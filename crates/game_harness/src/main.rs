@@ -1,7 +1,8 @@
 use bot_policies::{BotController, BotKind};
 use game_core::{
-    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaProgress, MetaRunSummary,
-    MetaSettlementReport, RunConfig, RunMetrics, StartingLoadout, TerminalKind, Vec2,
+    ContentPack, Difficulty, EnemyBehavior, FixedDt, GameCore, GameEvent, MetaProgress,
+    MetaRunSummary, MetaSettlementReport, RunConfig, RunMetrics, StartingLoadout, TerminalKind,
+    Vec2,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -14,7 +15,9 @@ use std::path::{Path, PathBuf};
 const GYM_ACTION_COUNT: usize = 9;
 const GYM_MAX_ENEMIES: usize = 8;
 const GYM_MAX_PICKUPS: usize = 4;
-const GYM_OBSERVATION_LEN: usize = 82;
+const GYM_OBSERVATION_V1_LEN: usize = 82;
+const GYM_OBSERVATION_V2_LEN: usize = 145;
+const GYM_DEFAULT_OBSERVATION_VERSION: u8 = 2;
 const GYM_REWARD_SURVIVAL_WEIGHT: f32 = 0.01;
 const GYM_REWARD_KILL_WEIGHT: f32 = 0.08;
 const GYM_REWARD_XP_WEIGHT: f32 = 0.04;
@@ -298,6 +301,7 @@ struct GymBridgeArgs {
     map_id: String,
     seconds: f32,
     tick_rate: u32,
+    observation_version: u8,
     content_dir: Option<PathBuf>,
 }
 
@@ -308,6 +312,7 @@ impl Default for GymBridgeArgs {
             map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
             tick_rate: 30,
+            observation_version: GYM_DEFAULT_OBSERVATION_VERSION,
             content_dir: Some(PathBuf::from("content/base_demo")),
         }
     }
@@ -694,6 +699,7 @@ struct GymBridgeInfo {
     seed: u64,
     map_id: String,
     tick_rate: u32,
+    observation_version: u8,
     tick: u64,
     time_seconds: f32,
     health: f32,
@@ -738,6 +744,7 @@ struct GymBridgeState {
     map_id: String,
     seconds: f32,
     tick_rate: u32,
+    observation_version: u8,
     tick: u64,
     last_action_index: Option<usize>,
     repeated_action_steps: u32,
@@ -1400,6 +1407,17 @@ fn parse_gym_bridge_args(values: Vec<String>) -> Result<GymBridgeArgs, String> {
                     .parse()
                     .map_err(|_| format!("invalid --tick-rate `{value}`"))?;
             }
+            "--observation-version" => {
+                parsed.observation_version = value
+                    .parse()
+                    .map_err(|_| format!("invalid --observation-version `{value}`"))?;
+                if gym_observation_len(parsed.observation_version).is_none() {
+                    return Err(format!(
+                        "unsupported --observation-version `{}`",
+                        parsed.observation_version
+                    ));
+                }
+            }
             "--content-dir" => {
                 parsed.content_dir = Some(PathBuf::from(value));
             }
@@ -1918,6 +1936,7 @@ fn run_gym_bridge(args: GymBridgeArgs) {
         args.map_id.clone(),
         args.seconds,
         args.tick_rate,
+        args.observation_version,
     );
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
@@ -1960,6 +1979,7 @@ impl GymBridgeState {
         map_id: String,
         seconds: f32,
         tick_rate: u32,
+        observation_version: u8,
     ) -> Self {
         let core = reset_gym_core(&content.pack, seed, &map_id, seconds, tick_rate);
         Self {
@@ -1969,6 +1989,7 @@ impl GymBridgeState {
             map_id,
             seconds,
             tick_rate,
+            observation_version,
             tick: 0,
             last_action_index: None,
             repeated_action_steps: 0,
@@ -2006,7 +2027,10 @@ impl GymBridgeState {
                 self.reset(seed, map_id, seconds, tick_rate);
                 self.response(
                     "reset",
-                    Some(gym_observation(&self.core.snapshot())),
+                    Some(gym_observation(
+                        &self.core.snapshot(),
+                        self.observation_version,
+                    )),
                     0.0,
                     Vec::new(),
                     GymRewardBreakdown::default(),
@@ -2039,7 +2063,10 @@ impl GymBridgeState {
         if self.core.is_terminal() {
             return self.response(
                 "step",
-                Some(gym_observation(&self.core.snapshot())),
+                Some(gym_observation(
+                    &self.core.snapshot(),
+                    self.observation_version,
+                )),
                 0.0,
                 Vec::new(),
                 GymRewardBreakdown::default(),
@@ -2078,7 +2105,7 @@ impl GymBridgeState {
 
         self.response(
             "step",
-            Some(gym_observation(&result.snapshot)),
+            Some(gym_observation(&result.snapshot, self.observation_version)),
             reward_breakdown.total,
             result.events,
             reward_breakdown,
@@ -2126,6 +2153,7 @@ impl GymBridgeState {
             seed: self.seed,
             map_id: self.map_id.clone(),
             tick_rate: self.tick_rate,
+            observation_version: self.observation_version,
             tick: self.tick,
             time_seconds: snapshot.time_seconds,
             health: snapshot.player.health,
@@ -2152,7 +2180,8 @@ impl GymBridgeState {
             }),
             reward_breakdown,
             content_hash: self.content.hash.clone(),
-            observation_len: GYM_OBSERVATION_LEN,
+            observation_len: gym_observation_len(self.observation_version)
+                .expect("validated gym observation version"),
             action_count: GYM_ACTION_COUNT,
         }
     }
@@ -2264,8 +2293,24 @@ fn gym_reward_breakdown(
     }
 }
 
-fn gym_observation(snapshot: &game_core::RunSnapshot) -> Vec<f32> {
-    let mut values = Vec::with_capacity(GYM_OBSERVATION_LEN);
+fn gym_observation(snapshot: &game_core::RunSnapshot, version: u8) -> Vec<f32> {
+    match version {
+        1 => gym_observation_v1(snapshot),
+        2 => gym_observation_v2(snapshot),
+        _ => panic!("unsupported gym observation version {version}"),
+    }
+}
+
+fn gym_observation_len(version: u8) -> Option<usize> {
+    match version {
+        1 => Some(GYM_OBSERVATION_V1_LEN),
+        2 => Some(GYM_OBSERVATION_V2_LEN),
+        _ => None,
+    }
+}
+
+fn gym_observation_v1(snapshot: &game_core::RunSnapshot) -> Vec<f32> {
+    let mut values = Vec::with_capacity(GYM_OBSERVATION_V1_LEN);
     let duration = (snapshot.time_seconds + snapshot.remaining_seconds).max(1.0);
     let max_dim = snapshot.map.width.max(snapshot.map.height).max(1.0);
     let half_width = (snapshot.map.width * 0.5).max(1.0);
@@ -2316,8 +2361,161 @@ fn gym_observation(snapshot: &game_core::RunSnapshot) -> Vec<f32> {
     values.push((snapshot.visible_pickups.len() as f32 / 16.0).min(1.0));
     values.push((snapshot.visible_projectiles.len() as f32 / 48.0).min(1.0));
 
-    debug_assert_eq!(values.len(), GYM_OBSERVATION_LEN);
+    debug_assert_eq!(values.len(), GYM_OBSERVATION_V1_LEN);
     values
+}
+
+fn gym_observation_v2(snapshot: &game_core::RunSnapshot) -> Vec<f32> {
+    let mut values = Vec::with_capacity(GYM_OBSERVATION_V2_LEN);
+    let duration = (snapshot.time_seconds + snapshot.remaining_seconds).max(1.0);
+    let max_dim = snapshot.map.width.max(snapshot.map.height).max(1.0);
+    let half_width = (snapshot.map.width * 0.5).max(1.0);
+    let half_height = (snapshot.map.height * 0.5).max(1.0);
+    let player = &snapshot.player;
+
+    values.push(clamp_unit(snapshot.time_seconds / duration));
+    values.push(clamp_unit(snapshot.remaining_seconds / duration));
+    values.push(ratio(player.health, player.max_health));
+    values.push(clamp_unit(player.level as f32 / 20.0));
+    values.push(ratio(player.xp, player.xp_to_next_level));
+    values.push(clamp_signed(player.position.x / half_width));
+    values.push(clamp_signed(player.position.y / half_height));
+    values.push(clamp_unit(
+        player.velocity.length() / player.move_speed.max(1.0),
+    ));
+    values.push(clamp_unit(player.pickup_radius / 240.0));
+    values.push(clamp_unit(player.damage_multiplier / 3.0));
+    values.push(clamp_unit(player.cooldown_multiplier / 3.0));
+
+    for enemy in snapshot.visible_enemies.iter().take(GYM_MAX_ENEMIES) {
+        let relative = enemy.position - player.position;
+        let relative_velocity = enemy.velocity - player.velocity;
+        values.push(clamp_signed(relative.x / snapshot.map.width.max(1.0)));
+        values.push(clamp_signed(relative.y / snapshot.map.height.max(1.0)));
+        values.push(clamp_signed(
+            relative_velocity.x / player.move_speed.max(1.0),
+        ));
+        values.push(clamp_signed(
+            relative_velocity.y / player.move_speed.max(1.0),
+        ));
+        values.push(clamp_unit(relative.length() / max_dim));
+        values.push(clamp_unit(enemy.radius / 160.0));
+        values.push(ratio(enemy.health, enemy.max_health));
+        values.push(clamp_unit(enemy.threat / 100.0));
+        values.push(if enemy.is_boss { 1.0 } else { 0.0 });
+        values.push(if enemy.is_elite { 1.0 } else { 0.0 });
+        values.push(enemy_behavior_embedding(enemy.behavior));
+    }
+    while values.len() < 11 + GYM_MAX_ENEMIES * 11 {
+        values.push(0.0);
+    }
+
+    for pickup in snapshot.visible_pickups.iter().take(GYM_MAX_PICKUPS) {
+        let relative = pickup.position - player.position;
+        values.push(clamp_signed(relative.x / snapshot.map.width.max(1.0)));
+        values.push(clamp_signed(relative.y / snapshot.map.height.max(1.0)));
+        values.push(clamp_unit(relative.length() / max_dim));
+        values.push(clamp_unit(pickup.value / 10.0));
+    }
+    while values.len() < 11 + GYM_MAX_ENEMIES * 11 + GYM_MAX_PICKUPS * 4 {
+        values.push(0.0);
+    }
+
+    let left = (player.position.x + half_width) / snapshot.map.width.max(1.0);
+    let right = (half_width - player.position.x) / snapshot.map.width.max(1.0);
+    let bottom = (player.position.y + half_height) / snapshot.map.height.max(1.0);
+    let top = (half_height - player.position.y) / snapshot.map.height.max(1.0);
+    values.push(clamp_unit(left));
+    values.push(clamp_unit(right));
+    values.push(clamp_unit(bottom));
+    values.push(clamp_unit(top));
+    values.push(clamp_unit(left.min(right).min(bottom).min(top) * 2.0));
+
+    values.push(clamp_unit(snapshot.build.weapons.len() as f32 / 6.0));
+    values.push(clamp_unit(snapshot.build.passives.len() as f32 / 6.0));
+    values.push(clamp_unit(snapshot.build.evolutions.len() as f32 / 6.0));
+    values.push(clamp_unit(snapshot.build.tags.len() as f32 / 12.0));
+    values.push(clamp_unit(
+        snapshot.build.open_evolution_paths.len() as f32 / 6.0,
+    ));
+    values.push(clamp_unit(
+        snapshot
+            .build
+            .weapons
+            .iter()
+            .map(|weapon| weapon.level)
+            .max()
+            .unwrap_or(0) as f32
+            / 8.0,
+    ));
+
+    values.push(clamp_unit(snapshot.visible_enemies.len() as f32 / 32.0));
+    values.push(clamp_unit(snapshot.visible_pickups.len() as f32 / 16.0));
+    values.push(clamp_unit(snapshot.visible_projectiles.len() as f32 / 48.0));
+    values.push(clamp_unit(snapshot.active_hazards.len() as f32 / 8.0));
+
+    if let Some(hazard) = nearest_hazard(snapshot) {
+        let relative = hazard.position - player.position;
+        values.push(clamp_signed(relative.x / snapshot.map.width.max(1.0)));
+        values.push(clamp_signed(relative.y / snapshot.map.height.max(1.0)));
+        values.push(clamp_unit(relative.length() / max_dim));
+        values.push(clamp_unit(hazard.radius / 240.0));
+        values.push(clamp_unit(1.0 - hazard.slow_multiplier));
+        values.push(clamp_unit(hazard.damage_per_second / 32.0));
+        values.push(clamp_unit(hazard.remaining_seconds / 10.0));
+    } else {
+        values.extend_from_slice(&[0.0; 7]);
+    }
+
+    if let Some(boss) = &snapshot.boss {
+        let relative = boss.position - player.position;
+        values.push(1.0);
+        values.push(clamp_signed(relative.x / snapshot.map.width.max(1.0)));
+        values.push(clamp_signed(relative.y / snapshot.map.height.max(1.0)));
+        values.push(clamp_unit(relative.length() / max_dim));
+        values.push(ratio(boss.health, boss.max_health));
+    } else {
+        values.extend_from_slice(&[0.0; 5]);
+    }
+
+    values.push(clamp_unit(snapshot.map.width / 2000.0));
+    values.push(clamp_unit(snapshot.map.height / 2000.0));
+    values.push(clamp_signed(
+        (snapshot.map.width - snapshot.map.height) / max_dim,
+    ));
+
+    debug_assert_eq!(values.len(), GYM_OBSERVATION_V2_LEN);
+    values
+}
+
+fn nearest_hazard(snapshot: &game_core::RunSnapshot) -> Option<&game_core::HazardSnapshot> {
+    let player_position = snapshot.player.position;
+    snapshot.active_hazards.iter().min_by(|left, right| {
+        let left_distance = (left.position - player_position).length();
+        let right_distance = (right.position - player_position).length();
+        left_distance.total_cmp(&right_distance)
+    })
+}
+
+fn enemy_behavior_embedding(behavior: EnemyBehavior) -> f32 {
+    match behavior {
+        EnemyBehavior::Chase => 0.0,
+        EnemyBehavior::Dash => 1.0 / 7.0,
+        EnemyBehavior::Split => 2.0 / 7.0,
+        EnemyBehavior::LeaveHazard => 3.0 / 7.0,
+        EnemyBehavior::OrbitPlayer => 4.0 / 7.0,
+        EnemyBehavior::Jump => 5.0 / 7.0,
+        EnemyBehavior::RangedSpit => 6.0 / 7.0,
+        EnemyBehavior::Shielded => 1.0,
+    }
+}
+
+fn clamp_unit(value: f32) -> f32 {
+    value.clamp(0.0, 1.0)
+}
+
+fn clamp_signed(value: f32) -> f32 {
+    value.clamp(-1.0, 1.0)
 }
 
 fn ratio(value: f32, max: f32) -> f32 {
@@ -5493,7 +5691,7 @@ fn print_help() {
         "  cargo run -p game_harness -- lock-accepted-content [--accepted-dir harness/accepted_content] [--lock-file harness/accepted_content/accepted_content.lock.json] [--runtime-content-root harness/accepted_content] [--report-dir harness/reports/local_accepted_content_lock]"
     );
     eprintln!(
-        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--content-dir content/base_demo]",
+        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--content-dir content/base_demo]",
         DEFAULT_MAP_ID
     );
 }
@@ -5506,8 +5704,9 @@ fn escape_json(value: &str) -> String {
 mod tests {
     use super::{
         content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_movement,
-        gym_observation, gym_reward_breakdown, movement_changed, ManualAcceptanceDecision,
-        GYM_OBSERVATION_LEN, REQUIRED_PLAYTEST_RUN_IDS,
+        gym_observation, gym_observation_len, gym_reward_breakdown, movement_changed,
+        ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
+        REQUIRED_PLAYTEST_RUN_IDS,
     };
     use game_core::{GameCore, RewardHint, RunConfig, TerminalKind, TerminalState};
     use serde_json::{json, Value};
@@ -5529,10 +5728,15 @@ mod tests {
     #[test]
     fn gym_observation_has_stable_length() {
         let core = GameCore::reset(RunConfig::default());
-        let observation = gym_observation(&core.snapshot());
+        let v1_observation = gym_observation(&core.snapshot(), 1);
+        let v2_observation = gym_observation(&core.snapshot(), 2);
 
-        assert_eq!(observation.len(), GYM_OBSERVATION_LEN);
-        assert!(observation.iter().all(|value| value.is_finite()));
+        assert_eq!(v1_observation.len(), GYM_OBSERVATION_V1_LEN);
+        assert_eq!(v2_observation.len(), GYM_OBSERVATION_V2_LEN);
+        assert_eq!(gym_observation_len(1), Some(GYM_OBSERVATION_V1_LEN));
+        assert_eq!(gym_observation_len(2), Some(GYM_OBSERVATION_V2_LEN));
+        assert!(v1_observation.iter().all(|value| value.is_finite()));
+        assert!(v2_observation.iter().all(|value| value.is_finite()));
     }
 
     #[test]

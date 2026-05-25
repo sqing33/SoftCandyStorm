@@ -6,6 +6,7 @@ The current bridge is Phase 1 only:
 
 - 9 discrete movement actions.
 - Headless `GameCore` through `game_harness gym-bridge`.
+- Observation v2 with player stat modifiers, enemy relative velocity/radius/elite/behavior features, active hazard direction, boss summary, map dimensions, and corner proximity.
 - Upgrade choices handled by the bridge rule policy.
 - DQN/PPO config is intentionally small for smoke runs.
 
@@ -45,6 +46,8 @@ python3 python/train/train_sb3.py --algorithm dqn --timesteps 128 --eval-episode
 Use `--model-out <path>` and `--report-dir <path>` for experiments that should not overwrite the default per-algorithm model or local training reports.
 
 `train_sb3.py` writes the model zip, per-algorithm model metadata, a training report, an evaluation report, and known exploit notes. Do not record RL Bot training as complete until all of those files exist and the policy has been compared against rule Bot baselines.
+
+The shared config uses `observation_version: 2` and `observation_len: 145`. Older v1 models with 82 inputs can still be inspected by using a separate config that sets `observation_version: 1` and `observation_len: 82`; do not mix v1 models with v2 evaluation reports.
 
 For multi-map training experiments, pass a comma-separated map list. `cycle` is deterministic and rotates maps on each environment reset; `random` uses the episode seed and episode index to select maps deterministically.
 

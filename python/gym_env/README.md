@@ -8,18 +8,20 @@ This package is the first Python-side bridge for RL experiments. It wraps the Ru
 python python/gym_env/smoke_test.py
 ```
 
-The smoke test starts `cargo run -q -p game_harness -- gym-bridge`, resets a short episode, steps with a fixed discrete movement action, and verifies that the observation length matches the bridge spec.
+The smoke test starts `cargo run -q -p game_harness -- gym-bridge`, resets a short episode, steps with a fixed discrete movement action, and verifies that the observation length matches the bridge spec. The default bridge uses observation v2.
 
 ## Environment
 
 ```python
 from python.gym_env import SoftCandyStormEnv
 
-env = SoftCandyStormEnv(seconds=600.0, tick_rate=30)
+env = SoftCandyStormEnv(seconds=600.0, tick_rate=30, observation_version=2)
 obs, info = env.reset(seed=12345)
 obs, reward, terminated, truncated, info = env.step(3)
 env.close()
 ```
+
+Observation v1 is still available for old local model analysis with `observation_version=1`. New training should use v2, which adds player stat modifiers, enemy relative velocity/radius/elite/behavior features, active hazard direction, boss summary, map dimensions, and corner proximity.
 
 For multi-map training experiments, pass a map list and let the environment choose a map on each reset:
 

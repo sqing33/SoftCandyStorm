@@ -56,6 +56,7 @@ class SoftCandyStormEnv(gym.Env):
         map_id="frosting-grassland",
         map_ids=None,
         map_selection="cycle",
+        observation_version=2,
         content_dir="content/base_demo",
         harness_cmd=None,
         cwd=None,
@@ -67,6 +68,7 @@ class SoftCandyStormEnv(gym.Env):
         self.map_selection = map_selection
         if self.map_selection not in {"cycle", "random"}:
             raise ValueError("map_selection must be `cycle` or `random`")
+        self.observation_version = int(observation_version)
         self.map_id = self.map_ids[0]
         self.episode_index = 0
         self.content_dir = content_dir
@@ -132,6 +134,8 @@ class SoftCandyStormEnv(gym.Env):
             str(self.seconds),
             "--tick-rate",
             str(self.tick_rate),
+            "--observation-version",
+            str(self.observation_version),
             "--map-id",
             self.map_id,
             "--content-dir",

@@ -389,6 +389,10 @@
     {
       "id": "rl_ppo_100k_action_score_multimap_diagnostic",
       "summary": "使用 action_score_diagnostic 复查 100000-step PPO 的 6 地图 10 seed / 300 秒评估；动作 7 在全地图都是平均最高概率动作，但概率仅 0.2387-0.3029，确认跨地图失败不是单纯动作熵问题"
+    },
+    {
+      "id": "rl_observation_v2",
+      "summary": "Gym bridge 增加 observation v2，默认 145 维，补齐玩家倍率、敌人相对速度/半径/精英/行为嵌入、active hazard、Boss、地图尺寸和角落距离；v1 82 维保留用于旧模型分析"
     }
   ],
   "current_findings": [
@@ -571,6 +575,11 @@
       "id": "rl_ppo_100k_action_score_diagnostic_result",
       "summary": "100000-step PPO 在 6 张地图上都把动作 7 作为平均最高概率动作，但平均概率并不极端；soda-creek 动作最分散仍低胜率，说明后续应优先处理地图条件、Boss/hazard 和 300 秒中后期训练目标。",
       "report": "harness/reports/2026-05-26_rl_ppo_100k_action_score_multimap_diagnostic_001/summary.md"
+    },
+    {
+      "id": "rl_observation_v2_available",
+      "summary": "训练入口默认使用 observation v2，smoke 与 dry-run 均返回 observation_len 145；旧 82 维模型不得直接混用 v2 报告，后续 PPO 训练应基于 v2 重新开始。",
+      "report": "harness/reports/2026-05-26_rl_observation_v2_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -580,7 +589,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "100000-step PPO 已修复动作分布 gate，但 6 地图 10 seed / 300 秒对比和 action_score 诊断显示跨地图泛化失败不是单纯动作熵问题；下一步应检查 Gym observation 的地图/Boss/hazard 表达，并尝试 curriculum、300 秒训练 episode 或 Boss/hazard reward shaping"
+      "summary": "Gym observation v2 已补齐地图/Boss/hazard 表达；下一步应基于 v2 重新训练 PPO，并尝试 curriculum、300 秒训练 episode 或 Boss/hazard reward shaping，再重跑 6 地图对比"
     }
   ]
 }

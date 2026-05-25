@@ -86,6 +86,7 @@ def build_env(
         map_id=selected_map_id,
         map_ids=map_ids,
         map_selection=map_selection,
+        observation_version=env_cfg.get("observation_version", 2),
         content_dir=env_cfg["content_dir"],
     )
 
@@ -197,6 +198,8 @@ def train(
         "content_dir": config["environment"]["content_dir"],
         "content_rules": "headless GameCore via game_harness gym-bridge",
         "reward_config": "prototype reward in game_harness gym_reward",
+        "observation_version": config["environment"].get("observation_version", 2),
+        "observation_len": config["environment"]["observation_len"],
         "algorithm_parameters": kwargs,
         "evaluation_policy": evaluation["action_selection"],
         "started_at": started_at,
@@ -226,6 +229,8 @@ def train(
             "seconds": config["environment"]["seconds"],
             "tick_rate": config["environment"]["tick_rate"],
             "content_dir": config["environment"]["content_dir"],
+            "observation_version": config["environment"].get("observation_version", 2),
+            "observation_len": config["environment"]["observation_len"],
             "maps": train_maps
             or [config["environment"].get("map_id", "frosting-grassland")],
             "map_selection": train_map_selection if train_maps else "single",
