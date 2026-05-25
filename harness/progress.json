@@ -161,6 +161,10 @@
     {
       "id": "python_gym_bridge_smoke",
       "summary": "实现 `game_harness gym-bridge` JSONL 协议和 `python/gym_env` Gymnasium 包装器，完成 9 动作、82 维 observation、reward 映射和 2 秒 episode 冒烟"
+    },
+    {
+      "id": "rl_training_smoke_config",
+      "summary": "增加 Stable-Baselines3 DQN/PPO 训练配置、训练入口、依赖检查、dry-run 和评估报告模板；当前环境缺少训练依赖，已验证配置与 bridge dry-run"
     }
   ],
   "current_findings": [
@@ -186,8 +190,8 @@
     },
     {
       "id": "rl_training_not_started",
-      "summary": "Python Gym bridge 已能通过同一个 headless GameCore 跑 episode 冒烟，但尚未安装或运行 Stable-Baselines3 训练；当前只证明环境接口，不证明 RL Bot 能力。",
-      "report": "harness/reports/2026-05-25_gym_bridge_smoke_001/summary.md"
+      "summary": "RL 训练配置和 DQN/PPO dry-run 入口已准备完成，但当前 Python 环境缺少 `gymnasium`、`numpy`、`stable_baselines3`，尚未产生真实模型；当前只证明训练入口，不证明 RL Bot 能力。",
+      "report": "harness/reports/2026-05-25_rl_training_smoke_config_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -196,8 +200,8 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "rl_training_smoke_config",
-      "summary": "为 Python Gym bridge 增加最小 DQN/PPO 训练配置和评估报告模板；只有在依赖可用并跑出模型后，才能记录 RL Bot 训练完成"
+      "id": "rl_model_training_smoke",
+      "summary": "安装 Gymnasium、NumPy 和 Stable-Baselines3 后，运行最小 DQN 训练并保存模型、metadata、评估报告和已知 exploit 记录"
     }
   ]
 }

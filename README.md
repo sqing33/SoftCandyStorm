@@ -33,6 +33,7 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 600 --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json --player-skill new
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 90 --demo-input --simulation-speed 8 --playtest-report harness/telemetry/local/runtime_demo_input_001.json --player-skill demo-bot --capture-interval 1 --auto-exit-after-report
 python python/gym_env/smoke_test.py
+python python/train/train_sb3.py --dry-run --algorithm dqn --steps 90
 ```
 
 带 `--report-dir` 的批量命令会输出 `summary.md`、`metrics.json`、门禁失败记录，以及原型 replay JSON。
@@ -44,6 +45,7 @@ python python/gym_env/smoke_test.py
 `game_runtime --demo-input` 会启用确定性演示输入，用于无需窗口焦点地覆盖移动、XP 拾取和升级选择链路；它只用于技术验证，不替代真人试玩判断。`--simulation-speed <倍率>` 只加速 Runtime 中的 GameCore 步进，适合 capture 冒烟验证；`--auto-exit-after-report` 会在终局报告写盘后自动退出 Runtime，适合长时间 capture 脚本化验证。
 人工试玩前先按 `harness/playtest/runtime_manual_review_pack.md` 准备 9 局最小覆盖矩阵，并使用 `harness/playtest/runtime_manual_review_template.json` 统一评分、标签和门禁结论。
 `python/gym_env` 提供第一版 Gymnasium 包装器，通过 `game_harness gym-bridge` JSONL 进程调用同一个 headless GameCore；当前用于 RL Phase 1 的 9 方向移动训练冒烟，不控制窗口，也不替代规则 Bot 基线。
+`python/train` 提供 Stable-Baselines3 的 DQN/PPO 训练配置和入口；当前可用 `--check-deps`、`--dry-run` 验证环境，真实训练需要先安装 `gymnasium`、`numpy` 和 `stable-baselines3`。
 
 素材候选后处理入口：
 

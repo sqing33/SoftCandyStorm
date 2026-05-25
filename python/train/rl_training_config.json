@@ -1,0 +1,57 @@
+{
+  "config_version": 1,
+  "phase": "rl_phase_1_movement_survival",
+  "environment": {
+    "env_class": "python.gym_env.SoftCandyStormEnv",
+    "seed": 12345,
+    "seconds": 180.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "action_space": "Discrete(9)",
+    "observation_len": 82,
+    "upgrade_policy": "bridge_first_option"
+  },
+  "algorithms": {
+    "dqn": {
+      "enabled": true,
+      "policy": "MlpPolicy",
+      "total_timesteps": 2000,
+      "learning_rate": 0.0003,
+      "buffer_size": 10000,
+      "learning_starts": 100,
+      "batch_size": 32,
+      "gamma": 0.99,
+      "train_freq": 4,
+      "target_update_interval": 250
+    },
+    "ppo": {
+      "enabled": true,
+      "policy": "MlpPolicy",
+      "total_timesteps": 2000,
+      "learning_rate": 0.0003,
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2
+    }
+  },
+  "evaluation": {
+    "seed_start": 30000,
+    "episodes": 5,
+    "seconds": 180.0,
+    "success_metrics": [
+      "average_survival_seconds",
+      "win_rate",
+      "average_level",
+      "average_kills",
+      "damage_taken",
+      "exploit_notes"
+    ]
+  },
+  "outputs": {
+    "model_dir": "python/train/models",
+    "report_dir": "harness/reports/local_rl_training",
+    "metadata_file": "model_metadata.json"
+  }
+}
