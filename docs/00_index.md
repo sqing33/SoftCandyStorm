@@ -73,6 +73,22 @@
 - Harness 原则：游戏核心逻辑必须可 headless 跑，渲染只是一个客户端
 - 美术方向：可爱糖果、软萌怪潮、圆润高辨识度、适合批量生成和裁切
 
+## 文档索引校验
+
+修改 `docs/00_index.md`、`AGENTS.md` 必读清单，或新增、删除 `docs/00` 到 `docs/19` 文档后，应运行：
+
+```bash
+python3 tools/validate_docs_index.py --repo-root .
+```
+
+需要留下 Harness 证据时，生成 JSON 与 Markdown 报告：
+
+```bash
+python3 tools/validate_docs_index.py --repo-root . --report harness/reports/<report-id>/docs_index_validation.json --markdown harness/reports/<report-id>/summary.md
+```
+
+该校验只证明文档清单、索引链接和 Agent 必读编号一致，不代表每个文档需求都已经被代码、内容或素材实现。
+
 ## 关键设计判断
 
 1. AI 不需要实时操控浏览器或游戏窗口。
