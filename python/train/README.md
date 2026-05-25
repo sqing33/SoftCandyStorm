@@ -164,3 +164,22 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 ```
 
 The first weighted smoke improved offline validation accuracy but still collapsed deterministically to action `5` in Gym comparison, so class weighting is a diagnostic knob rather than a proven fix.
+
+The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
+
+```bash
+cargo run -q -p game_harness -- export-bot-trajectories --bot kite --seed-start 31000 --seeds 5 --map-id soda-creek --seconds 60 --tick-rate 30 --observation-version 2 --sample-stride 5 --out harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001/kite_soda_creek.jsonl
+```
+
+Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --epochs 20 \
+  --batch-size 256 \
+  --model-out python/train/models/behavior_clone_kite_high_pressure_expanded_smoke.pt \
+  --report harness/reports/2026-05-26_rl_behavior_clone_kite_expanded_smoke_001/run_output.json
+```
+
+The expanded smoke passed the short high-pressure comparison gate, but it is still only a 10-second smoke. Run longer 60/300-second comparisons before treating it as a useful distillation base.

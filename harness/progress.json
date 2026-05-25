@@ -784,6 +784,11 @@
       "id": "rl_behavior_clone_weighted_loss_repair_attempt",
       "summary": "Behavior clone 训练入口支持 inverse_frequency 类别加权；weighted smoke 离线准确率提高到 92.22%，但 Gym deterministic 对比仍 100% 塌缩到 action 5，已记录 failure case。",
       "report": "harness/failed_cases/fail_20260526_019_behavior_clone_weighted_action_collapse.json"
+    },
+    {
+      "id": "rl_behavior_clone_expanded_trajectory_smoke",
+      "summary": "扩展 high-pressure KiteBot 轨迹到三图 5 seed、60 秒、stride 5 共 5312 条 sample；unweighted behavior clone 在三图 10 秒短对比中动作熵通过门禁，说明数据覆盖比单纯 loss 加权更有效。",
+      "report": "harness/reports/2026-05-26_rl_behavior_clone_kite_expanded_multimap_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -793,7 +798,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "扩大规则 Bot 轨迹数据集并加入多图/均衡采样、长局状态覆盖或序列上下文，先修复 behavior clone deterministic 单动作塌缩，再考虑 PPO 蒸馏或 warm-start"
+      "summary": "用 expanded behavior clone 进行 60 秒和 300 秒 high-pressure 对比；如果长局仍稳定，再尝试作为 PPO 蒸馏或 warm-start 的初始化候选"
     }
   ]
 }

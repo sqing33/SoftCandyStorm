@@ -231,6 +231,14 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 首轮 weighted smoke 表明：离线 validation accuracy 可以提升，但 deterministic Gym policy 仍可能塌缩到单一动作。因此 class weighting 只能作为诊断旋钮，不能当作轨迹蒸馏已修复的证据。
 
+更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
+
+- `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。
+- `caramel-workshop`：normalized action entropy 0.4859，最大动作占比 44.5%。
+- `cracked-star-jar`：normalized action entropy 0.3370，最大动作占比 69.5%。
+
+结论：数据覆盖比单纯 loss 权重更能缓解 deterministic 塌缩，但这仍只是 10 秒 smoke，不代表 60/300 秒高压泛化通过。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。
