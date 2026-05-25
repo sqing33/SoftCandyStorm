@@ -1,5 +1,4 @@
 use bevy::{
-    app::AppExit,
     asset::AssetPlugin,
     audio::{AudioBundle, AudioSource, PlaybackSettings, Volume},
     prelude::*,
@@ -97,6 +96,7 @@ struct RuntimeCli {
     seconds: f32,
     tick_rate: u32,
     demo_input: bool,
+    simulation_speed: f32,
     playtest_report: Option<PathBuf>,
     auto_exit_after_report: bool,
     player_skill: String,
@@ -111,6 +111,7 @@ impl Default for RuntimeCli {
             seconds: 600.0,
             tick_rate: 30,
             demo_input: false,
+            simulation_speed: 1.0,
             playtest_report: None,
             auto_exit_after_report: false,
             player_skill: "unrated".to_string(),
@@ -135,6 +136,7 @@ struct RuntimeState {
     effects: Vec<RuntimeEffect>,
     capture: RuntimeCaptureState,
     demo_input: bool,
+    simulation_speed: f32,
     auto_exit_after_report: bool,
     paused: bool,
     run_number: u32,
@@ -229,6 +231,7 @@ struct RuntimePlaytestReport {
     report_version: u32,
     player_skill: String,
     input_mode: &'static str,
+    simulation_speed: f32,
     auto_exit_after_report: bool,
     run_number: u32,
     content_dir: String,
@@ -420,6 +423,7 @@ fn setup_runtime(
         effects: Vec::new(),
         capture: RuntimeCaptureState::from_cli(&cli),
         demo_input: cli.demo_input,
+        simulation_speed: cli.simulation_speed,
         auto_exit_after_report: cli.auto_exit_after_report,
         paused: false,
         run_number: 1,
@@ -483,7 +487,8 @@ fn step_game_core(
         return;
     }
 
-    state.accumulator = (state.accumulator + time.delta_seconds()).min(0.25);
+    let frame_seconds = (time.delta_seconds() * state.simulation_speed).min(0.25);
+    state.accumulator = (state.accumulator + frame_seconds).min(0.25);
     let movement = if state.demo_input {
         demo_movement(&snapshot)
     } else {
@@ -516,7 +521,7 @@ fn update_runtime_effects(time: Res<Time>, mut state: ResMut<RuntimeState>) {
     state.effects.retain(|effect| effect.ttl_seconds > 0.0);
 }
 
-fn capture_playtest_report(mut state: ResMut<RuntimeState>, mut exit_events: EventWriter<AppExit>) {
+fn capture_playtest_report(mut state: ResMut<RuntimeState>) {
     if !state.capture.enabled() {
         return;
     }
@@ -540,14 +545,18 @@ fn capture_playtest_report(mut state: ResMut<RuntimeState>, mut exit_events: Eve
     state.capture.record_sample(sample, snapshot.time_seconds);
 
     let report = RuntimePlaytestReport::from_state(&state, metrics);
-    if let Err(error) = write_runtime_playtest_report(&state.capture, &report) {
-        eprintln!("failed to write runtime playtest report: {error}");
-    }
+    let report_written = match write_runtime_playtest_report(&state.capture, &report) {
+        Ok(()) => true,
+        Err(error) => {
+            eprintln!("failed to write runtime playtest report: {error}");
+            false
+        }
+    };
 
-    if should_finish {
+    if should_finish && report_written {
         state.capture.finished = true;
         if state.auto_exit_after_report {
-            exit_events.send(AppExit::Success);
+            std::process::exit(0);
         }
     }
 }
@@ -1329,6 +1338,15 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--demo-input" => {
                 cli.demo_input = true;
             }
+            "--simulation-speed" => {
+                if let Some(value) = args.next() {
+                    if let Ok(speed) = value.parse::<f32>() {
+                        if speed.is_finite() && speed > 0.0 {
+                            cli.simulation_speed = speed;
+                        }
+                    }
+                }
+            }
             "--playtest-report" => {
                 if let Some(value) = args.next() {
                     cli.playtest_report = Some(PathBuf::from(value));
@@ -1443,6 +1461,7 @@ impl RuntimePlaytestReport {
             report_version: 1,
             player_skill: state.capture.player_skill.clone(),
             input_mode: if state.demo_input { "demo" } else { "keyboard" },
+            simulation_speed: state.simulation_speed,
             auto_exit_after_report: state.auto_exit_after_report,
             run_number: state.run_number,
             content_dir: state.content_dir.display().to_string(),
@@ -1562,6 +1581,8 @@ mod tests {
             "--tick-rate".to_string(),
             "20".to_string(),
             "--demo-input".to_string(),
+            "--simulation-speed".to_string(),
+            "4".to_string(),
             "--auto-exit-after-report".to_string(),
         ]);
 
@@ -1570,6 +1591,7 @@ mod tests {
         assert_eq!(cli.seconds, 120.0);
         assert_eq!(cli.tick_rate, 20);
         assert!(cli.demo_input);
+        assert_eq!(cli.simulation_speed, 4.0);
         assert!(cli.auto_exit_after_report);
     }
 
@@ -1594,10 +1616,16 @@ mod tests {
 
     #[test]
     fn keeps_runtime_cli_defaults_for_bad_values() {
-        let cli = parse_runtime_cli(["--seed".to_string(), "bad".to_string()]);
+        let cli = parse_runtime_cli([
+            "--seed".to_string(),
+            "bad".to_string(),
+            "--simulation-speed".to_string(),
+            "-1".to_string(),
+        ]);
 
         assert_eq!(cli.content_dir, PathBuf::from(DEFAULT_CONTENT_DIR));
         assert_eq!(cli.seed, 12_345);
+        assert_eq!(cli.simulation_speed, 1.0);
     }
 
     #[test]
