@@ -9,7 +9,7 @@ use serde_json::Value;
 use std::collections::BTreeSet;
 use std::env;
 use std::fs;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 const GYM_ACTION_COUNT: usize = 9;
@@ -321,6 +321,37 @@ impl Default for GymBridgeArgs {
             tick_rate: 30,
             observation_version: GYM_DEFAULT_OBSERVATION_VERSION,
             content_dir: Some(PathBuf::from("content/base_demo")),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct BotTrajectoryExportArgs {
+    seed_start: u64,
+    seeds: u64,
+    map_id: String,
+    seconds: f32,
+    tick_rate: u32,
+    bot: BotKind,
+    content_dir: Option<PathBuf>,
+    out_file: PathBuf,
+    observation_version: u8,
+    sample_stride: u32,
+}
+
+impl Default for BotTrajectoryExportArgs {
+    fn default() -> Self {
+        Self {
+            seed_start: 12_345,
+            seeds: 1,
+            map_id: DEFAULT_MAP_ID.to_string(),
+            seconds: 60.0,
+            tick_rate: 30,
+            bot: BotKind::Kite,
+            content_dir: Some(PathBuf::from("content/base_demo")),
+            out_file: PathBuf::from("harness/reports/local_bot_trajectories/trajectories.jsonl"),
+            observation_version: GYM_DEFAULT_OBSERVATION_VERSION,
+            sample_stride: 1,
         }
     }
 }
@@ -742,6 +773,86 @@ struct GymRewardBreakdown {
 }
 
 #[derive(Debug, Serialize)]
+struct BotTrajectoryExportReport {
+    status: String,
+    output_file: String,
+    bot: String,
+    map_id: String,
+    seed_start: u64,
+    seeds: u64,
+    seconds: f32,
+    tick_rate: u32,
+    observation_version: u8,
+    observation_len: usize,
+    action_count: usize,
+    sample_stride: u32,
+    sample_count: u64,
+    skipped_upgrade_samples: u64,
+    episode_count: u64,
+    victory_count: u64,
+    content_hash: String,
+}
+
+#[derive(Debug, Serialize)]
+struct BotTrajectoryMetadataRecord {
+    record_type: &'static str,
+    dataset_version: &'static str,
+    bot: String,
+    map_id: String,
+    seed_start: u64,
+    seeds: u64,
+    seconds: f32,
+    tick_rate: u32,
+    observation_version: u8,
+    observation_len: usize,
+    action_count: usize,
+    sample_stride: u32,
+    content_hash: String,
+    content_dir: String,
+}
+
+#[derive(Debug, Serialize)]
+struct BotTrajectorySampleRecord {
+    record_type: &'static str,
+    seed: u64,
+    map_id: String,
+    bot: String,
+    tick: u64,
+    time_seconds: f32,
+    health_ratio: f32,
+    level: u32,
+    kills: u32,
+    action: usize,
+    movement: [f32; 2],
+    observation: Vec<f32>,
+}
+
+#[derive(Debug, Serialize)]
+struct BotTrajectoryEpisodeRecord {
+    record_type: &'static str,
+    seed: u64,
+    map_id: String,
+    bot: String,
+    terminal: String,
+    reason: String,
+    duration_seconds: f32,
+    kills: u32,
+    level: u32,
+    damage_taken: f32,
+    samples: u64,
+    skipped_upgrade_samples: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct BotTrajectorySummaryRecord {
+    record_type: &'static str,
+    sample_count: u64,
+    skipped_upgrade_samples: u64,
+    episode_count: u64,
+    victory_count: u64,
+}
+
+#[derive(Debug, Serialize)]
 struct GymTerminalInfo {
     kind: String,
     reason: String,
@@ -882,6 +993,14 @@ fn main() {
         },
         "gym-bridge" => match parse_gym_bridge_args(args.collect()) {
             Ok(args) => run_gym_bridge(args),
+            Err(message) => {
+                eprintln!("error: {message}");
+                print_help();
+                std::process::exit(2);
+            }
+        },
+        "export-bot-trajectories" => match parse_bot_trajectory_export_args(args.collect()) {
+            Ok(args) => run_export_bot_trajectories(args),
             Err(message) => {
                 eprintln!("error: {message}");
                 print_help();
@@ -1450,6 +1569,88 @@ fn parse_gym_bridge_args(values: Vec<String>) -> Result<GymBridgeArgs, String> {
     Ok(parsed)
 }
 
+fn parse_bot_trajectory_export_args(
+    values: Vec<String>,
+) -> Result<BotTrajectoryExportArgs, String> {
+    let mut parsed = BotTrajectoryExportArgs::default();
+    let mut index = 0;
+    while index < values.len() {
+        let key = &values[index];
+        let value = values
+            .get(index + 1)
+            .ok_or_else(|| format!("missing value for `{key}`"))?;
+        match key.as_str() {
+            "--seed-start" => {
+                parsed.seed_start = value
+                    .parse()
+                    .map_err(|_| format!("invalid --seed-start `{value}`"))?;
+            }
+            "--seeds" => {
+                parsed.seeds = value
+                    .parse()
+                    .map_err(|_| format!("invalid --seeds `{value}`"))?;
+            }
+            "--map-id" => {
+                parsed.map_id = value.to_string();
+            }
+            "--seconds" => {
+                parsed.seconds = value
+                    .parse()
+                    .map_err(|_| format!("invalid --seconds `{value}`"))?;
+            }
+            "--tick-rate" => {
+                parsed.tick_rate = value
+                    .parse()
+                    .map_err(|_| format!("invalid --tick-rate `{value}`"))?;
+            }
+            "--bot" => {
+                parsed.bot = BotKind::parse(value).ok_or_else(|| {
+                    format!("invalid --bot `{value}`; use {}", BotKind::all_names())
+                })?;
+            }
+            "--content-dir" => {
+                parsed.content_dir = Some(PathBuf::from(value));
+            }
+            "--out" => {
+                parsed.out_file = PathBuf::from(value);
+            }
+            "--observation-version" => {
+                parsed.observation_version = value
+                    .parse()
+                    .map_err(|_| format!("invalid --observation-version `{value}`"))?;
+                if gym_observation_len(parsed.observation_version).is_none() {
+                    return Err(format!(
+                        "unsupported --observation-version `{}`",
+                        parsed.observation_version
+                    ));
+                }
+            }
+            "--sample-stride" => {
+                parsed.sample_stride = value
+                    .parse()
+                    .map_err(|_| format!("invalid --sample-stride `{value}`"))?;
+            }
+            _ => return Err(format!("unknown flag `{key}`")),
+        }
+        index += 2;
+    }
+
+    if parsed.seeds == 0 {
+        return Err("--seeds must be greater than zero".to_string());
+    }
+    if parsed.seconds <= 0.0 {
+        return Err("--seconds must be positive".to_string());
+    }
+    if parsed.tick_rate == 0 {
+        return Err("--tick-rate must be greater than zero".to_string());
+    }
+    if parsed.sample_stride == 0 {
+        return Err("--sample-stride must be greater than zero".to_string());
+    }
+
+    Ok(parsed)
+}
+
 fn parse_bot_list(value: &str) -> Result<Vec<BotKind>, String> {
     if value == "all" {
         return Ok(default_matrix_bots());
@@ -1986,6 +2187,197 @@ fn run_gym_bridge(args: GymBridgeArgs) {
     }
 }
 
+fn run_export_bot_trajectories(args: BotTrajectoryExportArgs) {
+    let content = load_content_or_exit(args.content_dir.as_ref());
+    let report = match export_bot_trajectories(&content, &args) {
+        Ok(report) => report,
+        Err(error) => {
+            eprintln!(
+                "error: failed to export bot trajectories `{}`: {error}",
+                args.out_file.display()
+            );
+            std::process::exit(1);
+        }
+    };
+
+    match serde_json::to_string_pretty(&report) {
+        Ok(json) => println!("{json}"),
+        Err(error) => {
+            eprintln!("error: failed to render bot trajectory export report: {error}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn export_bot_trajectories(
+    content: &LoadedContent,
+    args: &BotTrajectoryExportArgs,
+) -> io::Result<BotTrajectoryExportReport> {
+    if let Some(parent) = args.out_file.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let observation_len = gym_observation_len(args.observation_version).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "unsupported observation version `{}`",
+                args.observation_version
+            ),
+        )
+    })?;
+    let content_dir = args
+        .content_dir
+        .as_ref()
+        .map(|path| path.display().to_string())
+        .unwrap_or_else(|| "builtin:base-demo".to_string());
+    let mut writer = BufWriter::new(fs::File::create(&args.out_file)?);
+    write_jsonl_record(
+        &mut writer,
+        &BotTrajectoryMetadataRecord {
+            record_type: "metadata",
+            dataset_version: "bot-trajectory-v0",
+            bot: args.bot.as_str().to_string(),
+            map_id: args.map_id.clone(),
+            seed_start: args.seed_start,
+            seeds: args.seeds,
+            seconds: args.seconds,
+            tick_rate: args.tick_rate,
+            observation_version: args.observation_version,
+            observation_len,
+            action_count: GYM_ACTION_COUNT,
+            sample_stride: args.sample_stride,
+            content_hash: content.hash.clone(),
+            content_dir,
+        },
+    )?;
+
+    let mut total_samples = 0u64;
+    let mut total_skipped_upgrade_samples = 0u64;
+    let mut victory_count = 0u64;
+    for seed_offset in 0..args.seeds {
+        let seed = args.seed_start + seed_offset;
+        let episode =
+            export_bot_trajectory_episode(content, args, seed, &mut writer, observation_len)?;
+        if episode.terminal == TerminalKind::Victory.as_str() {
+            victory_count += 1;
+        }
+        total_samples += episode.samples;
+        total_skipped_upgrade_samples += episode.skipped_upgrade_samples;
+        write_jsonl_record(&mut writer, &episode)?;
+    }
+
+    write_jsonl_record(
+        &mut writer,
+        &BotTrajectorySummaryRecord {
+            record_type: "summary",
+            sample_count: total_samples,
+            skipped_upgrade_samples: total_skipped_upgrade_samples,
+            episode_count: args.seeds,
+            victory_count,
+        },
+    )?;
+    writer.flush()?;
+
+    Ok(BotTrajectoryExportReport {
+        status: "ok".to_string(),
+        output_file: args.out_file.display().to_string(),
+        bot: args.bot.as_str().to_string(),
+        map_id: args.map_id.clone(),
+        seed_start: args.seed_start,
+        seeds: args.seeds,
+        seconds: args.seconds,
+        tick_rate: args.tick_rate,
+        observation_version: args.observation_version,
+        observation_len,
+        action_count: GYM_ACTION_COUNT,
+        sample_stride: args.sample_stride,
+        sample_count: total_samples,
+        skipped_upgrade_samples: total_skipped_upgrade_samples,
+        episode_count: args.seeds,
+        victory_count,
+        content_hash: content.hash.clone(),
+    })
+}
+
+fn export_bot_trajectory_episode<W: Write>(
+    content: &LoadedContent,
+    args: &BotTrajectoryExportArgs,
+    seed: u64,
+    writer: &mut W,
+    observation_len: usize,
+) -> io::Result<BotTrajectoryEpisodeRecord> {
+    let config = harness_run_config(seed, &args.map_id, args.seconds, args.tick_rate);
+    let mut core = GameCore::reset_with_content(config, content.pack.clone())
+        .map_err(|error| io::Error::other(error.to_string()))?;
+    let dt = FixedDt::from_tick_rate(args.tick_rate);
+    let max_steps = (args.seconds * args.tick_rate as f32) as usize + 10_000;
+    let mut steps = 0usize;
+    let mut controller = BotController::new(args.bot, seed);
+    let mut samples = 0u64;
+    let mut skipped_upgrade_samples = 0u64;
+
+    while !core.is_terminal() && steps < max_steps {
+        let snapshot = core.snapshot();
+        let action = controller.next_action(&snapshot);
+        if snapshot.upgrade_options.is_empty() {
+            if steps as u32 % args.sample_stride == 0 {
+                let observation = gym_observation(&snapshot, args.observation_version);
+                debug_assert_eq!(observation.len(), observation_len);
+                write_jsonl_record(
+                    writer,
+                    &BotTrajectorySampleRecord {
+                        record_type: "sample",
+                        seed,
+                        map_id: args.map_id.clone(),
+                        bot: args.bot.as_str().to_string(),
+                        tick: steps as u64,
+                        time_seconds: snapshot.time_seconds,
+                        health_ratio: ratio(snapshot.player.health, snapshot.player.max_health),
+                        level: snapshot.player.level,
+                        kills: snapshot.metrics_partial.kills,
+                        action: gym_discrete_action_index(action.movement),
+                        movement: [action.movement.x, action.movement.y],
+                        observation,
+                    },
+                )?;
+                samples += 1;
+            }
+        } else {
+            skipped_upgrade_samples += 1;
+        }
+
+        core.step(action, dt);
+        steps += 1;
+    }
+
+    let metrics = core.metrics();
+    let terminal = metrics.terminal.as_ref();
+    Ok(BotTrajectoryEpisodeRecord {
+        record_type: "episode",
+        seed,
+        map_id: args.map_id.clone(),
+        bot: args.bot.as_str().to_string(),
+        terminal: terminal
+            .map(|terminal| terminal.kind.as_str().to_string())
+            .unwrap_or_else(|| "not_terminal".to_string()),
+        reason: terminal
+            .map(|terminal| terminal.reason.clone())
+            .unwrap_or_else(|| "step_limit_reached".to_string()),
+        duration_seconds: metrics.duration_seconds,
+        kills: metrics.kills,
+        level: metrics.level,
+        damage_taken: metrics.damage_taken,
+        samples,
+        skipped_upgrade_samples,
+    })
+}
+
+fn write_jsonl_record<W: Write, T: Serialize>(writer: &mut W, record: &T) -> io::Result<()> {
+    serde_json::to_writer(&mut *writer, record).map_err(io::Error::other)?;
+    writer.write_all(b"\n")
+}
+
 impl GymBridgeState {
     fn new(
         content: LoadedContent,
@@ -2273,6 +2665,22 @@ fn gym_discrete_movement(action: usize) -> Vec2 {
         8 => Vec2::new(-1.0, 1.0).normalized_or_zero(),
         _ => Vec2::ZERO,
     }
+}
+
+fn gym_discrete_action_index(movement: Vec2) -> usize {
+    if movement.length() <= 0.05 {
+        return 0;
+    }
+    let normalized = movement.normalized_or_zero();
+    (1..GYM_ACTION_COUNT)
+        .max_by(|left, right| {
+            let left_movement = gym_discrete_movement(*left);
+            let right_movement = gym_discrete_movement(*right);
+            let left_score = normalized.x * left_movement.x + normalized.y * left_movement.y;
+            let right_score = normalized.x * right_movement.x + normalized.y * right_movement.y;
+            left_score.total_cmp(&right_score)
+        })
+        .unwrap_or(0)
 }
 
 fn gym_reward_breakdown(
@@ -5849,6 +6257,11 @@ fn print_help() {
         "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--content-dir content/base_demo]",
         DEFAULT_MAP_ID
     );
+    eprintln!(
+        "  cargo run -p game_harness -- export-bot-trajectories [--seed-start N] [--seeds N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--observation-version 1|2] [--sample-stride N] [--content-dir content/base_demo] [--out harness/reports/local_bot_trajectories/trajectories.jsonl]",
+        DEFAULT_MAP_ID,
+        BotKind::all_names()
+    );
 }
 
 fn escape_json(value: &str) -> String {
@@ -5858,10 +6271,11 @@ fn escape_json(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_movement,
-        gym_observation, gym_observation_len, gym_reward_breakdown, gym_safety_delta_reward,
-        gym_safety_risk_score, movement_changed, ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN,
-        GYM_OBSERVATION_V2_LEN, GYM_REWARD_SAFETY_DELTA_WEIGHT, REQUIRED_PLAYTEST_RUN_IDS,
+        content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_action_index,
+        gym_discrete_movement, gym_observation, gym_observation_len, gym_reward_breakdown,
+        gym_safety_delta_reward, gym_safety_risk_score, movement_changed, ManualAcceptanceDecision,
+        GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN, GYM_REWARD_SAFETY_DELTA_WEIGHT,
+        REQUIRED_PLAYTEST_RUN_IDS,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, HazardSnapshot, RewardHint,
@@ -5881,6 +6295,14 @@ mod tests {
         assert_eq!(gym_discrete_movement(0), game_core::Vec2::ZERO);
         assert!(gym_discrete_movement(2).length() <= 1.0 + f32::EPSILON);
         assert!(gym_discrete_movement(6).length() <= 1.0 + f32::EPSILON);
+    }
+
+    #[test]
+    fn gym_discrete_action_index_quantizes_rule_bot_movement() {
+        assert_eq!(gym_discrete_action_index(Vec2::ZERO), 0);
+        assert_eq!(gym_discrete_action_index(Vec2::new(1.0, 0.1)), 3);
+        assert_eq!(gym_discrete_action_index(Vec2::new(-0.6, -0.8)), 6);
+        assert_eq!(gym_discrete_action_index(Vec2::new(-0.2, 1.0)), 1);
     }
 
     #[test]

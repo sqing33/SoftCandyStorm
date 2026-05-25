@@ -110,3 +110,13 @@ Evaluation reports also include `action_score_diagnostic`. For probability polic
 Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` with training, `--evaluate-model`, or `--compare-rule-bots` when diagnosing whether a policy still has useful action probability mass even though deterministic argmax collapses.
 
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
+
+## Rule Bot Trajectory Export
+
+Use the Harness trajectory exporter to produce JSONL movement datasets from rule Bots before behavior cloning or policy distillation experiments:
+
+```bash
+cargo run -p game_harness -- export-bot-trajectories --bot kite --seed-start 30000 --seeds 10 --map-id soda-creek --seconds 300 --observation-version 2 --out harness/reports/local_bot_trajectories/kite_soda.jsonl
+```
+
+The first record is `metadata`, each `sample` contains an observation vector and discrete movement action, and the final record is `summary`. Upgrade-choice states are skipped because Phase 1 RL still trains movement only.

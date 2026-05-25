@@ -473,6 +473,10 @@
     {
       "id": "rl_ppo_soda_focus_warm_start_regression",
       "summary": "Soda-focused warm-start 在 high-pressure 3 地图 10 seed / 300 秒对比中退化：soda-creek 和 caramel-workshop 均为 0% 胜率，平均胜率降到 3.33%，已记录单图微调泛化失败"
+    },
+    {
+      "id": "rl_rule_bot_trajectory_export_available",
+      "summary": "Harness 增加 export-bot-trajectories JSONL 导出命令，可把规则 Bot 的 observation v2 与离散 movement action 作为行为克隆/轨迹蒸馏数据集输出，并保留 metadata、episode 和 summary 记录"
     }
   ],
   "current_findings": [
@@ -760,6 +764,11 @@
       "id": "rl_ppo_soda_focus_warm_start_regression",
       "summary": "单图 soda-creek 继续训练不是好方向：动作熵提高但目标图胜率掉到 0%，还牺牲 caramel-workshop；后续应改用多图 curriculum 或规则 Bot 轨迹蒸馏。",
       "report": "harness/failed_cases/fail_20260526_018_soda_focus_warm_start_regression.json"
+    },
+    {
+      "id": "rl_rule_bot_trajectory_export_available",
+      "summary": "规则 Bot 轨迹现在能导出为 JSONL，Phase 1 只记录 movement 样本并跳过升级选择状态，为后续 behavior cloning / policy distillation 提供可复现数据源。",
+      "report": "crates/game_harness/src/main.rs"
     }
   ],
   "next_recommended": [
@@ -769,7 +778,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "实现规则 Bot 轨迹导出或多图 curriculum 权重，不再做单图 PPO 微调；下一轮目标是保留 warm-start +20k 的 13.33% 平均胜率并提升 soda-creek 存活"
+      "summary": "基于 export-bot-trajectories 生成 high-pressure 规则 Bot 小样本数据集，下一步实现 Python 侧行为克隆/轨迹蒸馏入口，再回到 PPO 微调"
     }
   ]
 }

@@ -173,6 +173,20 @@ v2 已覆盖：
 
 其中 `high-pressure` 当前对应 `soda-creek`、`caramel-workshop`、`cracked-star-jar`，用于复查 observation v2 PPO 在 300 秒高压地图中的泛化失败。
 
+Harness 还提供规则 Bot 轨迹导出入口：
+
+```bash
+cargo run -p game_harness -- export-bot-trajectories \
+  --bot kite \
+  --seed-start 30000 \
+  --seeds 10 \
+  --map-id soda-creek \
+  --seconds 300 \
+  --out harness/reports/local_bot_trajectories/kite_soda.jsonl
+```
+
+导出格式为 JSONL：第一行 `metadata`，中间为 `sample`，最后为 `summary`。每个 sample 包含 observation v2 和离散 movement action，可用于后续行为克隆、规则 Bot 轨迹蒸馏或 curriculum 诊断。Phase 1 只导出 movement 状态；升级选择状态会跳过并计数，避免把 Build 决策混入移动生存训练。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。
