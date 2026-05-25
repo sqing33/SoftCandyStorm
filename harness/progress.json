@@ -101,19 +101,23 @@
     {
       "id": "asset_candidate_cleanup_pass",
       "summary": "为第二批 repair 素材和彩虹糖弹 preferred 候选增加 alpha 连通组件清理，输出 128/64/32px 透明 runtime-size 候选与棋盘格预览；清理结果仍停留在 generated_candidates"
+    },
+    {
+      "id": "asset_topdown_retry_candidates",
+      "summary": "使用 mmx 生成玩家和暴走搅糖机 Boss 严格俯视角重试候选，完成抠图、alpha 连通组件清理和 128/64/32px 预览；审查结论仍为 repair，原因是候选偏正面吉祥物"
     }
   ],
   "current_findings": [
     {
-      "id": "asset_art_direction_followup",
-      "summary": "素材清理批次已移除部分星光、投影和离散阴影，并输出 32px 透明候选；玩家和 Boss 仍非严格俯视角，普通软糖怪粉色高光也需人工复核，必要时可使用 mmx 重生成更严格 top-down 版本",
-      "report": "asset/generated_candidates/2026-05-25_asset_cleanup_pass/metadata/review_2026-05-25.md"
+      "id": "asset_topdown_prompt_limit",
+      "summary": "mmx 严格俯视角重试仍倾向生成正面吉祥物/图标；玩家和 Boss 的 v004_002 可作为风格参考，但若 Runtime 坚持俯视角统一，需要继续强化 prompt 或改用手工/程序化占位素材",
+      "report": "asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/review_2026-05-25.md"
     }
   ],
   "next_recommended": [
     {
-      "id": "asset_art_direction_approval_or_topdown_regen",
-      "summary": "人工确认清理后的玩家、Boss、软糖怪、糖晶和彩虹糖弹是否可作为后续 Runtime 素材候选；若不接受视角或轮廓，使用 mmx 重生成严格 top-down 玩家和 Boss"
+      "id": "asset_runtime_placeholder_or_prompt_refine",
+      "summary": "决定 Runtime 原型阶段采用偏正面吉祥物候选、继续用 mmx 强化俯视角 prompt，还是先制作手工/程序化 top-down 占位素材"
     },
     {
       "id": "larger_bot_baseline_nightly",

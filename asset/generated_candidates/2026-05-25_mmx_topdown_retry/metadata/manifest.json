@@ -1,0 +1,99 @@
+{
+  "batch_id": "2026-05-25_mmx_topdown_retry",
+  "generated_at": "2026-05-25",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_method": "api-key",
+    "source": "local configured mmx credentials"
+  },
+  "purpose": "重新生成玩家和暴走搅糖机 Boss 的严格俯视角候选，尝试修复上一批非俯视角美术风险。",
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "人工美术审查",
+      "确认是否接受偏正面吉祥物视角",
+      "如果必须严格俯视角，继续重生成或改用手工/程序化占位素材",
+      "正式接入前再次确认来源、prompt、版本和后处理说明"
+    ]
+  },
+  "generation_prompts": {
+    "player_jar_keeper_topdown_v004": "Strict top-down 2D game sprite viewed directly from above for a cute candy roguelite, trainee candy jar keeper player character, small round chibi body, candy jar lid hat visible from above, tiny arms and boots, cream white and soft pink palette, thick dark high contrast outline, simple readable silhouette at 32-64px, single complete centered sprite only, perfectly flat solid #00ff00 chroma-key background, no shadow, no ambient occlusion, no text, no label, no watermark, no frontal portrait, no side view, no perspective camera, no cropped body, no extra props outside the character.",
+    "boss_runaway_sugar_mixer_topdown_v004": "Strict top-down 2D game boss sprite viewed directly from above for a cute candy roguelite, runaway sugar mixer machine boss, circular toy-like mixer bowl body, spinning sugar arms contained close to the round silhouette, candy splashes inside the bowl, pink frosting metal and pastel candy colors, cheerful but dangerous expression drawn as simple top markings, thick dark high contrast outline, readable at 128px, single complete centered boss only, perfectly flat solid #00ff00 chroma-key background, no shadow, no ambient occlusion, no text, no label, no watermark, no frontal face portrait, no side view, no perspective camera, no cropped parts, no extra characters."
+  },
+  "postprocess": {
+    "script": "tools/asset_postprocess.py",
+    "commands": [
+      "mmx image generate --prompt <player_jar_keeper_topdown_v004> --aspect-ratio 1:1 --n 2 --out-dir asset/generated_candidates/2026-05-25_mmx_topdown_retry/images --out-prefix player_jar_keeper_topdown_v004 --non-interactive --quiet",
+      "mmx image generate --prompt <boss_runaway_sugar_mixer_topdown_v004> --aspect-ratio 1:1 --n 2 --out-dir asset/generated_candidates/2026-05-25_mmx_topdown_retry/images --out-prefix boss_runaway_sugar_mixer_topdown_v004 --non-interactive --quiet",
+      "python3 tools/asset_postprocess.py key-singles asset/generated_candidates/2026-05-25_mmx_topdown_retry/images/player_jar_keeper_topdown_v004_001.jpg asset/generated_candidates/2026-05-25_mmx_topdown_retry/images/player_jar_keeper_topdown_v004_002.jpg asset/generated_candidates/2026-05-25_mmx_topdown_retry/images/boss_runaway_sugar_mixer_topdown_v004_001.jpg asset/generated_candidates/2026-05-25_mmx_topdown_retry/images/boss_runaway_sugar_mixer_topdown_v004_002.jpg --out-dir asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004 --background auto --threshold 42 --padding 8 --manifest asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/postprocess_topdown_v004.json",
+      "python3 tools/asset_postprocess.py clean-components asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004/player_jar_keeper_topdown_v004_001.png asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004/player_jar_keeper_topdown_v004_002.png asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004/boss_runaway_sugar_mixer_topdown_v004_001.png asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004/boss_runaway_sugar_mixer_topdown_v004_002.png --out-dir asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004_clean --min-alpha 24 --keep-components 1 --padding 8 --manifest asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/component_cleanup_topdown_v004.json",
+      "python3 tools/asset_postprocess.py make-previews asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004_clean/player_jar_keeper_topdown_v004_001_clean.png asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004_clean/player_jar_keeper_topdown_v004_002_clean.png asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004_clean/boss_runaway_sugar_mixer_topdown_v004_001_clean.png asset/generated_candidates/2026-05-25_mmx_topdown_retry/processed/topdown_v004_clean/boss_runaway_sugar_mixer_topdown_v004_002_clean.png --out-dir asset/generated_candidates/2026-05-25_mmx_topdown_retry/review_previews/topdown_v004 --canvas-size 128 --preview-sizes 128,64,32 --occupancy 0.86 --contact-cols 4 --manifest asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/preview_topdown_v004.json"
+    ]
+  },
+  "assets": [
+    {
+      "id": "player_jar_keeper_topdown_v004_001",
+      "type": "image",
+      "source_path": "images/player_jar_keeper_topdown_v004_001.jpg",
+      "processed_path": "processed/topdown_v004_clean/player_jar_keeper_topdown_v004_001_clean.png",
+      "runtime_32_path": "review_previews/topdown_v004/runtime_32/player_jar_keeper_topdown_v004_001_clean_runtime_32.png",
+      "qa_status": "repair",
+      "qa_notes": [
+        "玩家身份清楚，小尺寸可读。",
+        "仍偏正面站立角色，不是严格俯视角。"
+      ]
+    },
+    {
+      "id": "player_jar_keeper_topdown_v004_002",
+      "type": "image",
+      "source_path": "images/player_jar_keeper_topdown_v004_002.jpg",
+      "processed_path": "processed/topdown_v004_clean/player_jar_keeper_topdown_v004_002_clean.png",
+      "runtime_32_path": "review_previews/topdown_v004/runtime_32/player_jar_keeper_topdown_v004_002_clean_runtime_32.png",
+      "qa_status": "repair_preferred",
+      "qa_notes": [
+        "轮廓更紧，更像从上方看到的糖罐帽角色。",
+        "脸部仍是正面表情，只能作为风格参考或人工复核候选。"
+      ]
+    },
+    {
+      "id": "boss_runaway_sugar_mixer_topdown_v004_001",
+      "type": "image",
+      "source_path": "images/boss_runaway_sugar_mixer_topdown_v004_001.jpg",
+      "processed_path": "processed/topdown_v004_clean/boss_runaway_sugar_mixer_topdown_v004_001_clean.png",
+      "runtime_32_path": "review_previews/topdown_v004/runtime_32/boss_runaway_sugar_mixer_topdown_v004_001_clean_runtime_32.png",
+      "qa_status": "repair",
+      "qa_notes": [
+        "Boss 轮廓和糖果身份明显。",
+        "表情和张口过于正面，俯视角目标未达成。"
+      ]
+    },
+    {
+      "id": "boss_runaway_sugar_mixer_topdown_v004_002",
+      "type": "image",
+      "source_path": "images/boss_runaway_sugar_mixer_topdown_v004_002.jpg",
+      "processed_path": "processed/topdown_v004_clean/boss_runaway_sugar_mixer_topdown_v004_002_clean.png",
+      "runtime_32_path": "review_previews/topdown_v004/runtime_32/boss_runaway_sugar_mixer_topdown_v004_002_clean_runtime_32.png",
+      "qa_status": "repair_preferred",
+      "qa_notes": [
+        "比 v004_001 更接近可用 Boss 图标，64px 下身份清楚。",
+        "仍偏正面机器角色，不满足严格俯视角统一。"
+      ]
+    }
+  ],
+  "batch_qa": {
+    "gate_result": "repair",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "preferred_candidates": [
+      "player_jar_keeper_topdown_v004_002",
+      "boss_runaway_sugar_mixer_topdown_v004_002"
+    ],
+    "notes": [
+      "mmx 重试未稳定遵守严格俯视角约束。",
+      "本批次可以保留为风格参考和失败复盘素材，但不能替代人工美术验收。",
+      "若 Runtime 坚持俯视角一致性，建议继续 prompt 约束或改用手工/程序化占位。"
+    ]
+  }
+}
