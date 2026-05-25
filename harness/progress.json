@@ -253,6 +253,10 @@
     {
       "id": "base_demo_boss_roster_completion",
       "summary": "补齐 docs/04 首批 6 个 Boss 配置，新增汽水喷泉龙、巨型棉花团、焦糖熔炉、巨型熊糖王和裂星糖罐核心，并同步内置 base_demo 内容包"
+    },
+    {
+      "id": "content_event_extended_runtime_effects",
+      "summary": "GameCore 内容事件扩展运行时语义，支持事件触发升级三选一、按 enemy_id 刷怪和生成临时地面危险区，并补充对应单测"
     }
   ],
   "current_findings": [
@@ -280,6 +284,11 @@
       "id": "boss_roster_config_scope",
       "summary": "base_demo 已覆盖 docs/04 首批 Boss 名录，Boss 包含基础数值、阶段技能名、反制说明、视觉和音效描述；当前只有暴走搅糖机接入糖霜草地波次，其余 Boss 仍待地图专属波次和运行时技能语义。",
       "report": "content/base_demo/bosses/cracked-star-jar-core.json"
+    },
+    {
+      "id": "content_event_effect_scope",
+      "summary": "内容事件现在能改变倍率、治疗、触发升级选项、刷出指定普通敌人和生成临时慢速危险区；复杂事件 UI、专属美术和三选一奖励池细分仍待 Runtime/内容后续扩展。",
+      "report": "crates/game_core/src/lib.rs"
     },
     {
       "id": "asset_final_art_still_pending",

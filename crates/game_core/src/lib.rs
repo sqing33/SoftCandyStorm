@@ -778,8 +778,83 @@ impl GameCore {
                         remaining_seconds: duration_seconds,
                     });
                 }
+                "offer_upgrade" => {
+                    self.offer_event_upgrade_options(events);
+                }
+                "spawn_enemy" => {
+                    self.spawn_event_enemies(effect, events);
+                }
+                "spawn_hazard" => {
+                    self.spawn_event_hazards(effect);
+                }
                 _ => {}
             }
+        }
+    }
+
+    fn offer_event_upgrade_options(&mut self, events: &mut Vec<GameEvent>) {
+        if !self.pending_upgrade_options.is_empty() {
+            return;
+        }
+
+        let upgrade_options = self.generate_upgrade_options();
+        if upgrade_options.is_empty() {
+            return;
+        }
+
+        let option_ids = upgrade_options
+            .iter()
+            .map(|option| option.snapshot.id.clone())
+            .collect();
+        self.pending_upgrade_options = upgrade_options;
+        events.push(GameEvent::UpgradeOffered {
+            options: option_ids,
+        });
+    }
+
+    fn spawn_event_enemies(
+        &mut self,
+        effect: &content::EventEffectDefinition,
+        events: &mut Vec<GameEvent>,
+    ) {
+        let Some(enemy_id) = effect.enemy_id.as_deref() else {
+            return;
+        };
+        let Some(definition) = self.content.enemies.get(enemy_id).cloned() else {
+            return;
+        };
+
+        let count = effect.value.round().clamp(1.0, 12.0) as u32;
+        for _ in 0..count {
+            if self.enemies.len() >= 160 {
+                break;
+            }
+            let position =
+                self.spawn_position_around_player(self.map.spawn_min, self.map.spawn_max);
+            let enemy =
+                Enemy::from_enemy_definition(self.allocate_entity_id(), position, &definition);
+            events.push(GameEvent::EnemySpawned {
+                entity_id: enemy.entity_id,
+                enemy_id: enemy.enemy_id.clone(),
+            });
+            self.enemies.push(enemy);
+        }
+    }
+
+    fn spawn_event_hazards(&mut self, effect: &content::EventEffectDefinition) {
+        let count = effect.value.round().clamp(1.0, 8.0) as u32;
+        let radius = effect.radius.unwrap_or(72.0).max(4.0);
+        let duration_seconds = effect.duration_seconds.unwrap_or(6.0).max(0.1);
+        let slow_multiplier = effect.slow_multiplier.unwrap_or(0.65).clamp(0.2, 1.0);
+
+        for _ in 0..count {
+            let position = self.spawn_position_around_player(80.0, self.map.spawn_min.max(120.0));
+            self.hazards.push(Hazard {
+                position,
+                radius,
+                remaining_seconds: duration_seconds,
+                slow_multiplier,
+            });
         }
     }
 
@@ -2790,5 +2865,59 @@ mod tests {
             .any(|event| matches!(event, GameEvent::ContentEventTriggered { event_id } if event_id == "rainbow-candy-rush")));
         assert!(result.reward_hint.xp_delta > 13.9);
         assert!(core.active_event_multiplier("spawn_rate_multiplier") > 1.0);
+    }
+
+    #[test]
+    fn content_events_can_offer_upgrades_and_spawn_entities() {
+        let mut core = GameCore::reset(RunConfig::default());
+        let mut event = core
+            .content
+            .events
+            .get("rainbow-candy-rush")
+            .expect("base demo event should exist")
+            .clone();
+        event.id = "test-supply-quake".to_string();
+        event.trigger.start_second = Some(0.0);
+        event.trigger.end_second = Some(10.0);
+        event.trigger.chance = Some(1.0);
+        event.effects = vec![
+            content::EventEffectDefinition {
+                effect_type: "offer_upgrade".to_string(),
+                value: 3.0,
+                duration_seconds: None,
+                enemy_id: None,
+                radius: None,
+                slow_multiplier: None,
+            },
+            content::EventEffectDefinition {
+                effect_type: "spawn_enemy".to_string(),
+                value: 2.0,
+                duration_seconds: None,
+                enemy_id: Some("bouncy-gummy".to_string()),
+                radius: None,
+                slow_multiplier: None,
+            },
+            content::EventEffectDefinition {
+                effect_type: "spawn_hazard".to_string(),
+                value: 2.0,
+                duration_seconds: Some(4.0),
+                enemy_id: None,
+                radius: Some(48.0),
+                slow_multiplier: Some(0.55),
+            },
+        ];
+        core.content.events.insert(event.id.clone(), event);
+
+        let result = core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+
+        assert!(result.events.iter().any(
+            |event| matches!(event, GameEvent::UpgradeOffered { options } if !options.is_empty())
+        ));
+        assert!(!core.snapshot().upgrade_options.is_empty());
+        assert!(core
+            .enemies
+            .iter()
+            .any(|enemy| enemy.enemy_id == "bouncy-gummy"));
+        assert_eq!(core.hazards.len(), 2);
     }
 }

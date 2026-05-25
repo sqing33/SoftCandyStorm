@@ -1181,11 +1181,17 @@ impl ContentPack {
                         effect_type: "xp_multiplier".to_string(),
                         value: 1.4,
                         duration_seconds: Some(25.0),
+                        enemy_id: None,
+                        radius: None,
+                        slow_multiplier: None,
                     },
                     EventEffectDefinition {
                         effect_type: "spawn_rate_multiplier".to_string(),
                         value: 1.25,
                         duration_seconds: Some(25.0),
+                        enemy_id: None,
+                        radius: None,
+                        slow_multiplier: None,
                     },
                 ],
                 visual_description: "天空落下彩虹糖晶，地面出现亮色糖光。".to_string(),
@@ -1811,6 +1817,8 @@ impl ContentPack {
                         "damage_multiplier",
                         "heal",
                         "spawn_enemy",
+                        "spawn_hazard",
+                        "offer_upgrade",
                     ],
                     &mut errors,
                 );
@@ -1821,6 +1829,45 @@ impl ContentPack {
                         duration_seconds,
                         &mut errors,
                     );
+                }
+                if effect.effect_type == "spawn_enemy" {
+                    validate_positive("event.effect.value", effect.value, &mut errors);
+                    match &effect.enemy_id {
+                        Some(enemy_id) if self.enemies.contains_key(enemy_id) => {}
+                        Some(enemy_id) => errors.push(format!(
+                            "event `{}` references missing enemy `{enemy_id}`",
+                            event.id
+                        )),
+                        None => errors.push(format!(
+                            "event `{}` spawn_enemy effect is missing enemy_id",
+                            event.id
+                        )),
+                    }
+                }
+                if effect.effect_type == "spawn_hazard" {
+                    validate_positive("event.effect.value", effect.value, &mut errors);
+                    if effect.duration_seconds.is_none() {
+                        errors.push(format!(
+                            "event `{}` spawn_hazard effect is missing duration_seconds",
+                            event.id
+                        ));
+                    }
+                    if let Some(radius) = effect.radius {
+                        validate_positive("event.effect.radius", radius, &mut errors);
+                    }
+                    if let Some(slow_multiplier) = effect.slow_multiplier {
+                        validate_finite(
+                            "event.effect.slow_multiplier",
+                            slow_multiplier,
+                            &mut errors,
+                        );
+                        if !(0.0..=1.0).contains(&slow_multiplier) {
+                            errors.push(format!(
+                                "event `{}` has slow_multiplier outside 0..=1: {}",
+                                event.id, slow_multiplier
+                            ));
+                        }
+                    }
                 }
             }
         }
@@ -2777,6 +2824,12 @@ pub struct EventEffectDefinition {
     pub value: f32,
     #[serde(default)]
     pub duration_seconds: Option<f32>,
+    #[serde(default)]
+    pub enemy_id: Option<String>,
+    #[serde(default)]
+    pub radius: Option<f32>,
+    #[serde(default)]
+    pub slow_multiplier: Option<f32>,
 }
 
 fn load_category<T>(path: &Path) -> Result<BTreeMap<String, T>, ContentError>
