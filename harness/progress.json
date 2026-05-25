@@ -289,6 +289,10 @@
     {
       "id": "six_map_boss_matrix_scoping",
       "summary": "使用 Kite、BossHunter、Tank 对 6 张地图执行 600 秒 3 seed 小矩阵范围扫描；焦糖工坊已 pass，其他地图暴露偏易或 Tank 早死问题，并记录 aggregate failure case"
+    },
+    {
+      "id": "soda_creek_balance_repair",
+      "summary": "修复汽水溪谷分裂问题：降低 0-210 秒泡泡远程占比，提高汽水喷泉龙本体/技能压力，并将 BossHunter 调整为更激进的近身猎 Boss 策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
     }
   ],
   "current_findings": [
@@ -324,8 +328,13 @@
     },
     {
       "id": "six_map_boss_balance_spread",
-      "summary": "6 地图范围扫描显示地图平衡尚未统一：糖霜草地、裂星糖罐整体偏易，棉花云牧场和果冻月台的 BossHunter/Tank 偏易，汽水溪谷同时存在高技能过安全与 Tank 早死；需要按地图逐步修复。",
+      "summary": "6 地图范围扫描显示地图平衡尚未统一：糖霜草地、裂星糖罐整体偏易，棉花云牧场和果冻月台的 BossHunter/Tank 偏易；汽水溪谷已完成首轮修复并通过小样本回归，其他地图仍需逐步修复。",
       "report": "harness/failed_cases/fail_20260526_002_six_map_boss_balance_spread.json"
+    },
+    {
+      "id": "soda_creek_boss_matrix_repaired",
+      "summary": "soda-creek 分裂问题已完成首轮修复：KiteBot 与 BossHunterBot 3 seed 胜率均为 66.7%，TankBot 为 33.3%，全部进入当前 Harness 目标区间；Replay 回归 9/9 通过，该结论仍是小样本。",
+      "report": "harness/reports/2026-05-26_soda_creek_balance_repair_001/summary.md"
     },
     {
       "id": "content_event_effect_scope",
@@ -399,10 +408,6 @@
     }
   ],
   "next_recommended": [
-    {
-      "id": "soda_creek_balance_repair",
-      "summary": "优先修复汽水溪谷的分裂问题：Tank 3 seed 全败但 Kite/BossHunter 全胜，需要降低早期 Tank 无解压力，同时把威胁转移到更可读的中后期 Boss/泡泡机制"
-    },
     {
       "id": "cracked_star_jar_final_map_pressure",
       "summary": "提高裂星糖罐最终地图压力，使裂星糖罐核心的阶段风暴和波次组合能让高技能/防御 Bot 不再 3 seed 全胜"
