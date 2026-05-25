@@ -247,6 +247,53 @@ def extract_sprites(args: argparse.Namespace) -> dict:
     return summary
 
 
+def key_single_assets(args: argparse.Namespace) -> dict:
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    outputs = []
+    for source_text in args.inputs:
+        source = Path(source_text)
+        image = Image.open(source)
+        transparent = remove_connected_background(image, args.background, args.threshold)
+        trimmed = trim_alpha(transparent, args.padding)
+        if trimmed is None:
+            continue
+
+        output_path = out_dir / f"{source.stem}.png"
+        trimmed.save(output_path)
+        outputs.append(
+            {
+                "source": str(source),
+                "path": str(output_path),
+                "width": trimmed.width,
+                "height": trimmed.height,
+            }
+        )
+
+    summary = {
+        "out_dir": str(out_dir),
+        "background": args.background,
+        "threshold": args.threshold,
+        "padding": args.padding,
+        "output_count": len(outputs),
+        "outputs": outputs,
+        "qa_notes": [
+            "Outputs remain generated candidates and are not accepted runtime assets.",
+            "Connected background removal only clears edge-connected background color.",
+            "Human review is still required for shadow remnants, watermarks, and sprite identity.",
+        ],
+    }
+    if args.manifest:
+        manifest_path = Path(args.manifest)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    return summary
+
+
 def make_previews(args: argparse.Namespace) -> dict:
     out_dir = Path(args.out_dir)
     normalized_dir = out_dir / f"normalized_{args.canvas_size}"
@@ -340,6 +387,27 @@ def build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--padding", type=int, default=4, help="transparent padding in pixels")
     extract.add_argument("--manifest", help="optional JSON summary output")
     extract.set_defaults(func=extract_sprites)
+
+    key_singles = subparsers.add_parser(
+        "key-singles", help="remove connected background from single-image candidates"
+    )
+    key_singles.add_argument("inputs", nargs="+", help="input generated single-image candidates")
+    key_singles.add_argument("--out-dir", required=True, help="candidate output directory")
+    key_singles.add_argument(
+        "--background",
+        choices=("auto", "sampled", "green"),
+        default="auto",
+        help="background keying mode",
+    )
+    key_singles.add_argument(
+        "--threshold",
+        type=float,
+        default=42.0,
+        help="color distance threshold for sampled backgrounds",
+    )
+    key_singles.add_argument("--padding", type=int, default=8, help="transparent padding in pixels")
+    key_singles.add_argument("--manifest", help="optional JSON summary output")
+    key_singles.set_defaults(func=key_single_assets)
 
     previews = subparsers.add_parser(
         "make-previews", help="normalize selected PNG candidates and make review previews"
