@@ -65,6 +65,10 @@
     {
       "id": "asset_candidate_postprocess_tool",
       "summary": "增加素材候选后处理脚本，支持按网格裁切 spritesheet、移除连通背景、输出 PNG 候选和 JSON 后处理报告；已对第一批 mmx spritesheet 生成 25 个裁切候选"
+    },
+    {
+      "id": "expanded_replay_baseline_set",
+      "summary": "扩充代表性 Replay 基线：使用 all Bot、5 seed、300 秒生成 45 条 replay，并通过 strict replay-batch 回归验证 45/45 可复现"
     }
   ],
   "current_findings": [
@@ -72,6 +76,11 @@
       "id": "boss_hunter_short_smoke_too_easy",
       "summary": "180 秒 3 seed 矩阵烟测中 BossHunterBot 胜率为 100%，超过高技能规则 Bot 初始目标 45%-75%",
       "report": "harness/reports/2026-05-25_matrix_smoke_001"
+    },
+    {
+      "id": "baseline_matrix_balance_spread",
+      "summary": "300 秒 5 seed 全 Bot 基线中 Idle/Random 通过目标；Coward、Greedy、Tank 偏弱，Kite、BossHunter、ZoneControl、Route 偏强或超过目标，需要后续数值/策略复盘",
+      "report": "harness/reports/2026-05-25_replay_baseline_001"
     }
   ],
   "next_recommended": [
@@ -80,8 +89,8 @@
       "summary": "人工审查第一批素材候选，筛出可继续后处理素材；重点检查 PNG 裁切候选的投影残留、小尺寸可读性和角色/敌人身份一致性，并对音频做响度、循环点和风格复核"
     },
     {
-      "id": "expand_replay_baseline_set",
-      "summary": "扩充代表性 replay 样本，覆盖经济流、防御流、Boss 流和失败 bug 复现局"
+      "id": "balance_baseline_repair",
+      "summary": "基于 300 秒全 Bot 基线复盘平衡目标：削弱过稳的 Kite/ZoneControl 路径，改善 Coward/Greedy/Tank 的早中期生存和收益曲线"
     }
   ]
 }
