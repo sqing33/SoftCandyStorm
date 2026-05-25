@@ -105,6 +105,104 @@ impl ContentPack {
             },
         );
 
+        pack.weapons.insert(
+            "candy-crystal-lance".to_string(),
+            WeaponDefinition {
+                id: "candy-crystal-lance".to_string(),
+                name: "糖晶长枪".to_string(),
+                version: 1,
+                rarity: "common".to_string(),
+                weapon_type: "projectile".to_string(),
+                tags: vec![
+                    "projectile".to_string(),
+                    "boss-killer".to_string(),
+                    "pierce".to_string(),
+                ],
+                description: "周期性射出高伤害糖晶长枪，优先瞄准 Boss。".to_string(),
+                targeting: TargetingDefinition {
+                    mode: "boss_priority".to_string(),
+                    range: 520.0,
+                },
+                base_stats: WeaponBaseStats {
+                    damage: 26.0,
+                    cooldown_ms: 1100.0,
+                    projectile_speed: 620.0,
+                    projectile_count: 1,
+                    pierce: 3,
+                    area_radius: 12.0,
+                    duration_ms: 0.0,
+                },
+                scaling: WeaponScaling {
+                    max_level: 5,
+                    damage_per_level: 9.0,
+                    cooldown_multiplier_per_level: 0.94,
+                    range_per_level: 20.0,
+                    area_per_level: 1.0,
+                    projectile_count_bonus_levels: vec![5],
+                },
+                balance_budget: WeaponBalanceBudget {
+                    role: "boss-killer".to_string(),
+                    single_target_dps: 24.0,
+                    group_dps: 16.0,
+                    performance_cost: "low".to_string(),
+                },
+                visual_description: "透明糖晶凝成的细长长枪，枪尖有星形高光。".to_string(),
+                sfx_description: "清脆的玻璃糖破空声。".to_string(),
+                unlock: UnlockDefinition {
+                    unlock_type: "default".to_string(),
+                },
+            },
+        );
+
+        pack.weapons.insert(
+            "soda-fountain".to_string(),
+            WeaponDefinition {
+                id: "soda-fountain".to_string(),
+                name: "汽水喷泉".to_string(),
+                version: 1,
+                rarity: "common".to_string(),
+                weapon_type: "burst".to_string(),
+                tags: vec![
+                    "aoe".to_string(),
+                    "burst".to_string(),
+                    "knockback".to_string(),
+                ],
+                description: "在敌人附近喷出汽水爆发，适合清理小群敌人。".to_string(),
+                targeting: TargetingDefinition {
+                    mode: "random_enemy".to_string(),
+                    range: 450.0,
+                },
+                base_stats: WeaponBaseStats {
+                    damage: 16.0,
+                    cooldown_ms: 950.0,
+                    projectile_speed: 450.0,
+                    projectile_count: 2,
+                    pierce: 1,
+                    area_radius: 24.0,
+                    duration_ms: 0.0,
+                },
+                scaling: WeaponScaling {
+                    max_level: 5,
+                    damage_per_level: 5.0,
+                    cooldown_multiplier_per_level: 0.93,
+                    range_per_level: 16.0,
+                    area_per_level: 3.0,
+                    projectile_count_bonus_levels: vec![4],
+                },
+                balance_budget: WeaponBalanceBudget {
+                    role: "aoe-clear".to_string(),
+                    single_target_dps: 34.0,
+                    group_dps: 52.0,
+                    performance_cost: "medium".to_string(),
+                },
+                visual_description: "蓝粉色汽水泡泡向上喷发，落地时溅出糖浆泡沫。".to_string(),
+                sfx_description: "短促的汽水喷发声和泡泡爆裂声。".to_string(),
+                unlock: UnlockDefinition {
+                    unlock_type: "default".to_string(),
+                },
+            },
+        );
+
         pack.evolutions.insert(
             "rainbow-candy-meteor".to_string(),
             EvolutionDefinition {

@@ -701,8 +701,9 @@ impl GameCore {
                 continue;
             }
 
-            let Some(target_position) =
-                self.find_nearest_enemy_position(self.weapons[weapon_index].range)
+            let targeting_mode = self.weapons[weapon_index].targeting_mode.clone();
+            let range = self.weapons[weapon_index].range;
+            let Some(target_position) = self.find_weapon_target_position(&targeting_mode, range)
             else {
                 continue;
             };
@@ -965,6 +966,11 @@ impl GameCore {
                     weapon.radius += weapon.area_per_level;
                 }
             }
+            UpgradeEffect::NewWeapon { weapon_id } => {
+                if let Some(definition) = self.content.weapons.get(&weapon_id) {
+                    self.weapons.push(WeaponState::from_definition(definition));
+                }
+            }
             UpgradeEffect::Passive { passive_id } => {
                 self.apply_passive(&passive_id);
             }
@@ -1002,6 +1008,23 @@ impl GameCore {
                     description: "提升伤害、射程和冷却节奏。".to_string(),
                 },
                 effect: UpgradeEffect::WeaponLevel {
+                    weapon_id: weapon.id.clone(),
+                },
+            });
+        }
+
+        for weapon in self.content.weapons.values() {
+            if self.weapons.iter().any(|state| state.id == weapon.id) {
+                continue;
+            }
+            candidates.push(UpgradeOffer {
+                snapshot: UpgradeOptionSnapshot {
+                    id: weapon.id.clone(),
+                    name: format!("获得{}", weapon.name),
+                    tags: weapon.tags.clone(),
+                    description: weapon.description.clone(),
+                },
+                effect: UpgradeEffect::NewWeapon {
                     weapon_id: weapon.id.clone(),
                 },
             });
@@ -1101,6 +1124,67 @@ impl GameCore {
                 }
                 _ => {}
             }
+        }
+    }
+
+    fn find_weapon_target_position(&mut self, mode: &str, range: f32) -> Option<Vec2> {
+        match mode {
+            "boss_priority" => self
+                .enemies
+                .iter()
+                .filter(|enemy| {
+                    enemy.is_boss && enemy.position.distance(self.player.position) <= range
+                })
+                .min_by(|left, right| {
+                    let left_distance = left.position.distance(self.player.position);
+                    let right_distance = right.position.distance(self.player.position);
+                    left_distance
+                        .partial_cmp(&right_distance)
+                        .unwrap_or(Ordering::Equal)
+                })
+                .map(|enemy| enemy.position)
+                .or_else(|| self.find_nearest_enemy_position(range)),
+            "highest_health_enemy" => self
+                .enemies
+                .iter()
+                .filter(|enemy| enemy.position.distance(self.player.position) <= range)
+                .max_by(|left, right| {
+                    left.health
+                        .partial_cmp(&right.health)
+                        .unwrap_or(Ordering::Equal)
+                })
+                .map(|enemy| enemy.position),
+            "random_enemy" => {
+                let targets = self
+                    .enemies
+                    .iter()
+                    .filter(|enemy| enemy.position.distance(self.player.position) <= range)
+                    .map(|enemy| enemy.position)
+                    .collect::<Vec<_>>();
+                targets
+                    .get(self.rng.range_usize(targets.len()))
+                    .copied()
+                    .or_else(|| self.find_nearest_enemy_position(range))
+            }
+            "random_direction" => {
+                let angle = self.rng.range_f32(0.0, std::f32::consts::TAU);
+                Some(self.player.position + Vec2::new(angle.cos(), angle.sin()) * range.max(1.0))
+            }
+            "movement_direction" => {
+                let direction = self.player.velocity.normalized_or_zero();
+                let direction = if direction.length_squared() > 0.0 {
+                    direction
+                } else {
+                    Vec2::new(1.0, 0.0)
+                };
+                Some(self.player.position + direction * range.max(1.0))
+            }
+            "ground_near_player" | "self_centered" => {
+                let angle = self.rng.range_f32(0.0, std::f32::consts::TAU);
+                let distance = self.rng.range_f32(range * 0.25, range.max(1.0));
+                Some(self.player.position + Vec2::new(angle.cos(), angle.sin()) * distance)
+            }
+            _ => self.find_nearest_enemy_position(range),
         }
     }
 
@@ -1256,6 +1340,7 @@ struct WeaponState {
     cooldown_remaining: f32,
     projectile_speed: f32,
     range: f32,
+    targeting_mode: String,
     radius: f32,
     pierce: u32,
     tags: Vec<String>,
@@ -1278,6 +1363,7 @@ impl WeaponState {
             cooldown_remaining: 0.2,
             projectile_speed: definition.base_stats.projectile_speed,
             range: definition.targeting.range,
+            targeting_mode: definition.targeting.mode.clone(),
             radius: definition.base_stats.area_radius,
             pierce: definition.base_stats.pierce,
             tags: definition.tags.clone(),
@@ -1472,6 +1558,7 @@ impl From<&UpgradeOffer> for UpgradeOptionSnapshot {
 #[derive(Debug, Clone)]
 enum UpgradeEffect {
     WeaponLevel { weapon_id: String },
+    NewWeapon { weapon_id: String },
     Passive { passive_id: String },
 }
 
@@ -1612,7 +1699,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 19);
+        assert_eq!(content.object_count(), 21);
         let mut core = GameCore::reset_with_content(
             RunConfig {
                 seed: 7,
@@ -1664,5 +1751,28 @@ mod tests {
         assert!(core.player.damage_reduction > 0.0);
         assert!(core.player.projectile_size_multiplier > 1.0);
         assert!(core.player.effect_duration_multiplier > 1.0);
+    }
+
+    #[test]
+    fn upgrade_options_can_grant_new_weapons() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.pending_upgrade_options = vec![UpgradeOffer {
+            snapshot: UpgradeOptionSnapshot {
+                id: "candy-crystal-lance".to_string(),
+                name: "获得糖晶长枪".to_string(),
+                tags: Vec::new(),
+                description: String::new(),
+            },
+            effect: UpgradeEffect::NewWeapon {
+                weapon_id: "candy-crystal-lance".to_string(),
+            },
+        }];
+
+        core.apply_upgrade_choice(0, &mut Vec::new(), &mut RewardHint::default());
+
+        assert!(core
+            .weapons
+            .iter()
+            .any(|weapon| weapon.id == "candy-crystal-lance"));
     }
 }
