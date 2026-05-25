@@ -341,6 +341,10 @@
     {
       "id": "rl_ppo_multimap_extended_comparison",
       "summary": "将新 reward 下的 PPO 扩展到全部 6 张 base_demo 地图、10 seed、300 秒；动作分布保持健康，但 soda-creek、caramel-workshop、cracked-star-jar 胜率分别只有 20%、20%、40%，已记录跨地图泛化 failure case"
+    },
+    {
+      "id": "rl_ppo_multimap_training_experiment",
+      "summary": "新增多地图训练入口后运行 PPO 6 地图 cycle 训练 10000 requested timesteps；训练入口可用但模型塌缩到动作 6 占 100%，已记录多地图训练动作塌缩 failure case"
     }
   ],
   "current_findings": [
@@ -463,6 +467,11 @@
       "id": "rl_ppo_multimap_generalization_gap",
       "summary": "PPO policy 在 frosting-grassland、cotton-cloud-pasture、jelly-platform 保持 100% 胜率，但在 soda-creek、caramel-workshop、cracked-star-jar 明显掉线，说明需要多地图训练或 curriculum 后再扩 600 秒验证。",
       "report": "harness/failed_cases/fail_20260526_005_ppo_multimap_generalization_gap.json"
+    },
+    {
+      "id": "rl_ppo_multimap_training_action_collapse",
+      "summary": "首轮 6 地图 cycle PPO 训练没有修复泛化，反而在默认评估中动作 6 占 100%、归一化动作熵 0.0；下一步必须先修训练探索/动作惩罚，再做跨地图对比。",
+      "report": "harness/failed_cases/fail_20260526_006_ppo_multimap_training_action_collapse.json"
     }
   ],
   "next_recommended": [
@@ -472,7 +481,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "为 PPO 增加多地图训练或地图随机化评估入口，先修复 soda-creek、caramel-workshop、cracked-star-jar 的泛化断层，再扩到 600 秒和更多 seed"
+      "summary": "修复多地图 PPO 训练的动作塌缩，优先尝试 entropy 系数、action_repeat 惩罚或 random 地图选择；通过动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
     }
   ]
 }
