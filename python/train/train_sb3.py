@@ -17,6 +17,27 @@ from python.gym_env import SoftCandyStormEnv
 
 REQUIRED_MODULES = ["gymnasium", "numpy", "stable_baselines3"]
 
+BASE_DEMO_MAP_PRESETS = {
+    "all-base-demo": [
+        "frosting-grassland",
+        "soda-creek",
+        "cotton-cloud-pasture",
+        "caramel-workshop",
+        "jelly-platform",
+        "cracked-star-jar",
+    ],
+    "high-pressure": [
+        "soda-creek",
+        "caramel-workshop",
+        "cracked-star-jar",
+    ],
+    "stable-open": [
+        "frosting-grassland",
+        "cotton-cloud-pasture",
+        "jelly-platform",
+    ],
+}
+
 
 def load_config(path):
     with Path(path).open("r", encoding="utf-8") as handle:
@@ -69,6 +90,26 @@ def parse_map_list(value):
     return maps
 
 
+def resolve_train_maps(train_maps, train_map_preset):
+    parsed_maps = parse_map_list(train_maps)
+    if parsed_maps is not None and train_map_preset is not None:
+        raise ValueError("--train-maps and --train-map-preset cannot be used together")
+    if train_map_preset is None:
+        return parsed_maps, None
+    try:
+        return list(BASE_DEMO_MAP_PRESETS[train_map_preset]), train_map_preset
+    except KeyError as exc:
+        raise ValueError(f"unknown train map preset `{train_map_preset}`") from exc
+
+
+def validate_positive_seconds(value, flag_name):
+    if value is None:
+        return None
+    if value <= 0.0:
+        raise ValueError(f"{flag_name} must be greater than 0")
+    return value
+
+
 def build_env(
     config,
     seed=None,
@@ -91,8 +132,22 @@ def build_env(
     )
 
 
-def dry_run(config, algorithm, steps):
-    env = build_env(config, seconds=min(config["environment"]["seconds"], 5.0))
+def dry_run(
+    config,
+    algorithm,
+    steps,
+    train_seconds=None,
+    train_maps=None,
+    train_map_selection="cycle",
+    train_map_preset=None,
+):
+    requested_seconds = train_seconds or config["environment"]["seconds"]
+    env = build_env(
+        config,
+        seconds=min(requested_seconds, 5.0),
+        map_ids=train_maps,
+        map_selection=train_map_selection,
+    )
     total_reward = 0.0
     try:
         observation, info = env.reset(seed=config["environment"]["seed"])
@@ -116,6 +171,12 @@ def dry_run(config, algorithm, steps):
             "time_seconds": info["time_seconds"],
             "observation_len": info["observation_len"],
             "action_count": info["action_count"],
+            "requested_train_seconds": requested_seconds,
+            "dry_run_seconds": env.seconds,
+            "training_maps": train_maps
+            or [config["environment"].get("map_id", "frosting-grassland")],
+            "training_map_selection": train_map_selection if train_maps else "single",
+            "training_map_preset": train_map_preset,
             "total_reward": round(total_reward, 4),
             "dependencies": dependency_status(),
         }
@@ -131,8 +192,10 @@ def train(
     eval_seconds=None,
     model_out=None,
     report_dir_out=None,
+    train_seconds=None,
     train_maps=None,
     train_map_selection="cycle",
+    train_map_preset=None,
     algorithm_overrides=None,
     eval_deterministic=True,
 ):
@@ -142,7 +205,13 @@ def train(
 
     selected = algorithm_config(config, algorithm)
     train_steps = total_timesteps or selected["total_timesteps"]
-    env = build_env(config, map_ids=train_maps, map_selection=train_map_selection)
+    effective_train_seconds = train_seconds or config["environment"]["seconds"]
+    env = build_env(
+        config,
+        seconds=effective_train_seconds,
+        map_ids=train_maps,
+        map_selection=train_map_selection,
+    )
     model_dir = Path(config["outputs"]["model_dir"])
     report_dir = (
         Path(report_dir_out)
@@ -200,6 +269,7 @@ def train(
         "reward_config": "prototype reward in game_harness gym_reward",
         "observation_version": config["environment"].get("observation_version", 2),
         "observation_len": config["environment"]["observation_len"],
+        "training_seconds": effective_train_seconds,
         "algorithm_parameters": kwargs,
         "evaluation_policy": evaluation["action_selection"],
         "started_at": started_at,
@@ -210,6 +280,7 @@ def train(
         "training_maps": train_maps
         or [config["environment"].get("map_id", "frosting-grassland")],
         "training_map_selection": train_map_selection if train_maps else "single",
+        "training_map_preset": train_map_preset,
     }
     metadata_path = metadata_path_for(config, algorithm, model_out=model_out)
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
@@ -226,7 +297,7 @@ def train(
             "requested_timesteps": train_steps,
             "actual_timesteps": actual_timesteps,
             "seed": config["environment"]["seed"],
-            "seconds": config["environment"]["seconds"],
+            "seconds": effective_train_seconds,
             "tick_rate": config["environment"]["tick_rate"],
             "content_dir": config["environment"]["content_dir"],
             "observation_version": config["environment"].get("observation_version", 2),
@@ -234,6 +305,7 @@ def train(
             "maps": train_maps
             or [config["environment"].get("map_id", "frosting-grassland")],
             "map_selection": train_map_selection if train_maps else "single",
+            "map_preset": train_map_preset,
             "started_at": started_at,
             "completed_at": completed_at,
             "algorithm_parameters": kwargs,
@@ -939,7 +1011,19 @@ def main():
     parser.add_argument("--model", default=None)
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
+    parser.add_argument(
+        "--train-seconds",
+        type=float,
+        default=None,
+        help="Override training episode duration without changing evaluation seconds.",
+    )
     parser.add_argument("--train-maps", default=None)
+    parser.add_argument(
+        "--train-map-preset",
+        choices=sorted(BASE_DEMO_MAP_PRESETS),
+        default=None,
+        help="Use a predefined base_demo training map set.",
+    )
     parser.add_argument(
         "--ent-coef",
         type=float,
@@ -967,9 +1051,13 @@ def main():
     algorithm_config(config, args.algorithm)
     try:
         algorithm_overrides = algorithm_overrides_from_args(args)
+        train_seconds = validate_positive_seconds(args.train_seconds, "--train-seconds")
+        train_maps, train_map_preset = resolve_train_maps(
+            args.train_maps,
+            args.train_map_preset,
+        )
     except ValueError as exc:
         parser.error(str(exc))
-    train_maps = parse_map_list(args.train_maps)
 
     if args.copy_template:
         write_report(args.report, copy_template(args.copy_template))
@@ -981,7 +1069,18 @@ def main():
         return
 
     if args.dry_run:
-        write_report(args.report, dry_run(config, args.algorithm, args.steps))
+        write_report(
+            args.report,
+            dry_run(
+                config,
+                args.algorithm,
+                args.steps,
+                train_seconds=train_seconds,
+                train_maps=train_maps,
+                train_map_selection=args.train_map_selection,
+                train_map_preset=train_map_preset,
+            ),
+        )
         return
 
     if args.evaluate_model:
@@ -1027,8 +1126,10 @@ def main():
             eval_seconds=args.eval_seconds,
             model_out=args.model_out,
             report_dir_out=args.report_dir,
+            train_seconds=train_seconds,
             train_maps=train_maps,
             train_map_selection=args.train_map_selection,
+            train_map_preset=train_map_preset,
             algorithm_overrides=algorithm_overrides,
             eval_deterministic=not args.eval_stochastic,
         ),

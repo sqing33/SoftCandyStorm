@@ -409,6 +409,10 @@
     {
       "id": "rl_ppo_observation_v2_50k_multimap_comparison",
       "summary": "使用 observation v2 50k PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布健康但 soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，已记录 50k v2 跨地图 failure case"
+    },
+    {
+      "id": "rl_training_episode_controls",
+      "summary": "训练入口增加 --train-seconds 与 --train-map-preset，可独立拉长训练 episode，并直接选择 all-base-demo、high-pressure 或 stable-open 地图集合用于 curriculum/定向实验"
     }
   ],
   "current_findings": [
@@ -616,6 +620,11 @@
       "id": "rl_ppo_observation_v2_50k_multimap_gap",
       "summary": "Observation v2 50k PPO 动作分布已健康，但 300 秒跨地图仍失败：soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，其中 soda-creek 平均只存活 33.6698 秒；后续应改训练目标而不是只压动作熵。",
       "report": "harness/failed_cases/fail_20260526_013_ppo_observation_v2_50k_multimap_gap.json"
+    },
+    {
+      "id": "rl_training_episode_controls_available",
+      "summary": "SB3 训练入口现在能用 --train-seconds 运行 300 秒训练 episode，并用 --train-map-preset high-pressure 定向训练 soda-creek、caramel-workshop、cracked-star-jar；报告和 metadata 会记录训练时长、地图集合和 preset。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "next_recommended": [
@@ -625,7 +634,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "Observation v2 50k PPO 仍无法通过 300 秒跨地图对比；下一步应优先尝试 300 秒训练 episode、地图 curriculum 或高压地图定向训练，并加入 Boss/hazard/受伤前兆 reward shaping"
+      "summary": "Observation v2 50k PPO 仍无法通过 300 秒跨地图对比；下一步可用 --train-seconds 300 与 --train-map-preset high-pressure 跑定向训练，再评估是否继续加入 Boss/hazard/受伤前兆 reward shaping"
     }
   ]
 }

@@ -162,6 +162,15 @@ v2 已覆盖：
 - build 数量、进化路径数量和最高武器等级
 - 边界距离、角落接近度、最近危险区方向、Boss 汇总和地图尺寸
 
+训练入口当前支持：
+
+- `--train-maps`：传入逗号分隔地图列表。
+- `--train-map-selection cycle|random`：控制多地图 reset 轮换方式。
+- `--train-map-preset all-base-demo|high-pressure|stable-open`：使用常见 `base_demo` 地图集合。
+- `--train-seconds`：覆盖训练 episode 时长，独立于 `--eval-seconds`。
+
+其中 `high-pressure` 当前对应 `soda-creek`、`caramel-workshop`、`cracked-star-jar`，用于复查 observation v2 PPO 在 300 秒高压地图中的泛化失败。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

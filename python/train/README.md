@@ -55,6 +55,18 @@ For multi-map training experiments, pass a comma-separated map list. `cycle` is 
 python3 python/train/train_sb3.py --algorithm ppo --train-maps frosting-grassland,soda-creek,caramel-workshop --train-map-selection cycle
 ```
 
+Use `--train-map-preset` for common `base_demo` sets:
+
+- `all-base-demo`: all six current maps.
+- `high-pressure`: `soda-creek`, `caramel-workshop`, `cracked-star-jar`.
+- `stable-open`: `frosting-grassland`, `cotton-cloud-pasture`, `jelly-platform`.
+
+Use `--train-seconds` to change training episode length without changing evaluation length. This is useful after a policy passes short action-distribution checks but fails 300-second cross-map generalization.
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
+```
+
 For PPO exploration experiments, use `--ent-coef <value>` to override the entropy coefficient without editing the shared config. Training metadata and reports record the final SB3 algorithm parameters.
 
 ```bash
