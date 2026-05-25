@@ -1,0 +1,36 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "python/train/models/ppo_phase1_observation_v2_high_pressure_safety_train300_random_ent002_50000_eval60.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "seed": 12345,
+  "content_dir": "content/base_demo",
+  "content_rules": "headless GameCore via game_harness gym-bridge",
+  "reward_config": "prototype reward in game_harness gym_reward",
+  "observation_version": 2,
+  "observation_len": 145,
+  "training_seconds": 300.0,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.02,
+    "clip_range": 0.2
+  },
+  "evaluation_policy": "deterministic",
+  "started_at": "2026-05-25T20:48:14.340128+00:00",
+  "completed_at": "2026-05-25T20:48:39.445149+00:00",
+  "evaluation_path": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_safety_train300_50k_training_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_safety_train300_50k_training_001/ppo_known_exploits.json",
+  "known_exploits": [],
+  "training_maps": [
+    "soda-creek",
+    "caramel-workshop",
+    "cracked-star-jar"
+  ],
+  "training_map_selection": "random",
+  "training_map_preset": "high-pressure"
+}

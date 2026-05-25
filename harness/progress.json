@@ -429,6 +429,10 @@
     {
       "id": "rl_reward_safety_shaping",
       "summary": "Gym reward 增加 low_health、boundary_risk、enemy_pressure、hazard_risk 和 boss_pressure 安全塑形字段，用于减少固定方向逃生、低血量贴边、忽略危险区和 Boss 压力的 RL policy exploit"
+    },
+    {
+      "id": "rl_ppo_observation_v2_high_pressure_safety_train300_50k_training",
+      "summary": "基于安全塑形 reward 重训 observation v2 high-pressure 300 秒 PPO 50000 requested timesteps；60 秒 deterministic 评估胜率 100%、平均承伤 1.8、最大动作 46.40%、归一化动作熵 0.5048，已进入 300 秒高压对比"
     }
   ],
   "current_findings": [
@@ -661,6 +665,11 @@
       "id": "rl_reward_safety_shaping_available",
       "summary": "Gym bridge 的 reward_breakdown 现在会输出低血量、边界、敌人压力、危险区和 Boss 压力塑形字段；这只改变训练信号，仍需通过 high-pressure 300 秒对比证明策略泛化改善。",
       "report": "crates/game_harness/src/main.rs"
+    },
+    {
+      "id": "rl_ppo_safety_train300_action_gate",
+      "summary": "安全塑形 reward 下的 high-pressure train300 50k PPO 通过 60 秒短局动作 gate，短局平均承伤从上一轮 36.21 降到 1.8，最大动作占比降到 46.40%；仍需 300 秒高压地图对比验证泛化。",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_safety_train300_50k_training_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -670,7 +679,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "Gym reward 已加入安全塑形字段；下一步应基于该 reward 重训 high-pressure 300 秒 PPO，并复跑 high-pressure 10 seed / 300 秒对比，确认 caramel-workshop 是否脱离 0% 胜率且 soda-creek/cracked-star-jar 是否不再显著低于规则 Bot"
+      "summary": "安全塑形 reward 的 high-pressure 300 秒 PPO 已通过 60 秒短局动作 gate；下一步必须复跑 high-pressure 10 seed / 300 秒对比，确认 caramel-workshop 是否脱离 0% 胜率且 soda-creek/cracked-star-jar 是否不再显著低于规则 Bot"
     }
   ]
 }
