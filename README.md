@@ -2,7 +2,7 @@
 
 《软糖风暴》是一款计划中的可爱糖果风俯视角自动攻击肉鸽生存游戏。
 
-当前阶段是设计与计划阶段，本目录只包含文档，不包含正式游戏实现。
+当前已进入 Goal 模式后的 Phase 1 起步：仓库包含设计文档，以及一版最小 headless GameCore / Harness 原型。当前原型用于验证固定 seed、固定 tick、无渲染仿真闭环，还不是正式可玩 Runtime。
 
 ## 快速入口
 
@@ -13,6 +13,38 @@
 - [核心玩法规格](./docs/02_核心玩法规格.md)
 - [Bevy 技术架构计划](./docs/06_Bevy技术架构计划.md)
 - [Harness 工程计划](./docs/07_Harness工程计划.md)
+
+## 原型运行
+
+当前可运行的 headless 仿真入口：
+
+```bash
+cargo run -p game_harness -- validate-content --content-dir content/base_demo
+cargo run -p game_harness -- budget-content --content-dir content/base_demo
+cargo run -p game_harness -- simulate --content-dir content/base_demo --seed 12345 --seconds 600 --bot kite
+cargo run -p game_harness -- batch --content-dir content/base_demo --seed-start 12345 --seeds 10 --seconds 600 --bot kite
+cargo run -p game_harness -- batch --content-dir content/base_demo --seed-start 12345 --seeds 10 --seconds 600 --bot kite --report-dir harness/reports/2026-05-25_kite_batch_001
+cargo run -p game_harness -- matrix --content-dir content/base_demo --seed-start 20000 --seeds 3 --seconds 180 --bots random,coward,tank,boss-hunter --report-dir harness/reports/2026-05-25_matrix_smoke_001
+cargo run -p game_harness -- replay --content-dir content/base_demo --replay-file harness/reports/2026-05-25_matrix_smoke_001/representative_replays/boss_hunter_seed_20000.json
+cargo run -p game_harness -- replay-batch --content-dir content/base_demo --replay-dir harness/reports/2026-05-25_matrix_smoke_001/representative_replays --report-dir harness/reports/2026-05-25_replay_regression_smoke_001
+cargo run -p game_harness -- validate-candidates --source-dir harness/generated_candidates --validated-dir harness/validated_candidates --rejected-dir harness/rejected_content --report-dir harness/reports/2026-05-25_candidates_smoke_001
+cargo run -p game_harness -- simulate-candidates --source-dir harness/validated_candidates --simulated-dir harness/simulated_candidates --repair-dir harness/repair_queue --seed-start 20000 --seeds 3 --seconds 180 --bots random,coward,tank,boss-hunter --report-dir harness/reports/2026-05-25_candidate_simulation_smoke_001
+cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 600
+```
+
+带 `--report-dir` 的批量命令会输出 `summary.md`、`metrics.json`、门禁失败记录，以及原型 replay JSON。
+`replay-batch` 会递归扫描 replay JSON，并用 strict 模式校验 content hash、升级选项和 final metrics 是否完全复现。
+`validate-candidates` 会先做 schema 校验和静态预算门禁，只有两者都通过才会复制到 `harness/validated_candidates`。
+`simulate-candidates` 会对 `validated_candidates` 执行 Bot 矩阵，通过后复制到 `harness/simulated_candidates`，未通过则复制到 `harness/repair_queue`。
+`game_runtime` 是最小 Bevy 可视化客户端：读取键盘输入，调用同一个 GameCore，再根据 snapshot/events 更新画面和 HUD。
+
+常用检查：
+
+```bash
+cargo fmt --check
+cargo clippy --workspace --all-targets
+cargo test --workspace
+```
 
 ## 当前方向
 
