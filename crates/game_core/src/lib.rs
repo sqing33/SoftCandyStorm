@@ -2517,7 +2517,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 32);
+        assert_eq!(content.object_count(), 39);
         let mut core = GameCore::reset_with_content(
             RunConfig {
                 seed: 7,
