@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_009",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "training=12345; eval=30000-30002",
+  "bot": "PPO policy",
+  "time_seconds": 60.0,
+  "symptom": "增强 Gym action_repeat 惩罚后，使用 6 张 base_demo 地图 random 训练 PPO 10000 requested timesteps，并设置 ent_coef=0.02，训练后默认确定性评估仍出现动作 6 占 100.00%、归一化动作熵 0.0 的单动作塌缩；gate 为 trained_needs_action_bias_repair。",
+  "root_cause": "新的 action_repeat 惩罚已生效，评估中 action_repeat 平均为 -6.9907、总 reward 为 -4.421，但 10000-step PPO 多地图训练仍未学会可复现的动作切换策略；问题可能来自训练步数不足、curriculum 缺失、确定性 argmax 易塌缩，或观察/奖励中缺少足够明确的边界与重复动作诊断信号。",
+  "fix": "后续需要先记录 stochastic 诊断，确认策略分布是否仍有熵；再尝试更长训练、curriculum、边界停留惩罚或 policy probability 诊断。在修复前不得将该模型用于规则 Bot 对比、跨地图压力测试或内容门禁判断。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_repeat_penalty_ent_coef_001/summary.md。修复后需先通过确定性动作分布 gate：最大动作占比低于 75%、归一化动作熵高于 0.25，再运行 6 地图 10 seed / 300 秒对比。"
+}
