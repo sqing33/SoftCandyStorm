@@ -345,6 +345,10 @@
     {
       "id": "rl_ppo_multimap_training_experiment",
       "summary": "新增多地图训练入口后运行 PPO 6 地图 cycle 训练 10000 requested timesteps；训练入口可用但模型塌缩到动作 6 占 100%，已记录多地图训练动作塌缩 failure case"
+    },
+    {
+      "id": "rl_ppo_multimap_random_training_experiment",
+      "summary": "尝试 PPO 6 地图 random 训练 10000 requested timesteps；随机地图采样仍塌缩到动作 7 占 100%、归一化动作熵 0.0，已记录随机多地图训练动作塌缩 failure case"
     }
   ],
   "current_findings": [
@@ -472,6 +476,11 @@
       "id": "rl_ppo_multimap_training_action_collapse",
       "summary": "首轮 6 地图 cycle PPO 训练没有修复泛化，反而在默认评估中动作 6 占 100%、归一化动作熵 0.0；下一步必须先修训练探索/动作惩罚，再做跨地图对比。",
       "report": "harness/failed_cases/fail_20260526_006_ppo_multimap_training_action_collapse.json"
+    },
+    {
+      "id": "rl_ppo_multimap_random_training_action_collapse",
+      "summary": "将多地图训练改为 random 地图选择后仍未修复 PPO 动作塌缩，默认评估中动作 7 占 100%、归一化动作熵 0.0；说明下一步应优先改训练参数和 reward 惩罚，而不是继续切换地图采样方式。",
+      "report": "harness/failed_cases/fail_20260526_007_ppo_multimap_random_training_action_collapse.json"
     }
   ],
   "next_recommended": [
@@ -481,7 +490,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "修复多地图 PPO 训练的动作塌缩，优先尝试 entropy 系数、action_repeat 惩罚或 random 地图选择；通过动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
+      "summary": "修复多地图 PPO 训练的动作塌缩；cycle 和 random 地图选择均已失败，下一步优先暴露并提高 PPO entropy 系数，或增强 action_repeat / 边界停留惩罚；通过动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
     }
   ]
 }
