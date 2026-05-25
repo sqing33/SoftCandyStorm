@@ -105,19 +105,23 @@
     {
       "id": "asset_topdown_retry_candidates",
       "summary": "使用 mmx 生成玩家和暴走搅糖机 Boss 严格俯视角重试候选，完成抠图、alpha 连通组件清理和 128/64/32px 预览；审查结论仍为 repair，原因是候选偏正面吉祥物"
+    },
+    {
+      "id": "prototype_topdown_placeholder_assets",
+      "summary": "生成程序化 top-down Runtime 原型占位素材包，覆盖玩家、四类敌人、Boss、XP 糖晶、彩虹糖弹和糖霜草地图块，并保存生成脚本、manifest 与 contact sheet"
     }
   ],
   "current_findings": [
     {
-      "id": "asset_topdown_prompt_limit",
-      "summary": "mmx 严格俯视角重试仍倾向生成正面吉祥物/图标；玩家和 Boss 的 v004_002 可作为风格参考，但若 Runtime 坚持俯视角统一，需要继续强化 prompt 或改用手工/程序化占位素材",
-      "report": "asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/review_2026-05-25.md"
+      "id": "runtime_asset_integration_pending",
+      "summary": "程序化 top-down 原型占位素材已经生成并可用于替换 Runtime 几何色块；下一步需要在 Bevy Runtime 中加载这些纹理，同时保留 AI 候选不越级接入正式素材",
+      "report": "assets/prototype_topdown/manifest.json"
     }
   ],
   "next_recommended": [
     {
-      "id": "asset_runtime_placeholder_or_prompt_refine",
-      "summary": "决定 Runtime 原型阶段采用偏正面吉祥物候选、继续用 mmx 强化俯视角 prompt，还是先制作手工/程序化 top-down 占位素材"
+      "id": "runtime_load_prototype_assets",
+      "summary": "让 Runtime 加载 `assets/prototype_topdown` 程序化占位纹理，替换玩家、敌人、Boss 和 XP pickup 的几何色块绘制"
     },
     {
       "id": "larger_bot_baseline_nightly",
