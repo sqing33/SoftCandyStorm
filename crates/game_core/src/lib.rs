@@ -1304,7 +1304,7 @@ impl GameCore {
             return evolution_candidates.into_iter().take(3).collect();
         }
 
-        let mut candidates = Vec::new();
+        let mut weapon_level_candidates = Vec::new();
 
         for weapon in self
             .weapons
@@ -1318,7 +1318,7 @@ impl GameCore {
                 .get(&weapon.id)
                 .map(|definition| definition.name.clone())
                 .unwrap_or_else(|| weapon.id.clone());
-            candidates.push(UpgradeOffer {
+            weapon_level_candidates.push(UpgradeOffer {
                 snapshot: UpgradeOptionSnapshot {
                     id: format!("{}-level-{next_level}", weapon.id),
                     name: format!("{weapon_name}强化"),
@@ -1331,11 +1331,12 @@ impl GameCore {
             });
         }
 
+        let mut new_weapon_candidates = Vec::new();
         for weapon in self.content.weapons.values() {
             if self.weapons.iter().any(|state| state.id == weapon.id) {
                 continue;
             }
-            candidates.push(UpgradeOffer {
+            new_weapon_candidates.push(UpgradeOffer {
                 snapshot: UpgradeOptionSnapshot {
                     id: weapon.id.clone(),
                     name: format!("获得{}", weapon.name),
@@ -1348,6 +1349,7 @@ impl GameCore {
             });
         }
 
+        let mut passive_candidates = Vec::new();
         for passive in self.content.passives.values() {
             if self
                 .passives
@@ -1356,7 +1358,7 @@ impl GameCore {
             {
                 continue;
             }
-            candidates.push(UpgradeOffer {
+            passive_candidates.push(UpgradeOffer {
                 snapshot: UpgradeOptionSnapshot {
                     id: passive.id.clone(),
                     name: passive.name.clone(),
@@ -1369,11 +1371,23 @@ impl GameCore {
             });
         }
 
+        let mut candidates = Vec::new();
+        push_rotated_candidate(&mut weapon_level_candidates, &mut candidates, &mut self.rng);
+        push_rotated_candidate(&mut new_weapon_candidates, &mut candidates, &mut self.rng);
+        push_rotated_candidate(&mut passive_candidates, &mut candidates, &mut self.rng);
+
+        if candidates.len() < 3 {
+            let mut remaining = weapon_level_candidates;
+            remaining.extend(new_weapon_candidates);
+            remaining.extend(passive_candidates);
+            let offset = self.rng.range_usize(remaining.len());
+            remaining.rotate_left(offset);
+            candidates.extend(remaining.into_iter().take(3 - candidates.len()));
+        }
+
         if candidates.is_empty() {
             return Vec::new();
         }
-        let offset = self.rng.range_usize(candidates.len());
-        candidates.rotate_left(offset);
         candidates.into_iter().take(3).collect()
     }
 
@@ -1605,6 +1619,20 @@ impl GameCore {
 
 fn xp_required(level: u32) -> f32 {
     (12.0 + level as f32 * 8.0 + (level as f32).powf(1.35) * 5.0).floor()
+}
+
+fn push_rotated_candidate(
+    source: &mut Vec<UpgradeOffer>,
+    target: &mut Vec<UpgradeOffer>,
+    rng: &mut RunRng,
+) {
+    if source.is_empty() || target.len() >= 3 {
+        return;
+    }
+
+    let offset = rng.range_usize(source.len());
+    source.rotate_left(offset);
+    target.push(source.remove(0));
 }
 
 fn apply_passive_definition(
@@ -2268,6 +2296,23 @@ mod tests {
     }
 
     #[test]
+    fn upgrade_options_are_layered_after_weapon_pool_expands() {
+        let mut core = GameCore::reset(RunConfig::default());
+        let options = core.generate_upgrade_options();
+
+        assert!(options
+            .iter()
+            .any(|option| matches!(option.effect, UpgradeEffect::WeaponLevel { .. })));
+        assert!(options
+            .iter()
+            .any(|option| matches!(option.effect, UpgradeEffect::NewWeapon { .. })));
+        assert!(options
+            .iter()
+            .any(|option| matches!(option.effect, UpgradeEffect::Passive { .. })));
+        assert_eq!(options.len(), 3);
+    }
+
+    #[test]
     fn projectile_snapshot_exposes_active_projectiles() {
         let mut core = GameCore::reset(RunConfig::default());
         let dt = FixedDt::from_tick_rate(DEFAULT_TICK_RATE);
@@ -2293,7 +2338,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 25);
+        assert_eq!(content.object_count(), 32);
         let mut core = GameCore::reset_with_content(
             RunConfig {
                 seed: 7,
