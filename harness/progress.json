@@ -157,6 +157,10 @@
     {
       "id": "runtime_manual_review_pack",
       "summary": "增加 Runtime 人工试玩审查包和 JSON 模板，覆盖 9 局最小人工试玩矩阵、评分字段、标签、门禁结论和 failure case 记录要求"
+    },
+    {
+      "id": "python_gym_bridge_smoke",
+      "summary": "实现 `game_harness gym-bridge` JSONL 协议和 `python/gym_env` Gymnasium 包装器，完成 9 动作、82 维 observation、reward 映射和 2 秒 episode 冒烟"
     }
   ],
   "current_findings": [
@@ -179,12 +183,21 @@
       "id": "runtime_capture_visual_client_limit",
       "summary": "`--simulation-speed` 已降低 Runtime capture 的等待成本，但 Bevy 窗口启动和渲染仍有明显墙钟开销；高容量确定性验证仍应优先使用 headless Harness。",
       "report": "harness/reports/2026-05-25_runtime_simulation_speed_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_training_not_started",
+      "summary": "Python Gym bridge 已能通过同一个 headless GameCore 跑 episode 冒烟，但尚未安装或运行 Stable-Baselines3 训练；当前只证明环境接口，不证明 RL Bot 能力。",
+      "report": "harness/reports/2026-05-25_gym_bridge_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
+    },
+    {
+      "id": "rl_training_smoke_config",
+      "summary": "为 Python Gym bridge 增加最小 DQN/PPO 训练配置和评估报告模板；只有在依赖可用并跑出模型后，才能记录 RL Bot 训练完成"
     }
   ]
 }

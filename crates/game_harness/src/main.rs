@@ -1,13 +1,18 @@
 use bot_policies::{BotController, BotKind};
 use game_core::{
-    ContentPack, Difficulty, FixedDt, GameCore, RunConfig, RunMetrics, StartingLoadout,
+    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, RunConfig, RunMetrics, StartingLoadout,
     TerminalKind, Vec2,
 };
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
-use std::io;
+use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
+
+const GYM_ACTION_COUNT: usize = 9;
+const GYM_MAX_ENEMIES: usize = 8;
+const GYM_MAX_PICKUPS: usize = 4;
+const GYM_OBSERVATION_LEN: usize = 82;
 
 #[derive(Debug, Clone)]
 struct SimArgs {
@@ -160,6 +165,25 @@ struct SimulateCandidatesArgs {
     seconds: f32,
     tick_rate: u32,
     bots: Vec<BotKind>,
+}
+
+#[derive(Debug, Clone)]
+struct GymBridgeArgs {
+    seed: u64,
+    seconds: f32,
+    tick_rate: u32,
+    content_dir: Option<PathBuf>,
+}
+
+impl Default for GymBridgeArgs {
+    fn default() -> Self {
+        Self {
+            seed: 12_345,
+            seconds: 600.0,
+            tick_rate: 30,
+            content_dir: Some(PathBuf::from("content/base_demo")),
+        }
+    }
 }
 
 impl Default for SimulateCandidatesArgs {
@@ -393,6 +417,64 @@ struct CandidateBotSummary {
     max_enemy_count: usize,
 }
 
+#[derive(Debug, Deserialize)]
+struct GymBridgeRequest {
+    command: String,
+    seed: Option<u64>,
+    seconds: Option<f32>,
+    tick_rate: Option<u32>,
+    action: Option<usize>,
+}
+
+#[derive(Debug, Serialize)]
+struct GymBridgeResponse {
+    command: String,
+    status: String,
+    observation: Option<Vec<f32>>,
+    reward: f32,
+    terminated: bool,
+    truncated: bool,
+    info: GymBridgeInfo,
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct GymBridgeInfo {
+    seed: u64,
+    tick_rate: u32,
+    tick: u64,
+    time_seconds: f32,
+    health: f32,
+    level: u32,
+    kills: u32,
+    xp_collected: f32,
+    damage_taken: f32,
+    upgrade_options: Vec<String>,
+    events: Vec<String>,
+    terminal: Option<GymTerminalInfo>,
+    content_hash: String,
+    observation_len: usize,
+    action_count: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct GymTerminalInfo {
+    kind: String,
+    reason: String,
+    time_seconds: f32,
+    final_level: u32,
+    kills: u32,
+}
+
+struct GymBridgeState {
+    content: LoadedContent,
+    core: GameCore,
+    seed: u64,
+    seconds: f32,
+    tick_rate: u32,
+    tick: u64,
+}
+
 fn main() {
     let mut args = env::args().skip(1);
     let Some(command) = args.next() else {
@@ -467,6 +549,14 @@ fn main() {
         },
         "simulate-candidates" => match parse_simulate_candidates_args(args.collect()) {
             Ok(args) => run_simulate_candidates(args),
+            Err(message) => {
+                eprintln!("error: {message}");
+                print_help();
+                std::process::exit(2);
+            }
+        },
+        "gym-bridge" => match parse_gym_bridge_args(args.collect()) {
+            Ok(args) => run_gym_bridge(args),
             Err(message) => {
                 eprintln!("error: {message}");
                 print_help();
@@ -824,6 +914,48 @@ fn parse_simulate_candidates_args(values: Vec<String>) -> Result<SimulateCandida
     Ok(parsed)
 }
 
+fn parse_gym_bridge_args(values: Vec<String>) -> Result<GymBridgeArgs, String> {
+    let mut parsed = GymBridgeArgs::default();
+    let mut index = 0;
+    while index < values.len() {
+        let key = &values[index];
+        let value = values
+            .get(index + 1)
+            .ok_or_else(|| format!("missing value for `{key}`"))?;
+        match key.as_str() {
+            "--seed" => {
+                parsed.seed = value
+                    .parse()
+                    .map_err(|_| format!("invalid --seed `{value}`"))?;
+            }
+            "--seconds" => {
+                parsed.seconds = value
+                    .parse()
+                    .map_err(|_| format!("invalid --seconds `{value}`"))?;
+            }
+            "--tick-rate" => {
+                parsed.tick_rate = value
+                    .parse()
+                    .map_err(|_| format!("invalid --tick-rate `{value}`"))?;
+            }
+            "--content-dir" => {
+                parsed.content_dir = Some(PathBuf::from(value));
+            }
+            _ => return Err(format!("unknown flag `{key}`")),
+        }
+        index += 2;
+    }
+
+    if parsed.seconds <= 0.0 {
+        return Err("--seconds must be positive".to_string());
+    }
+    if parsed.tick_rate == 0 {
+        return Err("--tick-rate must be greater than zero".to_string());
+    }
+
+    Ok(parsed)
+}
+
 fn parse_bot_list(value: &str) -> Result<Vec<BotKind>, String> {
     if value == "all" {
         return Ok(default_matrix_bots());
@@ -1163,6 +1295,373 @@ fn run_budget(args: BudgetArgs) {
         }
     }
     if !report.errors.is_empty() {
+        std::process::exit(1);
+    }
+}
+
+fn run_gym_bridge(args: GymBridgeArgs) {
+    let content = load_content_or_exit(args.content_dir.as_ref());
+    let mut state = GymBridgeState::new(content, args.seed, args.seconds, args.tick_rate);
+    let stdin = io::stdin();
+    let mut stdout = io::stdout().lock();
+
+    for line in stdin.lock().lines() {
+        let line = match line {
+            Ok(line) => line,
+            Err(error) => {
+                eprintln!("error: failed to read gym bridge request: {error}");
+                std::process::exit(1);
+            }
+        };
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let request = match serde_json::from_str::<GymBridgeRequest>(&line) {
+            Ok(request) => request,
+            Err(error) => {
+                let response = state
+                    .error_response("parse_error", format!("failed to parse request: {error}"));
+                write_json_line_or_exit(&mut stdout, &response);
+                continue;
+            }
+        };
+
+        let should_close = request.command == "close";
+        let response = state.handle_request(request);
+        write_json_line_or_exit(&mut stdout, &response);
+        if should_close {
+            break;
+        }
+    }
+}
+
+impl GymBridgeState {
+    fn new(content: LoadedContent, seed: u64, seconds: f32, tick_rate: u32) -> Self {
+        let core = reset_gym_core(&content.pack, seed, seconds, tick_rate);
+        Self {
+            content,
+            core,
+            seed,
+            seconds,
+            tick_rate,
+            tick: 0,
+        }
+    }
+
+    fn reset(&mut self, seed: u64, seconds: f32, tick_rate: u32) {
+        self.core = reset_gym_core(&self.content.pack, seed, seconds, tick_rate);
+        self.seed = seed;
+        self.seconds = seconds;
+        self.tick_rate = tick_rate;
+        self.tick = 0;
+    }
+
+    fn handle_request(&mut self, request: GymBridgeRequest) -> GymBridgeResponse {
+        match request.command.as_str() {
+            "spec" => self.response("spec", None, 0.0, Vec::new()),
+            "reset" => {
+                let seed = request.seed.unwrap_or(self.seed);
+                let seconds = request.seconds.unwrap_or(self.seconds);
+                let tick_rate = request.tick_rate.unwrap_or(self.tick_rate);
+                if seconds <= 0.0 {
+                    return self.error_response("reset", "seconds must be positive".to_string());
+                }
+                if tick_rate == 0 {
+                    return self.error_response(
+                        "reset",
+                        "tick_rate must be greater than zero".to_string(),
+                    );
+                }
+                self.reset(seed, seconds, tick_rate);
+                self.response(
+                    "reset",
+                    Some(gym_observation(&self.core.snapshot())),
+                    0.0,
+                    Vec::new(),
+                )
+            }
+            "step" => {
+                let Some(action_index) = request.action else {
+                    return self.error_response("step", "step request missing action".to_string());
+                };
+                if action_index >= GYM_ACTION_COUNT {
+                    return self.error_response(
+                        "step",
+                        format!("action must be in 0..{}", GYM_ACTION_COUNT),
+                    );
+                }
+                self.step(action_index)
+            }
+            "close" => self.response("close", None, 0.0, Vec::new()),
+            other => self.error_response("unknown_command", format!("unknown command `{other}`")),
+        }
+    }
+
+    fn step(&mut self, action_index: usize) -> GymBridgeResponse {
+        if self.core.is_terminal() {
+            return self.response(
+                "step",
+                Some(gym_observation(&self.core.snapshot())),
+                0.0,
+                Vec::new(),
+            );
+        }
+
+        let snapshot = self.core.snapshot();
+        let action = if snapshot.upgrade_options.is_empty() {
+            game_core::PlayerAction {
+                movement: gym_discrete_movement(action_index),
+                upgrade_choice: None,
+            }
+        } else {
+            game_core::PlayerAction {
+                movement: Vec2::ZERO,
+                upgrade_choice: Some(0),
+            }
+        };
+        let result = self
+            .core
+            .step(action, FixedDt::from_tick_rate(self.tick_rate));
+        self.tick += 1;
+        let reward = gym_reward(
+            &result.reward_hint,
+            &result.events,
+            result.terminal.as_ref(),
+        );
+
+        self.response(
+            "step",
+            Some(gym_observation(&result.snapshot)),
+            reward,
+            result.events,
+        )
+    }
+
+    fn response(
+        &self,
+        command: &str,
+        observation: Option<Vec<f32>>,
+        reward: f32,
+        events: Vec<GameEvent>,
+    ) -> GymBridgeResponse {
+        let metrics = self.core.metrics();
+        GymBridgeResponse {
+            command: command.to_string(),
+            status: "ok".to_string(),
+            observation,
+            reward,
+            terminated: metrics.terminal.is_some(),
+            truncated: false,
+            info: self.info(events),
+            error: None,
+        }
+    }
+
+    fn error_response(&self, command: &str, error: String) -> GymBridgeResponse {
+        GymBridgeResponse {
+            command: command.to_string(),
+            status: "error".to_string(),
+            observation: None,
+            reward: 0.0,
+            terminated: self.core.metrics().terminal.is_some(),
+            truncated: false,
+            info: self.info(Vec::new()),
+            error: Some(error),
+        }
+    }
+
+    fn info(&self, events: Vec<GameEvent>) -> GymBridgeInfo {
+        let snapshot = self.core.snapshot();
+        let metrics = self.core.metrics();
+        GymBridgeInfo {
+            seed: self.seed,
+            tick_rate: self.tick_rate,
+            tick: self.tick,
+            time_seconds: snapshot.time_seconds,
+            health: snapshot.player.health,
+            level: snapshot.player.level,
+            kills: metrics.kills,
+            xp_collected: metrics.xp_collected,
+            damage_taken: metrics.damage_taken,
+            upgrade_options: snapshot
+                .upgrade_options
+                .iter()
+                .map(|option| option.id.clone())
+                .collect(),
+            events: events
+                .iter()
+                .map(gym_event_label)
+                .map(str::to_string)
+                .collect(),
+            terminal: metrics.terminal.map(|terminal| GymTerminalInfo {
+                kind: terminal.kind.as_str().to_string(),
+                reason: terminal.reason,
+                time_seconds: terminal.time_seconds,
+                final_level: terminal.final_level,
+                kills: terminal.kills,
+            }),
+            content_hash: self.content.hash.clone(),
+            observation_len: GYM_OBSERVATION_LEN,
+            action_count: GYM_ACTION_COUNT,
+        }
+    }
+}
+
+fn reset_gym_core(content: &ContentPack, seed: u64, seconds: f32, tick_rate: u32) -> GameCore {
+    let config = RunConfig {
+        seed,
+        map_id: "frosting-grassland".to_string(),
+        character_id: "jar-keeper".to_string(),
+        starting_loadout: StartingLoadout {
+            weapons: vec!["rainbow-candy-shot".to_string()],
+            passives: Vec::new(),
+        },
+        difficulty: Difficulty::Normal,
+        duration_seconds: seconds,
+        ruleset_version: "prototype-v0".to_string(),
+        content_pack_ids: vec!["base-demo".to_string()],
+        tick_rate,
+    };
+    match GameCore::reset_with_content(config, content.clone()) {
+        Ok(core) => core,
+        Err(error) => {
+            eprintln!("error: failed to reset gym bridge: {error}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn gym_discrete_movement(action: usize) -> Vec2 {
+    match action {
+        0 => Vec2::ZERO,
+        1 => Vec2::new(0.0, 1.0),
+        2 => Vec2::new(1.0, 1.0).normalized_or_zero(),
+        3 => Vec2::new(1.0, 0.0),
+        4 => Vec2::new(1.0, -1.0).normalized_or_zero(),
+        5 => Vec2::new(0.0, -1.0),
+        6 => Vec2::new(-1.0, -1.0).normalized_or_zero(),
+        7 => Vec2::new(-1.0, 0.0),
+        8 => Vec2::new(-1.0, 1.0).normalized_or_zero(),
+        _ => Vec2::ZERO,
+    }
+}
+
+fn gym_reward(
+    hint: &game_core::RewardHint,
+    events: &[GameEvent],
+    terminal: Option<&game_core::TerminalState>,
+) -> f32 {
+    let kill_delta = events
+        .iter()
+        .filter(|event| matches!(event, GameEvent::EnemyKilled { .. }))
+        .count() as f32;
+    let mut reward = hint.survival_delta * 0.01
+        + kill_delta * 0.05
+        + hint.xp_delta * 0.02
+        + hint.level_delta as f32 * 0.5
+        - hint.damage_taken_delta * 0.05;
+
+    if let Some(terminal) = terminal {
+        reward += match terminal.kind {
+            TerminalKind::Victory => 5.0,
+            TerminalKind::Defeat => -2.0,
+            TerminalKind::Timeout => 0.0,
+            TerminalKind::Aborted => -1.0,
+            TerminalKind::InvalidState => -5.0,
+        };
+    }
+
+    reward
+}
+
+fn gym_observation(snapshot: &game_core::RunSnapshot) -> Vec<f32> {
+    let mut values = Vec::with_capacity(GYM_OBSERVATION_LEN);
+    let duration = (snapshot.time_seconds + snapshot.remaining_seconds).max(1.0);
+    let max_dim = snapshot.map.width.max(snapshot.map.height).max(1.0);
+    let half_width = (snapshot.map.width * 0.5).max(1.0);
+    let half_height = (snapshot.map.height * 0.5).max(1.0);
+    let player = &snapshot.player;
+
+    values.push(snapshot.time_seconds / duration);
+    values.push(snapshot.remaining_seconds / duration);
+    values.push(ratio(player.health, player.max_health));
+    values.push((player.level as f32 / 20.0).min(1.0));
+    values.push(ratio(player.xp, player.xp_to_next_level));
+    values.push(player.position.x / half_width);
+    values.push(player.position.y / half_height);
+    values.push(player.velocity.length() / player.move_speed.max(1.0));
+
+    for enemy in snapshot.visible_enemies.iter().take(GYM_MAX_ENEMIES) {
+        let relative = enemy.position - player.position;
+        values.push(relative.x / snapshot.map.width.max(1.0));
+        values.push(relative.y / snapshot.map.height.max(1.0));
+        values.push(relative.length() / max_dim);
+        values.push(ratio(enemy.health, enemy.max_health));
+        values.push((enemy.threat / 100.0).min(1.0));
+        values.push(if enemy.is_boss { 1.0 } else { 0.0 });
+    }
+    while values.len() < 8 + GYM_MAX_ENEMIES * 6 {
+        values.push(0.0);
+    }
+
+    for pickup in snapshot.visible_pickups.iter().take(GYM_MAX_PICKUPS) {
+        let relative = pickup.position - player.position;
+        values.push(relative.x / snapshot.map.width.max(1.0));
+        values.push(relative.y / snapshot.map.height.max(1.0));
+        values.push(relative.length() / max_dim);
+        values.push((pickup.value / 10.0).min(1.0));
+    }
+    while values.len() < 8 + GYM_MAX_ENEMIES * 6 + GYM_MAX_PICKUPS * 4 {
+        values.push(0.0);
+    }
+
+    values.push((player.position.x + half_width) / snapshot.map.width.max(1.0));
+    values.push((half_width - player.position.x) / snapshot.map.width.max(1.0));
+    values.push((player.position.y + half_height) / snapshot.map.height.max(1.0));
+    values.push((half_height - player.position.y) / snapshot.map.height.max(1.0));
+    values.push((snapshot.build.weapons.len() as f32 / 6.0).min(1.0));
+    values.push((snapshot.build.passives.len() as f32 / 6.0).min(1.0));
+    values.push((snapshot.build.tags.len() as f32 / 12.0).min(1.0));
+    values.push((snapshot.visible_enemies.len() as f32 / 32.0).min(1.0));
+    values.push((snapshot.visible_pickups.len() as f32 / 16.0).min(1.0));
+    values.push((snapshot.visible_projectiles.len() as f32 / 48.0).min(1.0));
+
+    debug_assert_eq!(values.len(), GYM_OBSERVATION_LEN);
+    values
+}
+
+fn ratio(value: f32, max: f32) -> f32 {
+    if max <= 0.0 {
+        0.0
+    } else {
+        (value / max).clamp(0.0, 1.0)
+    }
+}
+
+fn gym_event_label(event: &GameEvent) -> &'static str {
+    match event {
+        GameEvent::EnemySpawned { .. } => "enemy_spawned",
+        GameEvent::BossSpawned { .. } => "boss_spawned",
+        GameEvent::WeaponFired { .. } => "weapon_fired",
+        GameEvent::EnemyHit { .. } => "enemy_hit",
+        GameEvent::EnemyKilled { .. } => "enemy_killed",
+        GameEvent::XpDropped { .. } => "xp_dropped",
+        GameEvent::XpCollected { .. } => "xp_collected",
+        GameEvent::LevelUp { .. } => "level_up",
+        GameEvent::UpgradeOffered { .. } => "upgrade_offered",
+        GameEvent::UpgradeChosen { .. } => "upgrade_chosen",
+        GameEvent::PlayerDamaged { .. } => "player_damaged",
+        GameEvent::RunEnded { .. } => "run_ended",
+    }
+}
+
+fn write_json_line_or_exit<T: Serialize>(writer: &mut impl Write, value: &T) {
+    if let Err(error) = serde_json::to_writer(&mut *writer, value)
+        .and_then(|()| writer.write_all(b"\n").map_err(serde_json::Error::io))
+        .and_then(|()| writer.flush().map_err(serde_json::Error::io))
+    {
+        eprintln!("error: failed to write gym bridge response: {error}");
         std::process::exit(1);
     }
 }
@@ -3122,6 +3621,9 @@ fn print_help() {
         "  cargo run -p game_harness -- simulate-candidates [--source-dir harness/validated_candidates] [--simulated-dir harness/simulated_candidates] [--repair-dir harness/repair_queue] [--seed-start N] [--seeds N] [--seconds N] [--tick-rate N] [--bots all|{}] [--report-dir harness/reports/local_candidate_simulation]",
         BotKind::all_names()
     );
+    eprintln!(
+        "  cargo run -p game_harness -- gym-bridge [--seed N] [--seconds N] [--tick-rate N] [--content-dir content/base_demo]"
+    );
 }
 
 fn escape_json(value: &str) -> String {
@@ -3130,11 +3632,28 @@ fn escape_json(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::movement_changed;
+    use super::{gym_discrete_movement, gym_observation, movement_changed, GYM_OBSERVATION_LEN};
+    use game_core::{GameCore, RunConfig};
 
     #[test]
     fn movement_changed_keeps_strict_replay_precision() {
         assert!(movement_changed(Some([0.0, 1.0]), [0.0001, 1.0]));
         assert!(!movement_changed(Some([0.25, -0.5]), [0.25, -0.5]));
+    }
+
+    #[test]
+    fn gym_discrete_actions_are_normalized() {
+        assert_eq!(gym_discrete_movement(0), game_core::Vec2::ZERO);
+        assert!(gym_discrete_movement(2).length() <= 1.0 + f32::EPSILON);
+        assert!(gym_discrete_movement(6).length() <= 1.0 + f32::EPSILON);
+    }
+
+    #[test]
+    fn gym_observation_has_stable_length() {
+        let core = GameCore::reset(RunConfig::default());
+        let observation = gym_observation(&core.snapshot());
+
+        assert_eq!(observation.len(), GYM_OBSERVATION_LEN);
+        assert!(observation.iter().all(|value| value.is_finite()));
     }
 }

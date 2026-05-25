@@ -1,0 +1,44 @@
+# Soft Candy Storm Gym Bridge
+
+This package is the first Python-side bridge for RL experiments. It wraps the Rust `game_harness gym-bridge` JSONL process, so training code still talks to the same headless `GameCore` used by Harness, Bot policies, Replay, and Runtime.
+
+## Smoke Test
+
+```bash
+python python/gym_env/smoke_test.py
+```
+
+The smoke test starts `cargo run -q -p game_harness -- gym-bridge`, resets a short episode, steps with a fixed discrete movement action, and verifies that the observation length matches the bridge spec.
+
+## Environment
+
+```python
+from python.gym_env import SoftCandyStormEnv
+
+env = SoftCandyStormEnv(seconds=600.0, tick_rate=30)
+obs, info = env.reset(seed=12345)
+obs, reward, terminated, truncated, info = env.step(3)
+env.close()
+```
+
+The first RL phase uses a 9-action discrete movement space:
+
+```text
+0 idle
+1 up
+2 up-right
+3 right
+4 down-right
+5 down
+6 down-left
+7 left
+8 up-left
+```
+
+Upgrade choices are handled by a simple rule policy in the bridge for now, matching the Phase 1 plan in `docs/09_AI_Bot训练计划.md`.
+
+## Dependency Notes
+
+- If `gymnasium` and `numpy` are installed, the wrapper exposes normal Gymnasium `spaces`.
+- Without them, the smoke test still runs with lightweight fallback classes.
+- Stable-Baselines3 training should install `gymnasium`, `numpy`, and `stable-baselines3` in the Python environment.
