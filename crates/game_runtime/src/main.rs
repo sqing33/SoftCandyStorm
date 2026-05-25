@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf, sync::Arc};
 
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
+const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const CAMERA_Z: f32 = 999.0;
 const EFFECT_Z: f32 = 35.0;
 const PLAYER_Z: f32 = 20.0;
@@ -98,6 +99,7 @@ struct RuntimeCli {
     accepted_content_id: Option<String>,
     content_pack_ids: Vec<String>,
     seed: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     demo_input: bool,
@@ -116,6 +118,7 @@ impl Default for RuntimeCli {
             accepted_content_id: None,
             content_pack_ids: vec!["base-demo".to_string()],
             seed: 12_345,
+            map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
             tick_rate: 30,
             demo_input: false,
@@ -1494,7 +1497,7 @@ fn make_tone_wav(frequency_hz: f32, seconds: f32, amplitude: f32) -> Vec<u8> {
 fn run_config_from_cli(cli: &RuntimeCli) -> RunConfig {
     RunConfig {
         seed: cli.seed,
-        map_id: "frosting-grassland".to_string(),
+        map_id: cli.map_id.clone(),
         character_id: "jar-keeper".to_string(),
         starting_loadout: StartingLoadout {
             weapons: vec!["rainbow-candy-shot".to_string()],
@@ -1538,6 +1541,11 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--seed" => {
                 if let Some(value) = args.next() {
                     cli.seed = value.parse().unwrap_or(cli.seed);
+                }
+            }
+            "--map-id" => {
+                if let Some(value) = args.next() {
+                    cli.map_id = value;
                 }
             }
             "--seconds" => {
@@ -1847,6 +1855,8 @@ mod tests {
             "content/custom".to_string(),
             "--seed".to_string(),
             "9".to_string(),
+            "--map-id".to_string(),
+            "soda-creek".to_string(),
             "--seconds".to_string(),
             "120".to_string(),
             "--tick-rate".to_string(),
@@ -1859,6 +1869,7 @@ mod tests {
 
         assert_eq!(cli.content_dir, PathBuf::from("content/custom"));
         assert_eq!(cli.seed, 9);
+        assert_eq!(cli.map_id, "soda-creek");
         assert_eq!(cli.seconds, 120.0);
         assert_eq!(cli.tick_rate, 20);
         assert!(cli.demo_input);
@@ -1956,11 +1967,16 @@ mod tests {
 
     #[test]
     fn builds_runtime_run_config_from_cli() {
-        let cli = parse_runtime_cli(["--seed".to_string(), "77".to_string()]);
+        let cli = parse_runtime_cli([
+            "--seed".to_string(),
+            "77".to_string(),
+            "--map-id".to_string(),
+            "jelly-platform".to_string(),
+        ]);
         let config = run_config_from_cli(&cli);
 
         assert_eq!(config.seed, 77);
-        assert_eq!(config.map_id, "frosting-grassland");
+        assert_eq!(config.map_id, "jelly-platform");
         assert_eq!(config.starting_loadout.weapons, ["rainbow-candy-shot"]);
     }
 
