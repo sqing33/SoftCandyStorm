@@ -197,9 +197,18 @@
     {
       "id": "meta_progression_runtime_ui",
       "summary": "Runtime 增加最小糖罐守护站局外面板，终局时调用 game_core::meta 展示糖晶碎片、星片、章节目标、图鉴更新和新解锁"
+    },
+    {
+      "id": "content_evolution_event_schema",
+      "summary": "GameCore 内容包支持加载与校验 evolutions/events 目录，base_demo 增加彩虹糖流星雨进化和彩虹糖潮事件配置，并由 snapshot 从内容包暴露可追踪进化路径"
     }
   ],
   "current_findings": [
+    {
+      "id": "evolution_event_runtime_scope",
+      "summary": "evolutions/events 现已进入内容 Schema 加载、引用校验、object_count 与 BuildSnapshot 可见范围；本次尚未实现进化触发、事件触发和对应战斗效果，后续应单独作为 GameCore 玩法功能推进。",
+      "report": "content/base_demo/evolutions/rainbow-candy-meteor.json"
+    },
     {
       "id": "asset_final_art_still_pending",
       "summary": "Runtime 已接入程序化 top-down 原型占位素材、彩虹糖弹 projectile 和事件驱动瞬时反馈；mmx 图像、TTS 和音乐仍停留在候选池，后续正式美术/音频仍需人工审查和来源/版本/后处理记录",

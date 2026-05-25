@@ -243,6 +243,7 @@ pub struct UpgradeOptionSnapshot {
 pub struct BuildSnapshot {
     pub weapons: Vec<BuildItemSnapshot>,
     pub passives: Vec<BuildItemSnapshot>,
+    pub evolutions: Vec<BuildItemSnapshot>,
     pub tags: Vec<String>,
     pub open_evolution_paths: Vec<String>,
 }
@@ -1149,9 +1150,35 @@ impl GameCore {
                     level: passive.level,
                 })
                 .collect(),
+            evolutions: Vec::new(),
             tags,
-            open_evolution_paths: vec!["rainbow-candy-meteor".to_string()],
+            open_evolution_paths: self.open_evolution_paths(),
         }
+    }
+
+    fn open_evolution_paths(&self) -> Vec<String> {
+        self.content
+            .evolutions
+            .values()
+            .filter(|evolution| {
+                let weapon_seen = self
+                    .weapons
+                    .iter()
+                    .any(|weapon| weapon.id == evolution.requirements.weapon.id);
+                let passive_seen =
+                    evolution
+                        .requirements
+                        .passive
+                        .as_ref()
+                        .is_some_and(|requirement| {
+                            self.passives
+                                .iter()
+                                .any(|passive| passive.id == requirement.id)
+                        });
+                weapon_seen || passive_seen
+            })
+            .map(|evolution| evolution.id.clone())
+            .collect()
     }
 }
 
@@ -1556,6 +1583,9 @@ mod tests {
     fn can_run_from_disk_content_pack() {
         let content = ContentPack::load_from_dir("../../content/base_demo")
             .expect("base_demo content should load from disk");
+        assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
+        assert!(content.events.contains_key("rainbow-candy-rush"));
+        assert_eq!(content.object_count(), 16);
         let mut core = GameCore::reset_with_content(
             RunConfig {
                 seed: 7,
@@ -1565,6 +1595,10 @@ mod tests {
             content,
         )
         .expect("base_demo content should initialize GameCore");
+        assert_eq!(
+            core.snapshot().build.open_evolution_paths,
+            vec!["rainbow-candy-meteor"]
+        );
 
         let dt = core.fixed_dt();
         while !core.is_terminal() {

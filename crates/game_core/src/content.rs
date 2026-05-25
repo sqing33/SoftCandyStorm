@@ -9,10 +9,12 @@ pub struct ContentPack {
     pub characters: BTreeMap<String, CharacterDefinition>,
     pub weapons: BTreeMap<String, WeaponDefinition>,
     pub passives: BTreeMap<String, PassiveDefinition>,
+    pub evolutions: BTreeMap<String, EvolutionDefinition>,
     pub enemies: BTreeMap<String, EnemyDefinition>,
     pub bosses: BTreeMap<String, BossDefinition>,
     pub waves: BTreeMap<String, WaveDefinition>,
     pub maps: BTreeMap<String, MapDefinition>,
+    pub events: BTreeMap<String, EventDefinition>,
 }
 
 impl ContentPack {
@@ -99,6 +101,55 @@ impl ContentPack {
                 sfx_description: "清脆 pop 声。".to_string(),
                 unlock: UnlockDefinition {
                     unlock_type: "default".to_string(),
+                },
+            },
+        );
+
+        pack.evolutions.insert(
+            "rainbow-candy-meteor".to_string(),
+            EvolutionDefinition {
+                id: "rainbow-candy-meteor".to_string(),
+                name: "彩虹糖流星雨".to_string(),
+                version: 1,
+                rarity: "epic".to_string(),
+                tags: vec![
+                    "projectile".to_string(),
+                    "aoe".to_string(),
+                    "evolution".to_string(),
+                ],
+                description: "彩虹糖弹进化为周期性流星雨。".to_string(),
+                requirements: EvolutionRequirementsDefinition {
+                    weapon: ContentLevelRequirementDefinition {
+                        id: "rainbow-candy-shot".to_string(),
+                        min_level: 5,
+                    },
+                    passive: Some(ContentLevelRequirementDefinition {
+                        id: "candy-crystal-lens".to_string(),
+                        min_level: 3,
+                    }),
+                    trigger: "boss_chest".to_string(),
+                },
+                replaces_weapon: "rainbow-candy-shot".to_string(),
+                weapon_definition: EvolutionWeaponDefinition {
+                    weapon_type: "burst".to_string(),
+                    targeting: TargetingDefinition {
+                        mode: "random_enemy".to_string(),
+                        range: 620.0,
+                    },
+                    base_stats: EvolutionWeaponBaseStats {
+                        damage: 42.0,
+                        cooldown_ms: 900.0,
+                        projectile_speed: None,
+                        projectile_count: 8,
+                        pierce: None,
+                        area_radius: 42.0,
+                        duration_ms: None,
+                    },
+                },
+                visual_description: "多颗彩虹糖从天空坠落，形成小型糖果爆炸。".to_string(),
+                sfx_description: "连续 sparkle pop。".to_string(),
+                unlock: UnlockDefinition {
+                    unlock_type: "discover".to_string(),
                 },
             },
         );
@@ -269,6 +320,42 @@ impl ContentPack {
             },
         );
 
+        pack.events.insert(
+            "rainbow-candy-rush".to_string(),
+            EventDefinition {
+                id: "rainbow-candy-rush".to_string(),
+                name: "彩虹糖潮".to_string(),
+                version: 1,
+                rarity: "rare".to_string(),
+                tags: vec![
+                    "event".to_string(),
+                    "risk-reward".to_string(),
+                    "xp".to_string(),
+                ],
+                description: "短时间内糖晶掉落增加，但敌人生成也会加快。".to_string(),
+                trigger: EventTriggerDefinition {
+                    trigger_type: "time_window".to_string(),
+                    start_second: Some(180.0),
+                    end_second: Some(480.0),
+                    chance: Some(0.08),
+                },
+                effects: vec![
+                    EventEffectDefinition {
+                        effect_type: "xp_multiplier".to_string(),
+                        value: 1.4,
+                        duration_seconds: Some(25.0),
+                    },
+                    EventEffectDefinition {
+                        effect_type: "spawn_rate_multiplier".to_string(),
+                        value: 1.25,
+                        duration_seconds: Some(25.0),
+                    },
+                ],
+                visual_description: "天空落下彩虹糖晶，地面出现亮色糖光。".to_string(),
+                sfx_description: "连续亮晶晶铃声。".to_string(),
+            },
+        );
+
         pack.waves.insert(
             "frosting-grassland-standard".to_string(),
             WaveDefinition {
@@ -299,10 +386,12 @@ impl ContentPack {
             characters: load_category(&path.join("characters"))?,
             weapons: load_category(&path.join("weapons"))?,
             passives: load_category(&path.join("passives"))?,
+            evolutions: load_category(&path.join("evolutions"))?,
             enemies: load_category(&path.join("enemies"))?,
             bosses: load_category(&path.join("bosses"))?,
             waves: load_category(&path.join("waves"))?,
             maps: load_category(&path.join("maps"))?,
+            events: load_category(&path.join("events"))?,
         };
         pack.validate()?;
         Ok(pack)
@@ -321,10 +410,12 @@ impl ContentPack {
         validate_ids("characters", self.characters.keys(), &mut errors);
         validate_ids("weapons", self.weapons.keys(), &mut errors);
         validate_ids("passives", self.passives.keys(), &mut errors);
+        validate_ids("evolutions", self.evolutions.keys(), &mut errors);
         validate_ids("enemies", self.enemies.keys(), &mut errors);
         validate_ids("bosses", self.bosses.keys(), &mut errors);
         validate_ids("waves", self.waves.keys(), &mut errors);
         validate_ids("maps", self.maps.keys(), &mut errors);
+        validate_ids("events", self.events.keys(), &mut errors);
 
         for character in self.characters.values() {
             validate_common(
@@ -534,6 +625,142 @@ impl ContentPack {
             }
         }
 
+        for evolution in self.evolutions.values() {
+            validate_common(
+                CommonValidation {
+                    category: "evolution",
+                    id: &evolution.id,
+                    version: evolution.version,
+                    rarity: &evolution.rarity,
+                    tags: &evolution.tags,
+                    description: &evolution.description,
+                    visual_description: &evolution.visual_description,
+                    sfx_description: &evolution.sfx_description,
+                },
+                &mut errors,
+            );
+            validate_content_level_requirement(
+                "evolution.weapon",
+                &evolution.id,
+                &evolution.requirements.weapon,
+                self.weapons
+                    .get(&evolution.requirements.weapon.id)
+                    .map(|weapon| weapon.scaling.max_level),
+                &mut errors,
+            );
+            if let Some(passive_requirement) = &evolution.requirements.passive {
+                validate_content_level_requirement(
+                    "evolution.passive",
+                    &evolution.id,
+                    passive_requirement,
+                    self.passives
+                        .get(&passive_requirement.id)
+                        .map(|passive| passive.max_level),
+                    &mut errors,
+                );
+            }
+            validate_allowed(
+                "evolution.trigger",
+                &evolution.requirements.trigger,
+                &[
+                    "boss_chest",
+                    "storm_chest",
+                    "boss_defeat",
+                    "time_window",
+                    "pickup",
+                ],
+                &mut errors,
+            );
+            if !self.weapons.contains_key(&evolution.replaces_weapon) {
+                errors.push(format!(
+                    "evolution `{}` replaces missing weapon `{}`",
+                    evolution.id, evolution.replaces_weapon
+                ));
+            }
+            if evolution.replaces_weapon != evolution.requirements.weapon.id {
+                warnings.push(format!(
+                    "evolution `{}` replaces `{}` but requires weapon `{}`",
+                    evolution.id, evolution.replaces_weapon, evolution.requirements.weapon.id
+                ));
+            }
+            validate_allowed(
+                "evolution.weapon_definition.type",
+                &evolution.weapon_definition.weapon_type,
+                &[
+                    "projectile",
+                    "orbit",
+                    "burst",
+                    "zone",
+                    "summon",
+                    "beam",
+                    "special",
+                ],
+                &mut errors,
+            );
+            validate_allowed(
+                "evolution.weapon_definition.targeting.mode",
+                &evolution.weapon_definition.targeting.mode,
+                &[
+                    "nearest_enemy",
+                    "highest_health_enemy",
+                    "boss_priority",
+                    "random_enemy",
+                    "random_direction",
+                    "movement_direction",
+                    "self_centered",
+                    "ground_near_player",
+                ],
+                &mut errors,
+            );
+            validate_positive(
+                "evolution.weapon_definition.targeting.range",
+                evolution.weapon_definition.targeting.range,
+                &mut errors,
+            );
+            validate_positive(
+                "evolution.weapon_definition.damage",
+                evolution.weapon_definition.base_stats.damage,
+                &mut errors,
+            );
+            validate_positive(
+                "evolution.weapon_definition.cooldown_ms",
+                evolution.weapon_definition.base_stats.cooldown_ms,
+                &mut errors,
+            );
+            validate_positive(
+                "evolution.weapon_definition.projectile_count",
+                evolution.weapon_definition.base_stats.projectile_count as f32,
+                &mut errors,
+            );
+            validate_positive(
+                "evolution.weapon_definition.area_radius",
+                evolution.weapon_definition.base_stats.area_radius,
+                &mut errors,
+            );
+            if let Some(projectile_speed) = evolution.weapon_definition.base_stats.projectile_speed
+            {
+                validate_positive(
+                    "evolution.weapon_definition.projectile_speed",
+                    projectile_speed,
+                    &mut errors,
+                );
+            }
+            if let Some(pierce) = evolution.weapon_definition.base_stats.pierce {
+                validate_positive(
+                    "evolution.weapon_definition.pierce",
+                    pierce as f32,
+                    &mut errors,
+                );
+            }
+            if let Some(duration_ms) = evolution.weapon_definition.base_stats.duration_ms {
+                validate_non_negative_finite(
+                    "evolution.weapon_definition.duration_ms",
+                    duration_ms,
+                    &mut errors,
+                );
+            }
+        }
+
         for enemy in self.enemies.values() {
             validate_enemy_like(
                 "enemy",
@@ -663,6 +890,89 @@ impl ContentPack {
             }
         }
 
+        for event in self.events.values() {
+            validate_common(
+                CommonValidation {
+                    category: "event",
+                    id: &event.id,
+                    version: event.version,
+                    rarity: &event.rarity,
+                    tags: &event.tags,
+                    description: &event.description,
+                    visual_description: &event.visual_description,
+                    sfx_description: &event.sfx_description,
+                },
+                &mut errors,
+            );
+            validate_allowed(
+                "event.trigger.type",
+                &event.trigger.trigger_type,
+                &[
+                    "time_window",
+                    "boss_defeat",
+                    "level_up",
+                    "random",
+                    "map_entry",
+                ],
+                &mut errors,
+            );
+            validate_optional_non_negative(
+                "event.trigger.start_second",
+                event.trigger.start_second,
+                &mut errors,
+            );
+            validate_optional_non_negative(
+                "event.trigger.end_second",
+                event.trigger.end_second,
+                &mut errors,
+            );
+            if let (Some(start_second), Some(end_second)) =
+                (event.trigger.start_second, event.trigger.end_second)
+            {
+                if end_second <= start_second {
+                    errors.push(format!(
+                        "event `{}` has trigger ending before start",
+                        event.id
+                    ));
+                }
+            }
+            if let Some(chance) = event.trigger.chance {
+                validate_finite("event.trigger.chance", chance, &mut errors);
+                if !(0.0..=1.0).contains(&chance) {
+                    errors.push(format!(
+                        "event `{}` has chance outside 0..=1: {}",
+                        event.id, chance
+                    ));
+                }
+            }
+            if event.effects.is_empty() {
+                errors.push(format!("event `{}` has empty effects", event.id));
+            }
+            for effect in &event.effects {
+                validate_allowed(
+                    "event.effect.type",
+                    &effect.effect_type,
+                    &[
+                        "xp_multiplier",
+                        "spawn_rate_multiplier",
+                        "pickup_radius_multiplier",
+                        "damage_multiplier",
+                        "heal",
+                        "spawn_enemy",
+                    ],
+                    &mut errors,
+                );
+                validate_finite("event.effect.value", effect.value, &mut errors);
+                if let Some(duration_seconds) = effect.duration_seconds {
+                    validate_positive(
+                        "event.effect.duration_seconds",
+                        duration_seconds,
+                        &mut errors,
+                    );
+                }
+            }
+        }
+
         if errors.is_empty() {
             Ok(ValidationReport {
                 object_count: self.object_count(),
@@ -677,10 +987,12 @@ impl ContentPack {
         self.characters.len()
             + self.weapons.len()
             + self.passives.len()
+            + self.evolutions.len()
             + self.enemies.len()
             + self.bosses.len()
             + self.waves.len()
             + self.maps.len()
+            + self.events.len()
     }
 }
 
@@ -921,6 +1233,7 @@ pub struct CharacterDefinition {
     pub description: String,
     pub base_stats: CharacterBaseStats,
     pub initial_loadout: InitialLoadoutDefinition,
+    #[serde(default, rename = "trait", alias = "trait_definition")]
     pub trait_definition: Option<CharacterTraitDefinition>,
     pub visual_description: String,
     pub sfx_description: String,
@@ -1043,6 +1356,63 @@ pub struct StatModifierDefinition {
     pub stat: String,
     pub mode: String,
     pub value_per_level: f32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EvolutionDefinition {
+    pub id: String,
+    pub name: String,
+    pub version: u32,
+    pub rarity: String,
+    pub tags: Vec<String>,
+    pub description: String,
+    pub requirements: EvolutionRequirementsDefinition,
+    pub replaces_weapon: String,
+    pub weapon_definition: EvolutionWeaponDefinition,
+    pub visual_description: String,
+    pub sfx_description: String,
+    pub unlock: UnlockDefinition,
+}
+
+impl ContentObject for EvolutionDefinition {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EvolutionRequirementsDefinition {
+    pub weapon: ContentLevelRequirementDefinition,
+    pub passive: Option<ContentLevelRequirementDefinition>,
+    pub trigger: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ContentLevelRequirementDefinition {
+    pub id: String,
+    pub min_level: u32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EvolutionWeaponDefinition {
+    #[serde(rename = "type")]
+    pub weapon_type: String,
+    pub targeting: TargetingDefinition,
+    pub base_stats: EvolutionWeaponBaseStats,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EvolutionWeaponBaseStats {
+    pub damage: f32,
+    pub cooldown_ms: f32,
+    #[serde(default)]
+    pub projectile_speed: Option<f32>,
+    pub projectile_count: u32,
+    #[serde(default)]
+    pub pierce: Option<u32>,
+    pub area_radius: f32,
+    #[serde(default)]
+    pub duration_ms: Option<f32>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -1216,6 +1586,47 @@ pub struct SpawnRulesDefinition {
     pub max_distance: f32,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct EventDefinition {
+    pub id: String,
+    pub name: String,
+    pub version: u32,
+    pub rarity: String,
+    pub tags: Vec<String>,
+    pub description: String,
+    pub trigger: EventTriggerDefinition,
+    pub effects: Vec<EventEffectDefinition>,
+    pub visual_description: String,
+    pub sfx_description: String,
+}
+
+impl ContentObject for EventDefinition {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EventTriggerDefinition {
+    #[serde(rename = "type")]
+    pub trigger_type: String,
+    #[serde(default)]
+    pub start_second: Option<f32>,
+    #[serde(default)]
+    pub end_second: Option<f32>,
+    #[serde(default)]
+    pub chance: Option<f32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct EventEffectDefinition {
+    #[serde(rename = "type")]
+    pub effect_type: String,
+    pub value: f32,
+    #[serde(default)]
+    pub duration_seconds: Option<f32>,
+}
+
 fn load_category<T>(path: &Path) -> Result<BTreeMap<String, T>, ContentError>
 where
     T: for<'de> Deserialize<'de> + ContentObject,
@@ -1372,6 +1783,38 @@ fn validate_enemy_like(
     }
 }
 
+fn validate_content_level_requirement(
+    field: &str,
+    owner_id: &str,
+    requirement: &ContentLevelRequirementDefinition,
+    max_level: Option<u32>,
+    errors: &mut Vec<String>,
+) {
+    if requirement.id.trim().is_empty() {
+        errors.push(format!("{field} for `{owner_id}` has empty id"));
+    }
+    validate_positive(
+        &format!("{field}.min_level"),
+        requirement.min_level as f32,
+        errors,
+    );
+    match max_level {
+        Some(max_level) if requirement.min_level > max_level => {
+            errors.push(format!(
+                "{field} for `{owner_id}` requires `{}` level {} above max level {}",
+                requirement.id, requirement.min_level, max_level
+            ));
+        }
+        Some(_) => {}
+        None => {
+            errors.push(format!(
+                "{field} for `{owner_id}` references missing content `{}`",
+                requirement.id
+            ));
+        }
+    }
+}
+
 fn validate_allowed(field: &str, value: &str, allowed: &[&str], errors: &mut Vec<String>) {
     if !allowed.contains(&value) {
         errors.push(format!(
@@ -1384,6 +1827,18 @@ fn validate_allowed(field: &str, value: &str, allowed: &[&str], errors: &mut Vec
 fn validate_positive(field: &str, value: f32, errors: &mut Vec<String>) {
     if !value.is_finite() || value <= 0.0 {
         errors.push(format!("{field} must be positive finite, got {value}"));
+    }
+}
+
+fn validate_non_negative_finite(field: &str, value: f32, errors: &mut Vec<String>) {
+    if !value.is_finite() || value < 0.0 {
+        errors.push(format!("{field} must be non-negative finite, got {value}"));
+    }
+}
+
+fn validate_optional_non_negative(field: &str, value: Option<f32>, errors: &mut Vec<String>) {
+    if let Some(value) = value {
+        validate_non_negative_finite(field, value, errors);
     }
 }
 
