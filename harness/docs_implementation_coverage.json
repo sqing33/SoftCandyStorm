@@ -74,7 +74,7 @@
       "doc_id": "03",
       "doc_path": "docs/03_世界观与剧情大纲.md",
       "status": "partial",
-      "summary": "角色、地图、事件和内容描述已承载糖果王国设定，但章节剧情推进、局内叙事呈现和图鉴文本还未完整产品化。",
+      "summary": "角色、地图、事件和内容描述已承载糖果王国设定，章节剧情和图鉴文本已有 generated candidate 候选包与纯 Python 校验报告；局内叙事 UI、人工审校和正式接受链路仍未完成。",
       "coverage": [
         {
           "id": "worldbuilding-content-hooks",
@@ -83,11 +83,15 @@
           "evidence": [
             "content/base_demo/characters/jar-keeper.json",
             "content/base_demo/maps/cracked-star-jar.json",
-            "content/base_demo/events/rainbow-candy-rush.json"
+            "content/base_demo/events/rainbow-candy-rush.json",
+            "harness/generated_candidates/2026-05-26_story_codex_seed_pack/README.md",
+            "tools/validate_story_codex_candidates.py",
+            "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md"
           ],
           "gaps": [
-            "缺少章节剧情 UI、完整图鉴条目和局外叙事推进。",
-            "剧情内容尚未经过人工审校。"
+            "章节剧情和图鉴文本仍在 generated_candidates，尚未经过人工审校和 accepted_content 接受。",
+            "缺少章节剧情 UI、图鉴 UI 和局外叙事推进的 Runtime 接入。",
+            "缺少真实玩家对剧情节奏、语气和信息量的反馈。"
           ]
         }
       ]
@@ -440,7 +444,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、meta progression、accepted lockfile 入口和 Runtime meta panel 已有原型；完整基地、章节、存档、图鉴和发布级闭环仍未完成。",
+      "summary": "局外结算、meta progression、accepted lockfile 入口和 Runtime meta panel 已有原型，章节剧情 / 图鉴候选内容已有 generated candidate 与校验报告；完整基地、存档、图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -449,10 +453,13 @@
           "evidence": [
             "crates/game_core/src/meta.rs",
             "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md",
-            "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md"
+            "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md",
+            "harness/generated_candidates/2026-05-26_story_codex_seed_pack/README.md",
+            "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md"
           ],
           "gaps": [
-            "缺少完整存档、基地 UI、章节目标链和真实 10 分钟完整局验证。",
+            "缺少完整存档、基地 UI、章节目标链、图鉴 UI 和真实 10 分钟完整局验证。",
+            "剧情 / 图鉴候选尚未通过人工审校，也未进入 accepted_content。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
           "blockers": [
