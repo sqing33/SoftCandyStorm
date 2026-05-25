@@ -95,6 +95,7 @@ struct RuntimeCli {
     seed: u64,
     seconds: f32,
     tick_rate: u32,
+    demo_input: bool,
     playtest_report: Option<PathBuf>,
     player_skill: String,
     capture_interval_seconds: f32,
@@ -107,6 +108,7 @@ impl Default for RuntimeCli {
             seed: 12_345,
             seconds: 600.0,
             tick_rate: 30,
+            demo_input: false,
             playtest_report: None,
             player_skill: "unrated".to_string(),
             capture_interval_seconds: 5.0,
@@ -129,6 +131,7 @@ struct RuntimeState {
     pending_sounds: Vec<RuntimeSound>,
     effects: Vec<RuntimeEffect>,
     capture: RuntimeCaptureState,
+    demo_input: bool,
     paused: bool,
     run_number: u32,
 }
@@ -221,6 +224,7 @@ struct RuntimePlaytestReport {
     kind: &'static str,
     report_version: u32,
     player_skill: String,
+    input_mode: &'static str,
     run_number: u32,
     content_dir: String,
     run_config: RuntimeRunConfigReport,
@@ -410,6 +414,7 @@ fn setup_runtime(
         pending_sounds: vec![RuntimeSound::System],
         effects: Vec::new(),
         capture: RuntimeCaptureState::from_cli(&cli),
+        demo_input: cli.demo_input,
         paused: false,
         run_number: 1,
     });
@@ -448,7 +453,11 @@ fn step_game_core(
     }
 
     let snapshot = state.core.snapshot();
-    let upgrade_choice = upgrade_choice_from_keyboard(&keyboard, &snapshot);
+    let upgrade_choice = if state.demo_input {
+        demo_upgrade_choice(&snapshot)
+    } else {
+        upgrade_choice_from_keyboard(&keyboard, &snapshot)
+    };
 
     if !snapshot.upgrade_options.is_empty() {
         state.accumulator = 0.0;
@@ -469,7 +478,11 @@ fn step_game_core(
     }
 
     state.accumulator = (state.accumulator + time.delta_seconds()).min(0.25);
-    let movement = movement_from_keyboard(&keyboard);
+    let movement = if state.demo_input {
+        demo_movement(&snapshot)
+    } else {
+        movement_from_keyboard(&keyboard)
+    };
     while state.accumulator >= state.dt_seconds && !state.core.is_terminal() {
         let result = state.core.step(
             PlayerAction {
@@ -582,6 +595,44 @@ fn upgrade_choice_from_keyboard(
         }
     }
     None
+}
+
+fn demo_upgrade_choice(snapshot: &RunSnapshot) -> Option<usize> {
+    if snapshot.upgrade_options.is_empty() {
+        None
+    } else {
+        Some(0)
+    }
+}
+
+fn demo_movement(snapshot: &RunSnapshot) -> CoreVec2 {
+    let player_position = snapshot.player.position;
+    if let Some(enemy) = snapshot.visible_enemies.iter().min_by(|left, right| {
+        player_position
+            .distance(left.position)
+            .partial_cmp(&player_position.distance(right.position))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    }) {
+        let away = player_position - enemy.position;
+        if away.length_squared() < 110.0 * 110.0 {
+            return away.normalized_or_zero();
+        }
+    }
+
+    if let Some(pickup) = snapshot.visible_pickups.iter().min_by(|left, right| {
+        player_position
+            .distance(left.position)
+            .partial_cmp(&player_position.distance(right.position))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    }) {
+        let toward_pickup = pickup.position - player_position;
+        if toward_pickup.length_squared() > 12.0 * 12.0 {
+            return toward_pickup.normalized_or_zero();
+        }
+    }
+
+    let angle = snapshot.time_seconds * 0.75;
+    CoreVec2::new(angle.cos(), angle.sin()).normalized_or_zero()
 }
 
 fn sync_camera(state: Res<RuntimeState>, mut query: Query<&mut Transform, With<RuntimeCamera>>) {
@@ -1266,6 +1317,9 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
                     cli.tick_rate = value.parse().unwrap_or(cli.tick_rate);
                 }
             }
+            "--demo-input" => {
+                cli.demo_input = true;
+            }
             "--playtest-report" => {
                 if let Some(value) = args.next() {
                     cli.playtest_report = Some(PathBuf::from(value));
@@ -1376,6 +1430,7 @@ impl RuntimePlaytestReport {
             kind: "runtime_playtest_capture",
             report_version: 1,
             player_skill: state.capture.player_skill.clone(),
+            input_mode: if state.demo_input { "demo" } else { "keyboard" },
             run_number: state.run_number,
             content_dir: state.content_dir.display().to_string(),
             run_config: RuntimeRunConfigReport::from_config(&state.config),
@@ -1471,10 +1526,10 @@ fn write_runtime_playtest_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        effects_for_events, event_kind_for_events, make_tone_wav, parse_runtime_cli, player_tint,
-        run_config_from_cli, runtime_asset_root, runtime_sprite_paths, sounds_for_events,
-        RuntimeCaptureState, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeSound,
-        DEFAULT_CONTENT_DIR,
+        demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
+        make_tone_wav, parse_runtime_cli, player_tint, run_config_from_cli, runtime_asset_root,
+        runtime_sprite_paths, sounds_for_events, RuntimeCaptureState, RuntimeEffectKind,
+        RuntimeEventCounts, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, PickupSnapshot,
@@ -1493,12 +1548,14 @@ mod tests {
             "120".to_string(),
             "--tick-rate".to_string(),
             "20".to_string(),
+            "--demo-input".to_string(),
         ]);
 
         assert_eq!(cli.content_dir, PathBuf::from("content/custom"));
         assert_eq!(cli.seed, 9);
         assert_eq!(cli.seconds, 120.0);
         assert_eq!(cli.tick_rate, 20);
+        assert!(cli.demo_input);
     }
 
     #[test]
@@ -1616,6 +1673,68 @@ mod tests {
         assert_eq!(counts.weapon_fired, 1);
         assert_eq!(counts.xp_collected, 1);
         assert_eq!(counts.player_damaged, 1);
+    }
+
+    #[test]
+    fn demo_input_chooses_first_upgrade() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        assert_eq!(demo_upgrade_choice(&snapshot), None);
+
+        snapshot
+            .upgrade_options
+            .push(game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-2".to_string(),
+                name: "彩虹糖弹 Lv2".to_string(),
+                tags: vec!["projectile".to_string()],
+                description: "提升彩虹糖弹。".to_string(),
+            });
+
+        assert_eq!(demo_upgrade_choice(&snapshot), Some(0));
+    }
+
+    #[test]
+    fn demo_movement_prefers_pickups_when_safe() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        snapshot.visible_pickups.push(PickupSnapshot {
+            entity_id: 1,
+            pickup_type: PickupType::Xp,
+            position: CoreVec2::new(40.0, 0.0),
+            value: 3.0,
+            radius: 10.0,
+        });
+
+        let movement = demo_movement(&snapshot);
+        assert!(movement.x > 0.9);
+        assert!(movement.y.abs() < 0.1);
+    }
+
+    #[test]
+    fn demo_movement_avoids_nearby_enemy() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        snapshot.visible_pickups.push(PickupSnapshot {
+            entity_id: 1,
+            pickup_type: PickupType::Xp,
+            position: CoreVec2::new(40.0, 0.0),
+            value: 3.0,
+            radius: 10.0,
+        });
+        snapshot.visible_enemies.push(EnemySnapshot {
+            entity_id: 2,
+            enemy_id: "bouncy-gummy".to_string(),
+            position: CoreVec2::new(20.0, 0.0),
+            velocity: CoreVec2::ZERO,
+            health: 10.0,
+            max_health: 10.0,
+            radius: 16.0,
+            threat: 1.0,
+            behavior: EnemyBehavior::Chase,
+            is_boss: false,
+            is_elite: false,
+        });
+
+        let movement = demo_movement(&snapshot);
+        assert!(movement.x < -0.9);
+        assert!(movement.y.abs() < 0.1);
     }
 
     #[test]

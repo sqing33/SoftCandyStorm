@@ -31,6 +31,7 @@ cargo run -p game_harness -- validate-candidates --source-dir harness/generated_
 cargo run -p game_harness -- simulate-candidates --source-dir harness/validated_candidates --simulated-dir harness/simulated_candidates --repair-dir harness/repair_queue --seed-start 20000 --seeds 3 --seconds 180 --bots random,coward,tank,boss-hunter --report-dir harness/reports/2026-05-25_candidate_simulation_smoke_001
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 600
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 600 --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json --player-skill new
+cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 90 --demo-input --playtest-report harness/telemetry/local/runtime_demo_input_001.json --player-skill demo-bot --capture-interval 1
 ```
 
 带 `--report-dir` 的批量命令会输出 `summary.md`、`metrics.json`、门禁失败记录，以及原型 replay JSON。
@@ -39,6 +40,7 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 `simulate-candidates` 会对 `validated_candidates` 执行 Bot 矩阵，通过后复制到 `harness/simulated_candidates`，未通过则复制到 `harness/repair_queue`。
 `game_runtime` 是最小 Bevy 可视化客户端：读取键盘输入，调用同一个 GameCore，再根据 snapshot/events 更新画面、HUD、事件反馈和占位音效。Runtime 操作：WASD/方向键移动，1/2/3 选择升级，P 暂停，R 重开。当前画面加载 `assets/prototype_topdown` 中的程序化 top-down 原型占位纹理，用于替换早期几何色块；当前音效是运行时生成的短 WAV 占位资源，用于验证事件到表现层的链路。AI 生成素材仍需走候选池、记录 prompt 和人工确认。
 `game_runtime --playtest-report` 会在本地写入人工试玩捕获 JSON，记录关键可观测样本、事件计数、最终 metrics，并附带人工评分和备注字段；默认写入路径建议放在 `harness/telemetry/local/`。
+`game_runtime --demo-input` 会启用确定性演示输入，用于无需窗口焦点地覆盖移动、XP 拾取和升级选择链路；它只用于技术验证，不替代真人试玩判断。
 
 素材候选后处理入口：
 

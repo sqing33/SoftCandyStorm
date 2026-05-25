@@ -137,6 +137,10 @@
     {
       "id": "runtime_playtest_capture_smoke",
       "summary": "启动 Runtime 生成 60 秒本地 capture 冒烟报告，验证 per-second samples、事件计数、final metrics 和人工评分模板能写盘；该报告只证明捕获链路，不替代真人试玩"
+    },
+    {
+      "id": "runtime_demo_input_mode",
+      "summary": "Runtime 增加 `--demo-input` 确定性演示输入，并生成 90 秒 demo capture；报告覆盖移动、XP 拾取、升级 offer/choice、事件计数和 final metrics"
     }
   ],
   "current_findings": [
@@ -159,6 +163,11 @@
       "id": "runtime_input_capture_gap",
       "summary": "本轮 agent-smoke capture 成功记录 60 秒无输入 Runtime 循环，但未验证键盘移动、XP 拾取、升级选择和 Boss 表现；如需要自动化覆盖，应补一个明确的 Runtime demo input 模式。",
       "report": "harness/reports/2026-05-25_runtime_playtest_capture_smoke_001/summary.md"
+    },
+    {
+      "id": "runtime_demo_input_boss_gap",
+      "summary": "90 秒 demo input capture 已覆盖移动、拾取和升级链路，但 Boss 在 210 秒才出现，受伤/死亡清晰度也未被覆盖；后续应增加更长或更高压的 Runtime capture。",
+      "report": "harness/reports/2026-05-25_runtime_demo_input_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -167,8 +176,8 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "runtime_demo_input_mode",
-      "summary": "为 Runtime 增加可选 demo input 模式，用确定性移动路线和升级选择生成更完整的非人工 capture，覆盖 XP 拾取、升级、受伤和 Boss 出场的表现链路"
+      "id": "runtime_boss_capture_pass",
+      "summary": "运行 210 秒以上的 Runtime demo/manual capture，专门验证 Boss 出场提示、Boss 可读性、受伤反馈和可能的死亡原因清晰度"
     }
   ]
 }
