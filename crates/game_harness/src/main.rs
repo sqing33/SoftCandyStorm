@@ -1,7 +1,7 @@
 use bot_policies::{BotController, BotKind};
 use game_core::{
-    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, RunConfig, RunMetrics, StartingLoadout,
-    TerminalKind, Vec2,
+    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaProgress, MetaRunSummary,
+    MetaSettlementReport, RunConfig, RunMetrics, StartingLoadout, TerminalKind, Vec2,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -54,6 +54,29 @@ impl Default for SimArgs {
             tick_rate: 30,
             bot: BotKind::Kite,
             content_dir: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct MetaSettlementArgs {
+    seed: u64,
+    seconds: f32,
+    tick_rate: u32,
+    bot: BotKind,
+    content_dir: Option<PathBuf>,
+    report_dir: Option<PathBuf>,
+}
+
+impl Default for MetaSettlementArgs {
+    fn default() -> Self {
+        Self {
+            seed: 12_345,
+            seconds: 120.0,
+            tick_rate: 30,
+            bot: BotKind::Kite,
+            content_dir: Some(PathBuf::from("content/base_demo")),
+            report_dir: None,
         }
     }
 }
@@ -301,6 +324,16 @@ struct BotBatchResult {
     summary: BatchSummary,
     metrics: Vec<RunMetrics>,
     replays: Vec<ReplayRecord>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct MetaSettlementSmokeReport {
+    report_version: u32,
+    content_dir: String,
+    bot: String,
+    run_summary: MetaRunSummary,
+    settlement: MetaSettlementReport,
+    progress_after: MetaProgress,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -778,6 +811,14 @@ fn main() {
                 std::process::exit(2);
             }
         },
+        "meta-settlement" => match parse_meta_settlement_args(args.collect()) {
+            Ok(args) => run_meta_settlement(args),
+            Err(message) => {
+                eprintln!("error: {message}");
+                print_help();
+                std::process::exit(2);
+            }
+        },
         "gym-bridge" => match parse_gym_bridge_args(args.collect()) {
             Ok(args) => run_gym_bridge(args),
             Err(message) => {
@@ -826,6 +867,56 @@ fn parse_sim_args(values: Vec<String>) -> Result<SimArgs, String> {
             }
             "--content-dir" => {
                 parsed.content_dir = Some(PathBuf::from(value));
+            }
+            _ => return Err(format!("unknown flag `{key}`")),
+        }
+        index += 2;
+    }
+
+    if parsed.seconds <= 0.0 {
+        return Err("--seconds must be positive".to_string());
+    }
+    if parsed.tick_rate == 0 {
+        return Err("--tick-rate must be greater than zero".to_string());
+    }
+
+    Ok(parsed)
+}
+
+fn parse_meta_settlement_args(values: Vec<String>) -> Result<MetaSettlementArgs, String> {
+    let mut parsed = MetaSettlementArgs::default();
+    let mut index = 0;
+    while index < values.len() {
+        let key = &values[index];
+        let value = values
+            .get(index + 1)
+            .ok_or_else(|| format!("missing value for `{key}`"))?;
+        match key.as_str() {
+            "--seed" => {
+                parsed.seed = value
+                    .parse()
+                    .map_err(|_| format!("invalid --seed `{value}`"))?;
+            }
+            "--seconds" => {
+                parsed.seconds = value
+                    .parse()
+                    .map_err(|_| format!("invalid --seconds `{value}`"))?;
+            }
+            "--tick-rate" => {
+                parsed.tick_rate = value
+                    .parse()
+                    .map_err(|_| format!("invalid --tick-rate `{value}`"))?;
+            }
+            "--bot" => {
+                parsed.bot = BotKind::parse(value).ok_or_else(|| {
+                    format!("invalid --bot `{value}`; use {}", BotKind::all_names())
+                })?;
+            }
+            "--content-dir" => {
+                parsed.content_dir = Some(PathBuf::from(value));
+            }
+            "--report-dir" => {
+                parsed.report_dir = Some(PathBuf::from(value));
             }
             _ => return Err(format!("unknown flag `{key}`")),
         }
@@ -1322,20 +1413,7 @@ fn simulate_once(
     tick_rate: u32,
     bot: BotKind,
 ) -> SimulationRun {
-    let config = RunConfig {
-        seed,
-        map_id: "frosting-grassland".to_string(),
-        character_id: "jar-keeper".to_string(),
-        starting_loadout: StartingLoadout {
-            weapons: vec!["rainbow-candy-shot".to_string()],
-            passives: Vec::new(),
-        },
-        difficulty: Difficulty::Normal,
-        duration_seconds: seconds,
-        ruleset_version: "prototype-v0".to_string(),
-        content_pack_ids: vec!["base-demo".to_string()],
-        tick_rate,
-    };
+    let config = harness_run_config(seed, seconds, tick_rate);
     let replay_run_config = ReplayRunConfig::from_config(&config);
     let ruleset_version = config.ruleset_version.clone();
     let mut core = match GameCore::reset_with_content(config, content.clone()) {
@@ -1405,6 +1483,23 @@ fn simulate_once(
     SimulationRun { metrics, replay }
 }
 
+fn harness_run_config(seed: u64, seconds: f32, tick_rate: u32) -> RunConfig {
+    RunConfig {
+        seed,
+        map_id: "frosting-grassland".to_string(),
+        character_id: "jar-keeper".to_string(),
+        starting_loadout: StartingLoadout {
+            weapons: vec!["rainbow-candy-shot".to_string()],
+            passives: Vec::new(),
+        },
+        difficulty: Difficulty::Normal,
+        duration_seconds: seconds,
+        ruleset_version: "prototype-v0".to_string(),
+        content_pack_ids: vec!["base-demo".to_string()],
+        tick_rate,
+    }
+}
+
 fn print_metrics_json(metrics: &RunMetrics, bot: BotKind) {
     let terminal_kind = metrics
         .terminal
@@ -1467,6 +1562,57 @@ fn run_batch(args: BatchArgs) {
     }
 
     print_batch_json(&result.summary, &result.metrics);
+}
+
+fn run_meta_settlement(args: MetaSettlementArgs) {
+    let content = load_content_or_exit(args.content_dir.as_ref());
+    let config = harness_run_config(args.seed, args.seconds, args.tick_rate);
+    let run = simulate_once(
+        &content.pack,
+        &content.hash,
+        args.seed,
+        args.seconds,
+        args.tick_rate,
+        args.bot,
+    );
+    let run_summary = MetaRunSummary::from_metrics(
+        format!("{}_seed_{}", args.bot.as_str(), args.seed),
+        &config,
+        &run.metrics,
+    );
+    let mut progress = MetaProgress::demo_start();
+    let settlement = progress.apply_run_summary(&run_summary);
+    let content_dir = args
+        .content_dir
+        .as_ref()
+        .map(|path| path.display().to_string())
+        .unwrap_or_else(|| "builtin:base-demo".to_string());
+    let report = MetaSettlementSmokeReport {
+        report_version: 1,
+        content_dir,
+        bot: args.bot.as_str().to_string(),
+        run_summary,
+        settlement,
+        progress_after: progress,
+    };
+
+    if let Some(report_dir) = &args.report_dir {
+        if let Err(error) = write_meta_settlement_report(report_dir, &report) {
+            eprintln!(
+                "error: failed to write meta settlement report `{}`: {error}",
+                report_dir.display()
+            );
+            std::process::exit(1);
+        }
+    }
+
+    match serde_json::to_string_pretty(&report) {
+        Ok(json) => println!("{json}"),
+        Err(error) => {
+            eprintln!("error: failed to render meta settlement report: {error}");
+            std::process::exit(1);
+        }
+    }
 }
 
 fn run_matrix(args: MatrixArgs) {
@@ -4897,6 +5043,20 @@ fn write_accepted_content_lock_report(
     Ok(())
 }
 
+fn write_meta_settlement_report(
+    report_dir: &Path,
+    report: &MetaSettlementSmokeReport,
+) -> io::Result<()> {
+    fs::create_dir_all(report_dir)?;
+    let json = serde_json::to_string_pretty(report).map_err(io::Error::other)?;
+    fs::write(report_dir.join("meta_settlement.json"), format!("{json}\n"))?;
+    fs::write(
+        report_dir.join("summary.md"),
+        render_meta_settlement_summary(report),
+    )?;
+    Ok(())
+}
+
 fn render_candidate_summary(report: &CandidatePipelineReport) -> String {
     let mut output = String::new();
     output.push_str("# Candidate Validation Summary\n\n");
@@ -5058,6 +5218,50 @@ fn render_accepted_content_lock_summary(report: &AcceptedContentLockReport) -> S
     output
 }
 
+fn render_meta_settlement_summary(report: &MetaSettlementSmokeReport) -> String {
+    let mut output = String::new();
+    output.push_str("# Meta Settlement Summary\n\n");
+    output.push_str(&format!("- Content: `{}`\n", report.content_dir));
+    output.push_str(&format!("- Bot: `{}`\n", report.bot));
+    output.push_str(&format!(
+        "- Run: `{}` on `{}` for `{:.1}` seconds\n",
+        report.run_summary.run_id, report.run_summary.map_id, report.run_summary.duration_seconds
+    ));
+    output.push_str(&format!(
+        "- Candy crystal shards gained: `{}`\n",
+        report.settlement.resources_gained.candy_crystal_shards
+    ));
+    output.push_str(&format!(
+        "- Star shards gained: `{}`\n",
+        report.settlement.resources_gained.star_shards
+    ));
+    output.push_str(&format!(
+        "- Storm grains gained: `{}`\n",
+        report.settlement.resources_gained.storm_grains
+    ));
+    output.push_str(&format!(
+        "- Completed goals: `{}`\n",
+        report.settlement.completed_goals.len()
+    ));
+    output.push_str(&format!(
+        "- Unlocks: `{}`\n",
+        report.settlement.unlocked.len()
+    ));
+    output.push_str(&format!(
+        "- Codex updates: `{}`\n\n",
+        report.settlement.codex_updates.len()
+    ));
+    output.push_str("## Gate Notes\n\n");
+    output.push_str("- This smoke applies one headless run to `MetaProgress::demo_start()`.\n");
+    output.push_str(
+        "- Failed or short runs can still grant candy crystal shards and codex progress.\n",
+    );
+    output.push_str(
+        "- Chapter star shards and unlocks are only granted when explicit chapter goals are met.\n",
+    );
+    output
+}
+
 fn run_validate(args: ValidateArgs) {
     match ContentPack::load_from_dir(&args.content_dir).and_then(|content| content.validate()) {
         Ok(report) => {
@@ -5089,6 +5293,10 @@ fn print_help() {
     eprintln!("  cargo run -p game_harness -- validate-content [--content-dir content/base_demo]");
     eprintln!(
         "  cargo run -p game_harness -- simulate [--seed N] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo]",
+        BotKind::all_names()
+    );
+    eprintln!(
+        "  cargo run -p game_harness -- meta-settlement [--seed N] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo] [--report-dir harness/reports/local_meta_settlement]",
         BotKind::all_names()
     );
     eprintln!(

@@ -1,9 +1,14 @@
 pub mod content;
 mod math;
+pub mod meta;
 mod rng;
 
 pub use content::{ContentError, ContentPack, ValidationReport};
 pub use math::Vec2;
+pub use meta::{
+    apply_demo_meta_settlement, MetaCodexEntry, MetaProgress, MetaResourceWallet, MetaRunSummary,
+    MetaSettlementReport, MetaUnlockSet, RunMode,
+};
 
 use content::{
     BossDefinition, CharacterDefinition, EnemyDefinition, EnemyStatsDefinition, MapDefinition,

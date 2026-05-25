@@ -22,6 +22,7 @@
 cargo run -p game_harness -- validate-content --content-dir content/base_demo
 cargo run -p game_harness -- budget-content --content-dir content/base_demo
 cargo run -p game_harness -- simulate --content-dir content/base_demo --seed 12345 --seconds 600 --bot kite
+cargo run -p game_harness -- meta-settlement --content-dir content/base_demo --seed 12345 --seconds 120 --bot kite --report-dir harness/reports/local_meta_settlement
 cargo run -p game_harness -- batch --content-dir content/base_demo --seed-start 12345 --seeds 10 --seconds 600 --bot kite
 cargo run -p game_harness -- batch --content-dir content/base_demo --seed-start 12345 --seeds 10 --seconds 600 --bot kite --report-dir harness/reports/2026-05-25_kite_batch_001
 cargo run -p game_harness -- matrix --content-dir content/base_demo --seed-start 20000 --seeds 3 --seconds 180 --bots random,coward,tank,boss-hunter --report-dir harness/reports/2026-05-25_matrix_smoke_001
@@ -41,6 +42,7 @@ python python/train/train_sb3.py --dry-run --algorithm dqn --steps 90
 ```
 
 带 `--report-dir` 的批量命令会输出 `summary.md`、`metrics.json`、门禁失败记录，以及原型 replay JSON。
+`meta-settlement` 会把一局 headless metrics 应用到 `MetaProgress::demo_start()`，输出局后糖晶碎片、章节目标、图鉴进度和解锁报告；短局可以验证资源与图鉴，但不会替代完整 10 分钟主线验收。
 `replay-batch` 会递归扫描 replay JSON，并用 strict 模式校验 content hash、升级选项和 final metrics 是否完全复现。
 `validate-candidates` 会先做 schema 校验和静态预算门禁，只有两者都通过才会复制到 `harness/validated_candidates`。
 `simulate-candidates` 会对 `validated_candidates` 执行 Bot 矩阵，通过后复制到 `harness/simulated_candidates`，未通过则复制到 `harness/repair_queue`。

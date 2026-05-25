@@ -181,6 +181,10 @@
     {
       "id": "runtime_locked_content_selection",
       "summary": "Runtime 增加 accepted lockfile 内容选择入口，只有 lockfile 中 status=locked 的候选可通过 --accepted-lock-file / --accepted-content-id 被读取"
+    },
+    {
+      "id": "meta_progression_core",
+      "summary": "GameCore 增加最小局外进度模型，覆盖糖晶碎片、星片、风暴糖粒、章节目标、图鉴进度、内容解锁和局后结算；Harness 增加 meta-settlement 报告入口"
     }
   ],
   "current_findings": [
@@ -220,6 +224,11 @@
       "report": "harness/reports/2026-05-25_runtime_lock_content_smoke_001/summary.md"
     },
     {
+      "id": "meta_progression_short_run_scope",
+      "summary": "`meta-settlement` 已验证短局可以获得糖晶碎片、图鉴发现和章节目标进度，但不会因 120 秒 duration_reached 误解锁下一章；完整章节推进仍需 10 分钟目标和 Boss 目标。",
+      "report": "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md"
+    },
+    {
       "id": "runtime_capture_visual_client_limit",
       "summary": "`--simulation-speed` 已降低 Runtime capture 的等待成本，但 Bevy 窗口启动和渲染仍有明显墙钟开销；高容量确定性验证仍应优先使用 headless Harness。",
       "report": "harness/reports/2026-05-25_runtime_simulation_speed_smoke_001/summary.md"
@@ -240,8 +249,8 @@
       "summary": "安装 Gymnasium、NumPy 和 Stable-Baselines3 后，运行最小 DQN 训练并保存模型、metadata、评估报告和已知 exploit 记录"
     },
     {
-      "id": "meta_progression_core",
-      "summary": "根据 docs/18 实现最小局外进度模型，覆盖糖晶碎片、章节目标、图鉴进度、角色/武器/地图解锁和结算奖励计算"
+      "id": "meta_progression_runtime_ui",
+      "summary": "在 Runtime 增加最小守护站/局后结算视图，展示 meta settlement 的糖晶碎片、图鉴进度、章节目标和新解锁"
     }
   ]
 }
