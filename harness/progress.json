@@ -325,6 +325,10 @@
     {
       "id": "rl_dqn_action_bias_repair_experiment",
       "summary": "运行 DQN 2000-step / 30 秒与 5000-step / 60 秒动作塌缩修复实验，并用独立模型与报告目录隔离产物；结果仍为 trained_needs_action_bias_repair，说明单纯增加训练步数不足以修复塌缩"
+    },
+    {
+      "id": "rl_reward_shaping_action_bias_repair",
+      "summary": "调整 Gym reward 降低短局终局奖励主导性，并增加轻量 action_repeat 惩罚；DQN 5000-step / 60 秒评估最大动作占比降至 35.68%、归一化动作熵升至 0.6524，进入规则 Bot 对比记录阶段"
     }
   ],
   "current_findings": [
@@ -440,8 +444,8 @@
     },
     {
       "id": "rl_policy_comparison_smoke_scope",
-      "summary": "DQN/PPO 训练和对比链路均已跑通，但 DQN 128-step 复现为动作 5 占比 100%，PPO 128-step 为动作 1 占比 100%；DQN 2000-step 降至动作 5 占比 81.72%，5000-step 又塌缩到动作 4 占比 96.91%，均仍触发 trained_needs_action_bias_repair。",
-      "report": "harness/reports/2026-05-26_rl_action_bias_repair_experiment_001/summary.md"
+      "summary": "DQN/PPO 训练和对比链路均已跑通；调整 Gym reward 后，DQN 5000-step / 60 秒烟测最大动作占比降至 35.68%、归一化动作熵升至 0.6524，已缓解动作塌缩并进入 comparison_recorded_not_balance_gate。该结论仍只有 3 seed / 60 秒，不能替代正式规则 Bot 矩阵或人工试玩。",
+      "report": "harness/reports/2026-05-26_rl_reward_shaping_experiment_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -450,8 +454,8 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "rl_policy_reward_shaping_experiment",
-      "summary": "针对 DQN/PPO policy 的单动作塌缩，优先调整 reward shaping、探索参数或动作塌缩惩罚，再扩大训练/评估窗口；修复后重跑 policy vs rule Bot 对比，直到动作分布不再由单一动作占 75% 以上"
+      "id": "rl_policy_extended_comparison",
+      "summary": "用新 Gym reward 跑 PPO 对照，并将 DQN/PPO 扩展到更多 seed、更长时长和多地图评估；只有扩大样本后仍保持动作分布健康，才能把 RL policy 纳入 exploit 压力测试池"
     }
   ]
 }

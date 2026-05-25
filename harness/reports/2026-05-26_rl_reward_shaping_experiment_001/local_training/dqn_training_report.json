@@ -1,0 +1,89 @@
+{
+  "status": "trained",
+  "algorithm": "dqn",
+  "model_path": "python/train/models/dqn_phase1_reward_shaping_5000_eval60.zip",
+  "metadata_path": "python/train/models/dqn_phase1_reward_shaping_5000_eval60_metadata.json",
+  "evaluation_path": "harness/reports/2026-05-26_rl_reward_shaping_experiment_001/local_training/dqn_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-26_rl_reward_shaping_experiment_001/local_training/dqn_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true
+  },
+  "training": {
+    "total_timesteps": 5000,
+    "requested_timesteps": 5000,
+    "actual_timesteps": 5000,
+    "seed": 12345,
+    "seconds": 180.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "started_at": "2026-05-25T19:03:28.888755+00:00",
+    "completed_at": "2026-05-25T19:03:31.336967+00:00"
+  },
+  "evaluation": {
+    "episodes": 3,
+    "win_rate": 1.0,
+    "average_survival_seconds": 60.0328,
+    "average_level": 1.6667,
+    "average_kills": 48.0,
+    "average_reward": 4.418,
+    "damage_taken_average": 33.3,
+    "action_distribution": {
+      "0": {
+        "count": 34,
+        "ratio": 0.0063
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 868,
+        "ratio": 0.1607
+      },
+      "3": {
+        "count": 1778,
+        "ratio": 0.3291
+      },
+      "4": {
+        "count": 1928,
+        "ratio": 0.3568
+      },
+      "5": {
+        "count": 640,
+        "ratio": 0.1185
+      },
+      "6": {
+        "count": 86,
+        "ratio": 0.0159
+      },
+      "7": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "8": {
+        "count": 69,
+        "ratio": 0.0128
+      }
+    },
+    "action_entropy_bits": 2.0682,
+    "normalized_action_entropy": 0.6524,
+    "reward_breakdown_average": {
+      "action_repeat": -0.4383,
+      "damage_taken": -2.664,
+      "kill": 3.84,
+      "level": 0.5333,
+      "survival": 0.6003,
+      "terminal": 1.0,
+      "total": 4.418,
+      "xp": 1.5467
+    }
+  },
+  "known_exploits": [],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_rule_bot_comparison"
+}
