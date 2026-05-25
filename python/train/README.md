@@ -43,3 +43,13 @@ python3 python/train/train_sb3.py --algorithm dqn --timesteps 128 --eval-episode
 ```
 
 `train_sb3.py` writes the model zip, model metadata, a training report, an evaluation report, and known exploit notes. Do not record RL Bot training as complete until all of those files exist and the policy has been compared against rule Bot baselines.
+
+## Policy vs Rule Bot Comparison
+
+Compare a saved SB3 policy against rule Bot baselines with the same map, seed range, and duration:
+
+```bash
+python3 python/train/train_sb3.py --algorithm dqn --compare-rule-bots --model python/train/models/dqn_phase1_movement_survival.zip --seed-start 30000 --eval-episodes 2 --eval-seconds 5 --map-id frosting-grassland --rule-bots random,kite,tank --report harness/reports/local_rl_training/dqn_rule_bot_comparison.json
+```
+
+The comparison report records the policy summary, action distribution, rule Bot matrix output, smoke findings, limitations, and `comparison_recorded_not_balance_gate` gate decision.

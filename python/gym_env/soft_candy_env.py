@@ -53,6 +53,7 @@ class SoftCandyStormEnv(gym.Env):
         seed=12345,
         seconds=600.0,
         tick_rate=30,
+        map_id="frosting-grassland",
         content_dir="content/base_demo",
         harness_cmd=None,
         cwd=None,
@@ -60,6 +61,7 @@ class SoftCandyStormEnv(gym.Env):
         self.seed_value = seed
         self.seconds = seconds
         self.tick_rate = tick_rate
+        self.map_id = map_id
         self.content_dir = content_dir
         self.cwd = Path(cwd) if cwd is not None else Path(__file__).resolve().parents[2]
         self.harness_cmd = harness_cmd or self._default_harness_cmd()
@@ -102,6 +104,8 @@ class SoftCandyStormEnv(gym.Env):
             str(self.seconds),
             "--tick-rate",
             str(self.tick_rate),
+            "--map-id",
+            self.map_id,
             "--content-dir",
             self.content_dir,
         ]
@@ -139,10 +143,14 @@ class SoftCandyStormEnv(gym.Env):
         payload = {
             "command": "reset",
             "seed": self.seed_value,
+            "map_id": options.get("map_id", self.map_id),
             "seconds": options.get("seconds", self.seconds),
             "tick_rate": options.get("tick_rate", self.tick_rate),
         }
         response = self._request(payload)
+        self.map_id = response["info"]["map_id"]
+        self.seconds = options.get("seconds", self.seconds)
+        self.tick_rate = options.get("tick_rate", self.tick_rate)
         return self._observation(response["observation"]), response["info"]
 
     def step(self, action):

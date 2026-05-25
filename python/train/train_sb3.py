@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import json
 import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,12 +50,13 @@ def algorithm_config(config, algorithm):
     return selected
 
 
-def build_env(config, seed=None, seconds=None):
+def build_env(config, seed=None, seconds=None, map_id=None):
     env_cfg = config["environment"]
     return SoftCandyStormEnv(
         seed=seed if seed is not None else env_cfg["seed"],
         seconds=seconds if seconds is not None else env_cfg["seconds"],
         tick_rate=env_cfg["tick_rate"],
+        map_id=map_id if map_id is not None else env_cfg.get("map_id", "frosting-grassland"),
         content_dir=env_cfg["content_dir"],
     )
 
@@ -94,7 +96,7 @@ def dry_run(config, algorithm, steps):
 def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seconds=None):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
-    from stable_baselines3 import DQN, PPO
+    model_classes = stable_baselines_model_classes()
 
     selected = algorithm_config(config, algorithm)
     train_steps = total_timesteps or selected["total_timesteps"]
@@ -104,7 +106,7 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
     model_dir.mkdir(parents=True, exist_ok=True)
     report_dir.mkdir(parents=True, exist_ok=True)
 
-    model_class = {"dqn": DQN, "ppo": PPO}[algorithm]
+    model_class = model_classes[algorithm]
     ignored_keys = {"enabled", "policy", "total_timesteps"}
     kwargs = {key: value for key, value in selected.items() if key not in ignored_keys}
     started_at = datetime.now(timezone.utc).isoformat()
@@ -178,24 +180,52 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
     return report
 
 
-def evaluate_model(model, config, episodes, seconds):
-    seed_start = config["evaluation"]["seed_start"]
+def stable_baselines_model_classes():
+    require_dependencies()
+    from stable_baselines3 import DQN, PPO
+
+    return {"dqn": DQN, "ppo": PPO}
+
+
+def default_model_path(config, algorithm):
+    return Path(config["outputs"]["model_dir"]) / f"{algorithm}_phase1_movement_survival.zip"
+
+
+def evaluate_saved_policy(config, algorithm, model_path=None, eval_episodes=None, eval_seconds=None, seed_start=None, map_id=None):
+    model_class = stable_baselines_model_classes()[algorithm]
+    model = model_class.load(model_path or default_model_path(config, algorithm))
+    return evaluate_model(
+        model,
+        config,
+        episodes=eval_episodes or config["evaluation"]["episodes"],
+        seconds=eval_seconds or config["evaluation"]["seconds"],
+        seed_start=seed_start,
+        map_id=map_id,
+    )
+
+
+def evaluate_model(model, config, episodes, seconds, seed_start=None, map_id=None):
+    seed_start = seed_start if seed_start is not None else config["evaluation"]["seed_start"]
+    map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
     max_steps = int(seconds * config["environment"]["tick_rate"]) + 10
     episode_reports = []
     total_reward = 0.0
     env = None
     try:
-        env = build_env(config, seed=seed_start, seconds=seconds)
+        env = build_env(config, seed=seed_start, seconds=seconds, map_id=map_id)
         for index in range(episodes):
             seed = seed_start + index
-            observation, info = env.reset(seed=seed, options={"seconds": seconds})
+            observation, info = env.reset(seed=seed, options={"seconds": seconds, "map_id": map_id})
             terminated = False
             truncated = False
             steps = 0
             episode_reward = 0.0
+            action_counts = {str(action): 0 for action in range(info["action_count"])}
             while not terminated and not truncated and steps < max_steps:
                 action, _state = model.predict(observation, deterministic=True)
-                observation, reward, terminated, truncated, info = env.step(action_to_int(action))
+                action_index = action_to_int(action)
+                action_counts[str(action_index)] = action_counts.get(str(action_index), 0) + 1
+                observation, reward, terminated, truncated, info = env.step(action_index)
                 episode_reward += reward
                 steps += 1
 
@@ -204,6 +234,7 @@ def evaluate_model(model, config, episodes, seconds):
             episode_reports.append(
                 {
                     "seed": seed,
+                    "map_id": info["map_id"],
                     "steps": steps,
                     "reward": round(episode_reward, 4),
                     "terminated": terminated,
@@ -215,6 +246,7 @@ def evaluate_model(model, config, episodes, seconds):
                     "kills": info["kills"],
                     "xp_collected": info["xp_collected"],
                     "damage_taken": info["damage_taken"],
+                    "action_counts": action_counts,
                 }
             )
     finally:
@@ -226,6 +258,7 @@ def evaluate_model(model, config, episodes, seconds):
         "report_version": 1,
         "status": "evaluated",
         "phase": config["phase"],
+        "map_id": map_id,
         "episodes": episode_reports,
         "summary": summary,
     }
@@ -242,7 +275,7 @@ def action_to_int(action):
 def summarize_evaluation(episodes, total_reward):
     count = max(1, len(episodes))
     wins = sum(1 for episode in episodes if episode["terminal_kind"] == "victory")
-    return {
+    summary = {
         "episodes": len(episodes),
         "win_rate": round(wins / count, 4),
         "average_survival_seconds": round(
@@ -255,6 +288,161 @@ def summarize_evaluation(episodes, total_reward):
             sum(episode["damage_taken"] for episode in episodes) / count, 4
         ),
     }
+    summary["action_distribution"] = summarize_action_distribution(episodes)
+    return summary
+
+
+def summarize_action_distribution(episodes):
+    counts = {}
+    for episode in episodes:
+        for action, count in episode.get("action_counts", {}).items():
+            counts[action] = counts.get(action, 0) + count
+    total = max(1, sum(counts.values()))
+    return {
+        action: {
+            "count": count,
+            "ratio": round(count / total, 4),
+        }
+        for action, count in sorted(counts.items(), key=lambda item: int(item[0]))
+    }
+
+
+def parse_rule_bots(value):
+    bots = [bot.strip() for bot in value.split(",") if bot.strip()]
+    if not bots:
+        raise ValueError("--rule-bots must include at least one bot")
+    return bots
+
+
+def run_rule_bot_matrix(config, bots, seed_start, seeds, seconds, map_id):
+    env_cfg = config["environment"]
+    command = [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "game_harness",
+        "--",
+        "matrix",
+        "--seed-start",
+        str(seed_start),
+        "--seeds",
+        str(seeds),
+        "--seconds",
+        str(seconds),
+        "--tick-rate",
+        str(env_cfg["tick_rate"]),
+        "--map-id",
+        map_id,
+        "--bots",
+        ",".join(bots),
+        "--content-dir",
+        env_cfg["content_dir"],
+    ]
+    completed = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return {
+        "command": command,
+        "stdout": json.loads(completed.stdout),
+        "stderr": completed.stderr.strip(),
+    }
+
+
+def compare_policy_to_rule_bots(
+    config,
+    algorithm,
+    model_path=None,
+    eval_episodes=None,
+    eval_seconds=None,
+    seed_start=None,
+    map_id=None,
+    rule_bots=None,
+):
+    episodes = eval_episodes or config["evaluation"]["episodes"]
+    seconds = eval_seconds or config["evaluation"]["seconds"]
+    seed_start = seed_start if seed_start is not None else config["evaluation"]["seed_start"]
+    map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
+    bots = rule_bots or ["random", "kite", "tank"]
+    policy = evaluate_saved_policy(
+        config,
+        algorithm,
+        model_path=model_path,
+        eval_episodes=episodes,
+        eval_seconds=seconds,
+        seed_start=seed_start,
+        map_id=map_id,
+    )
+    rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
+    return {
+        "report_version": 1,
+        "status": "compared",
+        "phase": config["phase"],
+        "algorithm": algorithm,
+        "model_path": str(model_path or default_model_path(config, algorithm)),
+        "map_id": map_id,
+        "seed_start": seed_start,
+        "seeds": episodes,
+        "seconds": seconds,
+        "tick_rate": config["environment"]["tick_rate"],
+        "policy": policy,
+        "rule_bots": rule_matrix["stdout"],
+        "rule_bot_command": rule_matrix["command"],
+        "rule_bot_stderr": rule_matrix["stderr"],
+        "findings": comparison_findings(policy, rule_matrix["stdout"]),
+        "limitations": [
+            "This comparison uses the same seed/map/duration, but a smoke-scale policy is not a balance or fun gate.",
+            "Rule Bot baselines remain the primary deterministic content gate until RL policies are trained and calibrated at larger scale.",
+        ],
+        "gate_decision": "comparison_recorded_not_balance_gate",
+    }
+
+
+def comparison_findings(policy, rule_matrix):
+    findings = []
+    summary = policy["summary"]
+    if summary["episodes"] < 10:
+        findings.append(
+            {
+                "id": "small_sample",
+                "severity": "info",
+                "summary": "Comparison uses fewer than 10 seeds and should only be treated as a smoke check.",
+            }
+        )
+    if summary["average_kills"] <= 1.0 and summary["win_rate"] >= 1.0:
+        findings.append(
+            {
+                "id": "possible_passive_survival_policy",
+                "severity": "watch",
+                "summary": "Policy can finish the short evaluation with very low kills; inspect whether reward design overvalues passive survival.",
+            }
+        )
+    distribution = summary.get("action_distribution", {})
+    dominant = max(distribution.items(), key=lambda item: item[1]["ratio"], default=None)
+    if dominant is not None and dominant[1]["ratio"] >= 0.75:
+        findings.append(
+            {
+                "id": "dominant_action_bias",
+                "severity": "watch",
+                "summary": f"Action {dominant[0]} accounts for {dominant[1]['ratio']:.2%} of policy steps in this smoke.",
+            }
+        )
+    rule_bots = rule_matrix.get("bots", [])
+    if rule_bots:
+        best_rule_kills = max(bot["average_kills"] for bot in rule_bots)
+        if summary["average_kills"] < best_rule_kills * 0.5:
+            findings.append(
+                {
+                    "id": "low_kill_output_vs_rule_bots",
+                    "severity": "watch",
+                    "summary": "Policy average kills are less than half of the strongest compared rule Bot in the same smoke window.",
+                }
+            )
+    return findings
 
 
 def known_exploits_from_evaluation(evaluation):
@@ -306,6 +494,12 @@ def main():
     parser.add_argument("--timesteps", type=int, default=None)
     parser.add_argument("--eval-episodes", type=int, default=None)
     parser.add_argument("--eval-seconds", type=float, default=None)
+    parser.add_argument("--seed-start", type=int, default=None)
+    parser.add_argument("--map-id", default=None)
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--evaluate-model", action="store_true")
+    parser.add_argument("--compare-rule-bots", action="store_true")
+    parser.add_argument("--rule-bots", default="random,kite,tank")
     parser.add_argument("--report", default=None)
     parser.add_argument("--copy-template", default=None)
     args = parser.parse_args()
@@ -324,6 +518,37 @@ def main():
 
     if args.dry_run:
         write_report(args.report, dry_run(config, args.algorithm, args.steps))
+        return
+
+    if args.evaluate_model:
+        write_report(
+            args.report,
+            evaluate_saved_policy(
+                config,
+                args.algorithm,
+                model_path=Path(args.model) if args.model else None,
+                eval_episodes=args.eval_episodes,
+                eval_seconds=args.eval_seconds,
+                seed_start=args.seed_start,
+                map_id=args.map_id,
+            ),
+        )
+        return
+
+    if args.compare_rule_bots:
+        write_report(
+            args.report,
+            compare_policy_to_rule_bots(
+                config,
+                args.algorithm,
+                model_path=Path(args.model) if args.model else None,
+                eval_episodes=args.eval_episodes,
+                eval_seconds=args.eval_seconds,
+                seed_start=args.seed_start,
+                map_id=args.map_id,
+                rule_bots=parse_rule_bots(args.rule_bots),
+            ),
+        )
         return
 
     write_report(
