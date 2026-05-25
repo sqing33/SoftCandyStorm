@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_008",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "training=12345; eval=30000-30002",
+  "bot": "PPO policy",
+  "time_seconds": 60.0,
+  "symptom": "使用 6 张 base_demo 地图 random 训练 PPO 10000 requested timesteps，并设置 ent_coef=0.02 后，训练后默认确定性评估仍出现动作 5 占 100.00%、归一化动作熵 0.0 的单动作塌缩；gate 为 trained_needs_action_bias_repair。",
+  "root_cause": "当前 entropy 系数覆盖入口已生效，但 ent_coef=0.02 不足以抵消多地图 PPO 在确定性评估中的单动作 argmax；短评估窗口和现有 reward/action_repeat 惩罚仍允许固定方向移动取得 duration_reached victory。",
+  "fix": "后续需要尝试更高 entropy 系数，或增强 action_repeat / 边界停留惩罚，并补充非确定性评估或 policy probability 诊断；在修复前不得将该模型用于规则 Bot 对比、跨地图压力测试或内容门禁判断。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_multimap_ent_coef_001/summary.md。修复后需先通过训练后动作分布 gate：最大动作占比低于 75%、归一化动作熵高于 0.25，再运行 6 地图 10 seed / 300 秒对比。"
+}
