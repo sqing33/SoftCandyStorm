@@ -297,6 +297,10 @@
     {
       "id": "cracked_star_jar_balance_repair",
       "summary": "修复裂星糖罐最终图偏易问题：裂星核心提高预算内 HP、延后高压阶段、补充阶段风暴伤害语义并提高 300 秒后怪潮压力，同时让规则 Bot 在最终图使用专属风险策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
+    },
+    {
+      "id": "rl_dqn_training_smoke",
+      "summary": "使用 uv 临时依赖环境完成最小 DQN 训练冒烟，生成 SB3 模型 zip、metadata、训练报告、评估报告和已知 exploit 记录；Gate 结论为 trained_needs_rule_bot_comparison"
     }
   ],
   "current_findings": [
@@ -411,9 +415,9 @@
       "report": "harness/reports/2026-05-25_runtime_simulation_speed_smoke_001/summary.md"
     },
     {
-      "id": "rl_training_not_started",
-      "summary": "RL 训练配置、dry-run 和训练后评估输出已准备完成，但系统 Python 仍缺少 `gymnasium`、`numpy`、`stable_baselines3`；一次 `uv` 临时 SB3/Torch 环境尝试因下载耗时过长中止，尚未产生真实模型。",
-      "report": "harness/reports/2026-05-25_rl_training_eval_path_001/summary.md"
+      "id": "rl_dqn_training_smoke_needs_comparison",
+      "summary": "最小 DQN 训练冒烟已在 uv 临时依赖环境中产出模型、metadata、评估报告和 known exploit 记录；评估仅为 5 秒 2 局，不能证明策略质量或游戏平衡，下一步需要与规则 Bot 基线做同 seed / 同 map 对比。",
+      "report": "harness/reports/2026-05-26_rl_dqn_training_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -422,8 +426,12 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "rl_model_training_smoke",
-      "summary": "安装 Gymnasium、NumPy 和 Stable-Baselines3 后，运行最小 DQN 训练并保存模型、metadata、评估报告和已知 exploit 记录"
+      "id": "rl_policy_rule_bot_comparison",
+      "summary": "将 DQN smoke policy 与规则 Bot 基线放到同 seed、同 map、同 duration 的最小矩阵中对比，记录 survival、kills、damage_taken、action 分布和 exploit 风险"
+    },
+    {
+      "id": "rl_ppo_training_smoke",
+      "summary": "使用 uv 临时依赖环境运行最小 PPO 训练冒烟，验证第二种 SB3 算法也能保存模型、metadata、评估报告和已知 exploit 记录"
     }
   ]
 }

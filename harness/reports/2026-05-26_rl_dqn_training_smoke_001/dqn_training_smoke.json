@@ -1,0 +1,37 @@
+{
+  "status": "trained",
+  "algorithm": "dqn",
+  "model_path": "python/train/models/dqn_phase1_movement_survival.zip",
+  "metadata_path": "python/train/models/model_metadata.json",
+  "evaluation_path": "harness/reports/local_rl_training/dqn_evaluation_report.json",
+  "known_exploits_path": "harness/reports/local_rl_training/dqn_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true
+  },
+  "training": {
+    "total_timesteps": 128,
+    "seed": 12345,
+    "seconds": 180.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "started_at": "2026-05-25T18:25:55.043108+00:00",
+    "completed_at": "2026-05-25T18:25:57.974812+00:00"
+  },
+  "evaluation": {
+    "episodes": 2,
+    "win_rate": 1.0,
+    "average_survival_seconds": 5.0333,
+    "average_level": 1.0,
+    "average_kills": 1.5,
+    "average_reward": 5.1453,
+    "damage_taken_average": 0.0
+  },
+  "known_exploits": [],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_rule_bot_comparison"
+}
