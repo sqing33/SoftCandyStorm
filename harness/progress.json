@@ -85,19 +85,23 @@
     {
       "id": "asset_candidate_second_pass",
       "summary": "使用 mmx 生成第二批单体素材候选，覆盖玩家、普通软糖怪、XP 糖晶、彩虹弹效果和暴走搅糖机 Boss，并完成抠图、预览和审查；结论为 repair，彩虹弹因水印和身份偏差需重生成"
+    },
+    {
+      "id": "asset_projectile_retry_candidates",
+      "summary": "使用 mmx 重生成彩虹糖弹候选，完成抠图、64px/32px 预览和审查；v003_002 身份最稳定但仍需人工清理阴影、星光和透明边缘"
     }
   ],
   "current_findings": [
     {
       "id": "asset_generation_background_noncompliance",
-      "summary": "第二批 mmx 单体图仍未稳定遵守 #00ff00 纯色背景约束，多数输出为白底或浅色底；自动抠图后仍需人工清理白边、外发光、阴影和水印风险",
-      "report": "asset/generated_candidates/2026-05-25_mmx_second_pass/metadata/review_2026-05-25.md"
+      "summary": "mmx 单体图仍未稳定遵守 #00ff00 纯色背景约束；彩虹糖弹重生成已移除明显水印和火箭化身份问题，但仍需人工清理阴影、星光残留、外发光和透明边缘",
+      "report": "asset/generated_candidates/2026-05-25_mmx_projectile_retry/metadata/review_2026-05-25.md"
     }
   ],
   "next_recommended": [
     {
       "id": "asset_candidate_cleanup_or_regen",
-      "summary": "对第二批 repair 候选做边缘清理，重新生成彩虹糖弹，并按 Runtime 视角要求决定是否重生成玩家和 Boss 的严格俯视版本"
+      "summary": "对第二批 repair 候选和彩虹糖弹 v003_002 做边缘清理，输出 32px runtime 规格预览，并按 Runtime 视角要求决定是否重生成玩家和 Boss 的严格俯视版本"
     },
     {
       "id": "expanded_bot_matrix_validation",

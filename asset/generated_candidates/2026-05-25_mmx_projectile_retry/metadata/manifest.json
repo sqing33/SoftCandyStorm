@@ -1,0 +1,102 @@
+{
+  "batch_id": "2026-05-25_mmx_projectile_retry",
+  "generated_at": "2026-05-25",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_method": "api-key",
+    "source": "local configured mmx credentials"
+  },
+  "purpose": "重新生成彩虹糖弹候选，修复第二批单体素材中的水印痕迹、火箭化轮廓和背景不合规问题。",
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "人工审查",
+      "选择 v003_001 或 v003_002 作为后续清理基底",
+      "透明边缘、阴影和星光残留清理",
+      "32px 投射物规格复核",
+      "正式接入前再次确认"
+    ]
+  },
+  "generation_prompt": {
+    "positive": "Top-down cute projectile sprite for a candy roguelite, single round rainbow candy bullet, compact candy sphere, thick dark high contrast outline, readable at 24-32px, bright rainbow candy stripes, isolated centered single projectile only, perfectly flat solid #00ff00 chroma-key background, no shadow crossing the sprite, no text, no label, no watermark, no rocket shape, no weapon handle, no character, no extra objects.",
+    "negative": "no text, no watermark, no logo, no rocket, no realistic weapon, no busy background, no dark sci-fi, no horror, no thin fragile details"
+  },
+  "postprocess": {
+    "script": "tools/asset_postprocess.py",
+    "commands": [
+      "python3 tools/asset_postprocess.py key-singles asset/generated_candidates/2026-05-25_mmx_projectile_retry/images/projectile_rainbow_candy_bullet_v003_001.jpg asset/generated_candidates/2026-05-25_mmx_projectile_retry/images/projectile_rainbow_candy_bullet_v003_002.jpg --out-dir asset/generated_candidates/2026-05-25_mmx_projectile_retry/processed/projectile_v003 --background auto --threshold 42 --padding 8 --manifest asset/generated_candidates/2026-05-25_mmx_projectile_retry/metadata/postprocess_projectile_v003.json",
+      "python3 tools/asset_postprocess.py make-previews asset/generated_candidates/2026-05-25_mmx_projectile_retry/processed/projectile_v003/projectile_rainbow_candy_bullet_v003_001.png asset/generated_candidates/2026-05-25_mmx_projectile_retry/processed/projectile_v003/projectile_rainbow_candy_bullet_v003_002.png --out-dir asset/generated_candidates/2026-05-25_mmx_projectile_retry/review_previews/projectile_v003 --canvas-size 128 --preview-sizes 64,32 --contact-cols 2 --manifest asset/generated_candidates/2026-05-25_mmx_projectile_retry/metadata/preview_projectile_v003.json"
+    ]
+  },
+  "assets": [
+    {
+      "id": "projectile_rainbow_candy_bullet_v003_001",
+      "type": "image",
+      "source_path": "images/projectile_rainbow_candy_bullet_v003_001.jpg",
+      "processed_path": "processed/projectile_v003/projectile_rainbow_candy_bullet_v003_001.png",
+      "preview_paths": [
+        "review_previews/projectile_v003/preview_64/projectile_rainbow_candy_bullet_v003_001_preview_64.png",
+        "review_previews/projectile_v003/preview_32/projectile_rainbow_candy_bullet_v003_001_preview_32.png"
+      ],
+      "format": {
+        "source": "jpg",
+        "processed": "png"
+      },
+      "source_dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "processed_dimensions": {
+        "width": 773,
+        "height": 608
+      },
+      "qa_status": "repair",
+      "qa_notes": [
+        "没有观察到明显文字或水印，主题比 v002 更接近彩虹糖弹。",
+        "带黄色爆闪和尾迹，适合飞行中投射物或 muzzle/impact 变体。",
+        "32px 下主体偏小，尾迹会占据较大轮廓，需要人工裁剪或拆成弹体与特效两层。"
+      ]
+    },
+    {
+      "id": "projectile_rainbow_candy_bullet_v003_002",
+      "type": "image",
+      "source_path": "images/projectile_rainbow_candy_bullet_v003_002.jpg",
+      "processed_path": "processed/projectile_v003/projectile_rainbow_candy_bullet_v003_002.png",
+      "preview_paths": [
+        "review_previews/projectile_v003/preview_64/projectile_rainbow_candy_bullet_v003_002_preview_64.png",
+        "review_previews/projectile_v003/preview_32/projectile_rainbow_candy_bullet_v003_002_preview_32.png"
+      ],
+      "format": {
+        "source": "jpg",
+        "processed": "png"
+      },
+      "source_dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "processed_dimensions": {
+        "width": 382,
+        "height": 295
+      },
+      "qa_status": "repair_preferred",
+      "qa_notes": [
+        "圆形彩虹糖球身份清楚，64px 和 32px 下可读性最好。",
+        "背景更接近绿幕，自动抠图结果比第二批彩虹弹稳定。",
+        "仍有右下阴影和左侧星光残留，正式接入前需要清理边缘并输出 32px 透明投射物规格。"
+      ]
+    }
+  ],
+  "batch_qa": {
+    "gate_result": "repair",
+    "preferred_candidate": "projectile_rainbow_candy_bullet_v003_002",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次解决了 v002 的火箭化轮廓和水印风险，但仍不能直接接入正式 Runtime。",
+      "建议以 v003_002 作为静态彩虹糖弹基底，v003_001 仅作为带尾迹效果参考。",
+      "后续需要清理阴影、星光残留和透明边缘，再生成最终 32px projectile preview。"
+    ]
+  }
+}
