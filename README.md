@@ -38,6 +38,12 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 `simulate-candidates` 会对 `validated_candidates` 执行 Bot 矩阵，通过后复制到 `harness/simulated_candidates`，未通过则复制到 `harness/repair_queue`。
 `game_runtime` 是最小 Bevy 可视化客户端：读取键盘输入，调用同一个 GameCore，再根据 snapshot/events 更新画面、HUD、事件反馈和占位音效。Runtime 操作：WASD/方向键移动，1/2/3 选择升级，P 暂停，R 重开。当前音效是运行时生成的短 WAV 占位资源，用于验证事件到表现层的链路；正式素材仍需走候选池、记录 prompt 和人工确认。
 
+素材候选后处理入口：
+
+```bash
+python3 tools/asset_postprocess.py extract-sprites asset/generated_candidates/2026-05-25_mmx_first_pass/images/runtime_spritesheet_v001_001.jpg --grid 5x5 --out-dir asset/generated_candidates/2026-05-25_mmx_first_pass/processed/runtime_spritesheet_v001 --prefix runtime_sprite --manifest asset/generated_candidates/2026-05-25_mmx_first_pass/metadata/postprocess_runtime_spritesheet_v001.json
+```
+
 常用检查：
 
 ```bash
