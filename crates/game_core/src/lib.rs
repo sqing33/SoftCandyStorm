@@ -11,8 +11,8 @@ pub use meta::{
 };
 
 use content::{
-    BossDefinition, CharacterDefinition, EnemyDefinition, EnemyStatsDefinition, MapDefinition,
-    WaveDefinition, WaveSegmentDefinition, WeaponDefinition,
+    BossDefinition, CharacterDefinition, EnemyDefinition, EnemyStatsDefinition,
+    EvolutionDefinition, MapDefinition, WaveDefinition, WaveSegmentDefinition, WeaponDefinition,
 };
 use rng::RunRng;
 use std::cmp::Ordering;
@@ -339,11 +339,13 @@ pub struct GameCore {
     player: PlayerState,
     weapons: Vec<WeaponState>,
     passives: Vec<PassiveState>,
+    evolutions: Vec<EvolutionState>,
     enemies: Vec<Enemy>,
     projectiles: Vec<Projectile>,
     pickups: Vec<Pickup>,
     spawn_timer: f32,
     boss_spawned: bool,
+    boss_chests_available: u32,
     pending_upgrade_options: Vec<UpgradeOffer>,
     metrics: RunMetrics,
     terminal: Option<TerminalState>,
@@ -407,11 +409,13 @@ impl GameCore {
             next_entity_id: 1,
             weapons,
             passives: Vec::new(),
+            evolutions: Vec::new(),
             enemies: Vec::new(),
             projectiles: Vec::new(),
             pickups: Vec::new(),
             spawn_timer: 0.0,
             boss_spawned: false,
+            boss_chests_available: 0,
             pending_upgrade_options: Vec::new(),
             metrics: RunMetrics {
                 seed,
@@ -791,6 +795,9 @@ impl GameCore {
 
         for enemy in killed {
             self.metrics.kills += 1;
+            if enemy.is_boss {
+                self.boss_chests_available = self.boss_chests_available.saturating_add(1);
+            }
             events.push(GameEvent::EnemyKilled {
                 entity_id: enemy.entity_id,
                 enemy_id: enemy.enemy_id.clone(),
@@ -808,6 +815,20 @@ impl GameCore {
                 value: pickup.value,
             });
             self.pickups.push(pickup);
+        }
+
+        if self.pending_upgrade_options.is_empty() {
+            let evolution_options = self.generate_evolution_options();
+            if !evolution_options.is_empty() {
+                let option_ids = evolution_options
+                    .iter()
+                    .map(|option| option.snapshot.id.clone())
+                    .collect::<Vec<_>>();
+                self.pending_upgrade_options = evolution_options;
+                events.push(GameEvent::UpgradeOffered {
+                    options: option_ids,
+                });
+            }
         }
     }
 
@@ -971,6 +992,27 @@ impl GameCore {
                     self.weapons.push(WeaponState::from_definition(definition));
                 }
             }
+            UpgradeEffect::Evolution { evolution_id } => {
+                if let Some(evolution) = self.content.evolutions.get(&evolution_id).cloned() {
+                    if let Some(weapon) = self
+                        .weapons
+                        .iter_mut()
+                        .find(|weapon| weapon.id == evolution.replaces_weapon)
+                    {
+                        *weapon = WeaponState::from_evolution_definition(&evolution);
+                    } else {
+                        self.weapons
+                            .push(WeaponState::from_evolution_definition(&evolution));
+                    }
+                    if evolution.requirements.trigger == "boss_chest" {
+                        self.boss_chests_available = self.boss_chests_available.saturating_sub(1);
+                    }
+                    self.evolutions.push(EvolutionState {
+                        id: evolution.id.clone(),
+                        level: 1,
+                    });
+                }
+            }
             UpgradeEffect::Passive { passive_id } => {
                 self.apply_passive(&passive_id);
             }
@@ -986,6 +1028,11 @@ impl GameCore {
     }
 
     fn generate_upgrade_options(&mut self) -> Vec<UpgradeOffer> {
+        let evolution_candidates = self.generate_evolution_options();
+        if !evolution_candidates.is_empty() {
+            return evolution_candidates.into_iter().take(3).collect();
+        }
+
         let mut candidates = Vec::new();
 
         for weapon in self
@@ -1057,6 +1104,51 @@ impl GameCore {
         let offset = self.rng.range_usize(candidates.len());
         candidates.rotate_left(offset);
         candidates.into_iter().take(3).collect()
+    }
+
+    fn generate_evolution_options(&self) -> Vec<UpgradeOffer> {
+        self.content
+            .evolutions
+            .values()
+            .filter(|evolution| self.can_offer_evolution(evolution))
+            .map(|evolution| UpgradeOffer {
+                snapshot: UpgradeOptionSnapshot {
+                    id: evolution.id.clone(),
+                    name: evolution.name.clone(),
+                    tags: evolution.tags.clone(),
+                    description: evolution.description.clone(),
+                },
+                effect: UpgradeEffect::Evolution {
+                    evolution_id: evolution.id.clone(),
+                },
+            })
+            .collect()
+    }
+
+    fn can_offer_evolution(&self, evolution: &EvolutionDefinition) -> bool {
+        if self.evolutions.iter().any(|state| state.id == evolution.id) {
+            return false;
+        }
+        let weapon_ready = self.weapons.iter().any(|weapon| {
+            weapon.id == evolution.requirements.weapon.id
+                && weapon.level >= evolution.requirements.weapon.min_level
+        });
+        if !weapon_ready {
+            return false;
+        }
+        let passive_ready = match evolution.requirements.passive.as_ref() {
+            Some(requirement) => self.passives.iter().any(|passive| {
+                passive.id == requirement.id && passive.level >= requirement.min_level
+            }),
+            None => true,
+        };
+        if !passive_ready {
+            return false;
+        }
+        match evolution.requirements.trigger.as_str() {
+            "boss_chest" => self.boss_chests_available > 0,
+            _ => true,
+        }
     }
 
     fn add_or_level_passive(&mut self, id: &str, max_level: u32) {
@@ -1255,7 +1347,14 @@ impl GameCore {
                     level: passive.level,
                 })
                 .collect(),
-            evolutions: Vec::new(),
+            evolutions: self
+                .evolutions
+                .iter()
+                .map(|evolution| BuildItemSnapshot {
+                    id: evolution.id.clone(),
+                    level: evolution.level,
+                })
+                .collect(),
             tags,
             open_evolution_paths: self.open_evolution_paths(),
         }
@@ -1266,6 +1365,9 @@ impl GameCore {
             .evolutions
             .values()
             .filter(|evolution| {
+                if self.evolutions.iter().any(|state| state.id == evolution.id) {
+                    return false;
+                }
                 let weapon_seen = self
                     .weapons
                     .iter()
@@ -1376,6 +1478,30 @@ impl WeaponState {
         }
     }
 
+    fn from_evolution_definition(definition: &EvolutionDefinition) -> Self {
+        let base_stats = &definition.weapon_definition.base_stats;
+        Self {
+            id: definition.id.clone(),
+            level: 1,
+            max_level: 1,
+            damage: base_stats.damage,
+            cooldown: base_stats.cooldown_ms / 1000.0,
+            cooldown_remaining: 0.2,
+            projectile_speed: base_stats.projectile_speed.unwrap_or(520.0),
+            range: definition.weapon_definition.targeting.range,
+            targeting_mode: definition.weapon_definition.targeting.mode.clone(),
+            radius: base_stats.area_radius,
+            pierce: base_stats.pierce.unwrap_or(1),
+            tags: definition.tags.clone(),
+            projectile_count_base: base_stats.projectile_count,
+            projectile_count_bonus_levels: Vec::new(),
+            damage_per_level: 0.0,
+            cooldown_multiplier_per_level: 1.0,
+            range_per_level: 0.0,
+            area_per_level: 0.0,
+        }
+    }
+
     fn projectile_count(&self) -> usize {
         self.projectile_count_base as usize
             + self
@@ -1391,6 +1517,12 @@ struct PassiveState {
     id: String,
     level: u32,
     max_level: u32,
+}
+
+#[derive(Debug, Clone)]
+struct EvolutionState {
+    id: String,
+    level: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -1559,6 +1691,7 @@ impl From<&UpgradeOffer> for UpgradeOptionSnapshot {
 enum UpgradeEffect {
     WeaponLevel { weapon_id: String },
     NewWeapon { weapon_id: String },
+    Evolution { evolution_id: String },
     Passive { passive_id: String },
 }
 
@@ -1774,5 +1907,39 @@ mod tests {
             .weapons
             .iter()
             .any(|weapon| weapon.id == "candy-crystal-lance"));
+    }
+
+    #[test]
+    fn boss_chest_evolution_replaces_required_weapon() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.weapons[0].level = 5;
+        core.passives.push(PassiveState {
+            id: "candy-crystal-lens".to_string(),
+            level: 3,
+            max_level: 5,
+        });
+        core.boss_chests_available = 1;
+
+        let options = core.generate_evolution_options();
+        assert_eq!(options[0].snapshot.id, "rainbow-candy-meteor");
+        core.pending_upgrade_options = options;
+        core.apply_upgrade_choice(0, &mut Vec::new(), &mut RewardHint::default());
+
+        let snapshot = core.snapshot();
+        assert!(snapshot
+            .build
+            .evolutions
+            .iter()
+            .any(|evolution| evolution.id == "rainbow-candy-meteor"));
+        assert!(snapshot
+            .build
+            .weapons
+            .iter()
+            .any(|weapon| weapon.id == "rainbow-candy-meteor"));
+        assert!(!snapshot
+            .build
+            .open_evolution_paths
+            .iter()
+            .any(|id| id == "rainbow-candy-meteor"));
     }
 }

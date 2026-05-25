@@ -209,12 +209,16 @@
     {
       "id": "upgrade_new_weapon_options",
       "summary": "GameCore 升级池支持授予内容包中的新武器，武器目标选择支持 boss_priority、highest_health_enemy、random_enemy、random_direction、movement_direction 和地面/自身附近目标；base_demo 增加糖晶长枪和汽水喷泉配置"
+    },
+    {
+      "id": "boss_chest_evolution_flow",
+      "summary": "GameCore 增加最小 Boss 宝箱进化流程：Boss 击杀后提供进化机会，满足武器和被动等级要求时可选择进化，进化会替换原武器并写入 BuildSnapshot.evolutions"
     }
   ],
   "current_findings": [
     {
       "id": "evolution_event_runtime_scope",
-      "summary": "evolutions/events 现已进入内容 Schema 加载、引用校验、object_count 与 BuildSnapshot 可见范围；本次尚未实现进化触发、事件触发和对应战斗效果，后续应单独作为 GameCore 玩法功能推进。",
+      "summary": "evolutions/events 现已进入内容 Schema 加载、引用校验、object_count 与 BuildSnapshot 可见范围；Boss 宝箱进化链路已补上，但 events 的实际触发和效果仍未实现，后续应单独作为 GameCore 玩法功能推进。",
       "report": "content/base_demo/evolutions/rainbow-candy-meteor.json"
     },
     {
