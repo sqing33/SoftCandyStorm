@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_017",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "30000-30009",
+  "bot": "PPO observation v2 high-pressure safety_delta train300 50k policy, stochastic action selection",
+  "time_seconds": 300.0,
+  "symptom": "同一 safety_delta PPO 模型使用 seeded stochastic action selection 后动作分布恢复健康，3 张 high-pressure 地图归一化动作熵均约 0.92，但 10 seed / 300 秒对比全部 0% 胜率：soda-creek 平均存活 70.0718 秒，caramel-workshop 平均存活 188.7368 秒，cracked-star-jar 平均存活 156.9941 秒。",
+  "root_cause": "Stochastic 选择能避免 deterministic argmax 的单动作塌缩，但当前 reward/observation/training curriculum 仍没有让 policy 学到 300 秒高压地图所需的续航、Boss/hazard 规避和安全拾取节奏。Safety_delta 主要奖励风险下降的短期变化，无法单独解决长局战略和地图泛化。",
+  "fix": "不要把该模型推进为 RL 测试 Bot。下一步应从训练目标和课程设计修复：加入阶段化 curriculum、显式拾取/续航目标、危险区与 Boss 距离前瞻，或先训练 imitation/behavior cloning 规则 Bot 轨迹再 PPO 微调；同时保留 deterministic 与 stochastic 双报告，避免只看动作熵。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_safety_delta_train300_50k_stochastic_comparison_001/summary.md。修复后必须至少超过 fail_014 的无 safety_delta high-pressure train300 50k 基线：soda-creek 10% 胜率且平均 217.3437 秒，caramel-workshop 平均 209.3660 秒，cracked-star-jar 10% 胜率且平均 238.4666 秒。"
+}
