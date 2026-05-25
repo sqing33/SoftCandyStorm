@@ -101,6 +101,7 @@ def train(
     eval_episodes=None,
     eval_seconds=None,
     model_out=None,
+    report_dir_out=None,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -110,7 +111,11 @@ def train(
     train_steps = total_timesteps or selected["total_timesteps"]
     env = build_env(config)
     model_dir = Path(config["outputs"]["model_dir"])
-    report_dir = Path(config["outputs"]["report_dir"])
+    report_dir = (
+        Path(report_dir_out)
+        if report_dir_out is not None
+        else Path(config["outputs"]["report_dir"])
+    )
     model_dir.mkdir(parents=True, exist_ok=True)
     report_dir.mkdir(parents=True, exist_ok=True)
 
@@ -611,6 +616,7 @@ def main():
     parser.add_argument("--map-id", default=None)
     parser.add_argument("--model", default=None)
     parser.add_argument("--model-out", default=None)
+    parser.add_argument("--report-dir", default=None)
     parser.add_argument("--evaluate-model", action="store_true")
     parser.add_argument("--compare-rule-bots", action="store_true")
     parser.add_argument("--rule-bots", default="random,kite,tank")
@@ -674,6 +680,7 @@ def main():
             eval_episodes=args.eval_episodes,
             eval_seconds=args.eval_seconds,
             model_out=args.model_out,
+            report_dir_out=args.report_dir,
         ),
     )
 
