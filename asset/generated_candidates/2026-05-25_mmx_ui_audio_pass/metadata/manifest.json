@@ -1,0 +1,101 @@
+{
+  "batch_id": "2026-05-25_mmx_ui_audio_pass",
+  "generated_at": "2026-05-25",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_method": "api-key",
+    "source": "local configured mmx credentials"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "人工审查",
+      "小尺寸 UI 可读性复核",
+      "听感审查",
+      "响度统一",
+      "正式接入前再次确认"
+    ]
+  },
+  "commands": [
+    "mmx image generate --prompt <ui_upgrade_card_frame_v001 prompt> --aspect-ratio 1:1 --n 1 --out-dir asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/images --out-prefix ui_upgrade_card_frame_v001 --non-interactive --quiet --output json",
+    "mmx speech synthesize --text '甜度升级！选择新的糖果魔法吧！' --language zh --format mp3 --sample-rate 32000 --bitrate 128000 --channels 1 --out asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/audio/voice_level_up_prompt_v001.mp3 --non-interactive --quiet --output json",
+    "mmx music generate --prompt <jingle_run_settlement_v001 prompt> --instrumental --genre 'game soundtrack' --mood 'bright triumphant playful' --instruments 'toy bells, marimba, plucky synth, soft bubbly bass' --tempo fast --bpm 132 --use-case 'short victory jingle for cute candy roguelite run settlement' --extra 'no vocals, no lyrics, short 8-12 seconds, clean final cadence, not a full background song' --avoid 'dark horror, heavy metal, vocals, lyrics, cinematic dread' --format mp3 --sample-rate 44100 --bitrate 256000 --out asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/music/jingle_run_settlement_v001.mp3 --non-interactive --quiet --output json",
+    "python3 tools/asset_postprocess.py key-singles asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/images/ui_upgrade_card_frame_v001_001.jpg --out-dir asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/processed/ui_v001 --background auto --threshold 42 --padding 8 --manifest asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/metadata/postprocess_ui_v001.json",
+    "python3 tools/asset_postprocess.py make-previews asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/processed/ui_v001/ui_upgrade_card_frame_v001_001.png --out-dir asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/review_previews/ui_v001 --canvas-size 128 --preview-sizes 64,32 --contact-cols 1 --manifest asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/metadata/preview_ui_v001.json"
+  ],
+  "assets": [
+    {
+      "id": "ui_upgrade_card_frame_v001",
+      "type": "image",
+      "path": "images/ui_upgrade_card_frame_v001_001.jpg",
+      "processed_path": "processed/ui_v001/ui_upgrade_card_frame_v001_001.png",
+      "preview_paths": [
+        "review_previews/ui_v001/preview_64/ui_upgrade_card_frame_v001_001_preview_64.png",
+        "review_previews/ui_v001/preview_32/ui_upgrade_card_frame_v001_001_preview_32.png"
+      ],
+      "format": "jpg",
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "size": "152K",
+      "prompt": "Square game UI upgrade card frame for a cute candy roguelite, candy wrapper style, pastel cream base, blueberry blue rare border and tiny sugar crystal corners, empty center space for an icon and text added later, clean readable mobile-friendly design, high contrast outline, no actual text, no letters, no logo, no watermark, isolated on flat solid #00ff00 chroma-key background.",
+      "negative_prompt": "no actual text, no letters, no logo, no watermark, no busy background, no dark horror",
+      "qa_status": "repair_background",
+      "qa_notes": [
+        "用于升级三选一卡牌框候选，不含正式 UI 文案。",
+        "人工预览未观察到文字或水印。",
+        "未遵守 #00ff00 背景约束，实际为白底并带投影，需要抠图、清理阴影或重生成。",
+        "已生成透明 PNG 和 64/32px 棋盘格预览，接入前还需要复核移动端缩放下的边框可读性。"
+      ]
+    },
+    {
+      "id": "voice_level_up_prompt_v001",
+      "type": "speech",
+      "path": "audio/voice_level_up_prompt_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 3.703594,
+      "sample_rate_hz": 32000,
+      "channels": 1,
+      "bitrate": "128 kbps",
+      "size": "64K",
+      "text": "甜度升级！选择新的糖果魔法吧！",
+      "prompt": "Chinese prototype level-up voice prompt for a cute candy roguelite: 甜度升级！选择新的糖果魔法吧！",
+      "qa_status": "needs_review",
+      "qa_notes": [
+        "可作为升级暂停时的语音提示候选。",
+        "接入前需要人工听感审查、音量统一、触发频率限制和可关闭设置。"
+      ]
+    },
+    {
+      "id": "jingle_run_settlement_v001",
+      "type": "music",
+      "path": "music/jingle_run_settlement_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 65.027483,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "256 kbps",
+      "size": "2.0M",
+      "prompt": "Short bright victory and run-settlement jingle for a cute candy roguelite game, cheerful candy jar repaired feeling, toy bells, marimba, plucky synth sparkle, bubbly bass accent, clean loopless ending, designed as an 8 to 12 second reward sting after a run.",
+      "generation_options": {
+        "instrumental": true,
+        "genre": "game soundtrack",
+        "mood": "bright triumphant playful",
+        "instruments": "toy bells, marimba, plucky synth, soft bubbly bass",
+        "tempo": "fast",
+        "bpm": 132,
+        "use_case": "short victory jingle for cute candy roguelite run settlement",
+        "avoid": "dark horror, heavy metal, vocals, lyrics, cinematic dread"
+      },
+      "qa_status": "repair_trim",
+      "qa_notes": [
+        "生成结果约 65 秒，明显长于 8-12 秒目标。",
+        "仅可作为结算音乐素材来源候选，不可直接作为短 jingle 接入。",
+        "接入前需要人工听感审查、剪辑短版本、响度统一和结尾复核。"
+      ]
+    }
+  ]
+}
