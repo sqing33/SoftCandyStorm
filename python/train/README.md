@@ -67,6 +67,12 @@ Use `--train-seconds` to change training episode length without changing evaluat
 python3 python/train/train_sb3.py --algorithm ppo --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
 ```
 
+Use `--model-in <path>` to continue training from a saved SB3 model and write the continued policy to `--model-out <path>`. Warm-start runs load adjacent `*_metadata.json` when available so reports can preserve the source model parameters. Algorithm override flags such as `--ent-coef` are intentionally blocked with `--model-in` until the runner can safely update loaded SB3 schedules.
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --model-in python/train/models/ppo_phase1_observation_v2_high_pressure_train300_random_ent002_50000_eval60.zip --timesteps 20000 --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --model-out python/train/models/ppo_phase1_warm_start_example.zip
+```
+
 For PPO exploration experiments, use `--ent-coef <value>` to override the entropy coefficient without editing the shared config. Training metadata and reports record the final SB3 algorithm parameters.
 
 ```bash

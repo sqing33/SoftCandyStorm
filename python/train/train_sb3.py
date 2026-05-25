@@ -198,6 +198,7 @@ def train(
     train_map_preset=None,
     algorithm_overrides=None,
     eval_deterministic=True,
+    model_in=None,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -230,8 +231,31 @@ def train(
     started_at = datetime.now(timezone.utc).isoformat()
     model_path = Path(model_out) if model_out is not None else default_model_path(config, algorithm)
     model_path.parent.mkdir(parents=True, exist_ok=True)
+    warm_start_model = Path(model_in) if model_in is not None else None
+    if warm_start_model is not None and not warm_start_model.exists():
+        raise ValueError(f"--model-in does not exist: {warm_start_model}")
+    warm_start_metadata_path = None
+    warm_start_metadata = None
+    if warm_start_model is not None:
+        warm_start_metadata_path, warm_start_metadata = load_model_metadata(warm_start_model)
+    algorithm_parameters = (
+        warm_start_metadata.get("algorithm_parameters", kwargs)
+        if warm_start_metadata is not None
+        else kwargs
+    )
+    if warm_start_metadata is not None:
+        algorithm_parameters_source = "warm_start_metadata"
+    elif warm_start_model is not None:
+        algorithm_parameters_source = "config_fallback_missing_warm_start_metadata"
+    else:
+        algorithm_parameters_source = "config"
+
     try:
-        model = model_class(selected["policy"], env, verbose=1, **kwargs)
+        if warm_start_model is not None:
+            model = model_class.load(warm_start_model, env=env)
+            model.verbose = 1
+        else:
+            model = model_class(selected["policy"], env, verbose=1, **kwargs)
         model.learn(total_timesteps=train_steps)
         actual_timesteps = int(getattr(model, "num_timesteps", train_steps))
         completed_at = datetime.now(timezone.utc).isoformat()
@@ -267,10 +291,15 @@ def train(
         "content_dir": config["environment"]["content_dir"],
         "content_rules": "headless GameCore via game_harness gym-bridge",
         "reward_config": "prototype reward in game_harness gym_reward",
+        "warm_start_model": str(warm_start_model) if warm_start_model else None,
+        "warm_start_metadata_path": (
+            str(warm_start_metadata_path) if warm_start_metadata_path else None
+        ),
         "observation_version": config["environment"].get("observation_version", 2),
         "observation_len": config["environment"]["observation_len"],
         "training_seconds": effective_train_seconds,
-        "algorithm_parameters": kwargs,
+        "algorithm_parameters": algorithm_parameters,
+        "algorithm_parameters_source": algorithm_parameters_source,
         "evaluation_policy": evaluation["action_selection"],
         "started_at": started_at,
         "completed_at": completed_at,
@@ -308,7 +337,12 @@ def train(
             "map_preset": train_map_preset,
             "started_at": started_at,
             "completed_at": completed_at,
-            "algorithm_parameters": kwargs,
+            "algorithm_parameters": algorithm_parameters,
+            "algorithm_parameters_source": algorithm_parameters_source,
+            "warm_start_model": str(warm_start_model) if warm_start_model else None,
+            "warm_start_metadata_path": (
+                str(warm_start_metadata_path) if warm_start_metadata_path else None
+            ),
             "evaluation_policy": evaluation["action_selection"],
         },
         "evaluation": evaluation["summary"],
@@ -338,6 +372,17 @@ def metadata_path_for(config, algorithm, model_out=None):
         return model_path.with_name(f"{model_path.stem}_metadata.json")
     metadata_file = config["outputs"]["metadata_file"].format(algorithm=algorithm)
     return Path(config["outputs"]["model_dir"]) / metadata_file
+
+
+def metadata_path_for_model(model_path):
+    return model_path.with_name(f"{model_path.stem}_metadata.json")
+
+
+def load_model_metadata(model_path):
+    metadata_path = metadata_path_for_model(model_path)
+    if not metadata_path.exists():
+        return None, None
+    return metadata_path, json.loads(metadata_path.read_text(encoding="utf-8"))
 
 
 def evaluate_saved_policy(
@@ -1160,6 +1205,7 @@ def main():
     parser.add_argument("--seed-start", type=int, default=None)
     parser.add_argument("--map-id", default=None)
     parser.add_argument("--model", default=None)
+    parser.add_argument("--model-in", default=None)
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
     parser.add_argument(
@@ -1219,6 +1265,8 @@ def main():
         parser.error("--compare-map-preset requires --compare-rule-bots")
     if args.compare_map_preset is not None and args.map_id is not None:
         parser.error("--compare-map-preset cannot be used together with --map-id")
+    if args.model_in and algorithm_overrides:
+        parser.error("--model-in cannot be combined with algorithm override flags yet")
 
     if args.copy_template:
         write_report(args.report, copy_template(args.copy_template))
@@ -1311,6 +1359,7 @@ def main():
             train_map_preset=train_map_preset,
             algorithm_overrides=algorithm_overrides,
             eval_deterministic=not args.eval_stochastic,
+            model_in=args.model_in,
         ),
     )
 

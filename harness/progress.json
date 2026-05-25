@@ -449,6 +449,10 @@
     {
       "id": "rl_ppo_safety_delta_stochastic_gap",
       "summary": "Safety_delta PPO 使用 seeded stochastic 选择后动作分布健康，但 high-pressure 3 地图 10 seed / 300 秒仍全部 0% 胜率；平均存活 138.6009 秒，说明问题不只是 deterministic argmax"
+    },
+    {
+      "id": "rl_warm_start_training_available",
+      "summary": "SB3 训练入口增加 --model-in warm start 能力，可从已有模型继续训练并在 metadata/report 中记录源模型与源 metadata，为课程学习和失败策略修复实验提供基础入口"
     }
   ],
   "current_findings": [
@@ -706,6 +710,11 @@
       "id": "rl_ppo_safety_delta_stochastic_gap",
       "summary": "Safety_delta PPO 的 seeded stochastic 高压对比解决了动作熵，但没有解决长局生存：soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，需回到训练目标和 curriculum 修复。",
       "report": "harness/failed_cases/fail_20260526_017_ppo_safety_delta_stochastic_gap.json"
+    },
+    {
+      "id": "rl_warm_start_training_available",
+      "summary": "训练入口现在支持 --model-in 从既有 SB3 模型继续训练；warm-start 报告会记录源模型、源 metadata 和算法参数来源，避免继续训练实验丢失 provenance。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "next_recommended": [
@@ -715,7 +724,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "暂缓继续堆 PPO timesteps，优先设计课程学习或规则 Bot 轨迹蒸馏：先让 policy 学到高压地图中后期拾取、Boss/hazard 规避和续航，再重跑 deterministic 与 seeded stochastic 双报告"
+      "summary": "使用 --model-in 从 fail_014 前表现最好的 high-pressure train300 PPO 模型 warm start，先做小步继续训练验证是否能保留长局存活，再决定是否进入完整 curriculum/规则 Bot 轨迹蒸馏"
     }
   ]
 }

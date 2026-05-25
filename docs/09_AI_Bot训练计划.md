@@ -168,6 +168,7 @@ v2 已覆盖：
 - `--train-map-selection cycle|random`：控制多地图 reset 轮换方式。
 - `--train-map-preset all-base-demo|high-pressure|stable-open`：使用常见 `base_demo` 地图集合。
 - `--train-seconds`：覆盖训练 episode 时长，独立于 `--eval-seconds`。
+- `--model-in`：从已有 SB3 模型 warm start 继续训练，用于课程学习、失败策略修复和后续规则 Bot 轨迹蒸馏实验。
 
 其中 `high-pressure` 当前对应 `soda-creek`、`caramel-workshop`、`cracked-star-jar`，用于复查 observation v2 PPO 在 300 秒高压地图中的泛化失败。
 
