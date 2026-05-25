@@ -51,6 +51,15 @@ def algorithm_config(config, algorithm):
     return selected
 
 
+def algorithm_overrides_from_args(args):
+    overrides = {}
+    if args.ent_coef is not None:
+        if args.algorithm != "ppo":
+            raise ValueError("--ent-coef is only supported for --algorithm ppo")
+        overrides["ent_coef"] = args.ent_coef
+    return overrides
+
+
 def parse_map_list(value):
     if value is None:
         return None
@@ -123,6 +132,7 @@ def train(
     report_dir_out=None,
     train_maps=None,
     train_map_selection="cycle",
+    algorithm_overrides=None,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -142,7 +152,10 @@ def train(
 
     model_class = model_classes[algorithm]
     ignored_keys = {"enabled", "policy", "total_timesteps"}
-    kwargs = {key: value for key, value in selected.items() if key not in ignored_keys}
+    effective_config = {**selected, **(algorithm_overrides or {})}
+    kwargs = {
+        key: value for key, value in effective_config.items() if key not in ignored_keys
+    }
     started_at = datetime.now(timezone.utc).isoformat()
     model_path = Path(model_out) if model_out is not None else default_model_path(config, algorithm)
     model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -182,6 +195,7 @@ def train(
         "content_dir": config["environment"]["content_dir"],
         "content_rules": "headless GameCore via game_harness gym-bridge",
         "reward_config": "prototype reward in game_harness gym_reward",
+        "algorithm_parameters": kwargs,
         "started_at": started_at,
         "completed_at": completed_at,
         "evaluation_path": str(evaluation_path),
@@ -214,6 +228,7 @@ def train(
             "map_selection": train_map_selection if train_maps else "single",
             "started_at": started_at,
             "completed_at": completed_at,
+            "algorithm_parameters": kwargs,
         },
         "evaluation": evaluation["summary"],
         "known_exploits": known_exploit_notes["known_exploits"],
@@ -646,6 +661,12 @@ def main():
     parser.add_argument("--report-dir", default=None)
     parser.add_argument("--train-maps", default=None)
     parser.add_argument(
+        "--ent-coef",
+        type=float,
+        default=None,
+        help="Override PPO entropy coefficient for exploration experiments.",
+    )
+    parser.add_argument(
         "--train-map-selection",
         choices=["cycle", "random"],
         default="cycle",
@@ -659,6 +680,10 @@ def main():
 
     config = load_config(args.config)
     algorithm_config(config, args.algorithm)
+    try:
+        algorithm_overrides = algorithm_overrides_from_args(args)
+    except ValueError as exc:
+        parser.error(str(exc))
     train_maps = parse_map_list(args.train_maps)
 
     if args.copy_template:
@@ -717,6 +742,7 @@ def main():
             report_dir_out=args.report_dir,
             train_maps=train_maps,
             train_map_selection=args.train_map_selection,
+            algorithm_overrides=algorithm_overrides,
         ),
     )
 

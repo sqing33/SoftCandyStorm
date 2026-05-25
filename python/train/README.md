@@ -52,6 +52,12 @@ For multi-map training experiments, pass a comma-separated map list. `cycle` is 
 python3 python/train/train_sb3.py --algorithm ppo --train-maps frosting-grassland,soda-creek,caramel-workshop --train-map-selection cycle
 ```
 
+For PPO exploration experiments, use `--ent-coef <value>` to override the entropy coefficient without editing the shared config. Training metadata and reports record the final SB3 algorithm parameters.
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --ent-coef 0.02 --train-maps frosting-grassland,soda-creek,caramel-workshop --train-map-selection random
+```
+
 ## Policy vs Rule Bot Comparison
 
 Compare a saved SB3 policy against rule Bot baselines with the same map, seed range, and duration:
