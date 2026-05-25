@@ -216,6 +216,7 @@ struct RuntimeEventCounts {
     upgrade_offered: u32,
     upgrade_chosen: u32,
     player_damaged: u32,
+    content_event_triggered: u32,
     run_ended: u32,
 }
 
@@ -1061,6 +1062,7 @@ fn event_kind_for_events(events: &[GameEvent]) -> RuntimeEventKind {
             | GameEvent::UpgradeChosen { .. }
             | GameEvent::LevelUp { .. } => Some(RuntimeEventKind::Upgrade),
             GameEvent::XpCollected { .. } => Some(RuntimeEventKind::Pickup),
+            GameEvent::ContentEventTriggered { .. } => Some(RuntimeEventKind::System),
             GameEvent::WeaponFired { .. }
             | GameEvent::EnemyKilled { .. }
             | GameEvent::BossSpawned { .. } => Some(RuntimeEventKind::Combat),
@@ -1081,6 +1083,7 @@ fn sounds_for_events(events: &[GameEvent]) -> Vec<RuntimeSound> {
             | GameEvent::UpgradeChosen { .. }
             | GameEvent::LevelUp { .. } => Some(RuntimeSound::Upgrade),
             GameEvent::XpCollected { .. } => Some(RuntimeSound::Pickup),
+            GameEvent::ContentEventTriggered { .. } => Some(RuntimeSound::System),
             GameEvent::WeaponFired { .. } => Some(RuntimeSound::Fire),
             GameEvent::BossSpawned { .. } => Some(RuntimeSound::Terminal),
             GameEvent::EnemySpawned { .. }
@@ -1116,6 +1119,7 @@ fn describe_event(event: &GameEvent) -> Option<String> {
         GameEvent::UpgradeOffered { .. } => Some("upgrade offered".to_string()),
         GameEvent::UpgradeChosen { option_id } => Some(format!("upgrade {option_id}")),
         GameEvent::PlayerDamaged { amount } => Some(format!("damage {amount:.1}")),
+        GameEvent::ContentEventTriggered { event_id } => Some(format!("event {event_id}")),
         GameEvent::RunEnded { terminal } => Some(format!("ended {}", terminal.kind.as_str())),
         GameEvent::EnemyHit { .. } | GameEvent::XpDropped { .. } => None,
     }
@@ -1154,6 +1158,7 @@ fn effects_for_events(events: &[GameEvent], snapshot: &RunSnapshot) -> Vec<Runti
                 GameEvent::EnemySpawned { .. }
                 | GameEvent::WeaponFired { .. }
                 | GameEvent::EnemyKilled { .. }
+                | GameEvent::ContentEventTriggered { .. }
                 | GameEvent::LevelUp { .. }
                 | GameEvent::UpgradeOffered { .. }
                 | GameEvent::UpgradeChosen { .. }
@@ -1688,6 +1693,7 @@ impl RuntimeEventCounts {
                 GameEvent::UpgradeOffered { .. } => self.upgrade_offered += 1,
                 GameEvent::UpgradeChosen { .. } => self.upgrade_chosen += 1,
                 GameEvent::PlayerDamaged { .. } => self.player_damaged += 1,
+                GameEvent::ContentEventTriggered { .. } => self.content_event_triggered += 1,
                 GameEvent::RunEnded { .. } => self.run_ended += 1,
             }
         }
@@ -2031,11 +2037,15 @@ mod tests {
                 value: 3.0,
             },
             GameEvent::PlayerDamaged { amount: 2.0 },
+            GameEvent::ContentEventTriggered {
+                event_id: "rainbow-candy-rush".to_string(),
+            },
         ]);
 
         assert_eq!(counts.weapon_fired, 1);
         assert_eq!(counts.xp_collected, 1);
         assert_eq!(counts.player_damaged, 1);
+        assert_eq!(counts.content_event_triggered, 1);
     }
 
     #[test]
@@ -2142,6 +2152,12 @@ mod tests {
         assert_eq!(
             sounds_for_events(&events),
             [RuntimeSound::Fire, RuntimeSound::Damage]
+        );
+        assert_eq!(
+            event_kind_for_events(&[GameEvent::ContentEventTriggered {
+                event_id: "rainbow-candy-rush".to_string(),
+            }]),
+            RuntimeEventKind::System
         );
     }
 

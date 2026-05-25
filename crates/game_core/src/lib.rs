@@ -11,11 +11,11 @@ pub use meta::{
 };
 
 use content::{
-    BossDefinition, CharacterDefinition, EnemyDefinition, EnemyStatsDefinition,
+    BossDefinition, CharacterDefinition, EnemyDefinition, EnemyStatsDefinition, EventDefinition,
     EvolutionDefinition, MapDefinition, WaveDefinition, WaveSegmentDefinition, WeaponDefinition,
 };
 use rng::RunRng;
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::BTreeSet};
 
 const DEFAULT_TICK_RATE: u32 = 30;
 const PLAYER_RADIUS: f32 = 18.0;
@@ -153,6 +153,9 @@ pub enum GameEvent {
     },
     PlayerDamaged {
         amount: f32,
+    },
+    ContentEventTriggered {
+        event_id: String,
     },
     RunEnded {
         terminal: TerminalState,
@@ -340,6 +343,8 @@ pub struct GameCore {
     weapons: Vec<WeaponState>,
     passives: Vec<PassiveState>,
     evolutions: Vec<EvolutionState>,
+    evaluated_content_events: BTreeSet<String>,
+    active_event_effects: Vec<ActiveEventEffect>,
     enemies: Vec<Enemy>,
     projectiles: Vec<Projectile>,
     pickups: Vec<Pickup>,
@@ -410,6 +415,8 @@ impl GameCore {
             weapons,
             passives: Vec::new(),
             evolutions: Vec::new(),
+            evaluated_content_events: BTreeSet::new(),
+            active_event_effects: Vec::new(),
             enemies: Vec::new(),
             projectiles: Vec::new(),
             pickups: Vec::new(),
@@ -485,6 +492,7 @@ impl GameCore {
         self.time_seconds += dt_seconds;
         reward_hint.survival_delta = dt_seconds;
 
+        self.update_content_events(dt_seconds, &mut events);
         self.update_player_movement(action.movement, dt_seconds);
         self.update_wave_spawns(dt_seconds, &mut events);
         self.update_enemy_behavior(dt_seconds);
@@ -628,6 +636,85 @@ impl GameCore {
             .clamp(-self.map.height * 0.5, self.map.height * 0.5);
     }
 
+    fn update_content_events(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
+        for effect in &mut self.active_event_effects {
+            effect.remaining_seconds -= dt;
+        }
+        self.active_event_effects
+            .retain(|effect| effect.remaining_seconds > 0.0);
+
+        let event_ids = self.content.events.keys().cloned().collect::<Vec<_>>();
+        for event_id in event_ids {
+            if self.evaluated_content_events.contains(&event_id) {
+                continue;
+            }
+            let Some(event) = self.content.events.get(&event_id).cloned() else {
+                continue;
+            };
+            if !self.content_event_window_is_open(&event) {
+                continue;
+            }
+
+            self.evaluated_content_events.insert(event_id);
+            let chance = event.trigger.chance.unwrap_or(1.0).clamp(0.0, 1.0);
+            if self.rng.next_f32() <= chance {
+                self.trigger_content_event(&event, events);
+            }
+        }
+    }
+
+    fn content_event_window_is_open(&self, event: &EventDefinition) -> bool {
+        match event.trigger.trigger_type.as_str() {
+            "time_window" => {
+                let start_second = event.trigger.start_second.unwrap_or(0.0);
+                let end_second = event
+                    .trigger
+                    .end_second
+                    .unwrap_or(self.config.duration_seconds);
+                self.time_seconds >= start_second && self.time_seconds <= end_second
+            }
+            "map_entry" => self.time_seconds <= self.fixed_dt().seconds() * 1.5,
+            _ => false,
+        }
+    }
+
+    fn trigger_content_event(&mut self, event: &EventDefinition, events: &mut Vec<GameEvent>) {
+        events.push(GameEvent::ContentEventTriggered {
+            event_id: event.id.clone(),
+        });
+
+        for effect in &event.effects {
+            match effect.effect_type.as_str() {
+                "heal" => {
+                    self.player.health =
+                        (self.player.health + effect.value).min(self.player.max_health);
+                }
+                "xp_multiplier"
+                | "spawn_rate_multiplier"
+                | "pickup_radius_multiplier"
+                | "damage_multiplier" => {
+                    let Some(duration_seconds) = effect.duration_seconds else {
+                        continue;
+                    };
+                    self.active_event_effects.push(ActiveEventEffect {
+                        effect_type: effect.effect_type.clone(),
+                        value: effect.value,
+                        remaining_seconds: duration_seconds,
+                    });
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn active_event_multiplier(&self, effect_type: &str) -> f32 {
+        self.active_event_effects
+            .iter()
+            .filter(|effect| effect.effect_type == effect_type)
+            .map(|effect| effect.value)
+            .fold(1.0, |current, value| current * value)
+    }
+
     fn update_wave_spawns(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
         let Some(wave) = self.content.waves.get(&self.wave_id).cloned() else {
             return;
@@ -662,7 +749,10 @@ impl GameCore {
             return;
         }
 
-        let spawn_interval = segment.spawn_interval_ms / 1000.0;
+        let spawn_interval = (segment.spawn_interval_ms / 1000.0)
+            / self
+                .active_event_multiplier("spawn_rate_multiplier")
+                .max(0.1);
 
         self.spawn_timer -= dt;
         if self.spawn_timer > 0.0 {
@@ -715,7 +805,9 @@ impl GameCore {
             let weapon_id = self.weapons[weapon_index].id.clone();
             let count = self.weapons[weapon_index].projectile_count();
             let projectile_speed = self.weapons[weapon_index].projectile_speed;
-            let damage = self.weapons[weapon_index].damage * self.player.damage_multiplier;
+            let damage = self.weapons[weapon_index].damage
+                * self.player.damage_multiplier
+                * self.active_event_multiplier("damage_multiplier");
             let radius =
                 self.weapons[weapon_index].radius * self.player.projectile_size_multiplier.max(0.1);
             let pierce = self.weapons[weapon_index].pierce;
@@ -862,9 +954,13 @@ impl GameCore {
 
     fn collect_pickups(&mut self, events: &mut Vec<GameEvent>, reward_hint: &mut RewardHint) {
         let mut collected = Vec::new();
+        let pickup_radius = self.player.pickup_radius
+            * self
+                .active_event_multiplier("pickup_radius_multiplier")
+                .max(0.1);
         self.pickups.retain(|pickup| {
-            let should_collect = self.player.position.distance(pickup.position)
-                <= self.player.pickup_radius + pickup.radius;
+            let should_collect =
+                self.player.position.distance(pickup.position) <= pickup_radius + pickup.radius;
             if should_collect {
                 collected.push(pickup.clone());
                 false
@@ -876,7 +972,9 @@ impl GameCore {
         for pickup in collected {
             match pickup.pickup_type {
                 PickupType::Xp => {
-                    let value = pickup.value * self.player.xp_multiplier;
+                    let value = pickup.value
+                        * self.player.xp_multiplier
+                        * self.active_event_multiplier("xp_multiplier");
                     self.player.xp += value;
                     self.metrics.xp_collected += value;
                     reward_hint.xp_delta += value;
@@ -1526,6 +1624,13 @@ struct EvolutionState {
 }
 
 #[derive(Debug, Clone)]
+struct ActiveEventEffect {
+    effect_type: String,
+    value: f32,
+    remaining_seconds: f32,
+}
+
+#[derive(Debug, Clone)]
 struct MapRuntime {
     width: f32,
     height: f32,
@@ -1941,5 +2046,34 @@ mod tests {
             .open_evolution_paths
             .iter()
             .any(|id| id == "rainbow-candy-meteor"));
+    }
+
+    #[test]
+    fn time_window_content_event_applies_active_effects() {
+        let mut core = GameCore::reset(RunConfig::default());
+        let event = core
+            .content
+            .events
+            .get_mut("rainbow-candy-rush")
+            .expect("base demo event should exist");
+        event.trigger.start_second = Some(0.0);
+        event.trigger.end_second = Some(10.0);
+        event.trigger.chance = Some(1.0);
+        core.pickups.push(Pickup {
+            entity_id: 999,
+            pickup_type: PickupType::Xp,
+            position: Vec2::ZERO,
+            value: 10.0,
+            radius: 10.0,
+        });
+
+        let result = core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+
+        assert!(result
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::ContentEventTriggered { event_id } if event_id == "rainbow-candy-rush")));
+        assert!(result.reward_hint.xp_delta > 13.9);
+        assert!(core.active_event_multiplier("spawn_rate_multiplier") > 1.0);
     }
 }

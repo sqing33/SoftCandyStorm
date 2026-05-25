@@ -213,12 +213,16 @@
     {
       "id": "boss_chest_evolution_flow",
       "summary": "GameCore 增加最小 Boss 宝箱进化流程：Boss 击杀后提供进化机会，满足武器和被动等级要求时可选择进化，进化会替换原武器并写入 BuildSnapshot.evolutions"
+    },
+    {
+      "id": "content_event_runtime_effects",
+      "summary": "GameCore 增加内容事件实际触发与持续效果，支持 time_window 事件按 seed 判定后启用 xp_multiplier、spawn_rate_multiplier、pickup_radius_multiplier、damage_multiplier 和 heal；Runtime/Harness 可记录 content_event_triggered"
     }
   ],
   "current_findings": [
     {
       "id": "evolution_event_runtime_scope",
-      "summary": "evolutions/events 现已进入内容 Schema 加载、引用校验、object_count 与 BuildSnapshot 可见范围；Boss 宝箱进化链路已补上，但 events 的实际触发和效果仍未实现，后续应单独作为 GameCore 玩法功能推进。",
+      "summary": "evolutions/events 已进入内容 Schema 加载、引用校验、object_count 与 BuildSnapshot 可见范围；Boss 宝箱进化链路和 time_window 内容事件效果已补上。仍未覆盖复杂事件类型、事件 UI 专属表现和人工体验验收。",
       "report": "content/base_demo/evolutions/rainbow-candy-meteor.json"
     },
     {

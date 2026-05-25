@@ -2202,6 +2202,7 @@ fn gym_event_label(event: &GameEvent) -> &'static str {
         GameEvent::UpgradeOffered { .. } => "upgrade_offered",
         GameEvent::UpgradeChosen { .. } => "upgrade_chosen",
         GameEvent::PlayerDamaged { .. } => "player_damaged",
+        GameEvent::ContentEventTriggered { .. } => "content_event_triggered",
         GameEvent::RunEnded { .. } => "run_ended",
     }
 }
