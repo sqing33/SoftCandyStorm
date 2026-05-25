@@ -381,6 +381,10 @@
     {
       "id": "rl_ppo_100k_multimap_comparison",
       "summary": "使用 100000-step PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布全地图过线，但 soda-creek 胜率 10%、caramel-workshop 和 cracked-star-jar 胜率 0%，已记录跨地图泛化 failure case"
+    },
+    {
+      "id": "rl_policy_action_score_diagnostic",
+      "summary": "SB3 评估报告增加 action_score_diagnostic 字段，PPO 记录动作概率、DQN 记录 q-value，并通过 5 秒 PPO/DQN smoke 验证 summary 与 episode 均输出 top-k 动作分数诊断"
     }
   ],
   "current_findings": [
@@ -553,6 +557,11 @@
       "id": "rl_ppo_100k_multimap_generalization_gap",
       "summary": "100000-step PPO policy 动作分布全地图过线，但 300 秒跨地图对比仍失败：soda-creek 胜率 10%，caramel-workshop 与 cracked-star-jar 胜率 0%，高压地图平均承伤约 120。该模型不能作为正式跨地图 RL 压力测试基线。",
       "report": "harness/failed_cases/fail_20260526_011_ppo_100k_multimap_generalization_gap.json"
+    },
+    {
+      "id": "rl_policy_action_score_observability",
+      "summary": "评估报告现在能区分采样动作分布与模型内部偏好：PPO smoke 显示动作 7 平均概率 0.3069、动作 4 平均概率 0.2995，DQN smoke 显示动作 3 q-value 最高且 dominant_top_action 为 84.11%。",
+      "report": "harness/reports/2026-05-26_rl_policy_action_score_diagnostic_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -562,7 +571,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "100000-step PPO 已修复动作分布 gate，但 6 地图 10 seed / 300 秒对比暴露跨地图泛化失败；下一步应增加 policy probability top-k 诊断，检查地图条件利用情况，并尝试 curriculum、300 秒训练 episode 或 Boss/hazard reward shaping"
+      "summary": "100000-step PPO 已修复动作分布 gate，但 6 地图 10 seed / 300 秒对比暴露跨地图泛化失败；action_score_diagnostic 已补齐，下一步可用该字段复跑 6 地图诊断，检查地图条件利用情况，并尝试 curriculum、300 秒训练 episode 或 Boss/hazard reward shaping"
     }
   ]
 }

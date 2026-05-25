@@ -70,6 +70,8 @@ The comparison report records the policy summary, action distribution, rule Bot 
 
 Policy evaluation reports include `action_entropy_bits`, `normalized_action_entropy`, and averaged `reward_breakdown` fields so action collapse and reward-shaping issues can be inspected before treating a policy as a useful test Bot.
 
+Evaluation reports also include `action_score_diagnostic`. For probability policies such as PPO, it records the mean action probabilities, top mean-probability actions, and how often each action was the policy's highest-probability action. For value policies such as DQN, it records the same aggregate view over q-values. Use this field when deterministic argmax keeps choosing one action even though sampled evaluation appears healthy.
+
 Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` with training, `--evaluate-model`, or `--compare-rule-bots` when diagnosing whether a policy still has useful action probability mass even though deterministic argmax collapses.
 
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.

@@ -311,12 +311,18 @@ def evaluate_model(
             steps = 0
             episode_reward = 0.0
             action_counts = {str(action): 0 for action in range(info["action_count"])}
+            action_score_tracker = new_action_score_tracker(info["action_count"])
             reward_breakdown_totals = {}
             while not terminated and not truncated and steps < max_steps:
                 action, _state = model.predict(
                     observation, deterministic=deterministic
                 )
                 action_index = action_to_int(action)
+                record_action_scores(
+                    action_score_tracker,
+                    policy_action_scores(model, observation),
+                    action_index,
+                )
                 action_counts[str(action_index)] = action_counts.get(str(action_index), 0) + 1
                 observation, reward, terminated, truncated, info = env.step(action_index)
                 for key, value in info.get("reward_breakdown", {}).items():
@@ -344,6 +350,9 @@ def evaluate_model(
                     "xp_collected": info["xp_collected"],
                     "damage_taken": info["damage_taken"],
                     "action_counts": action_counts,
+                    "action_score_diagnostic": summarize_action_score_tracker(
+                        action_score_tracker
+                    ),
                     "reward_breakdown": round_reward_breakdown(reward_breakdown_totals),
                 }
             )
@@ -371,6 +380,173 @@ def action_to_int(action):
     return int(action)
 
 
+def new_action_score_tracker(action_count):
+    return {
+        "action_count": action_count,
+        "kind": None,
+        "sample_count": 0,
+        "totals": [0.0 for _ in range(action_count)],
+        "top_counts": [0 for _ in range(action_count)],
+        "chosen_score_total": 0.0,
+        "chosen_score_sample_count": 0,
+        "unavailable_reason": None,
+    }
+
+
+def policy_action_scores(model, observation):
+    try:
+        import torch
+
+        policy = getattr(model, "policy", None)
+        if policy is None or not hasattr(policy, "obs_to_tensor"):
+            return unavailable_action_scores("model policy does not expose obs_to_tensor")
+        obs_tensor, _vectorized = policy.obs_to_tensor(observation)
+        with torch.no_grad():
+            distribution_getter = getattr(policy, "get_distribution", None)
+            if distribution_getter is not None:
+                distribution = distribution_getter(obs_tensor)
+                probabilities = distribution_probabilities(distribution, torch)
+                if probabilities is not None:
+                    return {
+                        "kind": "probability",
+                        "scores": tensor_first_row_values(probabilities),
+                    }
+
+            q_net = getattr(policy, "q_net", None)
+            if q_net is not None:
+                return {
+                    "kind": "q_value",
+                    "scores": tensor_first_row_values(q_net(obs_tensor)),
+                }
+    except Exception as exc:
+        return unavailable_action_scores(f"{type(exc).__name__}: {exc}")
+    return unavailable_action_scores("policy does not expose probabilities or q_values")
+
+
+def distribution_probabilities(distribution, torch):
+    torch_distribution = getattr(distribution, "distribution", None)
+    if torch_distribution is None:
+        return None
+    probabilities = getattr(torch_distribution, "probs", None)
+    if probabilities is not None:
+        return probabilities
+    logits = getattr(torch_distribution, "logits", None)
+    if logits is not None:
+        return torch.softmax(logits, dim=-1)
+    return None
+
+
+def tensor_first_row_values(tensor):
+    values = tensor.detach().cpu()
+    while len(values.shape) > 1:
+        values = values[0]
+    return [float(value) for value in values.tolist()]
+
+
+def unavailable_action_scores(reason):
+    return {
+        "kind": "unavailable",
+        "reason": reason,
+    }
+
+
+def record_action_scores(tracker, payload, chosen_action):
+    if tracker.get("unavailable_reason"):
+        return
+    if payload is None or payload.get("kind") == "unavailable":
+        tracker["unavailable_reason"] = (payload or {}).get(
+            "reason", "policy action scores unavailable"
+        )
+        return
+
+    kind = payload["kind"]
+    scores = payload.get("scores", [])
+    action_count = tracker["action_count"]
+    if len(scores) < action_count:
+        tracker["unavailable_reason"] = (
+            f"policy returned {len(scores)} scores for {action_count} actions"
+        )
+        return
+    if tracker["kind"] is None:
+        tracker["kind"] = kind
+    elif tracker["kind"] != kind:
+        tracker["unavailable_reason"] = (
+            f"mixed score kinds: {tracker['kind']} and {kind}"
+        )
+        return
+
+    limited_scores = scores[:action_count]
+    for index, score in enumerate(limited_scores):
+        tracker["totals"][index] += float(score)
+    top_action = max(range(action_count), key=lambda index: limited_scores[index])
+    tracker["top_counts"][top_action] += 1
+    if 0 <= chosen_action < action_count:
+        tracker["chosen_score_total"] += float(limited_scores[chosen_action])
+        tracker["chosen_score_sample_count"] += 1
+    tracker["sample_count"] += 1
+
+
+def summarize_action_score_tracker(tracker):
+    sample_count = tracker["sample_count"]
+    if sample_count <= 0:
+        return {
+            "kind": "unavailable",
+            "sample_count": 0,
+            "reason": tracker.get("unavailable_reason")
+            or "no policy action score samples recorded",
+        }
+
+    mean_scores = {
+        str(index): round(score_total / sample_count, 4)
+        for index, score_total in enumerate(tracker["totals"])
+    }
+    top_action_distribution = {
+        str(index): {
+            "count": count,
+            "ratio": round(count / sample_count, 4),
+        }
+        for index, count in enumerate(tracker["top_counts"])
+    }
+    chosen_count = tracker["chosen_score_sample_count"]
+    return {
+        "kind": tracker["kind"],
+        "sample_count": sample_count,
+        "mean_scores": mean_scores,
+        "mean_top_actions": top_mean_scores(mean_scores),
+        "top_action_distribution": top_action_distribution,
+        "dominant_top_action": dominant_action(top_action_distribution),
+        "mean_chosen_action_score": round(
+            tracker["chosen_score_total"] / max(1, chosen_count), 4
+        ),
+        "chosen_action_score_sample_count": chosen_count,
+    }
+
+
+def top_mean_scores(mean_scores, limit=3):
+    return [
+        {
+            "action": action,
+            "score": score,
+        }
+        for action, score in sorted(
+            mean_scores.items(), key=lambda item: item[1], reverse=True
+        )[:limit]
+    ]
+
+
+def dominant_action(distribution):
+    action, value = max(
+        distribution.items(), key=lambda item: item[1]["ratio"], default=(None, None)
+    )
+    if action is None:
+        return None
+    return {
+        "action": action,
+        "count": value["count"],
+        "ratio": value["ratio"],
+    }
+
+
 def summarize_evaluation(episodes, total_reward):
     count = max(1, len(episodes))
     wins = sum(1 for episode in episodes if episode["terminal_kind"] == "victory")
@@ -392,6 +568,7 @@ def summarize_evaluation(episodes, total_reward):
     summary["normalized_action_entropy"] = normalized_action_entropy(
         summary["action_distribution"]
     )
+    summary["action_score_diagnostic"] = summarize_action_score_diagnostics(episodes)
     summary["reward_breakdown_average"] = summarize_reward_breakdown(episodes)
     return summary
 
@@ -439,6 +616,76 @@ def summarize_reward_breakdown(episodes):
         for key, value in episode.get("reward_breakdown", {}).items():
             totals[key] = totals.get(key, 0.0) + value
     return {key: round(value / count, 4) for key, value in sorted(totals.items())}
+
+
+def summarize_action_score_diagnostics(episodes):
+    diagnostics = [
+        episode.get("action_score_diagnostic", {})
+        for episode in episodes
+        if episode.get("action_score_diagnostic", {}).get("sample_count", 0) > 0
+    ]
+    if not diagnostics:
+        reasons = [
+            episode.get("action_score_diagnostic", {}).get("reason")
+            for episode in episodes
+            if episode.get("action_score_diagnostic", {}).get("reason")
+        ]
+        return {
+            "kind": "unavailable",
+            "sample_count": 0,
+            "reason": reasons[0] if reasons else "no policy action score samples recorded",
+        }
+
+    kinds = sorted({diagnostic["kind"] for diagnostic in diagnostics})
+    action_keys = sorted(
+        {
+            action
+            for diagnostic in diagnostics
+            for action in diagnostic.get("mean_scores", {})
+        },
+        key=int,
+    )
+    sample_count = sum(diagnostic["sample_count"] for diagnostic in diagnostics)
+    score_totals = {action: 0.0 for action in action_keys}
+    top_counts = {action: 0 for action in action_keys}
+    chosen_score_total = 0.0
+    chosen_score_count = 0
+    for diagnostic in diagnostics:
+        diagnostic_count = diagnostic["sample_count"]
+        for action in action_keys:
+            score_totals[action] += (
+                diagnostic.get("mean_scores", {}).get(action, 0.0) * diagnostic_count
+            )
+            top_counts[action] += diagnostic.get("top_action_distribution", {}).get(
+                action, {}
+            ).get("count", 0)
+        chosen_count = diagnostic.get("chosen_action_score_sample_count", 0)
+        chosen_score_total += diagnostic.get("mean_chosen_action_score", 0.0) * chosen_count
+        chosen_score_count += chosen_count
+
+    mean_scores = {
+        action: round(score_totals[action] / sample_count, 4)
+        for action in action_keys
+    }
+    top_action_distribution = {
+        action: {
+            "count": count,
+            "ratio": round(count / sample_count, 4),
+        }
+        for action, count in top_counts.items()
+    }
+    return {
+        "kind": kinds[0] if len(kinds) == 1 else "mixed",
+        "sample_count": sample_count,
+        "mean_scores": mean_scores,
+        "mean_top_actions": top_mean_scores(mean_scores),
+        "top_action_distribution": top_action_distribution,
+        "dominant_top_action": dominant_action(top_action_distribution),
+        "mean_chosen_action_score": round(
+            chosen_score_total / max(1, chosen_score_count), 4
+        ),
+        "chosen_action_score_sample_count": chosen_score_count,
+    }
 
 
 def parse_rule_bots(value):
