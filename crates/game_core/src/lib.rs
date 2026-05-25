@@ -17,6 +17,7 @@ const PLAYER_RADIUS: f32 = 18.0;
 const CONTACT_DAMAGE_CAP_PER_SECOND: f32 = 35.0;
 const MAX_VISIBLE_ENEMIES: usize = 32;
 const MAX_VISIBLE_PICKUPS: usize = 16;
+const MAX_VISIBLE_PROJECTILES: usize = 48;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -160,6 +161,7 @@ pub struct RunSnapshot {
     pub player: PlayerSnapshot,
     pub visible_enemies: Vec<EnemySnapshot>,
     pub visible_pickups: Vec<PickupSnapshot>,
+    pub visible_projectiles: Vec<ProjectileSnapshot>,
     pub boss: Option<BossSnapshot>,
     pub upgrade_options: Vec<UpgradeOptionSnapshot>,
     pub build: BuildSnapshot,
@@ -203,6 +205,15 @@ pub struct PickupSnapshot {
     pub pickup_type: PickupType,
     pub position: Vec2,
     pub value: f32,
+    pub radius: f32,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProjectileSnapshot {
+    pub entity_id: u64,
+    pub weapon_id: String,
+    pub position: Vec2,
+    pub velocity: Vec2,
     pub radius: f32,
 }
 
@@ -502,6 +513,15 @@ impl GameCore {
                 .unwrap_or(Ordering::Equal)
         });
 
+        let mut visible_projectiles = self.projectiles.clone();
+        visible_projectiles.sort_by(|left, right| {
+            let left_distance = left.position.distance(self.player.position);
+            let right_distance = right.position.distance(self.player.position);
+            left_distance
+                .partial_cmp(&right_distance)
+                .unwrap_or(Ordering::Equal)
+        });
+
         let boss = self
             .enemies
             .iter()
@@ -539,6 +559,11 @@ impl GameCore {
                 .into_iter()
                 .take(MAX_VISIBLE_PICKUPS)
                 .map(PickupSnapshot::from)
+                .collect(),
+            visible_projectiles: visible_projectiles
+                .into_iter()
+                .take(MAX_VISIBLE_PROJECTILES)
+                .map(ProjectileSnapshot::from)
                 .collect(),
             boss,
             upgrade_options: self
@@ -691,6 +716,7 @@ impl GameCore {
                 let angle = spread_start + spread_step * projectile_index as f32;
                 let direction = base_direction.rotated(angle).normalized_or_zero();
                 let projectile = Projectile {
+                    entity_id: self.allocate_entity_id(),
                     weapon_id: weapon_id.clone(),
                     position: self.player.position,
                     velocity: direction * projectile_speed,
@@ -1329,6 +1355,7 @@ impl From<Enemy> for EnemySnapshot {
 
 #[derive(Debug, Clone)]
 struct Projectile {
+    entity_id: u64,
     weapon_id: String,
     position: Vec2,
     velocity: Vec2,
@@ -1336,6 +1363,18 @@ struct Projectile {
     radius: f32,
     pierce_remaining: u32,
     lifetime: f32,
+}
+
+impl From<Projectile> for ProjectileSnapshot {
+    fn from(projectile: Projectile) -> Self {
+        Self {
+            entity_id: projectile.entity_id,
+            weapon_id: projectile.weapon_id,
+            position: projectile.position,
+            velocity: projectile.velocity,
+            radius: projectile.radius,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -1486,6 +1525,26 @@ mod tests {
         );
 
         assert!(!core.snapshot().upgrade_options.is_empty());
+    }
+
+    #[test]
+    fn projectile_snapshot_exposes_active_projectiles() {
+        let mut core = GameCore::reset(RunConfig::default());
+        let dt = FixedDt::from_tick_rate(DEFAULT_TICK_RATE);
+
+        for _ in 0..300 {
+            core.step(PlayerAction::default(), dt);
+            let snapshot = core.snapshot();
+            if let Some(projectile) = snapshot.visible_projectiles.first() {
+                assert_eq!(projectile.weapon_id, "rainbow-candy-shot");
+                assert!(projectile.entity_id > 0);
+                assert!(projectile.radius > 0.0);
+                assert!(projectile.velocity.length_squared() > 0.0);
+                return;
+            }
+        }
+
+        panic!("expected rainbow-candy-shot to create a visible projectile");
     }
 
     #[test]

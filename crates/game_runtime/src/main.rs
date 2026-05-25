@@ -12,6 +12,7 @@ use std::{path::PathBuf, sync::Arc};
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const CAMERA_Z: f32 = 999.0;
 const PLAYER_Z: f32 = 20.0;
+const PROJECTILE_Z: f32 = 15.0;
 const ENEMY_Z: f32 = 10.0;
 const PICKUP_Z: f32 = 5.0;
 const MAP_Z: f32 = -20.0;
@@ -25,6 +26,7 @@ const SANDWICH_COOKIE_SPRITE: &str =
     "prototype_topdown/sprites/enemy_sandwich_cookie_creep_v001.png";
 const BOSS_MIXER_SPRITE: &str = "prototype_topdown/sprites/boss_runaway_sugar_mixer_v001.png";
 const PICKUP_CRYSTAL_SPRITE: &str = "prototype_topdown/sprites/pickup_candy_crystal_v001.png";
+const PROJECTILE_SPRITE: &str = "prototype_topdown/sprites/projectile_rainbow_candy_shot_v001.png";
 const MAP_TILE_SPRITE: &str = "prototype_topdown/sprites/map_frosting_grassland_tile_v001.png";
 
 fn main() {
@@ -77,6 +79,7 @@ fn runtime_sprite_paths() -> &'static [&'static str] {
         SANDWICH_COOKIE_SPRITE,
         BOSS_MIXER_SPRITE,
         PICKUP_CRYSTAL_SPRITE,
+        PROJECTILE_SPRITE,
         MAP_TILE_SPRITE,
     ]
 }
@@ -156,6 +159,7 @@ struct RuntimeSprites {
     sandwich_cookie: Handle<Image>,
     boss_mixer: Handle<Image>,
     pickup_crystal: Handle<Image>,
+    projectile: Handle<Image>,
     map_tile: Handle<Image>,
 }
 
@@ -444,6 +448,26 @@ fn sync_world_visuals(
         ));
     }
 
+    for projectile in &snapshot.visible_projectiles {
+        commands.spawn((
+            SpriteBundle {
+                texture: sprites.projectile.clone(),
+                sprite: Sprite {
+                    color: Color::WHITE,
+                    custom_size: Some(Vec2::splat((projectile.radius * 2.0).max(18.0))),
+                    ..default()
+                },
+                transform: Transform::from_xyz(
+                    projectile.position.x,
+                    projectile.position.y,
+                    PROJECTILE_Z,
+                ),
+                ..default()
+            },
+            RuntimeVisual,
+        ));
+    }
+
     for enemy in &snapshot.visible_enemies {
         let texture = sprites
             .enemy(enemy.enemy_id.as_str(), enemy.is_boss)
@@ -535,6 +559,7 @@ fn load_runtime_sprites(asset_server: &AssetServer) -> RuntimeSprites {
         sandwich_cookie: asset_server.load(SANDWICH_COOKIE_SPRITE),
         boss_mixer: asset_server.load(BOSS_MIXER_SPRITE),
         pickup_crystal: asset_server.load(PICKUP_CRYSTAL_SPRITE),
+        projectile: asset_server.load(PROJECTILE_SPRITE),
         map_tile: asset_server.load(MAP_TILE_SPRITE),
     }
 }

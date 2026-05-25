@@ -164,6 +164,7 @@ Snapshot 是 Bot 和 Python 环境观察世界的稳定接口，不应直接暴�
 - `player`
 - `visible_enemies`
 - `visible_pickups`
+- `visible_projectiles`
 - `active_hazards`
 - `boss`
 - `upgrade_options`
@@ -215,6 +216,22 @@ Bot/RL 不需要看所有敌人。Snapshot 可限制最近 N 个敌人，完整�
 - `position`
 - `value`
 - `radius`
+
+## ProjectileSnapshot
+
+字段：
+
+- `entity_id`
+- `weapon_id`
+- `position`
+- `velocity`
+- `radius`
+
+用途：
+
+- Runtime 绘制投射物。
+- Bot/RL 可选观察弹幕和武器覆盖。
+- Debug/Replay 对比活跃投射物数量和位置。
 
 ## BuildSnapshot
 
@@ -345,4 +362,3 @@ Gym 环境做三件事：
 3. 从 snapshot 转 observation，从 reward_hint/metrics 转 reward。
 
 首版可用 JSON line 协议，后续性能不足再考虑 PyO3。
-

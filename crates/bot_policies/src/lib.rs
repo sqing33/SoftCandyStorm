@@ -130,6 +130,7 @@ mod tests {
             },
             visible_enemies: Vec::new(),
             visible_pickups: Vec::new(),
+            visible_projectiles: Vec::new(),
             boss: None,
             upgrade_options: Vec::new(),
             build: game_core::BuildSnapshot::default(),
