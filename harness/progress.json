@@ -180,7 +180,7 @@
     },
     {
       "id": "partial_content_candidate_validator",
-      "summary": "增加纯 Python 局部内容候选校验器，面向还未合并成完整 GameCore 内容包的 generated_candidates，检查通用字段、被动/敌人字段、重复 id、候选池红线和报告输出。",
+      "summary": "增加纯 Python 局部内容候选校验器，面向还未合并成完整 GameCore 内容包的 generated_candidate_patches，检查通用字段、被动/敌人字段、重复 id、候选池红线和报告输出。",
       "report": "tools/validate_content_candidates.py"
     },
     {
@@ -197,6 +197,11 @@
       "id": "phase4_roster_gap_full_pack_materialized",
       "summary": "将 Phase 4 名录缺口补丁物化为完整 generated_candidates 内容包，包含 base_demo 全量内容和新增 4 个被动、4 个敌人候选；物化后内容计数为角色 5、武器 12、被动 12、进化 8、敌人 12、Boss 6、波次 6、地图 6、事件 5。",
       "report": "harness/reports/2026-05-26_phase4_roster_materialization_001/summary.md"
+    },
+    {
+      "id": "materialized_content_pack_preflight",
+      "summary": "增加纯 Python 完整候选包预检工具，检查 generated_candidates 中 full pack 的候选池标记、物化来源、目录计数、角色初始 loadout、进化条件和波次地图/敌人/Boss 引用；Phase 4 名录缺口 full pack 预检 1 批 72 项通过，0 error、0 warning。",
+      "report": "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md"
     },
     {
       "id": "python_gym_bridge_smoke",
