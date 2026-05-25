@@ -21,6 +21,7 @@ use std::{cmp::Ordering, collections::BTreeSet};
 const DEFAULT_TICK_RATE: u32 = 30;
 const PLAYER_RADIUS: f32 = 18.0;
 const CONTACT_DAMAGE_CAP_PER_SECOND: f32 = 35.0;
+const HAZARD_DAMAGE_CAP_PER_SECOND: f32 = 42.0;
 const MAX_VISIBLE_ENEMIES: usize = 32;
 const MAX_VISIBLE_PICKUPS: usize = 16;
 const MAX_VISIBLE_PROJECTILES: usize = 48;
@@ -242,6 +243,7 @@ pub struct HazardSnapshot {
     pub position: Vec2,
     pub radius: f32,
     pub slow_multiplier: f32,
+    pub damage_per_second: f32,
     pub remaining_seconds: f32,
 }
 
@@ -553,7 +555,7 @@ impl GameCore {
 
         self.update_content_events(dt_seconds, &mut events);
         self.update_player_slow_effects(dt_seconds);
-        self.update_hazards(dt_seconds);
+        self.update_hazards(dt_seconds, &mut events, &mut reward_hint);
         self.update_player_movement(action.movement, dt_seconds);
         self.update_wave_spawns(dt_seconds, &mut events);
         self.update_enemy_behavior(dt_seconds, &mut events);
@@ -690,21 +692,34 @@ impl GameCore {
             .retain(|effect| effect.remaining_seconds > 0.0);
     }
 
-    fn update_hazards(&mut self, dt: f32) {
+    fn update_hazards(
+        &mut self,
+        dt: f32,
+        events: &mut Vec<GameEvent>,
+        reward_hint: &mut RewardHint,
+    ) {
         for hazard in &mut self.hazards {
             hazard.remaining_seconds -= dt;
         }
         self.hazards.retain(|hazard| hazard.remaining_seconds > 0.0);
 
         let mut slow_effects = Vec::new();
+        let mut hazard_damage_per_second: f32 = 0.0;
         for hazard in &self.hazards {
             if self.player.position.distance(hazard.position) <= PLAYER_RADIUS + hazard.radius {
                 slow_effects.push((hazard.slow_multiplier, dt * 2.0));
+                hazard_damage_per_second += hazard.damage_per_second.max(0.0);
             }
         }
         for (multiplier, duration_seconds) in slow_effects {
             self.apply_player_slow(multiplier, duration_seconds);
         }
+        self.apply_player_damage(
+            hazard_damage_per_second.min(HAZARD_DAMAGE_CAP_PER_SECOND),
+            dt,
+            events,
+            reward_hint,
+        );
     }
 
     fn update_player_movement(&mut self, movement: Vec2, dt: f32) {
@@ -874,6 +889,7 @@ impl GameCore {
                 radius,
                 remaining_seconds: duration_seconds,
                 slow_multiplier,
+                damage_per_second: 0.0,
             });
         }
     }
@@ -976,6 +992,7 @@ impl GameCore {
                         radius: enemy.behavior_state.hazard_radius,
                         remaining_seconds: enemy.behavior_state.hazard_duration_seconds,
                         slow_multiplier: enemy.behavior_state.hazard_slow_multiplier,
+                        damage_per_second: 0.0,
                     });
                     enemy.behavior_state.hazard_cooldown_remaining +=
                         enemy.behavior_state.hazard_interval_seconds;
@@ -1061,6 +1078,7 @@ impl GameCore {
                     hazard_radius,
                     duration_seconds,
                     slow_multiplier,
+                    damage_per_second,
                 } => {
                     for _ in 0..count.min(8) {
                         let position = self.random_position_near(origin, 0.0, radius);
@@ -1069,6 +1087,7 @@ impl GameCore {
                             radius: hazard_radius,
                             remaining_seconds: duration_seconds,
                             slow_multiplier,
+                            damage_per_second,
                         });
                     }
                 }
@@ -1373,8 +1392,26 @@ impl GameCore {
             return;
         }
 
+        self.apply_player_damage(total_contact_dps, dt, events, reward_hint);
+    }
+
+    fn apply_player_damage(
+        &mut self,
+        damage_per_second: f32,
+        dt: f32,
+        events: &mut Vec<GameEvent>,
+        reward_hint: &mut RewardHint,
+    ) {
+        if damage_per_second <= 0.0 {
+            return;
+        }
+
         let damage_reduction = self.player.damage_reduction.clamp(0.0, 0.8);
-        let damage = total_contact_dps * dt * (1.0 - damage_reduction);
+        let damage = damage_per_second * dt * (1.0 - damage_reduction);
+        if damage <= 0.0 {
+            return;
+        }
+
         self.player.health = (self.player.health - damage).max(0.0);
         self.metrics.damage_taken += damage;
         reward_hint.damage_taken_delta += damage;
@@ -2178,6 +2215,7 @@ struct Hazard {
     radius: f32,
     remaining_seconds: f32,
     slow_multiplier: f32,
+    damage_per_second: f32,
 }
 
 impl From<&Hazard> for HazardSnapshot {
@@ -2186,6 +2224,7 @@ impl From<&Hazard> for HazardSnapshot {
             position: hazard.position,
             radius: hazard.radius,
             slow_multiplier: hazard.slow_multiplier,
+            damage_per_second: hazard.damage_per_second,
             remaining_seconds: hazard.remaining_seconds,
         }
     }
@@ -2206,6 +2245,7 @@ enum BossAbilityAction {
         hazard_radius: f32,
         duration_seconds: f32,
         slow_multiplier: f32,
+        damage_per_second: f32,
     },
 }
 
@@ -2234,7 +2274,14 @@ fn boss_phase_ability(
 }
 
 fn boss_ability_cooldown_seconds(ability_id: &str) -> f32 {
-    if ability_id.contains("double") || ability_id.contains("multi") {
+    if ability_id == "summon_caramel_slime"
+        || matches!(
+            ability_id,
+            "lay_caramel_tracks" | "slow_pulse" | "caramel_floor_cycle"
+        )
+        || ability_id.contains("double")
+        || ability_id.contains("multi")
+    {
         3.0
     } else if ability_id.contains("summon") || ability_id.contains("split") {
         4.0
@@ -2251,27 +2298,51 @@ fn boss_ability_actions(
     match ability_id {
         "summon_bouncy_gummy" => vec![boss_summon("bouncy-gummy", 2, boss_position)],
         "summon_soda_bubble" => vec![boss_summon("soda-bubble", 2, boss_position)],
-        "summon_caramel_slime" => vec![boss_summon("caramel-slime", 2, boss_position)],
+        "summon_caramel_slime" => vec![boss_summon("caramel-slime", 4, boss_position)],
         "summon_sticky_bear_gummy" => vec![boss_summon("sticky-bear-gummy", 2, boss_position)],
         "summon_guard_wave" => vec![boss_summon("sticky-bear-gummy", 4, boss_position)],
         "split_cotton_clumps" => vec![boss_summon("cotton-candy-clump", 3, boss_position)],
         "bubble_barrage" => vec![boss_summon("soda-bubble", 3, player_position)],
         "charged_fountain" => vec![
             boss_summon("soda-bubble", 4, player_position),
-            boss_hazard(player_position, 2, 160.0, 52.0, 2.4, 0.72),
+            boss_hazard(player_position, 2, 160.0, 52.0, 2.4, 0.72, 0.0),
         ],
-        "lay_caramel_tracks" => vec![boss_hazard(boss_position, 2, 120.0, 54.0, 3.2, 0.55)],
-        "slow_pulse" => vec![boss_hazard(player_position, 1, 80.0, 96.0, 1.8, 0.62)],
-        "caramel_floor_cycle" => vec![boss_hazard(player_position, 3, 180.0, 64.0, 3.6, 0.50)],
-        "jump_shockwave" => vec![boss_hazard(player_position, 1, 24.0, 120.0, 1.2, 0.70)],
-        "double_jump_shockwave" => vec![boss_hazard(player_position, 2, 140.0, 112.0, 1.4, 0.68)],
+        "lay_caramel_tracks" => vec![boss_hazard(boss_position, 3, 132.0, 64.0, 4.0, 0.52, 1.0)],
+        "slow_pulse" => vec![boss_hazard(
+            player_position,
+            2,
+            120.0,
+            112.0,
+            2.4,
+            0.52,
+            8.5,
+        )],
+        "caramel_floor_cycle" => vec![boss_hazard(
+            player_position,
+            4,
+            190.0,
+            92.0,
+            4.2,
+            0.44,
+            13.0,
+        )],
+        "jump_shockwave" => vec![boss_hazard(player_position, 1, 24.0, 120.0, 1.2, 0.70, 0.0)],
+        "double_jump_shockwave" => vec![boss_hazard(
+            player_position,
+            2,
+            140.0,
+            112.0,
+            1.4,
+            0.68,
+            0.0,
+        )],
         "sour_phase_storm" => vec![boss_summon("sour-gummy", 2, player_position)],
         "spicy_phase_burst" => vec![boss_summon("spicy-gummy", 3, boss_position)],
         "bubble_phase_barrage" => vec![boss_summon("soda-bubble", 3, player_position)],
         "multi_flavor_storm" => vec![
             boss_summon("sour-gummy", 2, player_position),
             boss_summon("spicy-gummy", 2, boss_position),
-            boss_hazard(player_position, 2, 180.0, 72.0, 2.4, 0.60),
+            boss_hazard(player_position, 2, 180.0, 72.0, 2.4, 0.60, 0.0),
         ],
         _ => Vec::new(),
     }
@@ -2293,6 +2364,7 @@ fn boss_hazard(
     hazard_radius: f32,
     duration_seconds: f32,
     slow_multiplier: f32,
+    damage_per_second: f32,
 ) -> BossAbilityAction {
     BossAbilityAction::SpawnHazard {
         count,
@@ -2301,6 +2373,7 @@ fn boss_hazard(
         hazard_radius,
         duration_seconds,
         slow_multiplier,
+        damage_per_second,
     }
 }
 
@@ -3109,12 +3182,36 @@ mod tests {
             radius: 64.0,
             remaining_seconds: 1.0,
             slow_multiplier: 0.5,
+            damage_per_second: 0.0,
         });
         core.update_player_slow_effects(0.1);
-        core.update_hazards(0.1);
+        core.update_hazards(0.1, &mut Vec::new(), &mut RewardHint::default());
         core.update_player_movement(Vec2::new(1.0, 0.0), 1.0);
 
         assert!(core.player.velocity.length() < core.player.move_speed * 0.75);
+    }
+
+    #[test]
+    fn hazard_damage_reduces_player_health() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.hazards.push(Hazard {
+            position: Vec2::ZERO,
+            radius: 64.0,
+            remaining_seconds: 1.0,
+            slow_multiplier: 1.0,
+            damage_per_second: 6.0,
+        });
+        let mut events = Vec::new();
+        let mut reward_hint = RewardHint::default();
+
+        core.update_hazards(0.5, &mut events, &mut reward_hint);
+
+        assert!(core.player.health < core.player.max_health);
+        assert_eq!(core.metrics.damage_taken, 3.0);
+        assert_eq!(reward_hint.damage_taken_delta, 3.0);
+        assert!(events
+            .iter()
+            .any(|event| matches!(event, GameEvent::PlayerDamaged { .. })));
     }
 
     #[test]
@@ -3126,6 +3223,7 @@ mod tests {
             radius: 64.0,
             remaining_seconds: 3.5,
             slow_multiplier: 0.55,
+            damage_per_second: 2.5,
         });
 
         let snapshot = core.snapshot();
@@ -3135,6 +3233,7 @@ mod tests {
         assert_eq!(hazard.position, position);
         assert_eq!(hazard.radius, 64.0);
         assert_eq!(hazard.slow_multiplier, 0.55);
+        assert_eq!(hazard.damage_per_second, 2.5);
         assert_eq!(hazard.remaining_seconds, 3.5);
     }
 

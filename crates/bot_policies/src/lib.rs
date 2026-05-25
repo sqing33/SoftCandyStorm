@@ -174,6 +174,24 @@ mod tests {
     }
 
     #[test]
+    fn boss_hunter_keeps_spacing_from_close_boss() {
+        let mut snapshot = empty_snapshot();
+        snapshot.boss = Some(game_core::BossSnapshot {
+            entity_id: 99,
+            boss_id: "caramel-furnace".to_string(),
+            health: 1000.0,
+            max_health: 1000.0,
+            position: Vec2::new(80.0, 0.0),
+        });
+
+        let mut bot = BotController::new(BotKind::BossHunter, 5);
+        let action = bot.next_action(&snapshot);
+
+        assert!(action.movement.x < 0.0);
+        assert!(action.movement.length() <= 1.0 + f32::EPSILON);
+    }
+
+    #[test]
     fn tank_prioritizes_cooldown_until_health_is_low() {
         let mut snapshot = empty_snapshot();
         snapshot.upgrade_options = vec![
@@ -395,9 +413,18 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
 
 fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
     if let Some(boss) = &snapshot.boss {
-        let to_boss = (boss.position - snapshot.player.position).normalized_or_zero();
-        let avoidance = avoid_enemies(snapshot, 70.0, 5);
-        return (to_boss * 1.45 + avoidance.normalized_or_zero() * 0.35).normalized_or_zero();
+        let to_boss = boss.position - snapshot.player.position;
+        let boss_distance = to_boss.length();
+        let boss_direction = to_boss.normalized_or_zero();
+        let spacing = if boss_distance < 150.0 {
+            boss_direction * -1.0
+        } else if boss_distance > 260.0 {
+            boss_direction
+        } else {
+            Vec2::ZERO
+        };
+        let avoidance = avoid_enemies(snapshot, 90.0, 6);
+        return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.85).normalized_or_zero();
     }
 
     greedy_movement(snapshot)
