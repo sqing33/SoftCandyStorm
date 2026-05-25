@@ -168,6 +168,25 @@ struct SimulateCandidatesArgs {
 }
 
 #[derive(Debug, Clone)]
+struct PromotePlaytestCandidatesArgs {
+    source_dir: PathBuf,
+    playtest_dir: PathBuf,
+    repair_dir: PathBuf,
+    report_dir: Option<PathBuf>,
+}
+
+impl Default for PromotePlaytestCandidatesArgs {
+    fn default() -> Self {
+        Self {
+            source_dir: PathBuf::from("harness/simulated_candidates"),
+            playtest_dir: PathBuf::from("harness/playtest_candidates"),
+            repair_dir: PathBuf::from("harness/repair_queue"),
+            report_dir: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 struct GymBridgeArgs {
     seed: u64,
     seconds: f32,
@@ -393,6 +412,30 @@ struct CandidateSimulationReport {
 }
 
 #[derive(Debug, Clone, Serialize)]
+struct CandidatePlaytestPromotionReport {
+    source_dir: String,
+    playtest_dir: String,
+    repair_dir: String,
+    candidate_count: usize,
+    playtest_count: usize,
+    repair_count: usize,
+    candidates: Vec<CandidatePlaytestPromotionReview>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CandidatePlaytestPromotionReview {
+    id: String,
+    source: String,
+    decision: &'static str,
+    destination: String,
+    object_count: Option<usize>,
+    content_hash: Option<String>,
+    errors: Vec<String>,
+    review_pack: Option<String>,
+    next_step: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
 struct CandidateSimulationReview {
     id: String,
     source: String,
@@ -555,6 +598,16 @@ fn main() {
                 std::process::exit(2);
             }
         },
+        "promote-playtest-candidates" => {
+            match parse_promote_playtest_candidates_args(args.collect()) {
+                Ok(args) => run_promote_playtest_candidates(args),
+                Err(message) => {
+                    eprintln!("error: {message}");
+                    print_help();
+                    std::process::exit(2);
+                }
+            }
+        }
         "gym-bridge" => match parse_gym_bridge_args(args.collect()) {
             Ok(args) => run_gym_bridge(args),
             Err(message) => {
@@ -911,6 +964,36 @@ fn parse_simulate_candidates_args(values: Vec<String>) -> Result<SimulateCandida
         return Err("--bots must include at least one bot".to_string());
     }
 
+    Ok(parsed)
+}
+
+fn parse_promote_playtest_candidates_args(
+    values: Vec<String>,
+) -> Result<PromotePlaytestCandidatesArgs, String> {
+    let mut parsed = PromotePlaytestCandidatesArgs::default();
+    let mut index = 0;
+    while index < values.len() {
+        let key = &values[index];
+        let value = values
+            .get(index + 1)
+            .ok_or_else(|| format!("missing value for `{key}`"))?;
+        match key.as_str() {
+            "--source-dir" => {
+                parsed.source_dir = PathBuf::from(value);
+            }
+            "--playtest-dir" => {
+                parsed.playtest_dir = PathBuf::from(value);
+            }
+            "--repair-dir" => {
+                parsed.repair_dir = PathBuf::from(value);
+            }
+            "--report-dir" => {
+                parsed.report_dir = Some(PathBuf::from(value));
+            }
+            _ => return Err(format!("unknown flag `{key}`")),
+        }
+        index += 2;
+    }
     Ok(parsed)
 }
 
@@ -1273,6 +1356,34 @@ fn run_simulate_candidates(args: SimulateCandidatesArgs) {
         Ok(json) => println!("{json}"),
         Err(error) => {
             eprintln!("error: failed to render candidate simulation report: {error}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn run_promote_playtest_candidates(args: PromotePlaytestCandidatesArgs) {
+    let report = match promote_playtest_candidate_dirs(&args) {
+        Ok(report) => report,
+        Err(error) => {
+            eprintln!("error: failed to promote playtest candidates: {error}");
+            std::process::exit(1);
+        }
+    };
+
+    if let Some(report_dir) = &args.report_dir {
+        if let Err(error) = write_candidate_playtest_promotion_report(report_dir, &report) {
+            eprintln!(
+                "error: failed to write playtest promotion report `{}`: {error}",
+                report_dir.display()
+            );
+            std::process::exit(1);
+        }
+    }
+
+    match serde_json::to_string_pretty(&report) {
+        Ok(json) => println!("{json}"),
+        Err(error) => {
+            eprintln!("error: failed to render playtest promotion report: {error}");
             std::process::exit(1);
         }
     }
@@ -3440,6 +3551,115 @@ fn simulate_candidate_dirs(args: &SimulateCandidatesArgs) -> io::Result<Candidat
     })
 }
 
+fn promote_playtest_candidate_dirs(
+    args: &PromotePlaytestCandidatesArgs,
+) -> io::Result<CandidatePlaytestPromotionReport> {
+    fs::create_dir_all(&args.source_dir)?;
+    fs::create_dir_all(&args.playtest_dir)?;
+    fs::create_dir_all(&args.repair_dir)?;
+
+    let mut entries = fs::read_dir(&args.source_dir)?
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .filter(|entry| entry.path().is_dir())
+        .collect::<Vec<_>>();
+    entries.sort_by_key(|entry| entry.file_name());
+
+    let mut candidates = Vec::new();
+    for entry in entries {
+        let source_path = entry.path();
+        let candidate_id = entry.file_name().to_string_lossy().to_string();
+        let loaded =
+            ContentPack::load_from_dir(&source_path).and_then(|pack| pack.validate().map(|_| pack));
+
+        match loaded {
+            Ok(pack) => {
+                let budget_report =
+                    evaluate_static_budget(&pack, source_path.display().to_string());
+                let content_hash = content_hash_for_dir(&source_path)?;
+                if budget_report.errors.is_empty() {
+                    let destination = args.playtest_dir.join(&candidate_id);
+                    copy_dir_all(&source_path, &destination)?;
+                    write_playtest_gate(&destination, &candidate_id, &content_hash)?;
+                    candidates.push(CandidatePlaytestPromotionReview {
+                        id: candidate_id,
+                        source: source_path.display().to_string(),
+                        decision: "playtest",
+                        destination: destination.display().to_string(),
+                        object_count: Some(pack.object_count()),
+                        content_hash: Some(content_hash),
+                        errors: Vec::new(),
+                        review_pack: Some(
+                            "harness/playtest/runtime_manual_review_pack.md".to_string(),
+                        ),
+                        next_step: "run human playtest review and fill candidate playtest notes before acceptance"
+                            .to_string(),
+                    });
+                } else {
+                    let destination = args.repair_dir.join(&candidate_id);
+                    copy_dir_all(&source_path, &destination)?;
+                    let errors = budget_report.errors.clone();
+                    write_playtest_repair_reason(
+                        &destination,
+                        &candidate_id,
+                        "static_budget_regression",
+                        &errors,
+                    )?;
+                    candidates.push(CandidatePlaytestPromotionReview {
+                        id: candidate_id,
+                        source: source_path.display().to_string(),
+                        decision: "repair",
+                        destination: destination.display().to_string(),
+                        object_count: Some(pack.object_count()),
+                        content_hash: Some(content_hash),
+                        errors,
+                        review_pack: None,
+                        next_step: "repair candidate before promoting to playtest_candidates"
+                            .to_string(),
+                    });
+                }
+            }
+            Err(error) => {
+                let destination = args.repair_dir.join(&candidate_id);
+                copy_dir_all(&source_path, &destination)?;
+                let errors = vec![error.to_string()];
+                write_rejection_reason(&destination, &candidate_id, "schema_error", &errors)?;
+                candidates.push(CandidatePlaytestPromotionReview {
+                    id: candidate_id,
+                    source: source_path.display().to_string(),
+                    decision: "repair",
+                    destination: destination.display().to_string(),
+                    object_count: None,
+                    content_hash: None,
+                    errors,
+                    review_pack: None,
+                    next_step: "repair candidate schema before promoting to playtest_candidates"
+                        .to_string(),
+                });
+            }
+        }
+    }
+
+    let playtest_count = candidates
+        .iter()
+        .filter(|candidate| candidate.decision == "playtest")
+        .count();
+    let repair_count = candidates
+        .iter()
+        .filter(|candidate| candidate.decision == "repair")
+        .count();
+
+    Ok(CandidatePlaytestPromotionReport {
+        source_dir: args.source_dir.display().to_string(),
+        playtest_dir: args.playtest_dir.display().to_string(),
+        repair_dir: args.repair_dir.display().to_string(),
+        candidate_count: candidates.len(),
+        playtest_count,
+        repair_count,
+        candidates,
+    })
+}
+
 fn copy_dir_all(source: &Path, destination: &Path) -> io::Result<()> {
     fs::create_dir_all(destination)?;
     for entry in fs::read_dir(source)? {
@@ -3490,6 +3710,44 @@ fn write_repair_reason(
     fs::write(destination.join("repair.json"), format!("{json}\n"))
 }
 
+fn write_playtest_repair_reason(
+    destination: &Path,
+    candidate_id: &str,
+    category: &str,
+    errors: &[String],
+) -> io::Result<()> {
+    let reason = serde_json::json!({
+        "candidate_id": candidate_id,
+        "decision": "repair",
+        "category": category,
+        "errors": errors,
+        "next_step": "repair candidate content before rerunning promote-playtest-candidates"
+    });
+    let json = serde_json::to_string_pretty(&reason).map_err(io::Error::other)?;
+    fs::write(destination.join("repair.json"), format!("{json}\n"))
+}
+
+fn write_playtest_gate(
+    destination: &Path,
+    candidate_id: &str,
+    content_hash: &str,
+) -> io::Result<()> {
+    let gate = serde_json::json!({
+        "candidate_id": candidate_id,
+        "decision": "playtest",
+        "content_hash": content_hash,
+        "category": "bot_simulation_passed",
+        "required_review": {
+            "manual_review": true,
+            "review_pack": "harness/playtest/runtime_manual_review_pack.md",
+            "forbidden_next_step": "accepted_content_without_human_review"
+        },
+        "next_step": "run a human playtest capture and record manual review before any accepted_content promotion"
+    });
+    let json = serde_json::to_string_pretty(&gate).map_err(io::Error::other)?;
+    fs::write(destination.join("playtest_gate.json"), format!("{json}\n"))
+}
+
 fn write_candidate_report(report_dir: &Path, report: &CandidatePipelineReport) -> io::Result<()> {
     fs::create_dir_all(report_dir)?;
     let json = serde_json::to_string_pretty(report).map_err(io::Error::other)?;
@@ -3517,6 +3775,23 @@ fn write_candidate_simulation_report(
     fs::write(
         report_dir.join("summary.md"),
         render_candidate_simulation_summary(report),
+    )?;
+    Ok(())
+}
+
+fn write_candidate_playtest_promotion_report(
+    report_dir: &Path,
+    report: &CandidatePlaytestPromotionReport,
+) -> io::Result<()> {
+    fs::create_dir_all(report_dir)?;
+    let json = serde_json::to_string_pretty(report).map_err(io::Error::other)?;
+    fs::write(
+        report_dir.join("candidate_playtest_promotion.json"),
+        format!("{json}\n"),
+    )?;
+    fs::write(
+        report_dir.join("summary.md"),
+        render_candidate_playtest_promotion_summary(report),
     )?;
     Ok(())
 }
@@ -3570,6 +3845,37 @@ fn render_candidate_simulation_summary(report: &CandidateSimulationReport) -> St
     output
 }
 
+fn render_candidate_playtest_promotion_summary(
+    report: &CandidatePlaytestPromotionReport,
+) -> String {
+    let mut output = String::new();
+    output.push_str("# Candidate Playtest Promotion Summary\n\n");
+    output.push_str(&format!("- Source: `{}`\n", report.source_dir));
+    output.push_str(&format!("- Playtest: `{}`\n", report.playtest_dir));
+    output.push_str(&format!("- Repair: `{}`\n", report.repair_dir));
+    output.push_str(&format!(
+        "- Result: `{}` playtest, `{}` repair, `{}` total\n\n",
+        report.playtest_count, report.repair_count, report.candidate_count
+    ));
+    output.push_str("| Candidate | Decision | Objects | Errors | Next Step |\n");
+    output.push_str("|---|---|---:|---:|---|\n");
+    for candidate in &report.candidates {
+        output.push_str(&format!(
+            "| {} | {} | {} | {} | {} |\n",
+            candidate.id,
+            candidate.decision,
+            candidate.object_count.unwrap_or(0),
+            candidate.errors.len(),
+            candidate.next_step
+        ));
+    }
+    output.push_str("\n## Gate Notes\n\n");
+    output.push_str("- `playtest` means the candidate is recommended for human playtest only.\n");
+    output.push_str("- This command never writes to `accepted_content`.\n");
+    output.push_str("- A human review is still required before any later acceptance step.\n");
+    output
+}
+
 fn run_validate(args: ValidateArgs) {
     match ContentPack::load_from_dir(&args.content_dir).and_then(|content| content.validate()) {
         Ok(report) => {
@@ -3620,6 +3926,9 @@ fn print_help() {
     eprintln!(
         "  cargo run -p game_harness -- simulate-candidates [--source-dir harness/validated_candidates] [--simulated-dir harness/simulated_candidates] [--repair-dir harness/repair_queue] [--seed-start N] [--seeds N] [--seconds N] [--tick-rate N] [--bots all|{}] [--report-dir harness/reports/local_candidate_simulation]",
         BotKind::all_names()
+    );
+    eprintln!(
+        "  cargo run -p game_harness -- promote-playtest-candidates [--source-dir harness/simulated_candidates] [--playtest-dir harness/playtest_candidates] [--repair-dir harness/repair_queue] [--report-dir harness/reports/local_playtest_promotion]"
     );
     eprintln!(
         "  cargo run -p game_harness -- gym-bridge [--seed N] [--seconds N] [--tick-rate N] [--content-dir content/base_demo]"
