@@ -141,6 +141,10 @@
     {
       "id": "runtime_demo_input_mode",
       "summary": "Runtime 增加 `--demo-input` 确定性演示输入，并生成 90 秒 demo capture；报告覆盖移动、XP 拾取、升级 offer/choice、事件计数和 final metrics"
+    },
+    {
+      "id": "runtime_boss_capture_pass",
+      "summary": "运行 240 秒 Runtime demo capture，验证 Boss 出场、玩家受伤、终局 terminal、事件计数和 final metrics 均能写入报告"
     }
   ],
   "current_findings": [
@@ -156,18 +160,13 @@
     },
     {
       "id": "manual_playtest_still_pending",
-      "summary": "Runtime 已能生成本地 playtest capture JSON，但人工可玩性判断尚未完成；下一轮应使用捕获参数实际试玩并补充清晰度、难度、命中反馈、XP 节奏和死亡原因备注。",
-      "report": "harness/telemetry/local/"
+      "summary": "Runtime demo capture 已自动覆盖移动、XP、升级、Boss 出场和受伤链路，但人工可玩性判断尚未完成；下一轮应实际试玩并补充清晰度、难度、命中反馈、XP 节奏和死亡原因备注。",
+      "report": "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md"
     },
     {
-      "id": "runtime_input_capture_gap",
-      "summary": "本轮 agent-smoke capture 成功记录 60 秒无输入 Runtime 循环，但未验证键盘移动、XP 拾取、升级选择和 Boss 表现；如需要自动化覆盖，应补一个明确的 Runtime demo input 模式。",
-      "report": "harness/reports/2026-05-25_runtime_playtest_capture_smoke_001/summary.md"
-    },
-    {
-      "id": "runtime_demo_input_boss_gap",
-      "summary": "90 秒 demo input capture 已覆盖移动、拾取和升级链路，但 Boss 在 210 秒才出现，受伤/死亡清晰度也未被覆盖；后续应增加更长或更高压的 Runtime capture。",
-      "report": "harness/reports/2026-05-25_runtime_demo_input_001/summary.md"
+      "id": "runtime_capture_operability_gap",
+      "summary": "240 秒 Runtime demo capture 写入终局报告后进程不会自动退出，且桌面环境墙钟耗时明显长于游戏时间；后续若要脚本化重复 capture，应增加 auto-exit 或加速/离屏模式。",
+      "report": "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -176,8 +175,8 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "runtime_boss_capture_pass",
-      "summary": "运行 210 秒以上的 Runtime demo/manual capture，专门验证 Boss 出场提示、Boss 可读性、受伤反馈和可能的死亡原因清晰度"
+      "id": "runtime_capture_auto_exit",
+      "summary": "为 Runtime capture 增加终局报告写盘后的可选自动退出能力，避免长时间 demo/manual capture 需要人工停止进程"
     }
   ]
 }
