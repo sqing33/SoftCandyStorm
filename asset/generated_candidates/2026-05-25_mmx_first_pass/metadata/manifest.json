@@ -1,0 +1,88 @@
+{
+  "batch_id": "2026-05-25_mmx_first_pass",
+  "generated_at": "2026-05-25",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_method": "api-key",
+    "source": "local configured mmx credentials"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "人工审查",
+      "后处理",
+      "格式整理",
+      "prompt 与来源复核",
+      "正式接入前再次确认"
+    ]
+  },
+  "assets": [
+    {
+      "id": "runtime_spritesheet_v001",
+      "type": "image",
+      "path": "images/runtime_spritesheet_v001_001.jpg",
+      "format": "jpg",
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "size": "172K",
+      "prompt": "Create a clean top-down 2D game spritesheet for a cute candy roguelite game. Theme: soft gummy candy storm, jelly monsters, candy weapons, pastel fantasy. Include one trainee candy jar keeper, round gummy monsters in pink and green, a rainbow candy projectile, a blue candy crystal pickup, and a cute runaway candy mixer boss. Style: rounded cartoon shapes, high contrast outline, readable at 32-64px, consistent lighting, cheerful action game style. Layout: isolated sprites in a clear grid, each sprite centered in its own cell with generous padding. Background: perfectly flat solid #00ff00 chroma-key background for removal. Constraints: no text, no labels, no watermark, no shadows crossing cells, no overlapping sprites.",
+      "negative_prompt": "no text, no labels, no watermark, no realistic gore, no horror, no dark sci-fi, no thin fragile details, no busy background, no shadows crossing sprite boundaries",
+      "qa_status": "needs_postprocess",
+      "qa_notes": [
+        "风格方向接近可爱糖果肉鸽，但没有遵守 #00ff00 绿幕背景约束。",
+        "实际为白底并带投影，不能直接裁切进入正式素材。",
+        "需要抠图、裁切、转 PNG，并复核 32-64px 小尺寸可读性。"
+      ]
+    },
+    {
+      "id": "voice_storm_alert_v001",
+      "type": "speech",
+      "path": "audio/voice_storm_alert_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 3.24,
+      "sample_rate_hz": 32000,
+      "channels": 1,
+      "bitrate": "128 kbps",
+      "size": "56K",
+      "text": "软糖风暴来了，守住糖罐！",
+      "prompt": "Chinese prototype voice alert for a cute candy roguelite: 软糖风暴来了，守住糖罐！",
+      "qa_status": "needs_review",
+      "qa_notes": [
+        "可作为开局或 Boss 前提示语音候选。",
+        "接入前需要人工听感审查、音量统一和风格确认。"
+      ]
+    },
+    {
+      "id": "bgm_candy_battle_loop_v001",
+      "type": "music",
+      "path": "music/bgm_candy_battle_loop_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 123.79,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "256 kbps",
+      "size": "3.8M",
+      "prompt": "Loopable upbeat cute candy roguelite battle background music for a top-down survival game. Bright marimba, plucky synth, toy percussion, bubbly bass, cheerful action energy, not dark, not cinematic horror, no vocals, suitable for a 60-90 second prototype gameplay loop.",
+      "generation_options": {
+        "instrumental": true,
+        "genre": "game soundtrack",
+        "mood": "cheerful action",
+        "instruments": "marimba, plucky synth, toy percussion, bubbly bass",
+        "tempo": "fast",
+        "bpm": 132,
+        "avoid": "dark horror, heavy metal, vocals, lyrics, realistic gore mood",
+        "use_case": "background music for prototype gameplay"
+      },
+      "qa_status": "needs_review",
+      "qa_notes": [
+        "作为糖果风战斗 BGM 候选。",
+        "生成长度约 124 秒，和 60-90 秒目标不完全一致。",
+        "接入前需要听感审查、循环点剪辑、响度统一和版本标注。"
+      ]
+    }
+  ]
+}
