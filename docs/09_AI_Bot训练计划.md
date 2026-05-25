@@ -271,6 +271,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 结论：中后期轨迹覆盖可以显著改善长局存活与动作分布，但最终图仍需要定向数据、危险状态重采样或序列上下文，不能把该模型推进为 RL 测试 Bot。
 
+针对 `cracked-star-jar` 增加 120-300 秒最终图定向轨迹后，最终图 300 秒胜率从 0% 提升到 66.67%，但 `soda-creek` 回归到 0%，说明单图补强会移动失败面。后续应做多图危险状态重采样或序列上下文，而不是继续单图堆样本。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

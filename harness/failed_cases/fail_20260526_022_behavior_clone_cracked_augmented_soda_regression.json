@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_022",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_cracked_augmented_smoke",
+  "seed": 38000,
+  "bot": "BehaviorCloneKiteCrackedAugmentedSmoke",
+  "time_seconds": 300.0,
+  "symptom": "追加 cracked-star-jar 120-300 秒定向轨迹后，cracked-star-jar 300 秒胜率从 0% 提升到 66.67%，但 soda-creek 回归到 0%，multi-map gate 仍为 repair",
+  "root_cause": "单图最终图补强改变了策略偏好，虽然改善最终图高压状态，却削弱了 soda-creek 长局恢复和续航；MLP movement clone 缺少跨地图序列上下文和危险状态平衡采样",
+  "fix": "停止单图继续加样本，改为三张 high-pressure 地图共同的危险状态重采样，或加入序列上下文模型后再训练",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_cracked_augmented_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 38000 --rule-bots random,kite,tank --report harness/reports/2026-05-26_rl_behavior_clone_kite_cracked_augmented_multimap_300s_001/comparison.json"
+}
