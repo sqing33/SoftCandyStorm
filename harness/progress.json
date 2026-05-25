@@ -177,6 +177,10 @@
     {
       "id": "accepted_content_version_lock",
       "summary": "实现 accepted_content 版本锁定命令，复核 acceptance_gate、内容 hash、人工审查引用和静态预算后生成 lockfile 与报告"
+    },
+    {
+      "id": "runtime_locked_content_selection",
+      "summary": "Runtime 增加 accepted lockfile 内容选择入口，只有 lockfile 中 status=locked 的候选可通过 --accepted-lock-file / --accepted-content-id 被读取"
     }
   ],
   "current_findings": [
@@ -211,6 +215,11 @@
       "report": "harness/reports/2026-05-25_accepted_content_lock_smoke_001/summary.md"
     },
     {
+      "id": "runtime_locked_content_smoke_is_synthetic",
+      "summary": "Runtime 已用临时 lockfile 验证可从 locked entry 解析内容目录并完成 1 秒 demo capture；该 smoke 不代表真实 accepted_content 已可上线。",
+      "report": "harness/reports/2026-05-25_runtime_lock_content_smoke_001/summary.md"
+    },
+    {
       "id": "runtime_capture_visual_client_limit",
       "summary": "`--simulation-speed` 已降低 Runtime capture 的等待成本，但 Bevy 窗口启动和渲染仍有明显墙钟开销；高容量确定性验证仍应优先使用 headless Harness。",
       "report": "harness/reports/2026-05-25_runtime_simulation_speed_smoke_001/summary.md"
@@ -231,8 +240,8 @@
       "summary": "安装 Gymnasium、NumPy 和 Stable-Baselines3 后，运行最小 DQN 训练并保存模型、metadata、评估报告和已知 exploit 记录"
     },
     {
-      "id": "accepted_content_runtime_import",
-      "summary": "在真实人工验收通过后，依据 accepted_content lockfile 设计 Runtime/content 导入或选择流程，避免未锁定候选被正式读取"
+      "id": "meta_progression_core",
+      "summary": "根据 docs/18 实现最小局外进度模型，覆盖糖晶碎片、章节目标、图鉴进度、角色/武器/地图解锁和结算奖励计算"
     }
   ]
 }

@@ -7,7 +7,7 @@ use game_core::{
     ContentPack, Difficulty, FixedDt, GameCore, GameEvent, PlayerAction, RunConfig, RunMetrics,
     RunSnapshot, StartingLoadout, TerminalKind, TerminalState, Vec2 as CoreVec2,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf, sync::Arc};
 
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
@@ -92,6 +92,9 @@ fn runtime_sprite_paths() -> &'static [&'static str] {
 #[derive(Debug, Clone)]
 struct RuntimeCli {
     content_dir: PathBuf,
+    accepted_lock_file: Option<PathBuf>,
+    accepted_content_id: Option<String>,
+    content_pack_ids: Vec<String>,
     seed: u64,
     seconds: f32,
     tick_rate: u32,
@@ -107,6 +110,9 @@ impl Default for RuntimeCli {
     fn default() -> Self {
         Self {
             content_dir: PathBuf::from(DEFAULT_CONTENT_DIR),
+            accepted_lock_file: None,
+            accepted_content_id: None,
+            content_pack_ids: vec!["base-demo".to_string()],
             seed: 12_345,
             seconds: 600.0,
             tick_rate: 30,
@@ -273,6 +279,20 @@ struct RuntimeMetricsReport {
     upgrade_choices: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+struct AcceptedContentLockFile {
+    status: String,
+    entries: Vec<AcceptedContentLockEntry>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct AcceptedContentLockEntry {
+    id: String,
+    runtime_content_dir: String,
+    status: String,
+    content_hash: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct RuntimeTerminalReport {
     kind: &'static str,
@@ -342,7 +362,8 @@ fn setup_runtime(
     mut audio_sources: ResMut<Assets<AudioSource>>,
     asset_server: Res<AssetServer>,
 ) {
-    let cli = parse_runtime_cli(std::env::args().skip(1));
+    let cli = resolve_runtime_content_selection(parse_runtime_cli(std::env::args().skip(1)))
+        .unwrap_or_else(|error| panic!("failed to resolve runtime content selection: {error}"));
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
         panic!(
             "failed to load runtime content from `{}`: {error}",
@@ -1298,7 +1319,7 @@ fn run_config_from_cli(cli: &RuntimeCli) -> RunConfig {
         difficulty: Difficulty::Normal,
         duration_seconds: cli.seconds,
         ruleset_version: "prototype-v0".to_string(),
-        content_pack_ids: vec!["base-demo".to_string()],
+        content_pack_ids: cli.content_pack_ids.clone(),
         tick_rate: cli.tick_rate,
     }
 }
@@ -1318,6 +1339,16 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--content-dir" => {
                 if let Some(value) = args.next() {
                     cli.content_dir = PathBuf::from(value);
+                }
+            }
+            "--accepted-lock-file" => {
+                if let Some(value) = args.next() {
+                    cli.accepted_lock_file = Some(PathBuf::from(value));
+                }
+            }
+            "--accepted-content-id" => {
+                if let Some(value) = args.next() {
+                    cli.accepted_content_id = Some(value);
                 }
             }
             "--seed" => {
@@ -1371,6 +1402,60 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
     }
 
     cli
+}
+
+fn resolve_runtime_content_selection(mut cli: RuntimeCli) -> Result<RuntimeCli, String> {
+    let Some(lock_file) = cli.accepted_lock_file.clone() else {
+        return Ok(cli);
+    };
+    let text = fs::read_to_string(&lock_file)
+        .map_err(|error| format!("failed to read `{}`: {error}", lock_file.display()))?;
+    let lock = serde_json::from_str::<AcceptedContentLockFile>(&text)
+        .map_err(|error| format!("failed to parse `{}`: {error}", lock_file.display()))?;
+    if lock.status != "locked" {
+        return Err(format!(
+            "accepted content lock `{}` has status `{}`",
+            lock_file.display(),
+            lock.status
+        ));
+    }
+
+    let locked_entries = lock
+        .entries
+        .iter()
+        .filter(|entry| entry.status == "locked")
+        .collect::<Vec<_>>();
+    let selected = if let Some(requested_id) = &cli.accepted_content_id {
+        locked_entries
+            .iter()
+            .find(|entry| entry.id == requested_id.as_str())
+            .copied()
+            .ok_or_else(|| {
+                format!(
+                    "accepted content id `{requested_id}` is not locked in `{}`",
+                    lock_file.display()
+                )
+            })?
+    } else if locked_entries.len() == 1 {
+        locked_entries[0]
+    } else {
+        return Err(format!(
+            "accepted content lock `{}` has {} locked entries; pass --accepted-content-id",
+            lock_file.display(),
+            locked_entries.len()
+        ));
+    };
+    if selected.content_hash.as_deref().unwrap_or("").is_empty() {
+        return Err(format!(
+            "accepted content id `{}` is locked without content_hash",
+            selected.id
+        ));
+    }
+
+    cli.content_dir = PathBuf::from(&selected.runtime_content_dir);
+    cli.accepted_content_id = Some(selected.id.clone());
+    cli.content_pack_ids = vec![selected.id.clone()];
+    Ok(cli)
 }
 
 impl RuntimeCaptureState {
@@ -1559,15 +1644,16 @@ fn write_runtime_playtest_report(
 mod tests {
     use super::{
         demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
-        make_tone_wav, parse_runtime_cli, player_tint, run_config_from_cli, runtime_asset_root,
-        runtime_sprite_paths, sounds_for_events, RuntimeCaptureState, RuntimeEffectKind,
-        RuntimeEventCounts, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
+        make_tone_wav, parse_runtime_cli, player_tint, resolve_runtime_content_selection,
+        run_config_from_cli, runtime_asset_root, runtime_sprite_paths, sounds_for_events,
+        RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
+        RuntimeSound, DEFAULT_CONTENT_DIR,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, PickupSnapshot,
         PickupType, RunConfig, Vec2 as CoreVec2,
     };
-    use std::path::PathBuf;
+    use std::{fs, path::PathBuf};
 
     #[test]
     fn parses_runtime_cli_overrides() {
@@ -1593,6 +1679,61 @@ mod tests {
         assert!(cli.demo_input);
         assert_eq!(cli.simulation_speed, 4.0);
         assert!(cli.auto_exit_after_report);
+    }
+
+    #[test]
+    fn parses_runtime_accepted_content_lock_options() {
+        let cli = parse_runtime_cli([
+            "--accepted-lock-file".to_string(),
+            "harness/accepted_content/accepted_content.lock.json".to_string(),
+            "--accepted-content-id".to_string(),
+            "base-demo-smoke".to_string(),
+        ]);
+
+        assert_eq!(
+            cli.accepted_lock_file,
+            Some(PathBuf::from(
+                "harness/accepted_content/accepted_content.lock.json"
+            ))
+        );
+        assert_eq!(cli.accepted_content_id, Some("base-demo-smoke".to_string()));
+    }
+
+    #[test]
+    fn resolves_runtime_content_from_single_locked_entry() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-lock-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let lock_file = root.join("accepted_content.lock.json");
+        fs::write(
+            &lock_file,
+            r#"{
+  "status": "locked",
+  "entries": [
+    {
+      "id": "base-demo-smoke",
+      "runtime_content_dir": "/tmp/base-demo-smoke",
+      "status": "locked",
+      "content_hash": "fnv1a64:example"
+    }
+  ]
+}
+"#,
+        )
+        .unwrap();
+
+        let cli = resolve_runtime_content_selection(RuntimeCli {
+            accepted_lock_file: Some(lock_file),
+            ..RuntimeCli::default()
+        })
+        .unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(cli.content_dir, PathBuf::from("/tmp/base-demo-smoke"));
+        assert_eq!(cli.content_pack_ids, ["base-demo-smoke"]);
     }
 
     #[test]
