@@ -195,6 +195,30 @@ impl ContentPack {
                 "cooldown_multiplier",
                 0.92,
             ),
+            passive_add(
+                "nonstick-apron",
+                "防粘围裙",
+                &["defense", "beginner"],
+                "降低接触伤害。",
+                "damage_reduction",
+                0.06,
+            ),
+            passive_add(
+                "sour-tuner",
+                "酸味调节器",
+                &["control", "duration"],
+                "延长控制和持续效果。",
+                "effect_duration",
+                0.1,
+            ),
+            passive_add(
+                "frosting-gloves",
+                "糖霜手套",
+                &["projectile", "size"],
+                "增加投射物大小。",
+                "projectile_size",
+                0.08,
+            ),
         ] {
             pack.passives.insert(passive.id.clone(), passive);
         }

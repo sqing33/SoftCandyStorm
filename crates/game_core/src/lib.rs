@@ -711,9 +711,11 @@ impl GameCore {
             let count = self.weapons[weapon_index].projectile_count();
             let projectile_speed = self.weapons[weapon_index].projectile_speed;
             let damage = self.weapons[weapon_index].damage * self.player.damage_multiplier;
-            let radius = self.weapons[weapon_index].radius;
+            let radius =
+                self.weapons[weapon_index].radius * self.player.projectile_size_multiplier.max(0.1);
             let pierce = self.weapons[weapon_index].pierce;
             let cooldown = self.weapons[weapon_index].cooldown * self.player.cooldown_multiplier;
+            let lifetime = 1.2 * self.player.effect_duration_multiplier.max(0.1);
             let base_direction = (target_position - self.player.position).normalized_or_zero();
             let spread_step = if count > 1 { 0.18 } else { 0.0 };
             let spread_start = -spread_step * (count.saturating_sub(1) as f32) * 0.5;
@@ -729,7 +731,7 @@ impl GameCore {
                     damage,
                     radius,
                     pierce_remaining: pierce,
-                    lifetime: 1.2,
+                    lifetime,
                 };
                 self.projectiles.push(projectile);
             }
@@ -828,7 +830,8 @@ impl GameCore {
             return;
         }
 
-        let damage = total_contact_dps * dt;
+        let damage_reduction = self.player.damage_reduction.clamp(0.0, 0.8);
+        let damage = total_contact_dps * dt * (1.0 - damage_reduction);
         self.player.health = (self.player.health - damage).max(0.0);
         self.metrics.damage_taken += damage;
         reward_hint.damage_taken_delta += damage;
@@ -1078,6 +1081,24 @@ impl GameCore {
                 ("xp_multiplier", "multiply") => {
                     self.player.xp_multiplier *= modifier.value_per_level;
                 }
+                ("damage_reduction", "add") => {
+                    self.player.damage_reduction += modifier.value_per_level;
+                }
+                ("damage_reduction", "multiply") => {
+                    self.player.damage_reduction *= modifier.value_per_level;
+                }
+                ("projectile_size", "add") => {
+                    self.player.projectile_size_multiplier += modifier.value_per_level;
+                }
+                ("projectile_size", "multiply") => {
+                    self.player.projectile_size_multiplier *= modifier.value_per_level;
+                }
+                ("effect_duration", "add") => {
+                    self.player.effect_duration_multiplier += modifier.value_per_level;
+                }
+                ("effect_duration", "multiply") => {
+                    self.player.effect_duration_multiplier *= modifier.value_per_level;
+                }
                 _ => {}
             }
         }
@@ -1199,6 +1220,9 @@ struct PlayerState {
     damage_multiplier: f32,
     cooldown_multiplier: f32,
     xp_multiplier: f32,
+    damage_reduction: f32,
+    projectile_size_multiplier: f32,
+    effect_duration_multiplier: f32,
 }
 
 impl PlayerState {
@@ -1215,6 +1239,9 @@ impl PlayerState {
             damage_multiplier: definition.base_stats.damage_multiplier,
             cooldown_multiplier: definition.base_stats.cooldown_multiplier,
             xp_multiplier: definition.base_stats.xp_multiplier,
+            damage_reduction: 0.0,
+            projectile_size_multiplier: 1.0,
+            effect_duration_multiplier: 1.0,
         }
     }
 }
@@ -1585,7 +1612,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 16);
+        assert_eq!(content.object_count(), 19);
         let mut core = GameCore::reset_with_content(
             RunConfig {
                 seed: 7,
@@ -1624,5 +1651,18 @@ mod tests {
                 .map(|terminal| terminal.kind),
             Some(TerminalKind::Victory)
         );
+    }
+
+    #[test]
+    fn passive_special_stats_affect_runtime_modifiers() {
+        let mut core = GameCore::reset(RunConfig::default());
+
+        core.apply_passive("nonstick-apron");
+        core.apply_passive("frosting-gloves");
+        core.apply_passive("sour-tuner");
+
+        assert!(core.player.damage_reduction > 0.0);
+        assert!(core.player.projectile_size_multiplier > 1.0);
+        assert!(core.player.effect_duration_multiplier > 1.0);
     }
 }
