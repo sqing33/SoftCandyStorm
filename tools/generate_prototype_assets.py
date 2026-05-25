@@ -202,7 +202,7 @@ def main() -> None:
         "source": "programmatic_pillow",
         "candidate_only": False,
         "runtime_ready": True,
-        "runtime_integrated": False,
+        "runtime_integrated": True,
         "style": "cute candy top-down prototype placeholders",
         "notes": [
             "These are programmatic placeholder assets, not AI-generated final art.",

@@ -1,4 +1,5 @@
 use bevy::{
+    asset::AssetPlugin,
     audio::{AudioBundle, AudioSource, PlaybackSettings, Volume},
     prelude::*,
 };
@@ -16,19 +17,35 @@ const PICKUP_Z: f32 = 5.0;
 const MAP_Z: f32 = -20.0;
 const MAP_BORDER_Z: f32 = -19.0;
 const PLACEHOLDER_SAMPLE_RATE: u32 = 22_050;
+const PLAYER_SPRITE: &str = "prototype_topdown/sprites/player_jar_keeper_v001.png";
+const BOUNCY_GUMMY_SPRITE: &str = "prototype_topdown/sprites/enemy_bouncy_gummy_v001.png";
+const SOUR_GUMMY_SPRITE: &str = "prototype_topdown/sprites/enemy_sour_gummy_v001.png";
+const CARAMEL_SLIME_SPRITE: &str = "prototype_topdown/sprites/enemy_caramel_slime_v001.png";
+const SANDWICH_COOKIE_SPRITE: &str =
+    "prototype_topdown/sprites/enemy_sandwich_cookie_creep_v001.png";
+const BOSS_MIXER_SPRITE: &str = "prototype_topdown/sprites/boss_runaway_sugar_mixer_v001.png";
+const PICKUP_CRYSTAL_SPRITE: &str = "prototype_topdown/sprites/pickup_candy_crystal_v001.png";
+const MAP_TILE_SPRITE: &str = "prototype_topdown/sprites/map_frosting_grassland_tile_v001.png";
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::srgb(0.95, 0.91, 0.78)))
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Soft Candy Storm Runtime Prototype".to_string(),
-                resolution: (1280.0, 720.0).into(),
-                present_mode: bevy::window::PresentMode::AutoVsync,
-                ..default()
-            }),
-            ..default()
-        }))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Soft Candy Storm Runtime Prototype".to_string(),
+                        resolution: (1280.0, 720.0).into(),
+                        present_mode: bevy::window::PresentMode::AutoVsync,
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(AssetPlugin {
+                    file_path: runtime_asset_root(),
+                    ..default()
+                }),
+        )
         .add_systems(Startup, setup_runtime)
         .add_systems(
             Update,
@@ -41,6 +58,13 @@ fn main() {
             ),
         )
         .run();
+}
+
+fn runtime_asset_root() -> String {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../assets")
+        .display()
+        .to_string()
 }
 
 #[derive(Debug, Clone)]
@@ -109,6 +133,18 @@ struct RuntimeSounds {
     system: Handle<AudioSource>,
 }
 
+#[derive(Resource)]
+struct RuntimeSprites {
+    player: Handle<Image>,
+    bouncy_gummy: Handle<Image>,
+    sour_gummy: Handle<Image>,
+    caramel_slime: Handle<Image>,
+    sandwich_cookie: Handle<Image>,
+    boss_mixer: Handle<Image>,
+    pickup_crystal: Handle<Image>,
+    map_tile: Handle<Image>,
+}
+
 #[derive(Component)]
 struct RuntimeVisual;
 
@@ -126,7 +162,11 @@ struct TerminalText;
 
 type TerminalTextFilter = (With<TerminalText>, Without<HudText>, Without<UpgradeText>);
 
-fn setup_runtime(mut commands: Commands, mut audio_sources: ResMut<Assets<AudioSource>>) {
+fn setup_runtime(
+    mut commands: Commands,
+    mut audio_sources: ResMut<Assets<AudioSource>>,
+    asset_server: Res<AssetServer>,
+) {
     let cli = parse_runtime_cli(std::env::args().skip(1));
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
         panic!(
@@ -208,6 +248,7 @@ fn setup_runtime(mut commands: Commands, mut audio_sources: ResMut<Assets<AudioS
         run_number: 1,
     });
     commands.insert_resource(create_runtime_sounds(&mut audio_sources));
+    commands.insert_resource(load_runtime_sprites(&asset_server));
 }
 
 fn step_game_core(
@@ -349,6 +390,7 @@ fn sync_camera(state: Res<RuntimeState>, mut query: Query<&mut Transform, With<R
 fn sync_world_visuals(
     mut commands: Commands,
     state: Res<RuntimeState>,
+    sprites: Res<RuntimeSprites>,
     visuals: Query<Entity, With<RuntimeVisual>>,
 ) {
     for entity in &visuals {
@@ -358,8 +400,9 @@ fn sync_world_visuals(
     let snapshot = &state.latest_snapshot;
     commands.spawn((
         SpriteBundle {
+            texture: sprites.map_tile.clone(),
             sprite: Sprite {
-                color: Color::srgb(0.82, 0.94, 0.68),
+                color: Color::WHITE,
                 custom_size: Some(Vec2::new(snapshot.map.width, snapshot.map.height)),
                 ..default()
             },
@@ -371,11 +414,13 @@ fn sync_world_visuals(
     spawn_map_borders(&mut commands, snapshot);
 
     for pickup in &snapshot.visible_pickups {
+        let size = (pickup.radius * 2.0).max(24.0);
         commands.spawn((
             SpriteBundle {
+                texture: sprites.pickup_crystal.clone(),
                 sprite: Sprite {
-                    color: Color::srgb(0.25, 0.78, 0.96),
-                    custom_size: Some(Vec2::splat((pickup.radius * 1.6).max(8.0))),
+                    color: Color::WHITE,
+                    custom_size: Some(Vec2::splat(size)),
                     ..default()
                 },
                 transform: Transform::from_xyz(pickup.position.x, pickup.position.y, PICKUP_Z),
@@ -386,10 +431,14 @@ fn sync_world_visuals(
     }
 
     for enemy in &snapshot.visible_enemies {
+        let texture = sprites
+            .enemy(enemy.enemy_id.as_str(), enemy.is_boss)
+            .clone();
         commands.spawn((
             SpriteBundle {
+                texture,
                 sprite: Sprite {
-                    color: enemy_color(enemy.is_boss, enemy.is_elite),
+                    color: enemy_tint(enemy.is_boss, enemy.is_elite),
                     custom_size: Some(Vec2::splat(enemy.radius * 2.0)),
                     ..default()
                 },
@@ -402,8 +451,9 @@ fn sync_world_visuals(
 
     commands.spawn((
         SpriteBundle {
+            texture: sprites.player.clone(),
             sprite: Sprite {
-                color: player_color(snapshot.player.health, snapshot.player.max_health),
+                color: player_tint(snapshot.player.health, snapshot.player.max_health),
                 custom_size: Some(Vec2::splat(42.0)),
                 ..default()
             },
@@ -462,17 +512,42 @@ fn spawn_map_borders(commands: &mut Commands, snapshot: &RunSnapshot) {
     }
 }
 
-fn enemy_color(is_boss: bool, is_elite: bool) -> Color {
-    if is_boss {
-        Color::srgb(0.92, 0.20, 0.38)
-    } else if is_elite {
-        Color::srgb(0.74, 0.27, 0.91)
-    } else {
-        Color::srgb(1.0, 0.45, 0.58)
+fn load_runtime_sprites(asset_server: &AssetServer) -> RuntimeSprites {
+    RuntimeSprites {
+        player: asset_server.load(PLAYER_SPRITE),
+        bouncy_gummy: asset_server.load(BOUNCY_GUMMY_SPRITE),
+        sour_gummy: asset_server.load(SOUR_GUMMY_SPRITE),
+        caramel_slime: asset_server.load(CARAMEL_SLIME_SPRITE),
+        sandwich_cookie: asset_server.load(SANDWICH_COOKIE_SPRITE),
+        boss_mixer: asset_server.load(BOSS_MIXER_SPRITE),
+        pickup_crystal: asset_server.load(PICKUP_CRYSTAL_SPRITE),
+        map_tile: asset_server.load(MAP_TILE_SPRITE),
     }
 }
 
-fn player_color(health: f32, max_health: f32) -> Color {
+impl RuntimeSprites {
+    fn enemy(&self, enemy_id: &str, is_boss: bool) -> &Handle<Image> {
+        if is_boss {
+            return &self.boss_mixer;
+        }
+        match enemy_id {
+            "sour-gummy" => &self.sour_gummy,
+            "caramel-slime" => &self.caramel_slime,
+            "sandwich-cookie-creep" => &self.sandwich_cookie,
+            _ => &self.bouncy_gummy,
+        }
+    }
+}
+
+fn enemy_tint(_is_boss: bool, is_elite: bool) -> Color {
+    if is_elite {
+        Color::srgb(1.0, 0.82, 1.0)
+    } else {
+        Color::WHITE
+    }
+}
+
+fn player_tint(health: f32, max_health: f32) -> Color {
     let ratio = if max_health > 0.0 {
         (health / max_health).clamp(0.0, 1.0)
     } else {
@@ -481,7 +556,7 @@ fn player_color(health: f32, max_health: f32) -> Color {
     if ratio < 0.30 {
         Color::srgb(1.0, 0.55, 0.48)
     } else {
-        Color::srgb(1.0, 0.93, 0.98)
+        Color::WHITE
     }
 }
 
@@ -815,8 +890,8 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
 #[cfg(test)]
 mod tests {
     use super::{
-        event_kind_for_events, make_tone_wav, parse_runtime_cli, player_color, run_config_from_cli,
-        sounds_for_events, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
+        event_kind_for_events, make_tone_wav, parse_runtime_cli, player_tint, run_config_from_cli,
+        runtime_asset_root, sounds_for_events, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
     };
     use game_core::GameEvent;
     use std::path::PathBuf;
@@ -859,8 +934,16 @@ mod tests {
     }
 
     #[test]
-    fn low_health_changes_player_color() {
-        assert_ne!(player_color(100.0, 100.0), player_color(20.0, 100.0));
+    fn low_health_changes_player_tint() {
+        assert_ne!(player_tint(100.0, 100.0), player_tint(20.0, 100.0));
+    }
+
+    #[test]
+    fn runtime_asset_root_points_to_workspace_assets() {
+        let root = PathBuf::from(runtime_asset_root());
+
+        assert!(root.ends_with("assets"));
+        assert!(root.join("prototype_topdown/manifest.json").exists());
     }
 
     #[test]

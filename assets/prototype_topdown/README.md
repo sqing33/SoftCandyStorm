@@ -17,7 +17,7 @@ These files are not AI-generated final art. They exist to replace temporary geom
 
 - Source: `tools/generate_prototype_assets.py`
 - Style: cute candy, rounded, high-contrast, top-down readable
-- Runtime status: prototype placeholder only
+- Runtime status: integrated by `crates/game_runtime`
 - Final-art status: not final art
 
 AI-generated candidates must still stay in `asset/generated_candidates/` until reviewed. Final promoted art must keep source, prompt or authoring notes, version, and post-processing metadata.

@@ -109,19 +109,23 @@
     {
       "id": "prototype_topdown_placeholder_assets",
       "summary": "生成程序化 top-down Runtime 原型占位素材包，覆盖玩家、四类敌人、Boss、XP 糖晶、彩虹糖弹和糖霜草地图块，并保存生成脚本、manifest 与 contact sheet"
+    },
+    {
+      "id": "runtime_prototype_asset_loading",
+      "summary": "Bevy Runtime 启动时加载 `assets/prototype_topdown` 程序化占位纹理，并用玩家、敌人、Boss、XP 糖晶和地图 tile 替换几何色块绘制"
     }
   ],
   "current_findings": [
     {
-      "id": "runtime_asset_integration_pending",
-      "summary": "程序化 top-down 原型占位素材已经生成并可用于替换 Runtime 几何色块；下一步需要在 Bevy Runtime 中加载这些纹理，同时保留 AI 候选不越级接入正式素材",
+      "id": "asset_final_art_still_pending",
+      "summary": "Runtime 已接入程序化 top-down 原型占位素材；这些素材不是最终美术，AI 生成图仍停留在候选池，后续正式美术仍需人工审查和来源/版本/后处理记录",
       "report": "assets/prototype_topdown/manifest.json"
     }
   ],
   "next_recommended": [
     {
-      "id": "runtime_load_prototype_assets",
-      "summary": "让 Runtime 加载 `assets/prototype_topdown` 程序化占位纹理，替换玩家、敌人、Boss 和 XP pickup 的几何色块绘制"
+      "id": "runtime_asset_visual_smoke",
+      "summary": "运行 Bevy Runtime 截图或人工冒烟检查，确认程序化占位纹理在窗口中正确显示、缩放和跟随 GameCore snapshot"
     },
     {
       "id": "larger_bot_baseline_nightly",
