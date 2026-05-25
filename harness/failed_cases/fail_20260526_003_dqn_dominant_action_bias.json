@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_003",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "30000-30001",
+  "bot": "DQN policy",
+  "time_seconds": 5.0,
+  "symptom": "DQN 冒烟模型在 2 个 seed、共 302 个 step 中 100% 选择离散动作 1；虽然短局均为 duration_reached victory，但行为明显塌缩，平均击杀也低于同窗口规则 Bot。",
+  "root_cause": "训练步数只有 128，评估窗口只有 5 秒，奖励与探索不足以形成稳定移动策略；当前 smoke 只验证 SB3 链路，不能代表可用 RL Bot。",
+  "fix": "增加动作分布/动作熵监控，扩大训练步数和评估时长，并考虑加入动作塌缩惩罚、拾取/击杀奖励拆解或 PPO 对照。",
+  "validation": "重新运行 policy 与规则 Bot 同 seed / 同 map 对比，要求动作分布不再由单一动作占 75% 以上，并记录 survival、kills、damage_taken 与 exploit findings。"
+}
