@@ -233,12 +233,16 @@
     {
       "id": "base_demo_weapon_roster_completion",
       "summary": "补齐 docs/04 首批 10 个武器配置，新增棉花糖护盾、棒棒糖回旋镖、跳跳糖地雷、焦糖黏地、布丁炮台、薄荷旋风和星糖射线，并同步内置 base_demo 内容包"
+    },
+    {
+      "id": "weapon_type_runtime_semantics",
+      "summary": "GameCore 开始按武器 type 执行首版运行时语义：orbit 从玩家周围生成环绕弹，burst/zone 在目标地面生成区域，summon 从玩家附近发射，beam 使用持续时间和更高穿透"
     }
   ],
   "current_findings": [
     {
       "id": "weapon_type_runtime_scope",
-      "summary": "base_demo 已覆盖 docs/04 首批武器名录和静态预算；当前 GameCore 仍以统一 projectile 表现运行 orbit、zone、summon、beam 等类型，后续需补专属武器运行时语义和 Runtime 可视反馈。",
+      "summary": "base_demo 已覆盖 docs/04 首批武器名录和静态预算；GameCore 已为 orbit、burst、zone、summon、beam 增加首版运行时差异，但 Runtime 专属视觉、持续伤害/控制细节和完整平衡回归仍待补齐。",
       "report": "content/base_demo/weapons/marshmallow-shield.json"
     },
     {

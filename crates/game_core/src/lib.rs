@@ -905,6 +905,7 @@ impl GameCore {
             };
 
             let weapon_id = self.weapons[weapon_index].id.clone();
+            let weapon_type = self.weapons[weapon_index].weapon_type.clone();
             let count = self.weapons[weapon_index].projectile_count();
             let projectile_speed = self.weapons[weapon_index].projectile_speed;
             let damage = self.weapons[weapon_index].damage
@@ -914,23 +915,36 @@ impl GameCore {
                 self.weapons[weapon_index].radius * self.player.projectile_size_multiplier.max(0.1);
             let pierce = self.weapons[weapon_index].pierce;
             let cooldown = self.weapons[weapon_index].cooldown * self.player.cooldown_multiplier;
-            let lifetime = 1.2 * self.player.effect_duration_multiplier.max(0.1);
+            let duration = self.weapons[weapon_index].duration;
+            let lifetime = weapon_lifetime(&weapon_type, duration)
+                * self.player.effect_duration_multiplier.max(0.1);
             let base_direction = (target_position - self.player.position).normalized_or_zero();
             let spread_step = if count > 1 { 0.18 } else { 0.0 };
             let spread_start = -spread_step * (count.saturating_sub(1) as f32) * 0.5;
 
             for projectile_index in 0..count {
-                let angle = spread_start + spread_step * projectile_index as f32;
-                let direction = base_direction.rotated(angle).normalized_or_zero();
+                let runtime = self.weapon_projectile_runtime(WeaponProjectileRuntimeInput {
+                    weapon_type: &weapon_type,
+                    target_position,
+                    base_direction,
+                    projectile_index,
+                    projectile_count: count,
+                    spread_start,
+                    spread_step,
+                    projectile_speed,
+                    pierce,
+                    lifetime,
+                    radius,
+                });
                 let projectile = Projectile {
                     entity_id: self.allocate_entity_id(),
                     weapon_id: weapon_id.clone(),
-                    position: self.player.position,
-                    velocity: direction * projectile_speed,
+                    position: runtime.position,
+                    velocity: runtime.velocity,
                     damage,
                     radius,
-                    pierce_remaining: pierce,
-                    lifetime,
+                    pierce_remaining: runtime.pierce_remaining,
+                    lifetime: runtime.lifetime,
                 };
                 self.projectiles.push(projectile);
             }
@@ -941,6 +955,82 @@ impl GameCore {
                 projectile_count: count as u32,
             });
         }
+    }
+
+    fn weapon_projectile_runtime(
+        &self,
+        input: WeaponProjectileRuntimeInput<'_>,
+    ) -> ProjectileRuntime {
+        match input.weapon_type {
+            "orbit" => {
+                let angle = std::f32::consts::TAU * input.projectile_index as f32
+                    / input.projectile_count.max(1) as f32
+                    + self.time_seconds * 1.7;
+                let radial = Vec2::new(angle.cos(), angle.sin());
+                let tangent = Vec2::new(-angle.sin(), angle.cos());
+                let orbit_radius = (PLAYER_RADIUS + input.radius + 18.0)
+                    .max(self.weapons_orbit_range_hint(input.radius));
+                ProjectileRuntime {
+                    position: self.player.position + radial * orbit_radius,
+                    velocity: tangent * input.projectile_speed * 0.35,
+                    pierce_remaining: input.pierce.max(2),
+                    lifetime: input.lifetime,
+                }
+            }
+            "burst" | "zone" => {
+                let angle = std::f32::consts::TAU * input.projectile_index as f32
+                    / input.projectile_count.max(1) as f32;
+                let offset = if input.projectile_count > 1 {
+                    Vec2::new(angle.cos(), angle.sin()) * input.radius * 0.65
+                } else {
+                    Vec2::ZERO
+                };
+                ProjectileRuntime {
+                    position: self.clamp_to_map(input.target_position + offset),
+                    velocity: Vec2::ZERO,
+                    pierce_remaining: input.pierce.max(3),
+                    lifetime: input.lifetime,
+                }
+            }
+            "summon" => {
+                let angle = std::f32::consts::TAU * input.projectile_index as f32
+                    / input.projectile_count.max(1) as f32
+                    + 0.6;
+                let summon_position =
+                    self.player.position + Vec2::new(angle.cos(), angle.sin()) * 44.0;
+                let direction = (input.target_position - summon_position).normalized_or_zero();
+                ProjectileRuntime {
+                    position: self.clamp_to_map(summon_position),
+                    velocity: direction * input.projectile_speed,
+                    pierce_remaining: input.pierce,
+                    lifetime: input.lifetime,
+                }
+            }
+            "beam" => {
+                let angle = input.spread_start + input.spread_step * input.projectile_index as f32;
+                let direction = input.base_direction.rotated(angle).normalized_or_zero();
+                ProjectileRuntime {
+                    position: self.player.position,
+                    velocity: direction * input.projectile_speed,
+                    pierce_remaining: input.pierce.max(4),
+                    lifetime: input.lifetime,
+                }
+            }
+            _ => {
+                let angle = input.spread_start + input.spread_step * input.projectile_index as f32;
+                let direction = input.base_direction.rotated(angle).normalized_or_zero();
+                ProjectileRuntime {
+                    position: self.player.position,
+                    velocity: direction * input.projectile_speed,
+                    pierce_remaining: input.pierce,
+                    lifetime: input.lifetime,
+                }
+            }
+        }
+    }
+
+    fn weapons_orbit_range_hint(&self, radius: f32) -> f32 {
+        (radius * 2.0 + PLAYER_RADIUS).min(96.0)
     }
 
     fn update_projectiles(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
@@ -1621,6 +1711,20 @@ fn xp_required(level: u32) -> f32 {
     (12.0 + level as f32 * 8.0 + (level as f32).powf(1.35) * 5.0).floor()
 }
 
+fn weapon_lifetime(weapon_type: &str, duration: f32) -> f32 {
+    if duration > 0.0 {
+        return duration;
+    }
+
+    match weapon_type {
+        "burst" => 0.35,
+        "zone" => 2.0,
+        "beam" => 0.75,
+        "orbit" => 1.6,
+        _ => 1.2,
+    }
+}
+
 fn push_rotated_candidate(
     source: &mut Vec<UpgradeOffer>,
     target: &mut Vec<UpgradeOffer>,
@@ -1743,6 +1847,7 @@ impl PlayerState {
 #[derive(Debug, Clone)]
 struct WeaponState {
     id: String,
+    weapon_type: String,
     level: u32,
     max_level: u32,
     damage: f32,
@@ -1753,6 +1858,7 @@ struct WeaponState {
     targeting_mode: String,
     radius: f32,
     pierce: u32,
+    duration: f32,
     tags: Vec<String>,
     projectile_count_base: u32,
     projectile_count_bonus_levels: Vec<u32>,
@@ -1766,6 +1872,7 @@ impl WeaponState {
     fn from_definition(definition: &WeaponDefinition) -> Self {
         Self {
             id: definition.id.clone(),
+            weapon_type: definition.weapon_type.clone(),
             level: 1,
             max_level: definition.scaling.max_level,
             damage: definition.base_stats.damage,
@@ -1776,6 +1883,7 @@ impl WeaponState {
             targeting_mode: definition.targeting.mode.clone(),
             radius: definition.base_stats.area_radius,
             pierce: definition.base_stats.pierce,
+            duration: definition.base_stats.duration_ms / 1000.0,
             tags: definition.tags.clone(),
             projectile_count_base: definition.base_stats.projectile_count,
             projectile_count_bonus_levels: definition.scaling.projectile_count_bonus_levels.clone(),
@@ -1790,6 +1898,7 @@ impl WeaponState {
         let base_stats = &definition.weapon_definition.base_stats;
         Self {
             id: definition.id.clone(),
+            weapon_type: definition.weapon_definition.weapon_type.clone(),
             level: 1,
             max_level: 1,
             damage: base_stats.damage,
@@ -1800,6 +1909,7 @@ impl WeaponState {
             targeting_mode: definition.weapon_definition.targeting.mode.clone(),
             radius: base_stats.area_radius,
             pierce: base_stats.pierce.unwrap_or(1),
+            duration: base_stats.duration_ms.unwrap_or(0.0) / 1000.0,
             tags: definition.tags.clone(),
             projectile_count_base: base_stats.projectile_count,
             projectile_count_bonus_levels: Vec::new(),
@@ -1818,6 +1928,27 @@ impl WeaponState {
                 .filter(|level| self.level >= **level)
                 .count()
     }
+}
+
+struct WeaponProjectileRuntimeInput<'a> {
+    weapon_type: &'a str,
+    target_position: Vec2,
+    base_direction: Vec2,
+    projectile_index: usize,
+    projectile_count: usize,
+    spread_start: f32,
+    spread_step: f32,
+    projectile_speed: f32,
+    pierce: u32,
+    lifetime: f32,
+    radius: f32,
+}
+
+struct ProjectileRuntime {
+    position: Vec2,
+    velocity: Vec2,
+    pierce_remaining: u32,
+    lifetime: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -2330,6 +2461,54 @@ mod tests {
         }
 
         panic!("expected rainbow-candy-shot to create a visible projectile");
+    }
+
+    #[test]
+    fn orbit_weapon_spawns_projectiles_around_player() {
+        let mut core = GameCore::reset(RunConfig {
+            starting_loadout: StartingLoadout {
+                weapons: vec!["marshmallow-shield".to_string()],
+                passives: Vec::new(),
+            },
+            ..RunConfig::default()
+        });
+        let dt = core.fixed_dt();
+
+        for _ in 0..20 {
+            core.step(PlayerAction::default(), dt);
+            if let Some(projectile) = core.projectiles.first() {
+                assert!(projectile.position.distance(core.player.position) > PLAYER_RADIUS);
+                assert!(projectile.velocity.length_squared() > 0.0);
+                assert!(projectile.lifetime > 1.0);
+                return;
+            }
+        }
+
+        panic!("expected marshmallow-shield to create orbit projectiles");
+    }
+
+    #[test]
+    fn zone_weapon_uses_duration_and_stationary_area() {
+        let mut core = GameCore::reset(RunConfig {
+            starting_loadout: StartingLoadout {
+                weapons: vec!["caramel-sticky-ground".to_string()],
+                passives: Vec::new(),
+            },
+            ..RunConfig::default()
+        });
+        let dt = core.fixed_dt();
+
+        for _ in 0..20 {
+            core.step(PlayerAction::default(), dt);
+            if let Some(projectile) = core.projectiles.first() {
+                assert_eq!(projectile.weapon_id, "caramel-sticky-ground");
+                assert_eq!(projectile.velocity, Vec2::ZERO);
+                assert!(projectile.lifetime > 2.0);
+                return;
+            }
+        }
+
+        panic!("expected caramel-sticky-ground to create a stationary zone");
     }
 
     #[test]
