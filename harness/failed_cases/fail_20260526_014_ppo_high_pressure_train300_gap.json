@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_014",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "30000-30009",
+  "bot": "PPO observation v2 high-pressure train300 50k policy",
+  "time_seconds": 300.0,
+  "symptom": "使用 observation v2、high-pressure 地图预设和 300 秒训练 episode 的 50000-step PPO 模型在三张高压地图 10 seed / 300 秒 deterministic 对比中仍未通过：soda-creek 胜率 10%、平均存活 217.3437 秒、平均承伤 119.9161；caramel-workshop 胜率 0%、平均存活 209.3660 秒、平均承伤 120.2623；cracked-star-jar 胜率 10%、平均存活 238.4666 秒、平均承伤 117.2084。",
+  "root_cause": "300 秒训练 episode 显著改善早死问题，但当前 reward 和训练目标仍没有让 policy 学会稳定处理高压地图的 Boss、hazard、中后期波次和低血量安全距离。动作分布虽然通过 gate，但三张地图都偏向动作 8/5/6，说明策略仍接近固定方向逃生，而不是根据地图条件和威胁动态调整。",
+  "fix": "不要将该模型推进为正式跨地图 RL 压力测试 Bot。下一步优先加入 Boss/hazard/受伤前兆、低血量安全距离、地图边界和中后期存活质量相关 reward shaping，并保留 high-pressure 300 秒训练入口做定向回归；必要时再增加按地图 curriculum 或更长训练。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_train300_50k_comparison_001/summary.md。修复后需重跑同一 high-pressure 10 seed / 300 秒 deterministic 聚合对比，要求 caramel-workshop 不再 0% 胜率，soda-creek 与 cracked-star-jar 不再显著低于规则 Bot 参考；随后扩展到 all-base-demo 6 地图 10 seed / 300 秒。"
+}
