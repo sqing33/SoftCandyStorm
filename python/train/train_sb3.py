@@ -1,6 +1,7 @@
 import argparse
 import importlib.util
 import json
+import math
 import shutil
 import subprocess
 import sys
@@ -221,11 +222,16 @@ def evaluate_model(model, config, episodes, seconds, seed_start=None, map_id=Non
             steps = 0
             episode_reward = 0.0
             action_counts = {str(action): 0 for action in range(info["action_count"])}
+            reward_breakdown_totals = {}
             while not terminated and not truncated and steps < max_steps:
                 action, _state = model.predict(observation, deterministic=True)
                 action_index = action_to_int(action)
                 action_counts[str(action_index)] = action_counts.get(str(action_index), 0) + 1
                 observation, reward, terminated, truncated, info = env.step(action_index)
+                for key, value in info.get("reward_breakdown", {}).items():
+                    reward_breakdown_totals[key] = reward_breakdown_totals.get(
+                        key, 0.0
+                    ) + float(value)
                 episode_reward += reward
                 steps += 1
 
@@ -247,6 +253,7 @@ def evaluate_model(model, config, episodes, seconds, seed_start=None, map_id=Non
                     "xp_collected": info["xp_collected"],
                     "damage_taken": info["damage_taken"],
                     "action_counts": action_counts,
+                    "reward_breakdown": round_reward_breakdown(reward_breakdown_totals),
                 }
             )
     finally:
@@ -289,7 +296,16 @@ def summarize_evaluation(episodes, total_reward):
         ),
     }
     summary["action_distribution"] = summarize_action_distribution(episodes)
+    summary["action_entropy_bits"] = action_entropy_bits(summary["action_distribution"])
+    summary["normalized_action_entropy"] = normalized_action_entropy(
+        summary["action_distribution"]
+    )
+    summary["reward_breakdown_average"] = summarize_reward_breakdown(episodes)
     return summary
+
+
+def round_reward_breakdown(values):
+    return {key: round(value, 4) for key, value in sorted(values.items())}
 
 
 def summarize_action_distribution(episodes):
@@ -305,6 +321,32 @@ def summarize_action_distribution(episodes):
         }
         for action, count in sorted(counts.items(), key=lambda item: int(item[0]))
     }
+
+
+def action_entropy_bits(distribution):
+    entropy = 0.0
+    for value in distribution.values():
+        ratio = value["ratio"]
+        if ratio > 0.0:
+            entropy -= ratio * math.log2(ratio)
+    return round(entropy, 4)
+
+
+def normalized_action_entropy(distribution):
+    action_count = max(1, len(distribution))
+    max_entropy = math.log2(action_count) if action_count > 1 else 1.0
+    if max_entropy <= 0.0:
+        return 0.0
+    return round(action_entropy_bits(distribution) / max_entropy, 4)
+
+
+def summarize_reward_breakdown(episodes):
+    totals = {}
+    count = max(1, len(episodes))
+    for episode in episodes:
+        for key, value in episode.get("reward_breakdown", {}).items():
+            totals[key] = totals.get(key, 0.0) + value
+    return {key: round(value / count, 4) for key, value in sorted(totals.items())}
 
 
 def parse_rule_bots(value):
@@ -429,6 +471,14 @@ def comparison_findings(policy, rule_matrix):
                 "id": "dominant_action_bias",
                 "severity": "watch",
                 "summary": f"Action {dominant[0]} accounts for {dominant[1]['ratio']:.2%} of policy steps in this smoke.",
+            }
+        )
+    if summary.get("normalized_action_entropy", 1.0) <= 0.25:
+        findings.append(
+            {
+                "id": "low_action_entropy",
+                "severity": "watch",
+                "summary": "Policy action entropy is very low; inspect exploration, reward shaping, and training duration.",
             }
         )
     rule_bots = rule_matrix.get("bots", [])

@@ -693,9 +693,21 @@ struct GymBridgeInfo {
     upgrade_options: Vec<String>,
     events: Vec<String>,
     terminal: Option<GymTerminalInfo>,
+    reward_breakdown: GymRewardBreakdown,
     content_hash: String,
     observation_len: usize,
     action_count: usize,
+}
+
+#[derive(Debug, Serialize, Clone, Copy, Default)]
+struct GymRewardBreakdown {
+    survival: f32,
+    kill: f32,
+    xp: f32,
+    level: f32,
+    damage_taken: f32,
+    terminal: f32,
+    total: f32,
 }
 
 #[derive(Debug, Serialize)]
@@ -1958,7 +1970,7 @@ impl GymBridgeState {
 
     fn handle_request(&mut self, request: GymBridgeRequest) -> GymBridgeResponse {
         match request.command.as_str() {
-            "spec" => self.response("spec", None, 0.0, Vec::new()),
+            "spec" => self.response("spec", None, 0.0, Vec::new(), GymRewardBreakdown::default()),
             "reset" => {
                 let seed = request.seed.unwrap_or(self.seed);
                 let map_id = request.map_id.unwrap_or_else(|| self.map_id.clone());
@@ -1979,6 +1991,7 @@ impl GymBridgeState {
                     Some(gym_observation(&self.core.snapshot())),
                     0.0,
                     Vec::new(),
+                    GymRewardBreakdown::default(),
                 )
             }
             "step" => {
@@ -1993,7 +2006,13 @@ impl GymBridgeState {
                 }
                 self.step(action_index)
             }
-            "close" => self.response("close", None, 0.0, Vec::new()),
+            "close" => self.response(
+                "close",
+                None,
+                0.0,
+                Vec::new(),
+                GymRewardBreakdown::default(),
+            ),
             other => self.error_response("unknown_command", format!("unknown command `{other}`")),
         }
     }
@@ -2005,6 +2024,7 @@ impl GymBridgeState {
                 Some(gym_observation(&self.core.snapshot())),
                 0.0,
                 Vec::new(),
+                GymRewardBreakdown::default(),
             );
         }
 
@@ -2024,7 +2044,7 @@ impl GymBridgeState {
             .core
             .step(action, FixedDt::from_tick_rate(self.tick_rate));
         self.tick += 1;
-        let reward = gym_reward(
+        let reward_breakdown = gym_reward_breakdown(
             &result.reward_hint,
             &result.events,
             result.terminal.as_ref(),
@@ -2033,8 +2053,9 @@ impl GymBridgeState {
         self.response(
             "step",
             Some(gym_observation(&result.snapshot)),
-            reward,
+            reward_breakdown.total,
             result.events,
+            reward_breakdown,
         )
     }
 
@@ -2044,6 +2065,7 @@ impl GymBridgeState {
         observation: Option<Vec<f32>>,
         reward: f32,
         events: Vec<GameEvent>,
+        reward_breakdown: GymRewardBreakdown,
     ) -> GymBridgeResponse {
         let metrics = self.core.metrics();
         GymBridgeResponse {
@@ -2053,7 +2075,7 @@ impl GymBridgeState {
             reward,
             terminated: metrics.terminal.is_some(),
             truncated: false,
-            info: self.info(events),
+            info: self.info(events, reward_breakdown),
             error: None,
         }
     }
@@ -2066,12 +2088,12 @@ impl GymBridgeState {
             reward: 0.0,
             terminated: self.core.metrics().terminal.is_some(),
             truncated: false,
-            info: self.info(Vec::new()),
+            info: self.info(Vec::new(), GymRewardBreakdown::default()),
             error: Some(error),
         }
     }
 
-    fn info(&self, events: Vec<GameEvent>) -> GymBridgeInfo {
+    fn info(&self, events: Vec<GameEvent>, reward_breakdown: GymRewardBreakdown) -> GymBridgeInfo {
         let snapshot = self.core.snapshot();
         let metrics = self.core.metrics();
         GymBridgeInfo {
@@ -2102,6 +2124,7 @@ impl GymBridgeState {
                 final_level: terminal.final_level,
                 kills: terminal.kills,
             }),
+            reward_breakdown,
             content_hash: self.content.hash.clone(),
             observation_len: GYM_OBSERVATION_LEN,
             action_count: GYM_ACTION_COUNT,
@@ -2154,32 +2177,43 @@ fn gym_discrete_movement(action: usize) -> Vec2 {
     }
 }
 
-fn gym_reward(
+fn gym_reward_breakdown(
     hint: &game_core::RewardHint,
     events: &[GameEvent],
     terminal: Option<&game_core::TerminalState>,
-) -> f32 {
+) -> GymRewardBreakdown {
     let kill_delta = events
         .iter()
         .filter(|event| matches!(event, GameEvent::EnemyKilled { .. }))
         .count() as f32;
-    let mut reward = hint.survival_delta * 0.01
-        + kill_delta * 0.05
-        + hint.xp_delta * 0.02
-        + hint.level_delta as f32 * 0.5
-        - hint.damage_taken_delta * 0.05;
+    let survival = hint.survival_delta * 0.01;
+    let kill = kill_delta * 0.05;
+    let xp = hint.xp_delta * 0.02;
+    let level = hint.level_delta as f32 * 0.5;
+    let damage_taken = -hint.damage_taken_delta * 0.05;
 
-    if let Some(terminal) = terminal {
-        reward += match terminal.kind {
+    let terminal = if let Some(terminal) = terminal {
+        match terminal.kind {
             TerminalKind::Victory => 5.0,
             TerminalKind::Defeat => -2.0,
             TerminalKind::Timeout => 0.0,
             TerminalKind::Aborted => -1.0,
             TerminalKind::InvalidState => -5.0,
-        };
-    }
+        }
+    } else {
+        0.0
+    };
 
-    reward
+    let total = survival + kill + xp + level + damage_taken + terminal;
+    GymRewardBreakdown {
+        survival,
+        kill,
+        xp,
+        level,
+        damage_taken,
+        terminal,
+        total,
+    }
 }
 
 fn gym_observation(snapshot: &game_core::RunSnapshot) -> Vec<f32> {
@@ -5424,10 +5458,10 @@ fn escape_json(value: &str) -> String {
 mod tests {
     use super::{
         content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_movement,
-        gym_observation, movement_changed, ManualAcceptanceDecision, GYM_OBSERVATION_LEN,
-        REQUIRED_PLAYTEST_RUN_IDS,
+        gym_observation, gym_reward_breakdown, movement_changed, ManualAcceptanceDecision,
+        GYM_OBSERVATION_LEN, REQUIRED_PLAYTEST_RUN_IDS,
     };
-    use game_core::{GameCore, RunConfig};
+    use game_core::{GameCore, RewardHint, RunConfig, TerminalKind, TerminalState};
     use serde_json::{json, Value};
     use std::fs;
 
@@ -5451,6 +5485,42 @@ mod tests {
 
         assert_eq!(observation.len(), GYM_OBSERVATION_LEN);
         assert!(observation.iter().all(|value| value.is_finite()));
+    }
+
+    #[test]
+    fn gym_reward_breakdown_sums_components() {
+        let hint = RewardHint {
+            survival_delta: 2.0,
+            kill_delta: 0,
+            xp_delta: 3.0,
+            damage_taken_delta: 4.0,
+            level_delta: 1,
+        };
+        let terminal = TerminalState {
+            kind: TerminalKind::Victory,
+            time_seconds: 5.0,
+            reason: "duration_reached".to_string(),
+            final_level: 1,
+            kills: 0,
+        };
+        let breakdown = gym_reward_breakdown(&hint, &[], Some(&terminal));
+
+        assert!((breakdown.survival - 0.02).abs() < f32::EPSILON);
+        assert!((breakdown.xp - 0.06).abs() < f32::EPSILON);
+        assert!((breakdown.level - 0.5).abs() < f32::EPSILON);
+        assert!((breakdown.damage_taken + 0.2).abs() < f32::EPSILON);
+        assert!((breakdown.terminal - 5.0).abs() < f32::EPSILON);
+        assert!(
+            (breakdown.total
+                - (breakdown.survival
+                    + breakdown.kill
+                    + breakdown.xp
+                    + breakdown.level
+                    + breakdown.damage_taken
+                    + breakdown.terminal))
+                .abs()
+                < f32::EPSILON
+        );
     }
 
     #[test]
