@@ -353,6 +353,10 @@
     {
       "id": "rl_ppo_multimap_entropy_experiment",
       "summary": "新增 PPO entropy 系数覆盖后运行 6 地图 random 训练 10000 requested timesteps，ent_coef=0.02 仍塌缩到动作 5 占 100%、归一化动作熵 0.0，已记录 entropy 实验动作塌缩 failure case"
+    },
+    {
+      "id": "rl_ppo_stochastic_eval_diagnostic",
+      "summary": "新增 saved policy 随机采样评估诊断，并复查 ent_coef=0.02 PPO 模型；stochastic 评估最大动作占比 33.35%、归一化动作熵 0.8869，说明问题集中在确定性 argmax 门禁路径"
     }
   ],
   "current_findings": [
@@ -490,6 +494,11 @@
       "id": "rl_ppo_multimap_ent_coef_action_collapse",
       "summary": "PPO 训练入口已能记录 ent_coef 覆盖参数，但 ent_coef=0.02 仍在确定性评估中塌缩到动作 5 占 100%、归一化动作熵 0.0；下一步需要更强探索、动作惩罚或评估诊断。",
       "report": "harness/failed_cases/fail_20260526_008_ppo_multimap_ent_coef_action_collapse.json"
+    },
+    {
+      "id": "rl_ppo_stochastic_eval_keeps_entropy",
+      "summary": "同一个 ent_coef=0.02 PPO 模型在 stochastic 评估中动作分布健康，最大动作占比 33.35%、归一化动作熵 0.8869；这不能解除确定性 failure，但能指导下一步同时记录 deterministic/stochastic 两套诊断。",
+      "report": "harness/reports/2026-05-26_rl_ppo_eval_stochastic_diagnostic_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -499,7 +508,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "修复多地图 PPO 训练的动作塌缩；cycle、random 和 ent_coef=0.02 均已失败，下一步优先尝试更高 entropy 系数、增强 action_repeat / 边界停留惩罚，或补充非确定性评估诊断；通过动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
+      "summary": "修复多地图 PPO 训练的动作塌缩；cycle、random 和 ent_coef=0.02 的确定性评估均已失败，但 stochastic 诊断显示策略分布仍有熵。下一步优先修确定性 argmax 策略质量，增强 action_repeat / 边界停留惩罚，并同时记录 deterministic/stochastic 两套动作分布；通过动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
     }
   ]
 }
