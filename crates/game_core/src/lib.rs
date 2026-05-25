@@ -2517,7 +2517,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 39);
+        assert_eq!(content.object_count(), 45);
         let mut core = GameCore::reset_with_content(
             RunConfig {
                 seed: 7,
@@ -2556,6 +2556,32 @@ mod tests {
                 .map(|terminal| terminal.kind),
             Some(TerminalKind::Victory)
         );
+    }
+
+    #[test]
+    fn base_demo_characters_have_valid_starting_loadouts() {
+        let content = ContentPack::load_from_dir("../../content/base_demo")
+            .expect("base_demo content should load from disk");
+
+        for character_id in [
+            "jar-keeper",
+            "bubble-courier",
+            "cream-knight",
+            "sour-plum-doctor",
+            "pudding-crafter",
+        ] {
+            let core = GameCore::reset_with_content(
+                RunConfig {
+                    character_id: character_id.to_string(),
+                    duration_seconds: 1.0,
+                    ..RunConfig::default()
+                },
+                content.clone(),
+            )
+            .expect("base demo character should initialize");
+            assert_eq!(core.config.character_id, character_id);
+            assert!(!core.weapons.is_empty());
+        }
     }
 
     #[test]
