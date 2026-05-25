@@ -1,0 +1,483 @@
+{
+  "report_version": 1,
+  "updated_at": "2026-05-26",
+  "scope": "docs/00-19 implementation coverage",
+  "summary": "Goal 模式下用于审计所有设计文档是否已经被当前仓库实现的覆盖账本。状态必须保守：缺少运行验证、真人试玩、最终素材或发布证据时，不得标为 complete。",
+  "docs": [
+    {
+      "doc_id": "00",
+      "doc_path": "docs/00_index.md",
+      "status": "complete",
+      "summary": "文档索引、必备文档清单和索引链接已经有独立校验器与报告。",
+      "coverage": [
+        {
+          "id": "docs-index-inventory",
+          "requirement": "docs/00 到 docs/19 文档齐全，docs/00_index.md 本地 Markdown 链接有效。",
+          "status": "complete",
+          "evidence": [
+            "tools/validate_docs_index.py",
+            "tools/test_validate_docs_index.py",
+            "harness/reports/2026-05-26_docs_index_validation_001/summary.md"
+          ],
+          "gaps": []
+        }
+      ]
+    },
+    {
+      "doc_id": "01",
+      "doc_path": "docs/01_游戏愿景与设计支柱.md",
+      "status": "partial",
+      "summary": "可爱糖果肉鸽方向已体现在 base_demo 内容、原型占位素材和 Harness 目标中，但差异化体验与可爱信息表达仍缺人工试玩和最终视觉验收。",
+      "coverage": [
+        {
+          "id": "vision-style-gameplay-loop",
+          "requirement": "游戏应围绕可爱糖果风、自动攻击肉鸽、生存升级和 Harness 驱动内容扩展形成一致体验。",
+          "status": "partial",
+          "evidence": [
+            "content/base_demo/maps/frosting-grassland.json",
+            "assets/prototype_topdown/manifest.json",
+            "harness/playtest/runtime_manual_review_pack.md"
+          ],
+          "gaps": [
+            "缺少真人试玩结论证明愿景中的可读性、爽感和再来一局动机成立。",
+            "mmx 素材候选尚未通过人工审查进入正式 Runtime 素材。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "02",
+      "doc_path": "docs/02_核心玩法规格.md",
+      "status": "partial",
+      "summary": "GameCore、Runtime 和内容包已覆盖移动、自动攻击、XP、升级、Boss、结算等原型链路，但当前本机二进制启动阻塞，无法重新验证完整可玩局。",
+      "coverage": [
+        {
+          "id": "core-loop-runtime-semantics",
+          "requirement": "实现移动、敌人追踪、武器自动释放、碰撞伤害、XP 拾取、升级选择、Boss 与结算。",
+          "status": "blocked",
+          "evidence": [
+            "crates/game_core/src/lib.rs",
+            "crates/game_runtime/src/main.rs",
+            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+          ],
+          "gaps": [
+            "恢复本机 Mach-O 启动后需重跑 GameCore、Harness 和 Runtime 验证。",
+            "仍需真实人工试玩确认玩法循环的可读性和节奏。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "03",
+      "doc_path": "docs/03_世界观与剧情大纲.md",
+      "status": "partial",
+      "summary": "角色、地图、事件和内容描述已承载糖果王国设定，但章节剧情推进、局内叙事呈现和图鉴文本还未完整产品化。",
+      "coverage": [
+        {
+          "id": "worldbuilding-content-hooks",
+          "requirement": "世界观、角色主题、地图主题和风暴事件应进入可展示内容。",
+          "status": "partial",
+          "evidence": [
+            "content/base_demo/characters/jar-keeper.json",
+            "content/base_demo/maps/cracked-star-jar.json",
+            "content/base_demo/events/rainbow-candy-rush.json"
+          ],
+          "gaps": [
+            "缺少章节剧情 UI、完整图鉴条目和局外叙事推进。",
+            "剧情内容尚未经过人工审校。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "04",
+      "doc_path": "docs/04_内容系统与素材库.md",
+      "status": "partial",
+      "summary": "base_demo 与 generated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；正式 accepted_content 仍受人工试玩门禁限制。",
+      "coverage": [
+        {
+          "id": "phase4-roster-content",
+          "requirement": "首批内容名录应结构化，并通过候选池、Schema、预算、仿真和人工试玩链路推进。",
+          "status": "partial",
+          "evidence": [
+            "content/base_demo/characters/jar-keeper.json",
+            "harness/reports/2026-05-26_phase4_roster_targets_candidate_full_pack_001/summary.md",
+            "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md"
+          ],
+          "gaps": [
+            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池。",
+            "缺少恢复二进制后的正式 Harness validate-candidates、Bot 仿真和人工试玩接受证据。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "05",
+      "doc_path": "docs/05_美术与音频素材计划.md",
+      "status": "partial",
+      "summary": "已有程序化 top-down 占位素材和多批 mmx 图像、TTS、music 候选；正式美术音频仍未通过人工审查接入。",
+      "coverage": [
+        {
+          "id": "asset-candidate-pipeline",
+          "requirement": "主角、敌人、Boss、武器特效、UI、音效和音乐应有候选、来源、prompt、后处理与审查记录。",
+          "status": "partial",
+          "evidence": [
+            "assets/prototype_topdown/manifest.json",
+            "asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/metadata/postprocess_audio_v001.json",
+            "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md"
+          ],
+          "gaps": [
+            "mmx 候选仍在 asset/generated_candidates，未进入正式 Runtime 素材。",
+            "缺少最终 sprite、音效、BGM 的人工审查和授权接受记录。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "06",
+      "doc_path": "docs/06_Bevy技术架构计划.md",
+      "status": "partial",
+      "summary": "Rust workspace、GameCore/Runtime/Harness/Python 边界已建立；当前二进制启动问题阻塞最新编译和运行验证。",
+      "coverage": [
+        {
+          "id": "bevy-workspace-boundaries",
+          "requirement": "建立 Bevy/Rust workspace，保持 GameCore 无渲染依赖，Runtime 通过 action/snapshot/events 交互。",
+          "status": "blocked",
+          "evidence": [
+            "Cargo.toml",
+            "crates/game_core/Cargo.toml",
+            "crates/game_runtime/Cargo.toml",
+            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+          ],
+          "gaps": [
+            "恢复本机二进制启动后需重跑 cargo fmt、clippy、test 和 Runtime smoke。",
+            "仍需更完整的 Runtime 视觉、音频和设置系统。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "07",
+      "doc_path": "docs/07_Harness工程计划.md",
+      "status": "partial",
+      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用等纯 Python 门禁已补强；完整仿真门禁仍受二进制阻塞。",
+      "coverage": [
+        {
+          "id": "harness-gates-and-reports",
+          "requirement": "Harness 应支持内容校验、批量模拟、报告、失败案例沉淀和持续进度审计。",
+          "status": "blocked",
+          "evidence": [
+            "crates/game_harness/src/main.rs",
+            "tools/validate_failure_cases.py",
+            "tools/validate_progress_reports.py",
+            "tools/validate_docs_implementation_coverage.py",
+            "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
+          ],
+          "gaps": [
+            "恢复二进制后需重跑 game_harness simulate、matrix、replay-batch 和候选晋级命令。",
+            "历史 progress 条目仍有无 report warning，需要逐步回填证据。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "08",
+      "doc_path": "docs/08_Bot测试计划.md",
+      "status": "partial",
+      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；最新验证仍需二进制恢复后重跑。",
+      "coverage": [
+        {
+          "id": "rule-bot-baselines",
+          "requirement": "Idle、Random、Coward、GreedyXp、Kite、Tank、BossHunter、Route 等规则 Bot 应能批量验证内容。",
+          "status": "blocked",
+          "evidence": [
+            "crates/game_harness/src/main.rs",
+            "harness/reports/2026-05-25_bot_matrix_nightly_001/summary.md",
+            "harness/reports/2026-05-25_bot_policy_calibration_011/summary.md"
+          ],
+          "gaps": [
+            "新增内容和平衡改动后需要恢复二进制并重跑多地图、多 seed Bot 矩阵。",
+            "规则 Bot 不是人工乐趣证明，仍需真人审查。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "09",
+      "doc_path": "docs/09_AI_Bot训练计划.md",
+      "status": "partial",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2 和多地图训练诊断已建立；RL Bot 还没有达到正式压力测试基线。",
+      "coverage": [
+        {
+          "id": "rl-training-and-diagnostics",
+          "requirement": "接入 Gymnasium/SB3，训练和评估 DQN/PPO/RL Bot，并记录 exploit 与泛化问题。",
+          "status": "blocked",
+          "evidence": [
+            "python/gym_env/soft_candy_env.py",
+            "python/train/train_sb3.py",
+            "python/train/train_behavior_clone.py",
+            "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_smoke_001/summary.md"
+          ],
+          "gaps": [
+            "context3 behavior clone 已训练但 Gym 评估被本机二进制启动阻塞。",
+            "PPO/BC 高压多地图仍有泛化 failure case，不能作为正式 RL 测试 Bot。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked",
+            "rl_policy_multimap_generalization_gap"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "10",
+      "doc_path": "docs/10_AI内容生成流水线.md",
+      "status": "partial",
+      "summary": "内容候选、物化、预检、素材 metadata 和 provenance 校验已实现；候选进入 accepted_content 仍需要仿真与人工确认。",
+      "coverage": [
+        {
+          "id": "candidate-pipeline",
+          "requirement": "AI 内容必须从 generated_candidates 经 Schema、预算、仿真、人工审查逐级推进，不能绕过门禁。",
+          "status": "partial",
+          "evidence": [
+            "tools/validate_content_candidates.py",
+            "tools/materialize_content_candidate_pack.py",
+            "tools/validate_materialized_content_pack.py",
+            "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md"
+          ],
+          "gaps": [
+            "当前 full pack 仍是 generated candidate，尚未通过恢复后的正式 Harness 仿真。",
+            "人工试玩候选和 accepted_content 接受链路需要真实审查证据。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "11",
+      "doc_path": "docs/11_测试指标与上线门禁.md",
+      "status": "partial",
+      "summary": "Release Candidate 证据清单校验器已存在，当前本地候选明确为 not-ready。",
+      "coverage": [
+        {
+          "id": "release-candidate-gates",
+          "requirement": "上线前必须通过编译、单测、headless、Bot、Replay、性能、人工试玩、素材 provenance 和打包门禁。",
+          "status": "blocked",
+          "evidence": [
+            "tools/validate_release_candidate_evidence.py",
+            "harness/release/current_local_rc_evidence.json",
+            "harness/reports/2026-05-26_release_candidate_evidence_current_local_001/summary.md"
+          ],
+          "gaps": [
+            "当前 release_candidate_evidence 报告为 not-ready。",
+            "缺少真实人工试玩、性能门禁、完整 Release package 和恢复后的编译测试证据。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked",
+            "manual_playtest_still_pending"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "12",
+      "doc_path": "docs/12_阶段路线图.md",
+      "status": "partial",
+      "summary": "Phase 0-6 有大量原型和报告证据，Phase 7-10 仍未达到公开 Demo、上线和运营要求。",
+      "coverage": [
+        {
+          "id": "roadmap-phase-audit",
+          "requirement": "按 Phase 0 到 Phase 10 推进，并用证据确认每阶段验收。",
+          "status": "partial",
+          "evidence": [
+            "harness/progress.json",
+            "tools/validate_phase4_roster_targets.py",
+            "harness/reports/2026-05-26_phase4_roster_targets_candidate_full_pack_001/summary.md"
+          ],
+          "gaps": [
+            "Phase 7 最终美术音频垂直切片仍未接受。",
+            "Phase 8-10 公开 Demo、上线前扩展和运营闭环尚未完成。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "13",
+      "doc_path": "docs/13_内容数据Schema设计.md",
+      "status": "partial",
+      "summary": "JSON 内容格式、加载、轻量引用和候选预检已有实现；尚未形成完整 JSON Schema 文件和恢复后的正式 Rust 校验闭环。",
+      "coverage": [
+        {
+          "id": "content-schema-contract",
+          "requirement": "角色、武器、被动、进化、敌人、Boss、波次、地图和事件应结构化并可校验。",
+          "status": "partial",
+          "evidence": [
+            "content/base_demo/weapons/rainbow-candy-shot.json",
+            "crates/game_core/src/content.rs",
+            "tools/validate_materialized_content_pack.py"
+          ],
+          "gaps": [
+            "缺少独立 JSON Schema 文件作为外部契约。",
+            "需要恢复 Rust 二进制后重跑 GameCore 内容加载和 Harness validate-content。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "14",
+      "doc_path": "docs/14_GameCore接口规格.md",
+      "status": "partial",
+      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，但当前无法重新运行验证接口契约。",
+      "coverage": [
+        {
+          "id": "gamecore-runtime-harness-api",
+          "requirement": "GameCore 应提供固定 seed、step、snapshot、metrics、replay 和 Python Gym 接口。",
+          "status": "blocked",
+          "evidence": [
+            "crates/game_core/src/lib.rs",
+            "crates/game_harness/src/main.rs",
+            "python/gym_env/soft_candy_env.py",
+            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+          ],
+          "gaps": [
+            "恢复二进制后需重跑 cargo test、game_harness replay-batch 和 Gym smoke。",
+            "接口版本化和外部兼容性仍需补充文档化证据。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "15",
+      "doc_path": "docs/15_经济与数值平衡模型.md",
+      "status": "partial",
+      "summary": "已有静态预算、Bot 矩阵、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡尚未完成。",
+      "coverage": [
+        {
+          "id": "balance-budget-and-regression",
+          "requirement": "经验、武器 DPS、敌人威胁、波次压力和 Boss 数值应有预算、仿真和回归证据。",
+          "status": "blocked",
+          "evidence": [
+            "harness/reports/2026-05-26_six_map_boss_matrix_scoping_001/summary.md",
+            "harness/reports/2026-05-26_caramel_workshop_balance_repair_001/summary.md",
+            "harness/failed_cases/fail_20260526_002_six_map_boss_balance_spread.json"
+          ],
+          "gaps": [
+            "需要恢复二进制后重跑更大样本多地图矩阵。",
+            "平衡仍缺真人新手/熟练视角反馈。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked",
+            "manual_playtest_still_pending"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "16",
+      "doc_path": "docs/16_Replay与遥测设计.md",
+      "status": "partial",
+      "summary": "Replay strict 回归、Runtime capture 和遥测样本已有实现；上线隐私和真实遥测闭环尚未完成。",
+      "coverage": [
+        {
+          "id": "replay-and-telemetry",
+          "requirement": "Replay 应可保存/回放/回归，遥测应记录关键局内事件并遵守隐私原则。",
+          "status": "blocked",
+          "evidence": [
+            "harness/reports/2026-05-25_replay_baseline_regression_001/summary.md",
+            "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md",
+            "crates/game_runtime/src/main.rs"
+          ],
+          "gaps": [
+            "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
+            "正式上线遥测隐私、关闭选项和数据策略尚未实现。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "17",
+      "doc_path": "docs/17_素材生成Prompt库.md",
+      "status": "partial",
+      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理；候选质量仍多为 repair，正式素材缺人工接受。",
+      "coverage": [
+        {
+          "id": "prompt-provenance",
+          "requirement": "生图、TTS、music 素材应保存 prompt、命令、来源、版本、后处理和审查记录。",
+          "status": "partial",
+          "evidence": [
+            "tools/validate_asset_candidates.py",
+            "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md",
+            "asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/review_2026-05-25.md"
+          ],
+          "gaps": [
+            "多个图像候选仍偏 repair，未达到最终可接入 Runtime 的质量。",
+            "语音和音乐候选仍需人工听感审查。"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "18",
+      "doc_path": "docs/18_完整游戏流程与局外成长.md",
+      "status": "partial",
+      "summary": "局外结算、meta progression、accepted lockfile 入口和 Runtime meta panel 已有原型；完整基地、章节、存档、图鉴和发布级闭环仍未完成。",
+      "coverage": [
+        {
+          "id": "full-flow-and-meta",
+          "requirement": "局外基地、章节推进、资源解锁、图鉴、长期目标和 Demo 闭环应可玩可验证。",
+          "status": "blocked",
+          "evidence": [
+            "crates/game_core/src/meta.rs",
+            "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md",
+            "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md"
+          ],
+          "gaps": [
+            "缺少完整存档、基地 UI、章节目标链和真实 10 分钟完整局验证。",
+            "Runtime meta panel 需要恢复二进制后重新验证。"
+          ],
+          "blockers": [
+            "local_binary_launch_blocked",
+            "manual_playtest_still_pending"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "19",
+      "doc_path": "docs/19_Goal模式开发约定.md",
+      "status": "complete",
+      "summary": "Goal 模式规则、Git 提交节奏、进度记录和证据引用校验已进入文档和工具链。",
+      "coverage": [
+        {
+          "id": "goal-mode-process",
+          "requirement": "Goal 模式应持续推进、按功能提交、保留验证证据，并在未完成时保持目标 active。",
+          "status": "complete",
+          "evidence": [
+            "docs/19_Goal模式开发约定.md",
+            "AGENTS.md",
+            "tools/validate_progress_reports.py",
+            "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
+          ],
+          "gaps": []
+        }
+      ]
+    }
+  ]
+}

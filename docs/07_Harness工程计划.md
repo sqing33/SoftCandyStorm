@@ -304,6 +304,22 @@ python3 tools/validate_progress_reports.py harness/progress.json --repo-root . -
 
 该校验会确认 progress 结构、同一 section 内重复 id、以及所有已填写 `report` 字段的本地路径是否存在。早期条目没有 `report` 字段时只记为 warning，因为这些历史记录可能尚未完成证据回填。
 
+## Docs 实现覆盖校验
+
+Goal 模式要求“完整实现所有 docs 内容”时，必须维护 `harness/docs_implementation_coverage.json`。该文件记录 `docs/00` 到 `docs/19` 的当前实现状态、证据路径、剩余 gap 和阻塞项。新增实现、修复门禁或发现新缺口后，应运行：
+
+```bash
+python3 tools/validate_docs_implementation_coverage.py harness/docs_implementation_coverage.json --repo-root . --allow-incomplete
+```
+
+需要留下 Harness 证据时，生成 JSON 与 Markdown 报告：
+
+```bash
+python3 tools/validate_docs_implementation_coverage.py harness/docs_implementation_coverage.json --repo-root . --report harness/reports/<report-id>/docs_implementation_coverage.json --markdown harness/reports/<report-id>/summary.md --allow-incomplete
+```
+
+只要任一文档仍是 `partial`、`blocked` 或 `pending`，报告就必须保持 `docs_implementation_incomplete`。只有所有 `docs/00` 到 `docs/19` 的覆盖项都具备现存证据，且不再有 gap 或 blocker，才能视为完整实现。
+
 ## Agent 工作循环
 
 每次 Agent 开始：
@@ -317,7 +333,8 @@ python3 tools/validate_progress_reports.py harness/progress.json --repo-root . -
 7. 运行对应测试。
 8. 更新 progress。
 9. 校验 progress 的证据引用。
-10. 如果失败，写失败案例。
+10. 如果目标涉及完整 docs 实现，更新并校验 docs 实现覆盖账本。
+11. 如果失败，写失败案例。
 
 ## 不允许的 Agent 行为
 
