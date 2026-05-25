@@ -231,6 +231,25 @@ impl Default for PromoteAcceptedCandidatesArgs {
 }
 
 #[derive(Debug, Clone)]
+struct LockAcceptedContentArgs {
+    accepted_dir: PathBuf,
+    lock_file: PathBuf,
+    runtime_content_root: PathBuf,
+    report_dir: Option<PathBuf>,
+}
+
+impl Default for LockAcceptedContentArgs {
+    fn default() -> Self {
+        Self {
+            accepted_dir: PathBuf::from("harness/accepted_content"),
+            lock_file: PathBuf::from("harness/accepted_content/accepted_content.lock.json"),
+            runtime_content_root: PathBuf::from("harness/accepted_content"),
+            report_dir: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 struct GymBridgeArgs {
     seed: u64,
     seconds: f32,
@@ -507,6 +526,42 @@ struct CandidateAcceptanceReview {
     next_step: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct AcceptedContentLockReport {
+    lock_version: u32,
+    status: &'static str,
+    accepted_dir: String,
+    lock_file: String,
+    runtime_content_root: String,
+    candidate_count: usize,
+    locked_count: usize,
+    blocked_count: usize,
+    entries: Vec<AcceptedContentLockEntry>,
+    errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct AcceptedContentLockEntry {
+    id: String,
+    source: String,
+    runtime_content_dir: String,
+    content_hash: Option<String>,
+    object_count: Option<usize>,
+    acceptance_gate: Option<String>,
+    manual_review_file: Option<String>,
+    completed_run_count: Option<usize>,
+    average_rating: Option<f32>,
+    status: &'static str,
+    errors: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+struct AcceptanceGateMetadata {
+    manual_review_file: String,
+    completed_run_count: usize,
+    average_rating: Option<f32>,
+}
+
 #[derive(Debug, Clone)]
 struct ManualAcceptanceGate {
     decision: ManualAcceptanceDecision,
@@ -715,6 +770,14 @@ fn main() {
                 }
             }
         }
+        "lock-accepted-content" => match parse_lock_accepted_content_args(args.collect()) {
+            Ok(args) => run_lock_accepted_content(args),
+            Err(message) => {
+                eprintln!("error: {message}");
+                print_help();
+                std::process::exit(2);
+            }
+        },
         "gym-bridge" => match parse_gym_bridge_args(args.collect()) {
             Ok(args) => run_gym_bridge(args),
             Err(message) => {
@@ -1126,6 +1189,36 @@ fn parse_promote_accepted_candidates_args(
             }
             "--review-dir" => {
                 parsed.review_dir = PathBuf::from(value);
+            }
+            "--report-dir" => {
+                parsed.report_dir = Some(PathBuf::from(value));
+            }
+            _ => return Err(format!("unknown flag `{key}`")),
+        }
+        index += 2;
+    }
+    Ok(parsed)
+}
+
+fn parse_lock_accepted_content_args(
+    values: Vec<String>,
+) -> Result<LockAcceptedContentArgs, String> {
+    let mut parsed = LockAcceptedContentArgs::default();
+    let mut index = 0;
+    while index < values.len() {
+        let key = &values[index];
+        let value = values
+            .get(index + 1)
+            .ok_or_else(|| format!("missing value for `{key}`"))?;
+        match key.as_str() {
+            "--accepted-dir" => {
+                parsed.accepted_dir = PathBuf::from(value);
+            }
+            "--lock-file" => {
+                parsed.lock_file = PathBuf::from(value);
+            }
+            "--runtime-content-root" => {
+                parsed.runtime_content_root = PathBuf::from(value);
             }
             "--report-dir" => {
                 parsed.report_dir = Some(PathBuf::from(value));
@@ -1554,6 +1647,38 @@ fn run_promote_accepted_candidates(args: PromoteAcceptedCandidatesArgs) {
             eprintln!("error: failed to render accepted candidate report: {error}");
             std::process::exit(1);
         }
+    }
+}
+
+fn run_lock_accepted_content(args: LockAcceptedContentArgs) {
+    let report = match lock_accepted_content_dirs(&args) {
+        Ok(report) => report,
+        Err(error) => {
+            eprintln!("error: failed to lock accepted content: {error}");
+            std::process::exit(1);
+        }
+    };
+
+    if let Some(report_dir) = &args.report_dir {
+        if let Err(error) = write_accepted_content_lock_report(report_dir, &report) {
+            eprintln!(
+                "error: failed to write accepted content lock report `{}`: {error}",
+                report_dir.display()
+            );
+            std::process::exit(1);
+        }
+    }
+
+    match serde_json::to_string_pretty(&report) {
+        Ok(json) => println!("{json}"),
+        Err(error) => {
+            eprintln!("error: failed to render accepted content lock report: {error}");
+            std::process::exit(1);
+        }
+    }
+
+    if report.blocked_count > 0 {
+        std::process::exit(1);
     }
 }
 
@@ -4049,6 +4174,126 @@ fn promote_accepted_candidate_dirs(
     })
 }
 
+fn lock_accepted_content_dirs(
+    args: &LockAcceptedContentArgs,
+) -> io::Result<AcceptedContentLockReport> {
+    fs::create_dir_all(&args.accepted_dir)?;
+
+    let mut entries = fs::read_dir(&args.accepted_dir)?
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .filter(|entry| entry.path().is_dir())
+        .collect::<Vec<_>>();
+    entries.sort_by_key(|entry| entry.file_name());
+
+    let mut locked_entries = Vec::new();
+    let mut errors = Vec::new();
+    for entry in entries {
+        let source_path = entry.path();
+        let candidate_id = entry.file_name().to_string_lossy().to_string();
+        let mut entry_errors = Vec::new();
+
+        let pack = match ContentPack::load_from_dir(&source_path) {
+            Ok(pack) => Some(pack),
+            Err(error) => {
+                entry_errors.push(format!("content validation failed: {error}"));
+                None
+            }
+        };
+        if let Some(pack) = &pack {
+            let budget_report = evaluate_static_budget(pack, source_path.display().to_string());
+            entry_errors.extend(budget_report.errors);
+        }
+
+        let content_hash = match content_hash_for_dir(&source_path) {
+            Ok(hash) => Some(hash),
+            Err(error) => {
+                entry_errors.push(format!("content hash failed: {error}"));
+                None
+            }
+        };
+
+        let gate_path = source_path.join("acceptance_gate.json");
+        let gate_metadata = match &content_hash {
+            Some(hash) => validate_acceptance_gate(&gate_path, &candidate_id, hash),
+            None => Err(vec![
+                "content hash missing before acceptance gate validation".to_string(),
+            ]),
+        };
+        let gate_metadata = match gate_metadata {
+            Ok(metadata) => Some(metadata),
+            Err(gate_errors) => {
+                entry_errors.extend(gate_errors);
+                None
+            }
+        };
+
+        let runtime_content_dir = args.runtime_content_root.join(&candidate_id);
+        let status = if entry_errors.is_empty() {
+            "locked"
+        } else {
+            "blocked"
+        };
+        if status == "blocked" {
+            errors.push(format!(
+                "accepted candidate `{candidate_id}` cannot be version-locked"
+            ));
+        }
+
+        locked_entries.push(AcceptedContentLockEntry {
+            id: candidate_id,
+            source: source_path.display().to_string(),
+            runtime_content_dir: runtime_content_dir.display().to_string(),
+            content_hash,
+            object_count: pack.as_ref().map(ContentPack::object_count),
+            acceptance_gate: gate_path.is_file().then(|| gate_path.display().to_string()),
+            manual_review_file: gate_metadata
+                .as_ref()
+                .map(|metadata| metadata.manual_review_file.clone()),
+            completed_run_count: gate_metadata
+                .as_ref()
+                .map(|metadata| metadata.completed_run_count),
+            average_rating: gate_metadata
+                .as_ref()
+                .and_then(|metadata| metadata.average_rating),
+            status,
+            errors: entry_errors,
+        });
+    }
+
+    let locked_count = locked_entries
+        .iter()
+        .filter(|entry| entry.status == "locked")
+        .count();
+    let blocked_count = locked_entries
+        .iter()
+        .filter(|entry| entry.status == "blocked")
+        .count();
+
+    let report = AcceptedContentLockReport {
+        lock_version: 1,
+        status: if blocked_count == 0 {
+            "locked"
+        } else {
+            "blocked"
+        },
+        accepted_dir: args.accepted_dir.display().to_string(),
+        lock_file: args.lock_file.display().to_string(),
+        runtime_content_root: args.runtime_content_root.display().to_string(),
+        candidate_count: locked_entries.len(),
+        locked_count,
+        blocked_count,
+        entries: locked_entries,
+        errors,
+    };
+
+    if report.blocked_count == 0 {
+        write_accepted_content_lock_file(&args.lock_file, &report)?;
+    }
+
+    Ok(report)
+}
+
 fn find_manual_acceptance_review_file(
     candidate_dir: &Path,
     review_dir: &Path,
@@ -4101,6 +4346,81 @@ fn validate_playtest_gate(
         errors.push("playtest gate must require manual_review".to_string());
     }
     errors
+}
+
+fn validate_acceptance_gate(
+    gate_path: &Path,
+    candidate_id: &str,
+    content_hash: &str,
+) -> Result<AcceptanceGateMetadata, Vec<String>> {
+    let text = fs::read_to_string(gate_path).map_err(|error| {
+        vec![format!(
+            "missing or unreadable acceptance gate `{}`: {error}",
+            gate_path.display()
+        )]
+    })?;
+    let gate = serde_json::from_str::<Value>(&text).map_err(|error| {
+        vec![format!(
+            "invalid acceptance gate JSON `{}`: {error}",
+            gate_path.display()
+        )]
+    })?;
+
+    let mut errors = Vec::new();
+    if json_string_field(&gate, "candidate_id") != Some(candidate_id) {
+        errors.push("acceptance gate candidate_id does not match directory".to_string());
+    }
+    if json_string_field(&gate, "decision") != Some("accept_candidate") {
+        errors.push("acceptance gate decision must be `accept_candidate`".to_string());
+    }
+    if json_string_field(&gate, "content_hash") != Some(content_hash) {
+        errors.push("acceptance gate content_hash does not match current content".to_string());
+    }
+    if json_string_field(&gate, "category") != Some("human_playtest_passed") {
+        errors.push("acceptance gate category must be `human_playtest_passed`".to_string());
+    }
+    let manual_review_file = json_string_field(&gate, "manual_review_file")
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            errors.push("acceptance gate must include manual_review_file".to_string());
+            String::new()
+        });
+    if !manual_review_file.is_empty() && !Path::new(&manual_review_file).is_file() {
+        errors.push(format!(
+            "acceptance gate manual_review_file does not exist: `{manual_review_file}`"
+        ));
+    }
+    let completed_run_count = gate
+        .get("completed_run_count")
+        .and_then(Value::as_u64)
+        .map(|value| value as usize)
+        .unwrap_or_else(|| {
+            errors.push("acceptance gate must include completed_run_count".to_string());
+            0
+        });
+    if completed_run_count < REQUIRED_PLAYTEST_RUN_IDS.len() {
+        errors.push(format!(
+            "acceptance gate completed_run_count must be at least {}",
+            REQUIRED_PLAYTEST_RUN_IDS.len()
+        ));
+    }
+    let average_rating = gate
+        .get("average_rating")
+        .and_then(Value::as_f64)
+        .map(|value| value as f32);
+    if average_rating.is_none() {
+        errors.push("acceptance gate must include average_rating".to_string());
+    }
+
+    if errors.is_empty() {
+        Ok(AcceptanceGateMetadata {
+            manual_review_file,
+            completed_run_count,
+            average_rating,
+        })
+    } else {
+        Err(errors)
+    }
 }
 
 fn evaluate_manual_acceptance_review(
@@ -4549,6 +4869,34 @@ fn write_candidate_acceptance_report(
     Ok(())
 }
 
+fn write_accepted_content_lock_file(
+    lock_file: &Path,
+    report: &AcceptedContentLockReport,
+) -> io::Result<()> {
+    if let Some(parent) = lock_file.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let json = serde_json::to_string_pretty(report).map_err(io::Error::other)?;
+    fs::write(lock_file, format!("{json}\n"))
+}
+
+fn write_accepted_content_lock_report(
+    report_dir: &Path,
+    report: &AcceptedContentLockReport,
+) -> io::Result<()> {
+    fs::create_dir_all(report_dir)?;
+    let json = serde_json::to_string_pretty(report).map_err(io::Error::other)?;
+    fs::write(
+        report_dir.join("accepted_content_lock.json"),
+        format!("{json}\n"),
+    )?;
+    fs::write(
+        report_dir.join("summary.md"),
+        render_accepted_content_lock_summary(report),
+    )?;
+    Ok(())
+}
+
 fn render_candidate_summary(report: &CandidatePipelineReport) -> String {
     let mut output = String::new();
     output.push_str("# Candidate Validation Summary\n\n");
@@ -4667,6 +5015,49 @@ fn render_candidate_acceptance_summary(report: &CandidateAcceptanceReport) -> St
     output
 }
 
+fn render_accepted_content_lock_summary(report: &AcceptedContentLockReport) -> String {
+    let mut output = String::new();
+    output.push_str("# Accepted Content Lock Summary\n\n");
+    output.push_str(&format!("- Status: `{}`\n", report.status));
+    output.push_str(&format!("- Accepted dir: `{}`\n", report.accepted_dir));
+    output.push_str(&format!("- Lock file: `{}`\n", report.lock_file));
+    output.push_str(&format!(
+        "- Runtime content root: `{}`\n",
+        report.runtime_content_root
+    ));
+    output.push_str(&format!(
+        "- Result: `{}` locked, `{}` blocked, `{}` total\n\n",
+        report.locked_count, report.blocked_count, report.candidate_count
+    ));
+    output.push_str(
+        "| Candidate | Status | Objects | Content Hash | Review Runs | Average Rating | Runtime Path | Errors |\n",
+    );
+    output.push_str("|---|---|---:|---|---:|---:|---|---:|\n");
+    for entry in &report.entries {
+        let average_rating = entry
+            .average_rating
+            .map(|value| format!("{value:.2}"))
+            .unwrap_or_else(|| "-".to_string());
+        output.push_str(&format!(
+            "| {} | {} | {} | {} | {} | {} | {} | {} |\n",
+            entry.id,
+            entry.status,
+            entry.object_count.unwrap_or(0),
+            entry.content_hash.as_deref().unwrap_or("-"),
+            entry.completed_run_count.unwrap_or(0),
+            average_rating,
+            entry.runtime_content_dir,
+            entry.errors.len()
+        ));
+    }
+    output.push_str("\n## Gate Notes\n\n");
+    output
+        .push_str("- The lockfile is written only when every accepted candidate remains valid.\n");
+    output.push_str("- Each locked entry preserves content hash, acceptance gate, manual review reference, object count, and Runtime content path.\n");
+    output.push_str("- This command does not invent human review evidence and does not promote playtest candidates.\n");
+    output
+}
+
 fn run_validate(args: ValidateArgs) {
     match ContentPack::load_from_dir(&args.content_dir).and_then(|content| content.validate()) {
         Ok(report) => {
@@ -4723,6 +5114,9 @@ fn print_help() {
     );
     eprintln!(
         "  cargo run -p game_harness -- promote-accepted-candidates [--source-dir harness/playtest_candidates] [--accepted-dir harness/accepted_content] [--repair-dir harness/repair_queue] [--review-dir harness/playtest_reviews] [--report-dir harness/reports/local_candidate_acceptance]"
+    );
+    eprintln!(
+        "  cargo run -p game_harness -- lock-accepted-content [--accepted-dir harness/accepted_content] [--lock-file harness/accepted_content/accepted_content.lock.json] [--runtime-content-root harness/accepted_content] [--report-dir harness/reports/local_accepted_content_lock]"
     );
     eprintln!(
         "  cargo run -p game_harness -- gym-bridge [--seed N] [--seconds N] [--tick-rate N] [--content-dir content/base_demo]"

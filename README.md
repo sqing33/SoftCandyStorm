@@ -31,6 +31,7 @@ cargo run -p game_harness -- validate-candidates --source-dir harness/generated_
 cargo run -p game_harness -- simulate-candidates --source-dir harness/validated_candidates --simulated-dir harness/simulated_candidates --repair-dir harness/repair_queue --seed-start 20000 --seeds 3 --seconds 180 --bots random,coward,tank,boss-hunter --report-dir harness/reports/2026-05-25_candidate_simulation_smoke_001
 cargo run -p game_harness -- promote-playtest-candidates --source-dir harness/simulated_candidates --playtest-dir harness/playtest_candidates --repair-dir harness/repair_queue --report-dir harness/reports/local_candidate_playtest_promotion
 cargo run -p game_harness -- promote-accepted-candidates --source-dir harness/playtest_candidates --accepted-dir harness/accepted_content --repair-dir harness/repair_queue --review-dir harness/playtest_reviews --report-dir harness/reports/local_candidate_acceptance
+cargo run -p game_harness -- lock-accepted-content --accepted-dir harness/accepted_content --lock-file harness/accepted_content/accepted_content.lock.json --runtime-content-root harness/accepted_content --report-dir harness/reports/local_accepted_content_lock
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 600
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 600 --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json --player-skill new
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 90 --demo-input --simulation-speed 8 --playtest-report harness/telemetry/local/runtime_demo_input_001.json --player-skill demo-bot --capture-interval 1 --auto-exit-after-report
@@ -44,6 +45,7 @@ python python/train/train_sb3.py --dry-run --algorithm dqn --steps 90
 `simulate-candidates` 会对 `validated_candidates` 执行 Bot 矩阵，通过后复制到 `harness/simulated_candidates`，未通过则复制到 `harness/repair_queue`。
 `promote-playtest-candidates` 会把已仿真通过且复核仍有效的 `simulated_candidates` 复制到 `harness/playtest_candidates` 并写入 `playtest_gate.json`；它只推荐人工试玩，不会写入 `accepted_content`。
 `promote-accepted-candidates` 只接受已完成 9 局人工试玩审查、内容 hash 复核和 `accept_candidate` 结论的 `playtest_candidates`；缺少人工审查时会保持 `waiting`，不会自动复制到 `accepted_content`。
+`lock-accepted-content` 会复核 `accepted_content` 中每个候选的内容 hash、`acceptance_gate.json`、人工审查引用和静态预算，然后写入版本锁定清单；只在全部候选仍有效时生成 lockfile。
 `game_runtime` 是最小 Bevy 可视化客户端：读取键盘输入，调用同一个 GameCore，再根据 snapshot/events 更新画面、HUD、事件反馈和占位音效。Runtime 操作：WASD/方向键移动，1/2/3 选择升级，P 暂停，R 重开。当前画面加载 `assets/prototype_topdown` 中的程序化 top-down 原型占位纹理，用于替换早期几何色块；当前音效是运行时生成的短 WAV 占位资源，用于验证事件到表现层的链路。AI 生成素材仍需走候选池、记录 prompt 和人工确认。
 `game_runtime --playtest-report` 会在本地写入人工试玩捕获 JSON，记录关键可观测样本、事件计数、最终 metrics，并附带人工评分和备注字段；默认写入路径建议放在 `harness/telemetry/local/`。
 `game_runtime --demo-input` 会启用确定性演示输入，用于无需窗口焦点地覆盖移动、XP 拾取和升级选择链路；它只用于技术验证，不替代真人试玩判断。`--simulation-speed <倍率>` 只加速 Runtime 中的 GameCore 步进，适合 capture 冒烟验证；`--auto-exit-after-report` 会在终局报告写盘后自动退出 Runtime，适合长时间 capture 脚本化验证。
