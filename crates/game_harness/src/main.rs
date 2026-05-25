@@ -24,8 +24,8 @@ const GYM_REWARD_VICTORY: f32 = 1.0;
 const GYM_REWARD_DEFEAT: f32 = -3.0;
 const GYM_REWARD_ABORTED: f32 = -1.0;
 const GYM_REWARD_INVALID_STATE: f32 = -5.0;
-const GYM_ACTION_REPEAT_GRACE_STEPS: u32 = 45;
-const GYM_ACTION_REPEAT_PENALTY: f32 = -0.001;
+const GYM_ACTION_REPEAT_GRACE_STEPS: u32 = 30;
+const GYM_ACTION_REPEAT_PENALTY: f32 = -0.004;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
     "new_001",
