@@ -120,3 +120,18 @@ cargo run -p game_harness -- export-bot-trajectories --bot kite --seed-start 300
 ```
 
 The first record is `metadata`, each `sample` contains an observation vector and discrete movement action, and the final record is `summary`. Upgrade-choice states are skipped because Phase 1 RL still trains movement only.
+
+## Behavior Cloning Smoke
+
+Use `train_behavior_clone.py` to train a small supervised movement clone from exported rule Bot trajectories:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001 \
+  --epochs 2 \
+  --batch-size 128 \
+  --model-out python/train/models/behavior_clone_kite_high_pressure_smoke.pt \
+  --report harness/reports/2026-05-26_rl_behavior_clone_kite_high_pressure_smoke_001/run_output.json
+```
+
+This entry point is for policy distillation and curriculum experiments only. A cloned model must still be wrapped for Gym evaluation, compared against rule Bot baselines, and reviewed for action bias before it can become an RL test Bot candidate.
