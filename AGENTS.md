@@ -146,6 +146,8 @@ generated_candidates -> validated_candidates -> simulated_candidates -> playtest
 - 目录：未来的 `assets/`、`asset/generated_candidates/`
 - 负责：素材 Agent
 - 规则：正式素材必须保存 prompt、来源、版本和后处理说明。
+- 可使用 `mmx` CLI 的生图、TTS、music 能力制作素材候选；生成结果只能先进入 `asset/generated_candidates/`，不得直接覆盖正式 Runtime 素材。
+- 每批 `mmx` 素材候选必须记录 prompt、命令/模型、生成时间、原始输出、后处理步骤、审查结论和后续处理建议。
 
 ## AI 内容生成红线
 
@@ -203,6 +205,8 @@ generated_candidates -> validated_candidates -> simulated_candidates -> playtest
 ### 提交时机
 
 长时间 Goal 模式或多模块开发时，不要把多个小时的工作堆到最后一次提交。每完成一个可解释、可验证的功能边界，就应考虑提交。
+
+持续实现超过 45 到 60 分钟时，必须主动检查是否已经形成可提交边界；如果已经完成一个功能、报告、素材批次或文档结论，应先提交再继续下一块。用户要求“继续一直做”不等于允许累积无提交的大块改动。
 
 应该提交的典型时机：
 
