@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_002",
+  "category": "balance",
+  "content_id": "base_demo_map_roster",
+  "seed": "12345-12347",
+  "bot": "KiteBot, BossHunterBot, TankBot",
+  "time_seconds": 600.0,
+  "symptom": "焦糖工坊修复后，6 地图小矩阵仍显示明显地图差异：糖霜草地和裂星糖罐三类 Bot 均 100% 胜率，棉花云牧场和果冻月台的 BossHunter/Tank 仍 100% 胜率；汽水溪谷则出现 Kite/BossHunter 100% 胜率但 Tank 0% 胜率。",
+  "root_cause": "焦糖工坊已有专属伤害危险区和中后期压力，但其他地图的 Boss 技能、波次组合和地图压力尚未按同一目标区间校准；汽水溪谷可能存在早期 Tank 压力过高与高技能策略过安全并存的问题。",
+  "fix": "按地图分批修复：先处理汽水溪谷的 Tank 早死和高技能过安全，再提高裂星糖罐最终地图压力，随后校准糖霜草地、棉花云牧场和果冻月台的 Boss/波次压力。",
+  "validation": "已生成轻量范围报告 harness/reports/2026-05-26_six_map_boss_matrix_scoping_001/summary.md；每张地图修复后需生成正式 matrix report、代表性 replay，并执行 replay-batch。"
+}
