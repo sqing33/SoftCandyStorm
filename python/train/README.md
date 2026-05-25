@@ -135,3 +135,18 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 ```
 
 This entry point is for policy distillation and curriculum experiments only. A cloned model must still be wrapped for Gym evaluation, compared against rule Bot baselines, and reviewed for action bias before it can become an RL test Bot candidate.
+
+Evaluate or compare a behavior clone checkpoint through the shared Gym policy diagnostics with `--behavior-clone-model`:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py \
+  --compare-rule-bots \
+  --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_smoke.pt \
+  --eval-episodes 2 \
+  --eval-seconds 10 \
+  --map-id soda-creek \
+  --rule-bots random,kite,tank \
+  --report harness/reports/2026-05-26_rl_behavior_clone_kite_eval_smoke_001/comparison.json
+```
+
+The adapter exposes action probabilities to the existing `action_score_diagnostic` report, so deterministic collapse and low entropy are visible in the same format as SB3 policies.

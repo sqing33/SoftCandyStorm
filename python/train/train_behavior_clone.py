@@ -253,6 +253,65 @@ def train_behavior_clone(dataset, args):
     }
 
 
+class BehaviorClonePolicy:
+    def __init__(self, checkpoint_path):
+        require_dependencies()
+        import torch
+        from torch import nn
+
+        self.checkpoint_path = str(checkpoint_path)
+        self.checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        self.observation_len = int(self.checkpoint["observation_len"])
+        self.action_count = int(self.checkpoint["action_count"])
+        self.hidden_size = int(self.checkpoint["hidden_size"])
+        self.model = nn.Sequential(
+            nn.Linear(self.observation_len, self.hidden_size),
+            nn.ReLU(),
+            nn.Linear(self.hidden_size, self.hidden_size),
+            nn.ReLU(),
+            nn.Linear(self.hidden_size, self.action_count),
+        )
+        self.model.load_state_dict(self.checkpoint["state_dict"])
+        self.model.eval()
+
+    def predict(self, observation, deterministic=True):
+        import torch
+
+        probabilities = self._probabilities(observation)
+        if deterministic:
+            action = int(torch.argmax(probabilities, dim=1).item())
+        else:
+            action = int(torch.multinomial(probabilities[0], 1).item())
+        return action, None
+
+    def action_scores(self, observation):
+        probabilities = self._probabilities(observation)
+        return {
+            "kind": "probability",
+            "scores": [float(value) for value in probabilities[0].tolist()],
+        }
+
+    def _probabilities(self, observation):
+        import numpy as np
+        import torch
+
+        values = np.asarray(observation, dtype=np.float32).reshape(1, -1)
+        if values.shape[1] != self.observation_len:
+            raise ValueError(
+                f"expected observation length {self.observation_len}, got {values.shape[1]}"
+            )
+        with torch.no_grad():
+            logits = self.model(torch.from_numpy(values))
+            return torch.softmax(logits, dim=1)
+
+
+def load_behavior_clone_policy(path):
+    checkpoint_path = Path(path)
+    if not checkpoint_path.exists():
+        raise ValueError(f"behavior clone model does not exist: {checkpoint_path}")
+    return BehaviorClonePolicy(checkpoint_path)
+
+
 def evaluate_classifier(model, x, y, loss_fn):
     import torch
 

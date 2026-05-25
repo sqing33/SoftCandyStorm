@@ -774,6 +774,11 @@
       "id": "rl_behavior_clone_smoke_available",
       "summary": "Python 训练入口现在可从规则 Bot 轨迹 JSONL 训练 movement-only behavior clone；已用 high-pressure 三图 KiteBot 小样本跑通 2 epoch smoke，结论仅为链路可用，不是 RL Bot 门禁通过。",
       "report": "harness/reports/2026-05-26_rl_behavior_clone_kite_high_pressure_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_evaluation_adapter",
+      "summary": "Behavior clone checkpoint 现在可通过 train_sb3.py --behavior-clone-model 进入 Gym evaluation 和规则 Bot 对比报告；soda-creek 10 秒 smoke 已记录 deterministic action 3 塌缩，门禁为 repair。",
+      "report": "harness/reports/2026-05-26_rl_behavior_clone_kite_eval_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -783,7 +788,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "将 behavior clone 模型接入 Gym evaluation wrapper，复用 action entropy 和规则 Bot 对比报告，确认轨迹蒸馏是否能改善 high-pressure 300 秒泛化"
+      "summary": "扩大规则 Bot 轨迹数据集并加入多图/均衡采样或 weighted loss，先修复 behavior clone 的 deterministic action 3 塌缩，再考虑 PPO 蒸馏或 warm-start"
     }
   ]
 }

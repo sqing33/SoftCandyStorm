@@ -202,6 +202,21 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 该入口只学习 Phase 1 movement action，不处理升级选择，也不替代 PPO/DQN 评估。任何 behavior clone 模型都必须先进入 Gym 评估、动作分布诊断和规则 Bot 对比，才能作为 RL 测试 Bot 候选。
 
+训练后的 behavior clone checkpoint 可以通过 `train_sb3.py --behavior-clone-model` 接入现有 Gym 评估和规则 Bot 对比：
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py \
+  --compare-rule-bots \
+  --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_smoke.pt \
+  --eval-episodes 2 \
+  --eval-seconds 10 \
+  --map-id soda-creek \
+  --rule-bots random,kite,tank \
+  --report harness/reports/2026-05-26_rl_behavior_clone_kite_eval_smoke_001/comparison.json
+```
+
+该 adapter 会输出 action probability 诊断，因此 behavior clone 的 deterministic 动作塌缩可以和 SB3 policy 使用同一套 `action_entropy_bits`、`normalized_action_entropy` 和 `action_score_diagnostic` 字段审查。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

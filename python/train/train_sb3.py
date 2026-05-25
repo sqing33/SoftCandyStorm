@@ -13,9 +13,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from python.gym_env import SoftCandyStormEnv
+from python.train.train_behavior_clone import load_behavior_clone_policy
 
 
-REQUIRED_MODULES = ["gymnasium", "numpy", "stable_baselines3"]
+REQUIRED_MODULES = ["gymnasium", "numpy", "stable_baselines3", "torch"]
 
 BASE_DEMO_MAP_PRESETS = {
     "all-base-demo": [
@@ -57,7 +58,7 @@ def require_dependencies():
         raise RuntimeError(
             "missing Python dependencies: "
             + ", ".join(missing)
-            + "; install gymnasium, numpy and stable-baselines3 before real training"
+            + "; install python/train/requirements.txt before real training or evaluation"
         )
     return status
 
@@ -412,6 +413,69 @@ def evaluate_saved_policy(
     )
 
 
+def evaluate_policy_model(
+    config,
+    algorithm,
+    model_path=None,
+    behavior_clone_model=None,
+    eval_episodes=None,
+    eval_seconds=None,
+    seed_start=None,
+    map_id=None,
+    deterministic=True,
+):
+    if behavior_clone_model is not None:
+        return evaluate_behavior_clone_policy(
+            config,
+            behavior_clone_model,
+            eval_episodes=eval_episodes,
+            eval_seconds=eval_seconds,
+            seed_start=seed_start,
+            map_id=map_id,
+            deterministic=deterministic,
+        )
+    return evaluate_saved_policy(
+        config,
+        algorithm,
+        model_path=model_path,
+        eval_episodes=eval_episodes,
+        eval_seconds=eval_seconds,
+        seed_start=seed_start,
+        map_id=map_id,
+        deterministic=deterministic,
+    )
+
+
+def evaluate_behavior_clone_policy(
+    config,
+    model_path,
+    eval_episodes=None,
+    eval_seconds=None,
+    seed_start=None,
+    map_id=None,
+    deterministic=True,
+):
+    model_path = Path(model_path)
+    policy = load_behavior_clone_policy(model_path)
+    evaluation = evaluate_model(
+        policy,
+        config,
+        episodes=eval_episodes or config["evaluation"]["episodes"],
+        seconds=eval_seconds or config["evaluation"]["seconds"],
+        seed_start=seed_start,
+        map_id=map_id,
+        deterministic=deterministic,
+    )
+    evaluation["policy_kind"] = "behavior_clone"
+    evaluation["algorithm"] = "behavior_clone"
+    evaluation["model_path"] = str(model_path)
+    evaluation["limitations"] = [
+        "Behavior clone evaluation reuses the Gym bridge and action diagnostics, but it is still not a balance or fun gate.",
+        "The current clone only predicts movement actions and cannot handle upgrade-choice decisions.",
+    ]
+    return evaluation
+
+
 def evaluate_model(
     model,
     config,
@@ -520,6 +584,12 @@ def new_action_score_tracker(action_count):
 
 
 def policy_action_scores(model, observation):
+    custom_action_scores = getattr(model, "action_scores", None)
+    if callable(custom_action_scores):
+        try:
+            return custom_action_scores(observation)
+        except Exception as exc:
+            return unavailable_action_scores(f"{type(exc).__name__}: {exc}")
     try:
         import torch
 
@@ -864,6 +934,7 @@ def compare_policy_to_rule_bots(
     config,
     algorithm,
     model_path=None,
+    behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -876,10 +947,11 @@ def compare_policy_to_rule_bots(
     seed_start = seed_start if seed_start is not None else config["evaluation"]["seed_start"]
     map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
     bots = rule_bots or ["random", "kite", "tank"]
-    policy = evaluate_saved_policy(
+    policy = evaluate_policy_model(
         config,
         algorithm,
         model_path=model_path,
+        behavior_clone_model=behavior_clone_model,
         eval_episodes=episodes,
         eval_seconds=seconds,
         seed_start=seed_start,
@@ -892,8 +964,14 @@ def compare_policy_to_rule_bots(
         "report_version": 1,
         "status": "compared",
         "phase": config["phase"],
-        "algorithm": algorithm,
-        "model_path": str(model_path or default_model_path(config, algorithm)),
+        "algorithm": policy_algorithm_label(algorithm, behavior_clone_model),
+        "model_path": policy_model_path(
+            config,
+            algorithm,
+            model_path,
+            behavior_clone_model,
+        ),
+        "policy_kind": policy.get("policy_kind", "sb3"),
         "map_id": map_id,
         "action_selection": policy["action_selection"],
         "seed_start": seed_start,
@@ -918,6 +996,7 @@ def compare_policy_to_rule_bots_across_maps(
     algorithm,
     map_ids,
     model_path=None,
+    behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -930,6 +1009,7 @@ def compare_policy_to_rule_bots_across_maps(
             config,
             algorithm,
             model_path=model_path,
+            behavior_clone_model=behavior_clone_model,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
             seed_start=seed_start,
@@ -944,8 +1024,14 @@ def compare_policy_to_rule_bots_across_maps(
         "report_version": 1,
         "status": "compared",
         "phase": config["phase"],
-        "algorithm": algorithm,
-        "model_path": str(model_path or default_model_path(config, algorithm)),
+        "algorithm": policy_algorithm_label(algorithm, behavior_clone_model),
+        "model_path": policy_model_path(
+            config,
+            algorithm,
+            model_path,
+            behavior_clone_model,
+        ),
+        "policy_kind": "behavior_clone" if behavior_clone_model is not None else "sb3",
         "action_selection": comparisons[0]["action_selection"] if comparisons else None,
         "map_preset": map_preset,
         "map_ids": map_ids,
@@ -962,6 +1048,18 @@ def compare_policy_to_rule_bots_across_maps(
         ],
         "gate_decision": multimap_comparison_gate_decision(findings),
     }
+
+
+def policy_algorithm_label(algorithm, behavior_clone_model=None):
+    if behavior_clone_model is not None:
+        return "behavior_clone"
+    return algorithm
+
+
+def policy_model_path(config, algorithm, model_path=None, behavior_clone_model=None):
+    if behavior_clone_model is not None:
+        return str(behavior_clone_model)
+    return str(model_path or default_model_path(config, algorithm))
 
 
 def summarize_multimap_comparison(comparisons):
@@ -1209,6 +1307,11 @@ def main():
     parser.add_argument("--seed-start", type=int, default=None)
     parser.add_argument("--map-id", default=None)
     parser.add_argument("--model", default=None)
+    parser.add_argument(
+        "--behavior-clone-model",
+        default=None,
+        help="Evaluate or compare a train_behavior_clone.py checkpoint instead of an SB3 zip.",
+    )
     parser.add_argument("--model-in", default=None)
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
@@ -1269,6 +1372,10 @@ def main():
         parser.error("--compare-map-preset requires --compare-rule-bots")
     if args.compare_map_preset is not None and args.map_id is not None:
         parser.error("--compare-map-preset cannot be used together with --map-id")
+    if args.behavior_clone_model and args.model:
+        parser.error("--behavior-clone-model cannot be combined with --model")
+    if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.model_in and algorithm_overrides:
         parser.error("--model-in cannot be combined with algorithm override flags yet")
 
@@ -1299,10 +1406,15 @@ def main():
     if args.evaluate_model:
         write_report(
             args.report,
-            evaluate_saved_policy(
+            evaluate_policy_model(
                 config,
                 args.algorithm,
                 model_path=Path(args.model) if args.model else None,
+                behavior_clone_model=(
+                    Path(args.behavior_clone_model)
+                    if args.behavior_clone_model
+                    else None
+                ),
                 eval_episodes=args.eval_episodes,
                 eval_seconds=args.eval_seconds,
                 seed_start=args.seed_start,
@@ -1322,6 +1434,11 @@ def main():
                     args.algorithm,
                     BASE_DEMO_MAP_PRESETS[args.compare_map_preset],
                     model_path=Path(args.model) if args.model else None,
+                    behavior_clone_model=(
+                        Path(args.behavior_clone_model)
+                        if args.behavior_clone_model
+                        else None
+                    ),
                     eval_episodes=args.eval_episodes,
                     eval_seconds=args.eval_seconds,
                     seed_start=args.seed_start,
@@ -1337,6 +1454,11 @@ def main():
                 config,
                 args.algorithm,
                 model_path=Path(args.model) if args.model else None,
+                behavior_clone_model=(
+                    Path(args.behavior_clone_model)
+                    if args.behavior_clone_model
+                    else None
+                ),
                 eval_episodes=args.eval_episodes,
                 eval_seconds=args.eval_seconds,
                 seed_start=args.seed_start,
