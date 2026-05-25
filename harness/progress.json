@@ -857,7 +857,7 @@
     },
     {
       "id": "local_binary_launch_blocked",
-      "summary": "当前本机新生成 Mach-O binary 启动异常：game_harness、rustc hello 和 cc hello 都会停在 _dyld_start，已记录 tooling failure case；恢复前不要继续依赖 Harness/Runtime/Gym 运行结果。",
+      "summary": "当前本机新生成 Mach-O binary 启动异常：game_harness、rustc hello 和 cc hello 都会停在 _dyld_start；补充诊断显示 binary 只有 com.apple.provenance、spctl rejected，复制到 /tmp、cp -X、删除 provenance 和重新 ad-hoc codesign 都未恢复启动。恢复前不要继续依赖 Harness/Runtime/Gym 运行结果。",
       "report": "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
     }
   ],

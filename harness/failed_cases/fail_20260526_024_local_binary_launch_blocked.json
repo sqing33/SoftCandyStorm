@@ -8,5 +8,37 @@
   "symptom": "本机新生成 Mach-O 可执行文件启动后无输出且不进入 main，Rust game_harness、rustc hello 和 cc hello 均会卡住，导致 game_harness gym-bridge 不能可靠响应",
   "root_cause": "macOS policy 对本地新生成二进制返回 rejected，进程采样停在 _dyld_start；原因可能是当前桌面会话的本地执行策略、quarantine/provenance 或系统安全服务异常",
   "fix": "先恢复本地新编译二进制的启动能力，再重跑 Harness、Runtime 和 Gym 对比；在恢复前不要把依赖 game_harness 的评估失败误判为策略或 GameCore 失败",
+  "diagnostics": [
+    {
+      "checked_at": "2026-05-26",
+      "command": "xattr -lr target/debug/game_harness",
+      "result": "仅观察到 com.apple.provenance 扩展属性，未观察到 com.apple.quarantine"
+    },
+    {
+      "checked_at": "2026-05-26",
+      "command": "codesign -dv target/debug/game_harness",
+      "result": "binary 为 arm64 Mach-O，签名状态是 ad-hoc / linker-signed，TeamIdentifier 为空"
+    },
+    {
+      "checked_at": "2026-05-26",
+      "command": "spctl -a -vv target/debug/game_harness",
+      "result": "返回 rejected"
+    },
+    {
+      "checked_at": "2026-05-26",
+      "command": "复制到 /tmp 后尝试 xattr -d com.apple.provenance",
+      "result": "命令返回成功但 com.apple.provenance 仍存在，/tmp 副本执行 --help 仍 5 秒超时"
+    },
+    {
+      "checked_at": "2026-05-26",
+      "command": "cp -X 复制到 /tmp 并执行 --help",
+      "result": "副本仍出现 com.apple.provenance，spctl 仍 rejected，执行仍 5 秒超时"
+    },
+    {
+      "checked_at": "2026-05-26",
+      "command": "codesign --force --sign - --timestamp=none /tmp/soft_candy_game_harness_no_xattr_test",
+      "result": "重新 ad-hoc 签名成功，但 spctl 仍 rejected，执行仍 5 秒超时"
+    }
+  ],
   "validation": "spctl -a -vv target/debug/game_harness；target/debug/game_harness --help；最小 rustc/cc hello binary 启动测试；恢复后重跑 context3 behavior clone 60/300 秒 high-pressure 对比"
 }
