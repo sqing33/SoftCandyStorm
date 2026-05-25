@@ -864,6 +864,157 @@ def compare_policy_to_rule_bots(
     }
 
 
+def compare_policy_to_rule_bots_across_maps(
+    config,
+    algorithm,
+    map_ids,
+    model_path=None,
+    eval_episodes=None,
+    eval_seconds=None,
+    seed_start=None,
+    rule_bots=None,
+    deterministic=True,
+    map_preset=None,
+):
+    comparisons = [
+        compare_policy_to_rule_bots(
+            config,
+            algorithm,
+            model_path=model_path,
+            eval_episodes=eval_episodes,
+            eval_seconds=eval_seconds,
+            seed_start=seed_start,
+            map_id=map_id,
+            rule_bots=rule_bots,
+            deterministic=deterministic,
+        )
+        for map_id in map_ids
+    ]
+    findings = multimap_comparison_findings(comparisons)
+    return {
+        "report_version": 1,
+        "status": "compared",
+        "phase": config["phase"],
+        "algorithm": algorithm,
+        "model_path": str(model_path or default_model_path(config, algorithm)),
+        "action_selection": comparisons[0]["action_selection"] if comparisons else None,
+        "map_preset": map_preset,
+        "map_ids": map_ids,
+        "seed_start": comparisons[0]["seed_start"] if comparisons else seed_start,
+        "seeds": comparisons[0]["seeds"] if comparisons else eval_episodes,
+        "seconds": comparisons[0]["seconds"] if comparisons else eval_seconds,
+        "tick_rate": config["environment"]["tick_rate"],
+        "maps": comparisons,
+        "summary": summarize_multimap_comparison(comparisons),
+        "findings": findings,
+        "limitations": [
+            "This multi-map comparison records policy behavior against rule Bot baselines; it is not a balance or fun gate.",
+            "A policy can pass action distribution checks and still fail high-pressure maps, so human review and rule Bot gates remain required.",
+        ],
+        "gate_decision": multimap_comparison_gate_decision(findings),
+    }
+
+
+def summarize_multimap_comparison(comparisons):
+    rows = []
+    for report in comparisons:
+        summary = report["policy"]["summary"]
+        dominant = dominant_action(summary.get("action_distribution", {}))
+        rule_win_rates = {
+            bot["bot"]: bot["win_rate"]
+            for bot in report.get("rule_bots", {}).get("bots", [])
+        }
+        rows.append(
+            {
+                "map_id": report["map_id"],
+                "policy_win_rate": summary["win_rate"],
+                "policy_average_survival_seconds": summary[
+                    "average_survival_seconds"
+                ],
+                "policy_damage_taken_average": summary["damage_taken_average"],
+                "policy_average_kills": summary["average_kills"],
+                "policy_dominant_action": dominant,
+                "policy_normalized_action_entropy": summary.get(
+                    "normalized_action_entropy"
+                ),
+                "rule_bot_win_rates": rule_win_rates,
+                "best_rule_bot_win_rate": max(rule_win_rates.values(), default=None),
+                "inner_gate_decision": report["gate_decision"],
+            }
+        )
+    count = max(1, len(rows))
+    return {
+        "maps": rows,
+        "map_count": len(rows),
+        "minimum_policy_win_rate": min(
+            (row["policy_win_rate"] for row in rows),
+            default=None,
+        ),
+        "average_policy_win_rate": round(
+            sum(row["policy_win_rate"] for row in rows) / count,
+            4,
+        ),
+        "average_policy_survival_seconds": round(
+            sum(row["policy_average_survival_seconds"] for row in rows) / count,
+            4,
+        ),
+        "repair_maps": [
+            row["map_id"]
+            for row in rows
+            if row["inner_gate_decision"] != "comparison_recorded_not_balance_gate"
+            or row["policy_win_rate"] <= 0.0
+        ],
+    }
+
+
+def multimap_comparison_findings(comparisons):
+    findings = []
+    for report in comparisons:
+        summary = report["policy"]["summary"]
+        if report["gate_decision"] != "comparison_recorded_not_balance_gate":
+            findings.append(
+                {
+                    "id": "map_action_distribution_repair",
+                    "severity": "repair",
+                    "map_id": report["map_id"],
+                    "summary": "Policy action distribution failed the per-map comparison gate.",
+                }
+            )
+        if summary["win_rate"] <= 0.0:
+            findings.append(
+                {
+                    "id": "zero_policy_win_rate",
+                    "severity": "repair",
+                    "map_id": report["map_id"],
+                    "summary": "Policy recorded 0% win rate on this map and should not be promoted as a multi-map RL test Bot.",
+                }
+            )
+            continue
+        rule_bots = report.get("rule_bots", {}).get("bots", [])
+        best_rule_win_rate = max(
+            (bot["win_rate"] for bot in rule_bots),
+            default=0.0,
+        )
+        if best_rule_win_rate >= 0.5 and summary["win_rate"] < best_rule_win_rate * 0.5:
+            findings.append(
+                {
+                    "id": "policy_underperforms_rule_bots",
+                    "severity": "watch",
+                    "map_id": report["map_id"],
+                    "summary": "Policy win rate is less than half of the strongest compared rule Bot on this map.",
+                }
+            )
+    return findings
+
+
+def multimap_comparison_gate_decision(findings):
+    if any(finding["severity"] == "repair" for finding in findings):
+        return "multimap_comparison_recorded_needs_policy_repair"
+    if any(finding["severity"] == "watch" for finding in findings):
+        return "multimap_comparison_recorded_watch"
+    return "multimap_comparison_recorded_not_balance_gate"
+
+
 def comparison_findings(policy, rule_matrix):
     findings = []
     summary = policy["summary"]
@@ -1042,6 +1193,12 @@ def main():
     )
     parser.add_argument("--evaluate-model", action="store_true")
     parser.add_argument("--compare-rule-bots", action="store_true")
+    parser.add_argument(
+        "--compare-map-preset",
+        choices=sorted(BASE_DEMO_MAP_PRESETS),
+        default=None,
+        help="Run --compare-rule-bots once for each map in a predefined preset.",
+    )
     parser.add_argument("--rule-bots", default="random,kite,tank")
     parser.add_argument("--report", default=None)
     parser.add_argument("--copy-template", default=None)
@@ -1058,6 +1215,10 @@ def main():
         )
     except ValueError as exc:
         parser.error(str(exc))
+    if args.compare_map_preset is not None and not args.compare_rule_bots:
+        parser.error("--compare-map-preset requires --compare-rule-bots")
+    if args.compare_map_preset is not None and args.map_id is not None:
+        parser.error("--compare-map-preset cannot be used together with --map-id")
 
     if args.copy_template:
         write_report(args.report, copy_template(args.copy_template))
@@ -1100,6 +1261,24 @@ def main():
         return
 
     if args.compare_rule_bots:
+        rule_bots = parse_rule_bots(args.rule_bots)
+        if args.compare_map_preset:
+            write_report(
+                args.report,
+                compare_policy_to_rule_bots_across_maps(
+                    config,
+                    args.algorithm,
+                    BASE_DEMO_MAP_PRESETS[args.compare_map_preset],
+                    model_path=Path(args.model) if args.model else None,
+                    eval_episodes=args.eval_episodes,
+                    eval_seconds=args.eval_seconds,
+                    seed_start=args.seed_start,
+                    rule_bots=rule_bots,
+                    deterministic=not args.eval_stochastic,
+                    map_preset=args.compare_map_preset,
+                ),
+            )
+            return
         write_report(
             args.report,
             compare_policy_to_rule_bots(
@@ -1110,7 +1289,7 @@ def main():
                 eval_seconds=args.eval_seconds,
                 seed_start=args.seed_start,
                 map_id=args.map_id,
-                rule_bots=parse_rule_bots(args.rule_bots),
+                rule_bots=rule_bots,
                 deterministic=not args.eval_stochastic,
             ),
         )

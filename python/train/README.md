@@ -81,7 +81,15 @@ Compare a saved SB3 policy against rule Bot baselines with the same map, seed ra
 python3 python/train/train_sb3.py --algorithm dqn --compare-rule-bots --model python/train/models/dqn_phase1_movement_survival.zip --seed-start 30000 --eval-episodes 2 --eval-seconds 5 --map-id frosting-grassland --rule-bots random,kite,tank --report harness/reports/local_rl_training/dqn_rule_bot_comparison.json
 ```
 
+Use `--compare-map-preset` to run the same comparison over a preset map set and write one aggregate report:
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model python/train/models/ppo_phase1_observation_v2_multimap_random_ent002_50000_eval60.zip --seed-start 30000 --eval-episodes 10 --eval-seconds 300 --rule-bots random,kite,tank --report harness/reports/local_rl_training/ppo_high_pressure_comparison.json
+```
+
 The comparison report records the policy summary, action distribution, rule Bot matrix output, smoke findings, limitations, and `comparison_recorded_not_balance_gate` gate decision.
+
+Multi-map comparison reports additionally include per-map policy/rule Bot win rates, dominant action, normalized action entropy, `repair_maps`, and a `multimap_comparison_*` gate decision. A multi-map report can mark `repair` even when per-map action distribution is healthy, because 0% win-rate maps still mean the policy is not ready as a cross-map RL test Bot.
 
 Policy evaluation reports include `action_entropy_bits`, `normalized_action_entropy`, and averaged `reward_breakdown` fields so action collapse and reward-shaping issues can be inspected before treating a policy as a useful test Bot.
 

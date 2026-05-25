@@ -317,6 +317,8 @@ AI Bot 不在普通每次提交 CI 中训练。
 - Weekly：重新训练或微调 RL Bot。
 - Release Candidate：全部 Bot + replay + 人工试玩。
 
+训练入口的 `--compare-rule-bots` 支持 `--compare-map-preset` 聚合输出多地图对比报告。该报告可以把每张地图的 RL policy 胜率、规则 Bot 胜率、动作分布和 `repair_maps` 放在同一个 JSON 中，避免手动拼接 6 份单地图报告。
+
 ## 模型版本管理
 
 每个训练模型保存：

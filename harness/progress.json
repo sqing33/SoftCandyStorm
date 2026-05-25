@@ -413,6 +413,10 @@
     {
       "id": "rl_training_episode_controls",
       "summary": "训练入口增加 --train-seconds 与 --train-map-preset，可独立拉长训练 episode，并直接选择 all-base-demo、high-pressure 或 stable-open 地图集合用于 curriculum/定向实验"
+    },
+    {
+      "id": "rl_multimap_comparison_entrypoint",
+      "summary": "训练入口的 --compare-rule-bots 增加 --compare-map-preset 聚合模式，可一次输出 all-base-demo、high-pressure 或 stable-open 的多地图 policy/rule Bot 对比报告"
     }
   ],
   "current_findings": [
@@ -624,6 +628,11 @@
     {
       "id": "rl_training_episode_controls_available",
       "summary": "SB3 训练入口现在能用 --train-seconds 运行 300 秒训练 episode，并用 --train-map-preset high-pressure 定向训练 soda-creek、caramel-workshop、cracked-star-jar；报告和 metadata 会记录训练时长、地图集合和 preset。",
+      "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_multimap_comparison_available",
+      "summary": "SB3 训练入口现在能用 --compare-rule-bots --compare-map-preset 生成聚合多地图对比报告，报告会汇总每张地图的 policy 胜率、规则 Bot 胜率、动作分布、repair_maps 和 multimap_comparison gate。",
       "report": "python/train/train_sb3.py"
     }
   ],
