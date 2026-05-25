@@ -293,6 +293,10 @@
     {
       "id": "soda_creek_balance_repair",
       "summary": "修复汽水溪谷分裂问题：降低 0-210 秒泡泡远程占比，提高汽水喷泉龙本体/技能压力，并将 BossHunter 调整为更激进的近身猎 Boss 策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
+    },
+    {
+      "id": "cracked_star_jar_balance_repair",
+      "summary": "修复裂星糖罐最终图偏易问题：裂星核心提高预算内 HP、延后高压阶段、补充阶段风暴伤害语义并提高 300 秒后怪潮压力，同时让规则 Bot 在最终图使用专属风险策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
     }
   ],
   "current_findings": [
@@ -328,13 +332,18 @@
     },
     {
       "id": "six_map_boss_balance_spread",
-      "summary": "6 地图范围扫描显示地图平衡尚未统一：糖霜草地、裂星糖罐整体偏易，棉花云牧场和果冻月台的 BossHunter/Tank 偏易；汽水溪谷已完成首轮修复并通过小样本回归，其他地图仍需逐步修复。",
+      "summary": "6 地图范围扫描显示地图平衡尚未统一：糖霜草地整体偏易，棉花云牧场和果冻月台的 BossHunter/Tank 偏易；汽水溪谷与裂星糖罐已完成首轮修复并通过小样本回归，其他地图仍需逐步修复。",
       "report": "harness/failed_cases/fail_20260526_002_six_map_boss_balance_spread.json"
     },
     {
       "id": "soda_creek_boss_matrix_repaired",
       "summary": "soda-creek 分裂问题已完成首轮修复：KiteBot 与 BossHunterBot 3 seed 胜率均为 66.7%，TankBot 为 33.3%，全部进入当前 Harness 目标区间；Replay 回归 9/9 通过，该结论仍是小样本。",
       "report": "harness/reports/2026-05-26_soda_creek_balance_repair_001/summary.md"
+    },
+    {
+      "id": "cracked_star_jar_boss_matrix_repaired",
+      "summary": "cracked-star-jar 终局偏易问题已完成首轮修复：KiteBot 与 BossHunterBot 3 seed 胜率均为 66.7%，TankBot 为 33.3%，全部进入当前 Harness 目标区间；Replay 回归 9/9 通过，该结论仍是小样本。",
+      "report": "harness/reports/2026-05-26_cracked_star_jar_balance_repair_001/summary.md"
     },
     {
       "id": "content_event_effect_scope",
@@ -408,10 +417,6 @@
     }
   ],
   "next_recommended": [
-    {
-      "id": "cracked_star_jar_final_map_pressure",
-      "summary": "提高裂星糖罐最终地图压力，使裂星糖罐核心的阶段风暴和波次组合能让高技能/防御 Bot 不再 3 seed 全胜"
-    },
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
