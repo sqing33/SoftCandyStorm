@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_001",
+  "category": "balance",
+  "content_id": "caramel-workshop",
+  "seed": "12345-12347",
+  "bot": "KiteBot, BossHunterBot, TankBot",
+  "time_seconds": 600.0,
+  "symptom": "首版 Boss 技能语义接入后，焦糖工坊 600 秒 3 seed 小矩阵中 KiteBot、BossHunterBot、TankBot 胜率均为 100%，高于当前 Harness 目标区间。",
+  "root_cause": "焦糖工坊波次和焦糖熔炉技能虽能生成危险区，但当前小样本中伤害压力不足，Boss 技能更多增加可见压力而没有显著威胁高技能和中技能规则 Bot。",
+  "fix": "后续应提高焦糖工坊中后期压力或增强焦糖熔炉技能约束，例如提高危险区覆盖、延长持续时间、增加刷怪联动，或重新校准该地图的 Bot 胜率目标。",
+  "validation": "已生成 harness/reports/2026-05-26_boss_map_matrix_caramel_workshop_002；修复后需以相同 map_id、seed range、bot set 重跑 600 秒矩阵，并执行 replay-batch 回归。"
+}
