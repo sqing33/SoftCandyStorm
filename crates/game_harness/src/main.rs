@@ -15,6 +15,17 @@ const GYM_ACTION_COUNT: usize = 9;
 const GYM_MAX_ENEMIES: usize = 8;
 const GYM_MAX_PICKUPS: usize = 4;
 const GYM_OBSERVATION_LEN: usize = 82;
+const GYM_REWARD_SURVIVAL_WEIGHT: f32 = 0.01;
+const GYM_REWARD_KILL_WEIGHT: f32 = 0.08;
+const GYM_REWARD_XP_WEIGHT: f32 = 0.04;
+const GYM_REWARD_LEVEL_WEIGHT: f32 = 0.8;
+const GYM_REWARD_DAMAGE_WEIGHT: f32 = -0.08;
+const GYM_REWARD_VICTORY: f32 = 1.0;
+const GYM_REWARD_DEFEAT: f32 = -3.0;
+const GYM_REWARD_ABORTED: f32 = -1.0;
+const GYM_REWARD_INVALID_STATE: f32 = -5.0;
+const GYM_ACTION_REPEAT_GRACE_STEPS: u32 = 45;
+const GYM_ACTION_REPEAT_PENALTY: f32 = -0.001;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
     "new_001",
@@ -706,6 +717,7 @@ struct GymRewardBreakdown {
     xp: f32,
     level: f32,
     damage_taken: f32,
+    action_repeat: f32,
     terminal: f32,
     total: f32,
 }
@@ -727,6 +739,8 @@ struct GymBridgeState {
     seconds: f32,
     tick_rate: u32,
     tick: u64,
+    last_action_index: Option<usize>,
+    repeated_action_steps: u32,
 }
 
 fn main() {
@@ -1956,6 +1970,8 @@ impl GymBridgeState {
             seconds,
             tick_rate,
             tick: 0,
+            last_action_index: None,
+            repeated_action_steps: 0,
         }
     }
 
@@ -1966,6 +1982,8 @@ impl GymBridgeState {
         self.seconds = seconds;
         self.tick_rate = tick_rate;
         self.tick = 0;
+        self.last_action_index = None;
+        self.repeated_action_steps = 0;
     }
 
     fn handle_request(&mut self, request: GymBridgeRequest) -> GymBridgeResponse {
@@ -2029,7 +2047,14 @@ impl GymBridgeState {
         }
 
         let snapshot = self.core.snapshot();
-        let action = if snapshot.upgrade_options.is_empty() {
+        let movement_action_active = snapshot.upgrade_options.is_empty();
+        let action_repeat = if movement_action_active {
+            self.record_action_repeat(action_index)
+        } else {
+            self.clear_action_repeat();
+            0.0
+        };
+        let action = if movement_action_active {
             game_core::PlayerAction {
                 movement: gym_discrete_movement(action_index),
                 upgrade_choice: None,
@@ -2048,6 +2073,7 @@ impl GymBridgeState {
             &result.reward_hint,
             &result.events,
             result.terminal.as_ref(),
+            action_repeat,
         );
 
         self.response(
@@ -2130,6 +2156,26 @@ impl GymBridgeState {
             action_count: GYM_ACTION_COUNT,
         }
     }
+
+    fn record_action_repeat(&mut self, action_index: usize) -> f32 {
+        if self.last_action_index == Some(action_index) {
+            self.repeated_action_steps = self.repeated_action_steps.saturating_add(1);
+        } else {
+            self.last_action_index = Some(action_index);
+            self.repeated_action_steps = 1;
+        }
+
+        if self.repeated_action_steps > GYM_ACTION_REPEAT_GRACE_STEPS {
+            GYM_ACTION_REPEAT_PENALTY
+        } else {
+            0.0
+        }
+    }
+
+    fn clear_action_repeat(&mut self) {
+        self.last_action_index = None;
+        self.repeated_action_steps = 0;
+    }
 }
 
 fn reset_gym_core(
@@ -2181,36 +2227,38 @@ fn gym_reward_breakdown(
     hint: &game_core::RewardHint,
     events: &[GameEvent],
     terminal: Option<&game_core::TerminalState>,
+    action_repeat: f32,
 ) -> GymRewardBreakdown {
     let kill_delta = events
         .iter()
         .filter(|event| matches!(event, GameEvent::EnemyKilled { .. }))
         .count() as f32;
-    let survival = hint.survival_delta * 0.01;
-    let kill = kill_delta * 0.05;
-    let xp = hint.xp_delta * 0.02;
-    let level = hint.level_delta as f32 * 0.5;
-    let damage_taken = -hint.damage_taken_delta * 0.05;
+    let survival = hint.survival_delta * GYM_REWARD_SURVIVAL_WEIGHT;
+    let kill = kill_delta * GYM_REWARD_KILL_WEIGHT;
+    let xp = hint.xp_delta * GYM_REWARD_XP_WEIGHT;
+    let level = hint.level_delta as f32 * GYM_REWARD_LEVEL_WEIGHT;
+    let damage_taken = hint.damage_taken_delta * GYM_REWARD_DAMAGE_WEIGHT;
 
     let terminal = if let Some(terminal) = terminal {
         match terminal.kind {
-            TerminalKind::Victory => 5.0,
-            TerminalKind::Defeat => -2.0,
+            TerminalKind::Victory => GYM_REWARD_VICTORY,
+            TerminalKind::Defeat => GYM_REWARD_DEFEAT,
             TerminalKind::Timeout => 0.0,
-            TerminalKind::Aborted => -1.0,
-            TerminalKind::InvalidState => -5.0,
+            TerminalKind::Aborted => GYM_REWARD_ABORTED,
+            TerminalKind::InvalidState => GYM_REWARD_INVALID_STATE,
         }
     } else {
         0.0
     };
 
-    let total = survival + kill + xp + level + damage_taken + terminal;
+    let total = survival + kill + xp + level + damage_taken + action_repeat + terminal;
     GymRewardBreakdown {
         survival,
         kill,
         xp,
         level,
         damage_taken,
+        action_repeat,
         terminal,
         total,
     }
@@ -5503,13 +5551,14 @@ mod tests {
             final_level: 1,
             kills: 0,
         };
-        let breakdown = gym_reward_breakdown(&hint, &[], Some(&terminal));
+        let breakdown = gym_reward_breakdown(&hint, &[], Some(&terminal), -0.002);
 
-        assert!((breakdown.survival - 0.02).abs() < f32::EPSILON);
-        assert!((breakdown.xp - 0.06).abs() < f32::EPSILON);
-        assert!((breakdown.level - 0.5).abs() < f32::EPSILON);
-        assert!((breakdown.damage_taken + 0.2).abs() < f32::EPSILON);
-        assert!((breakdown.terminal - 5.0).abs() < f32::EPSILON);
+        assert!((breakdown.survival - 0.02).abs() < 0.0001);
+        assert!((breakdown.xp - 0.12).abs() < 0.0001);
+        assert!((breakdown.level - 0.8).abs() < 0.0001);
+        assert!((breakdown.damage_taken + 0.32).abs() < 0.0001);
+        assert!((breakdown.action_repeat + 0.002).abs() < 0.0001);
+        assert!((breakdown.terminal - 1.0).abs() < 0.0001);
         assert!(
             (breakdown.total
                 - (breakdown.survival
@@ -5517,9 +5566,10 @@ mod tests {
                     + breakdown.xp
                     + breakdown.level
                     + breakdown.damage_taken
+                    + breakdown.action_repeat
                     + breakdown.terminal))
                 .abs()
-                < f32::EPSILON
+                < 0.0001
         );
     }
 
