@@ -1,0 +1,99 @@
+{
+  "batch_id": "2026-05-26_mmx_map_boss_audio_pass",
+  "generated_at": "2026-05-26",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_method": "api-key",
+    "source": "local configured mmx credentials"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "人工审查",
+      "UI 留白与伪文字复核",
+      "听感审查",
+      "响度统一",
+      "Boss 音乐剪辑或重生成",
+      "正式接入前再次确认"
+    ]
+  },
+  "commands": [
+    "mmx image generate --prompt <map_select_background_v001 prompt> --aspect-ratio 16:9 --n 1 --out-dir asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/images --out-prefix map_select_background_v001 --non-interactive --quiet --output json",
+    "mmx speech synthesize --text '警报！裂星糖罐核心苏醒了！' --language zh --format mp3 --sample-rate 32000 --bitrate 128000 --channels 1 --out asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/audio/voice_boss_arrival_v001.mp3 --non-interactive --quiet --output json",
+    "mmx music generate --prompt <sting_boss_arrival_v001 prompt> --instrumental --genre 'game soundtrack' --mood 'playful dramatic energetic' --instruments 'toy timpani, marimba, rainbow synth, bells, bubbly bass' --tempo fast --bpm 140 --use-case 'boss arrival warning sting for cute candy roguelite' --extra 'short 6-10 seconds, no vocals, no lyrics, clean final hit, not a full background song' --avoid 'dark horror, heavy metal, vocals, lyrics, cinematic dread, long ambient intro' --format mp3 --sample-rate 44100 --bitrate 256000 --out asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/music/sting_boss_arrival_v001.mp3 --non-interactive --quiet --output json"
+  ],
+  "assets": [
+    {
+      "id": "map_select_background_v001",
+      "type": "image",
+      "path": "images/map_select_background_v001_001.jpg",
+      "preview_paths": [
+        "review_previews/map_select_background_v001/map_select_background_v001_preview_640.jpg",
+        "review_previews/map_select_background_v001/map_select_background_v001_card_overlay_preview_640.jpg"
+      ],
+      "format": "jpg",
+      "dimensions": {
+        "width": 1280,
+        "height": 720
+      },
+      "size": "396K",
+      "prompt": "Wide 16:9 top-down map selection background for a cute candy roguelite game, showing six candy world regions as small readable diorama islands: frosting grassland, soda creek valley, cotton cloud pasture, caramel workshop, jelly platform station, cracked star candy jar. Bright pastel colors, rounded candy shapes, high contrast readable map landmarks, UI-safe empty space in the center for map cards added later, cheerful but action-ready, no characters, no text, no labels, no watermark, no logo, no dark sci-fi, no horror.",
+      "negative_prompt": "no characters, no text, no labels, no watermark, no logo, no dark sci-fi, no horror, no busy UI foreground",
+      "qa_status": "needs_visual_review",
+      "qa_notes": [
+        "可作为地图选择界面背景候选，不是 Runtime 地图地面素材。",
+        "需要人工检查六个区域是否可辨认、是否存在伪文字或 UI 干扰。",
+        "接入前应再生成小尺寸预览并验证地图卡牌覆盖后的可读性。"
+      ]
+    },
+    {
+      "id": "voice_boss_arrival_v001",
+      "type": "speech",
+      "path": "audio/voice_boss_arrival_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 2.681906,
+      "sample_rate_hz": 32000,
+      "channels": 1,
+      "bitrate": "135.7 kbps",
+      "size": "48K",
+      "text": "警报！裂星糖罐核心苏醒了！",
+      "prompt": "Chinese prototype boss arrival voice prompt for a cute candy roguelite: 警报！裂星糖罐核心苏醒了！",
+      "qa_status": "needs_review",
+      "qa_notes": [
+        "可作为 Boss 出场提示语音候选。",
+        "接入前需要人工听感审查、响度统一、字幕/无障碍替代和可关闭设置。",
+        "需要确认语气可爱紧张但不恐怖。"
+      ]
+    },
+    {
+      "id": "sting_boss_arrival_v001",
+      "type": "music",
+      "path": "music/sting_boss_arrival_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 102.42322,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "256.2 kbps",
+      "size": "3.1M",
+      "prompt": "Short playful but dramatic boss arrival musical sting for a cute candy roguelite game, cracked star candy jar core awakens, candy machine rumble, sparkling rainbow synth, toy timpani, marimba hits, bubbly bass rise, no vocals, no lyrics, designed as a 6 to 10 second boss warning cue with clean ending",
+      "generation_options": {
+        "instrumental": true,
+        "genre": "game soundtrack",
+        "mood": "playful dramatic energetic",
+        "instruments": "toy timpani, marimba, rainbow synth, bells, bubbly bass",
+        "tempo": "fast",
+        "bpm": 140,
+        "use_case": "boss arrival warning sting for cute candy roguelite",
+        "avoid": "dark horror, heavy metal, vocals, lyrics, cinematic dread, long ambient intro"
+      },
+      "qa_status": "repair_trim",
+      "qa_notes": [
+        "生成结果约 102 秒，明显长于 6-10 秒 Boss 出场 sting 目标。",
+        "仅可作为音乐剪辑来源候选，不可直接接入 Boss 出场事件。",
+        "接入前需要人工听感审查、剪辑短版本、响度统一和结尾复核。"
+      ]
+    }
+  ]
+}
