@@ -368,7 +368,97 @@ impl ContentPack {
                 4.0,
                 15.0,
                 4.0,
-                2.0,
+                1.6,
+            )
+            .with_behavior(
+                "leave_hazard",
+                serde_json::json!({
+                    "hazard_radius": 44,
+                    "hazard_duration_seconds": 2.2,
+                    "slow_multiplier": 0.78
+                }),
+            ),
+            enemy_definition(
+                "sticky-bear-gummy",
+                "粘粘熊糖",
+                "gummy",
+                &["control", "slow", "bear"],
+                28.0,
+                52.0,
+                3.7,
+                14.0,
+                4.0,
+                1.3,
+            )
+            .with_behavior(
+                "chase",
+                serde_json::json!({
+                    "on_contact_status_effect": {
+                        "stat": "move_speed",
+                        "multiplier": 0.82,
+                        "duration_seconds": 1.2
+                    }
+                }),
+            ),
+            enemy_definition(
+                "soda-bubble",
+                "汽水泡泡",
+                "soda",
+                &["split", "swarm", "soda"],
+                26.0,
+                70.0,
+                4.2,
+                15.0,
+                4.0,
+                1.3,
+            )
+            .with_behavior(
+                "split",
+                serde_json::json!({
+                    "child_enemy_id": "bouncy-gummy",
+                    "child_count": 2,
+                    "child_health_multiplier": 0.45,
+                    "child_radius_multiplier": 0.72
+                }),
+            ),
+            enemy_definition(
+                "cotton-candy-clump",
+                "棉花糖团",
+                "cotton-candy",
+                &["swarm", "aoe-check", "soft"],
+                20.0,
+                44.0,
+                3.4,
+                16.0,
+                3.0,
+                0.9,
+            )
+            .with_behavior(
+                "chase",
+                serde_json::json!({
+                    "pack_spawn_bias": "group"
+                }),
+            ),
+            enemy_definition(
+                "spicy-gummy",
+                "辣味软糖",
+                "gummy",
+                &["dash", "burst-danger", "spicy"],
+                22.0,
+                78.0,
+                5.0,
+                12.0,
+                5.0,
+                1.8,
+            )
+            .with_behavior(
+                "dash",
+                serde_json::json!({
+                    "charge_seconds": 0.8,
+                    "dash_seconds": 0.28,
+                    "cooldown_seconds": 2.4,
+                    "dash_speed_multiplier": 2.1
+                }),
             ),
         ] {
             pack.enemies.insert(enemy.common.id.clone(), enemy);
@@ -891,6 +981,21 @@ impl ContentPack {
                 &enemy.common.stats,
                 &mut errors,
             );
+            validate_allowed(
+                "enemy.behavior.type",
+                &enemy.behavior.behavior_type,
+                &[
+                    "chase",
+                    "dash",
+                    "split",
+                    "leave_hazard",
+                    "orbit_player",
+                    "jump",
+                    "ranged_spit",
+                    "shielded",
+                ],
+                &mut errors,
+            );
         }
 
         for boss in self.bosses.values() {
@@ -1233,7 +1338,11 @@ fn base_demo_wave_segments() -> Vec<WaveSegmentDefinition> {
             950.0,
             2,
             55,
-            &[("bouncy-gummy", 0.75), ("sour-gummy", 0.25)],
+            &[
+                ("bouncy-gummy", 0.65),
+                ("sour-gummy", 0.23),
+                ("sticky-bear-gummy", 0.12),
+            ],
         ),
         wave_segment(
             210.0,
@@ -1242,9 +1351,11 @@ fn base_demo_wave_segments() -> Vec<WaveSegmentDefinition> {
             2,
             65,
             &[
-                ("bouncy-gummy", 0.65),
-                ("sour-gummy", 0.2),
-                ("sandwich-cookie-creep", 0.15),
+                ("bouncy-gummy", 0.5),
+                ("sour-gummy", 0.18),
+                ("sandwich-cookie-creep", 0.14),
+                ("sticky-bear-gummy", 0.1),
+                ("soda-bubble", 0.08),
             ],
         ),
         wave_segment(
@@ -1254,10 +1365,13 @@ fn base_demo_wave_segments() -> Vec<WaveSegmentDefinition> {
             3,
             82,
             &[
-                ("bouncy-gummy", 0.48),
-                ("sour-gummy", 0.22),
-                ("sandwich-cookie-creep", 0.18),
-                ("caramel-slime", 0.12),
+                ("bouncy-gummy", 0.34),
+                ("sour-gummy", 0.18),
+                ("sandwich-cookie-creep", 0.15),
+                ("caramel-slime", 0.1),
+                ("sticky-bear-gummy", 0.1),
+                ("soda-bubble", 0.08),
+                ("cotton-candy-clump", 0.05),
             ],
         ),
         wave_segment(
@@ -1267,10 +1381,14 @@ fn base_demo_wave_segments() -> Vec<WaveSegmentDefinition> {
             3,
             105,
             &[
-                ("bouncy-gummy", 0.4),
-                ("sour-gummy", 0.25),
-                ("sandwich-cookie-creep", 0.2),
-                ("caramel-slime", 0.15),
+                ("bouncy-gummy", 0.28),
+                ("sour-gummy", 0.18),
+                ("sandwich-cookie-creep", 0.16),
+                ("caramel-slime", 0.12),
+                ("sticky-bear-gummy", 0.09),
+                ("soda-bubble", 0.08),
+                ("cotton-candy-clump", 0.05),
+                ("spicy-gummy", 0.04),
             ],
         ),
     ]
@@ -1556,6 +1674,14 @@ impl ContentObject for EnemyDefinition {
 impl EnemyDefinition {
     pub fn id(&self) -> &str {
         &self.common.id
+    }
+
+    fn with_behavior(mut self, behavior_type: &str, parameters: serde_json::Value) -> Self {
+        self.behavior = BehaviorDefinition {
+            behavior_type: behavior_type.to_string(),
+            parameters,
+        };
+        self
     }
 }
 

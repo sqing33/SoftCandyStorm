@@ -221,9 +221,18 @@
     {
       "id": "starting_passive_loadout",
       "summary": "GameCore reset 会应用 RunConfig 或角色 initial_loadout 中的初始被动，使初始被动进入 BuildSnapshot 并立即修改生命、减伤、经验、投射物等玩家属性"
+    },
+    {
+      "id": "base_demo_enemy_roster_completion",
+      "summary": "补齐 docs/04 首批 8 个普通敌人配置，新增粘粘熊糖、汽水泡泡、棉花糖团和辣味软糖，并将糖霜草地中后段波次接入完整敌人池"
     }
   ],
   "current_findings": [
+    {
+      "id": "enemy_behavior_config_scope",
+      "summary": "base_demo 已覆盖 docs/04 首批普通敌人名录和行为配置字段，并通过静态预算校验；复杂行为如分裂、冲刺、黏地减速仍需后续 GameCore 行为系统真实执行。",
+      "report": "content/base_demo/enemies/soda-bubble.json"
+    },
     {
       "id": "evolution_event_runtime_scope",
       "summary": "evolutions/events 已进入内容 Schema 加载、引用校验、object_count 与 BuildSnapshot 可见范围；Boss 宝箱进化链路和 time_window 内容事件效果已补上。仍未覆盖复杂事件类型、事件 UI 专属表现和人工体验验收。",

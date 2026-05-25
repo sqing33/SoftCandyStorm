@@ -5,7 +5,7 @@
   "family": "caramel",
   "rarity": "common",
   "tags": ["control", "sticky"],
-  "description": "黏糊糊的焦糖怪，首版先作为中期压力怪。",
+  "description": "黏糊糊的焦糖怪，移动后会短暂污染路线。",
   "stats": {
     "health": 35,
     "move_speed": 45,
@@ -15,11 +15,15 @@
     "score_value": 14
   },
   "behavior": {
-    "type": "chase",
-    "parameters": {}
+    "type": "leave_hazard",
+    "parameters": {
+      "hazard_radius": 44,
+      "hazard_duration_seconds": 2.2,
+      "slow_multiplier": 0.78
+    }
   },
   "spawn_budget": {
-    "threat": 2.0,
+    "threat": 1.6,
     "performance_cost": 1.2
   },
   "counterplay": "保持移动并优先清掉路线附近的焦糖怪。",
