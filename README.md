@@ -41,6 +41,7 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 `game_runtime` 是最小 Bevy 可视化客户端：读取键盘输入，调用同一个 GameCore，再根据 snapshot/events 更新画面、HUD、事件反馈和占位音效。Runtime 操作：WASD/方向键移动，1/2/3 选择升级，P 暂停，R 重开。当前画面加载 `assets/prototype_topdown` 中的程序化 top-down 原型占位纹理，用于替换早期几何色块；当前音效是运行时生成的短 WAV 占位资源，用于验证事件到表现层的链路。AI 生成素材仍需走候选池、记录 prompt 和人工确认。
 `game_runtime --playtest-report` 会在本地写入人工试玩捕获 JSON，记录关键可观测样本、事件计数、最终 metrics，并附带人工评分和备注字段；默认写入路径建议放在 `harness/telemetry/local/`。
 `game_runtime --demo-input` 会启用确定性演示输入，用于无需窗口焦点地覆盖移动、XP 拾取和升级选择链路；它只用于技术验证，不替代真人试玩判断。`--simulation-speed <倍率>` 只加速 Runtime 中的 GameCore 步进，适合 capture 冒烟验证；`--auto-exit-after-report` 会在终局报告写盘后自动退出 Runtime，适合长时间 capture 脚本化验证。
+人工试玩前先按 `harness/playtest/runtime_manual_review_pack.md` 准备 9 局最小覆盖矩阵，并使用 `harness/playtest/runtime_manual_review_template.json` 统一评分、标签和门禁结论。
 
 素材候选后处理入口：
 

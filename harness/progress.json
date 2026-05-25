@@ -153,6 +153,10 @@
     {
       "id": "runtime_capture_simulation_speed",
       "summary": "Runtime 增加 `--simulation-speed` 可选参数，并用 60 秒 8x demo capture 验证加速步进、报告字段和自动退出链路"
+    },
+    {
+      "id": "runtime_manual_review_pack",
+      "summary": "增加 Runtime 人工试玩审查包和 JSON 模板，覆盖 9 局最小人工试玩矩阵、评分字段、标签、门禁结论和 failure case 记录要求"
     }
   ],
   "current_findings": [
@@ -168,8 +172,8 @@
     },
     {
       "id": "manual_playtest_still_pending",
-      "summary": "Runtime demo capture 已自动覆盖移动、XP、升级、Boss 出场和受伤链路，但人工可玩性判断尚未完成；下一轮应实际试玩并补充清晰度、难度、命中反馈、XP 节奏和死亡原因备注。",
-      "report": "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md"
+      "summary": "Runtime demo capture 已自动覆盖移动、XP、升级、Boss 出场和受伤链路，人工试玩审查包也已准备完成；下一步仍必须由真人按 9 局矩阵实际试玩并填写评分。",
+      "report": "harness/playtest/runtime_manual_review_pack.md"
     },
     {
       "id": "runtime_capture_visual_client_limit",
@@ -181,10 +185,6 @@
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
-    },
-    {
-      "id": "runtime_manual_review_pack",
-      "summary": "准备人工试玩 capture 的审查包：明确玩家需要观察的清晰度、难度、命中反馈、XP 节奏、Boss 提示和死亡原因字段，避免把 demo capture 当成人类体验结论"
     }
   ]
 }

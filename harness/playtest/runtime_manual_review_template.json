@@ -1,0 +1,144 @@
+{
+  "review_pack_version": 1,
+  "source_docs": [
+    "docs/00_index.md",
+    "docs/02_核心玩法规格.md",
+    "docs/11_测试指标与上线门禁.md",
+    "docs/16_Replay与遥测设计.md"
+  ],
+  "purpose": "Runtime 人工试玩记录模板；用于补充 demo capture 无法证明的人类体验判断。",
+  "minimum_run_count": 9,
+  "rating_scale": {
+    "1": "不可接受，阻断推进",
+    "2": "明显问题，需要 repair",
+    "3": "可试玩但有风险",
+    "4": "达到当前原型目标",
+    "5": "明显优秀，可以作为后续标杆"
+  },
+  "runs": [
+    {
+      "run_id": "new_001",
+      "player_skill": "new",
+      "intent": "不看说明直接开始",
+      "required_observations": [
+        "是否理解移动",
+        "是否理解拾取糖晶",
+        "是否理解升级三选一"
+      ]
+    },
+    {
+      "run_id": "new_002",
+      "player_skill": "new",
+      "intent": "尝试贪 XP",
+      "required_observations": [
+        "是否知道为什么受伤",
+        "如果死亡是否知道主要原因",
+        "XP 节奏是否诱导过度冒险"
+      ]
+    },
+    {
+      "run_id": "new_003",
+      "player_skill": "new",
+      "intent": "保守绕圈",
+      "required_observations": [
+        "前 2 分钟是否至少看到 2-3 次升级机会",
+        "保守玩法是否太无聊",
+        "怪潮压力是否逐步增加"
+      ]
+    },
+    {
+      "run_id": "skilled_001",
+      "player_skill": "skilled",
+      "intent": "主动拉怪收 XP",
+      "required_observations": [
+        "命中反馈是否清楚",
+        "XP 拾取是否顺畅",
+        "升级选择是否有纠结"
+      ]
+    },
+    {
+      "run_id": "skilled_002",
+      "player_skill": "skilled",
+      "intent": "主动挑战 Boss",
+      "required_observations": [
+        "Boss 出场是否明显",
+        "Boss 威胁方向是否明确",
+        "Boss 战是否拖沓"
+      ]
+    },
+    {
+      "run_id": "skilled_003",
+      "player_skill": "skilled",
+      "intent": "高压波次存活",
+      "required_observations": [
+        "屏幕压力是否压迫但不烦",
+        "受伤反馈是否及时",
+        "性能体感是否稳定"
+      ]
+    },
+    {
+      "run_id": "build_001",
+      "player_skill": "build",
+      "intent": "远程投射物优先",
+      "required_observations": [
+        "projectile 可读性",
+        "单体输出反馈",
+        "远程 Build 是否有明确优势和代价"
+      ]
+    },
+    {
+      "run_id": "build_002",
+      "player_skill": "build",
+      "intent": "防御/移速优先",
+      "required_observations": [
+        "受伤反馈",
+        "逃生空间",
+        "容错感"
+      ]
+    },
+    {
+      "run_id": "build_003",
+      "player_skill": "build",
+      "intent": "控制/范围优先",
+      "required_observations": [
+        "地面效果可读性",
+        "敌群可读性",
+        "性能体感"
+      ]
+    }
+  ],
+  "manual_review_fields": {
+    "fun_rating": null,
+    "clarity_rating": null,
+    "difficulty_rating": null,
+    "projectile_readability": null,
+    "hit_feedback": null,
+    "xp_pickup_rhythm": null,
+    "boss_spawn_clarity": null,
+    "death_reason_clarity": null,
+    "notes": "",
+    "tags": [],
+    "next_actions": []
+  },
+  "allowed_tags": [
+    "visual-clarity",
+    "difficulty",
+    "xp-rhythm",
+    "upgrade-choice",
+    "weapon-feedback",
+    "boss-readability",
+    "damage-feedback",
+    "performance",
+    "input-feel",
+    "fun"
+  ],
+  "allowed_gate_decisions": [
+    "repair",
+    "playtest_pass",
+    "needs_more_runs"
+  ],
+  "forbidden_gate_decisions": [
+    "accept_release",
+    "accept_content"
+  ]
+}
