@@ -145,6 +145,10 @@
     {
       "id": "runtime_boss_capture_pass",
       "summary": "运行 240 秒 Runtime demo capture，验证 Boss 出场、玩家受伤、终局 terminal、事件计数和 final metrics 均能写入报告"
+    },
+    {
+      "id": "runtime_capture_auto_exit",
+      "summary": "Runtime 增加 `--auto-exit-after-report` 可选参数，并用 5 秒 demo capture 验证终局报告写盘后进程会自动退出"
     }
   ],
   "current_findings": [
@@ -164,9 +168,9 @@
       "report": "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md"
     },
     {
-      "id": "runtime_capture_operability_gap",
-      "summary": "240 秒 Runtime demo capture 写入终局报告后进程不会自动退出，且桌面环境墙钟耗时明显长于游戏时间；后续若要脚本化重复 capture，应增加 auto-exit 或加速/离屏模式。",
-      "report": "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md"
+      "id": "runtime_capture_wall_clock_gap",
+      "summary": "`--auto-exit-after-report` 已解决终局后人工停止进程的问题，但桌面 Runtime capture 的墙钟耗时仍明显长于游戏时间；后续若要高频脚本化视觉验证，应评估加速或离屏模式。",
+      "report": "harness/reports/2026-05-25_runtime_auto_exit_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -175,8 +179,8 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "runtime_capture_auto_exit",
-      "summary": "为 Runtime capture 增加终局报告写盘后的可选自动退出能力，避免长时间 demo/manual capture 需要人工停止进程"
+      "id": "runtime_capture_fast_forward_probe",
+      "summary": "评估是否需要 Runtime capture 加速或离屏模式；只有当视觉层验证进入常规门禁时才实现，避免过早复杂化 Runtime"
     }
   ]
 }
