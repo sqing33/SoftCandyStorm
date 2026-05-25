@@ -129,6 +129,10 @@
     {
       "id": "larger_bot_baseline_nightly",
       "summary": "将规则 Bot 基线扩展到 all Bot、20 seed、300 秒共 180 局；校准 Tank 与 ZoneControl 策略后所有 Bot 进入目标区间，strict replay-batch 回归 180/180 通过"
+    },
+    {
+      "id": "runtime_playtest_capture_tool",
+      "summary": "Runtime 增加本地人工试玩捕获参数 `--playtest-report`、`--player-skill` 和 `--capture-interval`，可持续写入关键可观测样本、事件计数、最终 metrics 与人工评分模板"
     }
   ],
   "current_findings": [
@@ -141,12 +145,17 @@
       "id": "nightly_bot_policy_bounds_repaired",
       "summary": "更大样本 nightly 曾暴露 TankBot 偏弱和 ZoneControlBot 偏强；已记录 failure case 并通过策略校准修复，后续仍应在新增内容或平衡改动后复跑 nightly 矩阵。",
       "report": "harness/failed_cases/fail_20260525_003_nightly_bot_policy_bounds.json"
+    },
+    {
+      "id": "manual_playtest_still_pending",
+      "summary": "Runtime 已能生成本地 playtest capture JSON，但人工可玩性判断尚未完成；下一轮应使用捕获参数实际试玩并补充清晰度、难度、命中反馈、XP 节奏和死亡原因备注。",
+      "report": "harness/telemetry/local/"
     }
   ],
   "next_recommended": [
     {
       "id": "runtime_manual_playtest_capture",
-      "summary": "启动 Bevy Runtime 进行人工可玩性走查，记录 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
+      "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     }
   ]
 }

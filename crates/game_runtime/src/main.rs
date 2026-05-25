@@ -4,10 +4,11 @@ use bevy::{
     prelude::*,
 };
 use game_core::{
-    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, PlayerAction, RunConfig, RunSnapshot,
-    StartingLoadout, TerminalKind, Vec2 as CoreVec2,
+    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, PlayerAction, RunConfig, RunMetrics,
+    RunSnapshot, StartingLoadout, TerminalKind, TerminalState, Vec2 as CoreVec2,
 };
-use std::{path::PathBuf, sync::Arc};
+use serde::Serialize;
+use std::{fs, path::PathBuf, sync::Arc};
 
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const CAMERA_Z: f32 = 999.0;
@@ -57,6 +58,7 @@ fn main() {
                 step_game_core,
                 play_runtime_audio.after(step_game_core),
                 update_runtime_effects.after(step_game_core),
+                capture_playtest_report.after(update_runtime_effects),
                 sync_camera.after(step_game_core),
                 sync_world_visuals.after(update_runtime_effects),
                 update_hud.after(step_game_core),
@@ -93,6 +95,9 @@ struct RuntimeCli {
     seed: u64,
     seconds: f32,
     tick_rate: u32,
+    playtest_report: Option<PathBuf>,
+    player_skill: String,
+    capture_interval_seconds: f32,
 }
 
 impl Default for RuntimeCli {
@@ -102,6 +107,9 @@ impl Default for RuntimeCli {
             seed: 12_345,
             seconds: 600.0,
             tick_rate: 30,
+            playtest_report: None,
+            player_skill: "unrated".to_string(),
+            capture_interval_seconds: 5.0,
         }
     }
 }
@@ -109,6 +117,7 @@ impl Default for RuntimeCli {
 #[derive(Resource)]
 struct RuntimeState {
     content: ContentPack,
+    content_dir: PathBuf,
     config: RunConfig,
     core: GameCore,
     dt: FixedDt,
@@ -119,6 +128,7 @@ struct RuntimeState {
     last_event_kind: RuntimeEventKind,
     pending_sounds: Vec<RuntimeSound>,
     effects: Vec<RuntimeEffect>,
+    capture: RuntimeCaptureState,
     paused: bool,
     run_number: u32,
 }
@@ -160,6 +170,119 @@ struct RuntimeEffect {
     ttl_seconds: f32,
     total_seconds: f32,
     intensity: f32,
+}
+
+#[derive(Debug, Clone)]
+struct RuntimeCaptureState {
+    report_path: Option<PathBuf>,
+    player_skill: String,
+    capture_interval_seconds: f32,
+    next_sample_seconds: f32,
+    event_counts: RuntimeEventCounts,
+    samples: Vec<RuntimeTelemetrySample>,
+    finished: bool,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+struct RuntimeEventCounts {
+    enemy_spawned: u32,
+    boss_spawned: u32,
+    weapon_fired: u32,
+    enemy_hit: u32,
+    enemy_killed: u32,
+    xp_dropped: u32,
+    xp_collected: u32,
+    level_up: u32,
+    upgrade_offered: u32,
+    upgrade_chosen: u32,
+    player_damaged: u32,
+    run_ended: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeTelemetrySample {
+    time_seconds: f32,
+    health: f32,
+    max_health: f32,
+    level: u32,
+    xp: f32,
+    xp_to_next_level: f32,
+    kills: u32,
+    visible_enemies: usize,
+    visible_pickups: usize,
+    visible_projectiles: usize,
+    active_effects: usize,
+    upgrade_options: usize,
+    last_event_kind: &'static str,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimePlaytestReport {
+    kind: &'static str,
+    report_version: u32,
+    player_skill: String,
+    run_number: u32,
+    content_dir: String,
+    run_config: RuntimeRunConfigReport,
+    event_counts: RuntimeEventCounts,
+    samples: Vec<RuntimeTelemetrySample>,
+    final_metrics: RuntimeMetricsReport,
+    manual_review: RuntimeManualReviewTemplate,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeRunConfigReport {
+    seed: u64,
+    map_id: String,
+    character_id: String,
+    difficulty: &'static str,
+    duration_seconds: f32,
+    tick_rate: u32,
+    ruleset_version: String,
+    content_pack_ids: Vec<String>,
+    starting_weapons: Vec<String>,
+    starting_passives: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeMetricsReport {
+    seed: u64,
+    tick_rate: u32,
+    duration_seconds: f32,
+    terminal: Option<RuntimeTerminalReport>,
+    kills: u32,
+    level: u32,
+    xp_collected: f32,
+    xp_dropped: f32,
+    damage_dealt_by_weapon: f32,
+    damage_taken: f32,
+    max_enemy_count: usize,
+    max_projectile_count: usize,
+    upgrade_choices: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeTerminalReport {
+    kind: &'static str,
+    time_seconds: f32,
+    reason: String,
+    final_level: u32,
+    kills: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeManualReviewTemplate {
+    fun_rating: Option<u8>,
+    clarity_rating: Option<u8>,
+    difficulty_rating: Option<u8>,
+    projectile_readability: Option<String>,
+    hit_feedback: Option<String>,
+    xp_pickup_rhythm: Option<String>,
+    boss_spawn_clarity: Option<String>,
+    death_reason_clarity: Option<String>,
+    notes: String,
+    tags: Vec<String>,
+    next_actions: Vec<String>,
 }
 
 #[derive(Resource)]
@@ -275,6 +398,7 @@ fn setup_runtime(
 
     commands.insert_resource(RuntimeState {
         content,
+        content_dir: cli.content_dir.clone(),
         config,
         core,
         dt,
@@ -285,6 +409,7 @@ fn setup_runtime(
         last_event_kind: RuntimeEventKind::System,
         pending_sounds: vec![RuntimeSound::System],
         effects: Vec::new(),
+        capture: RuntimeCaptureState::from_cli(&cli),
         paused: false,
         run_number: 1,
     });
@@ -370,6 +495,39 @@ fn update_runtime_effects(time: Res<Time>, mut state: ResMut<RuntimeState>) {
         effect.ttl_seconds -= dt;
     }
     state.effects.retain(|effect| effect.ttl_seconds > 0.0);
+}
+
+fn capture_playtest_report(mut state: ResMut<RuntimeState>) {
+    if !state.capture.enabled() {
+        return;
+    }
+
+    let snapshot = state.latest_snapshot.clone();
+    let metrics = state.core.metrics();
+    let should_finish = metrics.terminal.is_some() && !state.capture.finished;
+    let should_sample = state
+        .capture
+        .should_sample(snapshot.time_seconds, should_finish);
+
+    if !should_sample {
+        return;
+    }
+
+    let sample = RuntimeTelemetrySample::from_snapshot(
+        &snapshot,
+        state.effects.len(),
+        state.last_event_kind,
+    );
+    state.capture.record_sample(sample, snapshot.time_seconds);
+
+    let report = RuntimePlaytestReport::from_state(&state, metrics);
+    if let Err(error) = write_runtime_playtest_report(&state.capture, &report) {
+        eprintln!("failed to write runtime playtest report: {error}");
+    }
+
+    if should_finish {
+        state.capture.finished = true;
+    }
 }
 
 fn play_runtime_audio(
@@ -718,6 +876,7 @@ fn update_hud(
 }
 
 fn apply_runtime_feedback(state: &mut RuntimeState, events: &[GameEvent], snapshot: &RunSnapshot) {
+    state.capture.event_counts.observe(events);
     let feedback = feedback_for_events(events);
     state.last_event = feedback.message;
     state.last_event_kind = feedback.kind;
@@ -963,6 +1122,7 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.pending_sounds.clear();
     state.pending_sounds.push(RuntimeSound::System);
     state.effects.clear();
+    state.capture.reset_for_next_run();
     state.paused = false;
     state.run_number += 1;
 }
@@ -1074,6 +1234,12 @@ fn run_config_from_cli(cli: &RuntimeCli) -> RunConfig {
     }
 }
 
+fn difficulty_label(difficulty: Difficulty) -> &'static str {
+    match difficulty {
+        Difficulty::Normal => "normal",
+    }
+}
+
 fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
     let mut cli = RuntimeCli::default();
     let mut args = args.into_iter();
@@ -1100,6 +1266,22 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
                     cli.tick_rate = value.parse().unwrap_or(cli.tick_rate);
                 }
             }
+            "--playtest-report" => {
+                if let Some(value) = args.next() {
+                    cli.playtest_report = Some(PathBuf::from(value));
+                }
+            }
+            "--player-skill" => {
+                if let Some(value) = args.next() {
+                    cli.player_skill = value;
+                }
+            }
+            "--capture-interval" => {
+                if let Some(value) = args.next() {
+                    cli.capture_interval_seconds =
+                        value.parse().unwrap_or(cli.capture_interval_seconds);
+                }
+            }
             _ => {}
         }
     }
@@ -1107,12 +1289,192 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
     cli
 }
 
+impl RuntimeCaptureState {
+    fn from_cli(cli: &RuntimeCli) -> Self {
+        Self {
+            report_path: cli.playtest_report.clone(),
+            player_skill: cli.player_skill.clone(),
+            capture_interval_seconds: cli.capture_interval_seconds.max(0.5),
+            next_sample_seconds: 0.0,
+            event_counts: RuntimeEventCounts::default(),
+            samples: Vec::new(),
+            finished: false,
+        }
+    }
+
+    fn enabled(&self) -> bool {
+        self.report_path.is_some()
+    }
+
+    fn should_sample(&self, time_seconds: f32, force: bool) -> bool {
+        force || time_seconds + f32::EPSILON >= self.next_sample_seconds
+    }
+
+    fn record_sample(&mut self, sample: RuntimeTelemetrySample, time_seconds: f32) {
+        self.samples.push(sample);
+        while time_seconds + f32::EPSILON >= self.next_sample_seconds {
+            self.next_sample_seconds += self.capture_interval_seconds;
+        }
+    }
+
+    fn reset_for_next_run(&mut self) {
+        self.next_sample_seconds = 0.0;
+        self.event_counts = RuntimeEventCounts::default();
+        self.samples.clear();
+        self.finished = false;
+    }
+}
+
+impl RuntimeEventCounts {
+    fn observe(&mut self, events: &[GameEvent]) {
+        for event in events {
+            match event {
+                GameEvent::EnemySpawned { .. } => self.enemy_spawned += 1,
+                GameEvent::BossSpawned { .. } => self.boss_spawned += 1,
+                GameEvent::WeaponFired { .. } => self.weapon_fired += 1,
+                GameEvent::EnemyHit { .. } => self.enemy_hit += 1,
+                GameEvent::EnemyKilled { .. } => self.enemy_killed += 1,
+                GameEvent::XpDropped { .. } => self.xp_dropped += 1,
+                GameEvent::XpCollected { .. } => self.xp_collected += 1,
+                GameEvent::LevelUp { .. } => self.level_up += 1,
+                GameEvent::UpgradeOffered { .. } => self.upgrade_offered += 1,
+                GameEvent::UpgradeChosen { .. } => self.upgrade_chosen += 1,
+                GameEvent::PlayerDamaged { .. } => self.player_damaged += 1,
+                GameEvent::RunEnded { .. } => self.run_ended += 1,
+            }
+        }
+    }
+}
+
+impl RuntimeTelemetrySample {
+    fn from_snapshot(
+        snapshot: &RunSnapshot,
+        active_effects: usize,
+        last_event_kind: RuntimeEventKind,
+    ) -> Self {
+        Self {
+            time_seconds: snapshot.time_seconds,
+            health: snapshot.player.health,
+            max_health: snapshot.player.max_health,
+            level: snapshot.player.level,
+            xp: snapshot.player.xp,
+            xp_to_next_level: snapshot.player.xp_to_next_level,
+            kills: snapshot.metrics_partial.kills,
+            visible_enemies: snapshot.visible_enemies.len(),
+            visible_pickups: snapshot.visible_pickups.len(),
+            visible_projectiles: snapshot.visible_projectiles.len(),
+            active_effects,
+            upgrade_options: snapshot.upgrade_options.len(),
+            last_event_kind: last_event_kind.label(),
+        }
+    }
+}
+
+impl RuntimePlaytestReport {
+    fn from_state(state: &RuntimeState, metrics: RunMetrics) -> Self {
+        Self {
+            kind: "runtime_playtest_capture",
+            report_version: 1,
+            player_skill: state.capture.player_skill.clone(),
+            run_number: state.run_number,
+            content_dir: state.content_dir.display().to_string(),
+            run_config: RuntimeRunConfigReport::from_config(&state.config),
+            event_counts: state.capture.event_counts.clone(),
+            samples: state.capture.samples.clone(),
+            final_metrics: RuntimeMetricsReport::from_metrics(metrics),
+            manual_review: RuntimeManualReviewTemplate::default_for_runtime(),
+        }
+    }
+}
+
+impl RuntimeRunConfigReport {
+    fn from_config(config: &RunConfig) -> Self {
+        Self {
+            seed: config.seed,
+            map_id: config.map_id.clone(),
+            character_id: config.character_id.clone(),
+            difficulty: difficulty_label(config.difficulty),
+            duration_seconds: config.duration_seconds,
+            tick_rate: config.tick_rate,
+            ruleset_version: config.ruleset_version.clone(),
+            content_pack_ids: config.content_pack_ids.clone(),
+            starting_weapons: config.starting_loadout.weapons.clone(),
+            starting_passives: config.starting_loadout.passives.clone(),
+        }
+    }
+}
+
+impl RuntimeMetricsReport {
+    fn from_metrics(metrics: RunMetrics) -> Self {
+        Self {
+            seed: metrics.seed,
+            tick_rate: metrics.tick_rate,
+            duration_seconds: metrics.duration_seconds,
+            terminal: metrics.terminal.map(RuntimeTerminalReport::from_terminal),
+            kills: metrics.kills,
+            level: metrics.level,
+            xp_collected: metrics.xp_collected,
+            xp_dropped: metrics.xp_dropped,
+            damage_dealt_by_weapon: metrics.damage_dealt_by_weapon,
+            damage_taken: metrics.damage_taken,
+            max_enemy_count: metrics.max_enemy_count,
+            max_projectile_count: metrics.max_projectile_count,
+            upgrade_choices: metrics.upgrade_choices,
+        }
+    }
+}
+
+impl RuntimeTerminalReport {
+    fn from_terminal(terminal: TerminalState) -> Self {
+        Self {
+            kind: terminal.kind.as_str(),
+            time_seconds: terminal.time_seconds,
+            reason: terminal.reason,
+            final_level: terminal.final_level,
+            kills: terminal.kills,
+        }
+    }
+}
+
+impl RuntimeManualReviewTemplate {
+    fn default_for_runtime() -> Self {
+        Self {
+            fun_rating: None,
+            clarity_rating: None,
+            difficulty_rating: None,
+            projectile_readability: None,
+            hit_feedback: None,
+            xp_pickup_rhythm: None,
+            boss_spawn_clarity: None,
+            death_reason_clarity: None,
+            notes: "人工试玩后补充：是否看得清、是否知道为什么死、升级选择是否有纠结、是否有再来一局冲动。".to_string(),
+            tags: Vec::new(),
+            next_actions: Vec::new(),
+        }
+    }
+}
+
+fn write_runtime_playtest_report(
+    capture: &RuntimeCaptureState,
+    report: &RuntimePlaytestReport,
+) -> std::io::Result<()> {
+    let Some(path) = &capture.report_path else {
+        return Ok(());
+    };
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let json = serde_json::to_string_pretty(report)?;
+    fs::write(path, format!("{json}\n"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         effects_for_events, event_kind_for_events, make_tone_wav, parse_runtime_cli, player_tint,
         run_config_from_cli, runtime_asset_root, runtime_sprite_paths, sounds_for_events,
-        RuntimeEffectKind, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
+        RuntimeCaptureState, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeSound,
+        DEFAULT_CONTENT_DIR,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, PickupSnapshot,
@@ -1137,6 +1499,25 @@ mod tests {
         assert_eq!(cli.seed, 9);
         assert_eq!(cli.seconds, 120.0);
         assert_eq!(cli.tick_rate, 20);
+    }
+
+    #[test]
+    fn parses_runtime_playtest_capture_options() {
+        let cli = parse_runtime_cli([
+            "--playtest-report".to_string(),
+            "harness/telemetry/local/report.json".to_string(),
+            "--player-skill".to_string(),
+            "new".to_string(),
+            "--capture-interval".to_string(),
+            "2.5".to_string(),
+        ]);
+
+        assert_eq!(
+            cli.playtest_report,
+            Some(PathBuf::from("harness/telemetry/local/report.json"))
+        );
+        assert_eq!(cli.player_skill, "new");
+        assert_eq!(cli.capture_interval_seconds, 2.5);
     }
 
     #[test]
@@ -1177,6 +1558,64 @@ mod tests {
         for path in runtime_sprite_paths() {
             assert!(root.join(path).exists(), "missing runtime sprite {path}");
         }
+    }
+
+    #[test]
+    fn capture_state_samples_on_interval_and_reset() {
+        let cli = parse_runtime_cli([
+            "--playtest-report".to_string(),
+            "harness/telemetry/local/report.json".to_string(),
+            "--capture-interval".to_string(),
+            "2".to_string(),
+        ]);
+        let mut capture = RuntimeCaptureState::from_cli(&cli);
+
+        assert!(capture.enabled());
+        assert!(capture.should_sample(0.0, false));
+        capture.record_sample(
+            super::RuntimeTelemetrySample {
+                time_seconds: 0.0,
+                health: 100.0,
+                max_health: 100.0,
+                level: 1,
+                xp: 0.0,
+                xp_to_next_level: 10.0,
+                kills: 0,
+                visible_enemies: 0,
+                visible_pickups: 0,
+                visible_projectiles: 0,
+                active_effects: 0,
+                upgrade_options: 0,
+                last_event_kind: "status",
+            },
+            0.0,
+        );
+
+        assert!(!capture.should_sample(1.0, false));
+        assert!(capture.should_sample(2.0, false));
+        capture.reset_for_next_run();
+        assert!(capture.samples.is_empty());
+        assert!(capture.should_sample(0.0, false));
+    }
+
+    #[test]
+    fn event_counts_cover_runtime_capture_events() {
+        let mut counts = RuntimeEventCounts::default();
+        counts.observe(&[
+            GameEvent::WeaponFired {
+                weapon_id: "rainbow-candy-shot".to_string(),
+                projectile_count: 1,
+            },
+            GameEvent::XpCollected {
+                entity_id: 7,
+                value: 3.0,
+            },
+            GameEvent::PlayerDamaged { amount: 2.0 },
+        ]);
+
+        assert_eq!(counts.weapon_fired, 1);
+        assert_eq!(counts.xp_collected, 1);
+        assert_eq!(counts.player_damaged, 1);
     }
 
     #[test]
