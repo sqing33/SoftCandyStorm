@@ -299,7 +299,7 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
     let pickup_direction = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
 
     if avoidance.length_squared() > 0.0 {
-        return (avoidance.normalized_or_zero() * 0.14 + pickup_direction).normalized_or_zero();
+        return (avoidance.normalized_or_zero() * 0.13 + pickup_direction).normalized_or_zero();
     }
 
     if pickup_direction.length_squared() > 0.0 {
@@ -331,12 +331,12 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
 }
 
 fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 95.0, 6);
+    let avoidance = avoid_enemies(snapshot, 70.0, 4);
     if avoidance.length_squared() > 0.0 {
-        return avoidance.normalized_or_zero() * 0.27;
+        return avoidance.normalized_or_zero() * 0.13;
     }
 
-    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.22
+    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.42
 }
 
 fn best_pickup_direction(snapshot: &RunSnapshot) -> Option<Vec2> {

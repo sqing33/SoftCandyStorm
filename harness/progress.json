@@ -72,24 +72,18 @@
     },
     {
       "id": "rule_bot_policy_calibration",
-      "summary": "校准规则 Bot 基线策略：Idle、Random、Coward、Greedy、Tank、BossHunter、Route 已进入目标区间，45 条代表性 replay strict 回归 45/45 通过"
+      "summary": "完成规则 Bot 基线策略校准：Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 在 300 秒 5 seed 全矩阵中全部进入目标区间，45 条代表性 replay strict 回归 45/45 通过"
     }
   ],
-  "current_findings": [
-    {
-      "id": "bot_policy_calibration_residual_pressure",
-      "summary": "300 秒 5 seed 全 Bot 校准后 7/9 通过目标；Kite 胜率 80% 高于高技能目标上限 75%，ZoneControl 胜率 60% 高于中技能目标上限 55%，二者均只多胜 1 局。下一步应优先用内容、敌群和地图压力修复剩余偏稳问题，而不是继续削弱规则 Bot",
-      "report": "harness/reports/2026-05-25_bot_policy_calibration_010"
-    }
-  ],
+  "current_findings": [],
   "next_recommended": [
     {
       "id": "asset_candidate_review",
       "summary": "人工审查第一批素材候选，筛出可继续后处理素材；重点检查 PNG 裁切候选的投影残留、小尺寸可读性和角色/敌人身份一致性，并对音频做响度、循环点和风格复核"
     },
     {
-      "id": "balance_baseline_repair",
-      "summary": "基于 300 秒全 Bot 校准结果复盘内容压力：优先调整波次、敌群或地图压力，让 Kite/ZoneControl 的稳定胜率回落到目标区间，同时保持 Coward/Greedy/Tank 不再跌出目标"
+      "id": "expanded_bot_matrix_validation",
+      "summary": "将已通过的 300 秒 5 seed Bot 基线扩大到更多 seed 或更长时长，确认通过不是小样本偶然结果，再进入内容数值扩展"
     }
   ]
 }
