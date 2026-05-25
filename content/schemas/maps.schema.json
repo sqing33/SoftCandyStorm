@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/maps.schema.json",
+  "title": "Soft Candy Storm Map",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "tags", "description", "size", "bounds", "spawn_rules", "hazards", "visual_description", "music_theme"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "size": {"type": "object", "required": ["width", "height"], "properties": {"width": {"type": "number", "exclusiveMinimum": 0}, "height": {"type": "number", "exclusiveMinimum": 0}}},
+    "bounds": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}}},
+    "spawn_rules": {"type": "object", "required": ["mode", "min_distance", "max_distance"], "properties": {"mode": {"type": "string", "minLength": 1}, "min_distance": {"type": "number", "minimum": 0}, "max_distance": {"type": "number", "minimum": 0}}},
+    "hazards": {"type": "array"},
+    "visual_description": {"type": "string", "minLength": 1},
+    "music_theme": {"type": "string", "minLength": 1}
+  }
+}

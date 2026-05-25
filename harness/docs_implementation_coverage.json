@@ -316,20 +316,23 @@
       "doc_id": "13",
       "doc_path": "docs/13_内容数据Schema设计.md",
       "status": "partial",
-      "summary": "JSON 内容格式、加载、轻量引用和候选预检已有实现；尚未形成完整 JSON Schema 文件和恢复后的正式 Rust 校验闭环。",
+      "summary": "JSON 内容格式、独立 Schema 契约、轻量引用和候选预检已有实现；恢复后的正式 Rust/GameCore 校验闭环仍待补齐。",
       "coverage": [
         {
           "id": "content-schema-contract",
           "requirement": "角色、武器、被动、进化、敌人、Boss、波次、地图和事件应结构化并可校验。",
           "status": "partial",
           "evidence": [
+            "content/schemas/manifest.json",
+            "tools/validate_content_schema_contract.py",
+            "harness/reports/2026-05-26_content_schema_contract_001/summary.md",
             "content/base_demo/weapons/rainbow-candy-shot.json",
             "crates/game_core/src/content.rs",
             "tools/validate_materialized_content_pack.py"
           ],
           "gaps": [
-            "缺少独立 JSON Schema 文件作为外部契约。",
-            "需要恢复 Rust 二进制后重跑 GameCore 内容加载和 Harness validate-content。"
+            "需要恢复 Rust 二进制后重跑 GameCore 内容加载和 Harness validate-content。",
+            "Schema 契约目前覆盖结构、必填字段、枚举、id 和简单数值边界；复杂跨字段语义仍依赖 GameCore/Harness。"
           ]
         }
       ]

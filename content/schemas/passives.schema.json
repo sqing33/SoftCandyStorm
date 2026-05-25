@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/passives.schema.json",
+  "title": "Soft Candy Storm Passive",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "rarity", "tags", "description", "stat_modifiers", "max_level", "visual_description", "sfx_description", "unlock"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "rarity": {"type": "string", "enum": ["common", "rare", "epic", "legendary", "boss", "debug"]},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "stat_modifiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["stat", "mode", "value_per_level"],
+        "properties": {
+          "stat": {"type": "string", "enum": ["max_health", "move_speed", "pickup_radius", "damage_multiplier", "cooldown_multiplier", "xp_multiplier", "regen_per_second", "damage_reduction", "projectile_size", "effect_duration"]},
+          "mode": {"type": "string", "enum": ["add", "multiply", "set_min", "set_max"]},
+          "value_per_level": {"type": "number"}
+        }
+      }
+    },
+    "max_level": {"type": "integer", "minimum": 1},
+    "visual_description": {"type": "string", "minLength": 1},
+    "sfx_description": {"type": "string", "minLength": 1},
+    "unlock": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}}}
+  }
+}

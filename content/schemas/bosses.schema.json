@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/bosses.schema.json",
+  "title": "Soft Candy Storm Boss",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "rarity", "tags", "description", "stats", "phases", "counterplay", "visual_description", "sfx_description"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "rarity": {"type": "string", "enum": ["common", "rare", "epic", "legendary", "boss", "debug"]},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "stats": {"type": "object", "required": ["health", "move_speed", "contact_damage_per_second", "radius", "xp_value", "score_value"]},
+    "phases": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["hp_threshold", "abilities"], "properties": {"hp_threshold": {"type": "number", "minimum": 0}, "abilities": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}}}},
+    "counterplay": {"type": "string", "minLength": 1},
+    "visual_description": {"type": "string", "minLength": 1},
+    "sfx_description": {"type": "string", "minLength": 1}
+  }
+}

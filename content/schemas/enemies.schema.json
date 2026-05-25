@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/enemies.schema.json",
+  "title": "Soft Candy Storm Enemy",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "family", "rarity", "tags", "description", "stats", "behavior", "spawn_budget", "counterplay", "visual_description", "death_effect", "sfx_description"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "family": {"type": "string", "minLength": 1},
+    "rarity": {"type": "string", "enum": ["common", "rare", "epic", "legendary", "boss", "debug"]},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "stats": {
+      "type": "object",
+      "required": ["health", "move_speed", "contact_damage_per_second", "radius", "xp_value", "score_value"],
+      "properties": {
+        "health": {"type": "number", "exclusiveMinimum": 0},
+        "move_speed": {"type": "number", "minimum": 0},
+        "contact_damage_per_second": {"type": "number", "minimum": 0},
+        "radius": {"type": "number", "exclusiveMinimum": 0},
+        "xp_value": {"type": "number", "minimum": 0},
+        "score_value": {"type": "number", "minimum": 0}
+      }
+    },
+    "behavior": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "enum": ["chase", "dash", "split", "leave_hazard", "orbit_player", "jump", "ranged_spit", "shielded"]}, "parameters": {"type": "object"}}},
+    "spawn_budget": {"type": "object", "required": ["threat", "performance_cost"], "properties": {"threat": {"type": "number", "minimum": 0}, "performance_cost": {"type": "number", "minimum": 0}}},
+    "counterplay": {"type": "string", "minLength": 1},
+    "visual_description": {"type": "string", "minLength": 1},
+    "death_effect": {"type": "string", "minLength": 1},
+    "sfx_description": {"type": "string", "minLength": 1}
+  }
+}

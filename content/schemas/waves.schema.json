@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/waves.schema.json",
+  "title": "Soft Candy Storm Wave",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "map_id", "duration_seconds", "segments", "boss_events", "pressure_budget"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "map_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "segments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["start_second", "end_second", "spawn_interval_ms", "spawn_count", "max_alive", "enemy_pool"],
+        "properties": {
+          "start_second": {"type": "number", "minimum": 0},
+          "end_second": {"type": "number", "minimum": 0},
+          "spawn_interval_ms": {"type": "number", "exclusiveMinimum": 0},
+          "spawn_count": {"type": "integer", "minimum": 1},
+          "max_alive": {"type": "integer", "minimum": 1},
+          "enemy_pool": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["enemy_id", "weight"], "properties": {"enemy_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "weight": {"type": "number", "exclusiveMinimum": 0}}}}
+        }
+      }
+    },
+    "boss_events": {"type": "array", "items": {"type": "object", "required": ["time_second", "boss_id"], "properties": {"time_second": {"type": "number", "minimum": 0}, "boss_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}}}},
+    "pressure_budget": {"type": "object", "required": ["early", "middle", "late"]}
+  }
+}

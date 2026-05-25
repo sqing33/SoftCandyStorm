@@ -515,3 +515,40 @@ P2 人工审查：
 - 是否有明确反制
 - 是否能形成有趣流派
 
+## 独立 Schema 契约
+
+仓库提供独立 JSON Schema 契约：
+
+```text
+content/schemas/
+  manifest.json
+  characters.schema.json
+  weapons.schema.json
+  passives.schema.json
+  evolutions.schema.json
+  enemies.schema.json
+  bosses.schema.json
+  maps.schema.json
+  waves.schema.json
+  events.schema.json
+```
+
+新增或修改正式内容、候选内容、Schema 字段或内容生成 Prompt 后，应先运行：
+
+```bash
+python3 tools/validate_content_schema_contract.py content/base_demo --schema-manifest content/schemas/manifest.json
+```
+
+验证候选完整内容包时，可同时传入多个内容目录：
+
+```bash
+python3 tools/validate_content_schema_contract.py content/base_demo harness/generated_candidates/<candidate-pack> --schema-manifest content/schemas/manifest.json
+```
+
+需要留下 Harness 证据时，生成 JSON 与 Markdown 报告：
+
+```bash
+python3 tools/validate_content_schema_contract.py content/base_demo harness/generated_candidates/<candidate-pack> --schema-manifest content/schemas/manifest.json --report harness/reports/<report-id>/content_schema_contract.json --markdown harness/reports/<report-id>/summary.md
+```
+
+该工具只覆盖 JSON Schema 契约子集、必填字段、枚举、id 规范和简单数值边界；它不替代 GameCore 内容加载、静态预算、Bot 仿真、Replay 回归或人工审查。

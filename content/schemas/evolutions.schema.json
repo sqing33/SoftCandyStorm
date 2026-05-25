@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/evolutions.schema.json",
+  "title": "Soft Candy Storm Evolution",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "rarity", "tags", "description", "requirements", "replaces_weapon", "weapon_definition", "visual_description", "sfx_description", "unlock"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "rarity": {"type": "string", "enum": ["common", "rare", "epic", "legendary", "boss", "debug"]},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "requirements": {
+      "type": "object",
+      "required": ["weapon", "passive", "trigger"],
+      "properties": {
+        "weapon": {"type": "object", "required": ["id", "min_level"], "properties": {"id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "min_level": {"type": "integer", "minimum": 1}}},
+        "passive": {"type": "object", "required": ["id", "min_level"], "properties": {"id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "min_level": {"type": "integer", "minimum": 1}}},
+        "trigger": {"type": "string", "minLength": 1}
+      }
+    },
+    "replaces_weapon": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "weapon_definition": {
+      "type": "object",
+      "required": ["type", "targeting", "base_stats"],
+      "properties": {
+        "type": {"type": "string", "enum": ["projectile", "orbit", "burst", "zone", "summon", "beam", "special"]},
+        "targeting": {"type": "object", "required": ["mode", "range"], "properties": {"mode": {"type": "string", "minLength": 1}, "range": {"type": "number", "minimum": 0}}},
+        "base_stats": {"type": "object", "required": ["damage", "cooldown_ms"], "properties": {"damage": {"type": "number", "minimum": 0}, "cooldown_ms": {"type": "number", "exclusiveMinimum": 0}}}
+      }
+    },
+    "visual_description": {"type": "string", "minLength": 1},
+    "sfx_description": {"type": "string", "minLength": 1},
+    "unlock": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}}}
+  }
+}

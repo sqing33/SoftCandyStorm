@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/characters.schema.json",
+  "title": "Soft Candy Storm Character",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "rarity", "tags", "description", "base_stats", "initial_loadout", "trait", "visual_description", "sfx_description", "unlock"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "rarity": {"type": "string", "enum": ["common", "rare", "epic", "legendary", "boss", "debug"]},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "base_stats": {
+      "type": "object",
+      "required": ["max_health", "move_speed", "pickup_radius", "damage_multiplier", "cooldown_multiplier", "xp_multiplier", "regen_per_second"],
+      "properties": {
+        "max_health": {"type": "number", "exclusiveMinimum": 0},
+        "move_speed": {"type": "number", "minimum": 0},
+        "pickup_radius": {"type": "number", "minimum": 0},
+        "damage_multiplier": {"type": "number", "minimum": 0},
+        "cooldown_multiplier": {"type": "number", "exclusiveMinimum": 0},
+        "xp_multiplier": {"type": "number", "minimum": 0},
+        "regen_per_second": {"type": "number", "minimum": 0}
+      }
+    },
+    "initial_loadout": {
+      "type": "object",
+      "required": ["weapons", "passives"],
+      "properties": {
+        "weapons": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}},
+        "passives": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}}
+      }
+    },
+    "trait": {
+      "type": "object",
+      "required": ["id", "description", "rules"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 1},
+        "rules": {"type": "array"}
+      }
+    },
+    "visual_description": {"type": "string", "minLength": 1},
+    "sfx_description": {"type": "string", "minLength": 1},
+    "unlock": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}}}
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/weapons.schema.json",
+  "title": "Soft Candy Storm Weapon",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "rarity", "type", "tags", "description", "targeting", "base_stats", "scaling", "balance_budget", "visual_description", "sfx_description", "unlock"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "rarity": {"type": "string", "enum": ["common", "rare", "epic", "legendary", "boss", "debug"]},
+    "type": {"type": "string", "enum": ["projectile", "orbit", "burst", "zone", "summon", "beam", "special"]},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "targeting": {
+      "type": "object",
+      "required": ["mode", "range"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["nearest_enemy", "highest_health_enemy", "boss_priority", "random_enemy", "random_direction", "movement_direction", "self_centered", "ground_near_player"]},
+        "range": {"type": "number", "minimum": 0}
+      }
+    },
+    "base_stats": {
+      "type": "object",
+      "required": ["damage", "cooldown_ms", "projectile_speed", "projectile_count", "pierce", "area_radius", "duration_ms"],
+      "properties": {
+        "damage": {"type": "number", "minimum": 0},
+        "cooldown_ms": {"type": "number", "exclusiveMinimum": 0},
+        "projectile_speed": {"type": "number", "minimum": 0},
+        "projectile_count": {"type": "integer", "minimum": 0},
+        "pierce": {"type": "integer", "minimum": 0},
+        "area_radius": {"type": "number", "minimum": 0},
+        "duration_ms": {"type": "number", "minimum": 0}
+      }
+    },
+    "scaling": {
+      "type": "object",
+      "required": ["max_level", "damage_per_level", "cooldown_multiplier_per_level", "range_per_level", "area_per_level", "projectile_count_bonus_levels"],
+      "properties": {
+        "max_level": {"type": "integer", "minimum": 1},
+        "damage_per_level": {"type": "number", "minimum": 0},
+        "cooldown_multiplier_per_level": {"type": "number", "exclusiveMinimum": 0},
+        "range_per_level": {"type": "number", "minimum": 0},
+        "area_per_level": {"type": "number", "minimum": 0},
+        "projectile_count_bonus_levels": {"type": "array", "items": {"type": "integer", "minimum": 1}}
+      }
+    },
+    "balance_budget": {
+      "type": "object",
+      "required": ["role", "single_target_dps", "group_dps", "performance_cost"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "single_target_dps": {"type": "number", "minimum": 0},
+        "group_dps": {"type": "number", "minimum": 0},
+        "performance_cost": {"type": "string", "enum": ["low", "medium", "high"]}
+      }
+    },
+    "visual_description": {"type": "string", "minLength": 1},
+    "sfx_description": {"type": "string", "minLength": 1},
+    "unlock": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}}}
+  }
+}

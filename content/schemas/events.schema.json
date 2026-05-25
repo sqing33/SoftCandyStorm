@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "soft-candy://content/events.schema.json",
+  "title": "Soft Candy Storm Event",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "name", "version", "rarity", "tags", "description", "trigger", "effects", "visual_description", "sfx_description"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "rarity": {"type": "string", "enum": ["common", "rare", "epic", "legendary", "boss", "debug"]},
+    "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "description": {"type": "string", "minLength": 1},
+    "trigger": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}, "start_second": {"type": "number", "minimum": 0}, "end_second": {"type": "number", "minimum": 0}, "chance": {"type": "number", "minimum": 0}}},
+    "effects": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}}}},
+    "visual_description": {"type": "string", "minLength": 1},
+    "sfx_description": {"type": "string", "minLength": 1}
+  }
+}
