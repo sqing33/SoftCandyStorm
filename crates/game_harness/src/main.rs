@@ -15,6 +15,7 @@ const GYM_ACTION_COUNT: usize = 9;
 const GYM_MAX_ENEMIES: usize = 8;
 const GYM_MAX_PICKUPS: usize = 4;
 const GYM_OBSERVATION_LEN: usize = 82;
+const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
     "new_001",
     "new_002",
@@ -40,6 +41,7 @@ const ACCEPTANCE_RATING_FIELDS: [&str; 8] = [
 #[derive(Debug, Clone)]
 struct SimArgs {
     seed: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     bot: BotKind,
@@ -50,6 +52,7 @@ impl Default for SimArgs {
     fn default() -> Self {
         Self {
             seed: 12_345,
+            map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
             tick_rate: 30,
             bot: BotKind::Kite,
@@ -61,6 +64,7 @@ impl Default for SimArgs {
 #[derive(Debug, Clone)]
 struct MetaSettlementArgs {
     seed: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     bot: BotKind,
@@ -72,6 +76,7 @@ impl Default for MetaSettlementArgs {
     fn default() -> Self {
         Self {
             seed: 12_345,
+            map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 120.0,
             tick_rate: 30,
             bot: BotKind::Kite,
@@ -103,6 +108,7 @@ impl Default for BudgetArgs {
 struct BatchArgs {
     seed_start: u64,
     seeds: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     bot: BotKind,
@@ -115,6 +121,7 @@ impl Default for BatchArgs {
         Self {
             seed_start: 12_345,
             seeds: 10,
+            map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
             tick_rate: 30,
             bot: BotKind::Kite,
@@ -128,6 +135,7 @@ impl Default for BatchArgs {
 struct MatrixArgs {
     seed_start: u64,
     seeds: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     bots: Vec<BotKind>,
@@ -140,6 +148,7 @@ impl Default for MatrixArgs {
         Self {
             seed_start: 12_345,
             seeds: 10,
+            map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
             tick_rate: 30,
             bots: default_matrix_bots(),
@@ -275,6 +284,7 @@ impl Default for LockAcceptedContentArgs {
 #[derive(Debug, Clone)]
 struct GymBridgeArgs {
     seed: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     content_dir: Option<PathBuf>,
@@ -284,6 +294,7 @@ impl Default for GymBridgeArgs {
     fn default() -> Self {
         Self {
             seed: 12_345,
+            map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
             tick_rate: 30,
             content_dir: Some(PathBuf::from("content/base_demo")),
@@ -649,6 +660,7 @@ struct CandidateBotSummary {
 struct GymBridgeRequest {
     command: String,
     seed: Option<u64>,
+    map_id: Option<String>,
     seconds: Option<f32>,
     tick_rate: Option<u32>,
     action: Option<usize>,
@@ -669,6 +681,7 @@ struct GymBridgeResponse {
 #[derive(Debug, Serialize)]
 struct GymBridgeInfo {
     seed: u64,
+    map_id: String,
     tick_rate: u32,
     tick: u64,
     time_seconds: f32,
@@ -698,6 +711,7 @@ struct GymBridgeState {
     content: LoadedContent,
     core: GameCore,
     seed: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     tick: u64,
@@ -850,6 +864,9 @@ fn parse_sim_args(values: Vec<String>) -> Result<SimArgs, String> {
                     .parse()
                     .map_err(|_| format!("invalid --seed `{value}`"))?;
             }
+            "--map-id" => {
+                parsed.map_id = value.to_string();
+            }
             "--seconds" => {
                 parsed.seconds = value
                     .parse()
@@ -896,6 +913,9 @@ fn parse_meta_settlement_args(values: Vec<String>) -> Result<MetaSettlementArgs,
                 parsed.seed = value
                     .parse()
                     .map_err(|_| format!("invalid --seed `{value}`"))?;
+            }
+            "--map-id" => {
+                parsed.map_id = value.to_string();
             }
             "--seconds" => {
                 parsed.seconds = value
@@ -990,6 +1010,9 @@ fn parse_batch_args(values: Vec<String>) -> Result<BatchArgs, String> {
                     .parse()
                     .map_err(|_| format!("invalid --seeds `{value}`"))?;
             }
+            "--map-id" => {
+                parsed.map_id = value.to_string();
+            }
             "--seconds" => {
                 parsed.seconds = value
                     .parse()
@@ -1047,6 +1070,9 @@ fn parse_matrix_args(values: Vec<String>) -> Result<MatrixArgs, String> {
                 parsed.seeds = value
                     .parse()
                     .map_err(|_| format!("invalid --seeds `{value}`"))?;
+            }
+            "--map-id" => {
+                parsed.map_id = value.to_string();
             }
             "--seconds" => {
                 parsed.seconds = value
@@ -1335,6 +1361,9 @@ fn parse_gym_bridge_args(values: Vec<String>) -> Result<GymBridgeArgs, String> {
                     .parse()
                     .map_err(|_| format!("invalid --seed `{value}`"))?;
             }
+            "--map-id" => {
+                parsed.map_id = value.to_string();
+            }
             "--seconds" => {
                 parsed.seconds = value
                     .parse()
@@ -1398,22 +1427,24 @@ fn run_simulation(args: SimArgs) {
         &content.pack,
         &content.hash,
         args.seed,
+        &args.map_id,
         args.seconds,
         args.tick_rate,
         args.bot,
     );
-    print_metrics_json(&run.metrics, args.bot);
+    print_metrics_json(&run.metrics, args.bot, &args.map_id);
 }
 
 fn simulate_once(
     content: &ContentPack,
     content_hash: &str,
     seed: u64,
+    map_id: &str,
     seconds: f32,
     tick_rate: u32,
     bot: BotKind,
 ) -> SimulationRun {
-    let config = harness_run_config(seed, seconds, tick_rate);
+    let config = harness_run_config(seed, map_id, seconds, tick_rate);
     let replay_run_config = ReplayRunConfig::from_config(&config);
     let ruleset_version = config.ruleset_version.clone();
     let mut core = match GameCore::reset_with_content(config, content.clone()) {
@@ -1483,10 +1514,10 @@ fn simulate_once(
     SimulationRun { metrics, replay }
 }
 
-fn harness_run_config(seed: u64, seconds: f32, tick_rate: u32) -> RunConfig {
+fn harness_run_config(seed: u64, map_id: &str, seconds: f32, tick_rate: u32) -> RunConfig {
     RunConfig {
         seed,
-        map_id: "frosting-grassland".to_string(),
+        map_id: map_id.to_string(),
         character_id: "jar-keeper".to_string(),
         starting_loadout: StartingLoadout {
             weapons: vec!["rainbow-candy-shot".to_string()],
@@ -1500,7 +1531,7 @@ fn harness_run_config(seed: u64, seconds: f32, tick_rate: u32) -> RunConfig {
     }
 }
 
-fn print_metrics_json(metrics: &RunMetrics, bot: BotKind) {
+fn print_metrics_json(metrics: &RunMetrics, bot: BotKind, map_id: &str) {
     let terminal_kind = metrics
         .terminal
         .as_ref()
@@ -1515,6 +1546,7 @@ fn print_metrics_json(metrics: &RunMetrics, bot: BotKind) {
     println!("{{");
     println!("  \"seed\": {},", metrics.seed);
     println!("  \"bot\": \"{}\",", bot.as_str());
+    println!("  \"map_id\": \"{}\",", map_id);
     println!("  \"tick_rate\": {},", metrics.tick_rate);
     println!("  \"duration_seconds\": {:.3},", metrics.duration_seconds);
     println!("  \"terminal\": \"{}\",", terminal_kind);
@@ -1553,6 +1585,7 @@ fn run_batch(args: BatchArgs) {
         args.bot,
         args.seed_start,
         args.seeds,
+        &args.map_id,
         args.seconds,
         args.tick_rate,
     );
@@ -1566,11 +1599,12 @@ fn run_batch(args: BatchArgs) {
 
 fn run_meta_settlement(args: MetaSettlementArgs) {
     let content = load_content_or_exit(args.content_dir.as_ref());
-    let config = harness_run_config(args.seed, args.seconds, args.tick_rate);
+    let config = harness_run_config(args.seed, &args.map_id, args.seconds, args.tick_rate);
     let run = simulate_once(
         &content.pack,
         &content.hash,
         args.seed,
+        &args.map_id,
         args.seconds,
         args.tick_rate,
         args.bot,
@@ -1625,6 +1659,7 @@ fn run_matrix(args: MatrixArgs) {
             *bot,
             args.seed_start,
             args.seeds,
+            &args.map_id,
             args.seconds,
             args.tick_rate,
         ));
@@ -1851,7 +1886,13 @@ fn run_budget(args: BudgetArgs) {
 
 fn run_gym_bridge(args: GymBridgeArgs) {
     let content = load_content_or_exit(args.content_dir.as_ref());
-    let mut state = GymBridgeState::new(content, args.seed, args.seconds, args.tick_rate);
+    let mut state = GymBridgeState::new(
+        content,
+        args.seed,
+        args.map_id.clone(),
+        args.seconds,
+        args.tick_rate,
+    );
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
 
@@ -1887,21 +1928,29 @@ fn run_gym_bridge(args: GymBridgeArgs) {
 }
 
 impl GymBridgeState {
-    fn new(content: LoadedContent, seed: u64, seconds: f32, tick_rate: u32) -> Self {
-        let core = reset_gym_core(&content.pack, seed, seconds, tick_rate);
+    fn new(
+        content: LoadedContent,
+        seed: u64,
+        map_id: String,
+        seconds: f32,
+        tick_rate: u32,
+    ) -> Self {
+        let core = reset_gym_core(&content.pack, seed, &map_id, seconds, tick_rate);
         Self {
             content,
             core,
             seed,
+            map_id,
             seconds,
             tick_rate,
             tick: 0,
         }
     }
 
-    fn reset(&mut self, seed: u64, seconds: f32, tick_rate: u32) {
-        self.core = reset_gym_core(&self.content.pack, seed, seconds, tick_rate);
+    fn reset(&mut self, seed: u64, map_id: String, seconds: f32, tick_rate: u32) {
+        self.core = reset_gym_core(&self.content.pack, seed, &map_id, seconds, tick_rate);
         self.seed = seed;
+        self.map_id = map_id;
         self.seconds = seconds;
         self.tick_rate = tick_rate;
         self.tick = 0;
@@ -1912,6 +1961,7 @@ impl GymBridgeState {
             "spec" => self.response("spec", None, 0.0, Vec::new()),
             "reset" => {
                 let seed = request.seed.unwrap_or(self.seed);
+                let map_id = request.map_id.unwrap_or_else(|| self.map_id.clone());
                 let seconds = request.seconds.unwrap_or(self.seconds);
                 let tick_rate = request.tick_rate.unwrap_or(self.tick_rate);
                 if seconds <= 0.0 {
@@ -1923,7 +1973,7 @@ impl GymBridgeState {
                         "tick_rate must be greater than zero".to_string(),
                     );
                 }
-                self.reset(seed, seconds, tick_rate);
+                self.reset(seed, map_id, seconds, tick_rate);
                 self.response(
                     "reset",
                     Some(gym_observation(&self.core.snapshot())),
@@ -2026,6 +2076,7 @@ impl GymBridgeState {
         let metrics = self.core.metrics();
         GymBridgeInfo {
             seed: self.seed,
+            map_id: self.map_id.clone(),
             tick_rate: self.tick_rate,
             tick: self.tick,
             time_seconds: snapshot.time_seconds,
@@ -2058,10 +2109,16 @@ impl GymBridgeState {
     }
 }
 
-fn reset_gym_core(content: &ContentPack, seed: u64, seconds: f32, tick_rate: u32) -> GameCore {
+fn reset_gym_core(
+    content: &ContentPack,
+    seed: u64,
+    map_id: &str,
+    seconds: f32,
+    tick_rate: u32,
+) -> GameCore {
     let config = RunConfig {
         seed,
-        map_id: "frosting-grassland".to_string(),
+        map_id: map_id.to_string(),
         character_id: "jar-keeper".to_string(),
         starting_loadout: StartingLoadout {
             weapons: vec!["rainbow-candy-shot".to_string()],
@@ -2589,6 +2646,7 @@ fn summarize_batch(
     bot: BotKind,
     seed_start: u64,
     seeds: u64,
+    map_id: &str,
     seconds: f32,
     tick_rate: u32,
     results: &[RunMetrics],
@@ -2627,6 +2685,7 @@ fn summarize_batch(
         bot,
         seed_start,
         seeds,
+        map_id: map_id.to_string(),
         seconds,
         tick_rate,
         victories,
@@ -2642,6 +2701,7 @@ fn run_bot_batch(
     bot: BotKind,
     seed_start: u64,
     seeds: u64,
+    map_id: &str,
     seconds: f32,
     tick_rate: u32,
 ) -> BotBatchResult {
@@ -2650,12 +2710,20 @@ fn run_bot_batch(
 
     for offset in 0..seeds {
         let seed = seed_start + offset;
-        let run = simulate_once(&content.pack, &content.hash, seed, seconds, tick_rate, bot);
+        let run = simulate_once(
+            &content.pack,
+            &content.hash,
+            seed,
+            map_id,
+            seconds,
+            tick_rate,
+            bot,
+        );
         metrics.push(run.metrics);
         replays.push(run.replay);
     }
 
-    let summary = summarize_batch(bot, seed_start, seeds, seconds, tick_rate, &metrics);
+    let summary = summarize_batch(bot, seed_start, seeds, map_id, seconds, tick_rate, &metrics);
     BotBatchResult {
         summary,
         metrics,
@@ -2668,6 +2736,7 @@ struct BatchSummary {
     bot: BotKind,
     seed_start: u64,
     seeds: u64,
+    map_id: String,
     seconds: f32,
     tick_rate: u32,
     victories: usize,
@@ -2738,6 +2807,7 @@ impl ReplayFinalMetrics {
 fn print_batch_json(summary: &BatchSummary, results: &[RunMetrics]) {
     println!("{{");
     println!("  \"bot\": \"{}\",", summary.bot.as_str());
+    println!("  \"map_id\": \"{}\",", summary.map_id);
     println!("  \"seed_start\": {},", summary.seed_start);
     println!("  \"seeds\": {},", summary.seeds);
     println!("  \"seconds\": {:.3},", summary.seconds);
@@ -2782,6 +2852,7 @@ fn print_matrix_json(matrix_results: &[BotBatchResult]) {
         let target = win_rate_target(summary.bot);
         println!("    {{");
         println!("      \"bot\": \"{}\",", summary.bot.as_str());
+        println!("      \"map_id\": \"{}\",", summary.map_id);
         println!("      \"seed_start\": {},", summary.seed_start);
         println!("      \"seeds\": {},", summary.seeds);
         println!("      \"seconds\": {:.3},", summary.seconds);
@@ -2900,6 +2971,7 @@ fn render_summary(summary: &BatchSummary, results: &[RunMetrics]) -> String {
     let mut output = String::new();
     output.push_str("# Harness Batch Summary\n\n");
     output.push_str(&format!("- Bot: `{}`\n", summary.bot.as_str()));
+    output.push_str(&format!("- Map: `{}`\n", summary.map_id));
     output.push_str(&format!(
         "- Seeds: `{}`..`{}`\n",
         summary.seed_start,
@@ -2977,6 +3049,7 @@ fn render_matrix_summary(matrix_results: &[BotBatchResult]) -> String {
 
     if let Some(first_result) = matrix_results.first() {
         let first_summary = &first_result.summary;
+        output.push_str(&format!("- Map: `{}`\n", first_summary.map_id));
         output.push_str(&format!(
             "- Seeds: `{}`..`{}` per bot\n",
             first_summary.seed_start,
@@ -3070,6 +3143,7 @@ fn render_metrics_json(summary: &BatchSummary, results: &[RunMetrics]) -> String
     let mut output = String::new();
     output.push_str("{\n");
     output.push_str(&format!("  \"bot\": \"{}\",\n", summary.bot.as_str()));
+    output.push_str(&format!("  \"map_id\": \"{}\",\n", summary.map_id));
     output.push_str(&format!("  \"seed_start\": {},\n", summary.seed_start));
     output.push_str(&format!("  \"seeds\": {},\n", summary.seeds));
     output.push_str(&format!("  \"seconds\": {:.3},\n", summary.seconds));
@@ -3132,6 +3206,7 @@ fn render_matrix_metrics_json(matrix_results: &[BotBatchResult]) -> String {
         let target = win_rate_target(summary.bot);
         output.push_str("    {\n");
         output.push_str(&format!("      \"bot\": \"{}\",\n", summary.bot.as_str()));
+        output.push_str(&format!("      \"map_id\": \"{}\",\n", summary.map_id));
         output.push_str(&format!("      \"seed_start\": {},\n", summary.seed_start));
         output.push_str(&format!("      \"seeds\": {},\n", summary.seeds));
         output.push_str(&format!("      \"seconds\": {:.3},\n", summary.seconds));
@@ -3256,9 +3331,10 @@ fn render_failure_case_json(cases: &[(&BatchSummary, &RunMetrics, &'static str)]
             .map(|terminal| terminal.kind.as_str())
             .unwrap_or("not_terminal");
         output.push_str(&format!(
-            "  {{ \"case_id\": \"{}_seed_{}\", \"category\": \"balance\", \"content_id\": \"frosting-grassland-standard\", \"seed\": {}, \"bot\": \"{}\", \"time_seconds\": {:.3}, \"symptom\": \"{}: aggregate win rate {:.3}, representative run ended as {}\", \"root_cause\": \"prototype balance or bot policy requires review\", \"fix\": \"adjust content numbers or bot policy after reviewing matrix metrics\", \"validation\": \"rerun game_harness matrix with the same seed range\" }}{}\n",
+            "  {{ \"case_id\": \"{}_seed_{}\", \"category\": \"balance\", \"content_id\": \"{}\", \"seed\": {}, \"bot\": \"{}\", \"time_seconds\": {:.3}, \"symptom\": \"{}: aggregate win rate {:.3}, representative run ended as {}\", \"root_cause\": \"prototype balance or bot policy requires review\", \"fix\": \"adjust content numbers or bot policy after reviewing matrix metrics\", \"validation\": \"rerun game_harness matrix with the same seed range\" }}{}\n",
             sanitize_id(summary.bot.as_str()),
             metrics.seed,
+            summary.map_id,
             metrics.seed,
             summary.bot.as_str(),
             metrics.duration_seconds,
@@ -3934,6 +4010,7 @@ fn simulate_candidate_dirs(args: &SimulateCandidatesArgs) -> io::Result<Candidat
                     *bot,
                     args.seed_start,
                     args.seeds,
+                    DEFAULT_MAP_ID,
                     args.seconds,
                     args.tick_rate,
                 )
@@ -5293,19 +5370,23 @@ fn print_help() {
     eprintln!("usage:");
     eprintln!("  cargo run -p game_harness -- validate-content [--content-dir content/base_demo]");
     eprintln!(
-        "  cargo run -p game_harness -- simulate [--seed N] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo]",
+        "  cargo run -p game_harness -- simulate [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo]",
+        DEFAULT_MAP_ID,
         BotKind::all_names()
     );
     eprintln!(
-        "  cargo run -p game_harness -- meta-settlement [--seed N] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo] [--report-dir harness/reports/local_meta_settlement]",
+        "  cargo run -p game_harness -- meta-settlement [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo] [--report-dir harness/reports/local_meta_settlement]",
+        DEFAULT_MAP_ID,
         BotKind::all_names()
     );
     eprintln!(
-        "  cargo run -p game_harness -- batch [--seed-start N] [--seeds N] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo] [--report-dir harness/reports/local_batch]",
+        "  cargo run -p game_harness -- batch [--seed-start N] [--seeds N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--content-dir content/base_demo] [--report-dir harness/reports/local_batch]",
+        DEFAULT_MAP_ID,
         BotKind::all_names()
     );
     eprintln!(
-        "  cargo run -p game_harness -- matrix [--seed-start N] [--seeds N] [--seconds N] [--tick-rate N] [--bots all|{}] [--content-dir content/base_demo] [--report-dir harness/reports/local_matrix]",
+        "  cargo run -p game_harness -- matrix [--seed-start N] [--seeds N] [--map-id {}] [--seconds N] [--tick-rate N] [--bots all|{}] [--content-dir content/base_demo] [--report-dir harness/reports/local_matrix]",
+        DEFAULT_MAP_ID,
         BotKind::all_names()
     );
     eprintln!(
@@ -5328,7 +5409,8 @@ fn print_help() {
         "  cargo run -p game_harness -- lock-accepted-content [--accepted-dir harness/accepted_content] [--lock-file harness/accepted_content/accepted_content.lock.json] [--runtime-content-root harness/accepted_content] [--report-dir harness/reports/local_accepted_content_lock]"
     );
     eprintln!(
-        "  cargo run -p game_harness -- gym-bridge [--seed N] [--seconds N] [--tick-rate N] [--content-dir content/base_demo]"
+        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--content-dir content/base_demo]",
+        DEFAULT_MAP_ID
     );
 }
 
