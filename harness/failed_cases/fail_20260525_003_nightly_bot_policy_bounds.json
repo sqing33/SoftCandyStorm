@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260525_003",
+  "category": "bot_policy_gate",
+  "content_id": "base-demo",
+  "seed": "40000-40019",
+  "bot": "TankBot, ZoneControlBot",
+  "time_seconds": 300.0,
+  "symptom": "nightly all Bot 20 seed 初跑中 TankBot 胜率 15% 低于中技能目标 25%-55%，ZoneControlBot 胜率 65% 高于中技能目标 25%-55%。",
+  "root_cause": "TankBot 过早堆最大生命且低血回避触发偏晚，导致输出与清场不足；ZoneControlBot 在基础武器未成型前过早追求拾取和控制收益，导致后期强度偏高。",
+  "fix": "TankBot 调整升级优先级为先冷却再防御，并提高移动层低血回避敏感度；ZoneControlBot 先补足彩虹糖弹 Lv3，再回到拾取/控制优先，并略降拾取移动偏置。",
+  "validation": "重跑 all Bot、20 seed、300 秒矩阵共 180 局全部通过；TankBot 胜率 35%，ZoneControlBot 胜率 50%；strict replay-batch 180/180 通过。"
+}
