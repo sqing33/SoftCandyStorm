@@ -42,6 +42,8 @@ For a minimal smoke, override the training and evaluation size:
 python3 python/train/train_sb3.py --algorithm dqn --timesteps 128 --eval-episodes 2 --eval-seconds 5 --report harness/reports/local_rl_training/dqn_training_smoke.json
 ```
 
+Use `--model-out <path>` for experiments that should not overwrite the default per-algorithm model path.
+
 `train_sb3.py` writes the model zip, per-algorithm model metadata, a training report, an evaluation report, and known exploit notes. Do not record RL Bot training as complete until all of those files exist and the policy has been compared against rule Bot baselines.
 
 ## Policy vs Rule Bot Comparison

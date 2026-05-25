@@ -94,7 +94,14 @@ def dry_run(config, algorithm, steps):
         env.close()
 
 
-def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seconds=None):
+def train(
+    config,
+    algorithm,
+    total_timesteps=None,
+    eval_episodes=None,
+    eval_seconds=None,
+    model_out=None,
+):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
     model_classes = stable_baselines_model_classes()
@@ -111,7 +118,8 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
     ignored_keys = {"enabled", "policy", "total_timesteps"}
     kwargs = {key: value for key, value in selected.items() if key not in ignored_keys}
     started_at = datetime.now(timezone.utc).isoformat()
-    model_path = model_dir / f"{algorithm}_phase1_movement_survival.zip"
+    model_path = Path(model_out) if model_out is not None else default_model_path(config, algorithm)
+    model_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         model = model_class(selected["policy"], env, verbose=1, **kwargs)
         model.learn(total_timesteps=train_steps)
@@ -154,7 +162,7 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
         "known_exploits_path": str(exploit_path),
         "known_exploits": known_exploit_notes["known_exploits"],
     }
-    metadata_path = metadata_path_for(config, algorithm)
+    metadata_path = metadata_path_for(config, algorithm, model_out=model_out)
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     report = {
         "status": "trained",
@@ -196,7 +204,10 @@ def default_model_path(config, algorithm):
     return Path(config["outputs"]["model_dir"]) / f"{algorithm}_phase1_movement_survival.zip"
 
 
-def metadata_path_for(config, algorithm):
+def metadata_path_for(config, algorithm, model_out=None):
+    if model_out is not None:
+        model_path = Path(model_out)
+        return model_path.with_name(f"{model_path.stem}_metadata.json")
     metadata_file = config["outputs"]["metadata_file"].format(algorithm=algorithm)
     return Path(config["outputs"]["model_dir"]) / metadata_file
 
@@ -599,6 +610,7 @@ def main():
     parser.add_argument("--seed-start", type=int, default=None)
     parser.add_argument("--map-id", default=None)
     parser.add_argument("--model", default=None)
+    parser.add_argument("--model-out", default=None)
     parser.add_argument("--evaluate-model", action="store_true")
     parser.add_argument("--compare-rule-bots", action="store_true")
     parser.add_argument("--rule-bots", default="random,kite,tank")
@@ -661,6 +673,7 @@ def main():
             total_timesteps=args.timesteps,
             eval_episodes=args.eval_episodes,
             eval_seconds=args.eval_seconds,
+            model_out=args.model_out,
         ),
     )
 
