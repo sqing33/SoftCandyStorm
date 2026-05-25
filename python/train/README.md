@@ -46,6 +46,12 @@ Use `--model-out <path>` and `--report-dir <path>` for experiments that should n
 
 `train_sb3.py` writes the model zip, per-algorithm model metadata, a training report, an evaluation report, and known exploit notes. Do not record RL Bot training as complete until all of those files exist and the policy has been compared against rule Bot baselines.
 
+For multi-map training experiments, pass a comma-separated map list. `cycle` is deterministic and rotates maps on each environment reset; `random` uses the episode seed and episode index to select maps deterministically.
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --train-maps frosting-grassland,soda-creek,caramel-workshop --train-map-selection cycle
+```
+
 ## Policy vs Rule Bot Comparison
 
 Compare a saved SB3 policy against rule Bot baselines with the same map, seed range, and duration:

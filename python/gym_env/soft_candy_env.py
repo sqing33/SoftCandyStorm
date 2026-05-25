@@ -54,6 +54,8 @@ class SoftCandyStormEnv(gym.Env):
         seconds=600.0,
         tick_rate=30,
         map_id="frosting-grassland",
+        map_ids=None,
+        map_selection="cycle",
         content_dir="content/base_demo",
         harness_cmd=None,
         cwd=None,
@@ -61,7 +63,12 @@ class SoftCandyStormEnv(gym.Env):
         self.seed_value = seed
         self.seconds = seconds
         self.tick_rate = tick_rate
-        self.map_id = map_id
+        self.map_ids = self._normalize_map_ids(map_ids, map_id)
+        self.map_selection = map_selection
+        if self.map_selection not in {"cycle", "random"}:
+            raise ValueError("map_selection must be `cycle` or `random`")
+        self.map_id = self.map_ids[0]
+        self.episode_index = 0
         self.content_dir = content_dir
         self.cwd = Path(cwd) if cwd is not None else Path(__file__).resolve().parents[2]
         self.harness_cmd = harness_cmd or self._default_harness_cmd()
@@ -94,6 +101,27 @@ class SoftCandyStormEnv(gym.Env):
             "--",
             "gym-bridge",
         ]
+
+    def _normalize_map_ids(self, map_ids, fallback):
+        if map_ids is None:
+            return [fallback]
+        normalized = [map_id.strip() for map_id in map_ids if map_id.strip()]
+        if not normalized:
+            raise ValueError("map_ids must include at least one map id")
+        return normalized
+
+    def _select_map_id(self, explicit_map_id=None):
+        if explicit_map_id is not None:
+            return explicit_map_id
+        if len(self.map_ids) == 1:
+            return self.map_ids[0]
+        if self.map_selection == "random":
+            rng = random.Random(self.seed_value + self.episode_index)
+            selected = rng.choice(self.map_ids)
+        else:
+            selected = self.map_ids[self.episode_index % len(self.map_ids)]
+        self.episode_index += 1
+        return selected
 
     def _start_bridge(self):
         cmd = [
@@ -140,10 +168,11 @@ class SoftCandyStormEnv(gym.Env):
         if seed is not None:
             self.seed_value = seed
         options = options or {}
+        map_id = self._select_map_id(options.get("map_id"))
         payload = {
             "command": "reset",
             "seed": self.seed_value,
-            "map_id": options.get("map_id", self.map_id),
+            "map_id": map_id,
             "seconds": options.get("seconds", self.seconds),
             "tick_rate": options.get("tick_rate", self.tick_rate),
         }

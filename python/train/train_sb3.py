@@ -51,13 +51,32 @@ def algorithm_config(config, algorithm):
     return selected
 
 
-def build_env(config, seed=None, seconds=None, map_id=None):
+def parse_map_list(value):
+    if value is None:
+        return None
+    maps = [item.strip() for item in value.split(",") if item.strip()]
+    if not maps:
+        raise ValueError("map list must include at least one map id")
+    return maps
+
+
+def build_env(
+    config,
+    seed=None,
+    seconds=None,
+    map_id=None,
+    map_ids=None,
+    map_selection="cycle",
+):
     env_cfg = config["environment"]
+    selected_map_id = map_id if map_id is not None else env_cfg.get("map_id", "frosting-grassland")
     return SoftCandyStormEnv(
         seed=seed if seed is not None else env_cfg["seed"],
         seconds=seconds if seconds is not None else env_cfg["seconds"],
         tick_rate=env_cfg["tick_rate"],
-        map_id=map_id if map_id is not None else env_cfg.get("map_id", "frosting-grassland"),
+        map_id=selected_map_id,
+        map_ids=map_ids,
+        map_selection=map_selection,
         content_dir=env_cfg["content_dir"],
     )
 
@@ -102,6 +121,8 @@ def train(
     eval_seconds=None,
     model_out=None,
     report_dir_out=None,
+    train_maps=None,
+    train_map_selection="cycle",
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -109,7 +130,7 @@ def train(
 
     selected = algorithm_config(config, algorithm)
     train_steps = total_timesteps or selected["total_timesteps"]
-    env = build_env(config)
+    env = build_env(config, map_ids=train_maps, map_selection=train_map_selection)
     model_dir = Path(config["outputs"]["model_dir"])
     report_dir = (
         Path(report_dir_out)
@@ -166,6 +187,9 @@ def train(
         "evaluation_path": str(evaluation_path),
         "known_exploits_path": str(exploit_path),
         "known_exploits": known_exploit_notes["known_exploits"],
+        "training_maps": train_maps
+        or [config["environment"].get("map_id", "frosting-grassland")],
+        "training_map_selection": train_map_selection if train_maps else "single",
     }
     metadata_path = metadata_path_for(config, algorithm, model_out=model_out)
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
@@ -185,6 +209,9 @@ def train(
             "seconds": config["environment"]["seconds"],
             "tick_rate": config["environment"]["tick_rate"],
             "content_dir": config["environment"]["content_dir"],
+            "maps": train_maps
+            or [config["environment"].get("map_id", "frosting-grassland")],
+            "map_selection": train_map_selection if train_maps else "single",
             "started_at": started_at,
             "completed_at": completed_at,
         },
@@ -617,6 +644,12 @@ def main():
     parser.add_argument("--model", default=None)
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
+    parser.add_argument("--train-maps", default=None)
+    parser.add_argument(
+        "--train-map-selection",
+        choices=["cycle", "random"],
+        default="cycle",
+    )
     parser.add_argument("--evaluate-model", action="store_true")
     parser.add_argument("--compare-rule-bots", action="store_true")
     parser.add_argument("--rule-bots", default="random,kite,tank")
@@ -626,6 +659,7 @@ def main():
 
     config = load_config(args.config)
     algorithm_config(config, args.algorithm)
+    train_maps = parse_map_list(args.train_maps)
 
     if args.copy_template:
         write_report(args.report, copy_template(args.copy_template))
@@ -681,6 +715,8 @@ def main():
             eval_seconds=args.eval_seconds,
             model_out=args.model_out,
             report_dir_out=args.report_dir,
+            train_maps=train_maps,
+            train_map_selection=args.train_map_selection,
         ),
     )
 

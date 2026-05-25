@@ -21,6 +21,17 @@ obs, reward, terminated, truncated, info = env.step(3)
 env.close()
 ```
 
+For multi-map training experiments, pass a map list and let the environment choose a map on each reset:
+
+```python
+env = SoftCandyStormEnv(
+    map_ids=["frosting-grassland", "soda-creek", "caramel-workshop"],
+    map_selection="cycle",
+)
+```
+
+Explicit reset options such as `options={"map_id": "frosting-grassland"}` still override the training map selector, which keeps evaluation deterministic for a single map.
+
 The first RL phase uses a 9-action discrete movement space:
 
 ```text
