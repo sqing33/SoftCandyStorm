@@ -1,0 +1,184 @@
+{
+  "status": "trained",
+  "algorithm": "ppo",
+  "model_path": "python/train/models/ppo_phase1_observation_v2_multimap_random_ent002_10000_eval60.zip",
+  "metadata_path": "python/train/models/ppo_phase1_observation_v2_multimap_random_ent002_10000_eval60_metadata.json",
+  "evaluation_path": "harness/reports/2026-05-26_rl_ppo_observation_v2_training_001/local_training/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-26_rl_ppo_observation_v2_training_001/local_training/ppo_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true
+  },
+  "training": {
+    "total_timesteps": 10240,
+    "requested_timesteps": 10000,
+    "actual_timesteps": 10240,
+    "seed": 12345,
+    "seconds": 180.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "observation_version": 2,
+    "observation_len": 145,
+    "maps": [
+      "frosting-grassland",
+      "soda-creek",
+      "cotton-cloud-pasture",
+      "caramel-workshop",
+      "jelly-platform",
+      "cracked-star-jar"
+    ],
+    "map_selection": "random",
+    "started_at": "2026-05-25T20:13:50.880326+00:00",
+    "completed_at": "2026-05-25T20:13:56.359869+00:00",
+    "algorithm_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.02,
+      "clip_range": 0.2
+    },
+    "evaluation_policy": "deterministic"
+  },
+  "evaluation": {
+    "episodes": 3,
+    "win_rate": 1.0,
+    "average_survival_seconds": 60.0328,
+    "average_level": 1.6667,
+    "average_kills": 47.6667,
+    "average_reward": 2.9857,
+    "damage_taken_average": 3.4,
+    "action_distribution": {
+      "0": {
+        "count": 1905,
+        "ratio": 0.3526
+      },
+      "1": {
+        "count": 2918,
+        "ratio": 0.5401
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 325,
+        "ratio": 0.0602
+      },
+      "4": {
+        "count": 255,
+        "ratio": 0.0472
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "action_entropy_bits": 1.4622,
+    "normalized_action_entropy": 0.4613,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 5403,
+      "mean_scores": {
+        "0": 0.1388,
+        "1": 0.1909,
+        "2": 0.0554,
+        "3": 0.1171,
+        "4": 0.1628,
+        "5": 0.0879,
+        "6": 0.08,
+        "7": 0.0768,
+        "8": 0.0903
+      },
+      "mean_top_actions": [
+        {
+          "action": "1",
+          "score": 0.1909
+        },
+        {
+          "action": "4",
+          "score": 0.1628
+        },
+        {
+          "action": "0",
+          "score": 0.1388
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 1905,
+          "ratio": 0.3526
+        },
+        "1": {
+          "count": 2918,
+          "ratio": 0.5401
+        },
+        "2": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "3": {
+          "count": 325,
+          "ratio": 0.0602
+        },
+        "4": {
+          "count": 255,
+          "ratio": 0.0472
+        },
+        "5": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "6": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "7": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "8": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "dominant_top_action": {
+        "action": "1",
+        "count": 2918,
+        "ratio": 0.5401
+      },
+      "mean_chosen_action_score": 0.2205,
+      "chosen_action_score_sample_count": 5403
+    },
+    "reward_breakdown_average": {
+      "action_repeat": -3.7027,
+      "damage_taken": -0.272,
+      "kill": 3.8133,
+      "level": 0.5333,
+      "survival": 0.6003,
+      "terminal": 1.0,
+      "total": 2.9856,
+      "xp": 1.0133
+    }
+  },
+  "known_exploits": [],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_rule_bot_comparison"
+}
