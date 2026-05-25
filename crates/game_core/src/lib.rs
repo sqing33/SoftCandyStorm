@@ -171,6 +171,7 @@ pub struct RunSnapshot {
     pub visible_enemies: Vec<EnemySnapshot>,
     pub visible_pickups: Vec<PickupSnapshot>,
     pub visible_projectiles: Vec<ProjectileSnapshot>,
+    pub active_hazards: Vec<HazardSnapshot>,
     pub boss: Option<BossSnapshot>,
     pub upgrade_options: Vec<UpgradeOptionSnapshot>,
     pub build: BuildSnapshot,
@@ -224,6 +225,14 @@ pub struct ProjectileSnapshot {
     pub position: Vec2,
     pub velocity: Vec2,
     pub radius: f32,
+}
+
+#[derive(Debug, Clone)]
+pub struct HazardSnapshot {
+    pub position: Vec2,
+    pub radius: f32,
+    pub slow_multiplier: f32,
+    pub remaining_seconds: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -625,6 +634,7 @@ impl GameCore {
                 .take(MAX_VISIBLE_PROJECTILES)
                 .map(ProjectileSnapshot::from)
                 .collect(),
+            active_hazards: self.hazards.iter().map(HazardSnapshot::from).collect(),
             boss,
             upgrade_options: self
                 .pending_upgrade_options
@@ -2060,6 +2070,17 @@ struct Hazard {
     slow_multiplier: f32,
 }
 
+impl From<&Hazard> for HazardSnapshot {
+    fn from(hazard: &Hazard) -> Self {
+        Self {
+            position: hazard.position,
+            radius: hazard.radius,
+            slow_multiplier: hazard.slow_multiplier,
+            remaining_seconds: hazard.remaining_seconds,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct MapRuntime {
     width: f32,
@@ -2760,6 +2781,27 @@ mod tests {
         core.update_player_movement(Vec2::new(1.0, 0.0), 1.0);
 
         assert!(core.player.velocity.length() < core.player.move_speed * 0.75);
+    }
+
+    #[test]
+    fn hazard_snapshot_exposes_active_hazards() {
+        let mut core = GameCore::reset(RunConfig::default());
+        let position = Vec2::new(24.0, -12.0);
+        core.hazards.push(Hazard {
+            position,
+            radius: 64.0,
+            remaining_seconds: 3.5,
+            slow_multiplier: 0.55,
+        });
+
+        let snapshot = core.snapshot();
+
+        assert_eq!(snapshot.active_hazards.len(), 1);
+        let hazard = &snapshot.active_hazards[0];
+        assert_eq!(hazard.position, position);
+        assert_eq!(hazard.radius, 64.0);
+        assert_eq!(hazard.slow_multiplier, 0.55);
+        assert_eq!(hazard.remaining_seconds, 3.5);
     }
 
     #[test]

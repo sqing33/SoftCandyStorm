@@ -186,6 +186,14 @@ enum RuntimeEffectKind {
     BossSpawn,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct RuntimeMapVisualStyle {
+    display_name: &'static str,
+    tile_tint: Color,
+    border_color: Color,
+    hazard_color: Color,
+}
+
 #[derive(Debug, Clone)]
 struct RuntimeEffect {
     kind: RuntimeEffectKind,
@@ -235,6 +243,7 @@ struct RuntimeTelemetrySample {
     visible_enemies: usize,
     visible_pickups: usize,
     visible_projectiles: usize,
+    active_hazards: usize,
     active_effects: usize,
     upgrade_options: usize,
     last_event_kind: &'static str,
@@ -743,11 +752,12 @@ fn sync_world_visuals(
     }
 
     let snapshot = &state.latest_snapshot;
+    let map_style = map_visual_style(&snapshot.map.map_id);
     commands.spawn((
         SpriteBundle {
             texture: sprites.map_tile.clone(),
             sprite: Sprite {
-                color: Color::WHITE,
+                color: map_style.tile_tint,
                 custom_size: Some(Vec2::new(snapshot.map.width, snapshot.map.height)),
                 ..default()
             },
@@ -756,7 +766,8 @@ fn sync_world_visuals(
         },
         RuntimeVisual,
     ));
-    spawn_map_borders(&mut commands, snapshot);
+    spawn_map_borders(&mut commands, snapshot, map_style.border_color);
+    spawn_active_hazards(&mut commands, snapshot, map_style.hazard_color);
 
     for pickup in &snapshot.visible_pickups {
         let size = (pickup.radius * 2.0).max(24.0);
@@ -849,9 +860,8 @@ fn sync_world_visuals(
     ));
 }
 
-fn spawn_map_borders(commands: &mut Commands, snapshot: &RunSnapshot) {
+fn spawn_map_borders(commands: &mut Commands, snapshot: &RunSnapshot, color: Color) {
     let thickness = 10.0;
-    let color = Color::srgb(0.49, 0.36, 0.20);
     for (x, y, width, height) in [
         (
             0.0,
@@ -893,6 +903,28 @@ fn spawn_map_borders(commands: &mut Commands, snapshot: &RunSnapshot) {
     }
 }
 
+fn spawn_active_hazards(commands: &mut Commands, snapshot: &RunSnapshot, color: Color) {
+    for hazard in &snapshot.active_hazards {
+        let size = (hazard.radius * 2.0).max(24.0);
+        commands.spawn((
+            SpriteBundle {
+                sprite: Sprite {
+                    color,
+                    custom_size: Some(Vec2::splat(size)),
+                    ..default()
+                },
+                transform: Transform::from_xyz(
+                    hazard.position.x,
+                    hazard.position.y,
+                    EFFECT_Z - 2.0,
+                ),
+                ..default()
+            },
+            RuntimeVisual,
+        ));
+    }
+}
+
 fn load_runtime_sprites(asset_server: &AssetServer) -> RuntimeSprites {
     RuntimeSprites {
         player: asset_server.load(PLAYER_SPRITE),
@@ -918,6 +950,47 @@ impl RuntimeSprites {
             "sandwich-cookie-creep" => &self.sandwich_cookie,
             _ => &self.bouncy_gummy,
         }
+    }
+}
+
+fn map_visual_style(map_id: &str) -> RuntimeMapVisualStyle {
+    match map_id {
+        "soda-creek" => RuntimeMapVisualStyle {
+            display_name: "汽水溪谷",
+            tile_tint: Color::srgb(0.70, 0.93, 1.0),
+            border_color: Color::srgb(0.10, 0.44, 0.64),
+            hazard_color: Color::srgba(0.18, 0.78, 1.0, 0.34),
+        },
+        "cotton-cloud-pasture" => RuntimeMapVisualStyle {
+            display_name: "棉花云牧场",
+            tile_tint: Color::srgb(0.96, 0.91, 1.0),
+            border_color: Color::srgb(0.48, 0.36, 0.70),
+            hazard_color: Color::srgba(0.94, 0.80, 1.0, 0.38),
+        },
+        "caramel-workshop" => RuntimeMapVisualStyle {
+            display_name: "焦糖工坊",
+            tile_tint: Color::srgb(0.98, 0.73, 0.46),
+            border_color: Color::srgb(0.50, 0.22, 0.08),
+            hazard_color: Color::srgba(0.86, 0.34, 0.05, 0.42),
+        },
+        "jelly-platform" => RuntimeMapVisualStyle {
+            display_name: "果冻月台",
+            tile_tint: Color::srgb(0.72, 0.97, 0.86),
+            border_color: Color::srgb(0.08, 0.46, 0.40),
+            hazard_color: Color::srgba(0.28, 0.95, 0.70, 0.36),
+        },
+        "cracked-star-jar" => RuntimeMapVisualStyle {
+            display_name: "裂星糖罐",
+            tile_tint: Color::srgb(0.84, 0.82, 1.0),
+            border_color: Color::srgb(0.28, 0.22, 0.58),
+            hazard_color: Color::srgba(0.80, 0.38, 1.0, 0.40),
+        },
+        _ => RuntimeMapVisualStyle {
+            display_name: "糖霜草地",
+            tile_tint: Color::srgb(0.96, 0.98, 0.78),
+            border_color: Color::srgb(0.49, 0.36, 0.20),
+            hazard_color: Color::srgba(0.92, 0.50, 0.18, 0.34),
+        },
     }
 }
 
@@ -952,8 +1025,9 @@ fn update_hud(
     let snapshot = &state.latest_snapshot;
     if let Ok(mut text) = hud_query.get_single_mut() {
         let mode = if state.paused { "Paused" } else { "Playing" };
+        let map_style = map_visual_style(&snapshot.map.map_id);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  {}\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -964,6 +1038,8 @@ fn update_hud(
             snapshot.player.xp_to_next_level,
             snapshot.metrics_partial.kills,
             snapshot.visible_enemies.len(),
+            snapshot.active_hazards.len(),
+            map_style.display_name,
             snapshot.map.map_id,
             state.last_event,
             state.last_event_kind.label(),
@@ -1725,6 +1801,7 @@ impl RuntimeTelemetrySample {
             visible_enemies: snapshot.visible_enemies.len(),
             visible_pickups: snapshot.visible_pickups.len(),
             visible_projectiles: snapshot.visible_projectiles.len(),
+            active_hazards: snapshot.active_hazards.len(),
             active_effects,
             upgrade_options: snapshot.upgrade_options.len(),
             last_event_kind: last_event_kind.label(),
@@ -1837,10 +1914,11 @@ fn write_runtime_playtest_report(
 mod tests {
     use super::{
         demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
-        make_tone_wav, parse_runtime_cli, player_tint, render_meta_progress_panel,
-        resolve_runtime_content_selection, run_config_from_cli, runtime_asset_root,
-        runtime_sprite_paths, sounds_for_events, RuntimeCaptureState, RuntimeCli,
-        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
+        make_tone_wav, map_visual_style, parse_runtime_cli, player_tint,
+        render_meta_progress_panel, resolve_runtime_content_selection, run_config_from_cli,
+        runtime_asset_root, runtime_sprite_paths, sounds_for_events, RuntimeCaptureState,
+        RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeSound,
+        DEFAULT_CONTENT_DIR,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -1986,6 +2064,16 @@ mod tests {
     }
 
     #[test]
+    fn map_visual_style_distinguishes_known_maps() {
+        assert_eq!(map_visual_style("soda-creek").display_name, "汽水溪谷");
+        assert_eq!(
+            map_visual_style("cracked-star-jar").display_name,
+            "裂星糖罐"
+        );
+        assert_eq!(map_visual_style("unknown-map").display_name, "糖霜草地");
+    }
+
+    #[test]
     fn runtime_asset_root_points_to_workspace_assets() {
         let root = PathBuf::from(runtime_asset_root());
 
@@ -2026,6 +2114,7 @@ mod tests {
                 visible_enemies: 0,
                 visible_pickups: 0,
                 visible_projectiles: 0,
+                active_hazards: 0,
                 active_effects: 0,
                 upgrade_options: 0,
                 last_event_kind: "status",
