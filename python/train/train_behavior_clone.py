@@ -46,6 +46,7 @@ def dataset_paths(value):
 def load_trajectory_dataset(path, limit=None):
     observations = []
     actions = []
+    sample_metadata = []
     metadata = []
     episode_count = 0
     skipped_upgrade_samples = 0
@@ -93,6 +94,16 @@ def load_trajectory_dataset(path, limit=None):
                     raise ValueError(f"sample missing integer action in {dataset_path}:{line_number}")
                 observations.append([float(value) for value in observation])
                 actions.append(action)
+                sample_metadata.append(
+                    {
+                        "path": str(dataset_path),
+                        "map_id": record.get("map_id"),
+                        "time_seconds": float(record.get("time_seconds", 0.0)),
+                        "health_ratio": float(record.get("health_ratio", 1.0)),
+                        "level": int(record.get("level", 0)),
+                        "kills": int(record.get("kills", 0)),
+                    }
+                )
 
     if not actions:
         raise ValueError("trajectory dataset contains no sample records")
@@ -111,6 +122,7 @@ def load_trajectory_dataset(path, limit=None):
         "paths": [str(path) for path in paths],
         "observations": observations,
         "actions": actions,
+        "sample_metadata": sample_metadata,
         "metadata": metadata,
         "episode_count": episode_count,
         "skipped_upgrade_samples": skipped_upgrade_samples,
@@ -138,7 +150,35 @@ def summarize_dataset(dataset):
             }
             for action, count in action_counts.items()
         },
+        "sample_summary": summarize_sample_metadata(dataset["sample_metadata"]),
         "metadata": dataset["metadata"],
+    }
+
+
+def summarize_sample_metadata(sample_metadata):
+    if not sample_metadata:
+        return {}
+    map_counts = {}
+    times = []
+    health_ratios = []
+    for item in sample_metadata:
+        map_id = item.get("map_id") or "unknown"
+        map_counts[map_id] = map_counts.get(map_id, 0) + 1
+        times.append(float(item.get("time_seconds", 0.0)))
+        health_ratios.append(float(item.get("health_ratio", 1.0)))
+    sample_count = len(sample_metadata)
+    return {
+        "time_seconds_min": round(min(times), 4),
+        "time_seconds_max": round(max(times), 4),
+        "health_ratio_min": round(min(health_ratios), 4),
+        "health_ratio_average": round(sum(health_ratios) / sample_count, 4),
+        "map_distribution": {
+            map_id: {
+                "count": count,
+                "ratio": round(count / sample_count, 4),
+            }
+            for map_id, count in sorted(map_counts.items())
+        },
     }
 
 
@@ -147,7 +187,7 @@ def train_behavior_clone(dataset, args):
     import numpy as np
     import torch
     from torch import nn
-    from torch.utils.data import DataLoader, TensorDataset
+    from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 
     if len(dataset["actions"]) < 2:
         raise ValueError("behavior cloning requires at least two trajectory samples")
@@ -166,13 +206,33 @@ def train_behavior_clone(dataset, args):
     validation_indices = indices[:validation_count]
     train_indices = indices[validation_count:]
 
+    train_weights, sample_weight_report = build_sample_weights(
+        dataset["sample_metadata"],
+        train_indices,
+        args,
+        np,
+    )
+    train_dataset = TensorDataset(
+        torch.from_numpy(observations[train_indices]),
+        torch.from_numpy(actions[train_indices]),
+    )
+    sampler = None
+    shuffle = True
+    if train_weights is not None:
+        generator = torch.Generator()
+        generator.manual_seed(args.seed)
+        sampler = WeightedRandomSampler(
+            weights=torch.from_numpy(train_weights),
+            num_samples=len(train_indices),
+            replacement=True,
+            generator=generator,
+        )
+        shuffle = False
     train_loader = DataLoader(
-        TensorDataset(
-            torch.from_numpy(observations[train_indices]),
-            torch.from_numpy(actions[train_indices]),
-        ),
+        train_dataset,
         batch_size=args.batch_size,
-        shuffle=True,
+        shuffle=shuffle,
+        sampler=sampler,
     )
     validation_x = torch.from_numpy(observations[validation_indices])
     validation_y = torch.from_numpy(actions[validation_indices])
@@ -235,6 +295,8 @@ def train_behavior_clone(dataset, args):
             "hidden_size": args.hidden_size,
             "class_weighting": args.class_weighting,
             "class_weights": class_weight_report,
+            "sample_weighting": args.sample_weighting,
+            "sample_weights": sample_weight_report,
             "state_dict": model.state_dict(),
             "dataset_paths": dataset["paths"],
         },
@@ -258,6 +320,8 @@ def train_behavior_clone(dataset, args):
             "validation_split": args.validation_split,
             "class_weighting": args.class_weighting,
             "class_weights": class_weight_report,
+            "sample_weighting": args.sample_weighting,
+            "sample_weights": sample_weight_report,
             "train_samples": int(len(train_indices)),
             "validation_samples": int(len(validation_indices)),
         },
@@ -283,6 +347,55 @@ def build_class_weights(actions, action_count, mode, np_module, torch_module):
         torch_module.from_numpy(weights),
         [round(float(weight), 6) for weight in weights.tolist()],
     )
+
+
+def build_sample_weights(sample_metadata, indices, args, np_module):
+    if args.sample_weighting == "none":
+        return None, {
+            "mode": "none",
+            "min": 1.0,
+            "max": 1.0,
+            "mean": 1.0,
+        }
+
+    weights = []
+    for index in indices:
+        sample = sample_metadata[int(index)]
+        health_ratio = clamp(float(sample.get("health_ratio", 1.0)), 0.0, 1.0)
+        time_seconds = max(0.0, float(sample.get("time_seconds", 0.0)))
+        low_health_pressure = max(
+            0.0,
+            (args.danger_health_threshold - health_ratio)
+            / max(0.0001, args.danger_health_threshold),
+        )
+        late_pressure = clamp(
+            (time_seconds - args.danger_late_start_seconds)
+            / max(0.0001, args.danger_late_horizon_seconds - args.danger_late_start_seconds),
+            0.0,
+            1.0,
+        )
+        weights.append(
+            1.0
+            + args.danger_low_health_weight * low_health_pressure
+            + args.danger_late_weight * late_pressure
+        )
+
+    values = np_module.asarray(weights, dtype=np_module.float32)
+    return values, {
+        "mode": args.sample_weighting,
+        "min": round(float(values.min()), 6),
+        "max": round(float(values.max()), 6),
+        "mean": round(float(values.mean()), 6),
+        "danger_health_threshold": args.danger_health_threshold,
+        "danger_low_health_weight": args.danger_low_health_weight,
+        "danger_late_start_seconds": args.danger_late_start_seconds,
+        "danger_late_horizon_seconds": args.danger_late_horizon_seconds,
+        "danger_late_weight": args.danger_late_weight,
+    }
+
+
+def clamp(value, minimum, maximum):
+    return min(max(value, minimum), maximum)
 
 
 class BehaviorClonePolicy:
@@ -391,6 +504,17 @@ def main():
         default="none",
         help="Reweight cross entropy by action frequency to reduce majority-action collapse.",
     )
+    parser.add_argument(
+        "--sample-weighting",
+        choices=["none", "danger"],
+        default="none",
+        help="Use weighted sampling to revisit dangerous states more often.",
+    )
+    parser.add_argument("--danger-health-threshold", type=float, default=0.7)
+    parser.add_argument("--danger-low-health-weight", type=float, default=2.0)
+    parser.add_argument("--danger-late-start-seconds", type=float, default=60.0)
+    parser.add_argument("--danger-late-horizon-seconds", type=float, default=300.0)
+    parser.add_argument("--danger-late-weight", type=float, default=1.0)
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument(
         "--model-out",
@@ -414,6 +538,16 @@ def main():
         parser.error("--validation-split must be between 0 and 1")
     if args.limit_samples is not None and args.limit_samples <= 0:
         parser.error("--limit-samples must be greater than zero")
+    if not (0.0 < args.danger_health_threshold <= 1.0):
+        parser.error("--danger-health-threshold must be in (0, 1]")
+    if args.danger_low_health_weight < 0.0:
+        parser.error("--danger-low-health-weight must be greater than or equal to zero")
+    if args.danger_late_weight < 0.0:
+        parser.error("--danger-late-weight must be greater than or equal to zero")
+    if args.danger_late_start_seconds < 0.0:
+        parser.error("--danger-late-start-seconds must be greater than or equal to zero")
+    if args.danger_late_horizon_seconds <= args.danger_late_start_seconds:
+        parser.error("--danger-late-horizon-seconds must be greater than --danger-late-start-seconds")
 
     try:
         dataset = load_trajectory_dataset(args.dataset, limit=args.limit_samples)

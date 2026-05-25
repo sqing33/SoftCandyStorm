@@ -189,6 +189,18 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 The first weighted smoke improved offline validation accuracy but still collapsed deterministically to action `5` in Gym comparison, so class weighting is a diagnostic knob rather than a proven fix.
 
+Use `--sample-weighting danger` to revisit low-health and lategame samples more often during training:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_lategame_001 \
+  --sample-weighting danger \
+  --epochs 20
+```
+
+This uses weighted sampling from the same multi-map dataset, so it should be validated with the normal Gym comparison reports before being treated as a repair.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

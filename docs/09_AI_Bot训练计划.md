@@ -249,6 +249,18 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 首轮 weighted smoke 表明：离线 validation accuracy 可以提升，但 deterministic Gym policy 仍可能塌缩到单一动作。因此 class weighting 只能作为诊断旋钮，不能当作轨迹蒸馏已修复的证据。
 
+当长局失败集中在低血量或中后期危险状态时，可以用 `--sample-weighting danger` 做多图危险状态重采样。该模式会基于 sample 的 `health_ratio` 与 `time_seconds` 提高采样概率，而不是只给某一张地图追加样本：
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_lategame_001 \
+  --sample-weighting danger \
+  --epochs 20
+```
+
+危险状态重采样仍然只是训练策略，必须通过 60/300 秒 high-pressure 对比证明没有移动失败面。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。
