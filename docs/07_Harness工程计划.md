@@ -288,6 +288,22 @@ summary.md 内容：
 
 仓库提供 `tools/validate_failure_cases.py` 检查 `harness/failed_cases` 中的正式失败案例记录，也支持读取 Harness 报告里的 `failure_cases.json` 数组。新增 failure case 后应生成或刷新校验报告；校验通过只说明记录结构完整，不代表修复已经正确。
 
+## Progress 证据引用校验
+
+`harness/progress.json` 是 Goal 模式长跑时的进度账本。新增或修改 `completed`、`current_findings`、`next_recommended` 后，应运行：
+
+```bash
+python3 tools/validate_progress_reports.py harness/progress.json --repo-root .
+```
+
+需要留下 Harness 证据时，生成 JSON 与 Markdown 报告：
+
+```bash
+python3 tools/validate_progress_reports.py harness/progress.json --repo-root . --report harness/reports/<report-id>/progress_report_validation.json --markdown harness/reports/<report-id>/summary.md
+```
+
+该校验会确认 progress 结构、同一 section 内重复 id、以及所有已填写 `report` 字段的本地路径是否存在。早期条目没有 `report` 字段时只记为 warning，因为这些历史记录可能尚未完成证据回填。
+
 ## Agent 工作循环
 
 每次 Agent 开始：
@@ -300,7 +316,8 @@ summary.md 内容：
 6. 做最小完整改动。
 7. 运行对应测试。
 8. 更新 progress。
-9. 如果失败，写失败案例。
+9. 校验 progress 的证据引用。
+10. 如果失败，写失败案例。
 
 ## 不允许的 Agent 行为
 
