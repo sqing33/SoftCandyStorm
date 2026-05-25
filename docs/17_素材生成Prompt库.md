@@ -204,6 +204,25 @@ Short cute game sound effect, candy pop, bright and playful, 0.2 seconds, no voi
 - Boss 出场：`playful but dramatic candy machine rumble`
 - 胜利：`bright candy jar magical success jingle`
 
+## 当前 mmx 候选批次记录
+
+### 地图选择与 Boss 出场音频
+
+批次路径：
+
+```text
+asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/
+```
+
+生成内容：
+
+- `map_select_background_v001`：16:9 地图选择背景候选，仍需人工检查伪文字、地标可读性和地图卡牌覆盖效果。
+- `voice_boss_arrival_v001`：中文 Boss 出场提示语音候选，文本为“警报！裂星糖罐核心苏醒了！”，仍需人工听感和响度审查。
+- `sting_boss_arrival_v001`：Boss 出场音乐原始候选，约 102 秒，只能作为剪辑来源。
+- `sting_boss_arrival_v001_trim8s`：从原始音乐剪出的 8 秒 Boss 出场 sting 候选，仍需人工听感、响度和语音叠放审查。
+
+结论：该批次全部仍在 `generated_candidates`，不得直接进入正式 Runtime 素材。
+
 ## 生图后处理流程
 
 1. 生成图片。
@@ -241,4 +260,3 @@ icons/weapon_rainbow_candy_shot/v001.png
 - 对应内容 id
 
 不要只保存图片，不保存生成来源。
-
