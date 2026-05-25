@@ -277,6 +277,10 @@
     {
       "id": "boss_runtime_ability_semantics",
       "summary": "GameCore 增加 BossPhaseChanged / BossAbilityUsed 事件和首版 Boss phase ability 调度，按配置能力生成召唤敌人、地面危险区和阶段变化；Runtime/Harness 已接入事件标签、计数、音画反馈，caramel-workshop 220 秒 Runtime smoke 记录到 Boss 技能与 active hazards"
+    },
+    {
+      "id": "caramel_workshop_boss_matrix_regression",
+      "summary": "围绕 caramel-workshop 首版 Boss 技能语义运行 600 秒 3 seed 多 Bot 矩阵并执行 strict replay-batch 回归；Kite、BossHunter、Tank 均 100% 胜率，Replay 回归 9/9 通过，已记录偏易 failure case"
     }
   ],
   "current_findings": [
@@ -304,6 +308,11 @@
       "id": "boss_roster_config_scope",
       "summary": "base_demo 已覆盖 docs/04 首批 Boss 名录，Boss 包含基础数值、阶段技能名、反制说明、视觉和音效描述；六张地图标准波次均已挂接对应 Boss，GameCore 已按 phase abilities 提供首版召唤、危险区和阶段事件语义，后续仍需更细 Boss 专属平衡与美术表现。",
       "report": "content/base_demo/bosses/cracked-star-jar-core.json"
+    },
+    {
+      "id": "caramel_workshop_boss_matrix_too_easy",
+      "summary": "caramel-workshop 在首版 Boss 技能语义接入后仍偏易：600 秒 3 seed 小矩阵中 KiteBot、BossHunterBot、TankBot 胜率均为 100%，高于当前 Harness 目标区间；修复后需用同 map_id、seed range、bot set 重跑矩阵并执行 replay-batch。",
+      "report": "harness/failed_cases/fail_20260526_001_caramel_boss_map_easy.json"
     },
     {
       "id": "content_event_effect_scope",
@@ -378,8 +387,12 @@
   ],
   "next_recommended": [
     {
-      "id": "boss_map_matrix_refresh",
-      "summary": "围绕 6 张地图和首版 Boss 技能语义跑多 Bot/多 seed 矩阵，检查新增召唤与危险区是否让难度、性能或 replay 回归出现异常"
+      "id": "caramel_workshop_balance_repair",
+      "summary": "提高焦糖工坊中后期压力或焦糖熔炉技能约束，随后用 caramel-workshop、seed 12345..12347、kite/boss-hunter/tank 重跑 600 秒矩阵并执行 replay-batch"
+    },
+    {
+      "id": "six_map_boss_matrix_refresh",
+      "summary": "在焦糖工坊修复后扩展到 6 张地图的多 Bot/多 seed 矩阵，检查各地图 Boss 技能语义、难度、性能和 replay 回归是否稳定"
     },
     {
       "id": "runtime_manual_playtest_capture",
