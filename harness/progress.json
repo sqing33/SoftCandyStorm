@@ -373,6 +373,10 @@
     {
       "id": "rl_ppo_longer_training_stochastic_diagnostic",
       "summary": "复查 50000-step PPO 模型 stochastic 分布，最大动作占比 27.60%、归一化动作熵 0.8648、平均承伤 2.05，确认概率策略健康但确定性 gate 仍未过线"
+    },
+    {
+      "id": "rl_ppo_repeat_penalty_100k_training_gate",
+      "summary": "将增强 action_repeat 后的 PPO 多地图 random 训练提升到 100000 requested timesteps；确定性评估最大动作占比降至 52.93%、归一化动作熵升至 0.4491，首次通过动作分布 gate，并用 stochastic 评估确认概率策略健康"
     }
   ],
   "current_findings": [
@@ -535,6 +539,11 @@
       "id": "rl_ppo_longer_training_stochastic_healthy",
       "summary": "50000-step PPO 的 stochastic 评估动作分布健康，最大动作占比 27.60%、归一化动作熵 0.8648；确定性 argmax 仍是当前阻塞点。",
       "report": "harness/reports/2026-05-26_rl_ppo_longer_training_stochastic_diagnostic_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_100k_training_gate_passed",
+      "summary": "100000-step PPO 多地图 random 训练首次通过确定性动作分布 gate：最大动作占比 52.93%、归一化动作熵 0.4491；stochastic 诊断最大动作占比 31.67%、归一化动作熵 0.8896。当前 Gate 只是进入规则 Bot 对比，不代表内容或平衡门禁通过。",
+      "report": "harness/reports/2026-05-26_rl_ppo_repeat_penalty_100k_training_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -544,7 +553,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "修复多地图 PPO 训练的动作塌缩；50000-step 的 stochastic 策略健康，确定性动作熵达标但最大动作占比仍为 80.23%。下一步可尝试 100000-step 或 curriculum，并同时输出 deterministic/stochastic 两套评估；通过确定性动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
+      "summary": "100000-step PPO 多地图 random 训练已通过确定性动作分布 gate，最大动作占比 52.93%、归一化动作熵 0.4491；下一步重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比，确认跨地图泛化是否修复"
     }
   ]
 }
