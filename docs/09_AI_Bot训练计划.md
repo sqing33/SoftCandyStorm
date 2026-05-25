@@ -264,6 +264,13 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 因此 expanded behavior clone 仍不能作为 RL 测试 Bot，只能作为后续长局数据扩展、序列模型或 PPO 蒸馏初始化候选。
 
+使用 `--sample-start-seconds 60` 生成 300 秒中后期轨迹，并与原 0-60 秒 expanded 数据组合训练后，长局表现明显改善：
+
+- 60 秒 high-pressure 三图、5 seed：三图胜率均为 100%，动作熵约 0.87，最大动作占比不超过 30.45%。
+- 300 秒 high-pressure 三图、3 seed：平均胜率 22.22%，平均存活 231.3046 秒；`soda-creek` 和 `caramel-workshop` 胜率为 33.33%，但 `cracked-star-jar` 仍为 0%，gate 仍为 repair。
+
+结论：中后期轨迹覆盖可以显著改善长局存活与动作分布，但最终图仍需要定向数据、危险状态重采样或序列上下文，不能把该模型推进为 RL 测试 Bot。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

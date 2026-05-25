@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_021",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_combined_lategame_smoke",
+  "seed": 36000,
+  "bot": "BehaviorCloneKiteCombinedLategameSmoke",
+  "time_seconds": 300.0,
+  "symptom": "组合 0-60 秒与 60-300 秒规则 Bot 轨迹后，behavior clone 的 high-pressure 300 秒平均胜率提升到 22.22%，但 cracked-star-jar 仍为 0% 胜率，不能推进为 RL 测试 Bot",
+  "root_cause": "中后期轨迹覆盖改善了动作分布和存活时间，但最终图仍存在分布外危险状态；MLP movement clone 缺少序列记忆、Boss/危险区阶段策略和最终图定向恢复样本",
+  "fix": "围绕 cracked-star-jar 生成更多 120-300 秒定向轨迹，加入危险状态重采样或序列上下文，并重新验证 300 秒 high-pressure 三图对比",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_combined_lategame_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 36000 --rule-bots random,kite,tank --report harness/reports/2026-05-26_rl_behavior_clone_kite_combined_lategame_multimap_300s_001/comparison.json"
+}

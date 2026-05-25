@@ -799,6 +799,16 @@
       "id": "rl_windowed_trajectory_export_available",
       "summary": "规则 Bot 轨迹导出支持 --sample-start-seconds / --sample-end-seconds 时间窗口，可只写入中后期 sample，同时仍完整推进 GameCore 和 Bot 状态；smoke 验证 5-8 秒窗口样本边界正确。",
       "report": "crates/game_harness/src/main.rs"
+    },
+    {
+      "id": "rl_combined_trajectory_training_available",
+      "summary": "Behavior clone 训练入口支持重复 --dataset 组合多个 JSONL 文件或目录，并会保留 sample_start_seconds / sample_end_seconds provenance；可将开局与中后期轨迹放入同一训练。",
+      "report": "python/train/train_behavior_clone.py"
+    },
+    {
+      "id": "rl_behavior_clone_combined_lategame_partial_repair",
+      "summary": "组合 0-60 秒 expanded 轨迹与 60-300 秒 lategame 轨迹后，BC 在 60 秒三图全胜且动作熵健康；300 秒平均胜率从 0% 提升到 22.22%，但 cracked-star-jar 仍为 0%，gate 保持 repair。",
+      "report": "harness/failed_cases/fail_20260526_021_behavior_clone_combined_cracked_gap.json"
     }
   ],
   "next_recommended": [
@@ -808,7 +818,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "使用 --sample-start-seconds 生成 300 秒中后期规则 Bot 轨迹，重新训练 behavior clone 并优先验证 60/300 秒 high-pressure 对比；当前 expanded BC 不能作为 RL Bot 候选"
+      "summary": "围绕 cracked-star-jar 生成最终图定向中后期轨迹，加入危险状态重采样或序列上下文，再验证 300 秒 high-pressure 对比；当前 combined lategame BC 仍不能作为 RL Bot 候选"
     }
   ]
 }

@@ -207,3 +207,17 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 ```
 
 The expanded smoke passed the short high-pressure comparison gate, but it is still only a 10-second smoke. Run longer 60/300-second comparisons before treating it as a useful distillation base.
+
+The next lategame run combined the expanded opening dataset with a 60-300 second windowed dataset:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_lategame_001 \
+  --epochs 20 \
+  --batch-size 256 \
+  --model-out python/train/models/behavior_clone_kite_high_pressure_combined_lategame_smoke.pt \
+  --report harness/reports/2026-05-26_rl_behavior_clone_kite_combined_lategame_smoke_001/run_output.json
+```
+
+It improved the 300-second high-pressure average win rate to 22.22%, but `cracked-star-jar` remained at 0%, so the policy still needs repair.
