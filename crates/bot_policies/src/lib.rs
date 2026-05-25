@@ -103,16 +103,7 @@ impl BotController {
             self.route_angle.cos() * radius_x,
             self.route_angle.sin() * radius_y,
         );
-        let to_target = (target - snapshot.player.position).normalized_or_zero();
-
-        if let Some(enemy) = snapshot.visible_enemies.first() {
-            let away = snapshot.player.position - enemy.position;
-            if away.length() < 80.0 {
-                return (to_target + away.normalized_or_zero() * 1.2).normalized_or_zero();
-            }
-        }
-
-        to_target
+        (target - snapshot.player.position).normalized_or_zero()
     }
 }
 
@@ -212,7 +203,10 @@ fn defense_threshold(kind: BotKind) -> f32 {
         BotKind::Tank => 0.95,
         BotKind::Coward => 0.85,
         BotKind::Greedy => 0.55,
-        BotKind::Kite | BotKind::BossHunter | BotKind::ZoneControl | BotKind::Route => 0.75,
+        BotKind::Kite => 0.0,
+        BotKind::BossHunter => 0.55,
+        BotKind::ZoneControl => 0.0,
+        BotKind::Route => 0.45,
         BotKind::Idle | BotKind::Random => 0.0,
     }
 }
@@ -223,10 +217,10 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
         BotKind::Random => &[],
         BotKind::Coward => &[
             "big-candy-jar",
-            "bubble-shoes",
-            "star-spoon",
             "rainbow-candy-shot",
+            "bubble-shoes",
             "cream-clockwork",
+            "star-spoon",
         ],
         BotKind::Greedy => &[
             "star-spoon",
@@ -236,11 +230,11 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
             "bubble-shoes",
         ],
         BotKind::Kite => &[
-            "rainbow-candy-shot",
-            "cream-clockwork",
             "bubble-shoes",
-            "big-candy-jar",
+            "rainbow-candy-shot",
             "star-spoon",
+            "cream-clockwork",
+            "big-candy-jar",
         ],
         BotKind::Tank => &[
             "big-candy-jar",
@@ -257,19 +251,12 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
             "star-spoon",
         ],
         BotKind::ZoneControl => &[
-            "cream-clockwork",
             "rainbow-candy-shot",
-            "big-candy-jar",
             "star-spoon",
+            "cream-clockwork",
             "bubble-shoes",
         ],
-        BotKind::Route => &[
-            "bubble-shoes",
-            "rainbow-candy-shot",
-            "cream-clockwork",
-            "big-candy-jar",
-            "star-spoon",
-        ],
+        BotKind::Route => &["bubble-shoes", "star-spoon", "cream-clockwork"],
     }
 }
 
@@ -286,7 +273,7 @@ fn find_option(snapshot: &RunSnapshot, needles: &[&str]) -> Option<usize> {
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
     if let Some(enemy) = snapshot.visible_enemies.first() {
         let away = snapshot.player.position - enemy.position;
-        if away.length() < 90.0 {
+        if away.length() < 95.0 {
             return away.normalized_or_zero();
         }
     }
@@ -295,24 +282,24 @@ fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
 }
 
 fn coward_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 360.0, 14);
+    let avoidance = avoid_enemies(snapshot, 340.0, 14);
     if avoidance.length_squared() > 0.0 {
         return avoidance.normalized_or_zero();
     }
 
-    safe_pickup_direction(snapshot, 260.0).unwrap_or(Vec2::ZERO)
+    safe_pickup_direction(snapshot, 220.0)
+        .or_else(|| {
+            best_pickup_direction(snapshot).filter(|_| nearest_enemy_distance(snapshot) > 210.0)
+        })
+        .unwrap_or(Vec2::ZERO)
 }
 
 fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 300.0, 12);
+    let avoidance = avoid_enemies(snapshot, 68.0, 3);
     let pickup_direction = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
 
     if avoidance.length_squared() > 0.0 {
-        let orbit = nearest_enemy_away(snapshot)
-            .map(|away| Vec2::new(-away.y, away.x).normalized_or_zero())
-            .unwrap_or(Vec2::ZERO);
-        return (avoidance.normalized_or_zero() * 1.4 + orbit * 0.35 + pickup_direction * 0.35)
-            .normalized_or_zero();
+        return (avoidance.normalized_or_zero() * 0.14 + pickup_direction).normalized_or_zero();
     }
 
     if pickup_direction.length_squared() > 0.0 {
@@ -323,8 +310,8 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
 }
 
 fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
-    if snapshot.player.health / snapshot.player.max_health < 0.35 {
-        let avoidance = avoid_enemies(snapshot, 180.0, 8);
+    if snapshot.player.health / snapshot.player.max_health < 0.55 {
+        let avoidance = avoid_enemies(snapshot, 240.0, 10);
         if avoidance.length_squared() > 0.0 {
             return avoidance.normalized_or_zero();
         }
@@ -336,20 +323,20 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
 fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
     if let Some(boss) = &snapshot.boss {
         let to_boss = (boss.position - snapshot.player.position).normalized_or_zero();
-        let avoidance = avoid_enemies(snapshot, 130.0, 8);
-        return (to_boss * 1.1 + avoidance.normalized_or_zero() * 0.8).normalized_or_zero();
+        let avoidance = avoid_enemies(snapshot, 70.0, 5);
+        return (to_boss * 1.45 + avoidance.normalized_or_zero() * 0.35).normalized_or_zero();
     }
 
-    kite_movement(snapshot)
+    greedy_movement(snapshot)
 }
 
 fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 240.0, 10);
+    let avoidance = avoid_enemies(snapshot, 95.0, 6);
     if avoidance.length_squared() > 0.0 {
-        return avoidance.normalized_or_zero() * 0.7;
+        return avoidance.normalized_or_zero() * 0.27;
     }
 
-    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.55
+    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.22
 }
 
 fn best_pickup_direction(snapshot: &RunSnapshot) -> Option<Vec2> {
@@ -369,11 +356,12 @@ fn safe_pickup_direction(snapshot: &RunSnapshot, danger_radius: f32) -> Option<V
     })
 }
 
-fn nearest_enemy_away(snapshot: &RunSnapshot) -> Option<Vec2> {
+fn nearest_enemy_distance(snapshot: &RunSnapshot) -> f32 {
     snapshot
         .visible_enemies
         .first()
-        .map(|enemy| snapshot.player.position - enemy.position)
+        .map(|enemy| snapshot.player.position.distance(enemy.position))
+        .unwrap_or(f32::INFINITY)
 }
 
 fn avoid_enemies(snapshot: &RunSnapshot, radius: f32, limit: usize) -> Vec2 {
