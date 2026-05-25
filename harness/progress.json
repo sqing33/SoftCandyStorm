@@ -1,0 +1,71 @@
+{
+  "updated_at": "2026-05-25",
+  "phase": "goal-phase-2-runtime-prototype",
+  "completed": [
+    {
+      "id": "workspace_and_game_core",
+      "summary": "建立 Rust workspace、headless GameCore、固定 tick/seed 仿真、基础内容加载与校验"
+    },
+    {
+      "id": "base_demo_content_pack",
+      "summary": "建立 base_demo 内容包，覆盖角色、武器、被动、敌人、Boss、地图和波次"
+    },
+    {
+      "id": "rule_bot_policies",
+      "summary": "实现 Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 规则 Bot"
+    },
+    {
+      "id": "harness_batch_report",
+      "summary": "实现 validate-content、simulate、batch，以及 Markdown/JSON 报告与失败案例输出"
+    },
+    {
+      "id": "harness_bot_matrix",
+      "summary": "实现 matrix 命令，支持多 Bot 多 seed 汇总、门禁目标、失败案例和矩阵报告"
+    },
+    {
+      "id": "prototype_replay_records",
+      "summary": "Harness 报告写入原型 replay JSON，包含 RunConfig、content hash、action stream、升级选择和 final metrics"
+    },
+    {
+      "id": "strict_replay_runner",
+      "summary": "实现 replay 命令，严格校验 content hash、升级选项和 final metrics，可用于同版本 Replay 回归"
+    },
+    {
+      "id": "candidate_validation_pipeline",
+      "summary": "实现 validate-candidates 命令，将 generated_candidates 中的候选包校验后复制到 validated_candidates 或 rejected_content，并保留拒绝原因"
+    },
+    {
+      "id": "static_budget_gates",
+      "summary": "实现 budget-content 和候选池静态预算门禁，覆盖武器理论 DPS、敌人威胁/接触压力、波次压力和性能上限"
+    },
+    {
+      "id": "candidate_simulation_promotion",
+      "summary": "实现 simulate-candidates 命令，对 validated_candidates 执行 Bot 矩阵，通过后进入 simulated_candidates，未通过进入 repair_queue"
+    },
+    {
+      "id": "replay_regression_batch",
+      "summary": "实现 replay-batch 命令，递归扫描 replay JSON 并汇总 strict 回归结果；代表性矩阵样本 12/12 通过"
+    },
+    {
+      "id": "runtime_visualization_client",
+      "summary": "建立最小 Bevy Runtime 客户端，键盘输入转换为 PlayerAction，固定 tick 调用 GameCore，并通过 snapshot/events 绘制基础画面、HUD、升级提示和结算信息"
+    }
+  ],
+  "current_findings": [
+    {
+      "id": "boss_hunter_short_smoke_too_easy",
+      "summary": "180 秒 3 seed 矩阵烟测中 BossHunterBot 胜率为 100%，超过高技能规则 Bot 初始目标 45%-75%",
+      "report": "harness/reports/2026-05-25_matrix_smoke_001"
+    }
+  ],
+  "next_recommended": [
+    {
+      "id": "runtime_playability_pass",
+      "summary": "补齐 Runtime 可玩性细节：正式字体/基础素材、升级界面交互反馈、结算重开、音效占位和窗口内操作提示"
+    },
+    {
+      "id": "expand_replay_baseline_set",
+      "summary": "扩充代表性 replay 样本，覆盖经济流、防御流、Boss 流和失败 bug 复现局"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260525_002",
+  "category": "replay_regression",
+  "content_id": "base-demo",
+  "seed": 20000,
+  "bot": "CowardBot",
+  "time_seconds": 76.733,
+  "symptom": "strict replay 回放 CowardBot 代表样本时，第二次升级选项与记录不一致，后续样本也出现 final metrics 漂移",
+  "root_cause": "Replay action_stream 使用 0.001 容差压缩 movement 变化，丢失 CowardBot 的细微逐 tick 转向，导致长时间回放后玩家位置、拾取时机和升级选项漂移",
+  "fix": "movement_changed 改为使用 f32 bit-level 比较，strict replay 样本只在动作完全一致时才合并帧，并重新生成代表性 replay",
+  "validation": "重新运行 180 秒 12 局矩阵烟测后执行 replay-batch，12/12 strict replay 通过"
+}
