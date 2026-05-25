@@ -12,7 +12,8 @@ pub use meta::{
 
 use content::{
     BossDefinition, CharacterDefinition, EnemyDefinition, EnemyStatsDefinition, EventDefinition,
-    EvolutionDefinition, MapDefinition, WaveDefinition, WaveSegmentDefinition, WeaponDefinition,
+    EvolutionDefinition, MapDefinition, PassiveDefinition, WaveDefinition, WaveSegmentDefinition,
+    WeaponDefinition,
 };
 use rng::RunRng;
 use std::{cmp::Ordering, collections::BTreeSet};
@@ -401,19 +402,32 @@ impl GameCore {
             })?;
             weapons.push(WeaponState::from_definition(definition));
         }
+        let passive_ids = if config.starting_loadout.passives.is_empty() {
+            character.initial_loadout.passives.clone()
+        } else {
+            config.starting_loadout.passives.clone()
+        };
+        let mut player = PlayerState::from_definition(character);
+        let mut passives = Vec::new();
+        for passive_id in passive_ids {
+            let definition = content.passives.get(&passive_id).ok_or_else(|| {
+                ContentError::Validation(vec![format!("missing passive `{passive_id}`")])
+            })?;
+            apply_passive_definition(&mut player, &mut passives, &passive_id, definition);
+        }
 
         Ok(Self {
             config,
             map: MapRuntime::from_definition(map_definition),
             wave_id,
-            player: PlayerState::from_definition(character),
+            player,
             content,
             rng: RunRng::new(seed),
             tick: 0,
             time_seconds: 0.0,
             next_entity_id: 1,
             weapons,
-            passives: Vec::new(),
+            passives,
             evolutions: Vec::new(),
             evaluated_content_events: BTreeSet::new(),
             active_event_effects: Vec::new(),
@@ -1249,72 +1263,11 @@ impl GameCore {
         }
     }
 
-    fn add_or_level_passive(&mut self, id: &str, max_level: u32) {
-        if let Some(passive) = self.passives.iter_mut().find(|passive| passive.id == id) {
-            passive.level = (passive.level + 1).min(passive.max_level);
-        } else {
-            self.passives.push(PassiveState {
-                id: id.to_string(),
-                level: 1,
-                max_level,
-            });
-        }
-    }
-
     fn apply_passive(&mut self, id: &str) {
         let Some(definition) = self.content.passives.get(id).cloned() else {
             return;
         };
-        self.add_or_level_passive(id, definition.max_level);
-        for modifier in definition.stat_modifiers {
-            match (modifier.stat.as_str(), modifier.mode.as_str()) {
-                ("max_health", "add") => {
-                    self.player.max_health += modifier.value_per_level;
-                    self.player.health =
-                        (self.player.health + modifier.value_per_level).min(self.player.max_health);
-                }
-                ("move_speed", "add") => {
-                    self.player.move_speed += modifier.value_per_level;
-                }
-                ("pickup_radius", "add") => {
-                    self.player.pickup_radius += modifier.value_per_level;
-                }
-                ("damage_multiplier", "add") => {
-                    self.player.damage_multiplier += modifier.value_per_level;
-                }
-                ("cooldown_multiplier", "add") => {
-                    self.player.cooldown_multiplier += modifier.value_per_level;
-                }
-                ("cooldown_multiplier", "multiply") => {
-                    self.player.cooldown_multiplier *= modifier.value_per_level;
-                }
-                ("xp_multiplier", "add") => {
-                    self.player.xp_multiplier += modifier.value_per_level;
-                }
-                ("xp_multiplier", "multiply") => {
-                    self.player.xp_multiplier *= modifier.value_per_level;
-                }
-                ("damage_reduction", "add") => {
-                    self.player.damage_reduction += modifier.value_per_level;
-                }
-                ("damage_reduction", "multiply") => {
-                    self.player.damage_reduction *= modifier.value_per_level;
-                }
-                ("projectile_size", "add") => {
-                    self.player.projectile_size_multiplier += modifier.value_per_level;
-                }
-                ("projectile_size", "multiply") => {
-                    self.player.projectile_size_multiplier *= modifier.value_per_level;
-                }
-                ("effect_duration", "add") => {
-                    self.player.effect_duration_multiplier += modifier.value_per_level;
-                }
-                ("effect_duration", "multiply") => {
-                    self.player.effect_duration_multiplier *= modifier.value_per_level;
-                }
-                _ => {}
-            }
-        }
+        apply_passive_definition(&mut self.player, &mut self.passives, id, &definition);
     }
 
     fn find_weapon_target_position(&mut self, mode: &str, range: f32) -> Option<Vec2> {
@@ -1489,6 +1442,72 @@ impl GameCore {
 
 fn xp_required(level: u32) -> f32 {
     (12.0 + level as f32 * 8.0 + (level as f32).powf(1.35) * 5.0).floor()
+}
+
+fn apply_passive_definition(
+    player: &mut PlayerState,
+    passives: &mut Vec<PassiveState>,
+    id: &str,
+    definition: &PassiveDefinition,
+) {
+    if let Some(passive) = passives.iter_mut().find(|passive| passive.id == id) {
+        passive.level = (passive.level + 1).min(passive.max_level);
+    } else {
+        passives.push(PassiveState {
+            id: id.to_string(),
+            level: 1,
+            max_level: definition.max_level,
+        });
+    }
+
+    for modifier in &definition.stat_modifiers {
+        match (modifier.stat.as_str(), modifier.mode.as_str()) {
+            ("max_health", "add") => {
+                player.max_health += modifier.value_per_level;
+                player.health = (player.health + modifier.value_per_level).min(player.max_health);
+            }
+            ("move_speed", "add") => {
+                player.move_speed += modifier.value_per_level;
+            }
+            ("pickup_radius", "add") => {
+                player.pickup_radius += modifier.value_per_level;
+            }
+            ("damage_multiplier", "add") => {
+                player.damage_multiplier += modifier.value_per_level;
+            }
+            ("cooldown_multiplier", "add") => {
+                player.cooldown_multiplier += modifier.value_per_level;
+            }
+            ("cooldown_multiplier", "multiply") => {
+                player.cooldown_multiplier *= modifier.value_per_level;
+            }
+            ("xp_multiplier", "add") => {
+                player.xp_multiplier += modifier.value_per_level;
+            }
+            ("xp_multiplier", "multiply") => {
+                player.xp_multiplier *= modifier.value_per_level;
+            }
+            ("damage_reduction", "add") => {
+                player.damage_reduction += modifier.value_per_level;
+            }
+            ("damage_reduction", "multiply") => {
+                player.damage_reduction *= modifier.value_per_level;
+            }
+            ("projectile_size", "add") => {
+                player.projectile_size_multiplier += modifier.value_per_level;
+            }
+            ("projectile_size", "multiply") => {
+                player.projectile_size_multiplier *= modifier.value_per_level;
+            }
+            ("effect_duration", "add") => {
+                player.effect_duration_multiplier += modifier.value_per_level;
+            }
+            ("effect_duration", "multiply") => {
+                player.effect_duration_multiplier *= modifier.value_per_level;
+            }
+            _ => {}
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -1989,6 +2008,24 @@ mod tests {
         assert!(core.player.damage_reduction > 0.0);
         assert!(core.player.projectile_size_multiplier > 1.0);
         assert!(core.player.effect_duration_multiplier > 1.0);
+    }
+
+    #[test]
+    fn reset_applies_starting_passive_loadout() {
+        let core = GameCore::reset(RunConfig {
+            starting_loadout: StartingLoadout {
+                weapons: vec!["rainbow-candy-shot".to_string()],
+                passives: vec!["big-candy-jar".to_string(), "nonstick-apron".to_string()],
+            },
+            ..RunConfig::default()
+        });
+
+        assert!(core
+            .passives
+            .iter()
+            .any(|passive| passive.id == "big-candy-jar"));
+        assert!(core.snapshot().player.max_health > 120.0);
+        assert!(core.player.damage_reduction > 0.0);
     }
 
     #[test]
