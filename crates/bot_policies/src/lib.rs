@@ -210,6 +210,41 @@ mod tests {
     }
 
     #[test]
+    fn boss_hunter_uses_wider_avoidance_on_final_map() {
+        let mut final_map = empty_snapshot();
+        final_map.map.map_id = "cracked-star-jar".to_string();
+        final_map.boss = Some(game_core::BossSnapshot {
+            entity_id: 99,
+            boss_id: "cracked-star-jar-core".to_string(),
+            health: 1000.0,
+            max_health: 1000.0,
+            position: Vec2::new(90.0, 0.0),
+        });
+        final_map.visible_enemies.push(game_core::EnemySnapshot {
+            entity_id: 99,
+            enemy_id: "cracked-star-jar-core".to_string(),
+            position: Vec2::new(70.0, 0.0),
+            velocity: Vec2::ZERO,
+            health: 1000.0,
+            max_health: 1000.0,
+            radius: 64.0,
+            threat: 25.0,
+            behavior: game_core::EnemyBehavior::Chase,
+            is_boss: true,
+            is_elite: false,
+        });
+
+        let mut default_map = final_map.clone();
+        default_map.map.map_id = "soda-creek".to_string();
+
+        let mut final_bot = BotController::new(BotKind::BossHunter, 5);
+        let mut default_bot = BotController::new(BotKind::BossHunter, 5);
+
+        assert!(final_bot.next_action(&final_map).movement.x < 0.0);
+        assert_eq!(default_bot.next_action(&default_map).movement, Vec2::ZERO);
+    }
+
+    #[test]
     fn tank_prioritizes_cooldown_until_health_is_low() {
         let mut snapshot = empty_snapshot();
         snapshot.upgrade_options = vec![
@@ -275,7 +310,13 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
         1.0
     };
 
-    if health_ratio < defense_threshold(kind) {
+    let defense_threshold = if snapshot.map.map_id == "cracked-star-jar" && kind == BotKind::Tank {
+        0.35
+    } else {
+        defense_threshold(kind)
+    };
+
+    if health_ratio < defense_threshold {
         if let Some(index) = find_option(snapshot, &["big-candy-jar", "defense", "health"]) {
             return index;
         }
@@ -403,7 +444,12 @@ fn coward_movement(snapshot: &RunSnapshot) -> Vec2 {
 }
 
 fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 68.0, 3);
+    let avoidance_radius = if snapshot.map.map_id == "cracked-star-jar" {
+        55.0
+    } else {
+        68.0
+    };
+    let avoidance = avoid_enemies(snapshot, avoidance_radius, 3);
     let pickup_direction = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
 
     if avoidance.length_squared() > 0.0 {
@@ -419,14 +465,24 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
 
 fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let health_ratio = snapshot.player.health / snapshot.player.max_health;
-    if health_ratio < 0.70 {
+    let retreat_threshold = if snapshot.map.map_id == "cracked-star-jar" {
+        0.55
+    } else {
+        0.70
+    };
+    if health_ratio < retreat_threshold {
         let avoidance = avoid_enemies(snapshot, 250.0, 10);
         if avoidance.length_squared() > 0.0 {
             return avoidance.normalized_or_zero();
         }
     }
 
-    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.8
+    let pickup_weight = if snapshot.map.map_id == "cracked-star-jar" {
+        0.45
+    } else {
+        0.8
+    };
+    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * pickup_weight
 }
 
 fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
@@ -441,7 +497,12 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         } else {
             Vec2::ZERO
         };
-        let avoidance = avoid_enemies(snapshot, 60.0, 6);
+        let avoidance_radius = if snapshot.map.map_id == "cracked-star-jar" {
+            95.0
+        } else {
+            60.0
+        };
+        let avoidance = avoid_enemies(snapshot, avoidance_radius, 6);
         return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.85).normalized_or_zero();
     }
 

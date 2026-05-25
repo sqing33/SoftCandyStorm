@@ -1037,7 +1037,7 @@ impl ContentPack {
                 "裂星糖罐核心",
                 &["boss", "final", "phase-shift", "storm"],
                 "裂星糖罐深处的风暴核心，会按阶段释放不同口味的糖果风暴。",
-                2200.0,
+                2400.0,
                 24.0,
                 26.0,
                 64.0,
@@ -1045,9 +1045,9 @@ impl ContentPack {
                 1200,
                 &[
                     (1.0, &["sour_phase_storm", "sweet_phase_shield"][..]),
-                    (0.66, &["spicy_phase_burst", "bubble_phase_barrage"][..]),
+                    (0.5, &["spicy_phase_burst", "bubble_phase_barrage"][..]),
                     (
-                        0.33,
+                        0.25,
                         &["multi_flavor_storm", "phase_shift_vulnerability"][..],
                     ),
                 ],
@@ -2844,9 +2844,9 @@ fn cracked_star_jar_wave_segments() -> Vec<WaveSegmentDefinition> {
         wave_segment(
             300.0,
             480.0,
-            840.0,
+            800.0,
             3,
-            82,
+            90,
             &[
                 ("sandwich-cookie-creep", 0.22),
                 ("spicy-gummy", 0.18),
@@ -2860,7 +2860,7 @@ fn cracked_star_jar_wave_segments() -> Vec<WaveSegmentDefinition> {
         wave_segment(
             480.0,
             600.0,
-            710.0,
+            680.0,
             3,
             105,
             &[

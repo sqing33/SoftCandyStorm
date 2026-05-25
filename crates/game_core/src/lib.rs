@@ -2336,13 +2336,23 @@ fn boss_ability_actions(
             0.68,
             0.0,
         )],
-        "sour_phase_storm" => vec![boss_summon("sour-gummy", 2, player_position)],
-        "spicy_phase_burst" => vec![boss_summon("spicy-gummy", 3, boss_position)],
-        "bubble_phase_barrage" => vec![boss_summon("soda-bubble", 3, player_position)],
-        "multi_flavor_storm" => vec![
+        "sour_phase_storm" => vec![
             boss_summon("sour-gummy", 2, player_position),
-            boss_summon("spicy-gummy", 2, boss_position),
-            boss_hazard(player_position, 2, 180.0, 72.0, 2.4, 0.60, 0.0),
+            boss_hazard(player_position, 2, 150.0, 84.0, 2.4, 0.70, 0.0),
+        ],
+        "spicy_phase_burst" => vec![
+            boss_summon("spicy-gummy", 4, player_position),
+            boss_hazard(player_position, 2, 120.0, 76.0, 2.4, 0.66, 4.0),
+        ],
+        "bubble_phase_barrage" => vec![
+            boss_summon("soda-bubble", 5, player_position),
+            boss_hazard(player_position, 1, 0.0, 96.0, 3.0, 0.58, 7.0),
+        ],
+        "multi_flavor_storm" => vec![
+            boss_summon("sour-gummy", 3, player_position),
+            boss_summon("spicy-gummy", 3, player_position),
+            boss_summon("soda-bubble", 3, player_position),
+            boss_hazard(player_position, 3, 160.0, 90.0, 3.4, 0.55, 12.0),
         ],
         _ => Vec::new(),
     }
