@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_016",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "training 12345, eval 30000-30004",
+  "bot": "PPO observation v2 high-pressure safety_delta train300 50k policy",
+  "time_seconds": 60.0,
+  "symptom": "加入 safety_delta 风险变化奖励并重训 high-pressure 300 秒 PPO 后，60 秒 deterministic 评估胜率为 100%，但动作 6 占 90.74%，归一化动作熵只有 0.1982，gate 判定为 trained_needs_action_bias_repair。Stochastic 诊断同一模型动作 6 降到 25.57%、归一化动作熵 0.9007，说明概率分布仍有可用动作质量，但 deterministic argmax 不可直接作为测试 Bot。",
+  "root_cause": "safety_delta 奖励没有解决 PPO deterministic argmax 对单一移动方向的偏置。当前模型的平均动作概率并不极端，但动作 6 长期保持最高概率，deterministic 评估会持续选择该动作并触发高额 action_repeat 惩罚。训练时的采样行为和评估时的 argmax 行为存在明显落差。",
+  "fix": "不要推进该模型的 deterministic 300 秒规则 Bot 对比。下一步先做 seeded stochastic high-pressure 300 秒诊断，确认该 policy 是否只是不适合 deterministic 选择；如果项目仍要求 deterministic RL Bot，则需要继续修训练目标，例如加入更直接的位移多样性约束、调整 action_repeat 信号或训练后温度/策略选择方案。",
+  "validation": "本轮训练报告见 harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_safety_delta_train300_50k_training_001/summary.md。修复后必须先通过 60 秒动作分布 gate，再进入 high-pressure 10 seed / 300 秒聚合对比；若使用 stochastic policy，也必须记录固定 seed、动作熵、胜率和与规则 Bot 的同条件对比。"
+}
