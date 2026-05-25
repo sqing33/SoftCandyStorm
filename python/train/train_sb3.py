@@ -91,12 +91,13 @@ def dry_run(config, algorithm, steps):
         env.close()
 
 
-def train(config, algorithm):
+def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seconds=None):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
     from stable_baselines3 import DQN, PPO
 
     selected = algorithm_config(config, algorithm)
+    train_steps = total_timesteps or selected["total_timesteps"]
     env = build_env(config)
     model_dir = Path(config["outputs"]["model_dir"])
     report_dir = Path(config["outputs"]["report_dir"])
@@ -107,13 +108,30 @@ def train(config, algorithm):
     ignored_keys = {"enabled", "policy", "total_timesteps"}
     kwargs = {key: value for key, value in selected.items() if key not in ignored_keys}
     started_at = datetime.now(timezone.utc).isoformat()
-    model = model_class(selected["policy"], env, verbose=1, **kwargs)
-    model.learn(total_timesteps=selected["total_timesteps"])
-    completed_at = datetime.now(timezone.utc).isoformat()
-
     model_path = model_dir / f"{algorithm}_phase1_movement_survival.zip"
-    model.save(model_path)
-    env.close()
+    try:
+        model = model_class(selected["policy"], env, verbose=1, **kwargs)
+        model.learn(total_timesteps=train_steps)
+        completed_at = datetime.now(timezone.utc).isoformat()
+        model.save(model_path)
+    finally:
+        env.close()
+
+    evaluation = evaluate_model(
+        model,
+        config,
+        episodes=eval_episodes or config["evaluation"]["episodes"],
+        seconds=eval_seconds or config["evaluation"]["seconds"],
+    )
+    known_exploit_notes = known_exploits_from_evaluation(evaluation)
+    evaluation_path = report_dir / f"{algorithm}_evaluation_report.json"
+    exploit_path = report_dir / f"{algorithm}_known_exploits.json"
+    evaluation_path.write_text(
+        json.dumps(evaluation, indent=2) + "\n", encoding="utf-8"
+    )
+    exploit_path.write_text(
+        json.dumps(known_exploit_notes, indent=2) + "\n", encoding="utf-8"
+    )
 
     metadata = {
         "model_version": 1,
@@ -127,7 +145,9 @@ def train(config, algorithm):
         "reward_config": "prototype reward in game_harness gym_reward",
         "started_at": started_at,
         "completed_at": completed_at,
-        "known_exploits": [],
+        "evaluation_path": str(evaluation_path),
+        "known_exploits_path": str(exploit_path),
+        "known_exploits": known_exploit_notes["known_exploits"],
     }
     metadata_path = model_dir / config["outputs"]["metadata_file"]
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
@@ -136,9 +156,11 @@ def train(config, algorithm):
         "algorithm": algorithm,
         "model_path": str(model_path),
         "metadata_path": str(metadata_path),
+        "evaluation_path": str(evaluation_path),
+        "known_exploits_path": str(exploit_path),
         "dependency_status": dependency_status(),
         "training": {
-            "total_timesteps": selected["total_timesteps"],
+            "total_timesteps": train_steps,
             "seed": config["environment"]["seed"],
             "seconds": config["environment"]["seconds"],
             "tick_rate": config["environment"]["tick_rate"],
@@ -146,11 +168,115 @@ def train(config, algorithm):
             "started_at": started_at,
             "completed_at": completed_at,
         },
-        "gate_decision": "needs_evaluation",
+        "evaluation": evaluation["summary"],
+        "known_exploits": known_exploit_notes["known_exploits"],
+        "limitations": known_exploit_notes["limitations"],
+        "gate_decision": "trained_needs_rule_bot_comparison",
     }
     report_path = report_dir / f"{algorithm}_training_report.json"
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
+
+
+def evaluate_model(model, config, episodes, seconds):
+    seed_start = config["evaluation"]["seed_start"]
+    max_steps = int(seconds * config["environment"]["tick_rate"]) + 10
+    episode_reports = []
+    total_reward = 0.0
+    env = None
+    try:
+        env = build_env(config, seed=seed_start, seconds=seconds)
+        for index in range(episodes):
+            seed = seed_start + index
+            observation, info = env.reset(seed=seed, options={"seconds": seconds})
+            terminated = False
+            truncated = False
+            steps = 0
+            episode_reward = 0.0
+            while not terminated and not truncated and steps < max_steps:
+                action, _state = model.predict(observation, deterministic=True)
+                observation, reward, terminated, truncated, info = env.step(action_to_int(action))
+                episode_reward += reward
+                steps += 1
+
+            total_reward += episode_reward
+            terminal = info.get("terminal") or {}
+            episode_reports.append(
+                {
+                    "seed": seed,
+                    "steps": steps,
+                    "reward": round(episode_reward, 4),
+                    "terminated": terminated,
+                    "truncated": truncated,
+                    "time_seconds": info["time_seconds"],
+                    "terminal_kind": terminal.get("kind"),
+                    "terminal_reason": terminal.get("reason"),
+                    "level": info["level"],
+                    "kills": info["kills"],
+                    "xp_collected": info["xp_collected"],
+                    "damage_taken": info["damage_taken"],
+                }
+            )
+    finally:
+        if env is not None:
+            env.close()
+
+    summary = summarize_evaluation(episode_reports, total_reward)
+    return {
+        "report_version": 1,
+        "status": "evaluated",
+        "phase": config["phase"],
+        "episodes": episode_reports,
+        "summary": summary,
+    }
+
+
+def action_to_int(action):
+    if hasattr(action, "item"):
+        return int(action.item())
+    if isinstance(action, (list, tuple)):
+        return int(action[0])
+    return int(action)
+
+
+def summarize_evaluation(episodes, total_reward):
+    count = max(1, len(episodes))
+    wins = sum(1 for episode in episodes if episode["terminal_kind"] == "victory")
+    return {
+        "episodes": len(episodes),
+        "win_rate": round(wins / count, 4),
+        "average_survival_seconds": round(
+            sum(episode["time_seconds"] for episode in episodes) / count, 4
+        ),
+        "average_level": round(sum(episode["level"] for episode in episodes) / count, 4),
+        "average_kills": round(sum(episode["kills"] for episode in episodes) / count, 4),
+        "average_reward": round(total_reward / count, 4),
+        "damage_taken_average": round(
+            sum(episode["damage_taken"] for episode in episodes) / count, 4
+        ),
+    }
+
+
+def known_exploits_from_evaluation(evaluation):
+    summary = evaluation["summary"]
+    known_exploits = []
+    limitations = [
+        "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+        "Compare against rule Bot matrix before using an RL policy to judge new content.",
+    ]
+    if summary["win_rate"] >= 1.0 and summary["average_kills"] <= 1.0:
+        known_exploits.append(
+            {
+                "id": "possible_passive_survival_policy",
+                "summary": "Policy can finish the short evaluation with almost no kills; inspect whether the reward overvalues passive survival.",
+                "severity": "watch",
+            }
+        )
+    return {
+        "report_version": 1,
+        "known_exploits": known_exploits,
+        "limitations": limitations,
+    }
 
 
 def write_report(path, payload):
@@ -177,6 +303,9 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--check-deps", action="store_true")
     parser.add_argument("--steps", type=int, default=90)
+    parser.add_argument("--timesteps", type=int, default=None)
+    parser.add_argument("--eval-episodes", type=int, default=None)
+    parser.add_argument("--eval-seconds", type=float, default=None)
     parser.add_argument("--report", default=None)
     parser.add_argument("--copy-template", default=None)
     args = parser.parse_args()
@@ -197,7 +326,16 @@ def main():
         write_report(args.report, dry_run(config, args.algorithm, args.steps))
         return
 
-    write_report(args.report, train(config, args.algorithm))
+    write_report(
+        args.report,
+        train(
+            config,
+            args.algorithm,
+            total_timesteps=args.timesteps,
+            eval_episodes=args.eval_episodes,
+            eval_seconds=args.eval_seconds,
+        ),
+    )
 
 
 if __name__ == "__main__":

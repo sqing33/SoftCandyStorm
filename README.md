@@ -39,6 +39,7 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seconds 90 --demo-input --simulation-speed 8 --playtest-report harness/telemetry/local/runtime_demo_input_001.json --player-skill demo-bot --capture-interval 1 --auto-exit-after-report
 python python/gym_env/smoke_test.py
 python python/train/train_sb3.py --dry-run --algorithm dqn --steps 90
+python python/train/train_sb3.py --algorithm dqn --timesteps 128 --eval-episodes 2 --eval-seconds 5 --report harness/reports/local_rl_training/dqn_training_smoke.json
 ```
 
 带 `--report-dir` 的批量命令会输出 `summary.md`、`metrics.json`、门禁失败记录，以及原型 replay JSON。
@@ -57,6 +58,7 @@ python python/train/train_sb3.py --dry-run --algorithm dqn --steps 90
 人工试玩前先按 `harness/playtest/runtime_manual_review_pack.md` 准备 9 局最小覆盖矩阵，并使用 `harness/playtest/runtime_manual_review_template.json` 统一评分、标签和门禁结论。
 `python/gym_env` 提供第一版 Gymnasium 包装器，通过 `game_harness gym-bridge` JSONL 进程调用同一个 headless GameCore；当前用于 RL Phase 1 的 9 方向移动训练冒烟，不控制窗口，也不替代规则 Bot 基线。
 `python/train` 提供 Stable-Baselines3 的 DQN/PPO 训练配置和入口；当前可用 `--check-deps`、`--dry-run` 验证环境，真实训练需要先安装 `gymnasium`、`numpy` 和 `stable-baselines3`。
+`python/train/train_sb3.py` 真实训练完成后会写模型、metadata、training report、evaluation report 和 known exploit notes；`--timesteps`、`--eval-episodes`、`--eval-seconds` 可用于缩小 smoke，但 RL Bot 仍必须先和规则 Bot 矩阵对比，不能直接作为好玩或上线证明。
 
 素材候选后处理入口：
 

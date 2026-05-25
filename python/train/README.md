@@ -18,7 +18,7 @@ python3 python/train/train_sb3.py --check-deps
 Real training requires:
 
 ```bash
-python3 -m pip install gymnasium numpy stable-baselines3
+python3 -m pip install -r python/train/requirements.txt
 ```
 
 ## Dry Run
@@ -36,4 +36,10 @@ python3 python/train/train_sb3.py --algorithm dqn
 python3 python/train/train_sb3.py --algorithm ppo
 ```
 
-Do not record RL Bot training as complete until a model file, metadata file, evaluation report, and known exploit notes exist.
+For a minimal smoke, override the training and evaluation size:
+
+```bash
+python3 python/train/train_sb3.py --algorithm dqn --timesteps 128 --eval-episodes 2 --eval-seconds 5 --report harness/reports/local_rl_training/dqn_training_smoke.json
+```
+
+`train_sb3.py` writes the model zip, model metadata, a training report, an evaluation report, and known exploit notes. Do not record RL Bot training as complete until all of those files exist and the policy has been compared against rule Bot baselines.

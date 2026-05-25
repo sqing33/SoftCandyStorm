@@ -167,6 +167,10 @@
       "summary": "增加 Stable-Baselines3 DQN/PPO 训练配置、训练入口、依赖检查、dry-run 和评估报告模板；当前环境缺少训练依赖，已验证配置与 bridge dry-run"
     },
     {
+      "id": "rl_training_evaluation_outputs",
+      "summary": "扩展 `python/train/train_sb3.py`，真实训练可覆盖 timesteps/eval 规模并写模型 metadata、training report、evaluation report 和 known exploit notes"
+    },
+    {
       "id": "candidate_playtest_promotion",
       "summary": "实现 simulated_candidates 到 playtest_candidates 的人工试玩候选推进门禁，写入 playtest_gate 并验证不会进入 accepted_content"
     },
@@ -244,8 +248,8 @@
     },
     {
       "id": "rl_training_not_started",
-      "summary": "RL 训练配置和 DQN/PPO dry-run 入口已准备完成，但当前 Python 环境缺少 `gymnasium`、`numpy`、`stable_baselines3`，尚未产生真实模型；当前只证明训练入口，不证明 RL Bot 能力。",
-      "report": "harness/reports/2026-05-25_rl_training_smoke_config_001/summary.md"
+      "summary": "RL 训练配置、dry-run 和训练后评估输出已准备完成，但系统 Python 仍缺少 `gymnasium`、`numpy`、`stable_baselines3`；一次 `uv` 临时 SB3/Torch 环境尝试因下载耗时过长中止，尚未产生真实模型。",
+      "report": "harness/reports/2026-05-25_rl_training_eval_path_001/summary.md"
     }
   ],
   "next_recommended": [
