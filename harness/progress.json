@@ -461,6 +461,10 @@
     {
       "id": "rl_ppo_warm_start_safety_delta_high_pressure_watch",
       "summary": "Warm-start safety_delta 模型在 high-pressure 3 地图 10 seed / 300 秒对比中全部脱离 0% 胜率，平均胜率 13.33%、平均存活 196.3743 秒；但 soda-creek 与 cracked-star-jar 仍低于最强规则 Bot 一半，gate 为 watch"
+    },
+    {
+      "id": "rl_training_eval_map_available",
+      "summary": "SB3 训练入口在训练模式下支持用 --map-id 指定训练后评估地图，避免 high-pressure 或 curriculum 实验继续默认用 frosting-grassland 作为短局动作 gate"
     }
   ],
   "current_findings": [
@@ -733,6 +737,11 @@
       "id": "rl_ppo_warm_start_safety_delta_high_pressure_watch",
       "summary": "Warm-start + safety_delta 是目前 RL 方向的正向信号：caramel-workshop 从 0% 到 10%，cracked-star-jar 从 10% 到 20%，但 soda-creek 平均存活退到 136.8586 秒，仍需中后期续航修复。",
       "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_warm_start_safety_delta_plus20k_comparison_001/summary.md"
+    },
+    {
+      "id": "rl_training_eval_map_available",
+      "summary": "训练报告现在会记录 evaluation_map_id；后续 soda-focused warm-start 可以直接用 --map-id soda-creek 验证短局 gate，不再误读默认地图。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "next_recommended": [

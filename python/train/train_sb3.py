@@ -198,6 +198,7 @@ def train(
     train_map_preset=None,
     algorithm_overrides=None,
     eval_deterministic=True,
+    eval_map_id=None,
     model_in=None,
 ):
     require_dependencies()
@@ -268,6 +269,7 @@ def train(
         config,
         episodes=eval_episodes or config["evaluation"]["episodes"],
         seconds=eval_seconds or config["evaluation"]["seconds"],
+        map_id=eval_map_id,
         deterministic=eval_deterministic,
     )
     known_exploit_notes = known_exploits_from_evaluation(evaluation)
@@ -301,6 +303,7 @@ def train(
         "algorithm_parameters": algorithm_parameters,
         "algorithm_parameters_source": algorithm_parameters_source,
         "evaluation_policy": evaluation["action_selection"],
+        "evaluation_map_id": evaluation["map_id"],
         "started_at": started_at,
         "completed_at": completed_at,
         "evaluation_path": str(evaluation_path),
@@ -344,6 +347,7 @@ def train(
                 str(warm_start_metadata_path) if warm_start_metadata_path else None
             ),
             "evaluation_policy": evaluation["action_selection"],
+            "evaluation_map_id": evaluation["map_id"],
         },
         "evaluation": evaluation["summary"],
         "known_exploits": known_exploit_notes["known_exploits"],
@@ -1359,6 +1363,7 @@ def main():
             train_map_preset=train_map_preset,
             algorithm_overrides=algorithm_overrides,
             eval_deterministic=not args.eval_stochastic,
+            eval_map_id=args.map_id,
             model_in=args.model_in,
         ),
     )

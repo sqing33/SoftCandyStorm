@@ -67,6 +67,12 @@ Use `--train-seconds` to change training episode length without changing evaluat
 python3 python/train/train_sb3.py --algorithm ppo --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
 ```
 
+In training mode, pass `--map-id <id>` to choose the post-training evaluation map. This keeps short action-gate checks aligned with focused high-pressure or curriculum experiments instead of always falling back to the config default map.
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60 --map-id soda-creek
+```
+
 Use `--model-in <path>` to continue training from a saved SB3 model and write the continued policy to `--model-out <path>`. Warm-start runs load adjacent `*_metadata.json` when available so reports can preserve the source model parameters. Algorithm override flags such as `--ent-coef` are intentionally blocked with `--model-in` until the runner can safely update loaded SB3 schedules.
 
 ```bash
