@@ -1,6 +1,6 @@
 # Content Candidate Validation
 
-- Root: `harness/generated_candidates/2026-05-26_phase4_roster_gap_candidates`
+- Root: `harness/generated_candidate_patches`
 - Decision: `content_candidates_valid`
 - Candidate count: 1
 - Content count: 8

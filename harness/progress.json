@@ -185,13 +185,18 @@
     },
     {
       "id": "phase4_roster_gap_content_candidates",
-      "summary": "为 Phase 4 名录数量缺口生成局部内容候选，新增 4 个被动和 4 个普通敌人候选，全部保留在 generated_candidates；纯 Python 局部候选校验 1 批 8 项通过，尚未进入正式 Harness validate-candidates、Bot 仿真或人工审查。",
+      "summary": "为 Phase 4 名录数量缺口生成局部内容候选补丁，新增 4 个被动和 4 个普通敌人候选，全部保留在 generated_candidate_patches；纯 Python 局部候选校验 1 批 8 项通过，尚未进入正式 Harness validate-candidates、Bot 仿真或人工审查。",
       "report": "harness/reports/2026-05-26_phase4_roster_candidate_validation_001/summary.md"
     },
     {
       "id": "content_candidate_pack_materializer",
       "summary": "增加纯 Python 内容候选包物化工具，可把 generated_candidate_patches 中的局部候选叠加到 content/base_demo，生成完整 generated_candidates 内容包，等待正式 Harness validate-candidates。",
       "report": "tools/materialize_content_candidate_pack.py"
+    },
+    {
+      "id": "phase4_roster_gap_full_pack_materialized",
+      "summary": "将 Phase 4 名录缺口补丁物化为完整 generated_candidates 内容包，包含 base_demo 全量内容和新增 4 个被动、4 个敌人候选；物化后内容计数为角色 5、武器 12、被动 12、进化 8、敌人 12、Boss 6、波次 6、地图 6、事件 5。",
+      "report": "harness/reports/2026-05-26_phase4_roster_materialization_001/summary.md"
     },
     {
       "id": "python_gym_bridge_smoke",
