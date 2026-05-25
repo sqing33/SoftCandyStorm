@@ -417,6 +417,10 @@
     {
       "id": "rl_multimap_comparison_entrypoint",
       "summary": "训练入口的 --compare-rule-bots 增加 --compare-map-preset 聚合模式，可一次输出 all-base-demo、high-pressure 或 stable-open 的多地图 policy/rule Bot 对比报告"
+    },
+    {
+      "id": "rl_ppo_observation_v2_high_pressure_train300_50k_training",
+      "summary": "使用 observation v2、high-pressure 地图预设和 300 秒训练 episode 重训 PPO 50000 requested timesteps；60 秒 deterministic 评估胜率 100%、最大动作 54.50%、归一化动作熵 0.4614，已进入高压地图 300 秒对比阶段"
     }
   ],
   "current_findings": [
@@ -634,6 +638,11 @@
       "id": "rl_multimap_comparison_available",
       "summary": "SB3 训练入口现在能用 --compare-rule-bots --compare-map-preset 生成聚合多地图对比报告，报告会汇总每张地图的 policy 胜率、规则 Bot 胜率、动作分布、repair_maps 和 multimap_comparison gate。",
       "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_ppo_observation_v2_high_pressure_train300_action_gate",
+      "summary": "Observation v2 high-pressure 300 秒训练 episode 的 50k PPO 模型通过 60 秒短局动作分布 gate：最大动作占比 54.50%、归一化动作熵 0.4614；该结论只允许进入 300 秒规则 Bot 对比，不代表跨地图泛化已修复。",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_train300_50k_training_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -643,7 +652,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "Observation v2 50k PPO 仍无法通过 300 秒跨地图对比；下一步可用 --train-seconds 300 与 --train-map-preset high-pressure 跑定向训练，再评估是否继续加入 Boss/hazard/受伤前兆 reward shaping"
+      "summary": "Observation v2 high-pressure 300 秒训练 episode 的 50k PPO 已通过 60 秒短局动作 gate；下一步必须用 --compare-rule-bots --compare-map-preset high-pressure 跑 10 seed / 300 秒对比，再判断是否继续加入 Boss/hazard/受伤前兆 reward shaping"
     }
   ]
 }
