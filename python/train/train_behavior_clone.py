@@ -178,7 +178,14 @@ def train_behavior_clone(dataset, args):
         nn.Linear(args.hidden_size, dataset["action_count"]),
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    loss_fn = nn.CrossEntropyLoss()
+    class_weight_values, class_weight_report = build_class_weights(
+        actions[train_indices],
+        dataset["action_count"],
+        args.class_weighting,
+        np,
+        torch,
+    )
+    loss_fn = nn.CrossEntropyLoss(weight=class_weight_values)
     history = []
     started_at = datetime.now(timezone.utc).isoformat()
 
@@ -219,6 +226,8 @@ def train_behavior_clone(dataset, args):
             "observation_len": dataset["observation_len"],
             "action_count": dataset["action_count"],
             "hidden_size": args.hidden_size,
+            "class_weighting": args.class_weighting,
+            "class_weights": class_weight_report,
             "state_dict": model.state_dict(),
             "dataset_paths": dataset["paths"],
         },
@@ -240,6 +249,8 @@ def train_behavior_clone(dataset, args):
             "learning_rate": args.learning_rate,
             "hidden_size": args.hidden_size,
             "validation_split": args.validation_split,
+            "class_weighting": args.class_weighting,
+            "class_weights": class_weight_report,
             "train_samples": int(len(train_indices)),
             "validation_samples": int(len(validation_indices)),
         },
@@ -251,6 +262,20 @@ def train_behavior_clone(dataset, args):
             "A cloned policy must still pass Gym evaluation and rule Bot comparison before it can become an RL test Bot candidate.",
         ],
     }
+
+
+def build_class_weights(actions, action_count, mode, np_module, torch_module):
+    if mode == "none":
+        return None, [1.0 for _ in range(action_count)]
+    counts = np_module.bincount(actions, minlength=action_count).astype(np_module.float32)
+    weights = np_module.zeros(action_count, dtype=np_module.float32)
+    present = counts > 0.0
+    if present.any():
+        weights[present] = counts[present].sum() / (present.sum() * counts[present])
+    return (
+        torch_module.from_numpy(weights),
+        [round(float(weight), 6) for weight in weights.tolist()],
+    )
 
 
 class BehaviorClonePolicy:
@@ -348,6 +373,12 @@ def main():
     parser.add_argument("--hidden-size", type=int, default=128)
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--validation-split", type=float, default=0.2)
+    parser.add_argument(
+        "--class-weighting",
+        choices=["none", "inverse_frequency"],
+        default="none",
+        help="Reweight cross entropy by action frequency to reduce majority-action collapse.",
+    )
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument(
         "--model-out",

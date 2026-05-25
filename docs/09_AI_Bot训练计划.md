@@ -217,6 +217,20 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 该 adapter 会输出 action probability 诊断，因此 behavior clone 的 deterministic 动作塌缩可以和 SB3 policy 使用同一套 `action_entropy_bits`、`normalized_action_entropy` 和 `action_score_diagnostic` 字段审查。
 
+当轨迹数据动作分布明显偏斜时，可以用 `--class-weighting inverse_frequency` 做最小修复尝试：
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001 \
+  --epochs 20 \
+  --batch-size 128 \
+  --class-weighting inverse_frequency \
+  --model-out python/train/models/behavior_clone_kite_high_pressure_weighted_smoke.pt \
+  --report harness/reports/2026-05-26_rl_behavior_clone_kite_weighted_smoke_001/run_output.json
+```
+
+首轮 weighted smoke 表明：离线 validation accuracy 可以提升，但 deterministic Gym policy 仍可能塌缩到单一动作。因此 class weighting 只能作为诊断旋钮，不能当作轨迹蒸馏已修复的证据。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

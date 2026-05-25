@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_019",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_weighted_smoke",
+  "seed": 30000,
+  "bot": "BehaviorCloneKiteWeightedSmoke",
+  "time_seconds": 10.0,
+  "symptom": "inverse_frequency 类别加权训练后，behavior clone 在 soda-creek 10 秒 deterministic 对比中 100% 选择 action 5，normalized_action_entropy 为 0.0",
+  "root_cause": "小样本 high-pressure 轨迹只覆盖早期 10 秒状态，类别加权改变了多数动作偏置但没有让模型学到稳定的状态条件分支，导致塌缩从 action 3 转移到 action 5",
+  "fix": "后续扩大多图多 seed 轨迹集，并尝试均衡采样、长局状态覆盖、动作温度诊断或序列上下文；不要仅依赖 inverse_frequency loss",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_weighted_smoke.pt --eval-episodes 2 --eval-seconds 10 --seed-start 30000 --map-id soda-creek --rule-bots random,kite,tank --report harness/reports/2026-05-26_rl_behavior_clone_kite_weighted_eval_smoke_001/comparison.json"
+}

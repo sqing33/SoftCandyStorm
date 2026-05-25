@@ -150,3 +150,17 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 ```
 
 The adapter exposes action probabilities to the existing `action_score_diagnostic` report, so deterministic collapse and low entropy are visible in the same format as SB3 policies.
+
+Use `--class-weighting inverse_frequency` to run a quick loss-weighted repair attempt when exported trajectories are action-imbalanced:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001 \
+  --epochs 20 \
+  --batch-size 128 \
+  --class-weighting inverse_frequency \
+  --model-out python/train/models/behavior_clone_kite_high_pressure_weighted_smoke.pt \
+  --report harness/reports/2026-05-26_rl_behavior_clone_kite_weighted_smoke_001/run_output.json
+```
+
+The first weighted smoke improved offline validation accuracy but still collapsed deterministically to action `5` in Gym comparison, so class weighting is a diagnostic knob rather than a proven fix.

@@ -1,0 +1,266 @@
+{
+  "status": "trained",
+  "gate_decision": "behavior_clone_smoke_only_not_policy_gate",
+  "model_path": "python/train/models/behavior_clone_kite_high_pressure_weighted_smoke.pt",
+  "started_at": "2026-05-25T21:38:26.112895+00:00",
+  "completed_at": "2026-05-25T21:38:26.209161+00:00",
+  "dependency_status": {
+    "numpy": true,
+    "torch": true
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001/kite_caramel_workshop.jsonl",
+      "harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001/kite_cracked_star_jar.jsonl",
+      "harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001/kite_soda_creek.jsonl"
+    ],
+    "sample_count": 900,
+    "episode_count": 6,
+    "skipped_upgrade_samples": 0,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 82,
+        "ratio": 0.0911
+      },
+      "2": {
+        "count": 36,
+        "ratio": 0.04
+      },
+      "3": {
+        "count": 456,
+        "ratio": 0.5067
+      },
+      "4": {
+        "count": 26,
+        "ratio": 0.0289
+      },
+      "5": {
+        "count": 99,
+        "ratio": 0.11
+      },
+      "6": {
+        "count": 78,
+        "ratio": 0.0867
+      },
+      "7": {
+        "count": 55,
+        "ratio": 0.0611
+      },
+      "8": {
+        "count": 68,
+        "ratio": 0.0756
+      }
+    },
+    "metadata": [
+      {
+        "path": "harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001/kite_caramel_workshop.jsonl",
+        "bot": "kite",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "content_hash": "fnv1a64:4460bd20f1f46c6c"
+      },
+      {
+        "path": "harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001/kite_cracked_star_jar.jsonl",
+        "bot": "kite",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "content_hash": "fnv1a64:4460bd20f1f46c6c"
+      },
+      {
+        "path": "harness/reports/2026-05-26_rl_rule_bot_trajectory_export_smoke_001/kite_soda_creek.jsonl",
+        "bot": "kite",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "content_hash": "fnv1a64:4460bd20f1f46c6c"
+      }
+    ]
+  },
+  "training": {
+    "seed": 12345,
+    "epochs": 20,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "hidden_size": 128,
+    "validation_split": 0.2,
+    "class_weighting": "inverse_frequency",
+    "class_weights": [
+      0.0,
+      1.25,
+      3.6,
+      0.246575,
+      4.090909,
+      1.168831,
+      1.428571,
+      2.0,
+      1.764706
+    ],
+    "train_samples": 720,
+    "validation_samples": 180
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.184165,
+      "train_accuracy": 0.0819,
+      "validation_loss": 2.144964,
+      "validation_accuracy": 0.2278
+    },
+    {
+      "epoch": 2,
+      "train_loss": 2.104323,
+      "train_accuracy": 0.3125,
+      "validation_loss": 2.050332,
+      "validation_accuracy": 0.35
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.994351,
+      "train_accuracy": 0.3444,
+      "validation_loss": 1.921487,
+      "validation_accuracy": 0.3444
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.836522,
+      "train_accuracy": 0.4347,
+      "validation_loss": 1.737848,
+      "validation_accuracy": 0.4667
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.634469,
+      "train_accuracy": 0.5278,
+      "validation_loss": 1.524735,
+      "validation_accuracy": 0.6
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.407301,
+      "train_accuracy": 0.7056,
+      "validation_loss": 1.329712,
+      "validation_accuracy": 0.7056
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.179172,
+      "train_accuracy": 0.8125,
+      "validation_loss": 1.151824,
+      "validation_accuracy": 0.7722
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.994357,
+      "train_accuracy": 0.7931,
+      "validation_loss": 1.012771,
+      "validation_accuracy": 0.7667
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.83849,
+      "train_accuracy": 0.8222,
+      "validation_loss": 0.917007,
+      "validation_accuracy": 0.8556
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.728434,
+      "train_accuracy": 0.9069,
+      "validation_loss": 0.835665,
+      "validation_accuracy": 0.9111
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.637747,
+      "train_accuracy": 0.9236,
+      "validation_loss": 0.774494,
+      "validation_accuracy": 0.8722
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.570372,
+      "train_accuracy": 0.9181,
+      "validation_loss": 0.717879,
+      "validation_accuracy": 0.8944
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.520885,
+      "train_accuracy": 0.9333,
+      "validation_loss": 0.683305,
+      "validation_accuracy": 0.9
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.475165,
+      "train_accuracy": 0.925,
+      "validation_loss": 0.634428,
+      "validation_accuracy": 0.8889
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.433093,
+      "train_accuracy": 0.9306,
+      "validation_loss": 0.609904,
+      "validation_accuracy": 0.9
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.400522,
+      "train_accuracy": 0.9375,
+      "validation_loss": 0.579697,
+      "validation_accuracy": 0.9167
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.375553,
+      "train_accuracy": 0.9514,
+      "validation_loss": 0.559322,
+      "validation_accuracy": 0.9167
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.352376,
+      "train_accuracy": 0.9514,
+      "validation_loss": 0.534157,
+      "validation_accuracy": 0.9167
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.337027,
+      "train_accuracy": 0.95,
+      "validation_loss": 0.516858,
+      "validation_accuracy": 0.9167
+    },
+    {
+      "epoch": 20,
+      "train_loss": 0.312554,
+      "train_accuracy": 0.9486,
+      "validation_loss": 0.501305,
+      "validation_accuracy": 0.9222
+    }
+  ],
+  "final": {
+    "epoch": 20,
+    "train_loss": 0.312554,
+    "train_accuracy": 0.9486,
+    "validation_loss": 0.501305,
+    "validation_accuracy": 0.9222
+  },
+  "limitations": [
+    "Behavior cloning imitates rule Bot movement only; it is not a balance or fun gate.",
+    "The exported Phase 1 dataset skips upgrade-choice states, matching the current movement-only RL action space.",
+    "A cloned policy must still pass Gym evaluation and rule Bot comparison before it can become an RL test Bot candidate."
+  ]
+}
