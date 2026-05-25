@@ -305,6 +305,10 @@
     {
       "id": "rl_policy_rule_bot_comparison",
       "summary": "增加并运行 DQN policy 与规则 Bot 同 seed / 同 map 对比报告；确认对比链路可用，同时记录 DQN smoke policy 100% 选择动作 1 的动作塌缩 failure case"
+    },
+    {
+      "id": "rl_policy_observability_fields",
+      "summary": "Gym bridge 和 SB3 评估报告补充 reward_breakdown、action_entropy_bits 和 normalized_action_entropy，并用 DQN recheck 证明动作塌缩与终局奖励主导问题可被报告捕捉"
     }
   ],
   "current_findings": [
@@ -420,8 +424,8 @@
     },
     {
       "id": "rl_policy_comparison_smoke_scope",
-      "summary": "DQN policy 与 Random/Kite/Tank 规则 Bot 的同 seed / 同 map 对比链路已跑通；本次 5 秒 2 seed 只可作为 smoke，且暴露 DQN policy 100% 选择动作 1 的动作塌缩，需要训练与奖励后续修复。",
-      "report": "harness/reports/2026-05-26_rl_policy_rule_bot_comparison_001/summary.md"
+      "summary": "DQN policy 与 Random/Kite/Tank 规则 Bot 的同 seed / 同 map 对比链路已跑通；可观测性复查显示动作 1 占比 100%、归一化动作熵 0.0，奖励主要来自 5 秒 duration_reached 终局奖励，需要训练与奖励后续修复。",
+      "report": "harness/reports/2026-05-26_rl_policy_observability_recheck_001/summary.md"
     }
   ],
   "next_recommended": [
