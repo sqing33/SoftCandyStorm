@@ -4,6 +4,8 @@ use game_core::{
     TerminalKind, Vec2,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::io::{self, BufRead, Write};
@@ -13,6 +15,27 @@ const GYM_ACTION_COUNT: usize = 9;
 const GYM_MAX_ENEMIES: usize = 8;
 const GYM_MAX_PICKUPS: usize = 4;
 const GYM_OBSERVATION_LEN: usize = 82;
+const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
+    "new_001",
+    "new_002",
+    "new_003",
+    "skilled_001",
+    "skilled_002",
+    "skilled_003",
+    "build_001",
+    "build_002",
+    "build_003",
+];
+const ACCEPTANCE_RATING_FIELDS: [&str; 8] = [
+    "fun_rating",
+    "clarity_rating",
+    "difficulty_rating",
+    "projectile_readability",
+    "hit_feedback",
+    "xp_pickup_rhythm",
+    "boss_spawn_clarity",
+    "death_reason_clarity",
+];
 
 #[derive(Debug, Clone)]
 struct SimArgs {
@@ -181,6 +204,27 @@ impl Default for PromotePlaytestCandidatesArgs {
             source_dir: PathBuf::from("harness/simulated_candidates"),
             playtest_dir: PathBuf::from("harness/playtest_candidates"),
             repair_dir: PathBuf::from("harness/repair_queue"),
+            report_dir: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct PromoteAcceptedCandidatesArgs {
+    source_dir: PathBuf,
+    accepted_dir: PathBuf,
+    repair_dir: PathBuf,
+    review_dir: PathBuf,
+    report_dir: Option<PathBuf>,
+}
+
+impl Default for PromoteAcceptedCandidatesArgs {
+    fn default() -> Self {
+        Self {
+            source_dir: PathBuf::from("harness/playtest_candidates"),
+            accepted_dir: PathBuf::from("harness/accepted_content"),
+            repair_dir: PathBuf::from("harness/repair_queue"),
+            review_dir: PathBuf::from("harness/playtest_reviews"),
             report_dir: None,
         }
     }
@@ -436,6 +480,59 @@ struct CandidatePlaytestPromotionReview {
 }
 
 #[derive(Debug, Clone, Serialize)]
+struct CandidateAcceptanceReport {
+    source_dir: String,
+    accepted_dir: String,
+    repair_dir: String,
+    review_dir: String,
+    candidate_count: usize,
+    accepted_count: usize,
+    repair_count: usize,
+    waiting_count: usize,
+    candidates: Vec<CandidateAcceptanceReview>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct CandidateAcceptanceReview {
+    id: String,
+    source: String,
+    decision: &'static str,
+    destination: Option<String>,
+    object_count: Option<usize>,
+    content_hash: Option<String>,
+    review_file: Option<String>,
+    completed_run_count: usize,
+    average_rating: Option<f32>,
+    errors: Vec<String>,
+    next_step: String,
+}
+
+#[derive(Debug, Clone)]
+struct ManualAcceptanceGate {
+    decision: ManualAcceptanceDecision,
+    completed_run_count: usize,
+    average_rating: Option<f32>,
+    errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ManualAcceptanceDecision {
+    Accept,
+    Repair,
+    Waiting,
+}
+
+impl ManualAcceptanceDecision {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Accept => "accepted",
+            Self::Repair => "repair",
+            Self::Waiting => "waiting",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 struct CandidateSimulationReview {
     id: String,
     source: String,
@@ -601,6 +698,16 @@ fn main() {
         "promote-playtest-candidates" => {
             match parse_promote_playtest_candidates_args(args.collect()) {
                 Ok(args) => run_promote_playtest_candidates(args),
+                Err(message) => {
+                    eprintln!("error: {message}");
+                    print_help();
+                    std::process::exit(2);
+                }
+            }
+        }
+        "promote-accepted-candidates" => {
+            match parse_promote_accepted_candidates_args(args.collect()) {
+                Ok(args) => run_promote_accepted_candidates(args),
                 Err(message) => {
                     eprintln!("error: {message}");
                     print_help();
@@ -986,6 +1093,39 @@ fn parse_promote_playtest_candidates_args(
             }
             "--repair-dir" => {
                 parsed.repair_dir = PathBuf::from(value);
+            }
+            "--report-dir" => {
+                parsed.report_dir = Some(PathBuf::from(value));
+            }
+            _ => return Err(format!("unknown flag `{key}`")),
+        }
+        index += 2;
+    }
+    Ok(parsed)
+}
+
+fn parse_promote_accepted_candidates_args(
+    values: Vec<String>,
+) -> Result<PromoteAcceptedCandidatesArgs, String> {
+    let mut parsed = PromoteAcceptedCandidatesArgs::default();
+    let mut index = 0;
+    while index < values.len() {
+        let key = &values[index];
+        let value = values
+            .get(index + 1)
+            .ok_or_else(|| format!("missing value for `{key}`"))?;
+        match key.as_str() {
+            "--source-dir" => {
+                parsed.source_dir = PathBuf::from(value);
+            }
+            "--accepted-dir" => {
+                parsed.accepted_dir = PathBuf::from(value);
+            }
+            "--repair-dir" => {
+                parsed.repair_dir = PathBuf::from(value);
+            }
+            "--review-dir" => {
+                parsed.review_dir = PathBuf::from(value);
             }
             "--report-dir" => {
                 parsed.report_dir = Some(PathBuf::from(value));
@@ -1384,6 +1524,34 @@ fn run_promote_playtest_candidates(args: PromotePlaytestCandidatesArgs) {
         Ok(json) => println!("{json}"),
         Err(error) => {
             eprintln!("error: failed to render playtest promotion report: {error}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn run_promote_accepted_candidates(args: PromoteAcceptedCandidatesArgs) {
+    let report = match promote_accepted_candidate_dirs(&args) {
+        Ok(report) => report,
+        Err(error) => {
+            eprintln!("error: failed to promote accepted candidates: {error}");
+            std::process::exit(1);
+        }
+    };
+
+    if let Some(report_dir) = &args.report_dir {
+        if let Err(error) = write_candidate_acceptance_report(report_dir, &report) {
+            eprintln!(
+                "error: failed to write accepted candidate report `{}`: {error}",
+                report_dir.display()
+            );
+            std::process::exit(1);
+        }
+    }
+
+    match serde_json::to_string_pretty(&report) {
+        Ok(json) => println!("{json}"),
+        Err(error) => {
+            eprintln!("error: failed to render accepted candidate report: {error}");
             std::process::exit(1);
         }
     }
@@ -2968,11 +3136,28 @@ fn collect_content_files(path: &Path, files: &mut Vec<PathBuf>) -> io::Result<()
         } else if path
             .extension()
             .is_some_and(|extension| extension == "json")
+            && !is_harness_gate_metadata_file(&path)
         {
             files.push(path);
         }
     }
     Ok(())
+}
+
+fn is_harness_gate_metadata_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            matches!(
+                name,
+                "acceptance_gate.json"
+                    | "acceptance_repair.json"
+                    | "manual_review.json"
+                    | "playtest_gate.json"
+                    | "rejection.json"
+                    | "repair.json"
+            )
+        })
 }
 
 fn fnv1a_update(mut hash: u64, bytes: &[u8]) -> u64 {
@@ -3660,6 +3845,511 @@ fn promote_playtest_candidate_dirs(
     })
 }
 
+fn promote_accepted_candidate_dirs(
+    args: &PromoteAcceptedCandidatesArgs,
+) -> io::Result<CandidateAcceptanceReport> {
+    fs::create_dir_all(&args.source_dir)?;
+    fs::create_dir_all(&args.accepted_dir)?;
+    fs::create_dir_all(&args.repair_dir)?;
+    fs::create_dir_all(&args.review_dir)?;
+
+    let mut entries = fs::read_dir(&args.source_dir)?
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .filter(|entry| entry.path().is_dir())
+        .collect::<Vec<_>>();
+    entries.sort_by_key(|entry| entry.file_name());
+
+    let mut candidates = Vec::new();
+    for entry in entries {
+        let source_path = entry.path();
+        let candidate_id = entry.file_name().to_string_lossy().to_string();
+        let loaded =
+            ContentPack::load_from_dir(&source_path).and_then(|pack| pack.validate().map(|_| pack));
+
+        let pack = match loaded {
+            Ok(pack) => pack,
+            Err(error) => {
+                let destination = args.repair_dir.join(&candidate_id);
+                copy_dir_all(&source_path, &destination)?;
+                let errors = vec![error.to_string()];
+                write_acceptance_repair_reason(
+                    &destination,
+                    &candidate_id,
+                    "schema_error",
+                    &errors,
+                    "repair candidate schema before accepted_content promotion",
+                )?;
+                candidates.push(CandidateAcceptanceReview {
+                    id: candidate_id,
+                    source: source_path.display().to_string(),
+                    decision: "repair",
+                    destination: Some(destination.display().to_string()),
+                    object_count: None,
+                    content_hash: None,
+                    review_file: None,
+                    completed_run_count: 0,
+                    average_rating: None,
+                    errors,
+                    next_step: "repair candidate schema before accepted_content promotion"
+                        .to_string(),
+                });
+                continue;
+            }
+        };
+
+        let budget_report = evaluate_static_budget(&pack, source_path.display().to_string());
+        let content_hash = content_hash_for_dir(&source_path)?;
+        let mut gate_errors = validate_playtest_gate(&source_path, &candidate_id, &content_hash);
+        gate_errors.extend(budget_report.errors);
+        if !gate_errors.is_empty() {
+            let destination = args.repair_dir.join(&candidate_id);
+            copy_dir_all(&source_path, &destination)?;
+            write_acceptance_repair_reason(
+                &destination,
+                &candidate_id,
+                "pre_acceptance_gate_regression",
+                &gate_errors,
+                "repair candidate before rerunning promote-accepted-candidates",
+            )?;
+            candidates.push(CandidateAcceptanceReview {
+                id: candidate_id,
+                source: source_path.display().to_string(),
+                decision: "repair",
+                destination: Some(destination.display().to_string()),
+                object_count: Some(pack.object_count()),
+                content_hash: Some(content_hash),
+                review_file: None,
+                completed_run_count: 0,
+                average_rating: None,
+                errors: gate_errors,
+                next_step: "repair candidate before accepted_content promotion".to_string(),
+            });
+            continue;
+        }
+
+        let Some(review_file) =
+            find_manual_acceptance_review_file(&source_path, &args.review_dir, &candidate_id)
+        else {
+            candidates.push(CandidateAcceptanceReview {
+                id: candidate_id.clone(),
+                source: source_path.display().to_string(),
+                decision: "waiting",
+                destination: None,
+                object_count: Some(pack.object_count()),
+                content_hash: Some(content_hash),
+                review_file: None,
+                completed_run_count: 0,
+                average_rating: None,
+                errors: vec![format!(
+                    "missing manual acceptance review for `{candidate_id}` in `{}`",
+                    args.review_dir.display()
+                )],
+                next_step: "complete human playtest review before accepted_content promotion"
+                    .to_string(),
+            });
+            continue;
+        };
+
+        let manual_gate =
+            evaluate_manual_acceptance_review(&review_file, &candidate_id, &content_hash);
+        match manual_gate.decision {
+            ManualAcceptanceDecision::Accept => {
+                let destination = args.accepted_dir.join(&candidate_id);
+                copy_dir_all(&source_path, &destination)?;
+                write_acceptance_gate(
+                    &destination,
+                    &candidate_id,
+                    &content_hash,
+                    &review_file,
+                    manual_gate.completed_run_count,
+                    manual_gate.average_rating,
+                )?;
+                candidates.push(CandidateAcceptanceReview {
+                    id: candidate_id,
+                    source: source_path.display().to_string(),
+                    decision: manual_gate.decision.as_str(),
+                    destination: Some(destination.display().to_string()),
+                    object_count: Some(pack.object_count()),
+                    content_hash: Some(content_hash),
+                    review_file: Some(review_file.display().to_string()),
+                    completed_run_count: manual_gate.completed_run_count,
+                    average_rating: manual_gate.average_rating,
+                    errors: manual_gate.errors,
+                    next_step: "version-lock accepted candidate before runtime integration"
+                        .to_string(),
+                });
+            }
+            ManualAcceptanceDecision::Repair => {
+                let destination = args.repair_dir.join(&candidate_id);
+                copy_dir_all(&source_path, &destination)?;
+                write_acceptance_repair_reason(
+                    &destination,
+                    &candidate_id,
+                    "manual_playtest_repair",
+                    &manual_gate.errors,
+                    "repair candidate based on human playtest findings",
+                )?;
+                candidates.push(CandidateAcceptanceReview {
+                    id: candidate_id,
+                    source: source_path.display().to_string(),
+                    decision: manual_gate.decision.as_str(),
+                    destination: Some(destination.display().to_string()),
+                    object_count: Some(pack.object_count()),
+                    content_hash: Some(content_hash),
+                    review_file: Some(review_file.display().to_string()),
+                    completed_run_count: manual_gate.completed_run_count,
+                    average_rating: manual_gate.average_rating,
+                    errors: manual_gate.errors,
+                    next_step: "repair candidate and rerun playtest gate".to_string(),
+                });
+            }
+            ManualAcceptanceDecision::Waiting => {
+                candidates.push(CandidateAcceptanceReview {
+                    id: candidate_id,
+                    source: source_path.display().to_string(),
+                    decision: manual_gate.decision.as_str(),
+                    destination: None,
+                    object_count: Some(pack.object_count()),
+                    content_hash: Some(content_hash),
+                    review_file: Some(review_file.display().to_string()),
+                    completed_run_count: manual_gate.completed_run_count,
+                    average_rating: manual_gate.average_rating,
+                    errors: manual_gate.errors,
+                    next_step: "complete missing human review evidence before acceptance"
+                        .to_string(),
+                });
+            }
+        }
+    }
+
+    let accepted_count = candidates
+        .iter()
+        .filter(|candidate| candidate.decision == "accepted")
+        .count();
+    let repair_count = candidates
+        .iter()
+        .filter(|candidate| candidate.decision == "repair")
+        .count();
+    let waiting_count = candidates
+        .iter()
+        .filter(|candidate| candidate.decision == "waiting")
+        .count();
+
+    Ok(CandidateAcceptanceReport {
+        source_dir: args.source_dir.display().to_string(),
+        accepted_dir: args.accepted_dir.display().to_string(),
+        repair_dir: args.repair_dir.display().to_string(),
+        review_dir: args.review_dir.display().to_string(),
+        candidate_count: candidates.len(),
+        accepted_count,
+        repair_count,
+        waiting_count,
+        candidates,
+    })
+}
+
+fn find_manual_acceptance_review_file(
+    candidate_dir: &Path,
+    review_dir: &Path,
+    candidate_id: &str,
+) -> Option<PathBuf> {
+    [
+        review_dir.join(format!("{candidate_id}.json")),
+        review_dir.join(candidate_id).join("manual_review.json"),
+        candidate_dir.join("manual_review.json"),
+    ]
+    .into_iter()
+    .find(|path| path.is_file())
+}
+
+fn validate_playtest_gate(
+    candidate_dir: &Path,
+    candidate_id: &str,
+    content_hash: &str,
+) -> Vec<String> {
+    let gate_path = candidate_dir.join("playtest_gate.json");
+    let Ok(text) = fs::read_to_string(&gate_path) else {
+        return vec![format!(
+            "missing or unreadable playtest gate `{}`",
+            gate_path.display()
+        )];
+    };
+    let Ok(gate) = serde_json::from_str::<Value>(&text) else {
+        return vec![format!(
+            "invalid playtest gate JSON `{}`",
+            gate_path.display()
+        )];
+    };
+
+    let mut errors = Vec::new();
+    if json_string_field(&gate, "candidate_id") != Some(candidate_id) {
+        errors.push("playtest gate candidate_id does not match directory".to_string());
+    }
+    if json_string_field(&gate, "decision") != Some("playtest") {
+        errors.push("playtest gate decision must be `playtest`".to_string());
+    }
+    if json_string_field(&gate, "content_hash") != Some(content_hash) {
+        errors.push("playtest gate content_hash does not match current content".to_string());
+    }
+    let requires_manual_review = gate
+        .get("required_review")
+        .and_then(|review| review.get("manual_review"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if !requires_manual_review {
+        errors.push("playtest gate must require manual_review".to_string());
+    }
+    errors
+}
+
+fn evaluate_manual_acceptance_review(
+    review_file: &Path,
+    candidate_id: &str,
+    content_hash: &str,
+) -> ManualAcceptanceGate {
+    let text = match fs::read_to_string(review_file) {
+        Ok(text) => text,
+        Err(error) => {
+            return ManualAcceptanceGate {
+                decision: ManualAcceptanceDecision::Waiting,
+                completed_run_count: 0,
+                average_rating: None,
+                errors: vec![format!(
+                    "failed to read manual acceptance review `{}`: {error}",
+                    review_file.display()
+                )],
+            };
+        }
+    };
+    match serde_json::from_str::<Value>(&text) {
+        Ok(review) => evaluate_manual_acceptance_review_value(&review, candidate_id, content_hash),
+        Err(error) => ManualAcceptanceGate {
+            decision: ManualAcceptanceDecision::Waiting,
+            completed_run_count: 0,
+            average_rating: None,
+            errors: vec![format!(
+                "failed to parse manual acceptance review `{}`: {error}",
+                review_file.display()
+            )],
+        },
+    }
+}
+
+fn evaluate_manual_acceptance_review_value(
+    review: &Value,
+    candidate_id: &str,
+    content_hash: &str,
+) -> ManualAcceptanceGate {
+    let mut repair_errors = Vec::new();
+    let mut waiting_errors = Vec::new();
+    let mut seen_run_ids = BTreeSet::new();
+    let mut completed_run_count = 0usize;
+    let mut rating_sum = 0.0f32;
+    let mut rating_count = 0usize;
+
+    match acceptance_string_field(review, "candidate_id") {
+        Some(value) if value == candidate_id => {}
+        Some(_) => {
+            repair_errors.push("manual review candidate_id does not match candidate".to_string())
+        }
+        None => waiting_errors.push("manual review must include candidate_id".to_string()),
+    }
+    match acceptance_string_field(review, "content_hash") {
+        Some(value) if value == content_hash => {}
+        Some(_) => {
+            repair_errors.push("manual review content_hash does not match candidate".to_string())
+        }
+        None => waiting_errors.push("manual review must include content_hash".to_string()),
+    }
+    if acceptance_string_field(review, "reviewer").is_none() {
+        waiting_errors.push("manual review must include reviewer".to_string());
+    }
+    if acceptance_string_field(review, "reviewed_at").is_none() {
+        waiting_errors.push("manual review must include reviewed_at".to_string());
+    }
+    if acceptance_string_field(review, "summary").is_none() {
+        waiting_errors.push("manual review must include summary".to_string());
+    }
+
+    match acceptance_string_field(review, "acceptance_decision")
+        .or_else(|| acceptance_string_field(review, "decision"))
+    {
+        Some("accept_candidate") => {}
+        Some("repair") => {
+            repair_errors.push("manual review top-level decision is `repair`".to_string());
+        }
+        Some("needs_more_runs") | Some("playtest_pass") => {
+            waiting_errors.push(
+                "manual review requires top-level `acceptance_decision: accept_candidate`"
+                    .to_string(),
+            );
+        }
+        Some(value) => waiting_errors.push(format!(
+            "manual review has unsupported acceptance decision `{value}`"
+        )),
+        None => waiting_errors
+            .push("manual review must include `acceptance_decision: accept_candidate`".to_string()),
+    }
+
+    let Some(runs) = review.get("runs").and_then(Value::as_array) else {
+        return ManualAcceptanceGate {
+            decision: ManualAcceptanceDecision::Waiting,
+            completed_run_count,
+            average_rating: None,
+            errors: merge_gate_errors(repair_errors, {
+                waiting_errors.push("manual review must include runs array".to_string());
+                waiting_errors
+            }),
+        };
+    };
+
+    for run in runs {
+        let Some(run_id) = review_string_field(run, "run_id") else {
+            waiting_errors.push("manual review run is missing run_id".to_string());
+            continue;
+        };
+        seen_run_ids.insert(run_id.to_string());
+
+        let mut run_complete = true;
+        match review_string_field(run, "gate_decision")
+            .or_else(|| review_string_field(run, "decision"))
+        {
+            Some("playtest_pass") => {}
+            Some("repair") => {
+                repair_errors.push(format!("run `{run_id}` gate_decision is `repair`"));
+                run_complete = false;
+            }
+            Some("needs_more_runs") => {
+                waiting_errors.push(format!("run `{run_id}` needs more runs"));
+                run_complete = false;
+            }
+            Some(value) => {
+                waiting_errors.push(format!(
+                    "run `{run_id}` has unsupported gate_decision `{value}`"
+                ));
+                run_complete = false;
+            }
+            None => {
+                waiting_errors.push(format!("run `{run_id}` is missing gate_decision"));
+                run_complete = false;
+            }
+        }
+
+        for field in ACCEPTANCE_RATING_FIELDS {
+            match review_rating_field(run, field) {
+                Some(value) if (1..=5).contains(&value) => {
+                    rating_sum += value as f32;
+                    rating_count += 1;
+                    if value < 3 {
+                        repair_errors.push(format!("run `{run_id}` rating `{field}` is below 3"));
+                        run_complete = false;
+                    }
+                }
+                Some(value) => {
+                    repair_errors.push(format!(
+                        "run `{run_id}` rating `{field}` is outside 1-5: {value}"
+                    ));
+                    run_complete = false;
+                }
+                None => {
+                    waiting_errors.push(format!("run `{run_id}` is missing rating `{field}`"));
+                    run_complete = false;
+                }
+            }
+        }
+
+        if review_string_field(run, "notes").is_none() {
+            waiting_errors.push(format!("run `{run_id}` must include non-empty notes"));
+            run_complete = false;
+        }
+        if review_array_len(run, "next_actions").unwrap_or(0) == 0 {
+            waiting_errors.push(format!("run `{run_id}` must include next_actions"));
+            run_complete = false;
+        }
+        if run_complete {
+            completed_run_count += 1;
+        }
+    }
+
+    for required in REQUIRED_PLAYTEST_RUN_IDS {
+        if !seen_run_ids.contains(required) {
+            waiting_errors.push(format!(
+                "manual review is missing required run `{required}`"
+            ));
+        }
+    }
+
+    let average_rating = (rating_count > 0).then_some(rating_sum / rating_count as f32);
+    let decision = if !repair_errors.is_empty() {
+        ManualAcceptanceDecision::Repair
+    } else if !waiting_errors.is_empty() {
+        ManualAcceptanceDecision::Waiting
+    } else {
+        ManualAcceptanceDecision::Accept
+    };
+
+    ManualAcceptanceGate {
+        decision,
+        completed_run_count,
+        average_rating,
+        errors: merge_gate_errors(repair_errors, waiting_errors),
+    }
+}
+
+fn merge_gate_errors(mut repair_errors: Vec<String>, waiting_errors: Vec<String>) -> Vec<String> {
+    repair_errors.extend(waiting_errors);
+    repair_errors
+}
+
+fn json_string_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
+    value
+        .get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn acceptance_string_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
+    json_string_field(value, key).or_else(|| {
+        value
+            .get("human_review")
+            .and_then(|review| json_string_field(review, key))
+    })
+}
+
+fn review_field<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
+    value
+        .get(key)
+        .or_else(|| {
+            value
+                .get("manual_review")
+                .and_then(|review| review.get(key))
+        })
+        .or_else(|| {
+            value
+                .get("manual_review_fields")
+                .and_then(|review| review.get(key))
+        })
+}
+
+fn review_string_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
+    review_field(value, key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn review_rating_field(value: &Value, key: &str) -> Option<i64> {
+    review_field(value, key).and_then(Value::as_i64)
+}
+
+fn review_array_len(value: &Value, key: &str) -> Option<usize> {
+    review_field(value, key)
+        .and_then(Value::as_array)
+        .map(Vec::len)
+}
+
 fn copy_dir_all(source: &Path, destination: &Path) -> io::Result<()> {
     fs::create_dir_all(destination)?;
     for entry in fs::read_dir(source)? {
@@ -3748,6 +4438,52 @@ fn write_playtest_gate(
     fs::write(destination.join("playtest_gate.json"), format!("{json}\n"))
 }
 
+fn write_acceptance_gate(
+    destination: &Path,
+    candidate_id: &str,
+    content_hash: &str,
+    review_file: &Path,
+    completed_run_count: usize,
+    average_rating: Option<f32>,
+) -> io::Result<()> {
+    let gate = serde_json::json!({
+        "candidate_id": candidate_id,
+        "decision": "accept_candidate",
+        "content_hash": content_hash,
+        "category": "human_playtest_passed",
+        "manual_review_file": review_file.display().to_string(),
+        "completed_run_count": completed_run_count,
+        "average_rating": average_rating,
+        "required_next_step": "version-lock accepted candidate before runtime integration"
+    });
+    let json = serde_json::to_string_pretty(&gate).map_err(io::Error::other)?;
+    fs::write(
+        destination.join("acceptance_gate.json"),
+        format!("{json}\n"),
+    )
+}
+
+fn write_acceptance_repair_reason(
+    destination: &Path,
+    candidate_id: &str,
+    category: &str,
+    errors: &[String],
+    next_step: &str,
+) -> io::Result<()> {
+    let reason = serde_json::json!({
+        "candidate_id": candidate_id,
+        "decision": "repair",
+        "category": category,
+        "errors": errors,
+        "next_step": next_step
+    });
+    let json = serde_json::to_string_pretty(&reason).map_err(io::Error::other)?;
+    fs::write(
+        destination.join("acceptance_repair.json"),
+        format!("{json}\n"),
+    )
+}
+
 fn write_candidate_report(report_dir: &Path, report: &CandidatePipelineReport) -> io::Result<()> {
     fs::create_dir_all(report_dir)?;
     let json = serde_json::to_string_pretty(report).map_err(io::Error::other)?;
@@ -3792,6 +4528,23 @@ fn write_candidate_playtest_promotion_report(
     fs::write(
         report_dir.join("summary.md"),
         render_candidate_playtest_promotion_summary(report),
+    )?;
+    Ok(())
+}
+
+fn write_candidate_acceptance_report(
+    report_dir: &Path,
+    report: &CandidateAcceptanceReport,
+) -> io::Result<()> {
+    fs::create_dir_all(report_dir)?;
+    let json = serde_json::to_string_pretty(report).map_err(io::Error::other)?;
+    fs::write(
+        report_dir.join("candidate_acceptance.json"),
+        format!("{json}\n"),
+    )?;
+    fs::write(
+        report_dir.join("summary.md"),
+        render_candidate_acceptance_summary(report),
     )?;
     Ok(())
 }
@@ -3876,6 +4629,44 @@ fn render_candidate_playtest_promotion_summary(
     output
 }
 
+fn render_candidate_acceptance_summary(report: &CandidateAcceptanceReport) -> String {
+    let mut output = String::new();
+    output.push_str("# Candidate Acceptance Summary\n\n");
+    output.push_str(&format!("- Source: `{}`\n", report.source_dir));
+    output.push_str(&format!("- Accepted: `{}`\n", report.accepted_dir));
+    output.push_str(&format!("- Repair: `{}`\n", report.repair_dir));
+    output.push_str(&format!("- Reviews: `{}`\n", report.review_dir));
+    output.push_str(&format!(
+        "- Result: `{}` accepted, `{}` repair, `{}` waiting, `{}` total\n\n",
+        report.accepted_count, report.repair_count, report.waiting_count, report.candidate_count
+    ));
+    output.push_str(
+        "| Candidate | Decision | Runs | Average Rating | Errors | Destination | Next Step |\n",
+    );
+    output.push_str("|---|---|---:|---:|---:|---|---|\n");
+    for candidate in &report.candidates {
+        let average_rating = candidate
+            .average_rating
+            .map(|value| format!("{value:.2}"))
+            .unwrap_or_else(|| "-".to_string());
+        output.push_str(&format!(
+            "| {} | {} | {} | {} | {} | {} | {} |\n",
+            candidate.id,
+            candidate.decision,
+            candidate.completed_run_count,
+            average_rating,
+            candidate.errors.len(),
+            candidate.destination.as_deref().unwrap_or("-"),
+            candidate.next_step
+        ));
+    }
+    output.push_str("\n## Gate Notes\n\n");
+    output.push_str("- `accepted` means the candidate has complete human review evidence and is copied to `accepted_content`.\n");
+    output.push_str("- `waiting` means the candidate remains in `playtest_candidates` until human review evidence is complete.\n");
+    output.push_str("- This command still does not turn a candidate into a release candidate; version locking and release gates remain separate.\n");
+    output
+}
+
 fn run_validate(args: ValidateArgs) {
     match ContentPack::load_from_dir(&args.content_dir).and_then(|content| content.validate()) {
         Ok(report) => {
@@ -3931,6 +4722,9 @@ fn print_help() {
         "  cargo run -p game_harness -- promote-playtest-candidates [--source-dir harness/simulated_candidates] [--playtest-dir harness/playtest_candidates] [--repair-dir harness/repair_queue] [--report-dir harness/reports/local_playtest_promotion]"
     );
     eprintln!(
+        "  cargo run -p game_harness -- promote-accepted-candidates [--source-dir harness/playtest_candidates] [--accepted-dir harness/accepted_content] [--repair-dir harness/repair_queue] [--review-dir harness/playtest_reviews] [--report-dir harness/reports/local_candidate_acceptance]"
+    );
+    eprintln!(
         "  cargo run -p game_harness -- gym-bridge [--seed N] [--seconds N] [--tick-rate N] [--content-dir content/base_demo]"
     );
 }
@@ -3941,8 +4735,14 @@ fn escape_json(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{gym_discrete_movement, gym_observation, movement_changed, GYM_OBSERVATION_LEN};
+    use super::{
+        content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_movement,
+        gym_observation, movement_changed, ManualAcceptanceDecision, GYM_OBSERVATION_LEN,
+        REQUIRED_PLAYTEST_RUN_IDS,
+    };
     use game_core::{GameCore, RunConfig};
+    use serde_json::{json, Value};
+    use std::fs;
 
     #[test]
     fn movement_changed_keeps_strict_replay_precision() {
@@ -3964,5 +4764,97 @@ mod tests {
 
         assert_eq!(observation.len(), GYM_OBSERVATION_LEN);
         assert!(observation.iter().all(|value| value.is_finite()));
+    }
+
+    #[test]
+    fn content_hash_ignores_harness_gate_metadata() {
+        let root =
+            std::env::temp_dir().join(format!("soft-candy-hash-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("weapons")).unwrap();
+        fs::write(root.join("weapons").join("example.json"), "{}\n").unwrap();
+
+        let before = content_hash_for_dir(&root).unwrap();
+        fs::write(
+            root.join("playtest_gate.json"),
+            "{\"decision\":\"playtest\"}\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("acceptance_gate.json"),
+            "{\"decision\":\"accept_candidate\"}\n",
+        )
+        .unwrap();
+        let after = content_hash_for_dir(&root).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(before, after);
+    }
+
+    #[test]
+    fn complete_manual_acceptance_review_passes() {
+        let review = complete_manual_review_json();
+        let gate = evaluate_manual_acceptance_review_value(&review, "base-demo", "fnv1a64:example");
+
+        assert_eq!(gate.decision, ManualAcceptanceDecision::Accept);
+        assert_eq!(gate.completed_run_count, REQUIRED_PLAYTEST_RUN_IDS.len());
+        assert!(gate.errors.is_empty());
+    }
+
+    #[test]
+    fn manual_acceptance_review_waits_for_missing_run() {
+        let mut review = complete_manual_review_json();
+        review["runs"].as_array_mut().unwrap().pop();
+        let gate = evaluate_manual_acceptance_review_value(&review, "base-demo", "fnv1a64:example");
+
+        assert_eq!(gate.decision, ManualAcceptanceDecision::Waiting);
+        assert!(gate
+            .errors
+            .iter()
+            .any(|error| error.contains("missing required run")));
+    }
+
+    #[test]
+    fn manual_acceptance_review_repairs_low_rating() {
+        let mut review = complete_manual_review_json();
+        review["runs"][0]["manual_review"]["fun_rating"] = json!(2);
+        let gate = evaluate_manual_acceptance_review_value(&review, "base-demo", "fnv1a64:example");
+
+        assert_eq!(gate.decision, ManualAcceptanceDecision::Repair);
+        assert!(gate.errors.iter().any(|error| error.contains("below 3")));
+    }
+
+    fn complete_manual_review_json() -> Value {
+        let runs = REQUIRED_PLAYTEST_RUN_IDS
+            .iter()
+            .map(|run_id| {
+                json!({
+                    "run_id": run_id,
+                    "gate_decision": "playtest_pass",
+                    "manual_review": {
+                        "fun_rating": 4,
+                        "clarity_rating": 4,
+                        "difficulty_rating": 4,
+                        "projectile_readability": 4,
+                        "hit_feedback": 4,
+                        "xp_pickup_rhythm": 4,
+                        "boss_spawn_clarity": 4,
+                        "death_reason_clarity": 4,
+                        "notes": "人工试玩记录完整，当前原型目标可接受。",
+                        "tags": ["fun"],
+                        "next_actions": ["进入 accepted_content 候选池并等待版本锁定"]
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+        json!({
+            "candidate_id": "base-demo",
+            "content_hash": "fnv1a64:example",
+            "reviewer": "human-reviewer",
+            "reviewed_at": "2026-05-25",
+            "summary": "9 局人工试玩均达到当前原型目标。",
+            "acceptance_decision": "accept_candidate",
+            "runs": runs
+        })
     }
 }

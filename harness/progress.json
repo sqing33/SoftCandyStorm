@@ -169,6 +169,10 @@
     {
       "id": "candidate_playtest_promotion",
       "summary": "实现 simulated_candidates 到 playtest_candidates 的人工试玩候选推进门禁，写入 playtest_gate 并验证不会进入 accepted_content"
+    },
+    {
+      "id": "accepted_content_manual_gate",
+      "summary": "实现 playtest_candidates 到 accepted_content 的人工审查推进门禁，要求 9 局人工试玩证据、内容 hash 复核和 accept_candidate 结论；缺少审查时保持 waiting"
     }
   ],
   "current_findings": [
@@ -193,6 +197,11 @@
       "report": "harness/reports/2026-05-25_candidate_playtest_promotion_smoke_001/summary.md"
     },
     {
+      "id": "accepted_content_requires_manual_gate",
+      "summary": "`promote-accepted-candidates` 已能在缺少人工审查时保持 waiting；合成审查数据只用于临时技术 smoke，真实候选仍必须由人类完成 9 局审查后才能接受。",
+      "report": "harness/reports/2026-05-25_accepted_content_manual_gate_smoke_001/summary.md"
+    },
+    {
       "id": "runtime_capture_visual_client_limit",
       "summary": "`--simulation-speed` 已降低 Runtime capture 的等待成本，但 Bevy 窗口启动和渲染仍有明显墙钟开销；高容量确定性验证仍应优先使用 headless Harness。",
       "report": "harness/reports/2026-05-25_runtime_simulation_speed_smoke_001/summary.md"
@@ -209,12 +218,12 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "accepted_content_manual_gate",
-      "summary": "增加 playtest_candidates 到 accepted_content 的人工审查门禁模板或命令，要求存在真人试玩记录、评分、failure case 处理结论和内容 hash 复核"
-    },
-    {
       "id": "rl_model_training_smoke",
       "summary": "安装 Gymnasium、NumPy 和 Stable-Baselines3 后，运行最小 DQN 训练并保存模型、metadata、评估报告和已知 exploit 记录"
+    },
+    {
+      "id": "accepted_content_version_lock",
+      "summary": "为 accepted_content 增加版本锁定清单或导入流程，明确哪些已接受内容会进入 Runtime/content 读取路径，并保留来源报告与人工审查引用"
     }
   ]
 }

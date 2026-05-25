@@ -111,3 +111,5 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 - 是否出现 P0/P1 问题。
 - 哪些问题需要进入 `harness/failed_cases/`。
 - 下一步是 `repair`、`needs_more_runs` 还是 `playtest_pass`。
+
+如果候选要从 `playtest_candidates` 推进到 `accepted_content`，还必须按 `harness/playtest/content_acceptance_review_template.json` 补齐 9 局人工试玩证据、内容 hash、审查人、审查日期和 `accept_candidate` 总结论。
