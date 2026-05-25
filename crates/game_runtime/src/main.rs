@@ -1,9 +1,12 @@
-use bevy::prelude::*;
+use bevy::{
+    audio::{AudioBundle, AudioSource, PlaybackSettings, Volume},
+    prelude::*,
+};
 use game_core::{
     ContentPack, Difficulty, FixedDt, GameCore, GameEvent, PlayerAction, RunConfig, RunSnapshot,
     StartingLoadout, TerminalKind, Vec2 as CoreVec2,
 };
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const CAMERA_Z: f32 = 999.0;
@@ -12,6 +15,7 @@ const ENEMY_Z: f32 = 10.0;
 const PICKUP_Z: f32 = 5.0;
 const MAP_Z: f32 = -20.0;
 const MAP_BORDER_Z: f32 = -19.0;
+const PLACEHOLDER_SAMPLE_RATE: u32 = 22_050;
 
 fn main() {
     App::new()
@@ -30,6 +34,7 @@ fn main() {
             Update,
             (
                 step_game_core,
+                play_runtime_audio.after(step_game_core),
                 sync_camera.after(step_game_core),
                 sync_world_visuals.after(step_game_core),
                 update_hud.after(step_game_core),
@@ -67,8 +72,41 @@ struct RuntimeState {
     accumulator: f32,
     latest_snapshot: RunSnapshot,
     last_event: String,
+    last_event_kind: RuntimeEventKind,
+    pending_sounds: Vec<RuntimeSound>,
     paused: bool,
     run_number: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeEventKind {
+    Neutral,
+    Combat,
+    Pickup,
+    Upgrade,
+    Damage,
+    Terminal,
+    System,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeSound {
+    Fire,
+    Pickup,
+    Upgrade,
+    Damage,
+    Terminal,
+    System,
+}
+
+#[derive(Resource)]
+struct RuntimeSounds {
+    fire: Handle<AudioSource>,
+    pickup: Handle<AudioSource>,
+    upgrade: Handle<AudioSource>,
+    damage: Handle<AudioSource>,
+    terminal: Handle<AudioSource>,
+    system: Handle<AudioSource>,
 }
 
 #[derive(Component)]
@@ -88,7 +126,7 @@ struct TerminalText;
 
 type TerminalTextFilter = (With<TerminalText>, Without<HudText>, Without<UpgradeText>);
 
-fn setup_runtime(mut commands: Commands) {
+fn setup_runtime(mut commands: Commands, mut audio_sources: ResMut<Assets<AudioSource>>) {
     let cli = parse_runtime_cli(std::env::args().skip(1));
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
         panic!(
@@ -164,9 +202,12 @@ fn setup_runtime(mut commands: Commands) {
         accumulator: 0.0,
         latest_snapshot,
         last_event: "run started".to_string(),
+        last_event_kind: RuntimeEventKind::System,
+        pending_sounds: vec![RuntimeSound::System],
         paused: false,
         run_number: 1,
     });
+    commands.insert_resource(create_runtime_sounds(&mut audio_sources));
 }
 
 fn step_game_core(
@@ -182,6 +223,8 @@ fn step_game_core(
         } else {
             "resumed".to_string()
         };
+        state.last_event_kind = RuntimeEventKind::System;
+        state.pending_sounds.push(RuntimeSound::System);
     }
     if keyboard.just_pressed(KeyCode::KeyR) {
         reset_runtime_run(&mut state);
@@ -210,7 +253,7 @@ fn step_game_core(
                 },
                 dt,
             );
-            state.last_event = describe_events(&result.events);
+            apply_runtime_feedback(&mut state, &result.events);
             state.latest_snapshot = result.snapshot;
         } else {
             state.latest_snapshot = snapshot;
@@ -229,13 +272,27 @@ fn step_game_core(
             dt,
         );
         state.accumulator -= state.dt_seconds;
-        state.last_event = describe_events(&result.events);
+        apply_runtime_feedback(&mut state, &result.events);
         state.latest_snapshot = result.snapshot;
 
         if !state.latest_snapshot.upgrade_options.is_empty() {
             state.accumulator = 0.0;
             break;
         }
+    }
+}
+
+fn play_runtime_audio(
+    mut commands: Commands,
+    mut state: ResMut<RuntimeState>,
+    sounds: Res<RuntimeSounds>,
+) {
+    let pending = std::mem::take(&mut state.pending_sounds);
+    for sound in pending {
+        commands.spawn(AudioBundle {
+            source: sounds.handle(sound).clone(),
+            settings: PlaybackSettings::DESPAWN.with_volume(sound.volume()),
+        });
     }
 }
 
@@ -438,7 +495,7 @@ fn update_hud(
     if let Ok(mut text) = hud_query.get_single_mut() {
         let mode = if state.paused { "Paused" } else { "Playing" };
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  {}\n{}",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  {}\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -451,6 +508,7 @@ fn update_hud(
             snapshot.visible_enemies.len(),
             snapshot.map.map_id,
             state.last_event,
+            state.last_event_kind.label(),
         );
     }
 
@@ -467,7 +525,7 @@ fn update_hud(
                 })
                 .collect::<Vec<_>>()
                 .join("\n");
-            format!("Upgrade\n{options}")
+            format!("Upgrade paused - press 1/2/3\n{options}")
         };
     }
 
@@ -489,12 +547,35 @@ fn update_hud(
                         TerminalKind::InvalidState => "Invalid",
                     };
                     format!(
-                        "{title}  {:.1}s  Lv {}  Kills {}",
+                        "{title}  {:.1}s  Lv {}  Kills {}\nPress R to restart",
                         terminal.time_seconds, terminal.final_level, terminal.kills
                     )
                 })
                 .unwrap_or_default()
         };
+    }
+}
+
+fn apply_runtime_feedback(state: &mut RuntimeState, events: &[GameEvent]) {
+    let feedback = feedback_for_events(events);
+    state.last_event = feedback.message;
+    state.last_event_kind = feedback.kind;
+    for sound in feedback.sounds {
+        push_unique_sound(&mut state.pending_sounds, sound);
+    }
+}
+
+struct RuntimeFeedback {
+    message: String,
+    kind: RuntimeEventKind,
+    sounds: Vec<RuntimeSound>,
+}
+
+fn feedback_for_events(events: &[GameEvent]) -> RuntimeFeedback {
+    RuntimeFeedback {
+        message: describe_events(events),
+        kind: event_kind_for_events(events),
+        sounds: sounds_for_events(events),
     }
 }
 
@@ -504,6 +585,58 @@ fn describe_events(events: &[GameEvent]) -> String {
         .rev()
         .find_map(describe_event)
         .unwrap_or_else(|| "storm active".to_string())
+}
+
+fn event_kind_for_events(events: &[GameEvent]) -> RuntimeEventKind {
+    events
+        .iter()
+        .rev()
+        .find_map(|event| match event {
+            GameEvent::RunEnded { .. } => Some(RuntimeEventKind::Terminal),
+            GameEvent::PlayerDamaged { .. } => Some(RuntimeEventKind::Damage),
+            GameEvent::UpgradeOffered { .. }
+            | GameEvent::UpgradeChosen { .. }
+            | GameEvent::LevelUp { .. } => Some(RuntimeEventKind::Upgrade),
+            GameEvent::XpCollected { .. } => Some(RuntimeEventKind::Pickup),
+            GameEvent::WeaponFired { .. }
+            | GameEvent::EnemyKilled { .. }
+            | GameEvent::BossSpawned { .. } => Some(RuntimeEventKind::Combat),
+            GameEvent::EnemySpawned { .. }
+            | GameEvent::EnemyHit { .. }
+            | GameEvent::XpDropped { .. } => None,
+        })
+        .unwrap_or(RuntimeEventKind::Neutral)
+}
+
+fn sounds_for_events(events: &[GameEvent]) -> Vec<RuntimeSound> {
+    let mut sounds = Vec::new();
+    for event in events {
+        let sound = match event {
+            GameEvent::RunEnded { .. } => Some(RuntimeSound::Terminal),
+            GameEvent::PlayerDamaged { .. } => Some(RuntimeSound::Damage),
+            GameEvent::UpgradeOffered { .. }
+            | GameEvent::UpgradeChosen { .. }
+            | GameEvent::LevelUp { .. } => Some(RuntimeSound::Upgrade),
+            GameEvent::XpCollected { .. } => Some(RuntimeSound::Pickup),
+            GameEvent::WeaponFired { .. } => Some(RuntimeSound::Fire),
+            GameEvent::BossSpawned { .. } => Some(RuntimeSound::Terminal),
+            GameEvent::EnemySpawned { .. }
+            | GameEvent::EnemyHit { .. }
+            | GameEvent::EnemyKilled { .. }
+            | GameEvent::XpDropped { .. } => None,
+        };
+        if let Some(sound) = sound {
+            push_unique_sound(&mut sounds, sound);
+        }
+    }
+    sounds.truncate(3);
+    sounds
+}
+
+fn push_unique_sound(sounds: &mut Vec<RuntimeSound>, sound: RuntimeSound) {
+    if !sounds.contains(&sound) {
+        sounds.push(sound);
+    }
 }
 
 fn describe_event(event: &GameEvent) -> Option<String> {
@@ -532,8 +665,101 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.latest_snapshot = state.core.snapshot();
     state.accumulator = 0.0;
     state.last_event = "run restarted".to_string();
+    state.last_event_kind = RuntimeEventKind::System;
+    state.pending_sounds.clear();
+    state.pending_sounds.push(RuntimeSound::System);
     state.paused = false;
     state.run_number += 1;
+}
+
+impl RuntimeEventKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Neutral => "status",
+            Self::Combat => "combat",
+            Self::Pickup => "pickup",
+            Self::Upgrade => "upgrade",
+            Self::Damage => "damage",
+            Self::Terminal => "terminal",
+            Self::System => "system",
+        }
+    }
+}
+
+impl RuntimeSounds {
+    fn handle(&self, sound: RuntimeSound) -> &Handle<AudioSource> {
+        match sound {
+            RuntimeSound::Fire => &self.fire,
+            RuntimeSound::Pickup => &self.pickup,
+            RuntimeSound::Upgrade => &self.upgrade,
+            RuntimeSound::Damage => &self.damage,
+            RuntimeSound::Terminal => &self.terminal,
+            RuntimeSound::System => &self.system,
+        }
+    }
+}
+
+impl RuntimeSound {
+    fn volume(self) -> Volume {
+        match self {
+            Self::Fire => Volume::new(0.18),
+            Self::Pickup => Volume::new(0.22),
+            Self::Upgrade => Volume::new(0.34),
+            Self::Damage => Volume::new(0.30),
+            Self::Terminal => Volume::new(0.36),
+            Self::System => Volume::new(0.20),
+        }
+    }
+}
+
+fn create_runtime_sounds(audio_sources: &mut Assets<AudioSource>) -> RuntimeSounds {
+    RuntimeSounds {
+        fire: add_tone(audio_sources, 880.0, 0.055, 0.45),
+        pickup: add_tone(audio_sources, 1320.0, 0.070, 0.35),
+        upgrade: add_tone(audio_sources, 660.0, 0.140, 0.45),
+        damage: add_tone(audio_sources, 180.0, 0.090, 0.55),
+        terminal: add_tone(audio_sources, 440.0, 0.240, 0.50),
+        system: add_tone(audio_sources, 520.0, 0.060, 0.30),
+    }
+}
+
+fn add_tone(
+    audio_sources: &mut Assets<AudioSource>,
+    frequency_hz: f32,
+    seconds: f32,
+    amplitude: f32,
+) -> Handle<AudioSource> {
+    audio_sources.add(AudioSource {
+        bytes: Arc::from(make_tone_wav(frequency_hz, seconds, amplitude).into_boxed_slice()),
+    })
+}
+
+fn make_tone_wav(frequency_hz: f32, seconds: f32, amplitude: f32) -> Vec<u8> {
+    let sample_count = (PLACEHOLDER_SAMPLE_RATE as f32 * seconds).max(1.0) as u32;
+    let data_bytes = sample_count * 2;
+    let mut bytes = Vec::with_capacity(44 + data_bytes as usize);
+    bytes.extend_from_slice(b"RIFF");
+    bytes.extend_from_slice(&(36 + data_bytes).to_le_bytes());
+    bytes.extend_from_slice(b"WAVEfmt ");
+    bytes.extend_from_slice(&16u32.to_le_bytes());
+    bytes.extend_from_slice(&1u16.to_le_bytes());
+    bytes.extend_from_slice(&1u16.to_le_bytes());
+    bytes.extend_from_slice(&PLACEHOLDER_SAMPLE_RATE.to_le_bytes());
+    bytes.extend_from_slice(&(PLACEHOLDER_SAMPLE_RATE * 2).to_le_bytes());
+    bytes.extend_from_slice(&2u16.to_le_bytes());
+    bytes.extend_from_slice(&16u16.to_le_bytes());
+    bytes.extend_from_slice(b"data");
+    bytes.extend_from_slice(&data_bytes.to_le_bytes());
+
+    for index in 0..sample_count {
+        let t = index as f32 / PLACEHOLDER_SAMPLE_RATE as f32;
+        let fade = 1.0 - (index as f32 / sample_count as f32);
+        let sample = (t * frequency_hz * std::f32::consts::TAU).sin() * amplitude * fade;
+        let pcm = (sample * i16::MAX as f32) as i16;
+        bytes.extend_from_slice(&pcm.to_le_bytes());
+    }
+
+    bytes
 }
 
 fn run_config_from_cli(cli: &RuntimeCli) -> RunConfig {
@@ -588,7 +814,11 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_runtime_cli, player_color, run_config_from_cli, DEFAULT_CONTENT_DIR};
+    use super::{
+        event_kind_for_events, make_tone_wav, parse_runtime_cli, player_color, run_config_from_cli,
+        sounds_for_events, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
+    };
+    use game_core::GameEvent;
     use std::path::PathBuf;
 
     #[test]
@@ -631,5 +861,32 @@ mod tests {
     #[test]
     fn low_health_changes_player_color() {
         assert_ne!(player_color(100.0, 100.0), player_color(20.0, 100.0));
+    }
+
+    #[test]
+    fn maps_events_to_runtime_feedback() {
+        let events = [
+            GameEvent::WeaponFired {
+                weapon_id: "rainbow-candy-shot".to_string(),
+                projectile_count: 1,
+            },
+            GameEvent::PlayerDamaged { amount: 3.0 },
+        ];
+
+        assert_eq!(event_kind_for_events(&events), RuntimeEventKind::Damage);
+        assert_eq!(
+            sounds_for_events(&events),
+            [RuntimeSound::Fire, RuntimeSound::Damage]
+        );
+    }
+
+    #[test]
+    fn generated_placeholder_wav_has_header() {
+        let wav = make_tone_wav(440.0, 0.05, 0.25);
+
+        assert!(wav.starts_with(b"RIFF"));
+        assert_eq!(&wav[8..12], b"WAVE");
+        assert_eq!(&wav[12..16], b"fmt ");
+        assert_eq!(&wav[36..40], b"data");
     }
 }
