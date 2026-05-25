@@ -181,13 +181,31 @@ mod tests {
             boss_id: "caramel-furnace".to_string(),
             health: 1000.0,
             max_health: 1000.0,
-            position: Vec2::new(80.0, 0.0),
+            position: Vec2::new(40.0, 0.0),
         });
 
         let mut bot = BotController::new(BotKind::BossHunter, 5);
         let action = bot.next_action(&snapshot);
 
         assert!(action.movement.x < 0.0);
+        assert!(action.movement.length() <= 1.0 + f32::EPSILON);
+    }
+
+    #[test]
+    fn boss_hunter_advances_toward_distant_boss() {
+        let mut snapshot = empty_snapshot();
+        snapshot.boss = Some(game_core::BossSnapshot {
+            entity_id: 99,
+            boss_id: "soda-fountain-dragon".to_string(),
+            health: 1000.0,
+            max_health: 1000.0,
+            position: Vec2::new(220.0, 0.0),
+        });
+
+        let mut bot = BotController::new(BotKind::BossHunter, 5);
+        let action = bot.next_action(&snapshot);
+
+        assert!(action.movement.x > 0.0);
         assert!(action.movement.length() <= 1.0 + f32::EPSILON);
     }
 
@@ -416,14 +434,14 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         let to_boss = boss.position - snapshot.player.position;
         let boss_distance = to_boss.length();
         let boss_direction = to_boss.normalized_or_zero();
-        let spacing = if boss_distance < 150.0 {
+        let spacing = if boss_distance < 50.0 {
             boss_direction * -1.0
-        } else if boss_distance > 260.0 {
+        } else if boss_distance > 170.0 {
             boss_direction
         } else {
             Vec2::ZERO
         };
-        let avoidance = avoid_enemies(snapshot, 90.0, 6);
+        let avoidance = avoid_enemies(snapshot, 60.0, 6);
         return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.85).normalized_or_zero();
     }
 

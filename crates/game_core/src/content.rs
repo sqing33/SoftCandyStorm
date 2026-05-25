@@ -958,10 +958,10 @@ impl ContentPack {
                 "汽水喷泉龙",
                 &["boss", "ranged", "summon", "bubbles"],
                 "盘踞在汽水溪谷的泡泡龙，会蓄力喷出连续泡泡弹幕。",
-                1100.0,
+                2000.0,
                 42.0,
-                18.0,
-                52.0,
+                21.0,
+                76.0,
                 95.0,
                 650,
                 &[
@@ -2515,7 +2515,7 @@ fn soda_creek_wave_segments() -> Vec<WaveSegmentDefinition> {
             1250.0,
             1,
             35,
-            &[("bouncy-gummy", 0.55), ("soda-bubble", 0.45)],
+            &[("bouncy-gummy", 0.75), ("soda-bubble", 0.25)],
         ),
         wave_segment(
             90.0,
@@ -2524,8 +2524,8 @@ fn soda_creek_wave_segments() -> Vec<WaveSegmentDefinition> {
             2,
             55,
             &[
-                ("bouncy-gummy", 0.38),
-                ("soda-bubble", 0.32),
+                ("bouncy-gummy", 0.46),
+                ("soda-bubble", 0.24),
                 ("sour-gummy", 0.18),
                 ("spicy-gummy", 0.12),
             ],
@@ -2547,9 +2547,9 @@ fn soda_creek_wave_segments() -> Vec<WaveSegmentDefinition> {
         wave_segment(
             300.0,
             480.0,
-            840.0,
+            800.0,
             3,
-            82,
+            90,
             &[
                 ("soda-bubble", 0.25),
                 ("spicy-gummy", 0.18),

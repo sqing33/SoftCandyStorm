@@ -2297,15 +2297,15 @@ fn boss_ability_actions(
 ) -> Vec<BossAbilityAction> {
     match ability_id {
         "summon_bouncy_gummy" => vec![boss_summon("bouncy-gummy", 2, boss_position)],
-        "summon_soda_bubble" => vec![boss_summon("soda-bubble", 2, boss_position)],
+        "summon_soda_bubble" => vec![boss_summon("soda-bubble", 4, boss_position)],
         "summon_caramel_slime" => vec![boss_summon("caramel-slime", 4, boss_position)],
         "summon_sticky_bear_gummy" => vec![boss_summon("sticky-bear-gummy", 2, boss_position)],
         "summon_guard_wave" => vec![boss_summon("sticky-bear-gummy", 4, boss_position)],
         "split_cotton_clumps" => vec![boss_summon("cotton-candy-clump", 3, boss_position)],
-        "bubble_barrage" => vec![boss_summon("soda-bubble", 3, player_position)],
+        "bubble_barrage" => vec![boss_summon("soda-bubble", 4, player_position)],
         "charged_fountain" => vec![
-            boss_summon("soda-bubble", 4, player_position),
-            boss_hazard(player_position, 2, 160.0, 52.0, 2.4, 0.72, 0.0),
+            boss_summon("soda-bubble", 5, player_position),
+            boss_hazard(player_position, 1, 0.0, 108.0, 3.2, 0.58, 17.0),
         ],
         "lay_caramel_tracks" => vec![boss_hazard(boss_position, 3, 132.0, 64.0, 4.0, 0.52, 1.0)],
         "slow_pulse" => vec![boss_hazard(
