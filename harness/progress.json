@@ -401,6 +401,10 @@
     {
       "id": "rl_ppo_observation_v2_multimap_comparison",
       "summary": "使用 observation v2 10k PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布全地图过线，但 soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，已记录 v2 跨地图泛化 failure case"
+    },
+    {
+      "id": "rl_ppo_observation_v2_50k_training",
+      "summary": "将 observation v2 PPO 多地图 random 训练提升到 50000 requested timesteps；确定性评估最大动作占比降至 31.91%、归一化动作熵 0.7418，stochastic 评估最大动作占比 16.01%、归一化动作熵 0.9803，已进入 300 秒跨地图对比阶段"
     }
   ],
   "current_findings": [
@@ -598,6 +602,11 @@
       "id": "rl_ppo_observation_v2_multimap_gap",
       "summary": "Observation v2 10k PPO policy 仍无法通过 300 秒跨地图验证：soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，jelly-platform 胜率 30%；动作 gate 通过不能替代长局泛化门禁。",
       "report": "harness/failed_cases/fail_20260526_012_ppo_observation_v2_multimap_gap.json"
+    },
+    {
+      "id": "rl_ppo_observation_v2_50k_action_gate",
+      "summary": "Observation v2 50k PPO 短局动作分布健康，明显优于 10k：最大动作占比 31.91%、归一化动作熵 0.7418；下一步必须做 6 地图 300 秒对比验证泛化。",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_50k_training_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -607,7 +616,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "Observation v2 10k PPO 已通过短局动作 gate，但 300 秒跨地图对比仍失败；下一步应尝试 50000 或 100000 requested timesteps 的 observation v2 多地图训练，再判断是否需要 curriculum、300 秒训练 episode 或 Boss/hazard reward shaping"
+      "summary": "Observation v2 50k PPO 已通过短局动作 gate；下一步应重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比，再判断是否需要 100k、curriculum、300 秒训练 episode 或 Boss/hazard reward shaping"
     }
   ]
 }
