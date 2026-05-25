@@ -1,0 +1,99 @@
+{
+  "status": "trained",
+  "algorithm": "dqn",
+  "model_path": "python/train/models/dqn_phase1_movement_survival_5000_eval60.zip",
+  "metadata_path": "python/train/models/dqn_phase1_movement_survival_5000_eval60_metadata.json",
+  "evaluation_path": "harness/reports/2026-05-26_rl_action_bias_repair_experiment_001/local_training/dqn_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-26_rl_action_bias_repair_experiment_001/local_training/dqn_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true
+  },
+  "training": {
+    "total_timesteps": 5000,
+    "requested_timesteps": 5000,
+    "actual_timesteps": 5000,
+    "seed": 12345,
+    "seconds": 180.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "started_at": "2026-05-25T18:56:13.324804+00:00",
+    "completed_at": "2026-05-25T18:56:15.691513+00:00"
+  },
+  "evaluation": {
+    "episodes": 3,
+    "win_rate": 1.0,
+    "average_survival_seconds": 60.0328,
+    "average_level": 2.0,
+    "average_kills": 48.3333,
+    "average_reward": 7.5337,
+    "damage_taken_average": 33.8,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "4": {
+        "count": 5236,
+        "ratio": 0.9691
+      },
+      "5": {
+        "count": 1,
+        "ratio": 0.0002
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 163,
+        "ratio": 0.0302
+      },
+      "8": {
+        "count": 3,
+        "ratio": 0.0006
+      }
+    },
+    "action_entropy_bits": 0.2053,
+    "normalized_action_entropy": 0.0648,
+    "reward_breakdown_average": {
+      "damage_taken": -1.69,
+      "kill": 2.4167,
+      "level": 0.5,
+      "survival": 0.6003,
+      "terminal": 5.0,
+      "total": 7.5336,
+      "xp": 0.7067
+    }
+  },
+  "known_exploits": [
+    {
+      "id": "dominant_action_bias",
+      "severity": "repair",
+      "summary": "Action 4 accounts for 96.91% of policy steps in this smoke."
+    },
+    {
+      "id": "low_action_entropy",
+      "severity": "repair",
+      "summary": "Policy action entropy is very low; inspect exploration, reward shaping, and training duration."
+    }
+  ],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_action_bias_repair"
+}

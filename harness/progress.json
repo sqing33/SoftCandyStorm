@@ -321,6 +321,10 @@
     {
       "id": "rl_action_bias_gate",
       "summary": "将 dominant_action_bias、low_action_entropy 和 terminal_reward_dominance 纳入 RL 训练/对比报告，DQN 与 PPO 冒烟报告现在会阻断在 action_bias_repair 阶段"
+    },
+    {
+      "id": "rl_dqn_action_bias_repair_experiment",
+      "summary": "运行 DQN 2000-step / 30 秒与 5000-step / 60 秒动作塌缩修复实验，并用独立模型与报告目录隔离产物；结果仍为 trained_needs_action_bias_repair，说明单纯增加训练步数不足以修复塌缩"
     }
   ],
   "current_findings": [
@@ -436,8 +440,8 @@
     },
     {
       "id": "rl_policy_comparison_smoke_scope",
-      "summary": "DQN/PPO 训练和对比链路均已跑通，但最新冒烟显示 DQN 动作 5 占比 93.05%、PPO 动作 1 占比 100%，两者均触发 trained_needs_action_bias_repair；短局奖励仍主要来自 5 秒 duration_reached 终局奖励。",
-      "report": "harness/reports/2026-05-26_rl_ppo_training_smoke_001/summary.md"
+      "summary": "DQN/PPO 训练和对比链路均已跑通，但 DQN 128-step 复现为动作 5 占比 100%，PPO 128-step 为动作 1 占比 100%；DQN 2000-step 降至动作 5 占比 81.72%，5000-step 又塌缩到动作 4 占比 96.91%，均仍触发 trained_needs_action_bias_repair。",
+      "report": "harness/reports/2026-05-26_rl_action_bias_repair_experiment_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -446,8 +450,8 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "rl_policy_action_bias_repair",
-      "summary": "针对 DQN/PPO smoke policy 的单动作塌缩，降低短局终局奖励主导性或扩大训练/评估窗口，并重跑 policy vs rule Bot 对比，直到动作分布不再由单一动作占 75% 以上"
+      "id": "rl_policy_reward_shaping_experiment",
+      "summary": "针对 DQN/PPO policy 的单动作塌缩，优先调整 reward shaping、探索参数或动作塌缩惩罚，再扩大训练/评估窗口；修复后重跑 policy vs rule Bot 对比，直到动作分布不再由单一动作占 75% 以上"
     }
   ]
 }

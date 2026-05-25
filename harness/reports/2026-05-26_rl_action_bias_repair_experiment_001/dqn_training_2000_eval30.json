@@ -1,0 +1,99 @@
+{
+  "status": "trained",
+  "algorithm": "dqn",
+  "model_path": "python/train/models/dqn_phase1_movement_survival.zip",
+  "metadata_path": "python/train/models/dqn_model_metadata.json",
+  "evaluation_path": "harness/reports/local_rl_training/dqn_evaluation_report.json",
+  "known_exploits_path": "harness/reports/local_rl_training/dqn_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true
+  },
+  "training": {
+    "total_timesteps": 2000,
+    "requested_timesteps": 2000,
+    "actual_timesteps": 2000,
+    "seed": 12345,
+    "seconds": 180.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "started_at": "2026-05-25T18:51:53.892529+00:00",
+    "completed_at": "2026-05-25T18:51:55.332088+00:00"
+  },
+  "evaluation": {
+    "episodes": 3,
+    "win_rate": 1.0,
+    "average_survival_seconds": 30.0332,
+    "average_level": 1.0,
+    "average_kills": 22.3333,
+    "average_reward": 6.492,
+    "damage_taken_average": 1.7,
+    "action_distribution": {
+      "0": {
+        "count": 22,
+        "ratio": 0.0081
+      },
+      "1": {
+        "count": 8,
+        "ratio": 0.003
+      },
+      "2": {
+        "count": 80,
+        "ratio": 0.0296
+      },
+      "3": {
+        "count": 77,
+        "ratio": 0.0285
+      },
+      "4": {
+        "count": 43,
+        "ratio": 0.0159
+      },
+      "5": {
+        "count": 2209,
+        "ratio": 0.8172
+      },
+      "6": {
+        "count": 90,
+        "ratio": 0.0333
+      },
+      "7": {
+        "count": 48,
+        "ratio": 0.0178
+      },
+      "8": {
+        "count": 126,
+        "ratio": 0.0466
+      }
+    },
+    "action_entropy_bits": 1.1841,
+    "normalized_action_entropy": 0.3735,
+    "reward_breakdown_average": {
+      "damage_taken": -0.085,
+      "kill": 1.1167,
+      "level": 0.0,
+      "survival": 0.3003,
+      "terminal": 5.0,
+      "total": 6.492,
+      "xp": 0.16
+    }
+  },
+  "known_exploits": [
+    {
+      "id": "dominant_action_bias",
+      "severity": "repair",
+      "summary": "Action 5 accounts for 81.72% of policy steps in this smoke."
+    },
+    {
+      "id": "terminal_reward_dominance",
+      "severity": "watch",
+      "summary": "Terminal reward contributes 75.05% of absolute reward components in this evaluation."
+    }
+  ],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_action_bias_repair"
+}
