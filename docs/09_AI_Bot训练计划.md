@@ -296,6 +296,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 序列上下文的第一步应先用小规模 smoke 证明链路可用，再训练 3-5 帧模型并复查 60/300 秒 high-pressure 对比。如果仍低于规则 Bot，后续再考虑 GRU/Transformer 或分阶段 policy。
 
+3 帧 danger-weighted behavior clone 已完成训练，输入长度为 435，validation accuracy 为 86.87%。该结果仍只是训练 smoke：当前本机 Rust 可执行文件启动被 `spctl` 拒绝，`game_harness gym-bridge` 在 `_dyld_start` 阶段阻塞，60/300 秒 Gym 对比未完成。因此序列上下文模型尚未通过任何 policy gate。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

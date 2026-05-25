@@ -829,6 +829,11 @@
       "id": "rl_behavior_clone_sequence_context_available",
       "summary": "Behavior clone 训练入口支持 --context-frames 拼接同一 episode 的最近 observation，checkpoint 记录 base/input observation 长度；Gym 评估会在每个 episode reset policy 上下文缓存，兼容旧 1 帧模型。",
       "report": "python/train/train_behavior_clone.py"
+    },
+    {
+      "id": "rl_behavior_clone_context3_training_blocked_eval",
+      "summary": "3 帧 danger-weighted BC 已训练完成，输入长度 435、validation accuracy 86.87%；但本机新 Rust binary 被 spctl 拒绝并停在 _dyld_start，Gym 60/300 秒对比未完成，模型不得推进。",
+      "report": "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_smoke_001/summary.md"
     }
   ],
   "next_recommended": [

@@ -219,6 +219,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
   --epochs 20
 ```
 
+The first `--context-frames 3` danger-weighted model trained successfully with `input_observation_len = 435` and 86.87% validation accuracy, but Gym comparison was not completed because the local Rust `game_harness` binary was rejected by macOS policy and stalled before `main`. Re-run the 60/300 second high-pressure comparisons after the Rust binary launch issue is fixed; do not treat the context checkpoint as a policy gate pass.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash
