@@ -152,7 +152,7 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
         "known_exploits_path": str(exploit_path),
         "known_exploits": known_exploit_notes["known_exploits"],
     }
-    metadata_path = model_dir / config["outputs"]["metadata_file"]
+    metadata_path = metadata_path_for(config, algorithm)
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     report = {
         "status": "trained",
@@ -190,6 +190,11 @@ def stable_baselines_model_classes():
 
 def default_model_path(config, algorithm):
     return Path(config["outputs"]["model_dir"]) / f"{algorithm}_phase1_movement_survival.zip"
+
+
+def metadata_path_for(config, algorithm):
+    metadata_file = config["outputs"]["metadata_file"].format(algorithm=algorithm)
+    return Path(config["outputs"]["model_dir"]) / metadata_file
 
 
 def evaluate_saved_policy(config, algorithm, model_path=None, eval_episodes=None, eval_seconds=None, seed_start=None, map_id=None):
