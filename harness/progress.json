@@ -365,6 +365,10 @@
     {
       "id": "rl_ppo_repeat_penalty_stochastic_diagnostic",
       "summary": "复查增强 action_repeat 后的 PPO 模型 stochastic 分布，最大动作占比 33.63%、归一化动作熵 0.8295，确认概率策略仍有熵但确定性 argmax 路径不可用"
+    },
+    {
+      "id": "rl_ppo_repeat_penalty_longer_training",
+      "summary": "将增强 action_repeat 后的 PPO 多地图训练提升到 50000 requested timesteps；确定性动作熵升至 0.2876 但最大动作占比仍为 80.23%，接近但未通过动作 gate"
     }
   ],
   "current_findings": [
@@ -517,6 +521,11 @@
       "id": "rl_ppo_repeat_penalty_stochastic_keeps_entropy",
       "summary": "增强 action_repeat 后的 PPO 模型在 stochastic 评估中仍有健康动作熵，最大动作占比 33.63%、归一化动作熵 0.8295；确定性门禁仍失败，后续应关注 argmax 策略质量。",
       "report": "harness/reports/2026-05-26_rl_ppo_repeat_penalty_stochastic_diagnostic_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_longer_training_near_gate",
+      "summary": "50000-step PPO 训练让确定性动作熵达标、承伤显著下降，但最大动作占比仍为 80.23%，距离 75% gate 仍差一段；后续可尝试 100000-step 或 curriculum。",
+      "report": "harness/failed_cases/fail_20260526_010_ppo_longer_training_action_bias.json"
     }
   ],
   "next_recommended": [
@@ -526,7 +535,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "修复多地图 PPO 训练的动作塌缩；cycle、random、ent_coef=0.02 和增强 action_repeat 后的确定性评估均已失败，但两轮 stochastic 诊断均显示策略分布仍有熵。下一步优先尝试更长训练或 curriculum，并同时输出 deterministic/stochastic 两套评估；通过确定性动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
+      "summary": "修复多地图 PPO 训练的动作塌缩；50000-step 已接近动作 gate，确定性动作熵达标但最大动作占比仍为 80.23%。下一步可尝试 100000-step、curriculum 或 policy probability 诊断，并同时输出 deterministic/stochastic 两套评估；通过确定性动作分布 gate 后再重跑 6 地图 10 seed / 300 秒对比"
     }
   ]
 }

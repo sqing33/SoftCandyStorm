@@ -1,0 +1,114 @@
+{
+  "status": "trained",
+  "algorithm": "ppo",
+  "model_path": "python/train/models/ppo_phase1_multimap_repeat_penalty_ent002_50000_eval60.zip",
+  "metadata_path": "python/train/models/ppo_phase1_multimap_repeat_penalty_ent002_50000_eval60_metadata.json",
+  "evaluation_path": "harness/reports/2026-05-26_rl_ppo_repeat_penalty_longer_training_001/local_training/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-26_rl_ppo_repeat_penalty_longer_training_001/local_training/ppo_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true
+  },
+  "training": {
+    "total_timesteps": 50176,
+    "requested_timesteps": 50000,
+    "actual_timesteps": 50176,
+    "seed": 12345,
+    "seconds": 180.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "maps": [
+      "frosting-grassland",
+      "soda-creek",
+      "cotton-cloud-pasture",
+      "caramel-workshop",
+      "jelly-platform",
+      "cracked-star-jar"
+    ],
+    "map_selection": "random",
+    "started_at": "2026-05-25T19:41:16.362792+00:00",
+    "completed_at": "2026-05-25T19:41:39.157217+00:00",
+    "algorithm_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.02,
+      "clip_range": 0.2
+    },
+    "evaluation_policy": "deterministic"
+  },
+  "evaluation": {
+    "episodes": 3,
+    "win_rate": 1.0,
+    "average_survival_seconds": 60.0328,
+    "average_level": 1.0,
+    "average_kills": 46.6667,
+    "average_reward": 0.8563,
+    "damage_taken_average": 4.6,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 454,
+        "ratio": 0.084
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 4335,
+        "ratio": 0.8023
+      },
+      "4": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "5": {
+        "count": 614,
+        "ratio": 0.1136
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "action_entropy_bits": 0.9116,
+    "normalized_action_entropy": 0.2876,
+    "reward_breakdown_average": {
+      "action_repeat": -4.6693,
+      "damage_taken": -0.368,
+      "kill": 3.7333,
+      "level": 0.0,
+      "survival": 0.6003,
+      "terminal": 1.0,
+      "total": 0.8563,
+      "xp": 0.56
+    }
+  },
+  "known_exploits": [
+    {
+      "id": "dominant_action_bias",
+      "severity": "repair",
+      "summary": "Action 3 accounts for 80.23% of policy steps in this smoke."
+    }
+  ],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_action_bias_repair"
+}
