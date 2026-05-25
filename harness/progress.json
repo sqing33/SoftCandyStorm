@@ -453,6 +453,10 @@
     {
       "id": "rl_warm_start_training_available",
       "summary": "SB3 训练入口增加 --model-in warm start 能力，可从已有模型继续训练并在 metadata/report 中记录源模型与源 metadata，为课程学习和失败策略修复实验提供基础入口"
+    },
+    {
+      "id": "rl_ppo_warm_start_safety_delta_action_gate",
+      "summary": "从 high-pressure train300 50k PPO 模型 warm start 后继续用 safety_delta reward 训练 20224 step，60 秒 deterministic 评估通过动作 gate：胜率 100%、平均承伤 7.68、最大动作 48.98%、归一化动作熵 0.564"
     }
   ],
   "current_findings": [
@@ -715,6 +719,11 @@
       "id": "rl_warm_start_training_available",
       "summary": "训练入口现在支持 --model-in 从既有 SB3 模型继续训练；warm-start 报告会记录源模型、源 metadata 和算法参数来源，避免继续训练实验丢失 provenance。",
       "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_ppo_warm_start_safety_delta_action_gate",
+      "summary": "Warm-start + safety_delta 比从零训练更稳：60 秒短局承伤 7.68，动作熵 0.564，已具备进入 high-pressure 300 秒对比的条件。",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_warm_start_safety_delta_plus20k_training_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -724,7 +733,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "使用 --model-in 从 fail_014 前表现最好的 high-pressure train300 PPO 模型 warm start，先做小步继续训练验证是否能保留长局存活，再决定是否进入完整 curriculum/规则 Bot 轨迹蒸馏"
+      "summary": "对 warm-start + safety_delta 模型运行 high-pressure 10 seed / 300 秒规则 Bot 对比，确认短局动作 gate 改善能否转化为长局泛化"
     }
   ]
 }
