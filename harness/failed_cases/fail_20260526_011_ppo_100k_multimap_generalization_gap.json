@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_011",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "30000-30009",
+  "bot": "PPO 100k policy",
+  "time_seconds": 300.0,
+  "symptom": "100000-step PPO 多地图 random 训练已通过确定性动作分布 gate，但在 6 地图 10 seed / 300 秒对比中跨地图泛化仍失败：soda-creek 胜率 10%、平均承伤 119.7071；caramel-workshop 胜率 0%、平均承伤 120.5158；cracked-star-jar 胜率 0%、平均承伤 120.4954；jelly-platform 胜率 70% 但平均承伤 94.5454。所有地图最大动作占比仍低于 75%，说明动作 gate 通过不等于策略可用。",
+  "root_cause": "更长训练修复了确定性 argmax 动作塌缩，但当前训练目标仍不足以约束 300 秒中后期、Boss、地图 hazard 和高压波次规避；策略在 6 张地图都偏向动作 7，显示它可能学到单一移动倾向而不是稳定的地图条件化策略。",
+  "fix": "不要将该模型推进为正式 RL 压力测试 Bot。下一步应增加 policy probability top-k 诊断，检查地图条件和空间特征是否被策略利用；再尝试 curriculum、按地图分阶段训练、延长训练 episode 或加入中后期/Boss/hazard reward shaping。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_repeat_penalty_100k_multimap_comparison_001/summary.md。修复后需重跑同一 6 地图 10 seed / 300 秒 deterministic 对比，要求所有地图保持健康动作分布，同时高压地图胜率、承伤和击杀不再出现明显泛化断层；随后再扩到 600 秒和更多 seed。"
+}

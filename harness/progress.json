@@ -377,6 +377,10 @@
     {
       "id": "rl_ppo_repeat_penalty_100k_training_gate",
       "summary": "将增强 action_repeat 后的 PPO 多地图 random 训练提升到 100000 requested timesteps；确定性评估最大动作占比降至 52.93%、归一化动作熵升至 0.4491，首次通过动作分布 gate，并用 stochastic 评估确认概率策略健康"
+    },
+    {
+      "id": "rl_ppo_100k_multimap_comparison",
+      "summary": "使用 100000-step PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布全地图过线，但 soda-creek 胜率 10%、caramel-workshop 和 cracked-star-jar 胜率 0%，已记录跨地图泛化 failure case"
     }
   ],
   "current_findings": [
@@ -544,6 +548,11 @@
       "id": "rl_ppo_100k_training_gate_passed",
       "summary": "100000-step PPO 多地图 random 训练首次通过确定性动作分布 gate：最大动作占比 52.93%、归一化动作熵 0.4491；stochastic 诊断最大动作占比 31.67%、归一化动作熵 0.8896。当前 Gate 只是进入规则 Bot 对比，不代表内容或平衡门禁通过。",
       "report": "harness/reports/2026-05-26_rl_ppo_repeat_penalty_100k_training_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_100k_multimap_generalization_gap",
+      "summary": "100000-step PPO policy 动作分布全地图过线，但 300 秒跨地图对比仍失败：soda-creek 胜率 10%，caramel-workshop 与 cracked-star-jar 胜率 0%，高压地图平均承伤约 120。该模型不能作为正式跨地图 RL 压力测试基线。",
+      "report": "harness/failed_cases/fail_20260526_011_ppo_100k_multimap_generalization_gap.json"
     }
   ],
   "next_recommended": [
@@ -553,7 +562,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "100000-step PPO 多地图 random 训练已通过确定性动作分布 gate，最大动作占比 52.93%、归一化动作熵 0.4491；下一步重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比，确认跨地图泛化是否修复"
+      "summary": "100000-step PPO 已修复动作分布 gate，但 6 地图 10 seed / 300 秒对比暴露跨地图泛化失败；下一步应增加 policy probability top-k 诊断，检查地图条件利用情况，并尝试 curriculum、300 秒训练 episode 或 Boss/hazard reward shaping"
     }
   ]
 }
