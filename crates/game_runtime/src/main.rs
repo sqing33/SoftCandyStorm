@@ -184,6 +184,7 @@ enum RuntimeEffectKind {
     XpCollect,
     PlayerDamage,
     BossSpawn,
+    BossAbility,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -218,6 +219,8 @@ struct RuntimeCaptureState {
 struct RuntimeEventCounts {
     enemy_spawned: u32,
     boss_spawned: u32,
+    boss_phase_changed: u32,
+    boss_ability_used: u32,
     weapon_fired: u32,
     enemy_hit: u32,
     enemy_killed: u32,
@@ -1137,6 +1140,9 @@ fn event_kind_for_events(events: &[GameEvent]) -> RuntimeEventKind {
         .find_map(|event| match event {
             GameEvent::RunEnded { .. } => Some(RuntimeEventKind::Terminal),
             GameEvent::PlayerDamaged { .. } => Some(RuntimeEventKind::Damage),
+            GameEvent::BossPhaseChanged { .. } | GameEvent::BossAbilityUsed { .. } => {
+                Some(RuntimeEventKind::Combat)
+            }
             GameEvent::UpgradeOffered { .. }
             | GameEvent::UpgradeChosen { .. }
             | GameEvent::LevelUp { .. } => Some(RuntimeEventKind::Upgrade),
@@ -1158,6 +1164,9 @@ fn sounds_for_events(events: &[GameEvent]) -> Vec<RuntimeSound> {
         let sound = match event {
             GameEvent::RunEnded { .. } => Some(RuntimeSound::Terminal),
             GameEvent::PlayerDamaged { .. } => Some(RuntimeSound::Damage),
+            GameEvent::BossPhaseChanged { .. } | GameEvent::BossAbilityUsed { .. } => {
+                Some(RuntimeSound::Terminal)
+            }
             GameEvent::UpgradeOffered { .. }
             | GameEvent::UpgradeChosen { .. }
             | GameEvent::LevelUp { .. } => Some(RuntimeSound::Upgrade),
@@ -1188,6 +1197,16 @@ fn describe_event(event: &GameEvent) -> Option<String> {
     match event {
         GameEvent::EnemySpawned { enemy_id, .. } => Some(format!("spawned {enemy_id}")),
         GameEvent::BossSpawned { boss_id, .. } => Some(format!("boss {boss_id}")),
+        GameEvent::BossPhaseChanged {
+            boss_id,
+            phase_index,
+            ..
+        } => Some(format!("boss {boss_id} phase {}", phase_index + 1)),
+        GameEvent::BossAbilityUsed {
+            boss_id,
+            ability_id,
+            ..
+        } => Some(format!("boss {boss_id} uses {ability_id}")),
         GameEvent::WeaponFired {
             weapon_id,
             projectile_count,
@@ -1207,42 +1226,48 @@ fn describe_event(event: &GameEvent) -> Option<String> {
 fn effects_for_events(events: &[GameEvent], snapshot: &RunSnapshot) -> Vec<RuntimeEffect> {
     let mut effects = Vec::new();
     for event in events {
-        let effect =
-            match event {
-                GameEvent::EnemyHit {
-                    entity_id, damage, ..
-                } => enemy_position(snapshot, *entity_id).map(|position| {
-                    RuntimeEffect::new(RuntimeEffectKind::ProjectileHit, position, *damage, 0.16)
+        let effect = match event {
+            GameEvent::EnemyHit {
+                entity_id, damage, ..
+            } => enemy_position(snapshot, *entity_id).map(|position| {
+                RuntimeEffect::new(RuntimeEffectKind::ProjectileHit, position, *damage, 0.16)
+            }),
+            GameEvent::XpDropped { entity_id, value } => {
+                pickup_position(snapshot, *entity_id).map(|position| {
+                    RuntimeEffect::new(RuntimeEffectKind::XpDrop, position, *value, 0.42)
+                })
+            }
+            GameEvent::XpCollected { value, .. } => Some(RuntimeEffect::new(
+                RuntimeEffectKind::XpCollect,
+                snapshot.player.position,
+                *value,
+                0.26,
+            )),
+            GameEvent::PlayerDamaged { amount } => Some(RuntimeEffect::new(
+                RuntimeEffectKind::PlayerDamage,
+                snapshot.player.position,
+                *amount,
+                0.22,
+            )),
+            GameEvent::BossSpawned { entity_id, .. } => {
+                boss_position(snapshot, *entity_id).map(|position| {
+                    RuntimeEffect::new(RuntimeEffectKind::BossSpawn, position, 1.0, 0.72)
+                })
+            }
+            GameEvent::BossPhaseChanged { entity_id, .. }
+            | GameEvent::BossAbilityUsed { entity_id, .. } => boss_position(snapshot, *entity_id)
+                .map(|position| {
+                    RuntimeEffect::new(RuntimeEffectKind::BossAbility, position, 1.0, 0.48)
                 }),
-                GameEvent::XpDropped { entity_id, value } => pickup_position(snapshot, *entity_id)
-                    .map(|position| {
-                        RuntimeEffect::new(RuntimeEffectKind::XpDrop, position, *value, 0.42)
-                    }),
-                GameEvent::XpCollected { value, .. } => Some(RuntimeEffect::new(
-                    RuntimeEffectKind::XpCollect,
-                    snapshot.player.position,
-                    *value,
-                    0.26,
-                )),
-                GameEvent::PlayerDamaged { amount } => Some(RuntimeEffect::new(
-                    RuntimeEffectKind::PlayerDamage,
-                    snapshot.player.position,
-                    *amount,
-                    0.22,
-                )),
-                GameEvent::BossSpawned { entity_id, .. } => boss_position(snapshot, *entity_id)
-                    .map(|position| {
-                        RuntimeEffect::new(RuntimeEffectKind::BossSpawn, position, 1.0, 0.72)
-                    }),
-                GameEvent::EnemySpawned { .. }
-                | GameEvent::WeaponFired { .. }
-                | GameEvent::EnemyKilled { .. }
-                | GameEvent::ContentEventTriggered { .. }
-                | GameEvent::LevelUp { .. }
-                | GameEvent::UpgradeOffered { .. }
-                | GameEvent::UpgradeChosen { .. }
-                | GameEvent::RunEnded { .. } => None,
-            };
+            GameEvent::EnemySpawned { .. }
+            | GameEvent::WeaponFired { .. }
+            | GameEvent::EnemyKilled { .. }
+            | GameEvent::ContentEventTriggered { .. }
+            | GameEvent::LevelUp { .. }
+            | GameEvent::UpgradeOffered { .. }
+            | GameEvent::UpgradeChosen { .. }
+            | GameEvent::RunEnded { .. } => None,
+        };
         if let Some(effect) = effect {
             effects.push(effect);
         }
@@ -1306,6 +1331,10 @@ fn effect_visual_style(effect: &RuntimeEffect) -> (Color, f32) {
         RuntimeEffectKind::BossSpawn => (
             Color::srgba(1.0, 0.32, 0.72, 0.45 * fade),
             150.0 + growth * 80.0,
+        ),
+        RuntimeEffectKind::BossAbility => (
+            Color::srgba(0.86, 0.26, 1.0, 0.40 * fade),
+            120.0 + growth * 64.0,
         ),
     }
 }
@@ -1768,6 +1797,8 @@ impl RuntimeEventCounts {
             match event {
                 GameEvent::EnemySpawned { .. } => self.enemy_spawned += 1,
                 GameEvent::BossSpawned { .. } => self.boss_spawned += 1,
+                GameEvent::BossPhaseChanged { .. } => self.boss_phase_changed += 1,
+                GameEvent::BossAbilityUsed { .. } => self.boss_ability_used += 1,
                 GameEvent::WeaponFired { .. } => self.weapon_fired += 1,
                 GameEvent::EnemyHit { .. } => self.enemy_hit += 1,
                 GameEvent::EnemyKilled { .. } => self.enemy_killed += 1,
@@ -2145,12 +2176,24 @@ mod tests {
             GameEvent::ContentEventTriggered {
                 event_id: "rainbow-candy-rush".to_string(),
             },
+            GameEvent::BossPhaseChanged {
+                entity_id: 11,
+                boss_id: "caramel-furnace".to_string(),
+                phase_index: 1,
+            },
+            GameEvent::BossAbilityUsed {
+                entity_id: 11,
+                boss_id: "caramel-furnace".to_string(),
+                ability_id: "lay_caramel_tracks".to_string(),
+            },
         ]);
 
         assert_eq!(counts.weapon_fired, 1);
         assert_eq!(counts.xp_collected, 1);
         assert_eq!(counts.player_damaged, 1);
         assert_eq!(counts.content_event_triggered, 1);
+        assert_eq!(counts.boss_phase_changed, 1);
+        assert_eq!(counts.boss_ability_used, 1);
     }
 
     #[test]
@@ -2264,6 +2307,14 @@ mod tests {
             }]),
             RuntimeEventKind::System
         );
+        assert_eq!(
+            event_kind_for_events(&[GameEvent::BossAbilityUsed {
+                entity_id: 30,
+                boss_id: "caramel-furnace".to_string(),
+                ability_id: "lay_caramel_tracks".to_string(),
+            }]),
+            RuntimeEventKind::Combat
+        );
     }
 
     #[test]
@@ -2320,11 +2371,16 @@ mod tests {
                     entity_id: 30,
                     boss_id: "runaway-sugar-mixer".to_string(),
                 },
+                GameEvent::BossAbilityUsed {
+                    entity_id: 30,
+                    boss_id: "runaway-sugar-mixer".to_string(),
+                    ability_id: "dash_charge".to_string(),
+                },
             ],
             &snapshot,
         );
 
-        assert_eq!(effects.len(), 5);
+        assert_eq!(effects.len(), 6);
         assert!(effects.iter().any(|effect| {
             effect.kind == RuntimeEffectKind::ProjectileHit && effect.position == enemy_position
         }));
@@ -2341,6 +2397,9 @@ mod tests {
         }));
         assert!(effects.iter().any(|effect| {
             effect.kind == RuntimeEffectKind::BossSpawn && effect.position == boss_position
+        }));
+        assert!(effects.iter().any(|effect| {
+            effect.kind == RuntimeEffectKind::BossAbility && effect.position == boss_position
         }));
     }
 

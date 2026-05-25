@@ -122,6 +122,16 @@ pub enum GameEvent {
         entity_id: u64,
         boss_id: String,
     },
+    BossPhaseChanged {
+        entity_id: u64,
+        boss_id: String,
+        phase_index: usize,
+    },
+    BossAbilityUsed {
+        entity_id: u64,
+        boss_id: String,
+        ability_id: String,
+    },
     WeaponFired {
         weapon_id: String,
         projectile_count: u32,
@@ -546,7 +556,7 @@ impl GameCore {
         self.update_hazards(dt_seconds);
         self.update_player_movement(action.movement, dt_seconds);
         self.update_wave_spawns(dt_seconds, &mut events);
-        self.update_enemy_behavior(dt_seconds);
+        self.update_enemy_behavior(dt_seconds, &mut events);
         self.update_weapon_cooldowns(dt_seconds, &mut events);
         self.update_projectiles(dt_seconds, &mut events);
         self.resolve_contact_damage(dt_seconds, &mut events, &mut reward_hint);
@@ -941,11 +951,12 @@ impl GameCore {
         }
     }
 
-    fn update_enemy_behavior(&mut self, dt: f32) {
+    fn update_enemy_behavior(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
         let player_position = self.player.position;
         let half_width = self.map.width * 0.5;
         let half_height = self.map.height * 0.5;
         let mut new_hazards = Vec::new();
+        let mut boss_actions = Vec::new();
 
         for enemy in &mut self.enemies {
             let direction = (player_position - enemy.position).normalized_or_zero();
@@ -970,9 +981,99 @@ impl GameCore {
                         enemy.behavior_state.hazard_interval_seconds;
                 }
             }
+
+            if enemy.is_boss {
+                if let Some(definition) = self.content.bosses.get(&enemy.enemy_id) {
+                    let phase_index = boss_phase_index(definition, enemy.health / enemy.max_health);
+                    if phase_index != enemy.boss_phase_index {
+                        enemy.boss_phase_index = phase_index;
+                        enemy.boss_ability_cursor = 0;
+                        enemy.boss_ability_cooldown_remaining = 0.0;
+                        events.push(GameEvent::BossPhaseChanged {
+                            entity_id: enemy.entity_id,
+                            boss_id: enemy.enemy_id.clone(),
+                            phase_index,
+                        });
+                    }
+
+                    enemy.boss_ability_cooldown_remaining -= dt;
+                    if enemy.boss_ability_cooldown_remaining <= 0.0 {
+                        if let Some(ability_id) =
+                            boss_phase_ability(definition, phase_index, enemy.boss_ability_cursor)
+                        {
+                            enemy.boss_ability_cursor = enemy.boss_ability_cursor.wrapping_add(1);
+                            enemy.boss_ability_cooldown_remaining =
+                                boss_ability_cooldown_seconds(&ability_id);
+                            events.push(GameEvent::BossAbilityUsed {
+                                entity_id: enemy.entity_id,
+                                boss_id: enemy.enemy_id.clone(),
+                                ability_id: ability_id.clone(),
+                            });
+                            boss_actions.extend(boss_ability_actions(
+                                &ability_id,
+                                enemy.position,
+                                player_position,
+                            ));
+                        }
+                    }
+                }
+            }
         }
 
         self.hazards.extend(new_hazards);
+        self.apply_boss_ability_actions(boss_actions, events);
+    }
+
+    fn apply_boss_ability_actions(
+        &mut self,
+        actions: Vec<BossAbilityAction>,
+        events: &mut Vec<GameEvent>,
+    ) {
+        for action in actions {
+            match action {
+                BossAbilityAction::SpawnEnemy {
+                    enemy_id,
+                    count,
+                    origin,
+                    radius,
+                } => {
+                    let Some(definition) = self.content.enemies.get(&enemy_id).cloned() else {
+                        continue;
+                    };
+                    for _ in 0..count.min(6) {
+                        let position = self.random_position_near(origin, 40.0, radius);
+                        let enemy = Enemy::from_enemy_definition(
+                            self.allocate_entity_id(),
+                            position,
+                            &definition,
+                        );
+                        events.push(GameEvent::EnemySpawned {
+                            entity_id: enemy.entity_id,
+                            enemy_id: enemy.enemy_id.clone(),
+                        });
+                        self.enemies.push(enemy);
+                    }
+                }
+                BossAbilityAction::SpawnHazard {
+                    count,
+                    origin,
+                    radius,
+                    hazard_radius,
+                    duration_seconds,
+                    slow_multiplier,
+                } => {
+                    for _ in 0..count.min(8) {
+                        let position = self.random_position_near(origin, 0.0, radius);
+                        self.hazards.push(Hazard {
+                            position,
+                            radius: hazard_radius,
+                            remaining_seconds: duration_seconds,
+                            slow_multiplier,
+                        });
+                    }
+                }
+            }
+        }
     }
 
     fn update_weapon_cooldowns(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
@@ -1697,6 +1798,15 @@ impl GameCore {
         self.clamp_to_map(self.player.position + offset)
     }
 
+    fn random_position_near(&mut self, origin: Vec2, min_distance: f32, max_distance: f32) -> Vec2 {
+        let angle = self.rng.range_f32(0.0, std::f32::consts::TAU);
+        let distance = self
+            .rng
+            .range_f32(min_distance, max_distance.max(min_distance));
+        let offset = Vec2::new(angle.cos(), angle.sin()) * distance;
+        self.clamp_to_map(origin + offset)
+    }
+
     fn clamp_to_map(&self, position: Vec2) -> Vec2 {
         let mut position = position;
         position.x = position
@@ -2082,6 +2192,119 @@ impl From<&Hazard> for HazardSnapshot {
 }
 
 #[derive(Debug, Clone)]
+enum BossAbilityAction {
+    SpawnEnemy {
+        enemy_id: String,
+        count: u32,
+        origin: Vec2,
+        radius: f32,
+    },
+    SpawnHazard {
+        count: u32,
+        origin: Vec2,
+        radius: f32,
+        hazard_radius: f32,
+        duration_seconds: f32,
+        slow_multiplier: f32,
+    },
+}
+
+fn boss_phase_index(definition: &BossDefinition, health_ratio: f32) -> usize {
+    let ratio = health_ratio.clamp(0.0, 1.0);
+    let mut phase_index = 0;
+    for (index, phase) in definition.phases.iter().enumerate() {
+        if ratio <= phase.hp_threshold {
+            phase_index = index;
+        }
+    }
+    phase_index
+}
+
+fn boss_phase_ability(
+    definition: &BossDefinition,
+    phase_index: usize,
+    cursor: usize,
+) -> Option<String> {
+    let phase = definition.phases.get(phase_index)?;
+    if phase.abilities.is_empty() {
+        None
+    } else {
+        Some(phase.abilities[cursor % phase.abilities.len()].clone())
+    }
+}
+
+fn boss_ability_cooldown_seconds(ability_id: &str) -> f32 {
+    if ability_id.contains("double") || ability_id.contains("multi") {
+        3.0
+    } else if ability_id.contains("summon") || ability_id.contains("split") {
+        4.0
+    } else {
+        3.5
+    }
+}
+
+fn boss_ability_actions(
+    ability_id: &str,
+    boss_position: Vec2,
+    player_position: Vec2,
+) -> Vec<BossAbilityAction> {
+    match ability_id {
+        "summon_bouncy_gummy" => vec![boss_summon("bouncy-gummy", 2, boss_position)],
+        "summon_soda_bubble" => vec![boss_summon("soda-bubble", 2, boss_position)],
+        "summon_caramel_slime" => vec![boss_summon("caramel-slime", 2, boss_position)],
+        "summon_sticky_bear_gummy" => vec![boss_summon("sticky-bear-gummy", 2, boss_position)],
+        "summon_guard_wave" => vec![boss_summon("sticky-bear-gummy", 4, boss_position)],
+        "split_cotton_clumps" => vec![boss_summon("cotton-candy-clump", 3, boss_position)],
+        "bubble_barrage" => vec![boss_summon("soda-bubble", 3, player_position)],
+        "charged_fountain" => vec![
+            boss_summon("soda-bubble", 4, player_position),
+            boss_hazard(player_position, 2, 160.0, 52.0, 2.4, 0.72),
+        ],
+        "lay_caramel_tracks" => vec![boss_hazard(boss_position, 2, 120.0, 54.0, 3.2, 0.55)],
+        "slow_pulse" => vec![boss_hazard(player_position, 1, 80.0, 96.0, 1.8, 0.62)],
+        "caramel_floor_cycle" => vec![boss_hazard(player_position, 3, 180.0, 64.0, 3.6, 0.50)],
+        "jump_shockwave" => vec![boss_hazard(player_position, 1, 24.0, 120.0, 1.2, 0.70)],
+        "double_jump_shockwave" => vec![boss_hazard(player_position, 2, 140.0, 112.0, 1.4, 0.68)],
+        "sour_phase_storm" => vec![boss_summon("sour-gummy", 2, player_position)],
+        "spicy_phase_burst" => vec![boss_summon("spicy-gummy", 3, boss_position)],
+        "bubble_phase_barrage" => vec![boss_summon("soda-bubble", 3, player_position)],
+        "multi_flavor_storm" => vec![
+            boss_summon("sour-gummy", 2, player_position),
+            boss_summon("spicy-gummy", 2, boss_position),
+            boss_hazard(player_position, 2, 180.0, 72.0, 2.4, 0.60),
+        ],
+        _ => Vec::new(),
+    }
+}
+
+fn boss_summon(enemy_id: &str, count: u32, origin: Vec2) -> BossAbilityAction {
+    BossAbilityAction::SpawnEnemy {
+        enemy_id: enemy_id.to_string(),
+        count,
+        origin,
+        radius: 180.0,
+    }
+}
+
+fn boss_hazard(
+    origin: Vec2,
+    count: u32,
+    radius: f32,
+    hazard_radius: f32,
+    duration_seconds: f32,
+    slow_multiplier: f32,
+) -> BossAbilityAction {
+    BossAbilityAction::SpawnHazard {
+        count,
+        origin,
+        radius,
+        hazard_radius,
+        duration_seconds,
+        slow_multiplier,
+    }
+}
+
+#[derive(Debug, Clone)]
 struct MapRuntime {
     width: f32,
     height: f32,
@@ -2117,6 +2340,9 @@ struct Enemy {
     behavior_state: EnemyBehaviorState,
     is_boss: bool,
     is_elite: bool,
+    boss_phase_index: usize,
+    boss_ability_cursor: usize,
+    boss_ability_cooldown_remaining: f32,
 }
 
 impl Enemy {
@@ -2133,7 +2359,7 @@ impl Enemy {
     }
 
     fn from_boss_definition(entity_id: u64, position: Vec2, definition: &BossDefinition) -> Self {
-        Self::from_stats(
+        let mut enemy = Self::from_stats(
             entity_id,
             position,
             definition.id(),
@@ -2141,7 +2367,11 @@ impl Enemy {
             8.0,
             true,
             None,
-        )
+        );
+        enemy.behavior_state = EnemyBehaviorState::for_boss(definition);
+        enemy.behavior = enemy.behavior_state.behavior;
+        enemy.boss_ability_cooldown_remaining = 0.0;
+        enemy
     }
 
     fn from_stats(
@@ -2171,6 +2401,9 @@ impl Enemy {
             behavior_state,
             is_boss,
             is_elite: false,
+            boss_phase_index: 0,
+            boss_ability_cursor: 0,
+            boss_ability_cooldown_remaining: 0.0,
         }
     }
 
@@ -2252,6 +2485,30 @@ impl Default for EnemyBehaviorState {
             contact_slow_multiplier: 1.0,
             contact_slow_duration_seconds: 0.0,
         }
+    }
+}
+
+impl EnemyBehaviorState {
+    fn for_boss(definition: &BossDefinition) -> Self {
+        let mut state = Self::default();
+        let abilities = definition
+            .phases
+            .iter()
+            .flat_map(|phase| phase.abilities.iter())
+            .collect::<Vec<_>>();
+
+        if abilities.iter().any(|ability| {
+            ability.contains("dash") || ability.contains("jump") || ability.as_str() == "soft_roll"
+        }) {
+            state.behavior = EnemyBehavior::Dash;
+            state.dash_charge_seconds = 0.75;
+            state.dash_duration_seconds = 0.35;
+            state.dash_cooldown_seconds = 3.2;
+            state.dash_cooldown_remaining_seconds = state.dash_cooldown_seconds;
+            state.dash_speed_multiplier = 2.4;
+        }
+
+        state
     }
 }
 
@@ -2755,8 +3012,9 @@ mod tests {
         ));
 
         let mut saw_dash = false;
+        let mut events = Vec::new();
         for _ in 0..80 {
-            core.update_enemy_behavior(0.1);
+            core.update_enemy_behavior(0.1, &mut events);
             let enemy = &core.enemies[0];
             if enemy.velocity.length() > enemy.move_speed * 1.5 {
                 saw_dash = true;
@@ -2765,6 +3023,82 @@ mod tests {
         }
 
         assert!(saw_dash);
+    }
+
+    #[test]
+    fn boss_abilities_emit_events_and_spawn_hazards() {
+        let content = ContentPack::base_demo();
+        let boss_definition = content
+            .bosses
+            .get("caramel-furnace")
+            .expect("base demo should include caramel-furnace")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let boss_id = core.allocate_entity_id();
+        core.enemies.push(Enemy::from_boss_definition(
+            boss_id,
+            Vec2::new(120.0, 0.0),
+            &boss_definition,
+        ));
+
+        let mut events = Vec::new();
+        core.update_enemy_behavior(0.1, &mut events);
+
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::BossAbilityUsed {
+                    boss_id,
+                    ability_id,
+                    ..
+                } if boss_id == "caramel-furnace" && ability_id == "lay_caramel_tracks"
+            )
+        }));
+        assert!(!core.hazards.is_empty());
+    }
+
+    #[test]
+    fn boss_phase_change_emits_event_and_uses_new_ability() {
+        let content = ContentPack::base_demo();
+        let boss_definition = content
+            .bosses
+            .get("runaway-sugar-mixer")
+            .expect("base demo should include runaway-sugar-mixer")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let entity_id = core.allocate_entity_id();
+        let mut boss =
+            Enemy::from_boss_definition(entity_id, Vec2::new(120.0, 0.0), &boss_definition);
+        boss.health = boss.max_health * 0.40;
+        core.enemies.push(boss);
+
+        let mut events = Vec::new();
+        core.update_enemy_behavior(0.1, &mut events);
+
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::BossPhaseChanged {
+                    boss_id,
+                    phase_index: 1,
+                    ..
+                } if boss_id == "runaway-sugar-mixer"
+            )
+        }));
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::BossAbilityUsed {
+                    boss_id,
+                    ability_id,
+                    ..
+                } if boss_id == "runaway-sugar-mixer" && ability_id == "dash_charge"
+            )
+        }));
     }
 
     #[test]

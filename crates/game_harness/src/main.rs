@@ -2250,6 +2250,8 @@ fn gym_event_label(event: &GameEvent) -> &'static str {
     match event {
         GameEvent::EnemySpawned { .. } => "enemy_spawned",
         GameEvent::BossSpawned { .. } => "boss_spawned",
+        GameEvent::BossPhaseChanged { .. } => "boss_phase_changed",
+        GameEvent::BossAbilityUsed { .. } => "boss_ability_used",
         GameEvent::WeaponFired { .. } => "weapon_fired",
         GameEvent::EnemyHit { .. } => "enemy_hit",
         GameEvent::EnemyKilled { .. } => "enemy_killed",
