@@ -469,6 +469,10 @@
     {
       "id": "rl_ppo_soda_focus_warm_start_action_gate",
       "summary": "从 warm-start safety_delta 模型继续在 soda-creek 单图训练 20224 step，并用 soda-creek 做 60 秒短局评估；动作熵健康 0.7681，但短局胜率只有 40%、平均承伤 85.966"
+    },
+    {
+      "id": "rl_ppo_soda_focus_warm_start_regression",
+      "summary": "Soda-focused warm-start 在 high-pressure 3 地图 10 seed / 300 秒对比中退化：soda-creek 和 caramel-workshop 均为 0% 胜率，平均胜率降到 3.33%，已记录单图微调泛化失败"
     }
   ],
   "current_findings": [
@@ -751,6 +755,11 @@
       "id": "rl_ppo_soda_focus_warm_start_action_gate",
       "summary": "Soda-focused warm-start 没有动作塌缩，但 soda-creek 短局已明显吃力：60 秒胜率 40%、平均承伤 85.966，应通过 300 秒高压聚合确认是否过拟合或伤到其他地图。",
       "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_soda_focus_warm_start_safety_delta_plus20k_training_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_soda_focus_warm_start_regression",
+      "summary": "单图 soda-creek 继续训练不是好方向：动作熵提高但目标图胜率掉到 0%，还牺牲 caramel-workshop；后续应改用多图 curriculum 或规则 Bot 轨迹蒸馏。",
+      "report": "harness/failed_cases/fail_20260526_018_soda_focus_warm_start_regression.json"
     }
   ],
   "next_recommended": [
@@ -760,7 +769,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "对 soda-focused warm-start 模型运行 high-pressure 10 seed / 300 秒聚合对比，确认单图定向训练是否改善 soda-creek 或牺牲其他高压地图"
+      "summary": "实现规则 Bot 轨迹导出或多图 curriculum 权重，不再做单图 PPO 微调；下一轮目标是保留 warm-start +20k 的 13.33% 平均胜率并提升 soda-creek 存活"
     }
   ]
 }
