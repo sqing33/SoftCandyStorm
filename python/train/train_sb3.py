@@ -115,6 +115,7 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
     try:
         model = model_class(selected["policy"], env, verbose=1, **kwargs)
         model.learn(total_timesteps=train_steps)
+        actual_timesteps = int(getattr(model, "num_timesteps", train_steps))
         completed_at = datetime.now(timezone.utc).isoformat()
         model.save(model_path)
     finally:
@@ -163,7 +164,9 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
         "known_exploits_path": str(exploit_path),
         "dependency_status": dependency_status(),
         "training": {
-            "total_timesteps": train_steps,
+            "total_timesteps": actual_timesteps,
+            "requested_timesteps": train_steps,
+            "actual_timesteps": actual_timesteps,
             "seed": config["environment"]["seed"],
             "seconds": config["environment"]["seconds"],
             "tick_rate": config["environment"]["tick_rate"],
