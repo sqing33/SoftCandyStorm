@@ -11,13 +11,14 @@ const PLAYER_Z: f32 = 20.0;
 const ENEMY_Z: f32 = 10.0;
 const PICKUP_Z: f32 = 5.0;
 const MAP_Z: f32 = -20.0;
+const MAP_BORDER_Z: f32 = -19.0;
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::srgb(0.95, 0.91, 0.78)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "软糖风暴 Runtime Prototype".to_string(),
+                title: "Soft Candy Storm Runtime Prototype".to_string(),
                 resolution: (1280.0, 720.0).into(),
                 present_mode: bevy::window::PresentMode::AutoVsync,
                 ..default()
@@ -58,12 +59,16 @@ impl Default for RuntimeCli {
 
 #[derive(Resource)]
 struct RuntimeState {
+    content: ContentPack,
+    config: RunConfig,
     core: GameCore,
     dt: FixedDt,
     dt_seconds: f32,
     accumulator: f32,
     latest_snapshot: RunSnapshot,
     last_event: String,
+    paused: bool,
+    run_number: u32,
 }
 
 #[derive(Component)]
@@ -81,6 +86,8 @@ struct UpgradeText;
 #[derive(Component)]
 struct TerminalText;
 
+type TerminalTextFilter = (With<TerminalText>, Without<HudText>, Without<UpgradeText>);
+
 fn setup_runtime(mut commands: Commands) {
     let cli = parse_runtime_cli(std::env::args().skip(1));
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
@@ -89,21 +96,8 @@ fn setup_runtime(mut commands: Commands) {
             cli.content_dir.display()
         )
     });
-    let config = RunConfig {
-        seed: cli.seed,
-        map_id: "frosting-grassland".to_string(),
-        character_id: "jar-keeper".to_string(),
-        starting_loadout: StartingLoadout {
-            weapons: vec!["rainbow-candy-shot".to_string()],
-            passives: Vec::new(),
-        },
-        difficulty: Difficulty::Normal,
-        duration_seconds: cli.seconds,
-        ruleset_version: "prototype-v0".to_string(),
-        content_pack_ids: vec!["base-demo".to_string()],
-        tick_rate: cli.tick_rate,
-    };
-    let core = GameCore::reset_with_content(config, content)
+    let config = run_config_from_cli(&cli);
+    let core = GameCore::reset_with_content(config.clone(), content.clone())
         .expect("runtime content must pass the same GameCore validation as headless runs");
     let latest_snapshot = core.snapshot();
     let dt = FixedDt::from_tick_rate(cli.tick_rate);
@@ -162,12 +156,16 @@ fn setup_runtime(mut commands: Commands) {
     ));
 
     commands.insert_resource(RuntimeState {
+        content,
+        config,
         core,
         dt,
         dt_seconds: dt.seconds(),
         accumulator: 0.0,
         latest_snapshot,
-        last_event: "移动：WASD / 方向键，升级选择：1/2/3".to_string(),
+        last_event: "run started".to_string(),
+        paused: false,
+        run_number: 1,
     });
 }
 
@@ -177,7 +175,24 @@ fn step_game_core(
     mut state: ResMut<RuntimeState>,
 ) {
     let dt = state.dt;
+    if keyboard.just_pressed(KeyCode::KeyP) {
+        state.paused = !state.paused;
+        state.last_event = if state.paused {
+            "paused".to_string()
+        } else {
+            "resumed".to_string()
+        };
+    }
+    if keyboard.just_pressed(KeyCode::KeyR) {
+        reset_runtime_run(&mut state);
+        return;
+    }
+
     if state.core.is_terminal() {
+        state.latest_snapshot = state.core.snapshot();
+        return;
+    }
+    if state.paused {
         state.latest_snapshot = state.core.snapshot();
         return;
     }
@@ -296,6 +311,7 @@ fn sync_world_visuals(
         },
         RuntimeVisual,
     ));
+    spawn_map_borders(&mut commands, snapshot);
 
     for pickup in &snapshot.visible_pickups {
         commands.spawn((
@@ -330,7 +346,7 @@ fn sync_world_visuals(
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
-                color: Color::srgb(1.0, 0.93, 0.98),
+                color: player_color(snapshot.player.health, snapshot.player.max_health),
                 custom_size: Some(Vec2::splat(42.0)),
                 ..default()
             },
@@ -345,6 +361,50 @@ fn sync_world_visuals(
     ));
 }
 
+fn spawn_map_borders(commands: &mut Commands, snapshot: &RunSnapshot) {
+    let thickness = 10.0;
+    let color = Color::srgb(0.49, 0.36, 0.20);
+    for (x, y, width, height) in [
+        (
+            0.0,
+            snapshot.map.height * 0.5,
+            snapshot.map.width,
+            thickness,
+        ),
+        (
+            0.0,
+            -snapshot.map.height * 0.5,
+            snapshot.map.width,
+            thickness,
+        ),
+        (
+            -snapshot.map.width * 0.5,
+            0.0,
+            thickness,
+            snapshot.map.height,
+        ),
+        (
+            snapshot.map.width * 0.5,
+            0.0,
+            thickness,
+            snapshot.map.height,
+        ),
+    ] {
+        commands.spawn((
+            SpriteBundle {
+                sprite: Sprite {
+                    color,
+                    custom_size: Some(Vec2::new(width, height)),
+                    ..default()
+                },
+                transform: Transform::from_xyz(x, y, MAP_BORDER_Z),
+                ..default()
+            },
+            RuntimeVisual,
+        ));
+    }
+}
+
 fn enemy_color(is_boss: bool, is_elite: bool) -> Color {
     if is_boss {
         Color::srgb(0.92, 0.20, 0.38)
@@ -355,19 +415,32 @@ fn enemy_color(is_boss: bool, is_elite: bool) -> Color {
     }
 }
 
+fn player_color(health: f32, max_health: f32) -> Color {
+    let ratio = if max_health > 0.0 {
+        (health / max_health).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    if ratio < 0.30 {
+        Color::srgb(1.0, 0.55, 0.48)
+    } else {
+        Color::srgb(1.0, 0.93, 0.98)
+    }
+}
+
 fn update_hud(
     state: Res<RuntimeState>,
     mut hud_query: Query<&mut Text, With<HudText>>,
     mut upgrade_query: Query<&mut Text, (With<UpgradeText>, Without<HudText>)>,
-    mut terminal_query: Query<
-        &mut Text,
-        (With<TerminalText>, Without<HudText>, Without<UpgradeText>),
-    >,
+    mut terminal_query: Query<&mut Text, TerminalTextFilter>,
 ) {
     let snapshot = &state.latest_snapshot;
     if let Ok(mut text) = hud_query.get_single_mut() {
+        let mode = if state.paused { "Paused" } else { "Playing" };
         text.sections[0].value = format!(
-            "Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  {}\n{}",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  {}\n{}",
+            state.run_number,
+            mode,
             snapshot.time_seconds,
             snapshot.player.health.max(0.0),
             snapshot.player.max_health,
@@ -390,40 +463,38 @@ fn update_hud(
                 .iter()
                 .enumerate()
                 .map(|(index, option)| {
-                    format!(
-                        "{}. {} [{}] - {}",
-                        index + 1,
-                        option.name,
-                        option.tags.join(","),
-                        option.description
-                    )
+                    format!("{}. {} [{}]", index + 1, option.id, option.tags.join(","))
                 })
                 .collect::<Vec<_>>()
                 .join("\n");
-            format!("选择升级：\n{options}")
+            format!("Upgrade\n{options}")
         };
     }
 
     if let Ok(mut text) = terminal_query.get_single_mut() {
-        text.sections[0].value = state
-            .core
-            .metrics()
-            .terminal
-            .as_ref()
-            .map(|terminal| {
-                let title = match terminal.kind {
-                    TerminalKind::Victory => "胜利",
-                    TerminalKind::Defeat => "失败",
-                    TerminalKind::Timeout => "超时",
-                    TerminalKind::Aborted => "中止",
-                    TerminalKind::InvalidState => "异常",
-                };
-                format!(
-                    "{title}  {:.1}s  Lv {}  Kills {}",
-                    terminal.time_seconds, terminal.final_level, terminal.kills
-                )
-            })
-            .unwrap_or_default();
+        text.sections[0].value = if state.paused {
+            "Paused".to_string()
+        } else {
+            state
+                .core
+                .metrics()
+                .terminal
+                .as_ref()
+                .map(|terminal| {
+                    let title = match terminal.kind {
+                        TerminalKind::Victory => "Victory",
+                        TerminalKind::Defeat => "Defeat",
+                        TerminalKind::Timeout => "Timeout",
+                        TerminalKind::Aborted => "Aborted",
+                        TerminalKind::InvalidState => "Invalid",
+                    };
+                    format!(
+                        "{title}  {:.1}s  Lv {}  Kills {}",
+                        terminal.time_seconds, terminal.final_level, terminal.kills
+                    )
+                })
+                .unwrap_or_default()
+        };
     }
 }
 
@@ -432,25 +503,53 @@ fn describe_events(events: &[GameEvent]) -> String {
         .iter()
         .rev()
         .find_map(describe_event)
-        .unwrap_or_else(|| "风暴正在推进".to_string())
+        .unwrap_or_else(|| "storm active".to_string())
 }
 
 fn describe_event(event: &GameEvent) -> Option<String> {
     match event {
-        GameEvent::EnemySpawned { enemy_id, .. } => Some(format!("生成敌人：{enemy_id}")),
-        GameEvent::BossSpawned { boss_id, .. } => Some(format!("Boss 出现：{boss_id}")),
+        GameEvent::EnemySpawned { enemy_id, .. } => Some(format!("spawned {enemy_id}")),
+        GameEvent::BossSpawned { boss_id, .. } => Some(format!("boss {boss_id}")),
         GameEvent::WeaponFired {
             weapon_id,
             projectile_count,
-        } => Some(format!("武器发射：{weapon_id} x{projectile_count}")),
-        GameEvent::EnemyKilled { enemy_id, .. } => Some(format!("击败：{enemy_id}")),
-        GameEvent::XpCollected { value, .. } => Some(format!("拾取糖晶：+{value:.0} XP")),
-        GameEvent::LevelUp { level } => Some(format!("升级到 Lv {level}")),
-        GameEvent::UpgradeOffered { .. } => Some("升级选项已出现".to_string()),
-        GameEvent::UpgradeChosen { option_id } => Some(format!("选择升级：{option_id}")),
-        GameEvent::PlayerDamaged { amount } => Some(format!("受到伤害：{amount:.1}")),
-        GameEvent::RunEnded { terminal } => Some(format!("本局结束：{}", terminal.kind.as_str())),
+        } => Some(format!("fired {weapon_id} x{projectile_count}")),
+        GameEvent::EnemyKilled { enemy_id, .. } => Some(format!("defeated {enemy_id}")),
+        GameEvent::XpCollected { value, .. } => Some(format!("xp +{value:.0}")),
+        GameEvent::LevelUp { level } => Some(format!("level {level}")),
+        GameEvent::UpgradeOffered { .. } => Some("upgrade offered".to_string()),
+        GameEvent::UpgradeChosen { option_id } => Some(format!("upgrade {option_id}")),
+        GameEvent::PlayerDamaged { amount } => Some(format!("damage {amount:.1}")),
+        GameEvent::RunEnded { terminal } => Some(format!("ended {}", terminal.kind.as_str())),
         GameEvent::EnemyHit { .. } | GameEvent::XpDropped { .. } => None,
+    }
+}
+
+fn reset_runtime_run(state: &mut RuntimeState) {
+    let core = GameCore::reset_with_content(state.config.clone(), state.content.clone())
+        .expect("runtime reset must use already validated content");
+    state.core = core;
+    state.latest_snapshot = state.core.snapshot();
+    state.accumulator = 0.0;
+    state.last_event = "run restarted".to_string();
+    state.paused = false;
+    state.run_number += 1;
+}
+
+fn run_config_from_cli(cli: &RuntimeCli) -> RunConfig {
+    RunConfig {
+        seed: cli.seed,
+        map_id: "frosting-grassland".to_string(),
+        character_id: "jar-keeper".to_string(),
+        starting_loadout: StartingLoadout {
+            weapons: vec!["rainbow-candy-shot".to_string()],
+            passives: Vec::new(),
+        },
+        difficulty: Difficulty::Normal,
+        duration_seconds: cli.seconds,
+        ruleset_version: "prototype-v0".to_string(),
+        content_pack_ids: vec!["base-demo".to_string()],
+        tick_rate: cli.tick_rate,
     }
 }
 
@@ -489,7 +588,7 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_runtime_cli, DEFAULT_CONTENT_DIR};
+    use super::{parse_runtime_cli, player_color, run_config_from_cli, DEFAULT_CONTENT_DIR};
     use std::path::PathBuf;
 
     #[test]
@@ -517,5 +616,20 @@ mod tests {
 
         assert_eq!(cli.content_dir, PathBuf::from(DEFAULT_CONTENT_DIR));
         assert_eq!(cli.seed, 12_345);
+    }
+
+    #[test]
+    fn builds_runtime_run_config_from_cli() {
+        let cli = parse_runtime_cli(["--seed".to_string(), "77".to_string()]);
+        let config = run_config_from_cli(&cli);
+
+        assert_eq!(config.seed, 77);
+        assert_eq!(config.map_id, "frosting-grassland");
+        assert_eq!(config.starting_loadout.weapons, ["rainbow-candy-shot"]);
+    }
+
+    #[test]
+    fn low_health_changes_player_color() {
+        assert_ne!(player_color(100.0, 100.0), player_color(20.0, 100.0));
     }
 }

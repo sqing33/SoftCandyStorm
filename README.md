@@ -36,7 +36,7 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 `replay-batch` 会递归扫描 replay JSON，并用 strict 模式校验 content hash、升级选项和 final metrics 是否完全复现。
 `validate-candidates` 会先做 schema 校验和静态预算门禁，只有两者都通过才会复制到 `harness/validated_candidates`。
 `simulate-candidates` 会对 `validated_candidates` 执行 Bot 矩阵，通过后复制到 `harness/simulated_candidates`，未通过则复制到 `harness/repair_queue`。
-`game_runtime` 是最小 Bevy 可视化客户端：读取键盘输入，调用同一个 GameCore，再根据 snapshot/events 更新画面和 HUD。
+`game_runtime` 是最小 Bevy 可视化客户端：读取键盘输入，调用同一个 GameCore，再根据 snapshot/events 更新画面和 HUD。Runtime 操作：WASD/方向键移动，1/2/3 选择升级，P 暂停，R 重开。
 
 常用检查：
 
