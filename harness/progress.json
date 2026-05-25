@@ -273,6 +273,10 @@
     {
       "id": "runtime_map_visual_feedback",
       "summary": "GameCore snapshot 暴露 active_hazards，Runtime 按 map_id 切换地图色调、边界色、HUD 地图名称和危险区可视反馈，Telemetry sample 记录 active_hazards 数量；caramel-workshop 5 秒 Runtime smoke 通过"
+    },
+    {
+      "id": "boss_runtime_ability_semantics",
+      "summary": "GameCore 增加 BossPhaseChanged / BossAbilityUsed 事件和首版 Boss phase ability 调度，按配置能力生成召唤敌人、地面危险区和阶段变化；Runtime/Harness 已接入事件标签、计数、音画反馈，caramel-workshop 220 秒 Runtime smoke 记录到 Boss 技能与 active hazards"
     }
   ],
   "current_findings": [
@@ -298,7 +302,7 @@
     },
     {
       "id": "boss_roster_config_scope",
-      "summary": "base_demo 已覆盖 docs/04 首批 Boss 名录，Boss 包含基础数值、阶段技能名、反制说明、视觉和音效描述；六张地图标准波次均已挂接对应 Boss，后续仍待 Boss 专属运行时技能语义和 Runtime 专属表现。",
+      "summary": "base_demo 已覆盖 docs/04 首批 Boss 名录，Boss 包含基础数值、阶段技能名、反制说明、视觉和音效描述；六张地图标准波次均已挂接对应 Boss，GameCore 已按 phase abilities 提供首版召唤、危险区和阶段事件语义，后续仍需更细 Boss 专属平衡与美术表现。",
       "report": "content/base_demo/bosses/cracked-star-jar-core.json"
     },
     {
@@ -374,8 +378,8 @@
   ],
   "next_recommended": [
     {
-      "id": "boss_runtime_ability_semantics",
-      "summary": "为六个 Boss 增加首版运行时技能语义或表现事件，至少覆盖冲撞、召唤、地面危险区/阶段变化等可被 Harness 和 Runtime 观察的差异"
+      "id": "boss_map_matrix_refresh",
+      "summary": "围绕 6 张地图和首版 Boss 技能语义跑多 Bot/多 seed 矩阵，检查新增召唤与危险区是否让难度、性能或 replay 回归出现异常"
     },
     {
       "id": "runtime_manual_playtest_capture",
