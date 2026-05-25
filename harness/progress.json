@@ -265,6 +265,10 @@
     {
       "id": "base_demo_map_wave_roster_completion",
       "summary": "为 docs/04 首批 6 张地图补齐标准波次和对应 Boss 事件，使每张 base_demo 地图都能初始化 GameCore"
+    },
+    {
+      "id": "map_selection_cli_runtime",
+      "summary": "Harness simulate、batch、matrix、meta-settlement、gym-bridge 和 Bevy Runtime 均支持 --map-id 选择运行地图，报告与 Gym bridge info 会保留 map_id，并通过 soda-creek / cracked-star-jar / jelly-platform smoke 验证"
     }
   ],
   "current_findings": [
@@ -285,12 +289,12 @@
     },
     {
       "id": "map_roster_config_scope",
-      "summary": "base_demo 已覆盖 docs/04 首批地图名录，地图包含尺寸、生成距离、语义 hazard、视觉描述和音乐主题；当前仍是可加载配置，尚未挂接专属波次、Boss、Runtime 地图视觉或地形效果。",
+      "summary": "base_demo 已覆盖 docs/04 首批地图名录，地图包含尺寸、生成距离、语义 hazard、视觉描述和音乐主题；每张地图已有标准波次并可通过 Harness/Runtime --map-id 启动，Runtime 专属地图视觉和地形效果仍待补齐。",
       "report": "content/base_demo/maps/cracked-star-jar.json"
     },
     {
       "id": "boss_roster_config_scope",
-      "summary": "base_demo 已覆盖 docs/04 首批 Boss 名录，Boss 包含基础数值、阶段技能名、反制说明、视觉和音效描述；当前只有暴走搅糖机接入糖霜草地波次，其余 Boss 仍待地图专属波次和运行时技能语义。",
+      "summary": "base_demo 已覆盖 docs/04 首批 Boss 名录，Boss 包含基础数值、阶段技能名、反制说明、视觉和音效描述；六张地图标准波次均已挂接对应 Boss，后续仍待 Boss 专属运行时技能语义和 Runtime 专属表现。",
       "report": "content/base_demo/bosses/cracked-star-jar-core.json"
     },
     {
@@ -305,7 +309,7 @@
     },
     {
       "id": "map_wave_runtime_scope",
-      "summary": "每张 base_demo 地图已有可加载标准波次与 Boss 事件，并通过静态预算；GameCore 可按 map_id 选择对应波次，但 Harness/Runtime CLI 仍默认糖霜草地，地图选择入口和专属视觉仍待扩展。",
+      "summary": "每张 base_demo 地图已有可加载标准波次与 Boss 事件，并通过静态预算；GameCore、Harness CLI、Gym bridge 和 Runtime 现已能按 map_id 选择对应波次，地图专属视觉仍待扩展。",
       "report": "content/base_demo/waves/cracked-star-jar-standard.json"
     },
     {
@@ -365,6 +369,10 @@
     }
   ],
   "next_recommended": [
+    {
+      "id": "runtime_map_visual_feedback",
+      "summary": "为 6 张地图补齐 Runtime 视觉差异和地图 hazard 可读反馈，至少让 --map-id 切换后 HUD、地表色调、危险区/事件提示能被人工试玩区分"
+    },
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
