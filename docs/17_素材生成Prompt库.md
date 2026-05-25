@@ -234,6 +234,36 @@ asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/
 7. 放入 `asset/generated_candidates`。
 8. 人工选择后进入正式素材目录。
 
+## 候选素材 Metadata 校验
+
+每个 `asset/generated_candidates/<batch>/metadata/manifest.json` 都必须证明该批次仍是候选素材，而不是正式接入内容。
+
+推荐在生成或后处理后运行：
+
+```bash
+python3 tools/validate_asset_candidates.py asset/generated_candidates/<batch> \
+  --report /tmp/asset_candidate_validation.json \
+  --markdown /tmp/asset_candidate_validation.md
+```
+
+新 `mmx` 批次应额外使用：
+
+```bash
+python3 tools/validate_asset_candidates.py asset/generated_candidates/<batch> \
+  --require-commands
+```
+
+校验范围：
+
+- `project_rules.candidate_only` 必须为 `true`。
+- `project_rules.accepted_content` 必须为 `false`。
+- `project_rules.runtime_integrated` 必须为 `false`。
+- 素材路径、预览路径和后处理 manifest 必须能解析到真实文件。
+- 每个素材要有 `qa_status`、`qa_notes`，并记录 prompt、source 或 postprocess provenance。
+- 新 `mmx` 批次必须记录实际生成命令，避免后续无法复现。
+
+该校验只检查来源与候选池纪律，不替代人工美术、听感或小尺寸可读性审查。
+
 ## 素材命名规范
 
 ```text
