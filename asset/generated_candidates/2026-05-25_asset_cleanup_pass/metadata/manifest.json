@@ -1,0 +1,101 @@
+{
+  "batch_id": "2026-05-25_asset_cleanup_pass",
+  "generated_at": "2026-05-25",
+  "purpose": "对已有 repair 素材候选做 alpha 连通组件清理，移除离散星光、投影和噪点，并输出 32px runtime-size 透明候选预览。",
+  "source_batches": [
+    "2026-05-25_mmx_second_pass",
+    "2026-05-25_mmx_projectile_retry"
+  ],
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "generated_by_mmx": false,
+    "derived_from_mmx_candidates": true,
+    "required_next_steps": [
+      "人工美术审查",
+      "确认玩家和 Boss 是否接受非严格俯视角",
+      "必要时使用 mmx 重生成严格 top-down 版本",
+      "正式接入前再次确认来源、prompt、版本和后处理说明"
+    ]
+  },
+  "postprocess": {
+    "script": "tools/asset_postprocess.py",
+    "commands": [
+      "python3 tools/asset_postprocess.py clean-components asset/generated_candidates/2026-05-25_mmx_second_pass/processed/single_sprites_v002/player_jar_keeper_v002_001.png asset/generated_candidates/2026-05-25_mmx_second_pass/processed/single_sprites_v002/enemy_bouncy_gummy_v002_001.png asset/generated_candidates/2026-05-25_mmx_second_pass/processed/single_sprites_v002/pickup_candy_crystal_v002_001.png asset/generated_candidates/2026-05-25_mmx_second_pass/processed/single_sprites_v002/boss_runaway_sugar_mixer_v002_001.png asset/generated_candidates/2026-05-25_mmx_projectile_retry/processed/projectile_v003/projectile_rainbow_candy_bullet_v003_002.png --out-dir asset/generated_candidates/2026-05-25_asset_cleanup_pass/processed/cleaned_runtime_candidates --min-alpha 24 --keep-components 1 --padding 8 --manifest asset/generated_candidates/2026-05-25_asset_cleanup_pass/metadata/component_cleanup_v001.json",
+      "python3 tools/asset_postprocess.py make-previews asset/generated_candidates/2026-05-25_asset_cleanup_pass/processed/cleaned_runtime_candidates/player_jar_keeper_v002_001_clean.png asset/generated_candidates/2026-05-25_asset_cleanup_pass/processed/cleaned_runtime_candidates/enemy_bouncy_gummy_v002_001_clean.png asset/generated_candidates/2026-05-25_asset_cleanup_pass/processed/cleaned_runtime_candidates/pickup_candy_crystal_v002_001_clean.png asset/generated_candidates/2026-05-25_asset_cleanup_pass/processed/cleaned_runtime_candidates/boss_runaway_sugar_mixer_v002_001_clean.png asset/generated_candidates/2026-05-25_asset_cleanup_pass/processed/cleaned_runtime_candidates/projectile_rainbow_candy_bullet_v003_002_clean.png --out-dir asset/generated_candidates/2026-05-25_asset_cleanup_pass/review_previews/cleaned_runtime_candidates --canvas-size 128 --preview-sizes 128,64,32 --occupancy 0.86 --contact-cols 5 --manifest asset/generated_candidates/2026-05-25_asset_cleanup_pass/metadata/preview_cleaned_runtime_v001.json"
+    ]
+  },
+  "assets": [
+    {
+      "id": "player_jar_keeper_v002_001_clean",
+      "source_path": "../2026-05-25_mmx_second_pass/processed/single_sprites_v002/player_jar_keeper_v002_001.png",
+      "processed_path": "processed/cleaned_runtime_candidates/player_jar_keeper_v002_001_clean.png",
+      "runtime_32_path": "review_previews/cleaned_runtime_candidates/runtime_32/player_jar_keeper_v002_001_clean_runtime_32.png",
+      "qa_status": "repair",
+      "qa_notes": [
+        "角色身份和 32px 可读性保留。",
+        "原候选只有一个主体组件，清理主要用于统一流程。",
+        "仍不是严格俯视角，需要人工决定是否重生成。"
+      ]
+    },
+    {
+      "id": "enemy_bouncy_gummy_v002_001_clean",
+      "source_path": "../2026-05-25_mmx_second_pass/processed/single_sprites_v002/enemy_bouncy_gummy_v002_001.png",
+      "processed_path": "processed/cleaned_runtime_candidates/enemy_bouncy_gummy_v002_001_clean.png",
+      "runtime_32_path": "review_previews/cleaned_runtime_candidates/runtime_32/enemy_bouncy_gummy_v002_001_clean_runtime_32.png",
+      "qa_status": "repair",
+      "qa_notes": [
+        "普通软糖怪轮廓清楚，小尺寸可读性稳定。",
+        "粉色耳状高光可能影响怪物身份，需要人工复核。"
+      ]
+    },
+    {
+      "id": "pickup_candy_crystal_v002_001_clean",
+      "source_path": "../2026-05-25_mmx_second_pass/processed/single_sprites_v002/pickup_candy_crystal_v002_001.png",
+      "processed_path": "processed/cleaned_runtime_candidates/pickup_candy_crystal_v002_001_clean.png",
+      "runtime_32_path": "review_previews/cleaned_runtime_candidates/runtime_32/pickup_candy_crystal_v002_001_clean_runtime_32.png",
+      "qa_status": "repair_preferred",
+      "qa_notes": [
+        "XP 糖晶身份最清楚，清理后去除了大面积地面阴影组件。",
+        "32px 仍可读，适合进入人工美术复核。"
+      ]
+    },
+    {
+      "id": "boss_runaway_sugar_mixer_v002_001_clean",
+      "source_path": "../2026-05-25_mmx_second_pass/processed/single_sprites_v002/boss_runaway_sugar_mixer_v002_001.png",
+      "processed_path": "processed/cleaned_runtime_candidates/boss_runaway_sugar_mixer_v002_001_clean.png",
+      "runtime_32_path": "review_previews/cleaned_runtime_candidates/runtime_32/boss_runaway_sugar_mixer_v002_001_clean_runtime_32.png",
+      "qa_status": "repair",
+      "qa_notes": [
+        "移除了离散糖浆/投影组件，主体轮廓更紧。",
+        "Boss 仍偏正面插画，若 Runtime 统一俯视角，应重新生成。"
+      ]
+    },
+    {
+      "id": "projectile_rainbow_candy_bullet_v003_002_clean",
+      "source_path": "../2026-05-25_mmx_projectile_retry/processed/projectile_v003/projectile_rainbow_candy_bullet_v003_002.png",
+      "processed_path": "processed/cleaned_runtime_candidates/projectile_rainbow_candy_bullet_v003_002_clean.png",
+      "runtime_32_path": "review_previews/cleaned_runtime_candidates/runtime_32/projectile_rainbow_candy_bullet_v003_002_clean_runtime_32.png",
+      "qa_status": "repair_preferred",
+      "qa_notes": [
+        "移除了左侧星光和小噪点，圆形糖弹身份保留。",
+        "32px 下读作彩虹糖球，适合进入人工美术复核。"
+      ]
+    }
+  ],
+  "batch_qa": {
+    "gate_result": "repair",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "preferred_candidates": [
+      "pickup_candy_crystal_v002_001_clean",
+      "projectile_rainbow_candy_bullet_v003_002_clean"
+    ],
+    "notes": [
+      "清理解决了部分星光、阴影和离散噪点，但不能替代人工美术验收。",
+      "玩家和 Boss 的视角问题仍未解决。",
+      "后续若继续补素材，可使用 mmx 重新生成更严格的 top-down 版本。"
+    ]
+  }
+}

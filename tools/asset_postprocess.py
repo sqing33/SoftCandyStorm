@@ -175,6 +175,75 @@ def preview_on_checkerboard(sprite: Image.Image, size: int) -> Image.Image:
     return preview
 
 
+def alpha_components(
+    image: Image.Image, min_alpha: int
+) -> list[tuple[int, tuple[int, int, int, int], set[tuple[int, int]]]]:
+    rgba = image.convert("RGBA")
+    width, height = rgba.size
+    pixels = rgba.load()
+    visited: set[tuple[int, int]] = set()
+    components = []
+
+    for y in range(height):
+        for x in range(width):
+            point = (x, y)
+            if point in visited or pixels[x, y][3] < min_alpha:
+                continue
+
+            queue: deque[tuple[int, int]] = deque([point])
+            visited.add(point)
+            points: set[tuple[int, int]] = set()
+            xs = []
+            ys = []
+
+            while queue:
+                current_x, current_y = queue.popleft()
+                points.add((current_x, current_y))
+                xs.append(current_x)
+                ys.append(current_y)
+
+                for next_y in (current_y - 1, current_y, current_y + 1):
+                    for next_x in (current_x - 1, current_x, current_x + 1):
+                        if next_x == current_x and next_y == current_y:
+                            continue
+                        next_point = (next_x, next_y)
+                        if (
+                            not (0 <= next_x < width and 0 <= next_y < height)
+                            or next_point in visited
+                            or pixels[next_x, next_y][3] < min_alpha
+                        ):
+                            continue
+                        visited.add(next_point)
+                        queue.append(next_point)
+
+            components.append(
+                (
+                    len(points),
+                    (min(xs), min(ys), max(xs) + 1, max(ys) + 1),
+                    points,
+                )
+            )
+
+    components.sort(key=lambda component: component[0], reverse=True)
+    return components
+
+
+def clean_alpha_components(image: Image.Image, min_alpha: int, keep_components: int) -> Image.Image:
+    rgba = image.convert("RGBA")
+    pixels = rgba.load()
+    components = alpha_components(rgba, min_alpha)
+    kept_points: set[tuple[int, int]] = set()
+    for _, _, points in components[:keep_components]:
+        kept_points.update(points)
+
+    for y in range(rgba.height):
+        for x in range(rgba.width):
+            red, green, blue, alpha = pixels[x, y]
+            if (x, y) not in kept_points or alpha < min_alpha:
+                pixels[x, y] = (red, green, blue, 0)
+    return rgba
+
+
 def make_contact_sheet(images: list[Image.Image], cols: int, gap: int) -> Image.Image:
     if not images:
         return Image.new("RGBA", (1, 1), (0, 0, 0, 0))
@@ -294,15 +363,73 @@ def key_single_assets(args: argparse.Namespace) -> dict:
     return summary
 
 
+def clean_component_assets(args: argparse.Namespace) -> dict:
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    outputs = []
+    for source_text in args.inputs:
+        source = Path(source_text)
+        image = Image.open(source)
+        components = alpha_components(image, args.min_alpha)
+        cleaned = clean_alpha_components(image, args.min_alpha, args.keep_components)
+        trimmed = trim_alpha(cleaned, args.padding)
+        if trimmed is None:
+            continue
+
+        output_path = out_dir / f"{source.stem}_clean.png"
+        trimmed.save(output_path)
+        outputs.append(
+            {
+                "source": str(source),
+                "path": str(output_path),
+                "width": trimmed.width,
+                "height": trimmed.height,
+                "component_count": len(components),
+                "kept_components": min(args.keep_components, len(components)),
+                "largest_components": [
+                    {"area": area, "bbox": list(bbox)}
+                    for area, bbox, _ in components[: min(6, len(components))]
+                ],
+            }
+        )
+
+    summary = {
+        "out_dir": str(out_dir),
+        "min_alpha": args.min_alpha,
+        "keep_components": args.keep_components,
+        "padding": args.padding,
+        "output_count": len(outputs),
+        "outputs": outputs,
+        "qa_notes": [
+            "Outputs remain generated candidates and are not accepted runtime assets.",
+            "The pass keeps the largest alpha-connected components to remove detached stars, shadows, and noise.",
+            "Human review is still required for silhouette quality and art-direction fit.",
+        ],
+    }
+    if args.manifest:
+        manifest_path = Path(args.manifest)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    return summary
+
+
 def make_previews(args: argparse.Namespace) -> dict:
     out_dir = Path(args.out_dir)
     normalized_dir = out_dir / f"normalized_{args.canvas_size}"
     normalized_dir.mkdir(parents=True, exist_ok=True)
     preview_dirs = {}
+    runtime_dirs = {}
     for size in args.preview_sizes:
         preview_dir = out_dir / f"preview_{size}"
         preview_dir.mkdir(parents=True, exist_ok=True)
         preview_dirs[size] = preview_dir
+        runtime_dir = out_dir / f"runtime_{size}"
+        runtime_dir.mkdir(parents=True, exist_ok=True)
+        runtime_dirs[size] = runtime_dir
 
     outputs = []
     contact_previews: dict[int, list[Image.Image]] = {size: [] for size in args.preview_sizes}
@@ -315,11 +442,16 @@ def make_previews(args: argparse.Namespace) -> dict:
         normalized.save(normalized_path)
 
         previews = []
+        runtime_candidates = []
         for size in args.preview_sizes:
+            runtime_candidate = normalized.resize((size, size), Image.Resampling.LANCZOS)
+            runtime_path = runtime_dirs[size] / f"{sprite_id}_runtime_{size}.png"
+            runtime_candidate.save(runtime_path)
             preview = preview_on_checkerboard(normalized, size)
             preview_path = preview_dirs[size] / f"{sprite_id}_preview_{size}.png"
             preview.save(preview_path)
             contact_previews[size].append(preview)
+            runtime_candidates.append({"size": size, "path": str(runtime_path)})
             previews.append({"size": size, "path": str(preview_path)})
 
         outputs.append(
@@ -327,6 +459,7 @@ def make_previews(args: argparse.Namespace) -> dict:
                 "id": sprite_id,
                 "source": str(source),
                 "normalized": str(normalized_path),
+                "runtime_candidates": runtime_candidates,
                 "previews": previews,
             }
         )
@@ -349,6 +482,7 @@ def make_previews(args: argparse.Namespace) -> dict:
         "qa_notes": [
             "Outputs remain generated candidates and are not accepted runtime assets.",
             "Normalized sprites use transparent square canvases for size comparison.",
+            "Runtime-size PNGs are transparent review candidates and require human approval before promotion.",
             "Checkerboard previews are for readability review only and should not be used in runtime.",
         ],
     }
@@ -408,6 +542,23 @@ def build_parser() -> argparse.ArgumentParser:
     key_singles.add_argument("--padding", type=int, default=8, help="transparent padding in pixels")
     key_singles.add_argument("--manifest", help="optional JSON summary output")
     key_singles.set_defaults(func=key_single_assets)
+
+    clean_components = subparsers.add_parser(
+        "clean-components", help="remove detached alpha components from PNG candidates"
+    )
+    clean_components.add_argument("inputs", nargs="+", help="input transparent PNG candidates")
+    clean_components.add_argument("--out-dir", required=True, help="candidate output directory")
+    clean_components.add_argument(
+        "--min-alpha", type=int, default=24, help="minimum alpha included in components"
+    )
+    clean_components.add_argument(
+        "--keep-components", type=int, default=1, help="number of largest components to keep"
+    )
+    clean_components.add_argument(
+        "--padding", type=int, default=4, help="transparent padding after cleanup"
+    )
+    clean_components.add_argument("--manifest", help="optional JSON summary output")
+    clean_components.set_defaults(func=clean_component_assets)
 
     previews = subparsers.add_parser(
         "make-previews", help="normalize selected PNG candidates and make review previews"

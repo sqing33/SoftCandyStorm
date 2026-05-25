@@ -97,19 +97,23 @@
     {
       "id": "bot_policy_recalibration_10_seed",
       "summary": "复校 coward、tank、route 规则 Bot 策略后重跑 all Bot、10 seed、300 秒共 90 局；所有 Bot 进入原型胜率目标区间，strict replay-batch 回归 90/90 通过"
+    },
+    {
+      "id": "asset_candidate_cleanup_pass",
+      "summary": "为第二批 repair 素材和彩虹糖弹 preferred 候选增加 alpha 连通组件清理，输出 128/64/32px 透明 runtime-size 候选与棋盘格预览；清理结果仍停留在 generated_candidates"
     }
   ],
   "current_findings": [
     {
-      "id": "asset_generation_background_noncompliance",
-      "summary": "mmx 单体图仍未稳定遵守 #00ff00 纯色背景约束；彩虹糖弹重生成已移除明显水印和火箭化身份问题，但仍需人工清理阴影、星光残留、外发光和透明边缘",
-      "report": "asset/generated_candidates/2026-05-25_mmx_projectile_retry/metadata/review_2026-05-25.md"
+      "id": "asset_art_direction_followup",
+      "summary": "素材清理批次已移除部分星光、投影和离散阴影，并输出 32px 透明候选；玩家和 Boss 仍非严格俯视角，普通软糖怪粉色高光也需人工复核，必要时可使用 mmx 重生成更严格 top-down 版本",
+      "report": "asset/generated_candidates/2026-05-25_asset_cleanup_pass/metadata/review_2026-05-25.md"
     }
   ],
   "next_recommended": [
     {
-      "id": "asset_candidate_cleanup_or_regen",
-      "summary": "对第二批 repair 候选和彩虹糖弹 v003_002 做边缘清理，输出 32px runtime 规格预览，并按 Runtime 视角要求决定是否重生成玩家和 Boss 的严格俯视版本"
+      "id": "asset_art_direction_approval_or_topdown_regen",
+      "summary": "人工确认清理后的玩家、Boss、软糖怪、糖晶和彩虹糖弹是否可作为后续 Runtime 素材候选；若不接受视角或轮廓，使用 mmx 重生成严格 top-down 玩家和 Boss"
     },
     {
       "id": "larger_bot_baseline_nightly",
