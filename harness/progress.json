@@ -337,6 +337,10 @@
     {
       "id": "rl_policy_extended_comparison",
       "summary": "使用新 reward 下的 DQN/PPO 模型扩展到 10 seed、180 秒，并覆盖 frosting-grassland 与 caramel-workshop；两者动作分布均未复发塌缩，但 DQN 在 caramel-workshop 胜率只有 50%、平均承伤 97.6005，PPO 泛化更稳"
+    },
+    {
+      "id": "rl_ppo_multimap_extended_comparison",
+      "summary": "将新 reward 下的 PPO 扩展到全部 6 张 base_demo 地图、10 seed、300 秒；动作分布保持健康，但 soda-creek、caramel-workshop、cracked-star-jar 胜率分别只有 20%、20%、40%，已记录跨地图泛化 failure case"
     }
   ],
   "current_findings": [
@@ -452,8 +456,13 @@
     },
     {
       "id": "rl_policy_comparison_smoke_scope",
-      "summary": "DQN/PPO 训练和对比链路均已跑通；调整 Gym reward 后，两者在 10 seed、180 秒、两张地图中均未复发单动作塌缩。PPO 在 frosting-grassland 与 caramel-workshop 都更稳，DQN 在 caramel-workshop 只有 50% 胜率且承伤很高，暂不适合直接作为跨地图压力测试基线。",
-      "report": "harness/reports/2026-05-26_rl_policy_extended_comparison_001/summary.md"
+      "summary": "DQN/PPO 训练和对比链路均已跑通；调整 Gym reward 后动作塌缩已缓解，但 PPO 在 6 地图 10 seed / 300 秒中暴露跨地图泛化不足，soda-creek 与 caramel-workshop 胜率均只有 20%，cracked-star-jar 为 40%。当前 PPO 不能作为正式跨地图压力测试基线。",
+      "report": "harness/reports/2026-05-26_rl_ppo_multimap_extended_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_multimap_generalization_gap",
+      "summary": "PPO policy 在 frosting-grassland、cotton-cloud-pasture、jelly-platform 保持 100% 胜率，但在 soda-creek、caramel-workshop、cracked-star-jar 明显掉线，说明需要多地图训练或 curriculum 后再扩 600 秒验证。",
+      "report": "harness/failed_cases/fail_20260526_005_ppo_multimap_generalization_gap.json"
     }
   ],
   "next_recommended": [
@@ -462,8 +471,8 @@
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
-      "id": "rl_policy_extended_comparison",
-      "summary": "继续扩展新 reward 下的 PPO 到更多地图、更多 seed 和更长时长；DQN 需要多地图训练或泛化修复后再进入跨地图压力测试池"
+      "id": "rl_policy_multimap_training",
+      "summary": "为 PPO 增加多地图训练或地图随机化评估入口，先修复 soda-creek、caramel-workshop、cracked-star-jar 的泛化断层，再扩到 600 秒和更多 seed"
     }
   ]
 }

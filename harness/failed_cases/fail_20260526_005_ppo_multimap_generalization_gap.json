@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_005",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "32000-32009",
+  "bot": "PPO policy",
+  "time_seconds": 300.0,
+  "symptom": "新 reward 下的 PPO 5000-step policy 在 6 地图 10 seed / 300 秒评估中未复发动作塌缩，但跨地图泛化不足：soda-creek 胜率 20%、平均承伤 118.8896；caramel-workshop 胜率 20%、平均承伤 116.3133；cracked-star-jar 胜率 40%、平均承伤 99.7397。",
+  "root_cause": "当前 PPO 模型仍是单配置短训练产物，训练覆盖不足，未进行多地图训练、curriculum 或地图随机化；新 reward 修复了动作分布问题，但没有证明策略已学会跨地图威胁规避。",
+  "fix": "后续需要加入多地图训练或评估时地图随机化，增加训练步数，并把高压地图纳入训练/验证拆分；在修复前不要把该 PPO 作为正式跨地图 RL 压力测试基线。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_multimap_extended_001/summary.md。修复后需重跑 6 地图 10 seed / 300 秒矩阵，要求所有地图保持健康动作分布，并证明高压地图胜率和承伤不再出现明显泛化断层；随后再扩到 600 秒和更多 seed。"
+}
