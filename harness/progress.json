@@ -437,6 +437,10 @@
     {
       "id": "rl_ppo_observation_v2_high_pressure_safety_train300_50k_comparison",
       "summary": "安全塑形 reward 的 high-pressure train300 50k PPO 在 3 地图 10 seed / 300 秒对比中全部 0% 胜率；动作熵更高但长局生存退化，已记录 safety reward overcorrection failure case"
+    },
+    {
+      "id": "rl_reward_safety_delta_available",
+      "summary": "Gym reward 增加 safety_delta 风险变化奖励，记录上一帧聚合安全风险并奖励风险下降、惩罚风险上升；静态安全惩罚已下调为轻量诊断信号，下一步需重训 high-pressure 300 秒 PPO"
     }
   ],
   "current_findings": [
@@ -679,6 +683,11 @@
       "id": "rl_ppo_safety_reward_overcorrection",
       "summary": "安全塑形 reward 改善短局但让 300 秒高压地图全数失败：soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%；下一步应改为 risk reduction / safety_delta 奖励，而不是继续加大静态惩罚。",
       "report": "harness/failed_cases/fail_20260526_015_ppo_safety_reward_overcorrection.json"
+    },
+    {
+      "id": "rl_reward_safety_delta_available",
+      "summary": "Gym bridge 的 reward_breakdown 现在会输出 safety_delta，使用上一帧与当前帧的聚合安全风险差值来奖励脱险并惩罚风险升高；该实现只改变训练信号，仍需 high-pressure 300 秒 PPO 重训和规则 Bot 对比验证。",
+      "report": "crates/game_harness/src/main.rs"
     }
   ],
   "next_recommended": [
@@ -688,7 +697,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "安全塑形 reward 的静态惩罚导致 300 秒高压地图泛化退化；下一步应改为 safety_delta / risk_reduction 奖励，记录上一帧风险并奖励风险下降，再重训 high-pressure 300 秒 PPO"
+      "summary": "基于 safety_delta / risk_reduction 奖励重训 high-pressure 300 秒 PPO，并用 3 张高压地图 10 seed / 300 秒规则 Bot 对比验证是否优于 fail_015 的静态安全塑形结果"
     }
   ]
 }
