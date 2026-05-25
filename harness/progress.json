@@ -225,12 +225,16 @@
     {
       "id": "base_demo_enemy_roster_completion",
       "summary": "补齐 docs/04 首批 8 个普通敌人配置，新增粘粘熊糖、汽水泡泡、棉花糖团和辣味软糖，并将糖霜草地中后段波次接入完整敌人池"
+    },
+    {
+      "id": "enemy_behavior_runtime_effects",
+      "summary": "GameCore 增加首批敌人行为运行时效果：辣味软糖 dash 冲刺、汽水泡泡死亡分裂、焦糖史莱姆 leave_hazard 黏地减速，以及粘粘熊糖接触减速"
     }
   ],
   "current_findings": [
     {
       "id": "enemy_behavior_config_scope",
-      "summary": "base_demo 已覆盖 docs/04 首批普通敌人名录和行为配置字段，并通过静态预算校验；复杂行为如分裂、冲刺、黏地减速仍需后续 GameCore 行为系统真实执行。",
+      "summary": "base_demo 已覆盖 docs/04 首批普通敌人名录和行为配置字段，并通过静态预算校验；GameCore 已执行分裂、冲刺、黏地和接触减速的首版效果，后续仍需 Runtime 专属可视反馈和更细的平衡回归。",
       "report": "content/base_demo/enemies/soda-bubble.json"
     },
     {

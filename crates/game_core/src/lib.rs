@@ -323,6 +323,28 @@ impl TerminalKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EnemyBehavior {
     Chase,
+    Dash,
+    Split,
+    LeaveHazard,
+    OrbitPlayer,
+    Jump,
+    RangedSpit,
+    Shielded,
+}
+
+impl EnemyBehavior {
+    fn from_type(behavior_type: &str) -> Self {
+        match behavior_type {
+            "dash" => Self::Dash,
+            "split" => Self::Split,
+            "leave_hazard" => Self::LeaveHazard,
+            "orbit_player" => Self::OrbitPlayer,
+            "jump" => Self::Jump,
+            "ranged_spit" => Self::RangedSpit,
+            "shielded" => Self::Shielded,
+            _ => Self::Chase,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -346,7 +368,9 @@ pub struct GameCore {
     evolutions: Vec<EvolutionState>,
     evaluated_content_events: BTreeSet<String>,
     active_event_effects: Vec<ActiveEventEffect>,
+    player_slow_effects: Vec<ActiveSlowEffect>,
     enemies: Vec<Enemy>,
+    hazards: Vec<Hazard>,
     projectiles: Vec<Projectile>,
     pickups: Vec<Pickup>,
     spawn_timer: f32,
@@ -431,7 +455,9 @@ impl GameCore {
             evolutions: Vec::new(),
             evaluated_content_events: BTreeSet::new(),
             active_event_effects: Vec::new(),
+            player_slow_effects: Vec::new(),
             enemies: Vec::new(),
+            hazards: Vec::new(),
             projectiles: Vec::new(),
             pickups: Vec::new(),
             spawn_timer: 0.0,
@@ -507,6 +533,8 @@ impl GameCore {
         reward_hint.survival_delta = dt_seconds;
 
         self.update_content_events(dt_seconds, &mut events);
+        self.update_player_slow_effects(dt_seconds);
+        self.update_hazards(dt_seconds);
         self.update_player_movement(action.movement, dt_seconds);
         self.update_wave_spawns(dt_seconds, &mut events);
         self.update_enemy_behavior(dt_seconds);
@@ -634,9 +662,35 @@ impl GameCore {
         FixedDt::from_tick_rate(self.config.tick_rate)
     }
 
+    fn update_player_slow_effects(&mut self, dt: f32) {
+        for effect in &mut self.player_slow_effects {
+            effect.remaining_seconds -= dt;
+        }
+        self.player_slow_effects
+            .retain(|effect| effect.remaining_seconds > 0.0);
+    }
+
+    fn update_hazards(&mut self, dt: f32) {
+        for hazard in &mut self.hazards {
+            hazard.remaining_seconds -= dt;
+        }
+        self.hazards.retain(|hazard| hazard.remaining_seconds > 0.0);
+
+        let mut slow_effects = Vec::new();
+        for hazard in &self.hazards {
+            if self.player.position.distance(hazard.position) <= PLAYER_RADIUS + hazard.radius {
+                slow_effects.push((hazard.slow_multiplier, dt * 2.0));
+            }
+        }
+        for (multiplier, duration_seconds) in slow_effects {
+            self.apply_player_slow(multiplier, duration_seconds);
+        }
+    }
+
     fn update_player_movement(&mut self, movement: Vec2, dt: f32) {
         let normalized = movement.clamp_length_max(1.0);
-        self.player.velocity = normalized * self.player.move_speed;
+        self.player.velocity =
+            normalized * self.player.move_speed * self.active_player_slow_multiplier();
         self.player.position += self.player.velocity * dt;
         self.player.position.x = self
             .player
@@ -648,6 +702,14 @@ impl GameCore {
             .position
             .y
             .clamp(-self.map.height * 0.5, self.map.height * 0.5);
+    }
+
+    fn active_player_slow_multiplier(&self) -> f32 {
+        self.player_slow_effects
+            .iter()
+            .map(|effect| effect.multiplier)
+            .fold(1.0, f32::min)
+            .clamp(0.2, 1.0)
     }
 
     fn update_content_events(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
@@ -795,11 +857,37 @@ impl GameCore {
     }
 
     fn update_enemy_behavior(&mut self, dt: f32) {
+        let player_position = self.player.position;
+        let half_width = self.map.width * 0.5;
+        let half_height = self.map.height * 0.5;
+        let mut new_hazards = Vec::new();
+
         for enemy in &mut self.enemies {
-            let direction = (self.player.position - enemy.position).normalized_or_zero();
-            enemy.velocity = direction * enemy.move_speed;
+            let direction = (player_position - enemy.position).normalized_or_zero();
+            enemy.velocity = match enemy.behavior {
+                EnemyBehavior::Dash => enemy.dash_velocity(direction, dt),
+                _ => direction * enemy.move_speed,
+            };
             enemy.position += enemy.velocity * dt;
+            enemy.position.x = enemy.position.x.clamp(-half_width, half_width);
+            enemy.position.y = enemy.position.y.clamp(-half_height, half_height);
+
+            if enemy.behavior == EnemyBehavior::LeaveHazard {
+                enemy.behavior_state.hazard_cooldown_remaining -= dt;
+                if enemy.behavior_state.hazard_cooldown_remaining <= 0.0 {
+                    new_hazards.push(Hazard {
+                        position: enemy.position,
+                        radius: enemy.behavior_state.hazard_radius,
+                        remaining_seconds: enemy.behavior_state.hazard_duration_seconds,
+                        slow_multiplier: enemy.behavior_state.hazard_slow_multiplier,
+                    });
+                    enemy.behavior_state.hazard_cooldown_remaining +=
+                        enemy.behavior_state.hazard_interval_seconds;
+                }
+            }
         }
+
+        self.hazards.extend(new_hazards);
     }
 
     fn update_weapon_cooldowns(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
@@ -908,6 +996,7 @@ impl GameCore {
                 entity_id: enemy.entity_id,
                 enemy_id: enemy.enemy_id.clone(),
             });
+            self.spawn_split_children(&enemy, events);
             let pickup = Pickup {
                 entity_id: self.allocate_entity_id(),
                 pickup_type: PickupType::Xp,
@@ -938,21 +1027,71 @@ impl GameCore {
         }
     }
 
+    fn spawn_split_children(&mut self, enemy: &Enemy, events: &mut Vec<GameEvent>) {
+        if enemy.behavior != EnemyBehavior::Split {
+            return;
+        }
+        let Some(child_enemy_id) = enemy.behavior_state.split_child_enemy_id.clone() else {
+            return;
+        };
+        let Some(definition) = self.content.enemies.get(&child_enemy_id).cloned() else {
+            return;
+        };
+
+        let child_count = enemy.behavior_state.split_child_count.min(8);
+        if child_count == 0 {
+            return;
+        }
+
+        for child_index in 0..child_count {
+            let angle = std::f32::consts::TAU * child_index as f32 / child_count as f32;
+            let offset = Vec2::new(angle.cos(), angle.sin()) * (enemy.radius + 10.0);
+            let mut child = Enemy::from_enemy_definition(
+                self.allocate_entity_id(),
+                self.clamp_to_map(enemy.position + offset),
+                &definition,
+            );
+            let health_multiplier = enemy.behavior_state.split_child_health_multiplier.max(0.1);
+            child.max_health = (child.max_health * health_multiplier).max(1.0);
+            child.health = child.max_health;
+            child.radius = (child.radius
+                * enemy.behavior_state.split_child_radius_multiplier.max(0.25))
+            .max(4.0);
+            child.xp_value *= health_multiplier;
+            child.threat *= health_multiplier;
+            events.push(GameEvent::EnemySpawned {
+                entity_id: child.entity_id,
+                enemy_id: child.enemy_id.clone(),
+            });
+            self.enemies.push(child);
+        }
+    }
+
     fn resolve_contact_damage(
         &mut self,
         dt: f32,
         events: &mut Vec<GameEvent>,
         reward_hint: &mut RewardHint,
     ) {
-        let total_contact_dps = self
-            .enemies
-            .iter()
-            .filter(|enemy| {
-                self.player.position.distance(enemy.position) <= PLAYER_RADIUS + enemy.radius
-            })
-            .map(|enemy| enemy.contact_damage_per_second)
-            .sum::<f32>()
-            .min(CONTACT_DAMAGE_CAP_PER_SECOND);
+        let mut total_contact_dps: f32 = 0.0;
+        let mut slow_effects = Vec::new();
+        for enemy in &self.enemies {
+            if self.player.position.distance(enemy.position) > PLAYER_RADIUS + enemy.radius {
+                continue;
+            }
+            total_contact_dps += enemy.contact_damage_per_second;
+            if enemy.behavior_state.contact_slow_duration_seconds > 0.0 {
+                slow_effects.push((
+                    enemy.behavior_state.contact_slow_multiplier,
+                    enemy.behavior_state.contact_slow_duration_seconds,
+                ));
+            }
+        }
+        let total_contact_dps = total_contact_dps.min(CONTACT_DAMAGE_CAP_PER_SECOND);
+
+        for (multiplier, duration_seconds) in slow_effects {
+            self.apply_player_slow(multiplier, duration_seconds);
+        }
 
         if total_contact_dps <= 0.0 {
             return;
@@ -964,6 +1103,26 @@ impl GameCore {
         self.metrics.damage_taken += damage;
         reward_hint.damage_taken_delta += damage;
         events.push(GameEvent::PlayerDamaged { amount: damage });
+    }
+
+    fn apply_player_slow(&mut self, multiplier: f32, duration_seconds: f32) {
+        let multiplier = multiplier.clamp(0.2, 1.0);
+        if multiplier >= 1.0 || duration_seconds <= 0.0 {
+            return;
+        }
+
+        if let Some(effect) = self
+            .player_slow_effects
+            .iter_mut()
+            .find(|effect| (effect.multiplier - multiplier).abs() <= 0.001)
+        {
+            effect.remaining_seconds = effect.remaining_seconds.max(duration_seconds);
+        } else {
+            self.player_slow_effects.push(ActiveSlowEffect {
+                multiplier,
+                remaining_seconds: duration_seconds,
+            });
+        }
     }
 
     fn collect_pickups(&mut self, events: &mut Vec<GameEvent>, reward_hint: &mut RewardHint) {
@@ -1346,7 +1505,11 @@ impl GameCore {
         let angle = self.rng.range_f32(0.0, std::f32::consts::TAU);
         let distance = self.rng.range_f32(min_distance, max_distance);
         let offset = Vec2::new(angle.cos(), angle.sin()) * distance;
-        let mut position = self.player.position + offset;
+        self.clamp_to_map(self.player.position + offset)
+    }
+
+    fn clamp_to_map(&self, position: Vec2) -> Vec2 {
+        let mut position = position;
         position.x = position
             .x
             .clamp(-self.map.width * 0.5, self.map.width * 0.5);
@@ -1650,6 +1813,20 @@ struct ActiveEventEffect {
 }
 
 #[derive(Debug, Clone)]
+struct ActiveSlowEffect {
+    multiplier: f32,
+    remaining_seconds: f32,
+}
+
+#[derive(Debug, Clone)]
+struct Hazard {
+    position: Vec2,
+    radius: f32,
+    remaining_seconds: f32,
+    slow_multiplier: f32,
+}
+
+#[derive(Debug, Clone)]
 struct MapRuntime {
     width: f32,
     height: f32,
@@ -1682,6 +1859,7 @@ struct Enemy {
     xp_value: f32,
     threat: f32,
     behavior: EnemyBehavior,
+    behavior_state: EnemyBehaviorState,
     is_boss: bool,
     is_elite: bool,
 }
@@ -1695,6 +1873,7 @@ impl Enemy {
             &definition.common.stats,
             definition.spawn_budget.threat,
             false,
+            Some(&definition.behavior),
         )
     }
 
@@ -1706,6 +1885,7 @@ impl Enemy {
             &definition.common.stats,
             8.0,
             true,
+            None,
         )
     }
 
@@ -1716,7 +1896,10 @@ impl Enemy {
         stats: &EnemyStatsDefinition,
         threat: f32,
         is_boss: bool,
+        behavior_definition: Option<&content::BehaviorDefinition>,
     ) -> Self {
+        let behavior_state =
+            behavior_definition.map_or_else(EnemyBehaviorState::default, EnemyBehaviorState::from);
         Self {
             entity_id,
             enemy_id: id.to_string(),
@@ -1729,11 +1912,165 @@ impl Enemy {
             radius: stats.radius,
             xp_value: stats.xp_value,
             threat,
-            behavior: EnemyBehavior::Chase,
+            behavior: behavior_state.behavior,
+            behavior_state,
             is_boss,
             is_elite: false,
         }
     }
+
+    fn dash_velocity(&mut self, direction: Vec2, dt: f32) -> Vec2 {
+        if self.behavior_state.dash_remaining_seconds > 0.0 {
+            self.behavior_state.dash_remaining_seconds -= dt;
+            return self.behavior_state.dash_direction
+                * self.move_speed
+                * self.behavior_state.dash_speed_multiplier;
+        }
+
+        if self.behavior_state.dash_charge_remaining_seconds > 0.0 {
+            self.behavior_state.dash_charge_remaining_seconds -= dt;
+            if self.behavior_state.dash_charge_remaining_seconds <= 0.0 {
+                self.behavior_state.dash_direction = direction;
+                self.behavior_state.dash_remaining_seconds =
+                    self.behavior_state.dash_duration_seconds;
+            }
+            return Vec2::ZERO;
+        }
+
+        self.behavior_state.dash_cooldown_remaining_seconds -= dt;
+        if self.behavior_state.dash_cooldown_remaining_seconds <= 0.0 {
+            self.behavior_state.dash_charge_remaining_seconds =
+                self.behavior_state.dash_charge_seconds;
+            self.behavior_state.dash_cooldown_remaining_seconds =
+                self.behavior_state.dash_cooldown_seconds;
+        }
+
+        direction * self.move_speed
+    }
+}
+
+#[derive(Debug, Clone)]
+struct EnemyBehaviorState {
+    behavior: EnemyBehavior,
+    dash_charge_seconds: f32,
+    dash_charge_remaining_seconds: f32,
+    dash_duration_seconds: f32,
+    dash_remaining_seconds: f32,
+    dash_cooldown_seconds: f32,
+    dash_cooldown_remaining_seconds: f32,
+    dash_speed_multiplier: f32,
+    dash_direction: Vec2,
+    split_child_enemy_id: Option<String>,
+    split_child_count: u32,
+    split_child_health_multiplier: f32,
+    split_child_radius_multiplier: f32,
+    hazard_interval_seconds: f32,
+    hazard_cooldown_remaining: f32,
+    hazard_radius: f32,
+    hazard_duration_seconds: f32,
+    hazard_slow_multiplier: f32,
+    contact_slow_multiplier: f32,
+    contact_slow_duration_seconds: f32,
+}
+
+impl Default for EnemyBehaviorState {
+    fn default() -> Self {
+        Self {
+            behavior: EnemyBehavior::Chase,
+            dash_charge_seconds: 0.6,
+            dash_charge_remaining_seconds: 0.0,
+            dash_duration_seconds: 0.25,
+            dash_remaining_seconds: 0.0,
+            dash_cooldown_seconds: 2.0,
+            dash_cooldown_remaining_seconds: 2.0,
+            dash_speed_multiplier: 2.0,
+            dash_direction: Vec2::ZERO,
+            split_child_enemy_id: None,
+            split_child_count: 0,
+            split_child_health_multiplier: 0.5,
+            split_child_radius_multiplier: 0.75,
+            hazard_interval_seconds: 0.8,
+            hazard_cooldown_remaining: 0.0,
+            hazard_radius: 40.0,
+            hazard_duration_seconds: 2.0,
+            hazard_slow_multiplier: 0.8,
+            contact_slow_multiplier: 1.0,
+            contact_slow_duration_seconds: 0.0,
+        }
+    }
+}
+
+impl From<&content::BehaviorDefinition> for EnemyBehaviorState {
+    fn from(definition: &content::BehaviorDefinition) -> Self {
+        let parameters = &definition.parameters;
+        let mut state = Self {
+            behavior: EnemyBehavior::from_type(&definition.behavior_type),
+            ..Self::default()
+        };
+        state.dash_charge_seconds = behavior_parameter_f32(parameters, "charge_seconds", 0.6);
+        state.dash_duration_seconds = behavior_parameter_f32(parameters, "dash_seconds", 0.25);
+        state.dash_cooldown_seconds = behavior_parameter_f32(parameters, "cooldown_seconds", 2.0);
+        state.dash_cooldown_remaining_seconds = state.dash_cooldown_seconds;
+        state.dash_speed_multiplier =
+            behavior_parameter_f32(parameters, "dash_speed_multiplier", 2.0).max(1.0);
+        state.split_child_enemy_id = parameters
+            .get("child_enemy_id")
+            .and_then(|value| value.as_str())
+            .map(str::to_string);
+        state.split_child_count = behavior_parameter_u32(parameters, "child_count", 0);
+        state.split_child_health_multiplier =
+            behavior_parameter_f32(parameters, "child_health_multiplier", 0.5);
+        state.split_child_radius_multiplier =
+            behavior_parameter_f32(parameters, "child_radius_multiplier", 0.75);
+        state.hazard_radius = behavior_parameter_f32(parameters, "hazard_radius", 40.0);
+        state.hazard_duration_seconds =
+            behavior_parameter_f32(parameters, "hazard_duration_seconds", 2.0);
+        state.hazard_slow_multiplier = behavior_parameter_f32(parameters, "slow_multiplier", 0.8);
+        state.hazard_interval_seconds =
+            behavior_parameter_f32(parameters, "hazard_interval_seconds", 0.8).max(0.1);
+        state.contact_slow_multiplier = nested_behavior_parameter_f32(
+            parameters,
+            "on_contact_status_effect",
+            "multiplier",
+            1.0,
+        );
+        state.contact_slow_duration_seconds = nested_behavior_parameter_f32(
+            parameters,
+            "on_contact_status_effect",
+            "duration_seconds",
+            0.0,
+        );
+        state
+    }
+}
+
+fn behavior_parameter_f32(parameters: &serde_json::Value, key: &str, default: f32) -> f32 {
+    parameters
+        .get(key)
+        .and_then(|value| value.as_f64())
+        .map(|value| value as f32)
+        .filter(|value| value.is_finite())
+        .unwrap_or(default)
+}
+
+fn behavior_parameter_u32(parameters: &serde_json::Value, key: &str, default: u32) -> u32 {
+    parameters
+        .get(key)
+        .and_then(|value| value.as_u64())
+        .map(|value| value.min(u32::MAX as u64) as u32)
+        .unwrap_or(default)
+}
+
+fn nested_behavior_parameter_f32(
+    parameters: &serde_json::Value,
+    object_key: &str,
+    value_key: &str,
+    default: f32,
+) -> f32 {
+    parameters
+        .get(object_key)
+        .map(|value| behavior_parameter_f32(value, value_key, default))
+        .unwrap_or(default)
 }
 
 impl From<Enemy> for EnemySnapshot {
@@ -1995,6 +2332,97 @@ mod tests {
                 .map(|terminal| terminal.kind),
             Some(TerminalKind::Victory)
         );
+    }
+
+    #[test]
+    fn split_enemy_spawns_children_on_death() {
+        let content = ContentPack::base_demo();
+        let soda_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(40.0, 0.0), &soda_definition);
+        enemy.health = 1.0;
+        core.enemies.push(enemy);
+        let projectile_id = core.allocate_entity_id();
+        core.projectiles.push(Projectile {
+            entity_id: projectile_id,
+            weapon_id: "test-shot".to_string(),
+            position: Vec2::new(40.0, 0.0),
+            velocity: Vec2::ZERO,
+            damage: 10.0,
+            radius: 24.0,
+            pierce_remaining: 1,
+            lifetime: 1.0,
+        });
+
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+
+        assert!(core
+            .enemies
+            .iter()
+            .all(|enemy| enemy.enemy_id != "soda-bubble"));
+        assert_eq!(
+            core.enemies
+                .iter()
+                .filter(|enemy| enemy.enemy_id == "bouncy-gummy")
+                .count(),
+            2
+        );
+    }
+
+    #[test]
+    fn dash_enemy_temporarily_exceeds_base_speed() {
+        let content = ContentPack::base_demo();
+        let spicy_definition = content
+            .enemies
+            .get("spicy-gummy")
+            .expect("base demo should include spicy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        core.enemies.push(Enemy::from_enemy_definition(
+            enemy_id,
+            Vec2::new(80.0, 0.0),
+            &spicy_definition,
+        ));
+
+        let mut saw_dash = false;
+        for _ in 0..80 {
+            core.update_enemy_behavior(0.1);
+            let enemy = &core.enemies[0];
+            if enemy.velocity.length() > enemy.move_speed * 1.5 {
+                saw_dash = true;
+                break;
+            }
+        }
+
+        assert!(saw_dash);
+    }
+
+    #[test]
+    fn hazard_slow_reduces_player_movement_speed() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.hazards.push(Hazard {
+            position: Vec2::ZERO,
+            radius: 64.0,
+            remaining_seconds: 1.0,
+            slow_multiplier: 0.5,
+        });
+        core.update_player_slow_effects(0.1);
+        core.update_hazards(0.1);
+        core.update_player_movement(Vec2::new(1.0, 0.0), 1.0);
+
+        assert!(core.player.velocity.length() < core.player.move_speed * 0.75);
     }
 
     #[test]
