@@ -218,6 +218,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 该入口只学习 Phase 1 movement action，不处理升级选择，也不替代 PPO/DQN 评估。任何 behavior clone 模型都必须先进入 Gym 评估、动作分布诊断和规则 Bot 对比，才能作为 RL 测试 Bot 候选。
 
+`--dataset` 可以重复传入，用于组合不同时间窗口的数据集。例如可以把 0-60 秒 expanded 数据和 60-300 秒 lategame 数据放在同一次训练中，避免只学中后期而丢失开局状态。
+
 训练后的 behavior clone checkpoint 可以通过 `train_sb3.py --behavior-clone-model` 接入现有 Gym 评估和规则 Bot 对比：
 
 ```bash

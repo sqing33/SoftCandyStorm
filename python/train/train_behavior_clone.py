@@ -28,6 +28,11 @@ def require_dependencies():
 
 
 def dataset_paths(value):
+    if isinstance(value, (list, tuple)):
+        paths = []
+        for item in value:
+            paths.extend(dataset_paths(item))
+        return sorted(paths)
     root = Path(value)
     if root.is_file():
         return [root]
@@ -64,6 +69,8 @@ def load_trajectory_dataset(path, limit=None):
                             "observation_version": record.get("observation_version"),
                             "observation_len": record.get("observation_len"),
                             "action_count": record.get("action_count"),
+                            "sample_start_seconds": record.get("sample_start_seconds"),
+                            "sample_end_seconds": record.get("sample_end_seconds"),
                             "content_hash": record.get("content_hash"),
                         }
                     )
@@ -364,7 +371,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Train a movement behavior clone from Soft Candy Storm rule Bot trajectories."
     )
-    parser.add_argument("--dataset", default=None)
+    parser.add_argument(
+        "--dataset",
+        action="append",
+        default=None,
+        help="JSONL file or directory with JSONL files. Repeat to combine datasets.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--check-deps", action="store_true")
     parser.add_argument("--limit-samples", type=int, default=None)

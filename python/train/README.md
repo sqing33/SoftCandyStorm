@@ -150,6 +150,16 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 This entry point is for policy distillation and curriculum experiments only. A cloned model must still be wrapped for Gym evaluation, compared against rule Bot baselines, and reviewed for action bias before it can become an RL test Bot candidate.
 
+Repeat `--dataset` to combine complementary trajectory windows, such as an opening dataset plus a 60-300 second lategame dataset:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_lategame_001 \
+  --epochs 20 \
+  --batch-size 256
+```
+
 Evaluate or compare a behavior clone checkpoint through the shared Gym policy diagnostics with `--behavior-clone-model`:
 
 ```bash
