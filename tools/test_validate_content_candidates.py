@@ -95,7 +95,7 @@ def make_candidate(root: Path, *, duplicate_id: bool = False, runtime_integrated
 class ContentCandidateValidatorTests(unittest.TestCase):
     def test_valid_partial_candidate_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir) / "generated_candidates"
+            root = Path(temp_dir) / "generated_candidate_patches"
             candidate = make_candidate(root)
             report = build_report(candidate, base_content_dir=Path("content/base_demo"), allow_overrides=False)
 
@@ -105,7 +105,7 @@ class ContentCandidateValidatorTests(unittest.TestCase):
 
     def test_duplicate_base_id_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir) / "generated_candidates"
+            root = Path(temp_dir) / "generated_candidate_patches"
             candidate = make_candidate(root, duplicate_id=True)
             report = build_report(candidate, base_content_dir=Path("content/base_demo"), allow_overrides=False)
 
@@ -114,7 +114,7 @@ class ContentCandidateValidatorTests(unittest.TestCase):
 
     def test_runtime_integrated_candidate_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir) / "generated_candidates"
+            root = Path(temp_dir) / "generated_candidate_patches"
             candidate = make_candidate(root, runtime_integrated=True)
             report = build_report(candidate, base_content_dir=Path("content/base_demo"), allow_overrides=False)
 
@@ -123,7 +123,7 @@ class ContentCandidateValidatorTests(unittest.TestCase):
 
     def test_cli_writes_report_and_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir) / "generated_candidates"
+            root = Path(temp_dir) / "generated_candidate_patches"
             candidate = make_candidate(root)
             report_path = Path(temp_dir) / "report.json"
             markdown_path = Path(temp_dir) / "summary.md"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Validate partial generated content candidates.
+"""Validate partial generated content candidate patches.
 
-This dependency-free validator is a stopgap for AI-generated candidate batches
+This dependency-free validator is a stopgap for AI-generated candidate patches
 that are not yet full GameCore content packs. It checks common schema fields,
 passive/enemy-specific fields, candidate-only metadata, and duplicate ids
 against an existing base content directory.
@@ -374,8 +374,8 @@ def main() -> int:
         "root",
         type=Path,
         nargs="?",
-        default=Path("harness/generated_candidates"),
-        help="Generated content candidate root or a single candidate directory",
+        default=Path("harness/generated_candidate_patches"),
+        help="Generated content candidate patch root or a single patch directory",
     )
     parser.add_argument("--base-content-dir", type=Path, default=Path("content/base_demo"))
     parser.add_argument("--allow-overrides", action="store_true")
