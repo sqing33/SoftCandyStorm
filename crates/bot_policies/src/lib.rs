@@ -171,6 +171,60 @@ mod tests {
         let action = bot.next_action(&empty_snapshot());
         assert!(action.movement.length() <= 1.0 + f32::EPSILON);
     }
+
+    #[test]
+    fn tank_prioritizes_cooldown_until_health_is_low() {
+        let mut snapshot = empty_snapshot();
+        snapshot.upgrade_options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "cream-clockwork".to_string(),
+                name: "奶油发条".to_string(),
+                tags: vec!["cooldown".to_string()],
+                description: "缩短武器冷却。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "big-candy-jar".to_string(),
+                name: "大号糖罐".to_string(),
+                tags: vec!["defense".to_string(), "health".to_string()],
+                description: "提升最大生命。".to_string(),
+            },
+        ];
+
+        let mut bot = BotController::new(BotKind::Tank, 3);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(0));
+
+        snapshot.player.health = 40.0;
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+    }
+
+    #[test]
+    fn zone_control_unlocks_basic_weapon_before_pickup_bias() {
+        let mut snapshot = empty_snapshot();
+        snapshot.build.weapons.push(game_core::BuildItemSnapshot {
+            id: "rainbow-candy-shot".to_string(),
+            level: 2,
+        });
+        snapshot.upgrade_options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "star-spoon".to_string(),
+                name: "星星勺子".to_string(),
+                tags: vec!["pickup".to_string()],
+                description: "扩大糖晶拾取范围。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-3".to_string(),
+                name: "彩虹糖弹 Lv3".to_string(),
+                tags: vec!["projectile".to_string()],
+                description: "提升彩虹糖弹。".to_string(),
+            },
+        ];
+
+        let mut bot = BotController::new(BotKind::ZoneControl, 4);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+
+        snapshot.build.weapons[0].level = 3;
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(0));
+    }
 }
 
 fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut PolicyRng) -> usize {
@@ -190,6 +244,12 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
         }
     }
 
+    if kind == BotKind::ZoneControl && weapon_level(snapshot, "rainbow-candy-shot") < 3 {
+        if let Some(index) = find_option(snapshot, &["rainbow-candy-shot"]) {
+            return index;
+        }
+    }
+
     for priority in upgrade_priorities(kind) {
         if let Some(index) = find_option(snapshot, &[*priority]) {
             return index;
@@ -201,7 +261,7 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
 
 fn defense_threshold(kind: BotKind) -> f32 {
     match kind {
-        BotKind::Tank => 0.95,
+        BotKind::Tank => 0.55,
         BotKind::Coward => 0.62,
         BotKind::Greedy => 0.55,
         BotKind::Kite => 0.0,
@@ -238,8 +298,8 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
             "big-candy-jar",
         ],
         BotKind::Tank => &[
-            "big-candy-jar",
             "cream-clockwork",
+            "big-candy-jar",
             "rainbow-candy-shot",
             "bubble-shoes",
             "star-spoon",
@@ -252,8 +312,8 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
             "star-spoon",
         ],
         BotKind::ZoneControl => &[
-            "rainbow-candy-shot",
             "star-spoon",
+            "rainbow-candy-shot",
             "cream-clockwork",
             "bubble-shoes",
         ],
@@ -269,6 +329,16 @@ fn find_option(snapshot: &RunSnapshot, needles: &[&str]) -> Option<usize> {
                 || option.description.contains(needle)
         })
     })
+}
+
+fn weapon_level(snapshot: &RunSnapshot, weapon_id: &str) -> u32 {
+    snapshot
+        .build
+        .weapons
+        .iter()
+        .find(|weapon| weapon.id == weapon_id)
+        .map(|weapon| weapon.level)
+        .unwrap_or(0)
 }
 
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
@@ -312,7 +382,7 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
 
 fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let health_ratio = snapshot.player.health / snapshot.player.max_health;
-    if health_ratio < 0.62 {
+    if health_ratio < 0.70 {
         let avoidance = avoid_enemies(snapshot, 250.0, 10);
         if avoidance.length_squared() > 0.0 {
             return avoidance.normalized_or_zero();
@@ -338,7 +408,7 @@ fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
         return avoidance.normalized_or_zero() * 0.13;
     }
 
-    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.42
+    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.40
 }
 
 fn best_pickup_direction(snapshot: &RunSnapshot) -> Option<Vec2> {
