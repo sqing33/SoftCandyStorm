@@ -1241,26 +1241,52 @@ impl ContentPack {
             pack.events.insert(event.id.clone(), event);
         }
 
-        pack.waves.insert(
-            "frosting-grassland-standard".to_string(),
-            WaveDefinition {
-                id: "frosting-grassland-standard".to_string(),
-                name: "糖霜草地标准波次".to_string(),
-                version: 1,
-                map_id: "frosting-grassland".to_string(),
-                duration_seconds: 600.0,
-                segments: base_demo_wave_segments(),
-                boss_events: vec![BossEventDefinition {
-                    time_second: 210.0,
-                    boss_id: "runaway-sugar-mixer".to_string(),
-                }],
-                pressure_budget: PressureBudgetDefinition {
-                    early: "low".to_string(),
-                    middle: "medium".to_string(),
-                    late: "high".to_string(),
-                },
-            },
-        );
+        for wave in [
+            wave_definition(
+                "frosting-grassland-standard",
+                "糖霜草地标准波次",
+                "frosting-grassland",
+                "runaway-sugar-mixer",
+                base_demo_wave_segments(),
+            ),
+            wave_definition(
+                "soda-creek-standard",
+                "汽水溪谷标准波次",
+                "soda-creek",
+                "soda-fountain-dragon",
+                soda_creek_wave_segments(),
+            ),
+            wave_definition(
+                "cotton-cloud-pasture-standard",
+                "棉花云牧场标准波次",
+                "cotton-cloud-pasture",
+                "giant-cotton-clump",
+                cotton_cloud_pasture_wave_segments(),
+            ),
+            wave_definition(
+                "caramel-workshop-standard",
+                "焦糖工坊标准波次",
+                "caramel-workshop",
+                "caramel-furnace",
+                caramel_workshop_wave_segments(),
+            ),
+            wave_definition(
+                "jelly-platform-standard",
+                "果冻月台标准波次",
+                "jelly-platform",
+                "giant-gummy-bear-king",
+                jelly_platform_wave_segments(),
+            ),
+            wave_definition(
+                "cracked-star-jar-standard",
+                "裂星糖罐标准波次",
+                "cracked-star-jar",
+                "cracked-star-jar-core",
+                cracked_star_jar_wave_segments(),
+            ),
+        ] {
+            pack.waves.insert(wave.id.clone(), wave);
+        }
 
         pack
     }
@@ -2390,6 +2416,32 @@ fn spawn_hazard_event_effect(
     }
 }
 
+fn wave_definition(
+    id: &str,
+    name: &str,
+    map_id: &str,
+    boss_id: &str,
+    segments: Vec<WaveSegmentDefinition>,
+) -> WaveDefinition {
+    WaveDefinition {
+        id: id.to_string(),
+        name: name.to_string(),
+        version: 1,
+        map_id: map_id.to_string(),
+        duration_seconds: 600.0,
+        segments,
+        boss_events: vec![BossEventDefinition {
+            time_second: 210.0,
+            boss_id: boss_id.to_string(),
+        }],
+        pressure_budget: PressureBudgetDefinition {
+            early: "low".to_string(),
+            middle: "medium".to_string(),
+            late: "high".to_string(),
+        },
+    }
+}
+
 fn base_demo_wave_segments() -> Vec<WaveSegmentDefinition> {
     vec![
         wave_segment(0.0, 90.0, 1250.0, 1, 35, &[("bouncy-gummy", 1.0)]),
@@ -2450,6 +2502,375 @@ fn base_demo_wave_segments() -> Vec<WaveSegmentDefinition> {
                 ("soda-bubble", 0.08),
                 ("cotton-candy-clump", 0.05),
                 ("spicy-gummy", 0.04),
+            ],
+        ),
+    ]
+}
+
+fn soda_creek_wave_segments() -> Vec<WaveSegmentDefinition> {
+    vec![
+        wave_segment(
+            0.0,
+            90.0,
+            1250.0,
+            1,
+            35,
+            &[("bouncy-gummy", 0.55), ("soda-bubble", 0.45)],
+        ),
+        wave_segment(
+            90.0,
+            210.0,
+            950.0,
+            2,
+            55,
+            &[
+                ("bouncy-gummy", 0.38),
+                ("soda-bubble", 0.32),
+                ("sour-gummy", 0.18),
+                ("spicy-gummy", 0.12),
+            ],
+        ),
+        wave_segment(
+            210.0,
+            300.0,
+            1050.0,
+            2,
+            65,
+            &[
+                ("soda-bubble", 0.34),
+                ("bouncy-gummy", 0.25),
+                ("spicy-gummy", 0.16),
+                ("sour-gummy", 0.15),
+                ("sticky-bear-gummy", 0.1),
+            ],
+        ),
+        wave_segment(
+            300.0,
+            480.0,
+            840.0,
+            3,
+            82,
+            &[
+                ("soda-bubble", 0.25),
+                ("spicy-gummy", 0.18),
+                ("sour-gummy", 0.16),
+                ("sandwich-cookie-creep", 0.16),
+                ("bouncy-gummy", 0.15),
+                ("caramel-slime", 0.1),
+            ],
+        ),
+        wave_segment(
+            480.0,
+            600.0,
+            740.0,
+            3,
+            105,
+            &[
+                ("soda-bubble", 0.22),
+                ("spicy-gummy", 0.2),
+                ("sandwich-cookie-creep", 0.18),
+                ("caramel-slime", 0.14),
+                ("sour-gummy", 0.12),
+                ("bouncy-gummy", 0.1),
+                ("sticky-bear-gummy", 0.04),
+            ],
+        ),
+    ]
+}
+
+fn cotton_cloud_pasture_wave_segments() -> Vec<WaveSegmentDefinition> {
+    vec![
+        wave_segment(
+            0.0,
+            90.0,
+            1250.0,
+            1,
+            35,
+            &[("bouncy-gummy", 0.5), ("cotton-candy-clump", 0.5)],
+        ),
+        wave_segment(
+            90.0,
+            210.0,
+            950.0,
+            2,
+            55,
+            &[
+                ("cotton-candy-clump", 0.38),
+                ("bouncy-gummy", 0.36),
+                ("sour-gummy", 0.16),
+                ("sticky-bear-gummy", 0.1),
+            ],
+        ),
+        wave_segment(
+            210.0,
+            300.0,
+            1050.0,
+            2,
+            65,
+            &[
+                ("cotton-candy-clump", 0.34),
+                ("sticky-bear-gummy", 0.2),
+                ("soda-bubble", 0.16),
+                ("bouncy-gummy", 0.18),
+                ("sour-gummy", 0.12),
+            ],
+        ),
+        wave_segment(
+            300.0,
+            480.0,
+            820.0,
+            3,
+            82,
+            &[
+                ("cotton-candy-clump", 0.3),
+                ("sticky-bear-gummy", 0.18),
+                ("soda-bubble", 0.15),
+                ("sandwich-cookie-creep", 0.14),
+                ("sour-gummy", 0.13),
+                ("bouncy-gummy", 0.1),
+            ],
+        ),
+        wave_segment(
+            480.0,
+            600.0,
+            720.0,
+            3,
+            105,
+            &[
+                ("cotton-candy-clump", 0.26),
+                ("sticky-bear-gummy", 0.18),
+                ("soda-bubble", 0.16),
+                ("sandwich-cookie-creep", 0.16),
+                ("caramel-slime", 0.1),
+                ("sour-gummy", 0.1),
+                ("spicy-gummy", 0.04),
+            ],
+        ),
+    ]
+}
+
+fn caramel_workshop_wave_segments() -> Vec<WaveSegmentDefinition> {
+    vec![
+        wave_segment(
+            0.0,
+            90.0,
+            1250.0,
+            1,
+            35,
+            &[("bouncy-gummy", 0.65), ("caramel-slime", 0.35)],
+        ),
+        wave_segment(
+            90.0,
+            210.0,
+            950.0,
+            2,
+            55,
+            &[
+                ("bouncy-gummy", 0.42),
+                ("caramel-slime", 0.24),
+                ("sour-gummy", 0.18),
+                ("sticky-bear-gummy", 0.16),
+            ],
+        ),
+        wave_segment(
+            210.0,
+            300.0,
+            1050.0,
+            2,
+            65,
+            &[
+                ("caramel-slime", 0.26),
+                ("sandwich-cookie-creep", 0.22),
+                ("bouncy-gummy", 0.2),
+                ("sour-gummy", 0.14),
+                ("sticky-bear-gummy", 0.1),
+                ("soda-bubble", 0.08),
+            ],
+        ),
+        wave_segment(
+            300.0,
+            480.0,
+            820.0,
+            3,
+            82,
+            &[
+                ("caramel-slime", 0.24),
+                ("sandwich-cookie-creep", 0.2),
+                ("sticky-bear-gummy", 0.14),
+                ("soda-bubble", 0.13),
+                ("spicy-gummy", 0.1),
+                ("sour-gummy", 0.1),
+                ("bouncy-gummy", 0.09),
+            ],
+        ),
+        wave_segment(
+            480.0,
+            600.0,
+            730.0,
+            3,
+            105,
+            &[
+                ("caramel-slime", 0.25),
+                ("sandwich-cookie-creep", 0.22),
+                ("spicy-gummy", 0.14),
+                ("soda-bubble", 0.12),
+                ("sticky-bear-gummy", 0.1),
+                ("sour-gummy", 0.09),
+                ("bouncy-gummy", 0.08),
+            ],
+        ),
+    ]
+}
+
+fn jelly_platform_wave_segments() -> Vec<WaveSegmentDefinition> {
+    vec![
+        wave_segment(
+            0.0,
+            90.0,
+            1250.0,
+            1,
+            35,
+            &[("bouncy-gummy", 0.55), ("sticky-bear-gummy", 0.45)],
+        ),
+        wave_segment(
+            90.0,
+            210.0,
+            950.0,
+            2,
+            55,
+            &[
+                ("bouncy-gummy", 0.35),
+                ("sticky-bear-gummy", 0.3),
+                ("soda-bubble", 0.18),
+                ("sour-gummy", 0.17),
+            ],
+        ),
+        wave_segment(
+            210.0,
+            300.0,
+            1050.0,
+            2,
+            65,
+            &[
+                ("sticky-bear-gummy", 0.26),
+                ("soda-bubble", 0.22),
+                ("sandwich-cookie-creep", 0.18),
+                ("bouncy-gummy", 0.18),
+                ("sour-gummy", 0.1),
+                ("spicy-gummy", 0.06),
+            ],
+        ),
+        wave_segment(
+            300.0,
+            480.0,
+            820.0,
+            3,
+            82,
+            &[
+                ("sticky-bear-gummy", 0.22),
+                ("soda-bubble", 0.18),
+                ("sandwich-cookie-creep", 0.18),
+                ("spicy-gummy", 0.14),
+                ("bouncy-gummy", 0.14),
+                ("caramel-slime", 0.08),
+                ("sour-gummy", 0.06),
+            ],
+        ),
+        wave_segment(
+            480.0,
+            600.0,
+            730.0,
+            3,
+            105,
+            &[
+                ("sticky-bear-gummy", 0.22),
+                ("sandwich-cookie-creep", 0.2),
+                ("spicy-gummy", 0.16),
+                ("soda-bubble", 0.14),
+                ("caramel-slime", 0.12),
+                ("sour-gummy", 0.08),
+                ("bouncy-gummy", 0.08),
+            ],
+        ),
+    ]
+}
+
+fn cracked_star_jar_wave_segments() -> Vec<WaveSegmentDefinition> {
+    vec![
+        wave_segment(
+            0.0,
+            90.0,
+            1250.0,
+            1,
+            35,
+            &[
+                ("bouncy-gummy", 0.45),
+                ("sour-gummy", 0.25),
+                ("soda-bubble", 0.2),
+                ("cotton-candy-clump", 0.1),
+            ],
+        ),
+        wave_segment(
+            90.0,
+            210.0,
+            950.0,
+            2,
+            55,
+            &[
+                ("bouncy-gummy", 0.28),
+                ("sour-gummy", 0.22),
+                ("soda-bubble", 0.18),
+                ("sticky-bear-gummy", 0.16),
+                ("spicy-gummy", 0.1),
+                ("cotton-candy-clump", 0.06),
+            ],
+        ),
+        wave_segment(
+            210.0,
+            300.0,
+            1050.0,
+            2,
+            65,
+            &[
+                ("sandwich-cookie-creep", 0.22),
+                ("spicy-gummy", 0.18),
+                ("soda-bubble", 0.16),
+                ("caramel-slime", 0.14),
+                ("sticky-bear-gummy", 0.12),
+                ("sour-gummy", 0.1),
+                ("bouncy-gummy", 0.08),
+            ],
+        ),
+        wave_segment(
+            300.0,
+            480.0,
+            840.0,
+            3,
+            82,
+            &[
+                ("sandwich-cookie-creep", 0.22),
+                ("spicy-gummy", 0.18),
+                ("caramel-slime", 0.16),
+                ("soda-bubble", 0.14),
+                ("sticky-bear-gummy", 0.12),
+                ("sour-gummy", 0.1),
+                ("cotton-candy-clump", 0.08),
+            ],
+        ),
+        wave_segment(
+            480.0,
+            600.0,
+            710.0,
+            3,
+            105,
+            &[
+                ("sandwich-cookie-creep", 0.24),
+                ("spicy-gummy", 0.2),
+                ("caramel-slime", 0.16),
+                ("soda-bubble", 0.13),
+                ("sticky-bear-gummy", 0.11),
+                ("sour-gummy", 0.08),
+                ("cotton-candy-clump", 0.08),
             ],
         ),
     ]

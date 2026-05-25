@@ -2592,7 +2592,19 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 59);
+        assert_eq!(content.object_count(), 64);
+        for map_id in content.maps.keys().cloned().collect::<Vec<_>>() {
+            GameCore::reset_with_content(
+                RunConfig {
+                    seed: 7,
+                    map_id,
+                    duration_seconds: 1.0,
+                    ..RunConfig::default()
+                },
+                content.clone(),
+            )
+            .expect("every base_demo map should initialize with a wave");
+        }
         let mut core = GameCore::reset_with_content(
             RunConfig {
                 seed: 7,
