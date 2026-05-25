@@ -19,52 +19,70 @@
         "seed": 30000,
         "map_id": "frosting-grassland",
         "steps": 151,
-        "reward": 5.1903,
+        "reward": 5.2403,
         "terminated": true,
         "truncated": false,
         "time_seconds": 5.03333,
         "terminal_kind": "victory",
         "terminal_reason": "duration_reached",
         "level": 1,
-        "kills": 2,
+        "kills": 3,
         "xp_collected": 2.0,
         "damage_taken": 0.0,
         "action_counts": {
           "0": 0,
-          "1": 151,
+          "1": 0,
           "2": 0,
           "3": 0,
           "4": 0,
-          "5": 0,
+          "5": 151,
           "6": 0,
           "7": 0,
           "8": 0
+        },
+        "reward_breakdown": {
+          "damage_taken": 0.0,
+          "kill": 0.15,
+          "level": 0.0,
+          "survival": 0.0503,
+          "terminal": 5.0,
+          "total": 5.2403,
+          "xp": 0.04
         }
       },
       {
         "seed": 30001,
         "map_id": "frosting-grassland",
         "steps": 151,
-        "reward": 5.1003,
+        "reward": 5.2403,
         "terminated": true,
         "truncated": false,
         "time_seconds": 5.03333,
         "terminal_kind": "victory",
         "terminal_reason": "duration_reached",
         "level": 1,
-        "kills": 1,
-        "xp_collected": 0.0,
+        "kills": 3,
+        "xp_collected": 2.0,
         "damage_taken": 0.0,
         "action_counts": {
-          "0": 0,
-          "1": 151,
+          "0": 21,
+          "1": 0,
           "2": 0,
           "3": 0,
           "4": 0,
-          "5": 0,
+          "5": 130,
           "6": 0,
           "7": 0,
           "8": 0
+        },
+        "reward_breakdown": {
+          "damage_taken": 0.0,
+          "kill": 0.15,
+          "level": 0.0,
+          "survival": 0.0503,
+          "terminal": 5.0,
+          "total": 5.2403,
+          "xp": 0.04
         }
       }
     ],
@@ -73,17 +91,17 @@
       "win_rate": 1.0,
       "average_survival_seconds": 5.0333,
       "average_level": 1.0,
-      "average_kills": 1.5,
-      "average_reward": 5.1453,
+      "average_kills": 3.0,
+      "average_reward": 5.2403,
       "damage_taken_average": 0.0,
       "action_distribution": {
         "0": {
-          "count": 0,
-          "ratio": 0.0
+          "count": 21,
+          "ratio": 0.0695
         },
         "1": {
-          "count": 302,
-          "ratio": 1.0
+          "count": 0,
+          "ratio": 0.0
         },
         "2": {
           "count": 0,
@@ -98,8 +116,8 @@
           "ratio": 0.0
         },
         "5": {
-          "count": 0,
-          "ratio": 0.0
+          "count": 281,
+          "ratio": 0.9305
         },
         "6": {
           "count": 0,
@@ -113,6 +131,17 @@
           "count": 0,
           "ratio": 0.0
         }
+      },
+      "action_entropy_bits": 0.3641,
+      "normalized_action_entropy": 0.1149,
+      "reward_breakdown_average": {
+        "damage_taken": 0.0,
+        "kill": 0.15,
+        "level": 0.0,
+        "survival": 0.0503,
+        "terminal": 5.0,
+        "total": 5.2403,
+        "xp": 0.04
       }
     }
   },
@@ -273,13 +302,23 @@
     },
     {
       "id": "dominant_action_bias",
+      "severity": "repair",
+      "summary": "Action 5 accounts for 93.05% of policy steps in this smoke."
+    },
+    {
+      "id": "low_action_entropy",
+      "severity": "repair",
+      "summary": "Policy action entropy is very low; inspect exploration, reward shaping, and training duration."
+    },
+    {
+      "id": "terminal_reward_dominance",
       "severity": "watch",
-      "summary": "Action 1 accounts for 100.00% of policy steps in this smoke."
+      "summary": "Terminal reward contributes 95.41% of absolute reward components in this evaluation."
     }
   ],
   "limitations": [
     "This comparison uses the same seed/map/duration, but a smoke-scale policy is not a balance or fun gate.",
     "Rule Bot baselines remain the primary deterministic content gate until RL policies are trained and calibrated at larger scale."
   ],
-  "gate_decision": "comparison_recorded_not_balance_gate"
+  "gate_decision": "comparison_recorded_needs_action_bias_repair"
 }

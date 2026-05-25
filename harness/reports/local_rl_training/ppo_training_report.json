@@ -18,16 +18,16 @@
     "seconds": 180.0,
     "tick_rate": 30,
     "content_dir": "content/base_demo",
-    "started_at": "2026-05-25T18:41:26.203880+00:00",
-    "completed_at": "2026-05-25T18:41:27.125549+00:00"
+    "started_at": "2026-05-25T18:47:42.957806+00:00",
+    "completed_at": "2026-05-25T18:47:43.797310+00:00"
   },
   "evaluation": {
     "episodes": 2,
     "win_rate": 1.0,
     "average_survival_seconds": 5.0333,
     "average_level": 1.0,
-    "average_kills": 2.5,
-    "average_reward": 5.1953,
+    "average_kills": 1.5,
+    "average_reward": 5.1453,
     "damage_taken_average": 0.0,
     "action_distribution": {
       "0": {
@@ -35,8 +35,8 @@
         "ratio": 0.0
       },
       "1": {
-        "count": 0,
-        "ratio": 0.0
+        "count": 302,
+        "ratio": 1.0
       },
       "2": {
         "count": 0,
@@ -59,8 +59,8 @@
         "ratio": 0.0
       },
       "7": {
-        "count": 302,
-        "ratio": 1.0
+        "count": 0,
+        "ratio": 0.0
       },
       "8": {
         "count": 0,
@@ -71,18 +71,34 @@
     "normalized_action_entropy": 0.0,
     "reward_breakdown_average": {
       "damage_taken": 0.0,
-      "kill": 0.125,
+      "kill": 0.075,
       "level": 0.0,
       "survival": 0.0503,
       "terminal": 5.0,
-      "total": 5.1953,
+      "total": 5.1453,
       "xp": 0.02
     }
   },
-  "known_exploits": [],
+  "known_exploits": [
+    {
+      "id": "dominant_action_bias",
+      "severity": "repair",
+      "summary": "Action 1 accounts for 100.00% of policy steps in this smoke."
+    },
+    {
+      "id": "low_action_entropy",
+      "severity": "repair",
+      "summary": "Policy action entropy is very low; inspect exploration, reward shaping, and training duration."
+    },
+    {
+      "id": "terminal_reward_dominance",
+      "severity": "watch",
+      "summary": "Terminal reward contributes 97.18% of absolute reward components in this evaluation."
+    }
+  ],
   "limitations": [
     "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
     "Compare against rule Bot matrix before using an RL policy to judge new content."
   ],
-  "gate_decision": "trained_needs_rule_bot_comparison"
+  "gate_decision": "trained_needs_action_bias_repair"
 }

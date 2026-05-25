@@ -29,11 +29,12 @@ uv run --with 'gymnasium>=1.0,<2' --with 'numpy>=1.26' --with 'stable-baselines3
 - 平均等级：`1.0`
 - 平均击杀：`2.5`
 - 平均承伤：`0.0`
-- 动作分布：动作 `7` 占比 `100%`
+- 动作分布：动作 `1` 占比 `100%`
 - 动作熵：`0.0` bits
 - 归一化动作熵：`0.0`
-- 平均奖励拆解：`terminal=5.0`，`kill=0.125`，`survival=0.0503`，`xp=0.02`
-- Gate 结论：`trained_needs_rule_bot_comparison`
+- 平均奖励拆解：`terminal=5.0`，`kill=0.075`，`survival=0.0503`，`xp=0.02`
+- 已知 exploit：`dominant_action_bias`、`low_action_entropy`、`terminal_reward_dominance`
+- Gate 结论：`trained_needs_action_bias_repair`
 
 ## 限制
 
