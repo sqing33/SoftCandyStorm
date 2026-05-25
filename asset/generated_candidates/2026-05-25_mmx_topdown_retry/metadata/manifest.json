@@ -6,6 +6,17 @@
     "auth_method": "api-key",
     "source": "local configured mmx credentials"
   },
+  "command_provenance": {
+    "status": "promoted_from_nested_metadata",
+    "reason": "生成命令原先记录在 postprocess.commands 中；本次提升到 manifest.commands 以满足统一 strict metadata 校验。",
+    "limitations": [
+      "该批次 gate_result 仍为 repair，补 provenance 不改变候选状态。"
+    ]
+  },
+  "commands": [
+    "mmx image generate --prompt <player_jar_keeper_topdown_v004> --aspect-ratio 1:1 --n 2 --out-dir asset/generated_candidates/2026-05-25_mmx_topdown_retry/images --out-prefix player_jar_keeper_topdown_v004 --non-interactive --quiet",
+    "mmx image generate --prompt <boss_runaway_sugar_mixer_topdown_v004> --aspect-ratio 1:1 --n 2 --out-dir asset/generated_candidates/2026-05-25_mmx_topdown_retry/images --out-prefix boss_runaway_sugar_mixer_topdown_v004 --non-interactive --quiet"
+  ],
   "purpose": "重新生成玩家和暴走搅糖机 Boss 的严格俯视角候选，尝试修复上一批非俯视角美术风险。",
   "project_rules": {
     "candidate_only": true,

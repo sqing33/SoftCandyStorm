@@ -253,6 +253,8 @@ python3 tools/validate_asset_candidates.py asset/generated_candidates/<batch> \
   --require-commands
 ```
 
+历史批次如果原始 shell history 不可追溯，只能补记由 manifest prompt 和输出路径重建的命令模板，并必须在 `command_provenance.status` 中标明 `reconstructed_from_manifest` 或类似状态，不能把重建命令伪装成原始命令。
+
 校验范围：
 
 - `project_rules.candidate_only` 必须为 `true`。

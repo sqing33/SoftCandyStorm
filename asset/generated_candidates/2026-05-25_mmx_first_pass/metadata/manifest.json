@@ -6,6 +6,19 @@
     "auth_method": "api-key",
     "source": "local configured mmx credentials"
   },
+  "command_provenance": {
+    "status": "reconstructed_from_manifest",
+    "reason": "原始 shell history 不可用；以下命令模板由 manifest 中的 prompt、输出路径和生成参数重建。",
+    "limitations": [
+      "不保证 voice id 与当时完全一致。",
+      "不替代后续新批次保存真实原始命令。"
+    ]
+  },
+  "commands": [
+    "mmx image generate --prompt <runtime_spritesheet_v001.prompt> --aspect-ratio 1:1 --n 1 --out-dir asset/generated_candidates/2026-05-25_mmx_first_pass/images --out-prefix runtime_spritesheet_v001 --non-interactive --quiet",
+    "mmx speech synthesize --text \"软糖风暴来了，守住糖罐！\" --model speech-2.8-hd --format mp3 --sample-rate 32000 --channels 1 --out asset/generated_candidates/2026-05-25_mmx_first_pass/audio/voice_storm_alert_v001.mp3 --non-interactive --quiet",
+    "mmx music generate --prompt <bgm_candy_battle_loop_v001.prompt> --instrumental --genre \"game soundtrack\" --mood \"cheerful action\" --instruments \"marimba, plucky synth, toy percussion, bubbly bass\" --tempo fast --bpm 132 --avoid \"dark horror, heavy metal, vocals, lyrics, realistic gore mood\" --use-case \"background music for prototype gameplay\" --format mp3 --sample-rate 44100 --out asset/generated_candidates/2026-05-25_mmx_first_pass/music/bgm_candy_battle_loop_v001.mp3 --non-interactive --quiet"
+  ],
   "project_rules": {
     "candidate_only": true,
     "accepted_content": false,
