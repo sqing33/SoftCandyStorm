@@ -269,6 +269,10 @@
     {
       "id": "map_selection_cli_runtime",
       "summary": "Harness simulate、batch、matrix、meta-settlement、gym-bridge 和 Bevy Runtime 均支持 --map-id 选择运行地图，报告与 Gym bridge info 会保留 map_id，并通过 soda-creek / cracked-star-jar / jelly-platform smoke 验证"
+    },
+    {
+      "id": "runtime_map_visual_feedback",
+      "summary": "GameCore snapshot 暴露 active_hazards，Runtime 按 map_id 切换地图色调、边界色、HUD 地图名称和危险区可视反馈，Telemetry sample 记录 active_hazards 数量；caramel-workshop 5 秒 Runtime smoke 通过"
     }
   ],
   "current_findings": [
@@ -289,7 +293,7 @@
     },
     {
       "id": "map_roster_config_scope",
-      "summary": "base_demo 已覆盖 docs/04 首批地图名录，地图包含尺寸、生成距离、语义 hazard、视觉描述和音乐主题；每张地图已有标准波次并可通过 Harness/Runtime --map-id 启动，Runtime 专属地图视觉和地形效果仍待补齐。",
+      "summary": "base_demo 已覆盖 docs/04 首批地图名录，地图包含尺寸、生成距离、语义 hazard、视觉描述和音乐主题；每张地图已有标准波次并可通过 Harness/Runtime --map-id 启动，Runtime 已有首版地图色调、边界色、HUD 名称和 active_hazards 可视反馈，后续仍需专属地表素材与静态地形机制。",
       "report": "content/base_demo/maps/cracked-star-jar.json"
     },
     {
@@ -309,7 +313,7 @@
     },
     {
       "id": "map_wave_runtime_scope",
-      "summary": "每张 base_demo 地图已有可加载标准波次与 Boss 事件，并通过静态预算；GameCore、Harness CLI、Gym bridge 和 Runtime 现已能按 map_id 选择对应波次，地图专属视觉仍待扩展。",
+      "summary": "每张 base_demo 地图已有可加载标准波次与 Boss 事件，并通过静态预算；GameCore、Harness CLI、Gym bridge 和 Runtime 现已能按 map_id 选择对应波次，Runtime 首版地图视觉反馈已补齐，后续应扩展 Boss 专属机制和地图静态 hazard 语义。",
       "report": "content/base_demo/waves/cracked-star-jar-standard.json"
     },
     {
@@ -370,8 +374,8 @@
   ],
   "next_recommended": [
     {
-      "id": "runtime_map_visual_feedback",
-      "summary": "为 6 张地图补齐 Runtime 视觉差异和地图 hazard 可读反馈，至少让 --map-id 切换后 HUD、地表色调、危险区/事件提示能被人工试玩区分"
+      "id": "boss_runtime_ability_semantics",
+      "summary": "为六个 Boss 增加首版运行时技能语义或表现事件，至少覆盖冲撞、召唤、地面危险区/阶段变化等可被 Harness 和 Runtime 观察的差异"
     },
     {
       "id": "runtime_manual_playtest_capture",
