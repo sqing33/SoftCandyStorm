@@ -67,6 +67,20 @@ fn runtime_asset_root() -> String {
         .to_string()
 }
 
+#[cfg(test)]
+fn runtime_sprite_paths() -> &'static [&'static str] {
+    &[
+        PLAYER_SPRITE,
+        BOUNCY_GUMMY_SPRITE,
+        SOUR_GUMMY_SPRITE,
+        CARAMEL_SLIME_SPRITE,
+        SANDWICH_COOKIE_SPRITE,
+        BOSS_MIXER_SPRITE,
+        PICKUP_CRYSTAL_SPRITE,
+        MAP_TILE_SPRITE,
+    ]
+}
+
 #[derive(Debug, Clone)]
 struct RuntimeCli {
     content_dir: PathBuf,
@@ -891,7 +905,8 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
 mod tests {
     use super::{
         event_kind_for_events, make_tone_wav, parse_runtime_cli, player_tint, run_config_from_cli,
-        runtime_asset_root, sounds_for_events, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
+        runtime_asset_root, runtime_sprite_paths, sounds_for_events, RuntimeEventKind,
+        RuntimeSound, DEFAULT_CONTENT_DIR,
     };
     use game_core::GameEvent;
     use std::path::PathBuf;
@@ -944,6 +959,15 @@ mod tests {
 
         assert!(root.ends_with("assets"));
         assert!(root.join("prototype_topdown/manifest.json").exists());
+    }
+
+    #[test]
+    fn runtime_sprite_paths_exist() {
+        let root = PathBuf::from(runtime_asset_root());
+
+        for path in runtime_sprite_paths() {
+            assert!(root.join(path).exists(), "missing runtime sprite {path}");
+        }
     }
 
     #[test]
