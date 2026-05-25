@@ -55,3 +55,5 @@ python3 python/train/train_sb3.py --algorithm dqn --compare-rule-bots --model py
 The comparison report records the policy summary, action distribution, rule Bot matrix output, smoke findings, limitations, and `comparison_recorded_not_balance_gate` gate decision.
 
 Policy evaluation reports include `action_entropy_bits`, `normalized_action_entropy`, and averaged `reward_breakdown` fields so action collapse and reward-shaping issues can be inspected before treating a policy as a useful test Bot.
+
+Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.

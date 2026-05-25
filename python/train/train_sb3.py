@@ -128,6 +128,7 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
         seconds=eval_seconds or config["evaluation"]["seconds"],
     )
     known_exploit_notes = known_exploits_from_evaluation(evaluation)
+    gate_decision = training_gate_decision(known_exploit_notes)
     evaluation_path = report_dir / f"{algorithm}_evaluation_report.json"
     exploit_path = report_dir / f"{algorithm}_known_exploits.json"
     evaluation_path.write_text(
@@ -177,7 +178,7 @@ def train(config, algorithm, total_timesteps=None, eval_episodes=None, eval_seco
         "evaluation": evaluation["summary"],
         "known_exploits": known_exploit_notes["known_exploits"],
         "limitations": known_exploit_notes["limitations"],
-        "gate_decision": "trained_needs_rule_bot_comparison",
+        "gate_decision": gate_decision,
     }
     report_path = report_dir / f"{algorithm}_training_report.json"
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -428,6 +429,7 @@ def compare_policy_to_rule_bots(
         map_id=map_id,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
+    findings = comparison_findings(policy, rule_matrix["stdout"])
     return {
         "report_version": 1,
         "status": "compared",
@@ -443,12 +445,12 @@ def compare_policy_to_rule_bots(
         "rule_bots": rule_matrix["stdout"],
         "rule_bot_command": rule_matrix["command"],
         "rule_bot_stderr": rule_matrix["stderr"],
-        "findings": comparison_findings(policy, rule_matrix["stdout"]),
+        "findings": findings,
         "limitations": [
             "This comparison uses the same seed/map/duration, but a smoke-scale policy is not a balance or fun gate.",
             "Rule Bot baselines remain the primary deterministic content gate until RL policies are trained and calibrated at larger scale.",
         ],
-        "gate_decision": "comparison_recorded_not_balance_gate",
+        "gate_decision": comparison_gate_decision(findings),
     }
 
 
@@ -471,24 +473,7 @@ def comparison_findings(policy, rule_matrix):
                 "summary": "Policy can finish the short evaluation with very low kills; inspect whether reward design overvalues passive survival.",
             }
         )
-    distribution = summary.get("action_distribution", {})
-    dominant = max(distribution.items(), key=lambda item: item[1]["ratio"], default=None)
-    if dominant is not None and dominant[1]["ratio"] >= 0.75:
-        findings.append(
-            {
-                "id": "dominant_action_bias",
-                "severity": "watch",
-                "summary": f"Action {dominant[0]} accounts for {dominant[1]['ratio']:.2%} of policy steps in this smoke.",
-            }
-        )
-    if summary.get("normalized_action_entropy", 1.0) <= 0.25:
-        findings.append(
-            {
-                "id": "low_action_entropy",
-                "severity": "watch",
-                "summary": "Policy action entropy is very low; inspect exploration, reward shaping, and training duration.",
-            }
-        )
+    findings.extend(policy_quality_findings(summary))
     rule_bots = rule_matrix.get("bots", [])
     if rule_bots:
         best_rule_kills = max(bot["average_kills"] for bot in rule_bots)
@@ -503,9 +488,59 @@ def comparison_findings(policy, rule_matrix):
     return findings
 
 
+def policy_quality_findings(summary):
+    findings = []
+    distribution = summary.get("action_distribution", {})
+    dominant = max(distribution.items(), key=lambda item: item[1]["ratio"], default=None)
+    if dominant is not None and dominant[1]["ratio"] >= 0.75:
+        findings.append(
+            {
+                "id": "dominant_action_bias",
+                "severity": "repair",
+                "summary": f"Action {dominant[0]} accounts for {dominant[1]['ratio']:.2%} of policy steps in this smoke.",
+            }
+        )
+    if summary.get("normalized_action_entropy", 1.0) <= 0.25:
+        findings.append(
+            {
+                "id": "low_action_entropy",
+                "severity": "repair",
+                "summary": "Policy action entropy is very low; inspect exploration, reward shaping, and training duration.",
+            }
+        )
+    terminal_ratio = terminal_reward_ratio(summary)
+    if terminal_ratio >= 0.75:
+        findings.append(
+            {
+                "id": "terminal_reward_dominance",
+                "severity": "watch",
+                "summary": f"Terminal reward contributes {terminal_ratio:.2%} of absolute reward components in this evaluation.",
+            }
+        )
+    return findings
+
+
+def terminal_reward_ratio(summary):
+    breakdown = summary.get("reward_breakdown_average", {})
+    denominator = sum(
+        abs(float(value))
+        for key, value in breakdown.items()
+        if key != "total" and isinstance(value, (int, float))
+    )
+    if denominator <= 0.0:
+        return 0.0
+    return abs(float(breakdown.get("terminal", 0.0))) / denominator
+
+
+def comparison_gate_decision(findings):
+    if any(finding["severity"] == "repair" for finding in findings):
+        return "comparison_recorded_needs_action_bias_repair"
+    return "comparison_recorded_not_balance_gate"
+
+
 def known_exploits_from_evaluation(evaluation):
     summary = evaluation["summary"]
-    known_exploits = []
+    known_exploits = policy_quality_findings(summary)
     limitations = [
         "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
         "Compare against rule Bot matrix before using an RL policy to judge new content.",
@@ -523,6 +558,15 @@ def known_exploits_from_evaluation(evaluation):
         "known_exploits": known_exploits,
         "limitations": limitations,
     }
+
+
+def training_gate_decision(known_exploit_notes):
+    if any(
+        finding["severity"] == "repair"
+        for finding in known_exploit_notes["known_exploits"]
+    ):
+        return "trained_needs_action_bias_repair"
+    return "trained_needs_rule_bot_comparison"
 
 
 def write_report(path, payload):
