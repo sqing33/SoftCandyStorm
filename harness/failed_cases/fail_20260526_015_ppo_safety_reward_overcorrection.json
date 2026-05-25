@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_015",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "30000-30009",
+  "bot": "PPO observation v2 high-pressure safety train300 50k policy",
+  "time_seconds": 300.0,
+  "symptom": "加入 low_health、boundary_risk、enemy_pressure、hazard_risk、boss_pressure 安全塑形后，PPO 在 60 秒短局中承伤降到 1.8 且动作熵提升，但 3 张 high-pressure 地图 10 seed / 300 秒 deterministic 对比全部 0% 胜率：soda-creek 平均存活 59.3745 秒，caramel-workshop 平均存活 158.8643 秒，cracked-star-jar 平均存活 114.9160 秒。",
+  "root_cause": "当前安全塑形主要惩罚 policy 已经处在低血量、贴边、敌人压力、危险区或 Boss 压力状态，缺少对风险下降的正向奖励。该信号能降低短局承伤和固定动作偏置，但在长局中可能形成滞后负反馈：进入危险后持续扣分，却没有清楚奖励正在远离危险的动作，因此泛化反而退化。",
+  "fix": "不要继续单纯加大当前安全惩罚。下一步应在 GymBridgeState 中记录上一帧 safety risk，新增 safety_delta 或 risk_reduction breakdown：风险下降给小额正奖励，风险上升给小额惩罚；同时降低或门控 boundary_risk 和 low_health 的持续惩罚，避免压垮长局回报。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_safety_train300_50k_comparison_001/summary.md。修复后先重跑 60 秒短局动作 gate，确认动作分布不过度塌缩；再跑 high-pressure 10 seed / 300 秒 deterministic 聚合对比，要求 caramel-workshop 不再 0% 胜率，soda-creek 和 cracked-star-jar 不再低于上一轮无 safety_delta 模型。"
+}
