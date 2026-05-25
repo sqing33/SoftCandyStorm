@@ -121,12 +121,16 @@
     {
       "id": "projectile_snapshot_visualization",
       "summary": "GameCore RunSnapshot 暴露活跃 projectile，Runtime 使用彩虹糖弹原型贴图绘制 `visible_projectiles`，补齐 WeaponFired 事件之外的投射物可视化"
+    },
+    {
+      "id": "runtime_effect_and_hit_feedback",
+      "summary": "Runtime 增加短生命周期视觉反馈队列，基于 GameCore events 为 projectile 命中、XP 掉落/拾取、玩家受击和 Boss 出场绘制瞬时闪烁效果"
     }
   ],
   "current_findings": [
     {
       "id": "asset_final_art_still_pending",
-      "summary": "Runtime 已接入程序化 top-down 原型占位素材并显示彩虹糖弹 projectile；这些素材不是最终美术，AI 生成图仍停留在候选池，后续正式美术仍需人工审查和来源/版本/后处理记录",
+      "summary": "Runtime 已接入程序化 top-down 原型占位素材、彩虹糖弹 projectile 和事件驱动瞬时反馈；这些素材不是最终美术，AI 生成图仍停留在候选池，后续正式美术仍需人工审查和来源/版本/后处理记录",
       "report": "assets/prototype_topdown/manifest.json"
     }
   ],
@@ -136,8 +140,8 @@
       "summary": "在素材候选清理后，将规则 Bot 基线扩展到更大 seed 集或 nightly 矩阵，继续观察低技能和中技能 Bot 的边界稳定性"
     },
     {
-      "id": "runtime_effect_and_hit_feedback",
-      "summary": "基于 GameCore events 为 projectile 命中、XP 掉落、受击和 Boss 出场增加更清楚的 Runtime 视觉反馈"
+      "id": "runtime_manual_playtest_capture",
+      "summary": "启动 Bevy Runtime 进行人工可玩性走查，记录 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     }
   ]
 }

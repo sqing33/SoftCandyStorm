@@ -11,6 +11,7 @@ use std::{path::PathBuf, sync::Arc};
 
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const CAMERA_Z: f32 = 999.0;
+const EFFECT_Z: f32 = 35.0;
 const PLAYER_Z: f32 = 20.0;
 const PROJECTILE_Z: f32 = 15.0;
 const ENEMY_Z: f32 = 10.0;
@@ -18,6 +19,7 @@ const PICKUP_Z: f32 = 5.0;
 const MAP_Z: f32 = -20.0;
 const MAP_BORDER_Z: f32 = -19.0;
 const PLACEHOLDER_SAMPLE_RATE: u32 = 22_050;
+const MAX_RUNTIME_EFFECTS: usize = 96;
 const PLAYER_SPRITE: &str = "prototype_topdown/sprites/player_jar_keeper_v001.png";
 const BOUNCY_GUMMY_SPRITE: &str = "prototype_topdown/sprites/enemy_bouncy_gummy_v001.png";
 const SOUR_GUMMY_SPRITE: &str = "prototype_topdown/sprites/enemy_sour_gummy_v001.png";
@@ -54,8 +56,9 @@ fn main() {
             (
                 step_game_core,
                 play_runtime_audio.after(step_game_core),
+                update_runtime_effects.after(step_game_core),
                 sync_camera.after(step_game_core),
-                sync_world_visuals.after(step_game_core),
+                sync_world_visuals.after(update_runtime_effects),
                 update_hud.after(step_game_core),
             ),
         )
@@ -115,6 +118,7 @@ struct RuntimeState {
     last_event: String,
     last_event_kind: RuntimeEventKind,
     pending_sounds: Vec<RuntimeSound>,
+    effects: Vec<RuntimeEffect>,
     paused: bool,
     run_number: u32,
 }
@@ -138,6 +142,24 @@ enum RuntimeSound {
     Damage,
     Terminal,
     System,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeEffectKind {
+    ProjectileHit,
+    XpDrop,
+    XpCollect,
+    PlayerDamage,
+    BossSpawn,
+}
+
+#[derive(Debug, Clone)]
+struct RuntimeEffect {
+    kind: RuntimeEffectKind,
+    position: CoreVec2,
+    ttl_seconds: f32,
+    total_seconds: f32,
+    intensity: f32,
 }
 
 #[derive(Resource)]
@@ -262,6 +284,7 @@ fn setup_runtime(
         last_event: "run started".to_string(),
         last_event_kind: RuntimeEventKind::System,
         pending_sounds: vec![RuntimeSound::System],
+        effects: Vec::new(),
         paused: false,
         run_number: 1,
     });
@@ -312,7 +335,7 @@ fn step_game_core(
                 },
                 dt,
             );
-            apply_runtime_feedback(&mut state, &result.events);
+            apply_runtime_feedback(&mut state, &result.events, &result.snapshot);
             state.latest_snapshot = result.snapshot;
         } else {
             state.latest_snapshot = snapshot;
@@ -331,7 +354,7 @@ fn step_game_core(
             dt,
         );
         state.accumulator -= state.dt_seconds;
-        apply_runtime_feedback(&mut state, &result.events);
+        apply_runtime_feedback(&mut state, &result.events, &result.snapshot);
         state.latest_snapshot = result.snapshot;
 
         if !state.latest_snapshot.upgrade_options.is_empty() {
@@ -339,6 +362,14 @@ fn step_game_core(
             break;
         }
     }
+}
+
+fn update_runtime_effects(time: Res<Time>, mut state: ResMut<RuntimeState>) {
+    let dt = time.delta_seconds();
+    for effect in &mut state.effects {
+        effect.ttl_seconds -= dt;
+    }
+    state.effects.retain(|effect| effect.ttl_seconds > 0.0);
 }
 
 fn play_runtime_audio(
@@ -481,6 +512,22 @@ fn sync_world_visuals(
                     ..default()
                 },
                 transform: Transform::from_xyz(enemy.position.x, enemy.position.y, ENEMY_Z),
+                ..default()
+            },
+            RuntimeVisual,
+        ));
+    }
+
+    for effect in &state.effects {
+        let (color, size) = effect_visual_style(effect);
+        commands.spawn((
+            SpriteBundle {
+                sprite: Sprite {
+                    color,
+                    custom_size: Some(Vec2::splat(size)),
+                    ..default()
+                },
+                transform: Transform::from_xyz(effect.position.x, effect.position.y, EFFECT_Z),
                 ..default()
             },
             RuntimeVisual,
@@ -670,12 +717,15 @@ fn update_hud(
     }
 }
 
-fn apply_runtime_feedback(state: &mut RuntimeState, events: &[GameEvent]) {
+fn apply_runtime_feedback(state: &mut RuntimeState, events: &[GameEvent], snapshot: &RunSnapshot) {
     let feedback = feedback_for_events(events);
     state.last_event = feedback.message;
     state.last_event_kind = feedback.kind;
     for sound in feedback.sounds {
         push_unique_sound(&mut state.pending_sounds, sound);
+    }
+    for effect in effects_for_events(events, snapshot) {
+        push_runtime_effect(state, effect);
     }
 }
 
@@ -772,6 +822,136 @@ fn describe_event(event: &GameEvent) -> Option<String> {
     }
 }
 
+fn effects_for_events(events: &[GameEvent], snapshot: &RunSnapshot) -> Vec<RuntimeEffect> {
+    let mut effects = Vec::new();
+    for event in events {
+        let effect =
+            match event {
+                GameEvent::EnemyHit {
+                    entity_id, damage, ..
+                } => enemy_position(snapshot, *entity_id).map(|position| {
+                    RuntimeEffect::new(RuntimeEffectKind::ProjectileHit, position, *damage, 0.16)
+                }),
+                GameEvent::XpDropped { entity_id, value } => pickup_position(snapshot, *entity_id)
+                    .map(|position| {
+                        RuntimeEffect::new(RuntimeEffectKind::XpDrop, position, *value, 0.42)
+                    }),
+                GameEvent::XpCollected { value, .. } => Some(RuntimeEffect::new(
+                    RuntimeEffectKind::XpCollect,
+                    snapshot.player.position,
+                    *value,
+                    0.26,
+                )),
+                GameEvent::PlayerDamaged { amount } => Some(RuntimeEffect::new(
+                    RuntimeEffectKind::PlayerDamage,
+                    snapshot.player.position,
+                    *amount,
+                    0.22,
+                )),
+                GameEvent::BossSpawned { entity_id, .. } => boss_position(snapshot, *entity_id)
+                    .map(|position| {
+                        RuntimeEffect::new(RuntimeEffectKind::BossSpawn, position, 1.0, 0.72)
+                    }),
+                GameEvent::EnemySpawned { .. }
+                | GameEvent::WeaponFired { .. }
+                | GameEvent::EnemyKilled { .. }
+                | GameEvent::LevelUp { .. }
+                | GameEvent::UpgradeOffered { .. }
+                | GameEvent::UpgradeChosen { .. }
+                | GameEvent::RunEnded { .. } => None,
+            };
+        if let Some(effect) = effect {
+            effects.push(effect);
+        }
+    }
+    effects
+}
+
+fn enemy_position(snapshot: &RunSnapshot, entity_id: u64) -> Option<CoreVec2> {
+    snapshot
+        .visible_enemies
+        .iter()
+        .find(|enemy| enemy.entity_id == entity_id)
+        .map(|enemy| enemy.position)
+}
+
+fn pickup_position(snapshot: &RunSnapshot, entity_id: u64) -> Option<CoreVec2> {
+    snapshot
+        .visible_pickups
+        .iter()
+        .find(|pickup| pickup.entity_id == entity_id)
+        .map(|pickup| pickup.position)
+}
+
+fn boss_position(snapshot: &RunSnapshot, entity_id: u64) -> Option<CoreVec2> {
+    snapshot
+        .boss
+        .as_ref()
+        .filter(|boss| boss.entity_id == entity_id)
+        .map(|boss| boss.position)
+        .or_else(|| enemy_position(snapshot, entity_id))
+}
+
+fn push_runtime_effect(state: &mut RuntimeState, effect: RuntimeEffect) {
+    state.effects.push(effect);
+    if state.effects.len() > MAX_RUNTIME_EFFECTS {
+        let overflow = state.effects.len() - MAX_RUNTIME_EFFECTS;
+        state.effects.drain(0..overflow);
+    }
+}
+
+fn effect_visual_style(effect: &RuntimeEffect) -> (Color, f32) {
+    let fade = effect.fade();
+    let growth = 1.0 - fade;
+    match effect.kind {
+        RuntimeEffectKind::ProjectileHit => (
+            Color::srgba(1.0, 0.88, 0.20, 0.72 * fade),
+            20.0 + growth * 28.0 + effect.intensity.min(10.0),
+        ),
+        RuntimeEffectKind::XpDrop => (
+            Color::srgba(0.18, 0.86, 1.0, 0.62 * fade),
+            18.0 + growth * 18.0 + effect.intensity.min(12.0) * 0.35,
+        ),
+        RuntimeEffectKind::XpCollect => (
+            Color::srgba(0.35, 1.0, 0.48, 0.72 * fade),
+            28.0 + growth * 32.0 + effect.intensity.min(16.0) * 0.25,
+        ),
+        RuntimeEffectKind::PlayerDamage => (
+            Color::srgba(1.0, 0.20, 0.18, 0.78 * fade),
+            50.0 + growth * 24.0 + effect.intensity.min(12.0) * 1.5,
+        ),
+        RuntimeEffectKind::BossSpawn => (
+            Color::srgba(1.0, 0.32, 0.72, 0.45 * fade),
+            150.0 + growth * 80.0,
+        ),
+    }
+}
+
+impl RuntimeEffect {
+    fn new(
+        kind: RuntimeEffectKind,
+        position: CoreVec2,
+        intensity: f32,
+        total_seconds: f32,
+    ) -> Self {
+        Self {
+            kind,
+            position,
+            ttl_seconds: total_seconds,
+            total_seconds,
+            intensity,
+        }
+    }
+
+    fn fade(&self) -> f32 {
+        if self.total_seconds > 0.0 {
+            (self.ttl_seconds / self.total_seconds).clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
+    }
+}
+
 fn reset_runtime_run(state: &mut RuntimeState) {
     let core = GameCore::reset_with_content(state.config.clone(), state.content.clone())
         .expect("runtime reset must use already validated content");
@@ -782,6 +962,7 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.last_event_kind = RuntimeEventKind::System;
     state.pending_sounds.clear();
     state.pending_sounds.push(RuntimeSound::System);
+    state.effects.clear();
     state.paused = false;
     state.run_number += 1;
 }
@@ -929,11 +1110,14 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
 #[cfg(test)]
 mod tests {
     use super::{
-        event_kind_for_events, make_tone_wav, parse_runtime_cli, player_tint, run_config_from_cli,
-        runtime_asset_root, runtime_sprite_paths, sounds_for_events, RuntimeEventKind,
-        RuntimeSound, DEFAULT_CONTENT_DIR,
+        effects_for_events, event_kind_for_events, make_tone_wav, parse_runtime_cli, player_tint,
+        run_config_from_cli, runtime_asset_root, runtime_sprite_paths, sounds_for_events,
+        RuntimeEffectKind, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
     };
-    use game_core::GameEvent;
+    use game_core::{
+        BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, PickupSnapshot,
+        PickupType, RunConfig, Vec2 as CoreVec2,
+    };
     use std::path::PathBuf;
 
     #[test]
@@ -1010,6 +1194,84 @@ mod tests {
             sounds_for_events(&events),
             [RuntimeSound::Fire, RuntimeSound::Damage]
         );
+    }
+
+    #[test]
+    fn maps_events_to_runtime_visual_effects() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        let enemy_position = CoreVec2::new(12.0, 24.0);
+        let pickup_position = CoreVec2::new(-8.0, 16.0);
+        let boss_position = CoreVec2::new(42.0, -20.0);
+        snapshot.visible_enemies.push(EnemySnapshot {
+            entity_id: 10,
+            enemy_id: "bouncy-gummy".to_string(),
+            position: enemy_position,
+            velocity: CoreVec2::ZERO,
+            health: 12.0,
+            max_health: 20.0,
+            radius: 16.0,
+            threat: 1.0,
+            behavior: EnemyBehavior::Chase,
+            is_boss: false,
+            is_elite: false,
+        });
+        snapshot.visible_pickups.push(PickupSnapshot {
+            entity_id: 20,
+            pickup_type: PickupType::Xp,
+            position: pickup_position,
+            value: 6.0,
+            radius: 10.0,
+        });
+        snapshot.boss = Some(BossSnapshot {
+            entity_id: 30,
+            boss_id: "runaway-sugar-mixer".to_string(),
+            health: 200.0,
+            max_health: 200.0,
+            position: boss_position,
+        });
+
+        let effects = effects_for_events(
+            &[
+                GameEvent::EnemyHit {
+                    entity_id: 10,
+                    damage: 7.0,
+                    weapon_id: "rainbow-candy-shot".to_string(),
+                },
+                GameEvent::XpDropped {
+                    entity_id: 20,
+                    value: 6.0,
+                },
+                GameEvent::XpCollected {
+                    entity_id: 20,
+                    value: 6.0,
+                },
+                GameEvent::PlayerDamaged { amount: 3.0 },
+                GameEvent::BossSpawned {
+                    entity_id: 30,
+                    boss_id: "runaway-sugar-mixer".to_string(),
+                },
+            ],
+            &snapshot,
+        );
+
+        assert_eq!(effects.len(), 5);
+        assert!(effects.iter().any(|effect| {
+            effect.kind == RuntimeEffectKind::ProjectileHit && effect.position == enemy_position
+        }));
+        assert!(effects.iter().any(|effect| {
+            effect.kind == RuntimeEffectKind::XpDrop && effect.position == pickup_position
+        }));
+        assert!(effects.iter().any(|effect| {
+            effect.kind == RuntimeEffectKind::XpCollect
+                && effect.position == snapshot.player.position
+        }));
+        assert!(effects.iter().any(|effect| {
+            effect.kind == RuntimeEffectKind::PlayerDamage
+                && effect.position == snapshot.player.position
+        }));
+        assert!(effects.iter().any(|effect| {
+            effect.kind == RuntimeEffectKind::BossSpawn && effect.position == boss_position
+        }));
     }
 
     #[test]
