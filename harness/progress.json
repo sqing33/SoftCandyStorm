@@ -824,6 +824,11 @@
       "id": "rl_behavior_clone_danger_weighted_watch",
       "summary": "危险状态重采样 BC 在 60 秒 high-pressure 三图全胜且动作熵健康；300 秒平均胜率提升到 55.56%，但 cracked-star-jar 仍低于 KiteBot 规则基线，结论为 watch，不能推进为 RL 测试 Bot。",
       "report": "harness/failed_cases/fail_20260526_023_behavior_clone_danger_weighted_cracked_watch.json"
+    },
+    {
+      "id": "rl_behavior_clone_sequence_context_available",
+      "summary": "Behavior clone 训练入口支持 --context-frames 拼接同一 episode 的最近 observation，checkpoint 记录 base/input observation 长度；Gym 评估会在每个 episode reset policy 上下文缓存，兼容旧 1 帧模型。",
+      "report": "python/train/train_behavior_clone.py"
     }
   ],
   "next_recommended": [

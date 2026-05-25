@@ -292,6 +292,10 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 结论：危险状态重采样比单图补强更稳，能避免 `soda-creek` 回归到 0%，但最终图仍明显低于 KiteBot 规则基线 100% 胜率。因此该模型只能记为 watch，不能推进为 RL 测试 Bot。下一步应转向序列上下文、分阶段 policy 或结合 PPO 蒸馏初始化，而不是继续堆单帧 MLP 样本。
 
+训练入口已支持 `--context-frames <N>`，用于把同一 episode 内最近 N 帧 observation 拼接成 behavior clone 输入。默认 `N=1`，兼容旧模型；当 `N>1` 时，训练报告会记录 `context_frames`、`base_observation_len` 和 `input_observation_len`。在线 Gym 评估会在每个 episode reset 时清空 clone 的上下文缓存，避免跨 seed 泄漏状态。
+
+序列上下文的第一步应先用小规模 smoke 证明链路可用，再训练 3-5 帧模型并复查 60/300 秒 high-pressure 对比。如果仍低于规则 Bot，后续再考虑 GRU/Transformer 或分阶段 policy。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

@@ -496,6 +496,9 @@ def evaluate_model(
         for index in range(episodes):
             seed = seed_start + index
             observation, info = env.reset(seed=seed, options={"seconds": seconds, "map_id": map_id})
+            reset_policy = getattr(model, "reset", None)
+            if callable(reset_policy):
+                reset_policy()
             terminated = False
             truncated = False
             steps = 0

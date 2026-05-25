@@ -208,6 +208,17 @@ The first danger-weighted run used the expanded, lategame, and cracked-star-jar 
 
 Treat this as a `watch` result, not a policy gate pass. The next repair should add sequence context or staged policies rather than more single-map samples.
 
+Use `--context-frames <N>` to concatenate recent observations from the same exported episode before the MLP classifier. The default is `1` and remains compatible with older checkpoints. Context checkpoints record `base_observation_len`, `input_observation_len`, and `context_frames`; the Gym adapter resets the cached context at each evaluation episode boundary.
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_lategame_001 \
+  --context-frames 3 \
+  --sample-weighting danger \
+  --epochs 20
+```
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

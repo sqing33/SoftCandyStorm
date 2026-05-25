@@ -97,7 +97,9 @@ def load_trajectory_dataset(path, limit=None):
                 sample_metadata.append(
                     {
                         "path": str(dataset_path),
+                        "seed": int(record.get("seed", 0)),
                         "map_id": record.get("map_id"),
+                        "tick": int(record.get("tick", 0)),
                         "time_seconds": float(record.get("time_seconds", 0.0)),
                         "health_ratio": float(record.get("health_ratio", 1.0)),
                         "level": int(record.get("level", 0)),
@@ -196,7 +198,7 @@ def train_behavior_clone(dataset, args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    observations = np.asarray(dataset["observations"], dtype=np.float32)
+    observations, context_report = build_context_observations(dataset, args.context_frames, np)
     actions = np.asarray(dataset["actions"], dtype=np.int64)
     indices = np.arange(len(actions))
     np.random.default_rng(args.seed).shuffle(indices)
@@ -238,7 +240,7 @@ def train_behavior_clone(dataset, args):
     validation_y = torch.from_numpy(actions[validation_indices])
 
     model = nn.Sequential(
-        nn.Linear(dataset["observation_len"], args.hidden_size),
+        nn.Linear(context_report["input_observation_len"], args.hidden_size),
         nn.ReLU(),
         nn.Linear(args.hidden_size, args.hidden_size),
         nn.ReLU(),
@@ -288,9 +290,11 @@ def train_behavior_clone(dataset, args):
     model_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
-            "model_version": 1,
+            "model_version": 2,
             "kind": "behavior_clone_mlp",
-            "observation_len": dataset["observation_len"],
+            "observation_len": context_report["input_observation_len"],
+            "base_observation_len": dataset["observation_len"],
+            "context_frames": args.context_frames,
             "action_count": dataset["action_count"],
             "hidden_size": args.hidden_size,
             "class_weighting": args.class_weighting,
@@ -317,6 +321,9 @@ def train_behavior_clone(dataset, args):
             "batch_size": args.batch_size,
             "learning_rate": args.learning_rate,
             "hidden_size": args.hidden_size,
+            "context_frames": args.context_frames,
+            "input_observation_len": context_report["input_observation_len"],
+            "base_observation_len": dataset["observation_len"],
             "validation_split": args.validation_split,
             "class_weighting": args.class_weighting,
             "class_weights": class_weight_report,
@@ -347,6 +354,37 @@ def build_class_weights(actions, action_count, mode, np_module, torch_module):
         torch_module.from_numpy(weights),
         [round(float(weight), 6) for weight in weights.tolist()],
     )
+
+
+def build_context_observations(dataset, context_frames, np_module):
+    base_observations = np_module.asarray(dataset["observations"], dtype=np_module.float32)
+    if context_frames <= 1:
+        return base_observations, {
+            "context_frames": 1,
+            "base_observation_len": dataset["observation_len"],
+            "input_observation_len": dataset["observation_len"],
+        }
+
+    histories = {}
+    context_rows = []
+    history_limit = context_frames - 1
+    for observation, sample in zip(base_observations, dataset["sample_metadata"]):
+        key = (sample.get("path"), sample.get("seed"))
+        history = histories.get(key, [])
+        previous = history[-history_limit:]
+        missing = history_limit - len(previous)
+        frames = [observation for _ in range(missing)]
+        frames.extend(previous)
+        frames.append(observation)
+        context_rows.append(np_module.concatenate(frames).astype(np_module.float32))
+        history.append(observation)
+        histories[key] = history[-history_limit:]
+
+    return np_module.asarray(context_rows, dtype=np_module.float32), {
+        "context_frames": context_frames,
+        "base_observation_len": dataset["observation_len"],
+        "input_observation_len": dataset["observation_len"] * context_frames,
+    }
 
 
 def build_sample_weights(sample_metadata, indices, args, np_module):
@@ -406,11 +444,18 @@ class BehaviorClonePolicy:
 
         self.checkpoint_path = str(checkpoint_path)
         self.checkpoint = torch.load(checkpoint_path, map_location="cpu")
-        self.observation_len = int(self.checkpoint["observation_len"])
+        self.input_observation_len = int(self.checkpoint["observation_len"])
+        self.base_observation_len = int(
+            self.checkpoint.get("base_observation_len", self.input_observation_len)
+        )
+        self.context_frames = int(self.checkpoint.get("context_frames", 1))
         self.action_count = int(self.checkpoint["action_count"])
         self.hidden_size = int(self.checkpoint["hidden_size"])
+        self.history = []
+        self._last_observation = None
+        self._last_scores = None
         self.model = nn.Sequential(
-            nn.Linear(self.observation_len, self.hidden_size),
+            nn.Linear(self.input_observation_len, self.hidden_size),
             nn.ReLU(),
             nn.Linear(self.hidden_size, self.hidden_size),
             nn.ReLU(),
@@ -419,10 +464,15 @@ class BehaviorClonePolicy:
         self.model.load_state_dict(self.checkpoint["state_dict"])
         self.model.eval()
 
+    def reset(self):
+        self.history = []
+        self._last_observation = None
+        self._last_scores = None
+
     def predict(self, observation, deterministic=True):
         import torch
 
-        probabilities = self._probabilities(observation)
+        probabilities = self._probabilities(observation, update_history=True)
         if deterministic:
             action = int(torch.argmax(probabilities, dim=1).item())
         else:
@@ -430,24 +480,65 @@ class BehaviorClonePolicy:
         return action, None
 
     def action_scores(self, observation):
-        probabilities = self._probabilities(observation)
+        values = self._base_observation_values(observation)
+        if (
+            self._last_observation is not None
+            and values.shape == self._last_observation.shape
+            and (values == self._last_observation).all()
+            and self._last_scores is not None
+        ):
+            return {
+                "kind": "probability",
+                "scores": list(self._last_scores),
+            }
+        probabilities = self._probabilities(values, update_history=False)
         return {
             "kind": "probability",
             "scores": [float(value) for value in probabilities[0].tolist()],
         }
 
-    def _probabilities(self, observation):
+    def _probabilities(self, observation, update_history):
         import numpy as np
         import torch
 
-        values = np.asarray(observation, dtype=np.float32).reshape(1, -1)
-        if values.shape[1] != self.observation_len:
-            raise ValueError(
-                f"expected observation length {self.observation_len}, got {values.shape[1]}"
-            )
+        values = self._base_observation_values(observation)
+        features = self._context_features(values, np, update_history=update_history)
         with torch.no_grad():
-            logits = self.model(torch.from_numpy(values))
-            return torch.softmax(logits, dim=1)
+            logits = self.model(torch.from_numpy(features.reshape(1, -1)))
+            probabilities = torch.softmax(logits, dim=1)
+        if update_history:
+            self._last_observation = values.copy()
+            self._last_scores = [float(value) for value in probabilities[0].tolist()]
+        return probabilities
+
+    def _base_observation_values(self, observation):
+        import numpy as np
+
+        values = np.asarray(observation, dtype=np.float32).reshape(-1)
+        if values.shape[0] != self.base_observation_len:
+            raise ValueError(
+                f"expected observation length {self.base_observation_len}, got {values.shape[0]}"
+            )
+        return values
+
+    def _context_features(self, values, np_module, update_history):
+        if self.context_frames <= 1:
+            return values
+        history_limit = self.context_frames - 1
+        previous = self.history[-history_limit:]
+        missing = history_limit - len(previous)
+        frames = [values for _ in range(missing)]
+        frames.extend(previous)
+        frames.append(values)
+        if update_history:
+            self.history.append(values.copy())
+            self.history = self.history[-history_limit:]
+        features = np_module.concatenate(frames).astype(np_module.float32)
+        if features.shape[0] != self.input_observation_len:
+            raise ValueError(
+                f"expected context observation length {self.input_observation_len}, got {features.shape[0]}"
+            )
+        return features
 
 
 def load_behavior_clone_policy(path):
@@ -496,6 +587,7 @@ def main():
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--hidden-size", type=int, default=128)
+    parser.add_argument("--context-frames", type=int, default=1)
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--validation-split", type=float, default=0.2)
     parser.add_argument(
@@ -534,6 +626,8 @@ def main():
         parser.error("--batch-size must be greater than zero")
     if args.hidden_size <= 0:
         parser.error("--hidden-size must be greater than zero")
+    if args.context_frames <= 0:
+        parser.error("--context-frames must be greater than zero")
     if not (0.0 < args.validation_split < 1.0):
         parser.error("--validation-split must be between 0 and 1")
     if args.limit_samples is not None and args.limit_samples <= 0:
