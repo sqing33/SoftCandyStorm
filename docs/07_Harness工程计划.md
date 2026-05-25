@@ -273,15 +273,20 @@ summary.md 内容：
 
 ```json
 {
-  "case_id": "fail_wave_042",
+  "case_id": "fail_20260522_001",
+  "category": "balance",
   "content_id": "wave-caramel-overflow",
   "seed": 9182,
-  "bot": "reflex",
-  "time": 87.4,
-  "reason": "enemy_density_spike",
-  "notes": "Crawler and slime spawn weights combine into unavoidable contact damage before level 3."
+  "bot": "KiteBot",
+  "time_seconds": 87.4,
+  "symptom": "前期敌人密度过高导致不可避免接触伤害。",
+  "root_cause": "快速怪和减速怪在 90 秒前同时高权重生成。",
+  "fix": "降低快速怪权重并推迟减速怪出现时间。",
+  "validation": "重新运行 50 seed 后前 2 分钟死亡率回到目标区间。"
 }
 ```
+
+仓库提供 `tools/validate_failure_cases.py` 检查 `harness/failed_cases` 中的正式失败案例记录，也支持读取 Harness 报告里的 `failure_cases.json` 数组。新增 failure case 后应生成或刷新校验报告；校验通过只说明记录结构完整，不代表修复已经正确。
 
 ## Agent 工作循环
 
@@ -343,4 +348,3 @@ summary.md 内容：
 - 玩家行为聚类
 - 内容推荐生成
 - 长期自动运营辅助
-

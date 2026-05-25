@@ -188,6 +188,14 @@ generated_candidates -> validated_candidates -> simulated_candidates -> playtest
 - 能写指标就不要只写主观描述。
 - 修复后必须说明用什么验证。
 
+新增或修改 failure case 后，应运行：
+
+```bash
+python3 tools/validate_failure_cases.py harness/failed_cases
+```
+
+该校验只检查字段完整性、`case_id` 与文件名前缀、可审计文本和基础类型；它不能替代修复后的仿真、Replay 或人工复核。
+
 ## Git 规范
 
 本项目预计会长期由人类和多个 AI Agent 协作开发。Git 规范的目标不是形式主义，而是保证每一次改动都能被追踪、复盘、回滚和交接。
