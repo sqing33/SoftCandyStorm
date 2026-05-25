@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_023",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_danger_weighted_smoke",
+  "seed": 41000,
+  "bot": "BehaviorCloneKiteDangerWeightedSmoke",
+  "time_seconds": 300.0,
+  "symptom": "危险状态重采样后 60 秒 high-pressure 三图全胜，300 秒平均胜率提升到 55.56%，但 cracked-star-jar 仅 33.33%，明显低于 KiteBot 规则基线 100%，multi-map gate 为 watch",
+  "root_cause": "多图危险状态重采样减少了 soda-creek 回归和动作塌缩，但 MLP movement clone 仍只看单帧 observation，缺少长局阶段、Boss 压力、危险区节奏和恢复路径的序列上下文",
+  "fix": "引入序列上下文模型或分阶段 policy；保留多图危险状态采样，但不要继续用单图追加样本掩盖失败面",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_danger_weighted_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 41000 --rule-bots random,kite,tank --report harness/reports/2026-05-26_rl_behavior_clone_kite_danger_weighted_multimap_300s_001/comparison.json"
+}

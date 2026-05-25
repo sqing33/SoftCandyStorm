@@ -201,6 +201,13 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 This uses weighted sampling from the same multi-map dataset, so it should be validated with the normal Gym comparison reports before being treated as a repair.
 
+The first danger-weighted run used the expanded, lategame, and cracked-star-jar targeted datasets. It kept 60-second high-pressure comparison healthy across all three maps, but the 300-second comparison still underperformed KiteBot on `cracked-star-jar`:
+
+- 60 seconds: all three maps reached 100% win rate with normalized action entropy above 0.86.
+- 300 seconds: average win rate improved to 55.56%, but `cracked-star-jar` remained 33.33% while KiteBot reached 100%.
+
+Treat this as a `watch` result, not a policy gate pass. The next repair should add sequence context or staged policies rather than more single-map samples.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

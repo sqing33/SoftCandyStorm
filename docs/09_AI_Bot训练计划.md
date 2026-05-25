@@ -285,6 +285,13 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 针对 `cracked-star-jar` 增加 120-300 秒最终图定向轨迹后，最终图 300 秒胜率从 0% 提升到 66.67%，但 `soda-creek` 回归到 0%，说明单图补强会移动失败面。后续应做多图危险状态重采样或序列上下文，而不是继续单图堆样本。
 
+使用 `--sample-weighting danger` 在 expanded、lategame 和最终图定向轨迹的组合数据上做多图危险状态重采样后，短局表现继续保持健康：
+
+- 60 秒 high-pressure 三图、5 seed：三图胜率均为 100%，normalized action entropy 约 0.87 / 0.91 / 0.92。
+- 300 秒 high-pressure 三图、3 seed：平均胜率 55.56%，`soda-creek` 和 `caramel-workshop` 均为 66.67%，`cracked-star-jar` 为 33.33%；三图动作熵均约 0.90 以上。
+
+结论：危险状态重采样比单图补强更稳，能避免 `soda-creek` 回归到 0%，但最终图仍明显低于 KiteBot 规则基线 100% 胜率。因此该模型只能记为 watch，不能推进为 RL 测试 Bot。下一步应转向序列上下文、分阶段 policy 或结合 PPO 蒸馏初始化，而不是继续堆单帧 MLP 样本。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。
