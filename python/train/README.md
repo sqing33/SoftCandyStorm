@@ -91,7 +91,7 @@ The comparison report records the policy summary, action distribution, rule Bot 
 
 Multi-map comparison reports additionally include per-map policy/rule Bot win rates, dominant action, normalized action entropy, `repair_maps`, and a `multimap_comparison_*` gate decision. A multi-map report can mark `repair` even when per-map action distribution is healthy, because 0% win-rate maps still mean the policy is not ready as a cross-map RL test Bot.
 
-Policy evaluation reports include `action_entropy_bits`, `normalized_action_entropy`, and averaged `reward_breakdown` fields so action collapse and reward-shaping issues can be inspected before treating a policy as a useful test Bot.
+Policy evaluation reports include `action_entropy_bits`, `normalized_action_entropy`, and averaged `reward_breakdown` fields so action collapse and reward-shaping issues can be inspected before treating a policy as a useful test Bot. The current Gym reward breakdown includes the safety shaping fields `low_health`, `boundary_risk`, `enemy_pressure`, `hazard_risk`, and `boss_pressure`.
 
 Evaluation reports also include `action_score_diagnostic`. For probability policies such as PPO, it records the mean action probabilities, top mean-probability actions, and how often each action was the policy's highest-probability action. For value policies such as DQN, it records the same aggregate view over q-values. Use this field when deterministic argmax keeps choosing one action even though sampled evaluation appears healthy.
 

@@ -29,6 +29,11 @@ const GYM_REWARD_ABORTED: f32 = -1.0;
 const GYM_REWARD_INVALID_STATE: f32 = -5.0;
 const GYM_ACTION_REPEAT_GRACE_STEPS: u32 = 30;
 const GYM_ACTION_REPEAT_PENALTY: f32 = -0.004;
+const GYM_REWARD_LOW_HEALTH_PENALTY: f32 = -0.003;
+const GYM_REWARD_BOUNDARY_RISK_PENALTY: f32 = -0.002;
+const GYM_REWARD_ENEMY_PRESSURE_PENALTY: f32 = -0.004;
+const GYM_REWARD_HAZARD_RISK_PENALTY: f32 = -0.006;
+const GYM_REWARD_BOSS_PRESSURE_PENALTY: f32 = -0.003;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
     "new_001",
@@ -724,6 +729,11 @@ struct GymRewardBreakdown {
     level: f32,
     damage_taken: f32,
     action_repeat: f32,
+    low_health: f32,
+    boundary_risk: f32,
+    enemy_pressure: f32,
+    hazard_risk: f32,
+    boss_pressure: f32,
     terminal: f32,
     total: f32,
 }
@@ -2101,6 +2111,7 @@ impl GymBridgeState {
             &result.events,
             result.terminal.as_ref(),
             action_repeat,
+            Some(&result.snapshot),
         );
 
         self.response(
@@ -2257,6 +2268,7 @@ fn gym_reward_breakdown(
     events: &[GameEvent],
     terminal: Option<&game_core::TerminalState>,
     action_repeat: f32,
+    snapshot: Option<&game_core::RunSnapshot>,
 ) -> GymRewardBreakdown {
     let kill_delta = events
         .iter()
@@ -2267,6 +2279,11 @@ fn gym_reward_breakdown(
     let xp = hint.xp_delta * GYM_REWARD_XP_WEIGHT;
     let level = hint.level_delta as f32 * GYM_REWARD_LEVEL_WEIGHT;
     let damage_taken = hint.damage_taken_delta * GYM_REWARD_DAMAGE_WEIGHT;
+    let low_health = snapshot.map_or(0.0, gym_low_health_reward);
+    let boundary_risk = snapshot.map_or(0.0, gym_boundary_risk_reward);
+    let enemy_pressure = snapshot.map_or(0.0, gym_enemy_pressure_reward);
+    let hazard_risk = snapshot.map_or(0.0, gym_hazard_risk_reward);
+    let boss_pressure = snapshot.map_or(0.0, gym_boss_pressure_reward);
 
     let terminal = if let Some(terminal) = terminal {
         match terminal.kind {
@@ -2280,7 +2297,18 @@ fn gym_reward_breakdown(
         0.0
     };
 
-    let total = survival + kill + xp + level + damage_taken + action_repeat + terminal;
+    let total = survival
+        + kill
+        + xp
+        + level
+        + damage_taken
+        + action_repeat
+        + low_health
+        + boundary_risk
+        + enemy_pressure
+        + hazard_risk
+        + boss_pressure
+        + terminal;
     GymRewardBreakdown {
         survival,
         kill,
@@ -2288,8 +2316,85 @@ fn gym_reward_breakdown(
         level,
         damage_taken,
         action_repeat,
+        low_health,
+        boundary_risk,
+        enemy_pressure,
+        hazard_risk,
+        boss_pressure,
         terminal,
         total,
+    }
+}
+
+fn gym_low_health_reward(snapshot: &game_core::RunSnapshot) -> f32 {
+    GYM_REWARD_LOW_HEALTH_PENALTY * low_health_risk(snapshot)
+}
+
+fn gym_boundary_risk_reward(snapshot: &game_core::RunSnapshot) -> f32 {
+    let player = &snapshot.player;
+    let half_width = (snapshot.map.width * 0.5).max(1.0);
+    let half_height = (snapshot.map.height * 0.5).max(1.0);
+    let left = (player.position.x + half_width) / snapshot.map.width.max(1.0);
+    let right = (half_width - player.position.x) / snapshot.map.width.max(1.0);
+    let bottom = (player.position.y + half_height) / snapshot.map.height.max(1.0);
+    let top = (half_height - player.position.y) / snapshot.map.height.max(1.0);
+    let edge_risk = clamp_unit((0.12 - left.min(right).min(bottom).min(top)) / 0.12);
+    GYM_REWARD_BOUNDARY_RISK_PENALTY * edge_risk * (0.5 + low_health_risk(snapshot))
+}
+
+fn gym_enemy_pressure_reward(snapshot: &game_core::RunSnapshot) -> f32 {
+    let player = &snapshot.player;
+    let pressure: f32 = snapshot
+        .visible_enemies
+        .iter()
+        .take(GYM_MAX_ENEMIES)
+        .map(|enemy| {
+            let distance = (enemy.position - player.position).length() - enemy.radius;
+            let danger_radius = 96.0 + enemy.radius + enemy.threat.clamp(0.0, 80.0);
+            let proximity = proximity_risk(distance.max(0.0), danger_radius);
+            proximity * (0.5 + clamp_unit(enemy.threat / 100.0))
+        })
+        .sum();
+    GYM_REWARD_ENEMY_PRESSURE_PENALTY
+        * clamp_unit(pressure / 2.0)
+        * (0.5 + low_health_risk(snapshot))
+}
+
+fn gym_hazard_risk_reward(snapshot: &game_core::RunSnapshot) -> f32 {
+    let Some(hazard) = nearest_hazard(snapshot) else {
+        return 0.0;
+    };
+    let distance = (hazard.position - snapshot.player.position).length();
+    let danger_radius = hazard.radius + 72.0;
+    let proximity = proximity_risk(distance, danger_radius);
+    let severity =
+        clamp_unit(hazard.damage_per_second / 32.0 + (1.0 - hazard.slow_multiplier) * 0.5);
+    GYM_REWARD_HAZARD_RISK_PENALTY * proximity * (0.5 + severity)
+}
+
+fn gym_boss_pressure_reward(snapshot: &game_core::RunSnapshot) -> f32 {
+    let Some(boss) = &snapshot.boss else {
+        return 0.0;
+    };
+    let distance = (boss.position - snapshot.player.position).length();
+    let proximity = proximity_risk(distance, 280.0);
+    let boss_health_factor = 0.5 + ratio(boss.health, boss.max_health) * 0.5;
+    GYM_REWARD_BOSS_PRESSURE_PENALTY
+        * proximity
+        * boss_health_factor
+        * (1.0 + low_health_risk(snapshot))
+}
+
+fn low_health_risk(snapshot: &game_core::RunSnapshot) -> f32 {
+    let health_ratio = ratio(snapshot.player.health, snapshot.player.max_health);
+    clamp_unit((0.35 - health_ratio) / 0.35)
+}
+
+fn proximity_risk(distance: f32, danger_radius: f32) -> f32 {
+    if danger_radius <= 0.0 {
+        0.0
+    } else {
+        clamp_unit((danger_radius - distance) / danger_radius)
     }
 }
 
@@ -5708,7 +5813,10 @@ mod tests {
         ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
         REQUIRED_PLAYTEST_RUN_IDS,
     };
-    use game_core::{GameCore, RewardHint, RunConfig, TerminalKind, TerminalState};
+    use game_core::{
+        BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, HazardSnapshot, RewardHint,
+        RunConfig, TerminalKind, TerminalState, Vec2,
+    };
     use serde_json::{json, Value};
     use std::fs;
 
@@ -5755,13 +5863,18 @@ mod tests {
             final_level: 1,
             kills: 0,
         };
-        let breakdown = gym_reward_breakdown(&hint, &[], Some(&terminal), -0.002);
+        let breakdown = gym_reward_breakdown(&hint, &[], Some(&terminal), -0.002, None);
 
         assert!((breakdown.survival - 0.02).abs() < 0.0001);
         assert!((breakdown.xp - 0.12).abs() < 0.0001);
         assert!((breakdown.level - 0.8).abs() < 0.0001);
         assert!((breakdown.damage_taken + 0.32).abs() < 0.0001);
         assert!((breakdown.action_repeat + 0.002).abs() < 0.0001);
+        assert_eq!(breakdown.low_health, 0.0);
+        assert_eq!(breakdown.boundary_risk, 0.0);
+        assert_eq!(breakdown.enemy_pressure, 0.0);
+        assert_eq!(breakdown.hazard_risk, 0.0);
+        assert_eq!(breakdown.boss_pressure, 0.0);
         assert!((breakdown.terminal - 1.0).abs() < 0.0001);
         assert!(
             (breakdown.total
@@ -5771,7 +5884,66 @@ mod tests {
                     + breakdown.level
                     + breakdown.damage_taken
                     + breakdown.action_repeat
+                    + breakdown.low_health
+                    + breakdown.boundary_risk
+                    + breakdown.enemy_pressure
+                    + breakdown.hazard_risk
+                    + breakdown.boss_pressure
                     + breakdown.terminal))
+                .abs()
+                < 0.0001
+        );
+    }
+
+    #[test]
+    fn gym_reward_breakdown_includes_safety_shaping() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        let half_width = snapshot.map.width * 0.5;
+        snapshot.player.health = snapshot.player.max_health * 0.2;
+        snapshot.player.position = Vec2::new(-half_width + 8.0, 0.0);
+        snapshot.active_hazards.push(HazardSnapshot {
+            position: snapshot.player.position + Vec2::new(24.0, 0.0),
+            radius: 72.0,
+            slow_multiplier: 0.5,
+            damage_per_second: 18.0,
+            remaining_seconds: 3.0,
+        });
+        snapshot.boss = Some(BossSnapshot {
+            entity_id: 100,
+            boss_id: "test-boss".to_string(),
+            health: 500.0,
+            max_health: 600.0,
+            position: snapshot.player.position + Vec2::new(120.0, 0.0),
+        });
+        snapshot.visible_enemies.push(EnemySnapshot {
+            entity_id: 200,
+            enemy_id: "test-enemy".to_string(),
+            position: snapshot.player.position + Vec2::new(45.0, 0.0),
+            velocity: Vec2::ZERO,
+            health: 20.0,
+            max_health: 20.0,
+            radius: 16.0,
+            threat: 60.0,
+            behavior: EnemyBehavior::Chase,
+            is_boss: false,
+            is_elite: false,
+        });
+
+        let breakdown =
+            gym_reward_breakdown(&RewardHint::default(), &[], None, 0.0, Some(&snapshot));
+
+        assert!(breakdown.low_health < 0.0);
+        assert!(breakdown.boundary_risk < 0.0);
+        assert!(breakdown.enemy_pressure < 0.0);
+        assert!(breakdown.hazard_risk < 0.0);
+        assert!(breakdown.boss_pressure < 0.0);
+        assert!(
+            (breakdown.total
+                - (breakdown.low_health
+                    + breakdown.boundary_risk
+                    + breakdown.enemy_pressure
+                    + breakdown.hazard_risk
+                    + breakdown.boss_pressure))
                 .abs()
                 < 0.0001
         );

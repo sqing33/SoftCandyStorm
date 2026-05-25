@@ -204,6 +204,13 @@ reward =
 
 权重需要通过实验调整。
 
+当前 Gym reward 已输出可观测 breakdown 字段：
+
+- 基础成长：`survival`、`kill`、`xp`、`level`、`damage_taken`、`action_repeat`、`terminal`
+- 安全塑形：`low_health`、`boundary_risk`、`enemy_pressure`、`hazard_risk`、`boss_pressure`
+
+安全塑形只作为训练信号，不是内容平衡门禁。它的目标是减少固定方向逃生、低血量贴边、忽略危险区和 Boss 压力等 RL policy exploit；是否真正改善泛化，仍必须通过多地图规则 Bot 对比验证。
+
 ## DQN 使用场景
 
 DQN 适合：
