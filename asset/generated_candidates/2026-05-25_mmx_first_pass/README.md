@@ -6,9 +6,11 @@
 
 - `images/runtime_spritesheet_v001_001.jpg`：Runtime 原型 spritesheet 候选。
 - `processed/runtime_spritesheet_v001/`：从 Runtime 原型 spritesheet 切出的 25 个 PNG 候选。
+- `review_previews/runtime_spritesheet_v001/`：审查 shortlist 的统一画布和 64/32px 棋盘格预览。
 - `audio/voice_storm_alert_v001.mp3`：中文风暴提示语音候选。
 - `music/bgm_candy_battle_loop_v001.mp3`：糖果风战斗 BGM 候选。
 - `metadata/postprocess_runtime_spritesheet_v001.json`：spritesheet 后处理报告。
+- `metadata/preview_runtime_spritesheet_v001.json`：审查预览生成报告。
 - `metadata/review_2026-05-25.md`：第一批素材候选审查结论。
 
 ## 准入状态
@@ -20,3 +22,5 @@
 已使用 `tools/asset_postprocess.py` 做第一轮连通背景移除和网格裁切。输出 PNG 仍有原始投影残留，不能直接晋级为正式素材；后续需要人工挑选可用格子，必要时重新生成更严格的绿幕版本。
 
 已完成第一轮候选审查，结论为 `repair`：少量 PNG 可进入二次清理，语音和 BGM 仅保留为人工听感审查候选，全部仍不得接入正式 Runtime。
+
+已为审查 shortlist 生成 128px 透明标准画布，以及 64px、32px 棋盘格预览；这些预览仅用于人工检查小尺寸可读性，不是正式 Runtime 素材。

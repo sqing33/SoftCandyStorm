@@ -27,6 +27,13 @@ def parse_grid(value: str) -> tuple[int, int]:
     return cols, rows
 
 
+def parse_size_list(value: str) -> list[int]:
+    sizes = [int(part) for part in value.split(",") if part.strip()]
+    if not sizes or any(size <= 0 for size in sizes):
+        raise argparse.ArgumentTypeError("sizes must be positive integers, for example 64,32")
+    return sizes
+
+
 def average_corner_color(image: Image.Image, sample_size: int = 12) -> tuple[int, int, int]:
     rgb = image.convert("RGB")
     width, height = rgb.size
@@ -134,6 +141,55 @@ def trim_alpha(image: Image.Image, padding: int) -> Image.Image | None:
     return image.crop((left, top, right, bottom))
 
 
+def normalize_sprite(image: Image.Image, canvas_size: int, occupancy: float) -> Image.Image:
+    trimmed = trim_alpha(image.convert("RGBA"), padding=0)
+    if trimmed is None:
+        return Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+
+    max_sprite_size = max(1, int(canvas_size * occupancy))
+    scale = min(max_sprite_size / trimmed.width, max_sprite_size / trimmed.height)
+    width = max(1, int(round(trimmed.width * scale)))
+    height = max(1, int(round(trimmed.height * scale)))
+    resized = trimmed.resize((width, height), Image.Resampling.LANCZOS)
+
+    canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+    offset = ((canvas_size - width) // 2, (canvas_size - height) // 2)
+    canvas.alpha_composite(resized, offset)
+    return canvas
+
+
+def checkerboard(size: int, square: int = 8) -> Image.Image:
+    image = Image.new("RGBA", (size, size), (0, 0, 0, 255))
+    pixels = image.load()
+    light = (238, 238, 238, 255)
+    dark = (190, 190, 190, 255)
+    for y in range(size):
+        for x in range(size):
+            pixels[x, y] = light if ((x // square) + (y // square)) % 2 == 0 else dark
+    return image
+
+
+def preview_on_checkerboard(sprite: Image.Image, size: int) -> Image.Image:
+    preview = checkerboard(size)
+    preview.alpha_composite(sprite.resize((size, size), Image.Resampling.LANCZOS))
+    return preview
+
+
+def make_contact_sheet(images: list[Image.Image], cols: int, gap: int) -> Image.Image:
+    if not images:
+        return Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+    cell_size = images[0].width
+    rows = (len(images) + cols - 1) // cols
+    width = cols * cell_size + (cols - 1) * gap
+    height = rows * cell_size + (rows - 1) * gap
+    sheet = Image.new("RGBA", (width, height), (255, 255, 255, 255))
+    for index, image in enumerate(images):
+        x = (index % cols) * (cell_size + gap)
+        y = (index // cols) * (cell_size + gap)
+        sheet.alpha_composite(image, (x, y))
+    return sheet
+
+
 def extract_sprites(args: argparse.Namespace) -> dict:
     source = Path(args.input)
     out_dir = Path(args.out_dir)
@@ -191,6 +247,74 @@ def extract_sprites(args: argparse.Namespace) -> dict:
     return summary
 
 
+def make_previews(args: argparse.Namespace) -> dict:
+    out_dir = Path(args.out_dir)
+    normalized_dir = out_dir / f"normalized_{args.canvas_size}"
+    normalized_dir.mkdir(parents=True, exist_ok=True)
+    preview_dirs = {}
+    for size in args.preview_sizes:
+        preview_dir = out_dir / f"preview_{size}"
+        preview_dir.mkdir(parents=True, exist_ok=True)
+        preview_dirs[size] = preview_dir
+
+    outputs = []
+    contact_previews: dict[int, list[Image.Image]] = {size: [] for size in args.preview_sizes}
+    for source_text in args.inputs:
+        source = Path(source_text)
+        sprite_id = source.stem
+        image = Image.open(source)
+        normalized = normalize_sprite(image, args.canvas_size, args.occupancy)
+        normalized_path = normalized_dir / f"{sprite_id}_normalized_{args.canvas_size}.png"
+        normalized.save(normalized_path)
+
+        previews = []
+        for size in args.preview_sizes:
+            preview = preview_on_checkerboard(normalized, size)
+            preview_path = preview_dirs[size] / f"{sprite_id}_preview_{size}.png"
+            preview.save(preview_path)
+            contact_previews[size].append(preview)
+            previews.append({"size": size, "path": str(preview_path)})
+
+        outputs.append(
+            {
+                "id": sprite_id,
+                "source": str(source),
+                "normalized": str(normalized_path),
+                "previews": previews,
+            }
+        )
+
+    contact_sheets = []
+    for size, previews in contact_previews.items():
+        sheet = make_contact_sheet(previews, args.contact_cols, args.contact_gap)
+        path = out_dir / f"contact_sheet_{size}.png"
+        sheet.save(path)
+        contact_sheets.append({"size": size, "path": str(path)})
+
+    summary = {
+        "out_dir": str(out_dir),
+        "canvas_size": args.canvas_size,
+        "preview_sizes": args.preview_sizes,
+        "occupancy": args.occupancy,
+        "output_count": len(outputs),
+        "outputs": outputs,
+        "contact_sheets": contact_sheets,
+        "qa_notes": [
+            "Outputs remain generated candidates and are not accepted runtime assets.",
+            "Normalized sprites use transparent square canvases for size comparison.",
+            "Checkerboard previews are for readability review only and should not be used in runtime.",
+        ],
+    }
+    if args.manifest:
+        manifest_path = Path(args.manifest)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    return summary
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -216,6 +340,31 @@ def build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--padding", type=int, default=4, help="transparent padding in pixels")
     extract.add_argument("--manifest", help="optional JSON summary output")
     extract.set_defaults(func=extract_sprites)
+
+    previews = subparsers.add_parser(
+        "make-previews", help="normalize selected PNG candidates and make review previews"
+    )
+    previews.add_argument("inputs", nargs="+", help="input PNG candidates")
+    previews.add_argument("--out-dir", required=True, help="candidate output directory")
+    previews.add_argument(
+        "--canvas-size", type=int, default=128, help="square normalized canvas size"
+    )
+    previews.add_argument(
+        "--preview-sizes",
+        type=parse_size_list,
+        default=[64, 32],
+        help="comma-separated preview sizes, for example 64,32",
+    )
+    previews.add_argument(
+        "--occupancy",
+        type=float,
+        default=0.86,
+        help="fraction of the canvas occupied by the longest sprite side",
+    )
+    previews.add_argument("--contact-cols", type=int, default=4, help="contact sheet columns")
+    previews.add_argument("--contact-gap", type=int, default=8, help="contact sheet gap")
+    previews.add_argument("--manifest", help="optional JSON summary output")
+    previews.set_defaults(func=make_previews)
     return parser
 
 
