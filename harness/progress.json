@@ -285,6 +285,10 @@
     {
       "id": "caramel_workshop_balance_repair",
       "summary": "修复焦糖工坊偏易问题：地面危险区增加伤害语义，焦糖熔炉和中后期怪潮提高压力，防御被动略降，BossHunter 改为保持 Boss 间距；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
+    },
+    {
+      "id": "six_map_boss_matrix_scoping",
+      "summary": "使用 Kite、BossHunter、Tank 对 6 张地图执行 600 秒 3 seed 小矩阵范围扫描；焦糖工坊已 pass，其他地图暴露偏易或 Tank 早死问题，并记录 aggregate failure case"
     }
   ],
   "current_findings": [
@@ -317,6 +321,11 @@
       "id": "caramel_workshop_boss_matrix_repaired",
       "summary": "caramel-workshop 偏易 failure case 已完成首轮修复：KiteBot 与 BossHunterBot 3 seed 胜率均为 66.7%，TankBot 为 33.3%，全部进入当前 Harness 目标区间；该结论仍是小样本，需要纳入后续 6 地图/更多 seed 回归。",
       "report": "harness/reports/2026-05-26_caramel_workshop_balance_repair_001/summary.md"
+    },
+    {
+      "id": "six_map_boss_balance_spread",
+      "summary": "6 地图范围扫描显示地图平衡尚未统一：糖霜草地、裂星糖罐整体偏易，棉花云牧场和果冻月台的 BossHunter/Tank 偏易，汽水溪谷同时存在高技能过安全与 Tank 早死；需要按地图逐步修复。",
+      "report": "harness/failed_cases/fail_20260526_002_six_map_boss_balance_spread.json"
     },
     {
       "id": "content_event_effect_scope",
@@ -391,8 +400,12 @@
   ],
   "next_recommended": [
     {
-      "id": "six_map_boss_matrix_refresh",
-      "summary": "扩展到 6 张地图的多 Bot/多 seed 矩阵，检查各地图 Boss 技能语义、难度、性能和 replay 回归是否稳定，并确认焦糖工坊修复没有把全局防御流压得过低"
+      "id": "soda_creek_balance_repair",
+      "summary": "优先修复汽水溪谷的分裂问题：Tank 3 seed 全败但 Kite/BossHunter 全胜，需要降低早期 Tank 无解压力，同时把威胁转移到更可读的中后期 Boss/泡泡机制"
+    },
+    {
+      "id": "cracked_star_jar_final_map_pressure",
+      "summary": "提高裂星糖罐最终地图压力，使裂星糖罐核心的阶段风暴和波次组合能让高技能/防御 Bot 不再 3 seed 全胜"
     },
     {
       "id": "runtime_manual_playtest_capture",
