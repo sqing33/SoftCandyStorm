@@ -187,6 +187,22 @@ cargo run -p game_harness -- export-bot-trajectories \
 
 导出格式为 JSONL：第一行 `metadata`，中间为 `sample`，最后为 `summary`。每个 sample 包含 observation v2 和离散 movement action，可用于后续行为克隆、规则 Bot 轨迹蒸馏或 curriculum 诊断。Phase 1 只导出 movement 状态；升级选择状态会跳过并计数，避免把 Build 决策混入移动生存训练。
 
+若要专门覆盖 300 秒中后期状态，可在导出时使用时间窗口：
+
+```bash
+cargo run -p game_harness -- export-bot-trajectories \
+  --bot kite \
+  --seed-start 34000 \
+  --seeds 5 \
+  --map-id soda-creek \
+  --seconds 300 \
+  --sample-stride 10 \
+  --sample-start-seconds 60 \
+  --out harness/reports/local_bot_trajectories/kite_soda_late.jsonl
+```
+
+`sample-start-seconds` 和 `sample-end-seconds` 会写入 metadata 和导出报告；窗口外仍会正常推进 GameCore 与 Bot，只是不写 sample，从而保留真实中后期 Build、Boss、敌群和地图压力状态。
+
 ### 行为克隆入口
 
 `python/train/train_behavior_clone.py` 可以从规则 Bot 轨迹 JSONL 训练一个小型 MLP movement clone，用于验证轨迹蒸馏链路：

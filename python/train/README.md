@@ -121,6 +121,20 @@ cargo run -p game_harness -- export-bot-trajectories --bot kite --seed-start 300
 
 The first record is `metadata`, each `sample` contains an observation vector and discrete movement action, and the final record is `summary`. Upgrade-choice states are skipped because Phase 1 RL still trains movement only.
 
+Use `--sample-start-seconds` and `--sample-end-seconds` to export only a time window while still simulating the full run. This is useful for collecting 300-second middle/late-game states without over-weighting the opening:
+
+```bash
+cargo run -p game_harness -- export-bot-trajectories \
+  --bot kite \
+  --seed-start 34000 \
+  --seeds 5 \
+  --map-id soda-creek \
+  --seconds 300 \
+  --sample-stride 10 \
+  --sample-start-seconds 60 \
+  --out harness/reports/local_bot_trajectories/kite_soda_late.jsonl
+```
+
 ## Behavior Cloning Smoke
 
 Use `train_behavior_clone.py` to train a small supervised movement clone from exported rule Bot trajectories:

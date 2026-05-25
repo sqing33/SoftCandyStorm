@@ -337,6 +337,8 @@ struct BotTrajectoryExportArgs {
     out_file: PathBuf,
     observation_version: u8,
     sample_stride: u32,
+    sample_start_seconds: f32,
+    sample_end_seconds: Option<f32>,
 }
 
 impl Default for BotTrajectoryExportArgs {
@@ -352,6 +354,8 @@ impl Default for BotTrajectoryExportArgs {
             out_file: PathBuf::from("harness/reports/local_bot_trajectories/trajectories.jsonl"),
             observation_version: GYM_DEFAULT_OBSERVATION_VERSION,
             sample_stride: 1,
+            sample_start_seconds: 0.0,
+            sample_end_seconds: None,
         }
     }
 }
@@ -786,6 +790,8 @@ struct BotTrajectoryExportReport {
     observation_len: usize,
     action_count: usize,
     sample_stride: u32,
+    sample_start_seconds: f32,
+    sample_end_seconds: Option<f32>,
     sample_count: u64,
     skipped_upgrade_samples: u64,
     episode_count: u64,
@@ -807,6 +813,8 @@ struct BotTrajectoryMetadataRecord {
     observation_len: usize,
     action_count: usize,
     sample_stride: u32,
+    sample_start_seconds: f32,
+    sample_end_seconds: Option<f32>,
     content_hash: String,
     content_dir: String,
 }
@@ -1630,6 +1638,18 @@ fn parse_bot_trajectory_export_args(
                     .parse()
                     .map_err(|_| format!("invalid --sample-stride `{value}`"))?;
             }
+            "--sample-start-seconds" => {
+                parsed.sample_start_seconds = value
+                    .parse()
+                    .map_err(|_| format!("invalid --sample-start-seconds `{value}`"))?;
+            }
+            "--sample-end-seconds" => {
+                parsed.sample_end_seconds = Some(
+                    value
+                        .parse()
+                        .map_err(|_| format!("invalid --sample-end-seconds `{value}`"))?,
+                );
+            }
             _ => return Err(format!("unknown flag `{key}`")),
         }
         index += 2;
@@ -1646,6 +1666,22 @@ fn parse_bot_trajectory_export_args(
     }
     if parsed.sample_stride == 0 {
         return Err("--sample-stride must be greater than zero".to_string());
+    }
+    if parsed.sample_start_seconds < 0.0 {
+        return Err("--sample-start-seconds must be greater than or equal to zero".to_string());
+    }
+    if parsed.sample_start_seconds >= parsed.seconds {
+        return Err("--sample-start-seconds must be less than --seconds".to_string());
+    }
+    if let Some(sample_end_seconds) = parsed.sample_end_seconds {
+        if sample_end_seconds <= parsed.sample_start_seconds {
+            return Err(
+                "--sample-end-seconds must be greater than --sample-start-seconds".to_string(),
+            );
+        }
+        if sample_end_seconds > parsed.seconds {
+            return Err("--sample-end-seconds must be less than or equal to --seconds".to_string());
+        }
     }
 
     Ok(parsed)
@@ -2247,6 +2283,8 @@ fn export_bot_trajectories(
             observation_len,
             action_count: GYM_ACTION_COUNT,
             sample_stride: args.sample_stride,
+            sample_start_seconds: args.sample_start_seconds,
+            sample_end_seconds: args.sample_end_seconds,
             content_hash: content.hash.clone(),
             content_dir,
         },
@@ -2292,6 +2330,8 @@ fn export_bot_trajectories(
         observation_len,
         action_count: GYM_ACTION_COUNT,
         sample_stride: args.sample_stride,
+        sample_start_seconds: args.sample_start_seconds,
+        sample_end_seconds: args.sample_end_seconds,
         sample_count: total_samples,
         skipped_upgrade_samples: total_skipped_upgrade_samples,
         episode_count: args.seeds,
@@ -2320,7 +2360,9 @@ fn export_bot_trajectory_episode<W: Write>(
     while !core.is_terminal() && steps < max_steps {
         let snapshot = core.snapshot();
         let action = controller.next_action(&snapshot);
-        if snapshot.upgrade_options.is_empty() {
+        if !sample_time_in_window(snapshot.time_seconds, args) {
+            // Keep stepping the Bot so later samples include the true evolved run state.
+        } else if snapshot.upgrade_options.is_empty() {
             if steps as u32 % args.sample_stride == 0 {
                 let observation = gym_observation(&snapshot, args.observation_version);
                 debug_assert_eq!(observation.len(), observation_len);
@@ -2371,6 +2413,16 @@ fn export_bot_trajectory_episode<W: Write>(
         samples,
         skipped_upgrade_samples,
     })
+}
+
+fn sample_time_in_window(time_seconds: f32, args: &BotTrajectoryExportArgs) -> bool {
+    if time_seconds < args.sample_start_seconds {
+        return false;
+    }
+    if let Some(sample_end_seconds) = args.sample_end_seconds {
+        return time_seconds <= sample_end_seconds;
+    }
+    true
 }
 
 fn write_jsonl_record<W: Write, T: Serialize>(writer: &mut W, record: &T) -> io::Result<()> {
@@ -6258,7 +6310,7 @@ fn print_help() {
         DEFAULT_MAP_ID
     );
     eprintln!(
-        "  cargo run -p game_harness -- export-bot-trajectories [--seed-start N] [--seeds N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--observation-version 1|2] [--sample-stride N] [--content-dir content/base_demo] [--out harness/reports/local_bot_trajectories/trajectories.jsonl]",
+        "  cargo run -p game_harness -- export-bot-trajectories [--seed-start N] [--seeds N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--observation-version 1|2] [--sample-stride N] [--sample-start-seconds N] [--sample-end-seconds N] [--content-dir content/base_demo] [--out harness/reports/local_bot_trajectories/trajectories.jsonl]",
         DEFAULT_MAP_ID,
         BotKind::all_names()
     );
