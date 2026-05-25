@@ -185,6 +185,10 @@
     {
       "id": "meta_progression_core",
       "summary": "GameCore 增加最小局外进度模型，覆盖糖晶碎片、星片、风暴糖粒、章节目标、图鉴进度、内容解锁和局后结算；Harness 增加 meta-settlement 报告入口"
+    },
+    {
+      "id": "meta_progression_runtime_ui",
+      "summary": "Runtime 增加最小糖罐守护站局外面板，终局时调用 game_core::meta 展示糖晶碎片、星片、章节目标、图鉴更新和新解锁"
     }
   ],
   "current_findings": [
@@ -229,6 +233,11 @@
       "report": "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md"
     },
     {
+      "id": "runtime_meta_panel_smoke_scope",
+      "summary": "Runtime 已用 1 秒 demo-input capture 验证新增局外面板不破坏启动、终局和报告写盘；UI 文案由单测覆盖，该 smoke 不代表人工视觉验收。",
+      "report": "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md"
+    },
+    {
       "id": "runtime_capture_visual_client_limit",
       "summary": "`--simulation-speed` 已降低 Runtime capture 的等待成本，但 Bevy 窗口启动和渲染仍有明显墙钟开销；高容量确定性验证仍应优先使用 headless Harness。",
       "report": "harness/reports/2026-05-25_runtime_simulation_speed_smoke_001/summary.md"
@@ -247,10 +256,6 @@
     {
       "id": "rl_model_training_smoke",
       "summary": "安装 Gymnasium、NumPy 和 Stable-Baselines3 后，运行最小 DQN 训练并保存模型、metadata、评估报告和已知 exploit 记录"
-    },
-    {
-      "id": "meta_progression_runtime_ui",
-      "summary": "在 Runtime 增加最小守护站/局后结算视图，展示 meta settlement 的糖晶碎片、图鉴进度、章节目标和新解锁"
     }
   ]
 }

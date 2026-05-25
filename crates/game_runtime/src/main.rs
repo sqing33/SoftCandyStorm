@@ -4,8 +4,9 @@ use bevy::{
     prelude::*,
 };
 use game_core::{
-    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, PlayerAction, RunConfig, RunMetrics,
-    RunSnapshot, StartingLoadout, TerminalKind, TerminalState, Vec2 as CoreVec2,
+    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaProgress, MetaRunSummary,
+    MetaSettlementReport, PlayerAction, RunConfig, RunMetrics, RunSnapshot, StartingLoadout,
+    TerminalKind, TerminalState, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf, sync::Arc};
@@ -58,10 +59,11 @@ fn main() {
                 step_game_core,
                 play_runtime_audio.after(step_game_core),
                 update_runtime_effects.after(step_game_core),
-                capture_playtest_report.after(update_runtime_effects),
+                update_runtime_meta_settlement.after(step_game_core),
+                capture_playtest_report.after(update_runtime_meta_settlement),
                 sync_camera.after(step_game_core),
                 sync_world_visuals.after(update_runtime_effects),
-                update_hud.after(step_game_core),
+                update_hud.after(update_runtime_meta_settlement),
             ),
         )
         .run();
@@ -146,6 +148,9 @@ struct RuntimeState {
     auto_exit_after_report: bool,
     paused: bool,
     run_number: u32,
+    meta_progress: MetaProgress,
+    last_meta_settlement: Option<MetaSettlementReport>,
+    settled_run_number: Option<u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -355,7 +360,21 @@ struct UpgradeText;
 #[derive(Component)]
 struct TerminalText;
 
-type TerminalTextFilter = (With<TerminalText>, Without<HudText>, Without<UpgradeText>);
+#[derive(Component)]
+struct MetaText;
+
+type TerminalTextFilter = (
+    With<TerminalText>,
+    Without<HudText>,
+    Without<UpgradeText>,
+    Without<MetaText>,
+);
+type MetaTextFilter = (
+    With<MetaText>,
+    Without<HudText>,
+    Without<UpgradeText>,
+    Without<TerminalText>,
+);
 
 fn setup_runtime(
     mut commands: Commands,
@@ -428,6 +447,24 @@ fn setup_runtime(
         }),
         TerminalText,
     ));
+    commands.spawn((
+        TextBundle::from_section(
+            "",
+            TextStyle {
+                font_size: 17.0,
+                color: Color::srgb(0.16, 0.12, 0.08),
+                ..default()
+            },
+        )
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            right: Val::Px(14.0),
+            top: Val::Px(12.0),
+            width: Val::Px(430.0),
+            ..default()
+        }),
+        MetaText,
+    ));
 
     commands.insert_resource(RuntimeState {
         content,
@@ -448,6 +485,9 @@ fn setup_runtime(
         auto_exit_after_report: cli.auto_exit_after_report,
         paused: false,
         run_number: 1,
+        meta_progress: MetaProgress::demo_start(),
+        last_meta_settlement: None,
+        settled_run_number: None,
     });
     commands.insert_resource(create_runtime_sounds(&mut audio_sources));
     commands.insert_resource(load_runtime_sprites(&asset_server));
@@ -580,6 +620,10 @@ fn capture_playtest_report(mut state: ResMut<RuntimeState>) {
             std::process::exit(0);
         }
     }
+}
+
+fn update_runtime_meta_settlement(mut state: ResMut<RuntimeState>) {
+    settle_runtime_meta_if_needed(&mut state);
 }
 
 fn play_runtime_audio(
@@ -899,6 +943,7 @@ fn update_hud(
     mut hud_query: Query<&mut Text, With<HudText>>,
     mut upgrade_query: Query<&mut Text, (With<UpgradeText>, Without<HudText>)>,
     mut terminal_query: Query<&mut Text, TerminalTextFilter>,
+    mut meta_query: Query<&mut Text, MetaTextFilter>,
 ) {
     let snapshot = &state.latest_snapshot;
     if let Ok(mut text) = hud_query.get_single_mut() {
@@ -962,6 +1007,11 @@ fn update_hud(
                 })
                 .unwrap_or_default()
         };
+    }
+
+    if let Ok(mut text) = meta_query.get_single_mut() {
+        text.sections[0].value =
+            render_meta_progress_panel(&state.meta_progress, state.last_meta_settlement.as_ref());
     }
 }
 
@@ -1215,6 +1265,135 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.capture.reset_for_next_run();
     state.paused = false;
     state.run_number += 1;
+    state.last_meta_settlement = None;
+    state.settled_run_number = None;
+}
+
+fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
+    if state.settled_run_number == Some(state.run_number) {
+        return;
+    }
+
+    let metrics = state.core.metrics();
+    if metrics.terminal.is_none() {
+        return;
+    }
+
+    let run_id = format!(
+        "runtime_run_{}_seed_{}",
+        state.run_number, state.config.seed
+    );
+    let summary = MetaRunSummary::from_metrics(run_id, &state.config, &metrics);
+    let report = state.meta_progress.apply_run_summary(&summary);
+    state.last_meta_settlement = Some(report);
+    state.settled_run_number = Some(state.run_number);
+}
+
+fn render_meta_progress_panel(
+    progress: &MetaProgress,
+    settlement: Option<&MetaSettlementReport>,
+) -> String {
+    let discovered = meta_codex_discovered_count(progress);
+    let completed_goals = meta_completed_goal_count(progress);
+    let unlocked_content = meta_unlocked_content_count(progress);
+    let maps = format_string_set(&progress.unlocks.maps, 3);
+
+    let mut output = format!(
+        "糖罐守护站\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n",
+        progress.resources.candy_crystal_shards,
+        progress.resources.star_shards,
+        progress.resources.storm_grains,
+        completed_goals,
+        discovered,
+        unlocked_content,
+        maps,
+    );
+
+    if let Some(report) = settlement {
+        output.push_str(&format!(
+            "\n局后结算\n+{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}",
+            report.resources_gained.candy_crystal_shards,
+            report.resources_gained.star_shards,
+            report.resources_gained.storm_grains,
+            format_string_slice(&report.completed_goals, 2),
+            format_meta_unlocks(report, 2),
+            format_string_slice(&report.codex_updates, 2),
+        ));
+    } else {
+        output.push_str("\n巡逻中：结算会在本局结束后更新");
+    }
+
+    output
+}
+
+fn meta_codex_discovered_count(progress: &MetaProgress) -> usize {
+    let groups = [
+        &progress.codex.characters,
+        &progress.codex.weapons,
+        &progress.codex.passives,
+        &progress.codex.enemies,
+        &progress.codex.bosses,
+        &progress.codex.maps,
+        &progress.codex.evolutions,
+        &progress.codex.events,
+    ];
+    groups
+        .iter()
+        .map(|group| group.values().filter(|entry| entry.discovered).count())
+        .sum()
+}
+
+fn meta_completed_goal_count(progress: &MetaProgress) -> usize {
+    progress
+        .chapters
+        .values()
+        .map(|chapter| chapter.completed_goals.len())
+        .sum()
+}
+
+fn meta_unlocked_content_count(progress: &MetaProgress) -> usize {
+    progress.unlocks.characters.len()
+        + progress.unlocks.weapons.len()
+        + progress.unlocks.passives.len()
+        + progress.unlocks.maps.len()
+        + progress.unlocks.evolutions.len()
+        + progress.unlocks.chapters.len()
+        + progress.unlocks.events.len()
+        + progress.unlocks.cosmetics.len()
+}
+
+fn format_string_set(values: &std::collections::BTreeSet<String>, limit: usize) -> String {
+    let items = values.iter().cloned().collect::<Vec<_>>();
+    format_string_items(&items, limit)
+}
+
+fn format_string_slice(values: &[String], limit: usize) -> String {
+    format_string_items(values, limit)
+}
+
+fn format_string_items(values: &[String], limit: usize) -> String {
+    if values.is_empty() {
+        return "无".to_string();
+    }
+
+    let mut visible = values.iter().take(limit).cloned().collect::<Vec<_>>();
+    if values.len() > limit {
+        visible.push(format!("+{} 项", values.len() - limit));
+    }
+    visible.join(", ")
+}
+
+fn format_meta_unlocks(report: &MetaSettlementReport, limit: usize) -> String {
+    if report.unlocked.is_empty() {
+        return "无".to_string();
+    }
+
+    let values = report
+        .unlocked
+        .iter()
+        .map(|unlock| format!("{}:{}", unlock.kind, unlock.id))
+        .collect::<Vec<_>>();
+    format_string_items(&values, limit)
 }
 
 impl RuntimeEventKind {
@@ -1644,16 +1823,16 @@ fn write_runtime_playtest_report(
 mod tests {
     use super::{
         demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
-        make_tone_wav, parse_runtime_cli, player_tint, resolve_runtime_content_selection,
-        run_config_from_cli, runtime_asset_root, runtime_sprite_paths, sounds_for_events,
-        RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeSound, DEFAULT_CONTENT_DIR,
+        make_tone_wav, parse_runtime_cli, player_tint, render_meta_progress_panel,
+        resolve_runtime_content_selection, run_config_from_cli, runtime_asset_root,
+        runtime_sprite_paths, sounds_for_events, RuntimeCaptureState, RuntimeCli,
+        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeSound, DEFAULT_CONTENT_DIR,
     };
     use game_core::{
-        BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, PickupSnapshot,
-        PickupType, RunConfig, Vec2 as CoreVec2,
+        BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
+        MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode, Vec2 as CoreVec2,
     };
-    use std::{fs, path::PathBuf};
+    use std::{collections::BTreeMap, fs, path::PathBuf};
 
     #[test]
     fn parses_runtime_cli_overrides() {
@@ -1857,6 +2036,34 @@ mod tests {
         assert_eq!(counts.weapon_fired, 1);
         assert_eq!(counts.xp_collected, 1);
         assert_eq!(counts.player_damaged, 1);
+    }
+
+    #[test]
+    fn meta_panel_highlights_last_settlement() {
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 120.0,
+            victory: false,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 95,
+            level: 5,
+            xp_collected: 210.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
+            passives_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        let report = progress.apply_run_summary(&summary);
+        let panel = render_meta_progress_panel(&progress, Some(&report));
+
+        assert!(panel.contains("糖罐守护站"));
+        assert!(panel.contains("局后结算"));
+        assert!(panel.contains("collect-200-candy-crystals"));
+        assert!(panel.contains("discovered:jar-keeper"));
     }
 
     #[test]
