@@ -257,6 +257,10 @@
     {
       "id": "content_event_extended_runtime_effects",
       "summary": "GameCore 内容事件扩展运行时语义，支持事件触发升级三选一、按 enemy_id 刷怪和生成临时地面危险区，并补充对应单测"
+    },
+    {
+      "id": "base_demo_random_event_roster_completion",
+      "summary": "补齐 docs/04 随机事件名录，新增糖罐补给、酸味雨、棉花云遮挡和焦糖地震，并同步内置 base_demo 内容包"
     }
   ],
   "current_findings": [
@@ -289,6 +293,11 @@
       "id": "content_event_effect_scope",
       "summary": "内容事件现在能改变倍率、治疗、触发升级选项、刷出指定普通敌人和生成临时慢速危险区；复杂事件 UI、专属美术和三选一奖励池细分仍待 Runtime/内容后续扩展。",
       "report": "crates/game_core/src/lib.rs"
+    },
+    {
+      "id": "random_event_config_scope",
+      "summary": "base_demo 已覆盖 docs/04 随机事件名录，并用现有事件效果表达奖励、风险收益、拾取收益和地面危险；Runtime 专属事件 UI、音画表现和地图定向事件权重仍待补齐。",
+      "report": "content/base_demo/events/caramel-quake.json"
     },
     {
       "id": "asset_final_art_still_pending",

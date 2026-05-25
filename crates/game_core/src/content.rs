@@ -1157,47 +1157,89 @@ impl ContentPack {
             pack.maps.insert(map.id.clone(), map);
         }
 
-        pack.events.insert(
-            "rainbow-candy-rush".to_string(),
-            EventDefinition {
-                id: "rainbow-candy-rush".to_string(),
-                name: "彩虹糖潮".to_string(),
-                version: 1,
-                rarity: "rare".to_string(),
-                tags: vec![
-                    "event".to_string(),
-                    "risk-reward".to_string(),
-                    "xp".to_string(),
+        for event in [
+            event_definition(
+                "sugar-jar-supply",
+                "糖罐补给",
+                "rare",
+                &["event", "supply", "upgrade"],
+                "限时出现糖罐补给，触发一次额外升级三选一奖励。",
+                120.0,
+                520.0,
+                0.06,
+                vec![event_effect("offer_upgrade", 3.0, None)],
+                "带缎带的小糖罐从地图边缘滚入，打开时喷出三色糖光。",
+                "糖罐打开的清脆叮声和短促奖励提示音。",
+            ),
+            event_definition(
+                "sour-rain",
+                "酸味雨",
+                "common",
+                &["event", "risk-reward", "xp", "swarm"],
+                "短时间敌人生成更急促，但糖晶收益也会提高。",
+                150.0,
+                520.0,
+                0.07,
+                vec![
+                    event_effect("spawn_rate_multiplier", 1.18, Some(28.0)),
+                    event_effect("xp_multiplier", 1.3, Some(28.0)),
+                    spawn_enemy_event_effect("spicy-gummy", 2.0),
                 ],
-                description: "短时间内糖晶掉落增加，但敌人生成也会加快。".to_string(),
-                trigger: EventTriggerDefinition {
-                    trigger_type: "time_window".to_string(),
-                    start_second: Some(180.0),
-                    end_second: Some(480.0),
-                    chance: Some(0.08),
-                },
-                effects: vec![
-                    EventEffectDefinition {
-                        effect_type: "xp_multiplier".to_string(),
-                        value: 1.4,
-                        duration_seconds: Some(25.0),
-                        enemy_id: None,
-                        radius: None,
-                        slow_multiplier: None,
-                    },
-                    EventEffectDefinition {
-                        effect_type: "spawn_rate_multiplier".to_string(),
-                        value: 1.25,
-                        duration_seconds: Some(25.0),
-                        enemy_id: None,
-                        radius: None,
-                        slow_multiplier: None,
-                    },
+                "青绿色酸味糖雨斜落，地面糖晶带一点发光酸粉。",
+                "细密酸糖雨声和轻微 fizz 声。",
+            ),
+            event_definition(
+                "cotton-cloud-cover",
+                "棉花云遮挡",
+                "common",
+                &["event", "vision", "pickup", "swarm"],
+                "软云短暂遮挡战场边缘，玩家输出节奏降低但拾取收益更高。",
+                120.0,
+                500.0,
+                0.06,
+                vec![
+                    event_effect("pickup_radius_multiplier", 1.35, Some(30.0)),
+                    event_effect("damage_multiplier", 0.9, Some(30.0)),
+                    spawn_enemy_event_effect("cotton-candy-clump", 3.0),
                 ],
-                visual_description: "天空落下彩虹糖晶，地面出现亮色糖光。".to_string(),
-                sfx_description: "连续亮晶晶铃声。".to_string(),
-            },
-        );
+                "粉白棉花云从屏幕边缘漂过，糖晶在云雾里显得更亮。",
+                "柔软风声、棉花云扑扑声和糖晶闪烁音。",
+            ),
+            event_definition(
+                "caramel-quake",
+                "焦糖地震",
+                "rare",
+                &["event", "hazard", "movement", "control"],
+                "地面短暂震动并出现焦糖危险区，要求玩家持续改变路线。",
+                240.0,
+                560.0,
+                0.06,
+                vec![
+                    spawn_hazard_event_effect(5.0, 10.0, 72.0, 0.55),
+                    spawn_enemy_event_effect("caramel-slime", 2.0),
+                ],
+                "金棕焦糖裂纹从地面冒出，随后形成数个亮面黏糖圈。",
+                "低频地面震动、焦糖冒泡和黏糖铺开的声音。",
+            ),
+            event_definition(
+                "rainbow-candy-rush",
+                "彩虹糖潮",
+                "rare",
+                &["event", "risk-reward", "xp"],
+                "短时间内糖晶掉落增加，但敌人生成也会加快。",
+                180.0,
+                480.0,
+                0.08,
+                vec![
+                    event_effect("xp_multiplier", 1.4, Some(25.0)),
+                    event_effect("spawn_rate_multiplier", 1.25, Some(25.0)),
+                ],
+                "天空落下彩虹糖晶，地面出现亮色糖光。",
+                "连续亮晶晶铃声。",
+            ),
+        ] {
+            pack.events.insert(event.id.clone(), event);
+        }
 
         pack.waves.insert(
             "frosting-grassland-standard".to_string(),
@@ -2277,6 +2319,74 @@ fn map_definition(
             .collect(),
         visual_description: visual_description.to_string(),
         music_theme: music_theme.to_string(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn event_definition(
+    id: &str,
+    name: &str,
+    rarity: &str,
+    tags: &[&str],
+    description: &str,
+    start_second: f32,
+    end_second: f32,
+    chance: f32,
+    effects: Vec<EventEffectDefinition>,
+    visual_description: &str,
+    sfx_description: &str,
+) -> EventDefinition {
+    EventDefinition {
+        id: id.to_string(),
+        name: name.to_string(),
+        version: 1,
+        rarity: rarity.to_string(),
+        tags: tags.iter().map(|tag| (*tag).to_string()).collect(),
+        description: description.to_string(),
+        trigger: EventTriggerDefinition {
+            trigger_type: "time_window".to_string(),
+            start_second: Some(start_second),
+            end_second: Some(end_second),
+            chance: Some(chance),
+        },
+        effects,
+        visual_description: visual_description.to_string(),
+        sfx_description: sfx_description.to_string(),
+    }
+}
+
+fn event_effect(
+    effect_type: &str,
+    value: f32,
+    duration_seconds: Option<f32>,
+) -> EventEffectDefinition {
+    EventEffectDefinition {
+        effect_type: effect_type.to_string(),
+        value,
+        duration_seconds,
+        enemy_id: None,
+        radius: None,
+        slow_multiplier: None,
+    }
+}
+
+fn spawn_enemy_event_effect(enemy_id: &str, count: f32) -> EventEffectDefinition {
+    EventEffectDefinition {
+        enemy_id: Some(enemy_id.to_string()),
+        ..event_effect("spawn_enemy", count, None)
+    }
+}
+
+fn spawn_hazard_event_effect(
+    count: f32,
+    duration_seconds: f32,
+    radius: f32,
+    slow_multiplier: f32,
+) -> EventEffectDefinition {
+    EventEffectDefinition {
+        radius: Some(radius),
+        slow_multiplier: Some(slow_multiplier),
+        ..event_effect("spawn_hazard", count, Some(duration_seconds))
     }
 }
 
