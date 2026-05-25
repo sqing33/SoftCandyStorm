@@ -103,7 +103,7 @@ impl BotController {
             self.route_angle.cos() * radius_x,
             self.route_angle.sin() * radius_y,
         );
-        (target - snapshot.player.position).normalized_or_zero()
+        (target - snapshot.player.position).normalized_or_zero() * 0.88
     }
 }
 
@@ -201,7 +201,7 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
 fn defense_threshold(kind: BotKind) -> f32 {
     match kind {
         BotKind::Tank => 0.95,
-        BotKind::Coward => 0.85,
+        BotKind::Coward => 0.62,
         BotKind::Greedy => 0.55,
         BotKind::Kite => 0.0,
         BotKind::BossHunter => 0.55,
@@ -216,9 +216,9 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
         BotKind::Idle => &["big-candy-jar", "rainbow-candy-shot"],
         BotKind::Random => &[],
         BotKind::Coward => &[
+            "bubble-shoes",
             "big-candy-jar",
             "rainbow-candy-shot",
-            "bubble-shoes",
             "cream-clockwork",
             "star-spoon",
         ],
@@ -310,8 +310,9 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
 }
 
 fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
-    if snapshot.player.health / snapshot.player.max_health < 0.55 {
-        let avoidance = avoid_enemies(snapshot, 240.0, 10);
+    let health_ratio = snapshot.player.health / snapshot.player.max_health;
+    if health_ratio < 0.62 {
+        let avoidance = avoid_enemies(snapshot, 250.0, 10);
         if avoidance.length_squared() > 0.0 {
             return avoidance.normalized_or_zero();
         }

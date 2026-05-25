@@ -93,6 +93,10 @@
     {
       "id": "expanded_bot_matrix_validation",
       "summary": "将规则 Bot 基线扩展到 all Bot、10 seed、300 秒共 90 局，并通过 strict replay-batch 回归验证 90/90 可复现；扩样本发现 coward、tank、route 三个 Bot 需要策略或平衡复查"
+    },
+    {
+      "id": "bot_policy_recalibration_10_seed",
+      "summary": "复校 coward、tank、route 规则 Bot 策略后重跑 all Bot、10 seed、300 秒共 90 局；所有 Bot 进入原型胜率目标区间，strict replay-batch 回归 90/90 通过"
     }
   ],
   "current_findings": [
@@ -100,11 +104,6 @@
       "id": "asset_generation_background_noncompliance",
       "summary": "mmx 单体图仍未稳定遵守 #00ff00 纯色背景约束；彩虹糖弹重生成已移除明显水印和火箭化身份问题，但仍需人工清理阴影、星光残留、外发光和透明边缘",
       "report": "asset/generated_candidates/2026-05-25_mmx_projectile_retry/metadata/review_2026-05-25.md"
-    },
-    {
-      "id": "expanded_bot_matrix_balance_findings",
-      "summary": "10 seed 扩展矩阵中 coward 胜率 40% 高于低技能目标上限 35%，tank 胜率 20% 低于中技能目标下限 25%，route 胜率 50% 高于低技能目标上限 35%；Replay 回归 90/90 通过，问题更偏向策略/数值复查而不是确定性错误",
-      "report": "harness/reports/2026-05-25_bot_matrix_expanded_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -113,8 +112,8 @@
       "summary": "对第二批 repair 候选和彩虹糖弹 v003_002 做边缘清理，输出 32px runtime 规格预览，并按 Runtime 视角要求决定是否重生成玩家和 Boss 的严格俯视版本"
     },
     {
-      "id": "bot_balance_followup",
-      "summary": "复查 coward、tank、route 的扩展矩阵 failure cases，判断是 Bot 策略定义偏差、地图路线安全漏洞，还是 base_demo 数值需要微调；修复后重跑 10 seed 矩阵和 strict replay-batch"
+      "id": "larger_bot_baseline_nightly",
+      "summary": "在素材候选清理后，将规则 Bot 基线扩展到更大 seed 集或 nightly 矩阵，继续观察低技能和中技能 Bot 的边界稳定性"
     }
   ]
 }
