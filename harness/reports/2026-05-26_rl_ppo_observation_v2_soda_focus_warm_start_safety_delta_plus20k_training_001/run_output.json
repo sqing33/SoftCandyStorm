@@ -1,0 +1,190 @@
+{
+  "status": "trained",
+  "algorithm": "ppo",
+  "model_path": "python/train/models/ppo_phase1_observation_v2_soda_focus_warm_start_safety_delta_train300_ent002_plus20000_eval_soda60.zip",
+  "metadata_path": "python/train/models/ppo_phase1_observation_v2_soda_focus_warm_start_safety_delta_train300_ent002_plus20000_eval_soda60_metadata.json",
+  "evaluation_path": "harness/reports/2026-05-26_rl_ppo_observation_v2_soda_focus_warm_start_safety_delta_plus20k_training_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-26_rl_ppo_observation_v2_soda_focus_warm_start_safety_delta_plus20k_training_001/ppo_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true
+  },
+  "training": {
+    "total_timesteps": 20224,
+    "requested_timesteps": 20000,
+    "actual_timesteps": 20224,
+    "seed": 12345,
+    "seconds": 300.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "observation_version": 2,
+    "observation_len": 145,
+    "maps": [
+      "soda-creek"
+    ],
+    "map_selection": "cycle",
+    "map_preset": null,
+    "started_at": "2026-05-25T21:15:25.479535+00:00",
+    "completed_at": "2026-05-25T21:15:35.648336+00:00",
+    "algorithm_parameters": {
+      "learning_rate": 0.0003,
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.02,
+      "clip_range": 0.2
+    },
+    "algorithm_parameters_source": "warm_start_metadata",
+    "warm_start_model": "python/train/models/ppo_phase1_observation_v2_high_pressure_warm_start_safety_delta_train300_random_ent002_plus20000_eval60.zip",
+    "warm_start_metadata_path": "python/train/models/ppo_phase1_observation_v2_high_pressure_warm_start_safety_delta_train300_random_ent002_plus20000_eval60_metadata.json",
+    "evaluation_policy": "deterministic",
+    "evaluation_map_id": "soda-creek"
+  },
+  "evaluation": {
+    "episodes": 5,
+    "win_rate": 0.4,
+    "average_survival_seconds": 57.3328,
+    "average_level": 2.4,
+    "average_kills": 64.2,
+    "average_reward": -0.3245,
+    "damage_taken_average": 85.966,
+    "action_distribution": {
+      "0": {
+        "count": 1350,
+        "ratio": 0.157
+      },
+      "1": {
+        "count": 490,
+        "ratio": 0.057
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 120,
+        "ratio": 0.014
+      },
+      "4": {
+        "count": 1298,
+        "ratio": 0.1509
+      },
+      "5": {
+        "count": 555,
+        "ratio": 0.0645
+      },
+      "6": {
+        "count": 2432,
+        "ratio": 0.2828
+      },
+      "7": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "8": {
+        "count": 2355,
+        "ratio": 0.2738
+      }
+    },
+    "action_entropy_bits": 2.4349,
+    "normalized_action_entropy": 0.7681,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 8600,
+      "mean_scores": {
+        "0": 0.1556,
+        "1": 0.0914,
+        "2": 0.0455,
+        "3": 0.0715,
+        "4": 0.1059,
+        "5": 0.1481,
+        "6": 0.1741,
+        "7": 0.0247,
+        "8": 0.1835
+      },
+      "mean_top_actions": [
+        {
+          "action": "8",
+          "score": 0.1835
+        },
+        {
+          "action": "6",
+          "score": 0.1741
+        },
+        {
+          "action": "0",
+          "score": 0.1556
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 1350,
+          "ratio": 0.157
+        },
+        "1": {
+          "count": 490,
+          "ratio": 0.057
+        },
+        "2": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "3": {
+          "count": 120,
+          "ratio": 0.014
+        },
+        "4": {
+          "count": 1298,
+          "ratio": 0.1509
+        },
+        "5": {
+          "count": 555,
+          "ratio": 0.0645
+        },
+        "6": {
+          "count": 2432,
+          "ratio": 0.2828
+        },
+        "7": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "8": {
+          "count": 2355,
+          "ratio": 0.2738
+        }
+      },
+      "dominant_top_action": {
+        "action": "6",
+        "count": 2432,
+        "ratio": 0.2828
+      },
+      "mean_chosen_action_score": 0.3584,
+      "chosen_action_score_sample_count": 8600
+    },
+    "reward_breakdown_average": {
+      "action_repeat": -1.0248,
+      "boss_pressure": 0.0,
+      "boundary_risk": -0.4382,
+      "damage_taken": -6.8773,
+      "enemy_pressure": -0.1408,
+      "hazard_risk": 0.0,
+      "kill": 5.136,
+      "level": 1.12,
+      "low_health": -0.0118,
+      "safety_delta": -0.0089,
+      "survival": 0.5733,
+      "terminal": -1.4,
+      "total": -0.3245,
+      "xp": 2.748
+    }
+  },
+  "known_exploits": [],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_rule_bot_comparison"
+}
