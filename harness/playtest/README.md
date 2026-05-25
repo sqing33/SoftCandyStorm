@@ -17,6 +17,16 @@ python3 harness/playtest/validate_manual_review.py \
 The bundled templates are intentionally incomplete and should fail validation
 until a human fills every required rating, notes, tags, and next action field.
 
+## Run Regression Tests
+
+```bash
+python3 harness/playtest/test_validate_manual_review.py
+```
+
+The tests use bundled positive and negative fixtures. They verify strict
+acceptance validation, CLI exit codes, and JSON/Markdown report output without
+requiring Rust, Bevy, GameCore, or local binary launch.
+
 ## Gate Rules
 
 - A valid review needs the 9 required run ids: `new_001` to `build_003`.
