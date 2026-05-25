@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_012",
+  "category": "rl_policy",
+  "content_id": "base-demo",
+  "seed": "30000-30009",
+  "bot": "PPO observation v2 10k policy",
+  "time_seconds": 300.0,
+  "symptom": "Observation v2 的 10000-step PPO 多地图 random 训练通过了 60 秒动作分布 gate，但在 6 地图 10 seed / 300 秒对比中跨地图泛化仍失败：soda-creek 胜率 0%、平均承伤 120.3078；caramel-workshop 胜率 0%、平均承伤 120.5901；cracked-star-jar 胜率 0%、平均承伤 120.4891；jelly-platform 胜率 30%、平均承伤 113.5097。所有地图最大动作占比低于 75%，说明动作 gate 通过仍不足以证明 300 秒策略可用。",
+  "root_cause": "Observation v2 增强了地图、Boss、hazard 和敌人动态表达，足以修复短局动作塌缩，但 10000 requested timesteps 仍不足以学习 300 秒中后期、Boss 技能、hazard 和高压波次规避；policy 在全部地图的 mean top action 仍集中到动作 1。",
+  "fix": "不要将该 10k v2 模型推进为正式 RL 压力测试 Bot。下一轮优先尝试 50000 或 100000 requested timesteps 的 observation v2 多地图训练；若长训仍失败，再加入 300 秒训练 episode、curriculum、高压地图定向训练或 Boss/hazard reward shaping。",
+  "validation": "本轮报告见 harness/reports/2026-05-26_rl_ppo_observation_v2_multimap_comparison_001/summary.md。修复后需重跑同一 6 地图 10 seed / 300 秒 deterministic 对比，要求所有地图保持健康动作分布，同时高压地图胜率、承伤和击杀不再出现明显泛化断层；随后再扩到 600 秒和更多 seed。"
+}
