@@ -298,6 +298,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 3 帧 danger-weighted behavior clone 已完成训练，输入长度为 435，validation accuracy 为 86.87%。该结果仍只是训练 smoke：当前本机 Rust 可执行文件启动被 `spctl` 拒绝，`game_harness gym-bridge` 在 `_dyld_start` 阶段阻塞，60/300 秒 Gym 对比未完成。因此序列上下文模型尚未通过任何 policy gate。
 
+在本地新生成 Mach-O binary 启动问题恢复前，不应继续解读 RL/Gym/Harness 运行结果。恢复后优先重跑 `game_harness --help`、`cargo test --workspace`，再重跑 context3 behavior clone 的 60/300 秒 high-pressure 对比。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。
