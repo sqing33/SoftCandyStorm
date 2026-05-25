@@ -972,31 +972,103 @@ impl ContentPack {
             },
         );
 
-        pack.maps.insert(
-            "frosting-grassland".to_string(),
-            MapDefinition {
-                id: "frosting-grassland".to_string(),
-                name: "糖霜草地".to_string(),
-                version: 1,
-                tags: vec!["beginner".to_string(), "open".to_string()],
-                description: "覆盖糖霜的开阔草地，新手守护员第一次面对软糖风暴的地方。".to_string(),
-                size: MapSizeDefinition {
-                    width: 2600.0,
-                    height: 1700.0,
-                },
-                bounds: BoundsDefinition {
-                    bounds_type: "rectangle".to_string(),
-                },
-                spawn_rules: SpawnRulesDefinition {
-                    mode: "around_player".to_string(),
-                    min_distance: 320.0,
-                    max_distance: 520.0,
-                },
-                hazards: Vec::new(),
-                visual_description: "奶白糖霜草地、棒棒糖路标、饼干小路。".to_string(),
-                music_theme: "bright_xylophone".to_string(),
-            },
-        );
+        for map in [
+            map_definition(
+                "frosting-grassland",
+                "糖霜草地",
+                &["beginner", "open"],
+                "覆盖糖霜的开阔草地，新手守护员第一次面对软糖风暴的地方。",
+                2600.0,
+                1700.0,
+                320.0,
+                520.0,
+                &[],
+                "奶白糖霜草地、棒棒糖路标、饼干小路。",
+                "bright_xylophone",
+            ),
+            map_definition(
+                "soda-creek",
+                "汽水溪谷",
+                &["mobility", "bubbles", "midgame"],
+                "流淌着汽水的小溪谷，泡泡地形和弹跳视觉让移动判断更忙碌。",
+                2400.0,
+                1800.0,
+                340.0,
+                560.0,
+                &[(
+                    "bubble_current",
+                    "周期性出现的泡泡水流提示，首版仅作为地图语义标记。",
+                )],
+                "蓝粉汽水溪流、透明泡泡拱桥和会弹光的糖石岸边。",
+                "sparkling_soda_marimba",
+            ),
+            map_definition(
+                "cotton-cloud-pasture",
+                "棉花云牧场",
+                &["soft", "swarm", "aoe-check"],
+                "漂浮在低空的棉花云牧场，视野柔和但敌群密度更高。",
+                2500.0,
+                1750.0,
+                330.0,
+                540.0,
+                &[(
+                    "soft_cloud_patch",
+                    "柔软云团遮挡路线边缘，首版仅作为地图语义标记。",
+                )],
+                "粉白棉花云草地、糖丝风车和云朵围栏。",
+                "soft_cloud_music_box",
+            ),
+            map_definition(
+                "caramel-workshop",
+                "焦糖工坊",
+                &["hazard", "industrial", "control"],
+                "生产焦糖机关的甜点工坊，障碍和地面危险更频繁。",
+                2300.0,
+                1700.0,
+                350.0,
+                560.0,
+                &[(
+                    "caramel_spill",
+                    "焦糖溢流会形成路线压力，首版仅作为地图语义标记。",
+                )],
+                "金棕焦糖锅炉、饼干齿轮、糖浆管线和亮面地板。",
+                "sticky_factory_groove",
+            ),
+            map_definition(
+                "jelly-platform",
+                "果冻月台",
+                &["route", "loop", "bot-test"],
+                "狭长又带环形路线的果冻月台，适合固定路线 Bot 与走位策略测试。",
+                2800.0,
+                1450.0,
+                360.0,
+                600.0,
+                &[(
+                    "jelly_bounce_lane",
+                    "果冻弹跳带强调路线选择，首版仅作为地图语义标记。",
+                )],
+                "半透明果冻平台、环形糖轨和远处星空糖站。",
+                "jelly_station_pulse",
+            ),
+            map_definition(
+                "cracked-star-jar",
+                "裂星糖罐",
+                &["final", "phase-shift", "storm"],
+                "最终地图，破裂糖罐中不断转色的风暴眼会改变战斗节奏。",
+                2600.0,
+                1900.0,
+                380.0,
+                620.0,
+                &[(
+                    "storm_phase_shift",
+                    "多味风暴阶段切换，首版仅作为地图语义标记。",
+                )],
+                "碎裂巨大糖罐、星糖裂纹、不断转色的风暴背景。",
+                "final_storm_celesta",
+            ),
+        ] {
+            pack.maps.insert(map.id.clone(), map);
+        }
 
         pack.events.insert(
             "rainbow-candy-rush".to_string(),
@@ -1978,6 +2050,49 @@ fn enemy_definition(
             performance_cost: 1.0,
         },
         death_effect: "弹成小糖屑。".to_string(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn map_definition(
+    id: &str,
+    name: &str,
+    tags: &[&str],
+    description: &str,
+    width: f32,
+    height: f32,
+    min_distance: f32,
+    max_distance: f32,
+    hazards: &[(&str, &str)],
+    visual_description: &str,
+    music_theme: &str,
+) -> MapDefinition {
+    MapDefinition {
+        id: id.to_string(),
+        name: name.to_string(),
+        version: 1,
+        tags: tags.iter().map(|tag| (*tag).to_string()).collect(),
+        description: description.to_string(),
+        size: MapSizeDefinition { width, height },
+        bounds: BoundsDefinition {
+            bounds_type: "rectangle".to_string(),
+        },
+        spawn_rules: SpawnRulesDefinition {
+            mode: "around_player".to_string(),
+            min_distance,
+            max_distance,
+        },
+        hazards: hazards
+            .iter()
+            .map(|(hazard_type, description)| {
+                serde_json::json!({
+                    "type": hazard_type,
+                    "description": description
+                })
+            })
+            .collect(),
+        visual_description: visual_description.to_string(),
+        music_theme: music_theme.to_string(),
     }
 }
 
