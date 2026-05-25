@@ -281,6 +281,10 @@
     {
       "id": "caramel_workshop_boss_matrix_regression",
       "summary": "围绕 caramel-workshop 首版 Boss 技能语义运行 600 秒 3 seed 多 Bot 矩阵并执行 strict replay-batch 回归；Kite、BossHunter、Tank 均 100% 胜率，Replay 回归 9/9 通过，已记录偏易 failure case"
+    },
+    {
+      "id": "caramel_workshop_balance_repair",
+      "summary": "修复焦糖工坊偏易问题：地面危险区增加伤害语义，焦糖熔炉和中后期怪潮提高压力，防御被动略降，BossHunter 改为保持 Boss 间距；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
     }
   ],
   "current_findings": [
@@ -310,9 +314,9 @@
       "report": "content/base_demo/bosses/cracked-star-jar-core.json"
     },
     {
-      "id": "caramel_workshop_boss_matrix_too_easy",
-      "summary": "caramel-workshop 在首版 Boss 技能语义接入后仍偏易：600 秒 3 seed 小矩阵中 KiteBot、BossHunterBot、TankBot 胜率均为 100%，高于当前 Harness 目标区间；修复后需用同 map_id、seed range、bot set 重跑矩阵并执行 replay-batch。",
-      "report": "harness/failed_cases/fail_20260526_001_caramel_boss_map_easy.json"
+      "id": "caramel_workshop_boss_matrix_repaired",
+      "summary": "caramel-workshop 偏易 failure case 已完成首轮修复：KiteBot 与 BossHunterBot 3 seed 胜率均为 66.7%，TankBot 为 33.3%，全部进入当前 Harness 目标区间；该结论仍是小样本，需要纳入后续 6 地图/更多 seed 回归。",
+      "report": "harness/reports/2026-05-26_caramel_workshop_balance_repair_001/summary.md"
     },
     {
       "id": "content_event_effect_scope",
@@ -387,12 +391,8 @@
   ],
   "next_recommended": [
     {
-      "id": "caramel_workshop_balance_repair",
-      "summary": "提高焦糖工坊中后期压力或焦糖熔炉技能约束，随后用 caramel-workshop、seed 12345..12347、kite/boss-hunter/tank 重跑 600 秒矩阵并执行 replay-batch"
-    },
-    {
       "id": "six_map_boss_matrix_refresh",
-      "summary": "在焦糖工坊修复后扩展到 6 张地图的多 Bot/多 seed 矩阵，检查各地图 Boss 技能语义、难度、性能和 replay 回归是否稳定"
+      "summary": "扩展到 6 张地图的多 Bot/多 seed 矩阵，检查各地图 Boss 技能语义、难度、性能和 replay 回归是否稳定，并确认焦糖工坊修复没有把全局防御流压得过低"
     },
     {
       "id": "runtime_manual_playtest_capture",
