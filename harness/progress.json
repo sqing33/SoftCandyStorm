@@ -789,6 +789,11 @@
       "id": "rl_behavior_clone_expanded_trajectory_smoke",
       "summary": "扩展 high-pressure KiteBot 轨迹到三图 5 seed、60 秒、stride 5 共 5312 条 sample；unweighted behavior clone 在三图 10 秒短对比中动作熵通过门禁，说明数据覆盖比单纯 loss 加权更有效。",
       "report": "harness/reports/2026-05-26_rl_behavior_clone_kite_expanded_multimap_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_expanded_long_eval_gap",
+      "summary": "Expanded behavior clone 通过 60 秒三图 smoke，但 300 秒 high-pressure 三图胜率均为 0%，cracked-star-jar 动作 7 占比 75.19%；已记录长局泛化 failure case。",
+      "report": "harness/failed_cases/fail_20260526_020_behavior_clone_expanded_long_gap.json"
     }
   ],
   "next_recommended": [
@@ -798,7 +803,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "用 expanded behavior clone 进行 60 秒和 300 秒 high-pressure 对比；如果长局仍稳定，再尝试作为 PPO 蒸馏或 warm-start 的初始化候选"
+      "summary": "生成覆盖 300 秒中后期状态的规则 Bot 轨迹，或加入序列上下文/危险状态重采样，再重新训练 behavior clone；当前 expanded BC 不能作为 RL Bot 候选"
     }
   ]
 }

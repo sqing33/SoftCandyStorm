@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_020",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_expanded_smoke",
+  "seed": 33000,
+  "bot": "BehaviorCloneKiteExpandedSmoke",
+  "time_seconds": 300.0,
+  "symptom": "expanded behavior clone 在 300 秒 high-pressure 三图对比中胜率均为 0%，cracked-star-jar 的 action 7 占比达到 75.19%，触发动作分布 repair",
+  "root_cause": "训练轨迹覆盖到 60 秒，但缺少 300 秒中后期 Boss、升级后 Build、敌人密度和危险状态分布；MLP movement clone 没有序列记忆，长局遇到分布外状态后退化为偏向 action 7 的逃生模式",
+  "fix": "生成覆盖 300 秒的多图规则 Bot 轨迹，加入危险状态重采样或序列上下文，再重新训练并优先验证 60/300 秒 high-pressure 对比",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_expanded_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 33000 --rule-bots random,kite,tank --report harness/reports/2026-05-26_rl_behavior_clone_kite_expanded_multimap_300s_001/comparison.json"
+}

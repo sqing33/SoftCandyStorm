@@ -239,6 +239,13 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 结论：数据覆盖比单纯 loss 权重更能缓解 deterministic 塌缩，但这仍只是 10 秒 smoke，不代表 60/300 秒高压泛化通过。
 
+后续验证结果：
+
+- 60 秒 high-pressure 三图、5 seed：平均胜率 66.67%，三图动作熵约 0.61 / 0.62 / 0.61，短中局可作为继续实验信号。
+- 300 秒 high-pressure 三图、3 seed：三图胜率均为 0%，`cracked-star-jar` 最大动作占比 75.19%，结论为 repair。
+
+因此 expanded behavior clone 仍不能作为 RL 测试 Bot，只能作为后续长局数据扩展、序列模型或 PPO 蒸馏初始化候选。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。
