@@ -930,47 +930,134 @@ impl ContentPack {
             pack.enemies.insert(enemy.common.id.clone(), enemy);
         }
 
-        pack.bosses.insert(
-            "runaway-sugar-mixer".to_string(),
-            BossDefinition {
-                common: EnemyCommonDefinition {
-                    id: "runaway-sugar-mixer".to_string(),
-                    name: "暴走搅糖机".to_string(),
-                    version: 1,
-                    rarity: "boss".to_string(),
-                    tags: vec!["boss".to_string(), "dash".to_string(), "summon".to_string()],
-                    description: "失控的搅糖机器，会一边冲撞一边甩出软糖。".to_string(),
-                    stats: EnemyStatsDefinition {
-                        health: 900.0,
-                        move_speed: 38.0,
-                        contact_damage_per_second: 20.0,
-                        radius: 48.0,
-                        xp_value: 80.0,
-                        score_value: 500,
-                    },
-                    counterplay: "冲撞前会出现红色预警线，冲撞后短暂硬直。".to_string(),
-                    visual_description: "圆滚滚的粉色搅糖机，带夸张搅拌臂。".to_string(),
-                    sfx_description: "机械搅拌声和糖浆飞溅声。".to_string(),
-                },
-                phases: vec![
-                    BossPhaseDefinition {
-                        hp_threshold: 1.0,
-                        abilities: vec![
-                            "dash_charge".to_string(),
-                            "summon_bouncy_gummy".to_string(),
-                        ],
-                    },
-                    BossPhaseDefinition {
-                        hp_threshold: 0.45,
-                        abilities: vec![
-                            "dash_charge".to_string(),
-                            "sugar_splash".to_string(),
-                            "summon_bouncy_gummy".to_string(),
-                        ],
-                    },
+        for boss in [
+            boss_definition(
+                "runaway-sugar-mixer",
+                "暴走搅糖机",
+                &["boss", "dash", "summon"],
+                "失控的搅糖机器，会一边冲撞一边甩出软糖。",
+                900.0,
+                38.0,
+                20.0,
+                48.0,
+                80.0,
+                500,
+                &[
+                    (1.0, &["dash_charge", "summon_bouncy_gummy"][..]),
+                    (
+                        0.45,
+                        &["dash_charge", "sugar_splash", "summon_bouncy_gummy"][..],
+                    ),
                 ],
-            },
-        );
+                "冲撞前会出现红色预警线，冲撞后短暂硬直。",
+                "圆滚滚的粉色搅糖机，带夸张搅拌臂。",
+                "机械搅拌声和糖浆飞溅声。",
+            ),
+            boss_definition(
+                "soda-fountain-dragon",
+                "汽水喷泉龙",
+                &["boss", "ranged", "summon", "bubbles"],
+                "盘踞在汽水溪谷的泡泡龙，会蓄力喷出连续泡泡弹幕。",
+                1100.0,
+                42.0,
+                18.0,
+                52.0,
+                95.0,
+                650,
+                &[
+                    (1.0, &["bubble_barrage", "summon_soda_bubble"][..]),
+                    (
+                        0.5,
+                        &["charged_fountain", "bubble_barrage", "summon_soda_bubble"][..],
+                    ),
+                ],
+                "喷射前有明显蓄力，绕到侧面移动可以避开主要弹幕。",
+                "蓝粉渐变的短胖汽水龙，背鳍像喷泉口，身体里有透明气泡。",
+                "蓄力汽水声、泡泡连爆声和轻快龙鸣。",
+            ),
+            boss_definition(
+                "giant-cotton-clump",
+                "巨型棉花团",
+                &["boss", "split", "merge", "swarm"],
+                "棉花云牧场里的巨大棉花团，会分裂成多个小团再重新合体。",
+                1050.0,
+                32.0,
+                16.0,
+                56.0,
+                95.0,
+                650,
+                &[
+                    (1.0, &["soft_roll", "split_cotton_clumps"][..]),
+                    (0.55, &["split_cotton_clumps", "recombine_heal"][..]),
+                ],
+                "分裂阶段单体较弱，优先清掉小团可以降低重新合体后的压力。",
+                "蓬松的粉白棉花云团，中心有糖晶眼睛，小团会拖着糖丝尾迹。",
+                "柔软蓬松的扑扑声、分裂时的糖丝拉伸声。",
+            ),
+            boss_definition(
+                "caramel-furnace",
+                "焦糖熔炉",
+                &["boss", "hazard", "control", "zone"],
+                "焦糖工坊的过热熔炉，会周期性铺设黏稠焦糖地面。",
+                1250.0,
+                28.0,
+                21.0,
+                54.0,
+                110.0,
+                750,
+                &[
+                    (1.0, &["lay_caramel_tracks", "slow_pulse"][..]),
+                    (0.5, &["caramel_floor_cycle", "summon_caramel_slime"][..]),
+                ],
+                "焦糖地面会压缩路线，需要持续移动并提前绕开亮面预警区。",
+                "圆腹焦糖熔炉，饼干铆钉和糖浆管线围绕炉身，炉口冒着金棕糖泡。",
+                "低沉炉鸣、糖浆咕嘟声和焦糖铺地的黏滑声。",
+            ),
+            boss_definition(
+                "giant-gummy-bear-king",
+                "巨型熊糖王",
+                &["boss", "jump", "summon", "shockwave"],
+                "果冻月台上的巨大熊糖王，会跳跃震波并召唤熊糖护卫。",
+                1400.0,
+                36.0,
+                24.0,
+                58.0,
+                120.0,
+                850,
+                &[
+                    (1.0, &["jump_shockwave", "summon_sticky_bear_gummy"][..]),
+                    (0.45, &["double_jump_shockwave", "summon_guard_wave"][..]),
+                ],
+                "起跳阴影会提前出现，落地后短暂硬直是主要输出窗口。",
+                "高大的半透明熊糖王，戴小王冠，跳跃时果冻月台会泛起圆形波纹。",
+                "厚重弹跳声、果冻震波声和小护卫集合提示音。",
+            ),
+            boss_definition(
+                "cracked-star-jar-core",
+                "裂星糖罐核心",
+                &["boss", "final", "phase-shift", "storm"],
+                "裂星糖罐深处的风暴核心，会按阶段释放不同口味的糖果风暴。",
+                2200.0,
+                24.0,
+                26.0,
+                64.0,
+                160.0,
+                1200,
+                &[
+                    (1.0, &["sour_phase_storm", "sweet_phase_shield"][..]),
+                    (0.66, &["spicy_phase_burst", "bubble_phase_barrage"][..]),
+                    (
+                        0.33,
+                        &["multi_flavor_storm", "phase_shift_vulnerability"][..],
+                    ),
+                ],
+                "每次阶段切换都会短暂暴露核心，需要根据当前风暴颜色调整输出距离。",
+                "悬浮的破裂糖罐核心，星糖裂纹不断转色，周围环绕多味风暴带。",
+                "玻璃糖裂响、渐强风暴声和阶段切换的亮晶铃音。",
+            ),
+        ] {
+            pack.bosses.insert(boss.common.id.clone(), boss);
+        }
 
         for map in [
             map_definition(
@@ -2050,6 +2137,56 @@ fn enemy_definition(
             performance_cost: 1.0,
         },
         death_effect: "弹成小糖屑。".to_string(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn boss_definition(
+    id: &str,
+    name: &str,
+    tags: &[&str],
+    description: &str,
+    health: f32,
+    move_speed: f32,
+    contact_damage_per_second: f32,
+    radius: f32,
+    xp_value: f32,
+    score_value: u32,
+    phases: &[(f32, &[&str])],
+    counterplay: &str,
+    visual_description: &str,
+    sfx_description: &str,
+) -> BossDefinition {
+    BossDefinition {
+        common: EnemyCommonDefinition {
+            id: id.to_string(),
+            name: name.to_string(),
+            version: 1,
+            rarity: "boss".to_string(),
+            tags: tags.iter().map(|tag| (*tag).to_string()).collect(),
+            description: description.to_string(),
+            stats: EnemyStatsDefinition {
+                health,
+                move_speed,
+                contact_damage_per_second,
+                radius,
+                xp_value,
+                score_value,
+            },
+            counterplay: counterplay.to_string(),
+            visual_description: visual_description.to_string(),
+            sfx_description: sfx_description.to_string(),
+        },
+        phases: phases
+            .iter()
+            .map(|(hp_threshold, abilities)| BossPhaseDefinition {
+                hp_threshold: *hp_threshold,
+                abilities: abilities
+                    .iter()
+                    .map(|ability| (*ability).to_string())
+                    .collect(),
+            })
+            .collect(),
     }
 }
 
