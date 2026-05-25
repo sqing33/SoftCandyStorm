@@ -58,7 +58,7 @@ python python/train/train_sb3.py --algorithm dqn --timesteps 128 --eval-episodes
 人工试玩前先按 `harness/playtest/runtime_manual_review_pack.md` 准备 9 局最小覆盖矩阵，并使用 `harness/playtest/runtime_manual_review_template.json` 统一评分、标签和门禁结论。
 `python/gym_env` 提供第一版 Gymnasium 包装器，通过 `game_harness gym-bridge` JSONL 进程调用同一个 headless GameCore；当前用于 RL Phase 1 的 9 方向移动训练冒烟，不控制窗口，也不替代规则 Bot 基线。
 `python/train` 提供 Stable-Baselines3 的 DQN/PPO 训练配置和入口；当前可用 `--check-deps`、`--dry-run` 验证环境，真实训练需要先安装 `gymnasium`、`numpy` 和 `stable-baselines3`。
-`python/train/train_sb3.py` 真实训练完成后会写模型、metadata、training report、evaluation report 和 known exploit notes；`--timesteps`、`--eval-episodes`、`--eval-seconds` 可用于缩小 smoke，PPO 探索实验可用 `--ent-coef` 临时覆盖 entropy 系数且会写入报告，但 RL Bot 仍必须先和规则 Bot 矩阵对比，不能直接作为好玩或上线证明。
+`python/train/train_sb3.py` 真实训练完成后会写模型、metadata、training report、evaluation report 和 known exploit notes；`--timesteps`、`--eval-episodes`、`--eval-seconds` 可用于缩小 smoke，PPO 探索实验可用 `--ent-coef` 临时覆盖 entropy 系数且会写入报告，`--eval-stochastic` 可用于诊断随机采样评估，但 RL Bot 仍必须先和规则 Bot 矩阵对比，不能直接作为好玩或上线证明。
 
 素材候选后处理入口：
 

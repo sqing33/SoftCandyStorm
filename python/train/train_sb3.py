@@ -133,6 +133,7 @@ def train(
     train_maps=None,
     train_map_selection="cycle",
     algorithm_overrides=None,
+    eval_deterministic=True,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -173,6 +174,7 @@ def train(
         config,
         episodes=eval_episodes or config["evaluation"]["episodes"],
         seconds=eval_seconds or config["evaluation"]["seconds"],
+        deterministic=eval_deterministic,
     )
     known_exploit_notes = known_exploits_from_evaluation(evaluation)
     gate_decision = training_gate_decision(known_exploit_notes)
@@ -196,6 +198,7 @@ def train(
         "content_rules": "headless GameCore via game_harness gym-bridge",
         "reward_config": "prototype reward in game_harness gym_reward",
         "algorithm_parameters": kwargs,
+        "evaluation_policy": evaluation["action_selection"],
         "started_at": started_at,
         "completed_at": completed_at,
         "evaluation_path": str(evaluation_path),
@@ -229,6 +232,7 @@ def train(
             "started_at": started_at,
             "completed_at": completed_at,
             "algorithm_parameters": kwargs,
+            "evaluation_policy": evaluation["action_selection"],
         },
         "evaluation": evaluation["summary"],
         "known_exploits": known_exploit_notes["known_exploits"],
@@ -259,7 +263,16 @@ def metadata_path_for(config, algorithm, model_out=None):
     return Path(config["outputs"]["model_dir"]) / metadata_file
 
 
-def evaluate_saved_policy(config, algorithm, model_path=None, eval_episodes=None, eval_seconds=None, seed_start=None, map_id=None):
+def evaluate_saved_policy(
+    config,
+    algorithm,
+    model_path=None,
+    eval_episodes=None,
+    eval_seconds=None,
+    seed_start=None,
+    map_id=None,
+    deterministic=True,
+):
     model_class = stable_baselines_model_classes()[algorithm]
     model = model_class.load(model_path or default_model_path(config, algorithm))
     return evaluate_model(
@@ -269,10 +282,19 @@ def evaluate_saved_policy(config, algorithm, model_path=None, eval_episodes=None
         seconds=eval_seconds or config["evaluation"]["seconds"],
         seed_start=seed_start,
         map_id=map_id,
+        deterministic=deterministic,
     )
 
 
-def evaluate_model(model, config, episodes, seconds, seed_start=None, map_id=None):
+def evaluate_model(
+    model,
+    config,
+    episodes,
+    seconds,
+    seed_start=None,
+    map_id=None,
+    deterministic=True,
+):
     seed_start = seed_start if seed_start is not None else config["evaluation"]["seed_start"]
     map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
     max_steps = int(seconds * config["environment"]["tick_rate"]) + 10
@@ -291,7 +313,9 @@ def evaluate_model(model, config, episodes, seconds, seed_start=None, map_id=Non
             action_counts = {str(action): 0 for action in range(info["action_count"])}
             reward_breakdown_totals = {}
             while not terminated and not truncated and steps < max_steps:
-                action, _state = model.predict(observation, deterministic=True)
+                action, _state = model.predict(
+                    observation, deterministic=deterministic
+                )
                 action_index = action_to_int(action)
                 action_counts[str(action_index)] = action_counts.get(str(action_index), 0) + 1
                 observation, reward, terminated, truncated, info = env.step(action_index)
@@ -333,6 +357,7 @@ def evaluate_model(model, config, episodes, seconds, seed_start=None, map_id=Non
         "status": "evaluated",
         "phase": config["phase"],
         "map_id": map_id,
+        "action_selection": "deterministic" if deterministic else "stochastic",
         "episodes": episode_reports,
         "summary": summary,
     }
@@ -471,6 +496,7 @@ def compare_policy_to_rule_bots(
     seed_start=None,
     map_id=None,
     rule_bots=None,
+    deterministic=True,
 ):
     episodes = eval_episodes or config["evaluation"]["episodes"]
     seconds = eval_seconds or config["evaluation"]["seconds"]
@@ -485,6 +511,7 @@ def compare_policy_to_rule_bots(
         eval_seconds=seconds,
         seed_start=seed_start,
         map_id=map_id,
+        deterministic=deterministic,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
     findings = comparison_findings(policy, rule_matrix["stdout"])
@@ -495,6 +522,7 @@ def compare_policy_to_rule_bots(
         "algorithm": algorithm,
         "model_path": str(model_path or default_model_path(config, algorithm)),
         "map_id": map_id,
+        "action_selection": policy["action_selection"],
         "seed_start": seed_start,
         "seeds": episodes,
         "seconds": seconds,
@@ -671,6 +699,11 @@ def main():
         choices=["cycle", "random"],
         default="cycle",
     )
+    parser.add_argument(
+        "--eval-stochastic",
+        action="store_true",
+        help="Sample policy actions during evaluation instead of using deterministic argmax.",
+    )
     parser.add_argument("--evaluate-model", action="store_true")
     parser.add_argument("--compare-rule-bots", action="store_true")
     parser.add_argument("--rule-bots", default="random,kite,tank")
@@ -710,6 +743,7 @@ def main():
                 eval_seconds=args.eval_seconds,
                 seed_start=args.seed_start,
                 map_id=args.map_id,
+                deterministic=not args.eval_stochastic,
             ),
         )
         return
@@ -726,6 +760,7 @@ def main():
                 seed_start=args.seed_start,
                 map_id=args.map_id,
                 rule_bots=parse_rule_bots(args.rule_bots),
+                deterministic=not args.eval_stochastic,
             ),
         )
         return
@@ -743,6 +778,7 @@ def main():
             train_maps=train_maps,
             train_map_selection=args.train_map_selection,
             algorithm_overrides=algorithm_overrides,
+            eval_deterministic=not args.eval_stochastic,
         ),
     )
 
