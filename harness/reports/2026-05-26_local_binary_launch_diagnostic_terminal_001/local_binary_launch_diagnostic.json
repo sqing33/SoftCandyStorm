@@ -1,0 +1,257 @@
+{
+  "report_version": 1,
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "generated_at": "2026-05-26T18:52:28+0800",
+  "environment": {
+    "platform": {
+      "command": [
+        "/usr/bin/uname",
+        "-a"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.229,
+      "stdout": "Darwin ITadmindeMacBook-Air.local 25.3.0 Darwin Kernel Version 25.3.0: Wed Jan 28 20:53:31 PST 2026; root:xnu-12377.91.3~2/RELEASE_ARM64_T8103 arm64\n",
+      "stderr": ""
+    },
+    "macos": {
+      "command": [
+        "/usr/bin/sw_vers"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.185,
+      "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.3.1\nBuildVersion:\t\t25D2128\n",
+      "stderr": ""
+    },
+    "arch": {
+      "command": [
+        "/usr/bin/arch"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.08,
+      "stdout": "arm64\n",
+      "stderr": ""
+    },
+    "cwd": "/Users/chongqing/Codes/软糖风暴",
+    "path": "/Users/chongqing/Library/pnpm:/Users/chongqing/.npm-global/bin:/Users/chongqing/.nvm/versions/node/v24.14.1/bin:/Users/chongqing/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/pmk/env/global/bin:/opt/homebrew/bin:/Users/chongqing/.cargo/bin:/Users/chongqing/.orbstack/bin:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+  },
+  "checks": {
+    "system_echo": {
+      "command": [
+        "/bin/echo",
+        "system-binary-ok"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.004,
+      "stdout": "system-binary-ok\n",
+      "stderr": ""
+    },
+    "developer_mode": {
+      "command": [
+        "/usr/sbin/DevToolsSecurity",
+        "-status"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.011,
+      "stdout": "Developer mode is currently enabled.\n",
+      "stderr": ""
+    },
+    "spctl_status": {
+      "command": [
+        "/usr/sbin/spctl",
+        "--status"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.009,
+      "stdout": "assessments enabled\n",
+      "stderr": ""
+    },
+    "cc_compile": {
+      "command": [
+        "/usr/bin/cc",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/hello.c",
+        "-o",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.384,
+      "stdout": "",
+      "stderr": ""
+    },
+    "file": {
+      "command": [
+        "/usr/bin/file",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.013,
+      "stdout": "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello: Mach-O 64-bit executable arm64\n",
+      "stderr": ""
+    },
+    "xattr": {
+      "command": [
+        "/usr/bin/xattr",
+        "-lr",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.004,
+      "stdout": "",
+      "stderr": ""
+    },
+    "codesign": {
+      "command": [
+        "/usr/bin/codesign",
+        "-dv",
+        "--verbose=4",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.008,
+      "stdout": "",
+      "stderr": "Executable=/private/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello\nIdentifier=softcandy_hello\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20400 size=392 flags=0x20002(adhoc,linker-signed) hashes=9+0 location=embedded\nVersionPlatform=1\nVersionMin=1703936\nVersionSDK=1704960\nHash type=sha256 size=32\nCandidateCDHash sha256=058f93bd60e0de75a97ec6606bc65d5f8a57c0bd\nCandidateCDHashFull sha256=058f93bd60e0de75a97ec6606bc65d5f8a57c0bdbce0b75264d7b34a9b6b5185\nHash choices=sha256\nCMSDigest=058f93bd60e0de75a97ec6606bc65d5f8a57c0bdbce0b75264d7b34a9b6b5185\nCMSDigestType=2\nExecutable Segment base=0\nExecutable Segment limit=52\nExecutable Segment flags=0x1\nPage size=4096\nCDHash=058f93bd60e0de75a97ec6606bc65d5f8a57c0bd\nSignature=adhoc\nInfo.plist=not bound\nTeamIdentifier=not set\nSealed Resources=none\nInternal requirements=none\n"
+    },
+    "spctl_assess": {
+      "command": [
+        "/usr/sbin/spctl",
+        "-a",
+        "-vvv",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello"
+      ],
+      "returncode": 3,
+      "timed_out": false,
+      "elapsed_seconds": 0.218,
+      "stdout": "",
+      "stderr": "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello: rejected\n"
+    },
+    "hello_run": {
+      "command": [
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello"
+      ],
+      "returncode": null,
+      "timed_out": true,
+      "elapsed_seconds": 5.003,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  "policy_log": {
+    "available": true,
+    "command": [
+      "/usr/bin/log",
+      "stream",
+      "--style",
+      "compact",
+      "--predicate",
+      "process == \"syspolicyd\" OR process == \"amfid\" OR eventMessage CONTAINS[c] \"Security policy\" OR eventMessage CONTAINS[c] \"CMS blob\" OR eventMessage CONTAINS[c] \"provenance\" OR eventMessage CONTAINS[c] \"Gatekeeper\" OR eventMessage CONTAINS[c] \"softcandy\""
+    ],
+    "trigger_run": {
+      "command": [
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello"
+      ],
+      "returncode": null,
+      "timed_out": true,
+      "elapsed_seconds": 5.005,
+      "stdout": "",
+      "stderr": ""
+    },
+    "line_count": 63,
+    "lines": [
+      "Filtering the log data using \"process == \"syspolicyd\" OR process == \"amfid\" OR composedMessage CONTAINS[c] \"Security policy\" OR composedMessage CONTAINS[c] \"CMS blob\" OR composedMessage CONTAINS[c] \"provenance\" OR composedMessage CONTAINS[c] \"Gatekeeper\" OR composedMessage CONTAINS[c] \"softcandy\"\"",
+      "Timestamp               Ty Process[PID:TID]",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:22.426 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:22.426 Df kernel[0:5f2136] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17664, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:22.426 Df kernel[0:5f2137] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17665, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:22.426 Df kernel[0:5f2138] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17666, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:22.426 Df kernel[0:5f2139] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17667, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:24.460 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.460 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.460 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:24.460 Df kernel[0:5f2178] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17680, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:24.461 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.461 Df kernel[0:5f2179] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17681, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:24.461 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.461 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:24.462 Df kernel[0:5f217a] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17682, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:24.462 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.463 Df kernel[0:5f217b] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17683, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:24.462 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.462 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:24.463 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.463 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:24.463 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:26.539 Df kernel[0:5f21a4] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17695, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:26.539 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.539 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.539 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:26.540 Df kernel[0:5f21a5] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17696, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:26.540 Df kernel[0:5f21a6] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17697, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3d] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:26.540 Df kernel[0:5f21a7] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17698, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:26.540 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:28.094 Df kernel[0:5f214a] (AppleSystemPolicy) ASP: Security policy would not allow process: 17669, /private/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_qxzruaa0/softcandy_hello",
+      "2026-05-26 18:52:28.573 Df kernel[0:5f21c6] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17707, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:28.575 Df kernel[0:5f21c7] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17708, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:28.577 Df kernel[0:5f21c8] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17709, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:28.579 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:28.581 Df kernel[0:5f21c9] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 17710, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 18:52:28.579 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:28.579 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:28.579 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:28.579 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:28.579 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 18:52:28.579 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 18:52:28.580 E  syspolicyd[220:5f1f3e] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3"
+    ]
+  },
+  "limitations": [
+    "This diagnostic proves only the current local session's ability to launch a newly compiled Mach-O binary.",
+    "It does not validate GameCore, Harness, Runtime, Gym, replay semantics, or gameplay balance.",
+    "A blocked result should prevent interpreting Rust Harness, Runtime, or Gym timeouts as game logic failures."
+  ],
+  "decision": "local_binary_launch_blocked",
+  "signals": {
+    "system_binary_runs": true,
+    "hello_compiled": true,
+    "hello_runs": false,
+    "hello_timed_out": true,
+    "developer_mode_disabled": false,
+    "spctl_rejected": true,
+    "provenance_xattr_present": false,
+    "amfi_no_cms_blob": false,
+    "security_policy_would_not_allow": true
+  },
+  "next_actions": [
+    "Do not treat Harness, Runtime, or Gym timeouts as game logic failures until this diagnostic returns local_binary_launch_ok.",
+    "Run the same diagnostic from a trusted developer host or after enabling Developer Mode for the tool that launches local binaries.",
+    "If available, sign local test binaries with a trusted code-signing identity that produces a CMS signature, then rerun this diagnostic.",
+    "Policy logs show AppleSystemPolicy or AMFI blocking the compiled hello binary before main executes."
+  ]
+}
