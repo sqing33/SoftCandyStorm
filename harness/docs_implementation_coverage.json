@@ -27,7 +27,7 @@
       "doc_id": "01",
       "doc_path": "docs/01_游戏愿景与设计支柱.md",
       "status": "partial",
-      "summary": "可爱糖果肉鸽方向已体现在 base_demo 内容、原型占位素材和 Harness 目标中，但差异化体验与可爱信息表达仍缺人工试玩和最终视觉验收。",
+      "summary": "可爱糖果肉鸽方向已体现在 base_demo 内容、原型占位素材、Harness 目标和 Demo readiness 审计中；审计明确当前不是可发布 Demo，原因包括正式包普通敌人数量不足、候选 full pack 未接受、人工试玩和最终视觉 / 音频验收缺失。",
       "coverage": [
         {
           "id": "vision-style-gameplay-loop",
@@ -39,11 +39,15 @@
             "harness/playtest/runtime_manual_review_pack.md",
             "harness/playtest/create_manual_playtest_review_packet.py",
             "harness/playtest/test_create_manual_playtest_review_packet.py",
-            "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md"
+            "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md",
+            "tools/validate_demo_readiness.py",
+            "tools/test_validate_demo_readiness.py",
+            "harness/reports/2026-05-26_demo_readiness_current_local_001/summary.md"
           ],
           "gaps": [
-            "已有 9 局人工试玩模板、TODO 草稿和审查包帮助真人覆盖可读性、爽感和再来一局动机，但仍缺少真人填写后的试玩结论。",
-            "mmx 素材候选尚未通过人工审查进入正式 Runtime 素材。"
+            "Demo readiness 审计当前为 demo_not_ready：正式 content/base_demo 只有 8 个普通敌人，低于 docs/01 Demo 目标的 12 个；Phase 4 full pack 候选虽然补齐数量，但仍在 generated_candidates，不能绕过 Harness 仿真、人工试玩和 accepted content lockfile。",
+            "已有 9 局人工试玩模板、TODO 草稿、审查包和 Demo readiness 报告帮助真人覆盖可读性、爽感和再来一局动机，但仍缺少真人填写后的试玩结论。",
+            "mmx 素材候选尚未通过人工审查进入正式 Runtime 素材；原型素材只能证明可读性占位，不代表最终视觉验收。"
           ]
         }
       ]
@@ -478,12 +482,15 @@
             "tools/validate_release_package_manifest.py",
             "tools/validate_goal_evidence_consistency.py",
             "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md",
-            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
+            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md",
+            "tools/validate_demo_readiness.py",
+            "tools/test_validate_demo_readiness.py",
+            "harness/reports/2026-05-26_demo_readiness_current_local_001/summary.md"
           ],
           "gaps": [
-            "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete。",
+            "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete；Demo readiness 审计也明确当前为 demo_not_ready。",
             "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending；当前 release package manifest 仍 blocked，Goal 证据一致性门禁确认该 not-ready 状态没有被其他账本误标为 ready。",
-            "恢复二进制、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
+            "恢复二进制、补齐正式内容、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
           ]
         }
       ]
