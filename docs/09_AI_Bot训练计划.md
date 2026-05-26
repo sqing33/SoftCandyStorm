@@ -340,6 +340,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 下一次 GRU、Transformer 或分阶段 policy 实验前，应先保存该诊断报告；若出现 `high_context_padding`、`high_action_persistence`、`low_late_low_health_coverage` 或 `map_sample_imbalance`，应先补轨迹窗口、调整 sample stride 或拆分阶段 policy，再考虑扩大训练轮数。
 
+行为克隆入口还支持 `--entropy-regularization <weight>` 作为动作分布约束实验。训练目标会在 cross entropy 上减去平均 policy entropy，用小权重惩罚过度自信的动作分布；报告同时保留 `train_loss`、`train_cross_entropy_loss`、`train_entropy_nats` 和 `validation_entropy_nats`，避免把正则化后的目标误读为普通模仿损失改善。该旋钮只能作为动作塌缩诊断和修复尝试，不能替代 60 / 300 秒 high-pressure 对比或 RL policy acceptance。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

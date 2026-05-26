@@ -525,16 +525,22 @@ def train_behavior_clone(dataset, args):
     for epoch in range(1, args.epochs + 1):
         model.train()
         total_loss = 0.0
+        total_cross_entropy_loss = 0.0
+        total_entropy = 0.0
         total_correct = 0
         total_seen = 0
         for batch_x, batch_y in train_loader:
             logits = model(batch_x)
-            loss = loss_fn(logits, batch_y)
+            cross_entropy_loss = loss_fn(logits, batch_y)
+            entropy = logit_entropy_nats(logits, torch)
+            loss = cross_entropy_loss - args.entropy_regularization * entropy
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             total_loss += float(loss.item()) * len(batch_y)
+            total_cross_entropy_loss += float(cross_entropy_loss.item()) * len(batch_y)
+            total_entropy += float(entropy.item()) * len(batch_y)
             total_correct += int((logits.argmax(dim=1) == batch_y).sum().item())
             total_seen += len(batch_y)
 
@@ -543,8 +549,14 @@ def train_behavior_clone(dataset, args):
             {
                 "epoch": epoch,
                 "train_loss": round(total_loss / max(1, total_seen), 6),
+                "train_cross_entropy_loss": round(
+                    total_cross_entropy_loss / max(1, total_seen),
+                    6,
+                ),
+                "train_entropy_nats": round(total_entropy / max(1, total_seen), 6),
                 "train_accuracy": round(total_correct / max(1, total_seen), 4),
                 "validation_loss": validation_metrics["loss"],
+                "validation_entropy_nats": validation_metrics["entropy_nats"],
                 "validation_accuracy": validation_metrics["accuracy"],
             }
         )
@@ -569,6 +581,7 @@ def train_behavior_clone(dataset, args):
             "class_weights": class_weight_report,
             "sample_weighting": args.sample_weighting,
             "sample_weights": sample_weight_report,
+            "entropy_regularization": args.entropy_regularization,
             "state_dict": model.state_dict(),
             "dataset_paths": dataset["paths"],
         },
@@ -606,6 +619,7 @@ def train_behavior_clone(dataset, args):
             "class_weights": class_weight_report,
             "sample_weighting": args.sample_weighting,
             "sample_weights": sample_weight_report,
+            "entropy_regularization": args.entropy_regularization,
             "train_samples": int(len(train_indices)),
             "validation_samples": int(len(validation_indices)),
         },
@@ -987,11 +1001,19 @@ def evaluate_classifier(model, x, y, loss_fn):
     with torch.no_grad():
         logits = model(x)
         loss = loss_fn(logits, y)
+        entropy = logit_entropy_nats(logits, torch)
         accuracy = (logits.argmax(dim=1) == y).float().mean()
     return {
         "loss": round(float(loss.item()), 6),
+        "entropy_nats": round(float(entropy.item()), 6),
         "accuracy": round(float(accuracy.item()), 4),
     }
+
+
+def logit_entropy_nats(logits, torch_module):
+    probabilities = torch_module.softmax(logits, dim=1)
+    log_probabilities = torch_module.log_softmax(logits, dim=1)
+    return -(probabilities * log_probabilities).sum(dim=1).mean()
 
 
 def write_report(path, payload):
@@ -1051,6 +1073,12 @@ def main():
     parser.add_argument("--danger-late-start-seconds", type=float, default=60.0)
     parser.add_argument("--danger-late-horizon-seconds", type=float, default=300.0)
     parser.add_argument("--danger-late-weight", type=float, default=1.0)
+    parser.add_argument(
+        "--entropy-regularization",
+        type=float,
+        default=0.0,
+        help="Subtract mean policy entropy from the training objective to reduce overconfident action collapse.",
+    )
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument(
         "--model-out",
@@ -1086,6 +1114,8 @@ def main():
         parser.error("--danger-late-start-seconds must be greater than or equal to zero")
     if args.danger_late_horizon_seconds <= args.danger_late_start_seconds:
         parser.error("--danger-late-horizon-seconds must be greater than --danger-late-start-seconds")
+    if args.entropy_regularization < 0.0:
+        parser.error("--entropy-regularization must be greater than or equal to zero")
 
     try:
         dataset = load_trajectory_dataset(args.dataset, limit=args.limit_samples)

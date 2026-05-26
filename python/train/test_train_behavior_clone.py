@@ -65,6 +65,7 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         danger_late_start_seconds=60.0,
         danger_late_horizon_seconds=300.0,
         danger_late_weight=1.0,
+        entropy_regularization=0.0,
         class_weighting="none",
         batch_size=4,
         epochs=1,
@@ -126,3 +127,14 @@ def test_sequence_diagnostics_report_context_padding_and_transitions():
     assert set(diagnostics["per_map"]) == {"caramel-workshop", "soda-creek"}
     assert diagnostics["per_map"]["soda-creek"]["sample_count"] == 4
     assert diagnostics["per_map"]["caramel-workshop"]["sample_count"] == 4
+
+
+def test_entropy_regularization_is_reported(tmp_path):
+    args = args_for(tmp_path, architecture="mlp", context_frames=2)
+    args.entropy_regularization = 0.05
+    report = train_behavior_clone(tiny_dataset(), args)
+
+    assert report["training"]["entropy_regularization"] == 0.05
+    assert report["final"]["train_entropy_nats"] > 0.0
+    assert report["final"]["validation_entropy_nats"] > 0.0
+    assert report["final"]["train_cross_entropy_loss"] >= report["final"]["train_loss"]

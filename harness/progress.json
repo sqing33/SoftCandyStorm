@@ -1543,6 +1543,11 @@
       "id": "rl_behavior_clone_sequence_diagnostics",
       "summary": "为 behavior clone dry-run / training report 增加 sequence_diagnostics，记录 context padding、sequence span、动作持续性、per-map 分布和晚期低血量覆盖；context8 GRU 数据诊断 21950 条样本，fully seeded ratio 98.56%、late low-health ratio 23.43%，无诊断 flag，说明下一步应转向动作约束、分阶段 policy 或 PPO 蒸馏初始化。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_sequence_diagnostic_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_entropy_regularization",
+      "summary": "为 behavior clone 训练增加 --entropy-regularization 动作分布约束旋钮，训练报告同时输出正则化目标、plain cross entropy 与 entropy；512 样本 GRU context8 smoke 成功写出模型与报告，结论保持 behavior_clone_smoke_only_not_policy_gate。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_entropy_regularization_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1552,7 +1557,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "序列模型诊断已完成且未发现 context padding、晚期低血量覆盖或地图样本占比的直接异常；下一步应做动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
+      "summary": "序列模型诊断和 entropy regularization 动作约束入口已完成；下一步应运行更完整的正则化 GRU / 分阶段 policy / PPO 蒸馏初始化实验，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
     },
     {
       "id": "phase4_full_pack_manual_review",

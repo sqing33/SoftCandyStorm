@@ -270,6 +270,19 @@ python3 python/train/train_behavior_clone.py \
 
 Treat `high_context_padding`, `high_action_persistence`, `low_late_low_health_coverage`, or `map_sample_imbalance` as `watch` signals that should be explained before another long GRU training run.
 
+When deterministic policies become overconfident, use `--entropy-regularization <weight>` as a small confidence-penalty experiment. The training objective subtracts mean policy entropy from cross entropy, while the report keeps both `train_loss` and `train_cross_entropy_loss` so the regularized objective cannot be confused with plain imitation accuracy:
+
+```bash
+python3 python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --architecture gru \
+  --context-frames 8 \
+  --map-conditioning one_hot \
+  --entropy-regularization 0.02
+```
+
+This is only an action-distribution diagnostic knob. A checkpoint trained with entropy regularization still needs the normal 60/300 second high-pressure comparison and RL policy acceptance review.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash
