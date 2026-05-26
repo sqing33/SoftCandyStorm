@@ -573,4 +573,4 @@ python3 tools/validate_content_schema_contract.py content/base_demo harness/gene
 python3 harness/content_review/validate_content_candidate_design_review.py harness/content_review/reviews/<review>.json --repo-root .
 ```
 
-该审查会绑定 `source_patch_manifest.contents`，要求覆盖每个新增候选 id，并检查主题适配、差异性、流派潜力、反制可读性、美术 / 音效适配和风险。通过结论只能是后续 `simulate_candidate` 候选，不能替代 Schema、预算、仿真、Replay 或最终人工试玩。
+该审查会绑定 `source_patch_manifest.contents`，要求覆盖每个新增候选 id，并检查主题适配、差异性、流派潜力、反制可读性、美术 / 音效适配和风险。通过结论只能是后续 `simulate_candidate` 候选，不能替代 Schema、预算、仿真、Replay 或最终人工试玩。若生成 `simulation_candidate_manifest.json`，还必须用 `harness/content_review/validate_content_simulation_candidate_manifest.py` 确认它继续绑定源候选、source patch、preflight 报告和人工设计审查，且不声明已写入 validated/simulated/playtest/accepted 阶段。

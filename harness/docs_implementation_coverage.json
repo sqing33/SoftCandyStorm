@@ -110,7 +110,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 新增候选已有设计审查草稿和校验器；正式 accepted_content 仍受仿真与人工试玩门禁限制。",
+      "summary": "base_demo 与 generated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 新增候选已有设计审查草稿、校验器和 simulation candidate manifest 门禁；正式 accepted_content 仍受仿真与人工试玩门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -122,10 +122,14 @@
             "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md",
             "harness/content_review/create_content_candidate_design_review_draft.py",
             "harness/content_review/validate_content_candidate_design_review.py",
+            "harness/content_review/promote_content_simulation_candidate.py",
+            "harness/content_review/validate_content_simulation_candidate_manifest.py",
+            "harness/content_review/content_simulation_candidate_manifest_template.json",
+            "harness/reports/2026-05-26_content_simulation_candidate_manifest_template_001/summary.md",
             "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json"
           ],
           "gaps": [
-            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿仍待真人填写通过。",
+            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿仍待真人填写通过，simulation candidate 模板当前也必须保持 invalid。",
             "缺少恢复二进制后的正式 Harness validate-candidates、Bot 仿真和人工试玩接受证据。"
           ]
         }
@@ -274,7 +278,7 @@
       "doc_id": "10",
       "doc_path": "docs/10_AI内容生成流水线.md",
       "status": "partial",
-      "summary": "内容候选、物化、预检、内容设计审查草稿 / 校验器、素材 metadata 和 provenance 校验已实现；候选进入 accepted_content 仍需要仿真与人工确认。",
+      "summary": "内容候选、物化、预检、内容设计审查草稿 / 校验器、simulation candidate manifest 门禁、素材 metadata 和 provenance 校验已实现；候选进入 accepted_content 仍需要仿真与人工确认。",
       "coverage": [
         {
           "id": "candidate-pipeline",
@@ -287,11 +291,14 @@
             "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md",
             "harness/content_review/create_content_candidate_design_review_draft.py",
             "harness/content_review/validate_content_candidate_design_review.py",
+            "harness/content_review/promote_content_simulation_candidate.py",
+            "harness/content_review/validate_content_simulation_candidate_manifest.py",
+            "harness/reports/2026-05-26_content_simulation_candidate_manifest_template_001/summary.md",
             "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json"
           ],
           "gaps": [
             "当前 full pack 仍是 generated candidate，尚未通过恢复后的正式 Harness 仿真。",
-            "内容设计审查已有草稿和校验器，但尚未由真人填写通过；人工试玩候选和 accepted_content 接受链路需要真实审查证据。"
+            "内容设计审查已有草稿、校验器和 simulation candidate manifest 门禁，但尚未由真人填写通过；人工试玩候选和 accepted_content 接受链路需要真实审查证据。"
           ]
         }
       ]
@@ -385,7 +392,7 @@
       "doc_id": "13",
       "doc_path": "docs/13_内容数据Schema设计.md",
       "status": "partial",
-      "summary": "JSON 内容格式、独立 Schema 契约、跨文件语义引用、候选预检和内容设计审查门禁已有实现；恢复后的正式 Rust/GameCore 校验闭环仍待补齐。",
+      "summary": "JSON 内容格式、独立 Schema 契约、跨文件语义引用、候选预检、内容设计审查门禁和 simulation candidate manifest 门禁已有实现；恢复后的正式 Rust/GameCore 校验闭环仍待补齐。",
       "coverage": [
         {
           "id": "content-schema-contract",
@@ -397,7 +404,9 @@
             "harness/reports/2026-05-26_content_schema_contract_001/summary.md",
             "content/base_demo/weapons/rainbow-candy-shot.json",
             "crates/game_core/src/content.rs",
-            "tools/validate_materialized_content_pack.py"
+            "tools/validate_materialized_content_pack.py",
+            "harness/content_review/validate_content_simulation_candidate_manifest.py",
+            "harness/reports/2026-05-26_content_simulation_candidate_manifest_template_001/summary.md"
           ],
           "gaps": [
             "需要恢复 Rust 二进制后重跑 GameCore 内容加载和 Harness validate-content。",
