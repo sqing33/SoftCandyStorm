@@ -17,6 +17,7 @@
 6. 如果人工审校结论为 `ui_candidate`，可运行 `promote_story_codex_ui_candidate.py` 复制到 `harness/story_review/ui_candidates/`，作为后续 Runtime UI 接入候选。
 7. UI 候选目录中的 `ui_candidate_manifest.json` 必须再通过 `validate_story_codex_ui_candidate_manifest.py`，确认它仍不写入 `accepted_content`、不标记 Runtime 集成，并绑定有效人工审校记录。
 8. UI 候选经过 Runtime UI review 和最终人工接受后，才可以写入 `story_codex_acceptance_manifest_template.json` 对应的最终接受 manifest，并用 `validate_story_codex_acceptance_manifest.py` 校验。
+9. Runtime UI review 记录必须先用 `validate_story_codex_runtime_ui_review.py` 独立校验；final human acceptance 记录必须先用 `validate_story_codex_final_acceptance.py` 独立校验，且绑定已通过的 Runtime UI review。
 
 该门禁和 UI 候选晋级都不会把剧情或图鉴内容推进到 `accepted_content`，也不会替代未来 Runtime UI 验收。
 
@@ -82,6 +83,30 @@ python3 harness/story_review/create_story_codex_acceptance_review_packet.py \
 
 最终接受审查包会汇总 UI 候选 manifest、Runtime UI review、final human acceptance 和 manifest 顶层占位状态，方便真人补齐证据。它不校验最终接受通过、不复制剧情或图鉴正文、不接入 Runtime，也不批准发布。
 
+Runtime UI review 校验示例：
+
+```bash
+python3 harness/story_review/validate_story_codex_runtime_ui_review.py \
+  harness/story_review/runtime_ui_reviews/<review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/story_codex_runtime_ui_review.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+模板 `story_codex_runtime_ui_review_template.json` 保留 TODO 和占位 UI 候选路径，当前报告应为 `story_codex_runtime_ui_review_invalid`。它要求真人确认 F3 入口可见、没有加载 generated candidate 正文、没有 Runtime 集成声明，并记录至少两条具体观察。
+
+Final human acceptance 校验示例：
+
+```bash
+python3 harness/story_review/validate_story_codex_final_acceptance.py \
+  harness/story_review/final_acceptance/<review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/story_codex_final_acceptance.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+模板 `story_codex_final_acceptance_template.json` 保留 TODO、占位 Runtime UI review 路径和占位 UI 候选路径，当前报告应为 `story_codex_final_acceptance_invalid`。它只接受 `runtime_ui_review_pass` 之后的最终人工接受记录，并继续要求 `release_ready=false`、`runtime_integrated=false`。
+
 最终接受 manifest 校验示例：
 
 ```bash
@@ -92,4 +117,4 @@ python3 harness/story_review/validate_story_codex_acceptance_manifest.py \
   --markdown harness/reports/<report-id>/summary.md
 ```
 
-模板 `story_codex_acceptance_manifest_template.json` 也保留 TODO 和占位 review 路径，当前报告应为 `story_codex_acceptance_manifest_invalid`。它要求绑定已通过的 UI 候选 manifest、Runtime UI review 记录和 final human acceptance 记录；即使将来报告有效，也只说明剧情 / 图鉴文本可以作为 accepted story/codex 内容，仍不代表 Runtime 已集成、发布包 ready 或可以跳过试玩 / 隐私 / 打包门禁。
+模板 `story_codex_acceptance_manifest_template.json` 也保留 TODO 和占位 review 路径，当前报告应为 `story_codex_acceptance_manifest_invalid`。它要求绑定已通过的 UI 候选 manifest、已通过的 Runtime UI review 记录和已通过的 final human acceptance 记录；即使将来报告有效，也只说明剧情 / 图鉴文本可以作为 accepted story/codex 内容，仍不代表 Runtime 已集成、发布包 ready 或可以跳过试玩 / 隐私 / 打包门禁。

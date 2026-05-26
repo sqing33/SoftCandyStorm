@@ -18,6 +18,8 @@ from validate_story_codex_ui_candidate_manifest import (
     build_report as build_ui_candidate_manifest_report,
     load_json_object,
 )
+from validate_story_codex_runtime_ui_review import build_report as build_runtime_ui_review_report
+from validate_story_codex_final_acceptance import build_report as build_final_acceptance_report
 
 
 EXPECTED_CONTRACT_ID = "story-codex-acceptance-manifest-v0"
@@ -32,28 +34,10 @@ REQUIRED_RULES = {
     "requires_final_human_acceptance": True,
     "generated_candidate_direct_acceptance_allowed": False,
 }
-RUNTIME_UI_REVIEW_REQUIRED_FLAGS = {
-    "f3_entry_visible": True,
-    "no_generated_candidate_text_loaded": True,
-    "no_runtime_integration_claim": True,
-    "layout_readable": True,
-}
-FINAL_ACCEPTANCE_REQUIRED_FLAGS = {
-    "accepts_story_codex_text": True,
-    "accepted_content_only_after_reviews": True,
-    "release_ready": False,
-    "runtime_integrated": False,
-}
 
 
 def is_nonempty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
-
-
-def string_list(value: Any) -> list[str]:
-    if not isinstance(value, list):
-        return []
-    return [item for item in value if isinstance(item, str) and item.strip()]
 
 
 def has_placeholder(value: Any) -> bool:
@@ -161,64 +145,60 @@ def validate_ui_candidate_manifest(
     return report
 
 
-def validate_required_flags(
-    payload: dict[str, Any],
-    field: str,
-    expected_flags: dict[str, bool],
-    label: str,
-    errors: list[str],
-) -> None:
-    flags = payload.get(field)
-    if not isinstance(flags, dict):
-        errors.append(f"{label}.{field} must be an object")
-        return
-    for flag, expected in expected_flags.items():
-        if flags.get(flag) is not expected:
-            errors.append(f"{label}.{field}.{flag} must be {json.dumps(expected)}")
-
-
-def validate_review_file(
+def validate_runtime_ui_review_file(
     path: Path | None,
     repo_root: Path,
     manifest_payload: dict[str, Any],
-    expected_review_type: str,
-    expected_decision: str,
-    required_flags: dict[str, bool],
-    label: str,
     errors: list[str],
 ) -> dict[str, Any] | None:
     if path is None:
         return None
     try:
+        report = build_runtime_ui_review_report(path, repo_root)
         payload = load_json_object(path)
     except (OSError, ValueError, json.JSONDecodeError) as error:
-        errors.append(f"{label} is invalid JSON: {error}")
+        errors.append(f"runtime_ui_review_file is invalid JSON: {error}")
         return None
 
-    if not isinstance(payload.get("review_version"), int) or payload["review_version"] <= 0:
-        errors.append(f"{label}.review_version must be a positive integer")
-    if payload.get("review_type") != expected_review_type:
-        errors.append(f"{label}.review_type must be `{expected_review_type}`")
+    if report["decision"] != "story_codex_runtime_ui_review_valid":
+        errors.append("runtime_ui_review_file must validate")
+    if report.get("gate_decision") != "runtime_ui_review_pass":
+        errors.append("runtime_ui_review_file.decision must be `runtime_ui_review_pass`")
     if payload.get("candidate_pack_id") != manifest_payload.get("candidate_pack_id"):
-        errors.append(f"{label}.candidate_pack_id must match acceptance manifest")
+        errors.append("runtime_ui_review_file.candidate_pack_id must match acceptance manifest")
     if payload.get("source_ui_candidate_manifest") != manifest_payload.get("source_ui_candidate_manifest"):
-        errors.append(f"{label}.source_ui_candidate_manifest must match acceptance manifest")
-    if payload.get("decision") != expected_decision:
-        errors.append(f"{label}.decision must be `{expected_decision}`")
-    for field in ("reviewer", "reviewed_at", "summary"):
-        if not is_nonempty_string(payload.get(field)):
-            errors.append(f"{label}.{field} must be non-empty")
-        elif has_placeholder(payload.get(field)):
-            errors.append(f"{label}.{field} must not contain TODO or placeholder markers")
+        errors.append("runtime_ui_review_file.source_ui_candidate_manifest must match acceptance manifest")
 
-    concrete_observations = string_list(payload.get("concrete_observations"))
-    if len(concrete_observations) < 2:
-        errors.append(f"{label}.concrete_observations must contain at least two concrete items")
-    unresolved_issues = string_list(payload.get("unresolved_issues"))
-    if unresolved_issues:
-        errors.append(f"{label}.unresolved_issues must be empty for {expected_decision}")
-    validate_required_flags(payload, "checks", required_flags, label, errors)
-    return payload
+    return {"report": report, "payload": payload}
+
+
+def validate_final_acceptance_file(
+    path: Path | None,
+    repo_root: Path,
+    manifest_payload: dict[str, Any],
+    errors: list[str],
+) -> dict[str, Any] | None:
+    if path is None:
+        return None
+    try:
+        report = build_final_acceptance_report(path, repo_root)
+        payload = load_json_object(path)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"final_human_acceptance_file is invalid JSON: {error}")
+        return None
+
+    if report["decision"] != "story_codex_final_acceptance_valid":
+        errors.append("final_human_acceptance_file must validate")
+    if report.get("gate_decision") != "accepted_content":
+        errors.append("final_human_acceptance_file.decision must be `accepted_content`")
+    if payload.get("candidate_pack_id") != manifest_payload.get("candidate_pack_id"):
+        errors.append("final_human_acceptance_file.candidate_pack_id must match acceptance manifest")
+    if payload.get("source_ui_candidate_manifest") != manifest_payload.get("source_ui_candidate_manifest"):
+        errors.append("final_human_acceptance_file.source_ui_candidate_manifest must match acceptance manifest")
+    if payload.get("runtime_ui_review_file") != manifest_payload.get("runtime_ui_review_file"):
+        errors.append("final_human_acceptance_file.runtime_ui_review_file must match acceptance manifest")
+
+    return {"report": report, "payload": payload}
 
 
 def build_report(manifest_path: Path, repo_root: Path) -> dict[str, Any]:
@@ -233,26 +213,21 @@ def build_report(manifest_path: Path, repo_root: Path) -> dict[str, Any]:
     final_acceptance_path = require_existing_repo_path(payload, "final_human_acceptance_file", repo_root, errors)
 
     ui_report = validate_ui_candidate_manifest(ui_manifest_path, repo_root, payload, errors)
-    runtime_ui_review = validate_review_file(
+    runtime_ui_review = validate_runtime_ui_review_file(
         runtime_ui_review_path,
         repo_root,
         payload,
-        "story_codex_runtime_ui_review",
-        "runtime_ui_review_pass",
-        RUNTIME_UI_REVIEW_REQUIRED_FLAGS,
-        "runtime_ui_review_file",
         errors,
     )
-    final_acceptance = validate_review_file(
+    final_acceptance = validate_final_acceptance_file(
         final_acceptance_path,
         repo_root,
         payload,
-        "story_codex_final_acceptance",
-        "accepted_content",
-        FINAL_ACCEPTANCE_REQUIRED_FLAGS,
-        "final_human_acceptance_file",
         errors,
     )
+
+    runtime_ui_review_report = runtime_ui_review["report"] if runtime_ui_review is not None else None
+    final_acceptance_report = final_acceptance["report"] if final_acceptance is not None else None
 
     return {
         "report_version": 1,
@@ -263,8 +238,18 @@ def build_report(manifest_path: Path, repo_root: Path) -> dict[str, Any]:
         "chapter_count": payload.get("chapter_count"),
         "codex_entry_count": payload.get("codex_entry_count"),
         "ui_candidate_manifest_decision": ui_report["decision"] if ui_report is not None else None,
-        "runtime_ui_review_decision": runtime_ui_review.get("decision") if runtime_ui_review is not None else None,
-        "final_acceptance_decision": final_acceptance.get("decision") if final_acceptance is not None else None,
+        "runtime_ui_review_report_decision": runtime_ui_review_report["decision"]
+        if runtime_ui_review_report is not None
+        else None,
+        "runtime_ui_review_decision": runtime_ui_review_report["gate_decision"]
+        if runtime_ui_review_report is not None
+        else None,
+        "final_acceptance_report_decision": final_acceptance_report["decision"]
+        if final_acceptance_report is not None
+        else None,
+        "final_acceptance_decision": final_acceptance_report["gate_decision"]
+        if final_acceptance_report is not None
+        else None,
         "errors": errors,
         "warnings": warnings,
         "limitations": [

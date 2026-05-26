@@ -145,6 +145,7 @@ def valid_final_acceptance(repo_root: Path) -> Path:
             "review_type": "story_codex_final_acceptance",
             "candidate_pack_id": "story-pack",
             "source_ui_candidate_manifest": "harness/story_review/ui_candidates/story-pack/ui_candidate_manifest.json",
+            "runtime_ui_review_file": "harness/story_review/runtime_ui_reviews/story-pack-runtime-ui.json",
             "reviewer": "final-human-reviewer",
             "reviewed_at": "2026-05-26",
             "decision": "accepted_content",
