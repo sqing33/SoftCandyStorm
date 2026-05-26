@@ -60,6 +60,7 @@ class SoftCandyStormEnv(gym.Env):
         content_dir="content/base_demo",
         harness_cmd=None,
         cwd=None,
+        upgrade_policy=None,
     ):
         self.seed_value = seed
         self.seconds = seconds
@@ -74,6 +75,10 @@ class SoftCandyStormEnv(gym.Env):
         self.content_dir = content_dir
         self.cwd = Path(cwd) if cwd is not None else Path(__file__).resolve().parents[2]
         self.harness_cmd = harness_cmd or self._default_harness_cmd()
+        self.upgrade_policy = upgrade_policy
+        self.last_info = None
+        self.last_observation = None
+        self.upgrade_policy_decision_count = 0
         self.process = None
         self.observation_len = None
         self.action_count = None
@@ -184,34 +189,78 @@ class SoftCandyStormEnv(gym.Env):
         self.map_id = response["info"]["map_id"]
         self.seconds = options.get("seconds", self.seconds)
         self.tick_rate = options.get("tick_rate", self.tick_rate)
+        self.last_info = response["info"]
+        self.last_observation = response["observation"]
+        self.upgrade_policy_decision_count = 0
         return self._observation(response["observation"]), response["info"]
 
     def step(self, action):
-        response = self._request({"command": "step", "action": int(action)})
+        payload = {"command": "step", "action": int(action)}
+        upgrade_decision = self._upgrade_choice_for_pending_prompt()
+        if upgrade_decision is not None:
+            payload["upgrade_choice"] = int(upgrade_decision["choice_index"])
+        response = self._request(payload)
+        info = response["info"]
+        if upgrade_decision is not None:
+            self.upgrade_policy_decision_count += 1
+            info["upgrade_policy_decision"] = upgrade_decision
+            info["upgrade_policy_decision_count"] = self.upgrade_policy_decision_count
+        self.last_info = info
+        self.last_observation = response["observation"]
         return (
             self._observation(response["observation"]),
             float(response["reward"]),
             bool(response["terminated"]),
             bool(response["truncated"]),
-            response["info"],
+            info,
         )
 
+    def _upgrade_choice_for_pending_prompt(self):
+        if self.upgrade_policy is None or not self.last_info:
+            return None
+        options = self.last_info.get("upgrade_options") or []
+        if not options:
+            return None
+        observation = self.last_observation
+        chooser = getattr(self.upgrade_policy, "choose", None)
+        if callable(chooser):
+            result = chooser(observation, options)
+        elif callable(self.upgrade_policy):
+            result = self.upgrade_policy(observation, options)
+        else:
+            raise RuntimeError("upgrade_policy must expose choose(observation, options) or be callable")
+        if isinstance(result, dict):
+            choice_index = int(result["choice_index"])
+            decision = dict(result)
+        else:
+            choice_index = int(result)
+            decision = {"choice_index": choice_index}
+        if choice_index < 0 or choice_index >= len(options):
+            raise RuntimeError(
+                f"upgrade_policy returned {choice_index} for {len(options)} upgrade options"
+            )
+        decision.setdefault("choice_upgrade_id", options[choice_index])
+        decision.setdefault("upgrade_options", list(options))
+        decision.setdefault("policy_kind", type(self.upgrade_policy).__name__)
+        return decision
+
     def close(self):
-        if self.process is None:
+        process = getattr(self, "process", None)
+        if process is None:
             return
-        if self.process.poll() is None:
+        if process.poll() is None:
             try:
                 self._request({"command": "close"})
             except RuntimeError:
                 pass
             try:
-                self.process.wait(timeout=0.5)
+                process.wait(timeout=0.5)
             except subprocess.TimeoutExpired:
-                self.process.terminate()
+                process.terminate()
                 try:
-                    self.process.wait(timeout=2)
+                    process.wait(timeout=2)
                 except subprocess.TimeoutExpired:
-                    self.process.kill()
+                    process.kill()
         self.process = None
 
     def __del__(self):

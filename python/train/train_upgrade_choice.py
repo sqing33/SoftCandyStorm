@@ -144,6 +144,80 @@ def build_upgrade_choice_model(input_len, hidden_size, nn_module):
     )
 
 
+class UpgradeChoiceRankerPolicy:
+    def __init__(self, checkpoint_path, checkpoint=None):
+        import torch
+        from torch import nn
+
+        self.checkpoint_path = str(checkpoint_path)
+        self.checkpoint = checkpoint or torch.load(checkpoint_path, map_location="cpu")
+        if self.checkpoint.get("kind") != "upgrade_choice_supervised_ranker":
+            raise ValueError("checkpoint is not an upgrade_choice_supervised_ranker")
+        self.vocabulary = list(self.checkpoint["upgrade_vocabulary"])
+        self.option_to_index = {
+            upgrade_id: index for index, upgrade_id in enumerate(self.vocabulary)
+        }
+        self.observation_len = int(self.checkpoint["observation_len"])
+        self.input_len = int(self.checkpoint["input_len"])
+        self.unknown_option_score = float(self.checkpoint.get("unknown_option_score", -1.0e6))
+        self.model = build_upgrade_choice_model(
+            self.input_len,
+            int(self.checkpoint["hidden_size"]),
+            nn,
+        )
+        self.model.load_state_dict(self.checkpoint["model_state_dict"])
+        self.model.eval()
+
+    def choose(self, observation, upgrade_options):
+        scores = self.option_scores(observation, upgrade_options)
+        choice_index = max(range(len(scores)), key=lambda index: scores[index])
+        return {
+            "choice_index": choice_index,
+            "choice_upgrade_id": upgrade_options[choice_index],
+            "policy_kind": "upgrade_choice_ranker",
+            "model_path": self.checkpoint_path,
+            "scores": [
+                {"upgrade_id": option, "score": round(float(score), 6)}
+                for option, score in zip(upgrade_options, scores)
+            ],
+        }
+
+    def option_scores(self, observation, upgrade_options):
+        import torch
+
+        if not upgrade_options:
+            raise ValueError("upgrade_options must not be empty")
+        if observation is None:
+            raise ValueError("observation is required for upgrade choice ranking")
+        if len(observation) != self.observation_len:
+            raise ValueError(
+                f"upgrade choice model expects observation_len {self.observation_len}, got {len(observation)}"
+            )
+        features = []
+        known_rows = []
+        known_indices = []
+        for index, option in enumerate(upgrade_options):
+            option_features = [0.0] * len(self.vocabulary)
+            option_index = self.option_to_index.get(option)
+            if option_index is None:
+                continue
+            option_features[option_index] = 1.0
+            features.append([float(value) for value in observation] + option_features)
+            known_indices.append(index)
+            known_rows.append(option)
+        scores = [self.unknown_option_score for _ in upgrade_options]
+        if known_rows:
+            with torch.no_grad():
+                logits = self.model(torch.tensor(features, dtype=torch.float32)).reshape(-1)
+            for option_index, score in zip(known_indices, logits.tolist()):
+                scores[option_index] = float(score)
+        return scores
+
+
+def load_upgrade_choice_policy(checkpoint_path):
+    return UpgradeChoiceRankerPolicy(checkpoint_path)
+
+
 def row_mask_for_groups(group_ids, selected_groups):
     selected = set(int(group_id) for group_id in selected_groups)
     return [index for index, group_id in enumerate(group_ids) if group_id in selected]
@@ -265,6 +339,7 @@ def train_upgrade_choice_model(dataset, args):
             "observation_len": rows["observation_len"],
             "input_len": rows["input_len"],
             "hidden_size": args.hidden_size,
+            "unknown_option_score": -1.0e6,
             "trained_at": datetime.now(timezone.utc).isoformat(),
             "limitations": [
                 "This model scores upgrade options from supervised rule Bot samples only.",

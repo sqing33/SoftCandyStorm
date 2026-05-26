@@ -7,7 +7,7 @@ The current bridge is Phase 1 only:
 - 9 discrete movement actions.
 - Headless `GameCore` through `game_harness gym-bridge`.
 - Observation v2 with player stat modifiers, enemy relative velocity/radius/elite/behavior features, active hazard direction, boss summary, map dimensions, and corner proximity.
-- Upgrade choices handled by the bridge rule policy.
+- Upgrade choices default to the bridge's first-option fallback, but evaluation/comparison can pass an optional supervised upgrade-choice ranker.
 - DQN/PPO config is intentionally small for smoke runs.
 
 ## Dependency Check
@@ -384,7 +384,24 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
   --report harness/reports/local_upgrade_choice/run_output.json
 ```
 
-The ranker expands each upgrade prompt into one option row per offered upgrade, appends an upgrade-id one-hot feature to the observation, and learns which option the rule Bot chose. The first 4-choice smoke writes a checkpoint and `upgrade_choice_training_smoke_not_policy_gate`; it is not connected to Gym upgrade action mode yet.
+The ranker expands each upgrade prompt into one option row per offered upgrade, appends an upgrade-id one-hot feature to the observation, and learns which option the rule Bot chose. The first 4-choice smoke writes a checkpoint and `upgrade_choice_training_smoke_not_policy_gate`; it proves model plumbing only, not upgrade strategy quality.
+
+Pass `--upgrade-choice-model` during `--evaluate-model` or `--compare-rule-bots` to let the Gym bridge use that ranker for pending upgrade prompts:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py \
+  --algorithm ppo \
+  --evaluate-model \
+  --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_smoke.pt \
+  --upgrade-choice-model harness/reports/2026-05-27_rl_upgrade_choice_training_smoke_001/upgrade_choice_smoke.pt \
+  --eval-episodes 1 \
+  --eval-seconds 60 \
+  --seed-start 57000 \
+  --map-id soda-creek \
+  --report harness/reports/local_upgrade_choice_gym/evaluation.json
+```
+
+Evaluation reports record `upgrade_policy`, per-episode `upgrade_policy_decisions`, and summary `upgrade_policy_decision_count`. The first 60-second `soda-creek` smoke reached one upgrade prompt and recorded one ranker decision, but it remains `gym_upgrade_action_mode_smoke_not_policy_gate`; run normal 60/300-second high-pressure comparisons before treating any movement + upgrade-policy pair as useful.
 
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 

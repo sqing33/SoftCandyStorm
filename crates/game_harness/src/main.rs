@@ -724,6 +724,7 @@ struct GymBridgeRequest {
     seconds: Option<f32>,
     tick_rate: Option<u32>,
     action: Option<usize>,
+    upgrade_choice: Option<usize>,
 }
 
 #[derive(Debug, Serialize)]
@@ -2575,7 +2576,7 @@ impl GymBridgeState {
                         format!("action must be in 0..{}", GYM_ACTION_COUNT),
                     );
                 }
-                self.step(action_index)
+                self.step(action_index, request.upgrade_choice)
             }
             "close" => self.response(
                 "close",
@@ -2588,7 +2589,7 @@ impl GymBridgeState {
         }
     }
 
-    fn step(&mut self, action_index: usize) -> GymBridgeResponse {
+    fn step(&mut self, action_index: usize, upgrade_choice: Option<usize>) -> GymBridgeResponse {
         if self.core.is_terminal() {
             return self.response(
                 "step",
@@ -2616,9 +2617,19 @@ impl GymBridgeState {
                 upgrade_choice: None,
             }
         } else {
+            let choice = upgrade_choice.unwrap_or(0);
+            if choice >= snapshot.upgrade_options.len() {
+                return self.error_response(
+                    "step",
+                    format!(
+                        "upgrade_choice must be in 0..{}",
+                        snapshot.upgrade_options.len()
+                    ),
+                );
+            }
             game_core::PlayerAction {
                 movement: Vec2::ZERO,
-                upgrade_choice: Some(0),
+                upgrade_choice: Some(choice),
             }
         };
         let result = self
@@ -6393,9 +6404,9 @@ mod tests {
     use super::{
         content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_action_index,
         gym_discrete_movement, gym_observation, gym_observation_len, gym_reward_breakdown,
-        gym_safety_delta_reward, gym_safety_risk_score, movement_changed, ManualAcceptanceDecision,
-        GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN, GYM_REWARD_SAFETY_DELTA_WEIGHT,
-        REQUIRED_PLAYTEST_RUN_IDS,
+        gym_safety_delta_reward, gym_safety_risk_score, movement_changed, GymBridgeRequest,
+        ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
+        GYM_REWARD_SAFETY_DELTA_WEIGHT, REQUIRED_PLAYTEST_RUN_IDS,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, HazardSnapshot, RewardHint,
@@ -6423,6 +6434,19 @@ mod tests {
         assert_eq!(gym_discrete_action_index(Vec2::new(1.0, 0.1)), 3);
         assert_eq!(gym_discrete_action_index(Vec2::new(-0.6, -0.8)), 6);
         assert_eq!(gym_discrete_action_index(Vec2::new(-0.2, 1.0)), 1);
+    }
+
+    #[test]
+    fn gym_bridge_request_accepts_upgrade_choice() {
+        let request: GymBridgeRequest = serde_json::from_value(json!({
+            "command": "step",
+            "action": 3,
+            "upgrade_choice": 2
+        }))
+        .expect("valid gym bridge request");
+
+        assert_eq!(request.action, Some(3));
+        assert_eq!(request.upgrade_choice, Some(2));
     }
 
     #[test]

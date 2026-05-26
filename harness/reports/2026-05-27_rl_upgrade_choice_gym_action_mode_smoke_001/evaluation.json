@@ -1,0 +1,310 @@
+{
+  "report_version": 1,
+  "status": "evaluated",
+  "phase": "rl_phase_1_movement_survival",
+  "map_id": "soda-creek",
+  "action_selection": "deterministic",
+  "upgrade_policy": {
+    "mode": "upgrade_choice_ranker",
+    "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_training_smoke_001/upgrade_choice_smoke.pt",
+    "limitations": [
+      "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+      "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+    ]
+  },
+  "episodes": [
+    {
+      "seed": 57000,
+      "map_id": "soda-creek",
+      "steps": 1801,
+      "reward": -5.4338,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 60.03276,
+      "terminal_kind": "victory",
+      "terminal_reason": "duration_reached",
+      "level": 2,
+      "kills": 67,
+      "xp_collected": 38.5,
+      "damage_taken": 87.080376,
+      "action_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 1801,
+        "4": 0,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 1801,
+        "mean_scores": {
+          "0": 0.0869,
+          "1": 0.1263,
+          "2": 0.0877,
+          "3": 0.2046,
+          "4": 0.0959,
+          "5": 0.1124,
+          "6": 0.0954,
+          "7": 0.0964,
+          "8": 0.0943
+        },
+        "mean_top_actions": [
+          {
+            "action": "3",
+            "score": 0.2046
+          },
+          {
+            "action": "1",
+            "score": 0.1263
+          },
+          {
+            "action": "5",
+            "score": 0.1124
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "2": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "3": {
+            "count": 1801,
+            "ratio": 1.0
+          },
+          "4": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "5": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "8": {
+            "count": 0,
+            "ratio": 0.0
+          }
+        },
+        "dominant_top_action": {
+          "action": "3",
+          "count": 1801,
+          "ratio": 1.0
+        },
+        "mean_chosen_action_score": 0.2046,
+        "chosen_action_score_sample_count": 1801
+      },
+      "upgrade_policy_decisions": [
+        {
+          "choice_index": 0,
+          "choice_upgrade_id": "rainbow-candy-shot-level-2",
+          "policy_kind": "upgrade_choice_ranker",
+          "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_training_smoke_001/upgrade_choice_smoke.pt",
+          "scores": [
+            {
+              "upgrade_id": "rainbow-candy-shot-level-2",
+              "score": 0.24165
+            },
+            {
+              "upgrade_id": "lollipop-boomerang",
+              "score": -1000000.0
+            },
+            {
+              "upgrade_id": "big-candy-jar",
+              "score": -1000000.0
+            }
+          ],
+          "upgrade_options": [
+            "rainbow-candy-shot-level-2",
+            "lollipop-boomerang",
+            "big-candy-jar"
+          ]
+        }
+      ],
+      "upgrade_policy_decision_count": 1,
+      "reward_breakdown": {
+        "action_repeat": -6.96,
+        "boss_pressure": 0.0,
+        "boundary_risk": -0.6219,
+        "damage_taken": -6.9664,
+        "enemy_pressure": -0.1634,
+        "hazard_risk": 0.0,
+        "kill": 5.36,
+        "level": 0.8,
+        "low_health": -0.0164,
+        "safety_delta": -0.0061,
+        "survival": 0.6003,
+        "terminal": 1.0,
+        "total": -5.4338,
+        "xp": 1.54
+      }
+    }
+  ],
+  "summary": {
+    "episodes": 1,
+    "win_rate": 1.0,
+    "average_survival_seconds": 60.0328,
+    "average_level": 2.0,
+    "average_kills": 67.0,
+    "average_reward": -5.4338,
+    "damage_taken_average": 87.0804,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 1801,
+        "ratio": 1.0
+      },
+      "4": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "action_entropy_bits": 0.0,
+    "normalized_action_entropy": 0.0,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 1801,
+      "mean_scores": {
+        "0": 0.0869,
+        "1": 0.1263,
+        "2": 0.0877,
+        "3": 0.2046,
+        "4": 0.0959,
+        "5": 0.1124,
+        "6": 0.0954,
+        "7": 0.0964,
+        "8": 0.0943
+      },
+      "mean_top_actions": [
+        {
+          "action": "3",
+          "score": 0.2046
+        },
+        {
+          "action": "1",
+          "score": 0.1263
+        },
+        {
+          "action": "5",
+          "score": 0.1124
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "3": {
+          "count": 1801,
+          "ratio": 1.0
+        },
+        "4": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "5": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "6": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "7": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "8": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "dominant_top_action": {
+        "action": "3",
+        "count": 1801,
+        "ratio": 1.0
+      },
+      "mean_chosen_action_score": 0.2046,
+      "chosen_action_score_sample_count": 1801
+    },
+    "upgrade_policy_decision_count": 1,
+    "reward_breakdown_average": {
+      "action_repeat": -6.96,
+      "boss_pressure": 0.0,
+      "boundary_risk": -0.6219,
+      "damage_taken": -6.9664,
+      "enemy_pressure": -0.1634,
+      "hazard_risk": 0.0,
+      "kill": 5.36,
+      "level": 0.8,
+      "low_health": -0.0164,
+      "safety_delta": -0.0061,
+      "survival": 0.6003,
+      "terminal": 1.0,
+      "total": -5.4338,
+      "xp": 1.54
+    }
+  },
+  "policy_kind": "behavior_clone",
+  "algorithm": "behavior_clone",
+  "model_path": "python/train/models/behavior_clone_kite_high_pressure_smoke.pt",
+  "limitations": [
+    "Behavior clone evaluation reuses the Gym bridge and action diagnostics, but it is still not a balance or fun gate.",
+    "The clone still predicts movement actions only; an optional upgrade-choice ranker can fill upgrade prompts during evaluation."
+  ],
+  "upgrade_policy_kind": "upgrade_choice_ranker",
+  "upgrade_choice_model": "harness/reports/2026-05-27_rl_upgrade_choice_training_smoke_001/upgrade_choice_smoke.pt"
+}

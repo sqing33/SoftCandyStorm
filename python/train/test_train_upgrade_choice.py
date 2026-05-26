@@ -5,6 +5,7 @@ import pytest
 from python.train.train_behavior_clone import load_upgrade_choice_dataset
 from python.train.train_upgrade_choice import (
     build_upgrade_choice_rows,
+    load_upgrade_choice_policy,
     summarize_upgrade_choice_rows,
     train_upgrade_choice_model,
 )
@@ -118,12 +119,19 @@ def test_upgrade_choice_rows_expand_each_option_once():
 
 def test_upgrade_choice_training_smoke_writes_checkpoint(tmp_path):
     report = train_upgrade_choice_model(tiny_upgrade_dataset(), args_for(tmp_path))
+    policy = load_upgrade_choice_policy(report["model_path"])
+    decision = policy.choose(
+        [0.1, 0.2, 0.3],
+        ["bubble-shoes", "cream-clockwork", "unknown-upgrade"],
+    )
 
     assert report["status"] == "trained"
     assert report["gate_decision"] == "upgrade_choice_training_smoke_not_policy_gate"
     assert report["rows"]["choice_count"] == 4
     assert report["training"]["validation_choice_count"] == 1
     assert (tmp_path / "upgrade_choice.pt").exists()
+    assert 0 <= decision["choice_index"] < 3
+    assert decision["scores"][2]["score"] < -1000.0
 
 
 def test_upgrade_choice_loader_rejects_mismatched_choice(tmp_path):

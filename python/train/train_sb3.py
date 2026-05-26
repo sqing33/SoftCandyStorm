@@ -14,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from python.gym_env import SoftCandyStormEnv
 from python.train.train_behavior_clone import load_behavior_clone_policy
+from python.train.train_upgrade_choice import load_upgrade_choice_policy
 
 
 REQUIRED_MODULES = ["gymnasium", "numpy", "stable_baselines3", "torch"]
@@ -140,6 +141,7 @@ def build_env(
     map_id=None,
     map_ids=None,
     map_selection="cycle",
+    upgrade_policy=None,
 ):
     env_cfg = config["environment"]
     selected_map_id = map_id if map_id is not None else env_cfg.get("map_id", "frosting-grassland")
@@ -152,6 +154,7 @@ def build_env(
         map_selection=map_selection,
         observation_version=env_cfg.get("observation_version", 2),
         content_dir=env_cfg["content_dir"],
+        upgrade_policy=upgrade_policy,
     )
 
 
@@ -425,9 +428,13 @@ def evaluate_saved_policy(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    upgrade_choice_model=None,
 ):
     model_class = stable_baselines_model_classes()[algorithm]
     model = model_class.load(model_path or default_model_path(config, algorithm))
+    upgrade_policy = (
+        load_upgrade_choice_policy(upgrade_choice_model) if upgrade_choice_model else None
+    )
     return evaluate_model(
         model,
         config,
@@ -436,6 +443,7 @@ def evaluate_saved_policy(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        upgrade_policy=upgrade_policy,
     )
 
 
@@ -449,8 +457,14 @@ def evaluate_policy_model(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    upgrade_choice_model=None,
 ):
     if behavior_clone_model is not None:
+        upgrade_policy = (
+            load_upgrade_choice_policy(upgrade_choice_model)
+            if upgrade_choice_model
+            else None
+        )
         return evaluate_behavior_clone_policy(
             config,
             behavior_clone_model,
@@ -459,6 +473,7 @@ def evaluate_policy_model(
             seed_start=seed_start,
             map_id=map_id,
             deterministic=deterministic,
+            upgrade_policy=upgrade_policy,
         )
     return evaluate_saved_policy(
         config,
@@ -469,6 +484,7 @@ def evaluate_policy_model(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        upgrade_choice_model=upgrade_choice_model,
     )
 
 
@@ -480,6 +496,7 @@ def evaluate_behavior_clone_policy(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    upgrade_policy=None,
 ):
     model_path = Path(model_path)
     policy = load_behavior_clone_policy(model_path)
@@ -491,14 +508,18 @@ def evaluate_behavior_clone_policy(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        upgrade_policy=upgrade_policy,
     )
     evaluation["policy_kind"] = "behavior_clone"
     evaluation["algorithm"] = "behavior_clone"
     evaluation["model_path"] = str(model_path)
     evaluation["limitations"] = [
         "Behavior clone evaluation reuses the Gym bridge and action diagnostics, but it is still not a balance or fun gate.",
-        "The current clone only predicts movement actions and cannot handle upgrade-choice decisions.",
+        "The clone still predicts movement actions only; an optional upgrade-choice ranker can fill upgrade prompts during evaluation.",
     ]
+    if upgrade_policy is not None:
+        evaluation["upgrade_policy_kind"] = "upgrade_choice_ranker"
+        evaluation["upgrade_choice_model"] = upgrade_policy.checkpoint_path
     return evaluation
 
 
@@ -510,6 +531,7 @@ def evaluate_model(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    upgrade_policy=None,
 ):
     seed_start = seed_start if seed_start is not None else config["evaluation"]["seed_start"]
     map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
@@ -518,7 +540,13 @@ def evaluate_model(
     total_reward = 0.0
     env = None
     try:
-        env = build_env(config, seed=seed_start, seconds=seconds, map_id=map_id)
+        env = build_env(
+            config,
+            seed=seed_start,
+            seconds=seconds,
+            map_id=map_id,
+            upgrade_policy=upgrade_policy,
+        )
         for index in range(episodes):
             seed = seed_start + index
             observation, info = env.reset(seed=seed, options={"seconds": seconds, "map_id": map_id})
@@ -534,6 +562,7 @@ def evaluate_model(
             episode_reward = 0.0
             action_counts = {str(action): 0 for action in range(info["action_count"])}
             action_score_tracker = new_action_score_tracker(info["action_count"])
+            upgrade_policy_decisions = []
             reward_breakdown_totals = {}
             while not terminated and not truncated and steps < max_steps:
                 action, _state = model.predict(
@@ -547,6 +576,8 @@ def evaluate_model(
                 )
                 action_counts[str(action_index)] = action_counts.get(str(action_index), 0) + 1
                 observation, reward, terminated, truncated, info = env.step(action_index)
+                if "upgrade_policy_decision" in info:
+                    upgrade_policy_decisions.append(info["upgrade_policy_decision"])
                 for key, value in info.get("reward_breakdown", {}).items():
                     reward_breakdown_totals[key] = reward_breakdown_totals.get(
                         key, 0.0
@@ -575,6 +606,8 @@ def evaluate_model(
                     "action_score_diagnostic": summarize_action_score_tracker(
                         action_score_tracker
                     ),
+                    "upgrade_policy_decisions": upgrade_policy_decisions,
+                    "upgrade_policy_decision_count": len(upgrade_policy_decisions),
                     "reward_breakdown": round_reward_breakdown(reward_breakdown_totals),
                 }
             )
@@ -589,6 +622,7 @@ def evaluate_model(
         "phase": config["phase"],
         "map_id": map_id,
         "action_selection": "deterministic" if deterministic else "stochastic",
+        "upgrade_policy": upgrade_policy_report(upgrade_policy),
         "episodes": episode_reports,
         "summary": summary,
     }
@@ -797,8 +831,27 @@ def summarize_evaluation(episodes, total_reward):
         summary["action_distribution"]
     )
     summary["action_score_diagnostic"] = summarize_action_score_diagnostics(episodes)
+    summary["upgrade_policy_decision_count"] = sum(
+        episode.get("upgrade_policy_decision_count", 0) for episode in episodes
+    )
     summary["reward_breakdown_average"] = summarize_reward_breakdown(episodes)
     return summary
+
+
+def upgrade_policy_report(upgrade_policy):
+    if upgrade_policy is None:
+        return {
+            "mode": "bridge_default_first_option",
+            "model_path": None,
+        }
+    return {
+        "mode": "upgrade_choice_ranker",
+        "model_path": getattr(upgrade_policy, "checkpoint_path", None),
+        "limitations": [
+            "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+            "Using an upgrade ranker during evaluation is not an RL policy acceptance gate.",
+        ],
+    }
 
 
 def round_reward_breakdown(values):
@@ -973,6 +1026,7 @@ def compare_policy_to_rule_bots(
     map_id=None,
     rule_bots=None,
     deterministic=True,
+    upgrade_choice_model=None,
 ):
     episodes = eval_episodes or config["evaluation"]["episodes"]
     seconds = eval_seconds or config["evaluation"]["seconds"]
@@ -989,6 +1043,7 @@ def compare_policy_to_rule_bots(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        upgrade_choice_model=upgrade_choice_model,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
     findings = comparison_findings(policy, rule_matrix["stdout"])
@@ -1004,6 +1059,8 @@ def compare_policy_to_rule_bots(
             behavior_clone_model,
         ),
         "policy_kind": policy.get("policy_kind", "sb3"),
+        "upgrade_policy": policy.get("upgrade_policy"),
+        "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "map_id": map_id,
         "action_selection": policy["action_selection"],
         "seed_start": seed_start,
@@ -1035,6 +1092,7 @@ def compare_policy_to_rule_bots_across_maps(
     rule_bots=None,
     deterministic=True,
     map_preset=None,
+    upgrade_choice_model=None,
 ):
     comparisons = [
         compare_policy_to_rule_bots(
@@ -1048,6 +1106,7 @@ def compare_policy_to_rule_bots_across_maps(
             map_id=map_id,
             rule_bots=rule_bots,
             deterministic=deterministic,
+            upgrade_choice_model=upgrade_choice_model,
         )
         for map_id in map_ids
     ]
@@ -1064,6 +1123,8 @@ def compare_policy_to_rule_bots_across_maps(
             behavior_clone_model,
         ),
         "policy_kind": "behavior_clone" if behavior_clone_model is not None else "sb3",
+        "upgrade_policy": comparisons[0].get("upgrade_policy") if comparisons else None,
+        "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "action_selection": comparisons[0]["action_selection"] if comparisons else None,
         "map_preset": map_preset,
         "map_ids": map_ids,
@@ -1344,6 +1405,11 @@ def main():
         default=None,
         help="Evaluate or compare a train_behavior_clone.py checkpoint instead of an SB3 zip.",
     )
+    parser.add_argument(
+        "--upgrade-choice-model",
+        default=None,
+        help="Optional train_upgrade_choice.py checkpoint used to choose upgrade prompts during evaluation/comparison.",
+    )
     parser.add_argument("--model-in", default=None)
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
@@ -1408,6 +1474,8 @@ def main():
         parser.error("--behavior-clone-model cannot be combined with --model")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
+    if args.upgrade_choice_model and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--upgrade-choice-model requires --evaluate-model or --compare-rule-bots")
 
     if args.copy_template:
         write_report(args.report, copy_template(args.copy_template))
@@ -1450,6 +1518,11 @@ def main():
                 seed_start=args.seed_start,
                 map_id=args.map_id,
                 deterministic=not args.eval_stochastic,
+                upgrade_choice_model=(
+                    Path(args.upgrade_choice_model)
+                    if args.upgrade_choice_model
+                    else None
+                ),
             ),
         )
         return
@@ -1475,6 +1548,11 @@ def main():
                     rule_bots=rule_bots,
                     deterministic=not args.eval_stochastic,
                     map_preset=args.compare_map_preset,
+                    upgrade_choice_model=(
+                        Path(args.upgrade_choice_model)
+                        if args.upgrade_choice_model
+                        else None
+                    ),
                 ),
             )
             return
@@ -1495,6 +1573,11 @@ def main():
                 map_id=args.map_id,
                 rule_bots=rule_bots,
                 deterministic=not args.eval_stochastic,
+                upgrade_choice_model=(
+                    Path(args.upgrade_choice_model)
+                    if args.upgrade_choice_model
+                    else None
+                ),
             ),
         )
         return

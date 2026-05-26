@@ -277,9 +277,11 @@ target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mi
 
 首个 `ent_coef = 0.02` 的 target-entropy warm-start 候选改善了 60 秒动作分布：high-pressure 三图 normalized entropy 为 0.5801 / 0.5823 / 0.5307，dominant action ratio 均低于 0.45；但短窗胜率仍只有 80% / 60% / 80%，300 秒三图仍全部 0%。结论：entropy coefficient 是短窗动作多样性修复方向，但不能解决 movement-only policy 的长局目标缺失。
 
-升级选择监督入口已经补上最小数据链路：`export-bot-trajectories --include-upgrade-samples true` 会在不破坏 movement dataset 的前提下输出 `upgrade_sample`，`train_behavior_clone.py` 的 movement loader 默认跳过并统计这些记录，`load_upgrade_choice_dataset` / `summarize_upgrade_choice_dataset` 可单独读取升级选择样本。当前 smoke 报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_export_smoke_001/summary.md`；下一步应基于该记录训练升级选择模型、把升级 action mode 纳入 Gym，或设计阶段目标监督，而不是继续只调 movement entropy。
+升级选择监督入口已经补上最小数据链路：`export-bot-trajectories --include-upgrade-samples true` 会在不破坏 movement dataset 的前提下输出 `upgrade_sample`，`train_behavior_clone.py` 的 movement loader 默认跳过并统计这些记录，`load_upgrade_choice_dataset` / `summarize_upgrade_choice_dataset` 可单独读取升级选择样本。当前 smoke 报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_export_smoke_001/summary.md`；后续应扩大多地图升级样本覆盖、改进升级词表和阶段目标监督，而不是继续只调 movement entropy。
 
-`python/train/train_upgrade_choice.py` 已提供首个监督升级选择 ranker smoke：它把每次升级 prompt 展开为一行一个候选升级，输入为 observation + upgrade id one-hot，目标为规则 Bot 选择的 upgrade。首个 4 choice / 12 row smoke 能写出 checkpoint 和报告，gate 为 `upgrade_choice_training_smoke_not_policy_gate`；它只证明模型管线，不代表升级策略质量，也尚未接入 Gym upgrade action mode。
+`python/train/train_upgrade_choice.py` 已提供首个监督升级选择 ranker smoke：它把每次升级 prompt 展开为一行一个候选升级，输入为 observation + upgrade id one-hot，目标为规则 Bot 选择的 upgrade。首个 4 choice / 12 row smoke 能写出 checkpoint 和报告，gate 为 `upgrade_choice_training_smoke_not_policy_gate`；它只证明模型管线，不代表升级策略质量。
+
+Gym bridge 现在支持在 `step` 请求中传入 `upgrade_choice`。`SoftCandyStormEnv` 可接收 `upgrade_policy`，在 pending upgrade prompt 时用上一帧 observation 和 `upgrade_options` 调用 ranker，并把选择写进 bridge payload。`train_sb3.py --upgrade-choice-model` 会加载 ranker 并在 evaluation / comparison 报告中记录 `upgrade_policy`、`upgrade_policy_decisions` 和 `upgrade_policy_decision_count`。首个 60 秒 `soda-creek` smoke 实际穿过 1 次升级 prompt，报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_gym_action_mode_smoke_001/summary.md`；gate 为 `gym_upgrade_action_mode_smoke_not_policy_gate`，仍不能作为 RL policy acceptance 或长局修复证据。
 
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
