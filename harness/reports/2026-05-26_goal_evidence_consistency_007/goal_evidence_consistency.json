@@ -14,26 +14,18 @@
   "release_candidate_ready": false,
   "release_package_status": "blocked",
   "blockers_seen": [
-    "local_binary_launch_blocked",
     "manual_asset_review_still_pending",
     "manual_playtest_still_pending",
     "phase8_public_demo_not_ready",
     "release_candidate_not_ready",
-    "rl_policy_multimap_generalization_gap"
+    "rl_policy_multimap_generalization_gap",
+    "rl_training_dependencies_missing"
   ],
   "errors": [],
-  "warnings": [],
+  "warnings": [
+    "local_binary_launch_blocked: not present in any checked ledger"
+  ],
   "checks": [
-    {
-      "id": "binary_blocker_sources",
-      "status": "pass",
-      "summary": "local_binary_launch_blocked is recorded in docs coverage, roadmap audit, progress, and package blockers."
-    },
-    {
-      "id": "binary_release_gates",
-      "status": "pass",
-      "summary": "Binary-dependent release gates are checked against the active local binary launch blocker."
-    },
     {
       "id": "manual_playtest_waiting",
       "status": "pass",
@@ -48,11 +40,6 @@
       "id": "not_ready_state_coherence",
       "status": "pass",
       "summary": "Docs, roadmap, RC evidence, and package manifest agree that the current local build is not ready."
-    },
-    {
-      "id": "binary_dependent_docs_not_complete",
-      "status": "pass",
-      "summary": "Binary-dependent docs remain incomplete while local binary launch is blocked."
     }
   ],
   "limitations": [
