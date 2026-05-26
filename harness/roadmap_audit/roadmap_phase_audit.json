@@ -1,0 +1,312 @@
+{
+  "report_version": 1,
+  "updated_at": "2026-05-26",
+  "scope": "docs/12 phase roadmap implementation audit",
+  "summary": "逐阶段记录 Phase 0-10 的当前实现状态、可审计证据、剩余 gap、blocker 和下一步。状态必须保守：缺少运行验证、人工试玩、正式素材或发布证据时，不得标为 complete。",
+  "phases": [
+    {
+      "phase": 0,
+      "title": "文档与方向锁定",
+      "status": "complete",
+      "goal": "确定《软糖风暴》的游戏方向、文档体系、技术路线和 Harness 原则。",
+      "acceptance": [
+        "docs/00-19 文档存在并在索引中可达",
+        "AGENTS.md 必读清单覆盖关键文档",
+        "Goal 模式开发约定和 Git 提交节奏已文档化"
+      ],
+      "evidence": [
+        "docs/00_index.md",
+        "AGENTS.md",
+        "docs/19_Goal模式开发约定.md",
+        "harness/reports/2026-05-26_docs_index_validation_001/summary.md"
+      ],
+      "gaps": [],
+      "blockers": [],
+      "next_actions": []
+    },
+    {
+      "phase": 1,
+      "title": "Bevy GameCore 原型",
+      "status": "blocked",
+      "goal": "建立 headless 可跑的 GameCore，覆盖移动、敌人、武器、XP、升级、波次和结算。",
+      "acceptance": [
+        "cargo test 通过",
+        "headless simulate 可以跑 600 秒",
+        "输出 metrics",
+        "固定 seed 可复现"
+      ],
+      "evidence": [
+        "Cargo.toml",
+        "crates/game_core/src/lib.rs",
+        "harness/reports/2026-05-26_gamecore_api_contract_001/summary.md",
+        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+      ],
+      "gaps": [
+        "当前只能证明源码形状和历史实现痕迹，不能重新运行 cargo test 或 headless simulate。",
+        "恢复二进制后需要重跑 GameCore 单测、Harness simulate、Replay 回归和 Gym smoke。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked"
+      ],
+      "next_actions": [
+        "恢复本机新编译 Mach-O 可执行文件启动能力。",
+        "恢复后先运行 cargo test --workspace 和 game_harness simulate quick。"
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "Bevy Runtime 可玩版",
+      "status": "blocked",
+      "goal": "把 GameCore 可视化，做到本地可玩并保留同一核心逻辑。",
+      "acceptance": [
+        "人工能完整玩一局",
+        "Runtime 与 headless 使用同一核心逻辑",
+        "画面能清楚表达怪潮和升级"
+      ],
+      "evidence": [
+        "crates/game_runtime/src/main.rs",
+        "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md",
+        "harness/playtest/runtime_manual_review_pack.md",
+        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+      ],
+      "gaps": [
+        "历史 Runtime capture 只能证明曾经能写报告，当前二进制启动阻塞后不能重新验证。",
+        "缺少真实人工完整试玩记录和可读性评分。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked",
+        "manual_playtest_still_pending"
+      ],
+      "next_actions": [
+        "恢复 Runtime 启动后运行 demo capture 和 9 局人工试玩审查。"
+      ]
+    },
+    {
+      "phase": 3,
+      "title": "规则 Bot 与 Harness",
+      "status": "blocked",
+      "goal": "支持多 Bot、多 seed、报告、失败案例和内容拒绝。",
+      "acceptance": [
+        "一条命令跑多 Bot 多 seed",
+        "输出 summary.md 和 metrics.json",
+        "能拒绝明显坏内容"
+      ],
+      "evidence": [
+        "crates/game_harness/src/main.rs",
+        "tools/validate_failure_cases.py",
+        "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md",
+        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+      ],
+      "gaps": [
+        "纯 Python 报告引用和 failure case 校验可用，但当前不能重跑 Rust Harness matrix、simulate 或 replay-batch。",
+        "历史 progress 仍有缺少 report 的条目，需要继续回填或整理。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked"
+      ],
+      "next_actions": [
+        "恢复二进制后重跑 all Bot matrix 与 strict replay-batch。",
+        "继续减少 progress 无 report warning。"
+      ]
+    },
+    {
+      "phase": 4,
+      "title": "内容配置化与首批内容",
+      "status": "partial",
+      "goal": "结构化首批角色、武器、被动、进化、敌人、Boss、地图和波次。",
+      "acceptance": [
+        "内容 schema 通过",
+        "Bot 门禁通过",
+        "人工试玩可接受"
+      ],
+      "evidence": [
+        "content/base_demo/characters/jar-keeper.json",
+        "harness/reports/2026-05-26_content_schema_contract_001/summary.md",
+        "harness/reports/2026-05-26_phase4_roster_targets_candidate_full_pack_001/summary.md",
+        "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md"
+      ],
+      "gaps": [
+        "Phase 4 full pack 仍在 generated_candidates，不是正式 accepted_content。",
+        "缺少恢复二进制后的正式 validate-candidates、Bot 仿真和人工试玩接受证据。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked",
+        "manual_playtest_still_pending"
+      ],
+      "next_actions": [
+        "恢复二进制后推进 full pack 到 validate-candidates / simulate-candidates。",
+        "人工试玩通过后再考虑 accepted_content。"
+      ]
+    },
+    {
+      "phase": 5,
+      "title": "AI 内容生成闭环",
+      "status": "partial",
+      "goal": "AI 生成候选内容，由 Harness 筛选、修正并推进到人工试玩候选。",
+      "acceptance": [
+        "AI 生成一批内容",
+        "Harness 自动拒绝坏内容",
+        "至少有部分内容进入人工试玩候选"
+      ],
+      "evidence": [
+        "harness/generated_candidates/2026-05-26_story_codex_seed_pack/README.md",
+        "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md",
+        "harness/reports/2026-05-25_candidate_playtest_promotion_smoke_001/summary.md",
+        "harness/playtest/content_acceptance_review_template.json"
+      ],
+      "gaps": [
+        "已有候选、预检和人工门禁模板，但缺少真实人工试玩接受记录。",
+        "候选进入 accepted_content 的链路仍只能用模板和 smoke 证明结构，不能证明内容质量。"
+      ],
+      "blockers": [
+        "manual_playtest_still_pending",
+        "local_binary_launch_blocked"
+      ],
+      "next_actions": [
+        "恢复二进制后对候选执行正式 simulate-candidates。",
+        "收集人工审查记录并运行 strict acceptance 校验。"
+      ]
+    },
+    {
+      "phase": 6,
+      "title": "AI Bot 训练",
+      "status": "blocked",
+      "goal": "接入 Gymnasium/SB3，并让 RL Bot 成为高级压力测试工具。",
+      "acceptance": [
+        "RL Bot 学会基础生存",
+        "RL Bot 超过 RandomBot",
+        "RL Bot 能发现至少一种规则 Bot 未发现的问题"
+      ],
+      "evidence": [
+        "python/gym_env/soft_candy_env.py",
+        "python/train/train_sb3.py",
+        "python/train/train_behavior_clone.py",
+        "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_smoke_001/summary.md"
+      ],
+      "gaps": [
+        "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
+        "context3 behavior clone 已训练但 Gym 评估被本机二进制启动阻塞。",
+        "当前 RL Bot 不能作为正式压力测试基线。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked",
+        "rl_policy_multimap_generalization_gap"
+      ],
+      "next_actions": [
+        "恢复二进制后完成 context3 BC 60/300 秒 high-pressure 对比。",
+        "继续做多图 curriculum 或策略蒸馏，不用单图微调替代泛化修复。"
+      ]
+    },
+    {
+      "phase": 7,
+      "title": "美术与音频垂直切片",
+      "status": "partial",
+      "goal": "形成对外可展示风格，覆盖主角、敌人、武器特效、Boss、HUD、升级卡牌、BGM 和音效。",
+      "acceptance": [
+        "可以录制 30-60 秒宣传片段",
+        "画面可爱且战斗信息清晰"
+      ],
+      "evidence": [
+        "assets/prototype_topdown/manifest.json",
+        "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md",
+        "asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/metadata/postprocess_audio_v001.json",
+        "harness/asset_review/asset_candidate_manual_review_template.json"
+      ],
+      "gaps": [
+        "多批 mmx 素材仍为 repair，尚未由真人审查通过并接入正式 Runtime。",
+        "不能录制发布级宣传片段，因为 Runtime 当前无法重新启动验证。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked",
+        "manual_asset_review_still_pending"
+      ],
+      "next_actions": [
+        "继续生成更严格 top-down 单体素材候选或程序化占位升级版。",
+        "真人完成素材审查记录后再推进正式接入。"
+      ]
+    },
+    {
+      "phase": 8,
+      "title": "公开 Demo",
+      "status": "blocked",
+      "goal": "形成可给外部玩家试玩的 Demo。",
+      "acceptance": [
+        "公开 Demo 可稳定运行",
+        "收集玩家反馈",
+        "收集 replay/遥测，若启用"
+      ],
+      "evidence": [
+        "harness/reports/2026-05-26_release_candidate_evidence_current_local_001/summary.md",
+        "harness/reports/2026-05-26_save_state_contract_001/summary.md",
+        "harness/telemetry_privacy/telemetry_privacy_policy_template.json",
+        "harness/playtest/runtime_manual_review_pack.md"
+      ],
+      "gaps": [
+        "Release candidate 报告明确 not-ready。",
+        "缺少稳定运行证明、外部玩家反馈、真实人工试玩、Runtime 设置、本地存档 UI、图鉴 UI 和隐私说明。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked",
+        "manual_playtest_still_pending"
+      ],
+      "next_actions": [
+        "恢复二进制后先完成内部 Runtime smoke 和人工试玩包。",
+        "将 release_candidate_evidence 中 waiting/fail gate 逐项修到 pass。"
+      ]
+    },
+    {
+      "phase": 9,
+      "title": "上线前扩展",
+      "status": "pending",
+      "goal": "从 Demo 扩展为可售卖版本。",
+      "acceptance": [
+        "Release Candidate 全量门禁通过",
+        "人工试玩确认首小时体验",
+        "性能达标"
+      ],
+      "evidence": [
+        "harness/reports/2026-05-26_release_candidate_evidence_current_local_001/summary.md",
+        "harness/reports/2026-05-26_docs_implementation_coverage_001/summary.md"
+      ],
+      "gaps": [
+        "内容规模、成就、设置、手柄支持、Steam 页面素材、首小时人工体验和性能证据都未达到上线前要求。",
+        "当前 release candidate 仍为 not-ready。"
+      ],
+      "blockers": [
+        "local_binary_launch_blocked",
+        "manual_playtest_still_pending",
+        "release_candidate_not_ready"
+      ],
+      "next_actions": [
+        "先完成 Phase 7 和 Phase 8，再扩展 Phase 9 内容规模和发布素材。"
+      ]
+    },
+    {
+      "phase": 10,
+      "title": "上线后运营",
+      "status": "pending",
+      "goal": "用 AI + Harness 支持长期内容更新。",
+      "acceptance": [
+        "更新不破坏旧内容",
+        "Harness 报告稳定",
+        "玩家反馈可进入 AI 生成输入"
+      ],
+      "evidence": [
+        "docs/10_AI内容生成流水线.md",
+        "docs/07_Harness工程计划.md",
+        "harness/reports/2026-05-26_release_candidate_evidence_current_local_001/summary.md"
+      ],
+      "gaps": [
+        "还没有公开 Demo、真实玩家反馈、上线版本或周期性运营内容包。",
+        "AI 内容更新还停留在候选与内部门禁阶段。"
+      ],
+      "blockers": [
+        "phase8_public_demo_not_ready",
+        "release_candidate_not_ready"
+      ],
+      "next_actions": [
+        "完成 Demo 和发布候选后，再建立每周候选内容批次与反馈输入闭环。"
+      ]
+    }
+  ]
+}

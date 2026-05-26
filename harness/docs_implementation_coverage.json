@@ -303,20 +303,26 @@
       "doc_id": "12",
       "doc_path": "docs/12_阶段路线图.md",
       "status": "partial",
-      "summary": "Phase 0-6 有大量原型和报告证据，Phase 7-10 仍未达到公开 Demo、上线和运营要求。",
+      "summary": "Phase 0-10 已有独立路线图阶段审计清单和报告；Phase 0 完成，Phase 1-8 多数受二进制、人工试玩、素材审查或 RL 泛化阻塞，Phase 9-10 仍未达到公开 Demo、上线和运营要求。",
       "coverage": [
         {
           "id": "roadmap-phase-audit",
           "requirement": "按 Phase 0 到 Phase 10 推进，并用证据确认每阶段验收。",
           "status": "partial",
           "evidence": [
+            "docs/12_阶段路线图.md",
+            "harness/roadmap_audit/roadmap_phase_audit.json",
+            "tools/validate_roadmap_phase_audit.py",
+            "tools/test_validate_roadmap_phase_audit.py",
+            "harness/reports/2026-05-26_roadmap_phase_audit_001/summary.md",
             "harness/progress.json",
             "tools/validate_phase4_roster_targets.py",
             "harness/reports/2026-05-26_phase4_roster_targets_candidate_full_pack_001/summary.md"
           ],
           "gaps": [
-            "Phase 7 最终美术音频垂直切片仍未接受。",
-            "Phase 8-10 公开 Demo、上线前扩展和运营闭环尚未完成。"
+            "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete。",
+            "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending。",
+            "恢复二进制、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
           ]
         }
       ]
