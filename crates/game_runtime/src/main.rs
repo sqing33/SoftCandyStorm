@@ -9,10 +9,16 @@ use game_core::{
     TerminalKind, TerminalState, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
+const DEFAULT_LOCAL_TELEMETRY_DIR: &str = "harness/telemetry/local";
+const DEFAULT_LOCAL_REPLAY_DIR: &str = "harness/replay";
 const CAMERA_Z: f32 = 999.0;
 const EFFECT_Z: f32 = 35.0;
 const PLAYER_Z: f32 = 20.0;
@@ -35,6 +41,17 @@ const PROJECTILE_SPRITE: &str = "prototype_topdown/sprites/projectile_rainbow_ca
 const MAP_TILE_SPRITE: &str = "prototype_topdown/sprites/map_frosting_grassland_tile_v001.png";
 
 fn main() {
+    let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
+    let prelaunch_cli = parse_runtime_cli(raw_args);
+    match run_runtime_prelaunch_actions(&prelaunch_cli) {
+        Ok(true) => return,
+        Ok(false) => {}
+        Err(error) => {
+            eprintln!("runtime privacy/data action failed: {error}");
+            std::process::exit(2);
+        }
+    }
+
     App::new()
         .insert_resource(ClearColor(Color::srgb(0.95, 0.91, 0.78)))
         .add_plugins(
@@ -108,6 +125,12 @@ struct RuntimeCli {
     auto_exit_after_report: bool,
     player_skill: String,
     capture_interval_seconds: f32,
+    runtime_settings_file: Option<PathBuf>,
+    local_data_dirs: Vec<PathBuf>,
+    explicit_local_data_dirs: Vec<PathBuf>,
+    export_local_data: Option<PathBuf>,
+    delete_local_data: bool,
+    print_privacy_notice: bool,
 }
 
 impl Default for RuntimeCli {
@@ -127,6 +150,15 @@ impl Default for RuntimeCli {
             auto_exit_after_report: false,
             player_skill: "unrated".to_string(),
             capture_interval_seconds: 5.0,
+            runtime_settings_file: None,
+            local_data_dirs: vec![
+                PathBuf::from(DEFAULT_LOCAL_TELEMETRY_DIR),
+                PathBuf::from(DEFAULT_LOCAL_REPLAY_DIR),
+            ],
+            explicit_local_data_dirs: Vec::new(),
+            export_local_data: None,
+            delete_local_data: false,
+            print_privacy_notice: false,
         }
     }
 }
@@ -151,6 +183,7 @@ struct RuntimeState {
     auto_exit_after_report: bool,
     paused: bool,
     run_number: u32,
+    privacy_settings: RuntimePrivacySettings,
     meta_progress: MetaProgress,
     last_meta_settlement: Option<MetaSettlementReport>,
     settled_run_number: Option<u32>,
@@ -215,6 +248,58 @@ struct RuntimeCaptureState {
     finished: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeUploadKind {
+    Telemetry,
+    RawReplay,
+    CrashReport,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct RuntimePrivacySettings {
+    #[serde(default)]
+    telemetry_upload_enabled: bool,
+    #[serde(default)]
+    raw_replay_upload_enabled: bool,
+    #[serde(default)]
+    crash_report_upload_enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimePrivacyReport {
+    telemetry_upload_enabled: bool,
+    raw_replay_upload_enabled: bool,
+    crash_report_upload_enabled: bool,
+    local_capture_only: bool,
+    upload_transport: &'static str,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeLocalDataExport {
+    kind: &'static str,
+    export_version: u32,
+    privacy_settings: RuntimePrivacySettings,
+    local_data_dirs: Vec<String>,
+    files: Vec<RuntimeLocalDataFile>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeLocalDataFile {
+    root: String,
+    relative_path: String,
+    encoding: &'static str,
+    contents: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeLocalDataDeleteReport {
+    kind: &'static str,
+    deleted_files: usize,
+    deleted_dirs: usize,
+    skipped_missing_roots: Vec<String>,
+    local_data_dirs: Vec<String>,
+}
+
 #[derive(Debug, Clone, Default, Serialize)]
 struct RuntimeEventCounts {
     enemy_spawned: u32,
@@ -266,6 +351,7 @@ struct RuntimePlaytestReport {
     event_counts: RuntimeEventCounts,
     samples: Vec<RuntimeTelemetrySample>,
     final_metrics: RuntimeMetricsReport,
+    privacy: RuntimePrivacyReport,
     manual_review: RuntimeManualReviewTemplate,
 }
 
@@ -399,6 +485,15 @@ fn setup_runtime(
 ) {
     let cli = resolve_runtime_content_selection(parse_runtime_cli(std::env::args().skip(1)))
         .unwrap_or_else(|error| panic!("failed to resolve runtime content selection: {error}"));
+    let privacy_settings = load_runtime_privacy_settings(&cli).unwrap_or_else(|error| {
+        panic!(
+            "failed to load runtime privacy settings from `{}`: {error}",
+            cli.runtime_settings_file
+                .as_ref()
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| "defaults".to_string())
+        )
+    });
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
         panic!(
             "failed to load runtime content from `{}`: {error}",
@@ -501,6 +596,7 @@ fn setup_runtime(
         auto_exit_after_report: cli.auto_exit_after_report,
         paused: false,
         run_number: 1,
+        privacy_settings,
         meta_progress: MetaProgress::demo_start(),
         last_meta_settlement: None,
         settled_run_number: None,
@@ -1694,11 +1790,245 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
                         value.parse().unwrap_or(cli.capture_interval_seconds);
                 }
             }
+            "--runtime-settings-file" => {
+                if let Some(value) = args.next() {
+                    cli.runtime_settings_file = Some(PathBuf::from(value));
+                }
+            }
+            "--local-data-dir" => {
+                if let Some(value) = args.next() {
+                    let path = PathBuf::from(value);
+                    cli.local_data_dirs.push(path.clone());
+                    cli.explicit_local_data_dirs.push(path);
+                }
+            }
+            "--export-local-data" => {
+                if let Some(value) = args.next() {
+                    cli.export_local_data = Some(PathBuf::from(value));
+                }
+            }
+            "--delete-local-data" => {
+                cli.delete_local_data = true;
+            }
+            "--print-privacy-notice" => {
+                cli.print_privacy_notice = true;
+            }
             _ => {}
         }
     }
 
     cli
+}
+
+fn run_runtime_prelaunch_actions(cli: &RuntimeCli) -> Result<bool, String> {
+    let privacy_settings = load_runtime_privacy_settings(cli)
+        .map_err(|error| format!("failed to load privacy settings: {error}"))?;
+    let mut handled = false;
+
+    if cli.print_privacy_notice {
+        println!("{}", runtime_privacy_notice(&privacy_settings));
+        handled = true;
+    }
+
+    if let Some(export_path) = &cli.export_local_data {
+        export_runtime_local_data(cli, &privacy_settings, export_path)
+            .map_err(|error| format!("failed to export local data: {error}"))?;
+        println!("{}", export_path.display());
+        handled = true;
+    }
+
+    if cli.delete_local_data {
+        let report = delete_runtime_local_data(cli)
+            .map_err(|error| format!("failed to delete local data: {error}"))?;
+        println!(
+            "deleted {} local files and {} empty directories",
+            report.deleted_files, report.deleted_dirs
+        );
+        handled = true;
+    }
+
+    Ok(handled)
+}
+
+fn load_runtime_privacy_settings(cli: &RuntimeCli) -> std::io::Result<RuntimePrivacySettings> {
+    let Some(path) = &cli.runtime_settings_file else {
+        return Ok(RuntimePrivacySettings::default());
+    };
+    let text = fs::read_to_string(path)?;
+    let settings = serde_json::from_str::<RuntimePrivacySettings>(&text).map_err(|error| {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
+    })?;
+    Ok(settings)
+}
+
+fn runtime_can_upload(settings: &RuntimePrivacySettings, kind: RuntimeUploadKind) -> bool {
+    match kind {
+        RuntimeUploadKind::Telemetry => settings.telemetry_upload_enabled,
+        RuntimeUploadKind::RawReplay => settings.raw_replay_upload_enabled,
+        RuntimeUploadKind::CrashReport => settings.crash_report_upload_enabled,
+    }
+}
+
+fn runtime_upload_transport_enabled(settings: &RuntimePrivacySettings) -> bool {
+    runtime_can_upload(settings, RuntimeUploadKind::Telemetry)
+        || runtime_can_upload(settings, RuntimeUploadKind::RawReplay)
+        || runtime_can_upload(settings, RuntimeUploadKind::CrashReport)
+}
+
+fn runtime_privacy_notice(settings: &RuntimePrivacySettings) -> String {
+    format!(
+        "《软糖风暴》隐私说明\n\
+遥测、Replay 和崩溃报告默认只保存在本机，用于平衡、崩溃分析和玩法改进。\n\
+上传匿名遥测：{}；上传原始 Replay 输入：{}；上传崩溃报告：{}。\n\
+上传功能必须由玩家明确开启，raw replay 需要单独同意；当前 Runtime 没有网络上传传输层。\n\
+本地数据可以导出为 JSON，也可以删除。数据不应包含个人身份信息、IP 地址、文件路径或自由文本输入；默认保留 90 天。",
+        on_off_label(settings.telemetry_upload_enabled),
+        on_off_label(settings.raw_replay_upload_enabled),
+        on_off_label(settings.crash_report_upload_enabled),
+    )
+}
+
+fn on_off_label(enabled: bool) -> &'static str {
+    if enabled {
+        "已开启"
+    } else {
+        "关闭"
+    }
+}
+
+fn export_runtime_local_data(
+    cli: &RuntimeCli,
+    privacy_settings: &RuntimePrivacySettings,
+    output_path: &Path,
+) -> std::io::Result<()> {
+    let export = RuntimeLocalDataExport {
+        kind: "runtime_local_data_export",
+        export_version: 1,
+        privacy_settings: privacy_settings.clone(),
+        local_data_dirs: cli
+            .local_data_dirs
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect(),
+        files: collect_runtime_local_data_files(&cli.local_data_dirs)?,
+    };
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let json = serde_json::to_string_pretty(&export)?;
+    fs::write(output_path, format!("{json}\n"))
+}
+
+fn collect_runtime_local_data_files(
+    roots: &[PathBuf],
+) -> std::io::Result<Vec<RuntimeLocalDataFile>> {
+    let mut files = Vec::new();
+    for root in roots {
+        collect_runtime_local_data_from_root(root, root, &mut files)?;
+    }
+    files.sort_by(|left, right| {
+        (&left.root, &left.relative_path).cmp(&(&right.root, &right.relative_path))
+    });
+    Ok(files)
+}
+
+fn collect_runtime_local_data_from_root(
+    root: &Path,
+    current: &Path,
+    files: &mut Vec<RuntimeLocalDataFile>,
+) -> std::io::Result<()> {
+    if !current.exists() {
+        return Ok(());
+    }
+    if current.is_file() {
+        let contents = fs::read_to_string(current)?;
+        files.push(RuntimeLocalDataFile {
+            root: root.display().to_string(),
+            relative_path: relative_path_string(root, current),
+            encoding: "utf-8",
+            contents,
+        });
+        return Ok(());
+    }
+    if !current.is_dir() {
+        return Ok(());
+    }
+
+    for entry in fs::read_dir(current)? {
+        let entry = entry?;
+        collect_runtime_local_data_from_root(root, &entry.path(), files)?;
+    }
+    Ok(())
+}
+
+fn delete_runtime_local_data(cli: &RuntimeCli) -> std::io::Result<RuntimeLocalDataDeleteReport> {
+    if cli.explicit_local_data_dirs.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "delete requires at least one explicit --local-data-dir",
+        ));
+    }
+
+    let mut report = RuntimeLocalDataDeleteReport {
+        kind: "runtime_local_data_delete_report",
+        deleted_files: 0,
+        deleted_dirs: 0,
+        skipped_missing_roots: Vec::new(),
+        local_data_dirs: cli
+            .explicit_local_data_dirs
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect(),
+    };
+
+    for root in &cli.explicit_local_data_dirs {
+        if !root.exists() {
+            report
+                .skipped_missing_roots
+                .push(root.display().to_string());
+            continue;
+        }
+        delete_runtime_local_data_root(root, &mut report)?;
+    }
+
+    Ok(report)
+}
+
+fn delete_runtime_local_data_root(
+    root: &Path,
+    report: &mut RuntimeLocalDataDeleteReport,
+) -> std::io::Result<()> {
+    if root.is_file() {
+        fs::remove_file(root)?;
+        report.deleted_files += 1;
+        return Ok(());
+    }
+    if !root.is_dir() {
+        return Ok(());
+    }
+
+    for entry in fs::read_dir(root)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            delete_runtime_local_data_root(&path, report)?;
+            if fs::read_dir(&path)?.next().is_none() {
+                fs::remove_dir(&path)?;
+                report.deleted_dirs += 1;
+            }
+        } else if path.is_file() {
+            fs::remove_file(&path)?;
+            report.deleted_files += 1;
+        }
+    }
+    Ok(())
+}
+
+fn relative_path_string(root: &Path, path: &Path) -> String {
+    path.strip_prefix(root)
+        .unwrap_or(path)
+        .display()
+        .to_string()
 }
 
 fn resolve_runtime_content_selection(mut cli: RuntimeCli) -> Result<RuntimeCli, String> {
@@ -1855,7 +2185,20 @@ impl RuntimePlaytestReport {
             event_counts: state.capture.event_counts.clone(),
             samples: state.capture.samples.clone(),
             final_metrics: RuntimeMetricsReport::from_metrics(metrics),
+            privacy: RuntimePrivacyReport::from_settings(&state.privacy_settings),
             manual_review: RuntimeManualReviewTemplate::default_for_runtime(),
+        }
+    }
+}
+
+impl RuntimePrivacyReport {
+    fn from_settings(settings: &RuntimePrivacySettings) -> Self {
+        Self {
+            telemetry_upload_enabled: settings.telemetry_upload_enabled,
+            raw_replay_upload_enabled: settings.raw_replay_upload_enabled,
+            crash_report_upload_enabled: settings.crash_report_upload_enabled,
+            local_capture_only: !runtime_upload_transport_enabled(settings),
+            upload_transport: "not_implemented",
         }
     }
 }
@@ -1944,12 +2287,15 @@ fn write_runtime_playtest_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
-        make_tone_wav, map_visual_style, parse_runtime_cli, player_tint,
-        render_meta_progress_panel, resolve_runtime_content_selection, run_config_from_cli,
-        runtime_asset_root, runtime_sprite_paths, sounds_for_events, RuntimeCaptureState,
-        RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeSound,
-        DEFAULT_CONTENT_DIR,
+        collect_runtime_local_data_files, delete_runtime_local_data, demo_movement,
+        demo_upgrade_choice, effects_for_events, event_kind_for_events, export_runtime_local_data,
+        load_runtime_privacy_settings, make_tone_wav, map_visual_style, parse_runtime_cli,
+        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
+        run_config_from_cli, runtime_asset_root, runtime_can_upload, runtime_privacy_notice,
+        runtime_sprite_paths, sounds_for_events, RuntimeCaptureState, RuntimeCli,
+        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimePrivacyReport,
+        RuntimePrivacySettings, RuntimeSound, RuntimeUploadKind, DEFAULT_CONTENT_DIR,
+        DEFAULT_LOCAL_REPLAY_DIR, DEFAULT_LOCAL_TELEMETRY_DIR,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -2061,6 +2407,46 @@ mod tests {
     }
 
     #[test]
+    fn parses_runtime_privacy_and_data_control_options() {
+        let cli = parse_runtime_cli([
+            "--runtime-settings-file".to_string(),
+            "harness/telemetry/local/runtime_settings.json".to_string(),
+            "--local-data-dir".to_string(),
+            "tmp/runtime-data".to_string(),
+            "--export-local-data".to_string(),
+            "tmp/export.json".to_string(),
+            "--delete-local-data".to_string(),
+            "--print-privacy-notice".to_string(),
+        ]);
+
+        assert_eq!(
+            cli.runtime_settings_file,
+            Some(PathBuf::from(
+                "harness/telemetry/local/runtime_settings.json"
+            ))
+        );
+        assert!(cli
+            .local_data_dirs
+            .contains(&PathBuf::from(DEFAULT_LOCAL_TELEMETRY_DIR)));
+        assert!(cli
+            .local_data_dirs
+            .contains(&PathBuf::from(DEFAULT_LOCAL_REPLAY_DIR)));
+        assert!(cli
+            .local_data_dirs
+            .contains(&PathBuf::from("tmp/runtime-data")));
+        assert_eq!(
+            cli.explicit_local_data_dirs,
+            [PathBuf::from("tmp/runtime-data")]
+        );
+        assert_eq!(
+            cli.export_local_data,
+            Some(PathBuf::from("tmp/export.json"))
+        );
+        assert!(cli.delete_local_data);
+        assert!(cli.print_privacy_notice);
+    }
+
+    #[test]
     fn keeps_runtime_cli_defaults_for_bad_values() {
         let cli = parse_runtime_cli([
             "--seed".to_string(),
@@ -2072,6 +2458,195 @@ mod tests {
         assert_eq!(cli.content_dir, PathBuf::from(DEFAULT_CONTENT_DIR));
         assert_eq!(cli.seed, 12_345);
         assert_eq!(cli.simulation_speed, 1.0);
+    }
+
+    #[test]
+    fn runtime_privacy_settings_default_to_local_only() {
+        let settings = RuntimePrivacySettings::default();
+
+        assert!(!runtime_can_upload(&settings, RuntimeUploadKind::Telemetry));
+        assert!(!runtime_can_upload(&settings, RuntimeUploadKind::RawReplay));
+        assert!(!runtime_can_upload(
+            &settings,
+            RuntimeUploadKind::CrashReport
+        ));
+
+        let report = RuntimePrivacyReport::from_settings(&settings);
+        assert!(report.local_capture_only);
+        assert_eq!(report.upload_transport, "not_implemented");
+    }
+
+    #[test]
+    fn runtime_privacy_settings_require_explicit_opt_in() {
+        let settings = RuntimePrivacySettings {
+            telemetry_upload_enabled: true,
+            raw_replay_upload_enabled: false,
+            crash_report_upload_enabled: true,
+        };
+
+        assert!(runtime_can_upload(&settings, RuntimeUploadKind::Telemetry));
+        assert!(!runtime_can_upload(&settings, RuntimeUploadKind::RawReplay));
+        assert!(runtime_can_upload(
+            &settings,
+            RuntimeUploadKind::CrashReport
+        ));
+
+        let report = RuntimePrivacyReport::from_settings(&settings);
+        assert!(!report.local_capture_only);
+    }
+
+    #[test]
+    fn loads_runtime_privacy_settings_file() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-settings-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let settings_file = root.join("runtime_settings.json");
+        fs::write(
+            &settings_file,
+            r#"{
+  "telemetry_upload_enabled": true,
+  "raw_replay_upload_enabled": false,
+  "crash_report_upload_enabled": false
+}
+"#,
+        )
+        .unwrap();
+
+        let settings = load_runtime_privacy_settings(&RuntimeCli {
+            runtime_settings_file: Some(settings_file),
+            ..RuntimeCli::default()
+        })
+        .unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert!(settings.telemetry_upload_enabled);
+        assert!(!settings.raw_replay_upload_enabled);
+        assert!(!settings.crash_report_upload_enabled);
+    }
+
+    #[test]
+    fn privacy_notice_contains_required_topics() {
+        let notice = runtime_privacy_notice(&RuntimePrivacySettings::default());
+
+        for fragment in [
+            "默认只保存在本机",
+            "平衡",
+            "崩溃分析",
+            "玩法改进",
+            "明确开启",
+            "raw replay",
+            "导出",
+            "删除",
+            "个人身份信息",
+            "90 天",
+        ] {
+            assert!(
+                notice.contains(fragment),
+                "missing privacy notice fragment {fragment}"
+            );
+        }
+    }
+
+    #[test]
+    fn collects_local_data_only_from_configured_roots() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-export-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let included = root.join("included");
+        let excluded = root.join("excluded");
+        fs::create_dir_all(included.join("nested")).unwrap();
+        fs::create_dir_all(&excluded).unwrap();
+        fs::write(included.join("report.json"), "{\"ok\":true}\n").unwrap();
+        fs::write(included.join("nested/replay.json"), "{\"tick\":1}\n").unwrap();
+        fs::write(excluded.join("private.json"), "{\"skip\":true}\n").unwrap();
+
+        let files = collect_runtime_local_data_files(&[included.clone()]).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(files.len(), 2);
+        assert!(files
+            .iter()
+            .any(|file| file.relative_path == "report.json" && file.contents.contains("\"ok\"")));
+        assert!(files
+            .iter()
+            .all(|file| file.root == included.display().to_string()));
+        assert!(files
+            .iter()
+            .all(|file| !file.relative_path.contains("private.json")));
+    }
+
+    #[test]
+    fn exports_local_data_json_with_privacy_settings() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-export-json-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let data_dir = root.join("telemetry");
+        let out_file = root.join("export/export.json");
+        fs::create_dir_all(&data_dir).unwrap();
+        fs::write(data_dir.join("sample.json"), "{\"sample\":1}\n").unwrap();
+
+        let cli = RuntimeCli {
+            local_data_dirs: vec![data_dir],
+            ..RuntimeCli::default()
+        };
+        let settings = RuntimePrivacySettings {
+            telemetry_upload_enabled: true,
+            raw_replay_upload_enabled: false,
+            crash_report_upload_enabled: false,
+        };
+        export_runtime_local_data(&cli, &settings, &out_file).unwrap();
+        let export_text = fs::read_to_string(&out_file).unwrap();
+        let export: serde_json::Value = serde_json::from_str(&export_text).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(export["kind"], "runtime_local_data_export");
+        assert_eq!(export["privacy_settings"]["telemetry_upload_enabled"], true);
+        assert_eq!(export["files"].as_array().unwrap().len(), 1);
+        assert_eq!(export["files"][0]["relative_path"], "sample.json");
+    }
+
+    #[test]
+    fn delete_local_data_only_removes_configured_roots() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-delete-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let included = root.join("included");
+        let excluded = root.join("excluded");
+        fs::create_dir_all(included.join("nested")).unwrap();
+        fs::create_dir_all(&excluded).unwrap();
+        fs::write(included.join("report.json"), "{\"ok\":true}\n").unwrap();
+        fs::write(included.join("nested/replay.json"), "{\"tick\":1}\n").unwrap();
+        fs::write(excluded.join("private.json"), "{\"keep\":true}\n").unwrap();
+
+        let report = delete_runtime_local_data(&RuntimeCli {
+            local_data_dirs: vec![included.clone()],
+            explicit_local_data_dirs: vec![included.clone()],
+            ..RuntimeCli::default()
+        })
+        .unwrap();
+
+        assert_eq!(report.deleted_files, 2);
+        assert!(!included.join("report.json").exists());
+        assert!(!included.join("nested/replay.json").exists());
+        assert!(excluded.join("private.json").exists());
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn delete_local_data_requires_explicit_root() {
+        let error = delete_runtime_local_data(&RuntimeCli::default()).unwrap_err();
+
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
     }
 
     #[test]

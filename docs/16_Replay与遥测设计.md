@@ -176,6 +176,16 @@ harness/telemetry/local/
 
 上线前再决定是否接匿名遥测。
 
+当前 Runtime 已提供本地数据控制 CLI：
+
+```bash
+cargo run -p game_runtime -- --print-privacy-notice
+cargo run -p game_runtime -- --runtime-settings-file harness/telemetry/local/runtime_settings.json --export-local-data harness/telemetry/local/export.json
+cargo run -p game_runtime -- --local-data-dir harness/telemetry/local/manual-smoke --delete-local-data
+```
+
+默认导出数据目录为 `harness/telemetry/local/` 和 `harness/replay/`，也可以重复传入 `--local-data-dir <path>` 指定额外本地数据目录。导出会读取配置目录并写成 JSON；删除必须显式传入至少一个 `--local-data-dir`，且只移除这些显式目录中的文件和空子目录。Runtime 仍没有网络上传传输层，试玩 capture 报告只会写入当前隐私设置摘要。
+
 ## 版本对比
 
 每次内容或数值改动后，对 replay 进行对比：
@@ -250,6 +260,14 @@ harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py
 - 本地数据需要有保留天数、删除和导出控制项。
 - Runtime 隐私设置页契约必须提供上传开关、raw replay 单独同意、崩溃报告同意、删除本地数据、导出本地数据和隐私说明入口。
 - 发布前仍需要人工隐私审查、真实 Runtime 设置页验证、隐私说明文本和 Release Candidate 证据。
+
+Runtime 当前实现状态：
+
+- `--runtime-settings-file <path>` 可读取 `telemetry_upload_enabled`、`raw_replay_upload_enabled`、`crash_report_upload_enabled`，默认全部关闭。
+- `--print-privacy-notice` 可输出本地优先、默认关闭、明确同意、删除 / 导出、禁止个人身份信息和 90 天保留主题。
+- `--export-local-data <path>` 可导出本地遥测 / replay JSON 文件内容，并附带当前隐私设置。
+- `--delete-local-data` 可删除显式传入的本地遥测 / replay 目录内容；为了避免误删开发证据，未传 `--local-data-dir` 时会拒绝执行。
+- 尚未完成真实 Bevy 设置页、平台存档位置、法律审查、上传传输和人工隐私审查，因此 Release Candidate 仍不得标为通过。
 
 当前校验命令：
 
