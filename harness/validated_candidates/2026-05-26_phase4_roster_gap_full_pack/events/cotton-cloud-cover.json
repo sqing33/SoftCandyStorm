@@ -1,0 +1,33 @@
+{
+  "id": "cotton-cloud-cover",
+  "name": "棉花云遮挡",
+  "version": 1,
+  "rarity": "common",
+  "tags": ["event", "vision", "pickup", "swarm"],
+  "description": "软云短暂遮挡战场边缘，玩家输出节奏降低但拾取收益更高。",
+  "trigger": {
+    "type": "time_window",
+    "start_second": 120,
+    "end_second": 500,
+    "chance": 0.06
+  },
+  "effects": [
+    {
+      "type": "pickup_radius_multiplier",
+      "value": 1.35,
+      "duration_seconds": 30
+    },
+    {
+      "type": "damage_multiplier",
+      "value": 0.9,
+      "duration_seconds": 30
+    },
+    {
+      "type": "spawn_enemy",
+      "value": 3,
+      "enemy_id": "cotton-candy-clump"
+    }
+  ],
+  "visual_description": "粉白棉花云从屏幕边缘漂过，糖晶在云雾里显得更亮。",
+  "sfx_description": "柔软风声、棉花云扑扑声和糖晶闪烁音。"
+}
