@@ -23,9 +23,9 @@ python3 harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py 
   --markdown harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md
 ```
 
-该门禁不替代法律审查，也不代表遥测实现已经接入 Runtime。`runtime_privacy_settings_contract_valid` 只证明预期设置页和数据控制项有可校验契约；真实 Bevy UI、持久化、删除、导出和上传链路仍需要 Runtime 验证。
+该门禁不替代法律审查，也不代表遥测实现已经接入 Runtime。`runtime_privacy_settings_contract_valid` 只证明预期设置页和数据控制项有可校验契约；真实上传链路、发布级导出 / 删除按钮、平台路径和人工隐私审查仍需要后续验证。
 
-当前 Runtime 已实现 CLI 级本地数据控制，但还没有完成 Bevy 设置页：
+当前 Runtime 已实现 CLI 级本地数据控制，并提供 `F4` Bevy 设置页用于显式切换上传型同意项：
 
 ```bash
 cargo run -p game_runtime -- --print-privacy-notice
@@ -33,4 +33,4 @@ cargo run -p game_runtime -- --runtime-settings-file harness/telemetry/local/run
 cargo run -p game_runtime -- --local-data-dir harness/telemetry/local/manual-smoke --delete-local-data
 ```
 
-这些命令只处理本地目录，导出默认包括 `harness/telemetry/local/` 和 `harness/replay/`，也可以用 `--local-data-dir <path>` 增加目录。导出会写入 JSON 并附带当前隐私设置；删除必须显式传入至少一个 `--local-data-dir`，只移除这些目录内的文件和空子目录。上传传输仍未实现，任何上传型遥测进入 RC 前仍需要人工隐私审查和真实 Runtime UI 验证。
+这些命令只处理本地目录，导出默认包括 `harness/telemetry/local/` 和 `harness/replay/`，也可以用 `--local-data-dir <path>` 增加目录。导出会写入 JSON 并附带当前隐私设置；删除必须显式传入至少一个 `--local-data-dir`，只移除这些目录内的文件和空子目录。运行 Runtime 时，`F4` 设置页可用 `7/8/9` 切换上传匿名遥测、raw replay 上传和崩溃报告上传；传入 `--runtime-settings-file` 时切换结果会写回 JSON，未传入时只在当前会话生效。上传传输仍未实现，任何上传型遥测进入 RC 前仍需要人工隐私审查和真实 Runtime 验证。

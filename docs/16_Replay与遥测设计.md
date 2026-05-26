@@ -186,6 +186,14 @@ cargo run -p game_runtime -- --local-data-dir harness/telemetry/local/manual-smo
 
 默认导出数据目录为 `harness/telemetry/local/` 和 `harness/replay/`，也可以重复传入 `--local-data-dir <path>` 指定额外本地数据目录。导出会读取配置目录并写成 JSON；删除必须显式传入至少一个 `--local-data-dir`，且只移除这些显式目录中的文件和空子目录。Runtime 仍没有网络上传传输层，试玩 capture 报告只会写入当前隐私设置摘要。
 
+Runtime 局外面板提供 `F4` 隐私与本地数据设置页：
+
+- `7`：切换上传匿名遥测。
+- `8`：切换上传原始 Replay。
+- `9`：切换上传崩溃报告。
+
+三个开关默认关闭，只有玩家显式按键才会开启。启动时传入 `--runtime-settings-file <path>` 后，设置页会把切换结果写回该 JSON；未传入设置文件时只在当前会话生效。该页面会显示本地导出 / 删除仍通过 CLI 执行，以及上传传输层 `not_implemented`，避免把开关误解为真实上传能力。
+
 ## 版本对比
 
 每次内容或数值改动后，对 replay 进行对比：
@@ -267,7 +275,7 @@ Runtime 当前实现状态：
 - `--print-privacy-notice` 可输出本地优先、默认关闭、明确同意、删除 / 导出、禁止个人身份信息和 90 天保留主题。
 - `--export-local-data <path>` 可导出本地遥测 / replay JSON 文件内容，并附带当前隐私设置。
 - `--delete-local-data` 可删除显式传入的本地遥测 / replay 目录内容；为了避免误删开发证据，未传 `--local-data-dir` 时会拒绝执行。
-- 尚未完成真实 Bevy 设置页、平台存档位置、法律审查、上传传输和人工隐私审查，因此 Release Candidate 仍不得标为通过。
+- Runtime 已有 `F4` 隐私设置页，可显式切换三个上传同意项并在配置了 `--runtime-settings-file` 时写回 JSON；仍未完成平台存档位置、法律审查、上传传输、发布级导出 / 删除按钮验证和人工隐私审查，因此 Release Candidate 仍不得标为通过。
 
 当前校验命令：
 

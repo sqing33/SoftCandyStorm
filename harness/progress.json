@@ -773,6 +773,11 @@
       "report": "crates/game_runtime/src/main.rs"
     },
     {
+      "id": "runtime_privacy_settings_panel",
+      "summary": "Runtime 局外面板增加 F4 隐私与本地数据设置页，支持用 7/8/9 显式切换上传匿名遥测、raw replay 上传和崩溃报告上传；默认全关，配置 --runtime-settings-file 时会把切换结果写回 JSON，未配置时只在当前会话生效。",
+      "report": "crates/game_runtime/src/main.rs"
+    },
+    {
       "id": "gamecore_status_effects_and_metrics_contract",
       "summary": "补齐 GameCore v0 公共 API 的状态效果与指标字段：PlayerSnapshot 暴露 status_effects / StatusEffectSnapshot，RunMetrics 暴露 damage_taken_by_source、boss_damage 和 boss_kill_times，并刷新 source-shape 契约报告；当前只证明源码形状，语义仍需恢复二进制后验证。",
       "report": "harness/reports/2026-05-26_gamecore_api_contract_001/summary.md"
@@ -1141,7 +1146,7 @@
     },
     {
       "id": "runtime_privacy_local_data_controls",
-      "summary": "Runtime 增加 CLI 级本地隐私和数据控制：读取默认关闭的上传型遥测 / raw replay / 崩溃报告设置，试玩 capture 报告写入隐私摘要，并提供隐私说明、本地遥测 / replay JSON 导出和显式目录删除能力；仍未完成 Bevy 设置页和人工隐私审查。",
+      "summary": "Runtime 已具备 CLI 级本地隐私和数据控制，并补上 F4 设置页切换与 JSON 持久化；上传传输、发布级导出 / 删除按钮、平台路径和人工隐私审查仍未完成。",
       "report": "crates/game_runtime/src/main.rs"
     },
     {

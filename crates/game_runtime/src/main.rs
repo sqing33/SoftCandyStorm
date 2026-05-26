@@ -194,6 +194,7 @@ struct RuntimeState {
     paused: bool,
     run_number: u32,
     privacy_settings: RuntimePrivacySettings,
+    runtime_settings_file: Option<PathBuf>,
     save_file: Option<PathBuf>,
     meta_panel_view: RuntimeMetaPanelView,
     meta_progress: MetaProgress,
@@ -237,6 +238,7 @@ enum RuntimeMetaPanelView {
     Overview,
     Chapters,
     Codex,
+    Settings,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -666,6 +668,7 @@ fn setup_runtime(
         paused: false,
         run_number: 1,
         privacy_settings,
+        runtime_settings_file: cli.runtime_settings_file.clone(),
         save_file: cli.save_file.clone(),
         meta_panel_view: RuntimeMetaPanelView::Overview,
         meta_progress,
@@ -710,6 +713,40 @@ fn step_game_core(
         state.meta_panel_view = RuntimeMetaPanelView::Codex;
         state.last_event = "codex progress view".to_string();
         state.last_event_kind = RuntimeEventKind::System;
+    }
+    if keyboard.just_pressed(KeyCode::F4) {
+        state.meta_panel_view = RuntimeMetaPanelView::Settings;
+        state.last_event = "privacy settings view".to_string();
+        state.last_event_kind = RuntimeEventKind::System;
+    }
+    if state.meta_panel_view == RuntimeMetaPanelView::Settings {
+        if let Some(kind) = privacy_toggle_from_keyboard(&keyboard) {
+            let enabled = toggle_runtime_privacy_setting(&mut state.privacy_settings, kind);
+            let persistence = match persist_runtime_privacy_settings_if_configured(&state) {
+                Ok(true) => "saved",
+                Ok(false) => "session only",
+                Err(error) => {
+                    state.last_event = format!("privacy settings save failed: {error}");
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::System);
+                    return;
+                }
+            };
+            if let Err(error) = persist_runtime_save_if_configured(&state) {
+                state.last_event =
+                    format!("privacy settings {persistence}, save sync failed: {error}");
+                state.last_event_kind = RuntimeEventKind::System;
+                state.pending_sounds.push(RuntimeSound::System);
+                return;
+            }
+            state.last_event = format!(
+                "{} {} ({persistence})",
+                runtime_upload_kind_label(kind),
+                if enabled { "enabled" } else { "disabled" }
+            );
+            state.last_event_kind = RuntimeEventKind::System;
+            state.pending_sounds.push(RuntimeSound::System);
+        }
     }
 
     if state.core.is_terminal() {
@@ -876,6 +913,18 @@ fn upgrade_choice_from_keyboard(
         }
     }
     None
+}
+
+fn privacy_toggle_from_keyboard(keyboard: &ButtonInput<KeyCode>) -> Option<RuntimeUploadKind> {
+    if keyboard.just_pressed(KeyCode::Digit7) {
+        Some(RuntimeUploadKind::Telemetry)
+    } else if keyboard.just_pressed(KeyCode::Digit8) {
+        Some(RuntimeUploadKind::RawReplay)
+    } else if keyboard.just_pressed(KeyCode::Digit9) {
+        Some(RuntimeUploadKind::CrashReport)
+    } else {
+        None
+    }
 }
 
 fn demo_upgrade_choice(snapshot: &RunSnapshot) -> Option<usize> {
@@ -1212,7 +1261,7 @@ fn update_hud(
         let mode = if state.paused { "Paused" } else { "Playing" };
         let map_style = map_visual_style(&snapshot.map.map_id);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1/F2/F3 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F4 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -1279,6 +1328,8 @@ fn update_hud(
             &state.meta_progress,
             state.last_meta_settlement.as_ref(),
             state.meta_panel_view,
+            &state.privacy_settings,
+            state.runtime_settings_file.as_deref(),
         );
     }
 }
@@ -1595,11 +1646,16 @@ fn render_meta_progress_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
     view: RuntimeMetaPanelView,
+    privacy_settings: &RuntimePrivacySettings,
+    runtime_settings_file: Option<&Path>,
 ) -> String {
     match view {
         RuntimeMetaPanelView::Overview => render_meta_overview_panel(progress, settlement),
         RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(progress, settlement),
         RuntimeMetaPanelView::Codex => render_meta_codex_panel(progress, settlement),
+        RuntimeMetaPanelView::Settings => {
+            render_meta_settings_panel(privacy_settings, runtime_settings_file)
+        }
     }
 }
 
@@ -1613,7 +1669,7 @@ fn render_meta_overview_panel(
     let maps = format_string_set(&progress.unlocks.maps, 3);
 
     let mut output = format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
         progress.resources.candy_crystal_shards,
         progress.resources.star_shards,
         progress.resources.storm_grains,
@@ -1646,7 +1702,7 @@ fn render_meta_chapter_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
 ) -> String {
-    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴".to_string()];
+    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置".to_string()];
     lines.push("章节目标".to_string());
     for chapter in progress.chapters.values().take(4) {
         lines.push(format!(
@@ -1679,7 +1735,7 @@ fn render_meta_codex_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
 ) -> String {
-    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴".to_string()];
+    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置".to_string()];
     lines.push("图鉴进度".to_string());
     for (label, discovered, total) in meta_codex_category_counts(progress) {
         lines.push(format!("{label}: {discovered}/{total} 已发现"));
@@ -1695,6 +1751,22 @@ fn render_meta_codex_panel(
         lines.push("本局图鉴更新会在结算后显示".to_string());
     }
     lines.join("\n")
+}
+
+fn render_meta_settings_panel(
+    settings: &RuntimePrivacySettings,
+    runtime_settings_file: Option<&Path>,
+) -> String {
+    let persistence = runtime_settings_file
+        .map(|path| format!("写回 {}", path.display()))
+        .unwrap_or_else(|| "未配置设置文件，本次会话生效".to_string());
+    format!(
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\n本地导出/删除仍通过 CLI 执行\n上传传输层: not_implemented",
+        on_off_label(settings.telemetry_upload_enabled),
+        on_off_label(settings.raw_replay_upload_enabled),
+        on_off_label(settings.crash_report_upload_enabled),
+        persistence,
+    )
 }
 
 fn meta_codex_discovered_count(progress: &MetaProgress) -> usize {
@@ -2119,11 +2191,43 @@ fn load_runtime_privacy_settings(cli: &RuntimeCli) -> std::io::Result<RuntimePri
     let Some(path) = &cli.runtime_settings_file else {
         return Ok(RuntimePrivacySettings::default());
     };
+    if !path.exists() {
+        return Ok(RuntimePrivacySettings::default());
+    }
     let text = fs::read_to_string(path)?;
     let settings = serde_json::from_str::<RuntimePrivacySettings>(&text).map_err(|error| {
         std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
     })?;
     Ok(settings)
+}
+
+fn write_runtime_privacy_settings(
+    path: &Path,
+    settings: &RuntimePrivacySettings,
+) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let json = serde_json::to_string_pretty(settings)?;
+    fs::write(path, format!("{json}\n"))
+}
+
+fn persist_runtime_privacy_settings_file(
+    path: Option<&Path>,
+    settings: &RuntimePrivacySettings,
+) -> std::io::Result<bool> {
+    let Some(path) = path else {
+        return Ok(false);
+    };
+    write_runtime_privacy_settings(path, settings)?;
+    Ok(true)
+}
+
+fn persist_runtime_privacy_settings_if_configured(state: &RuntimeState) -> std::io::Result<bool> {
+    persist_runtime_privacy_settings_file(
+        state.runtime_settings_file.as_deref(),
+        &state.privacy_settings,
+    )
 }
 
 fn load_runtime_meta_progress(
@@ -2230,10 +2334,38 @@ fn runtime_can_upload(settings: &RuntimePrivacySettings, kind: RuntimeUploadKind
     }
 }
 
+fn toggle_runtime_privacy_setting(
+    settings: &mut RuntimePrivacySettings,
+    kind: RuntimeUploadKind,
+) -> bool {
+    match kind {
+        RuntimeUploadKind::Telemetry => {
+            settings.telemetry_upload_enabled = !settings.telemetry_upload_enabled;
+            settings.telemetry_upload_enabled
+        }
+        RuntimeUploadKind::RawReplay => {
+            settings.raw_replay_upload_enabled = !settings.raw_replay_upload_enabled;
+            settings.raw_replay_upload_enabled
+        }
+        RuntimeUploadKind::CrashReport => {
+            settings.crash_report_upload_enabled = !settings.crash_report_upload_enabled;
+            settings.crash_report_upload_enabled
+        }
+    }
+}
+
 fn runtime_upload_transport_enabled(settings: &RuntimePrivacySettings) -> bool {
     runtime_can_upload(settings, RuntimeUploadKind::Telemetry)
         || runtime_can_upload(settings, RuntimeUploadKind::RawReplay)
         || runtime_can_upload(settings, RuntimeUploadKind::CrashReport)
+}
+
+fn runtime_upload_kind_label(kind: RuntimeUploadKind) -> &'static str {
+    match kind {
+        RuntimeUploadKind::Telemetry => "telemetry upload",
+        RuntimeUploadKind::RawReplay => "raw replay upload",
+        RuntimeUploadKind::CrashReport => "crash report upload",
+    }
 }
 
 fn runtime_privacy_notice(settings: &RuntimePrivacySettings) -> String {
@@ -2651,13 +2783,14 @@ mod tests {
         collect_runtime_local_data_files, delete_runtime_local_data, demo_movement,
         demo_upgrade_choice, effects_for_events, event_kind_for_events, export_runtime_local_data,
         load_runtime_privacy_settings, make_tone_wav, map_visual_style, parse_runtime_cli,
-        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
-        run_config_from_cli, runtime_asset_root, runtime_can_upload, runtime_privacy_notice,
-        runtime_sprite_paths, sounds_for_events, write_runtime_save_state, RuntimeCaptureState,
-        RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeMetaPanelView,
-        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSound, RuntimeUploadKind,
-        DEFAULT_CONTENT_DIR, DEFAULT_LOCAL_REPLAY_DIR, DEFAULT_LOCAL_TELEMETRY_DIR,
-        DEFAULT_SAVE_ID,
+        persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
+        resolve_runtime_content_selection, run_config_from_cli, runtime_asset_root,
+        runtime_can_upload, runtime_privacy_notice, runtime_sprite_paths, sounds_for_events,
+        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
+        RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
+        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSound,
+        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_LOCAL_REPLAY_DIR,
+        DEFAULT_LOCAL_TELEMETRY_DIR, DEFAULT_SAVE_ID,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -2908,6 +3041,71 @@ mod tests {
         assert!(settings.telemetry_upload_enabled);
         assert!(!settings.raw_replay_upload_enabled);
         assert!(!settings.crash_report_upload_enabled);
+    }
+
+    #[test]
+    fn missing_runtime_privacy_settings_file_uses_local_defaults() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-missing-settings-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let settings_file = root.join("runtime_settings.json");
+
+        let settings = load_runtime_privacy_settings(&RuntimeCli {
+            runtime_settings_file: Some(settings_file.clone()),
+            ..RuntimeCli::default()
+        })
+        .unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert!(!settings_file.exists());
+        assert!(!settings.telemetry_upload_enabled);
+        assert!(!settings.raw_replay_upload_enabled);
+        assert!(!settings.crash_report_upload_enabled);
+    }
+
+    #[test]
+    fn runtime_privacy_settings_toggle_and_persist_json() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-persist-settings-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let settings_file = root.join("settings/runtime_settings.json");
+        let mut settings = RuntimePrivacySettings::default();
+
+        assert!(toggle_runtime_privacy_setting(
+            &mut settings,
+            RuntimeUploadKind::Telemetry
+        ));
+        assert!(!toggle_runtime_privacy_setting(
+            &mut settings,
+            RuntimeUploadKind::Telemetry
+        ));
+        assert!(toggle_runtime_privacy_setting(
+            &mut settings,
+            RuntimeUploadKind::RawReplay
+        ));
+        write_runtime_privacy_settings(&settings_file, &settings).unwrap();
+
+        let loaded = load_runtime_privacy_settings(&RuntimeCli {
+            runtime_settings_file: Some(settings_file),
+            ..RuntimeCli::default()
+        })
+        .unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert!(!loaded.telemetry_upload_enabled);
+        assert!(loaded.raw_replay_upload_enabled);
+        assert!(!loaded.crash_report_upload_enabled);
+    }
+
+    #[test]
+    fn runtime_privacy_settings_without_file_are_session_only() {
+        let settings = RuntimePrivacySettings::default();
+
+        assert!(!persist_runtime_privacy_settings_file(None, &settings).unwrap());
     }
 
     #[test]
@@ -3297,8 +3495,13 @@ mod tests {
             bosses_defeated: Default::default(),
         };
         let report = progress.apply_run_summary(&summary);
-        let panel =
-            render_meta_progress_panel(&progress, Some(&report), RuntimeMetaPanelView::Overview);
+        let panel = render_meta_progress_panel(
+            &progress,
+            Some(&report),
+            RuntimeMetaPanelView::Overview,
+            &RuntimePrivacySettings::default(),
+            None,
+        );
 
         assert!(panel.contains("糖罐守护站"));
         assert!(panel.contains("局后结算"));
@@ -3326,8 +3529,13 @@ mod tests {
             bosses_defeated: Default::default(),
         };
         let report = progress.apply_run_summary(&summary);
-        let panel =
-            render_meta_progress_panel(&progress, Some(&report), RuntimeMetaPanelView::Chapters);
+        let panel = render_meta_progress_panel(
+            &progress,
+            Some(&report),
+            RuntimeMetaPanelView::Chapters,
+            &RuntimePrivacySettings::default(),
+            None,
+        );
 
         assert!(panel.contains("章节目标"));
         assert!(panel.contains("frosting-grassland"));
@@ -3355,13 +3563,41 @@ mod tests {
             bosses_defeated: Default::default(),
         };
         let report = progress.apply_run_summary(&summary);
-        let panel =
-            render_meta_progress_panel(&progress, Some(&report), RuntimeMetaPanelView::Codex);
+        let panel = render_meta_progress_panel(
+            &progress,
+            Some(&report),
+            RuntimeMetaPanelView::Codex,
+            &RuntimePrivacySettings::default(),
+            None,
+        );
 
         assert!(panel.contains("图鉴进度"));
         assert!(panel.contains("角色: 1/1 已发现"));
         assert!(panel.contains("character:jar-keeper"));
         assert!(panel.contains("本局更新"));
+    }
+
+    #[test]
+    fn meta_panel_renders_privacy_settings_view() {
+        let settings = RuntimePrivacySettings {
+            telemetry_upload_enabled: true,
+            raw_replay_upload_enabled: false,
+            crash_report_upload_enabled: false,
+        };
+        let settings_path = PathBuf::from("harness/telemetry/local/runtime_settings.json");
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Settings,
+            &settings,
+            Some(settings_path.as_path()),
+        );
+
+        assert!(panel.contains("隐私与本地数据"));
+        assert!(panel.contains("上传匿名遥测: 已开启"));
+        assert!(panel.contains("上传原始 Replay: 关闭"));
+        assert!(panel.contains("runtime_settings.json"));
+        assert!(panel.contains("not_implemented"));
     }
 
     #[test]

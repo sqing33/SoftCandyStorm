@@ -305,7 +305,7 @@
           ],
           "gaps": [
             "当前 release_candidate_evidence 报告为 not-ready。",
-            "Runtime 隐私设置已有可校验契约，CLI 级隐私说明、本地 JSON 导出和显式目录删除已实现；但缺少真实 Bevy 设置页、持久化 UI、人工隐私审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package 和恢复后的运行级证据。"
+            "Runtime 隐私设置已有可校验契约，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少人工隐私审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package、上传链路、发布级导出 / 删除按钮和恢复后的运行级证据。"
           ],
           "blockers": [
             "local_binary_launch_blocked",
@@ -434,7 +434,7 @@
       "doc_id": "16",
       "doc_path": "docs/16_Replay与遥测设计.md",
       "status": "partial",
-      "summary": "Replay strict 回归、Runtime capture、遥测样本、隐私策略校验模板、本地存档数据控制契约、Runtime 隐私设置契约和 CLI 级本地导出 / 显式删除能力已有实现；真实 Runtime 设置页、法律审查和真实遥测闭环尚未完成。",
+      "summary": "Replay strict 回归、Runtime capture、遥测样本、隐私策略校验模板、本地存档数据控制契约、Runtime 隐私设置契约、CLI 级本地导出 / 显式删除能力和 F4 隐私设置页已有实现；法律审查、上传链路和真实遥测闭环尚未完成。",
       "coverage": [
         {
           "id": "replay-and-telemetry",
@@ -458,7 +458,7 @@
           ],
           "gaps": [
             "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
-            "隐私策略、Runtime 设置页契约和存档契约已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；但真实 Bevy 设置页、按钮持久化、法律审查和实际上传禁用/同意逻辑尚未完成。"
+            "隐私策略、Runtime 设置页契约和存档契约已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，并在配置 --runtime-settings-file 时写回 JSON。法律审查、上传传输、发布级导出 / 删除按钮和实际上传链路仍未完成。"
           ],
           "blockers": [
             "local_binary_launch_blocked"
@@ -495,7 +495,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel 三页视图、v0 存档契约、Runtime v0 存档读写、Runtime 隐私设置契约和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告和人工审校草稿；完整基地、可点击图鉴 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel 四页视图、v0 存档契约、Runtime v0 存档读写、Runtime 隐私设置契约、F4 隐私设置页和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告和人工审校草稿；完整基地、可点击图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -523,7 +523,7 @@
             "harness/telemetry_privacy/README.md"
           ],
           "gaps": [
-            "已有 v0 存档 JSON 契约，Runtime 可通过 --save-file 读取或创建存档、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；右侧局外面板已有 F1 概览、F2 章节目标和 F3 图鉴进度视图；但缺少存档迁移、完整基地 UI、章节目标链交互、可点击图鉴 UI、真实设置按钮和真实 10 分钟完整局验证。",
+            "已有 v0 存档 JSON 契约，Runtime 可通过 --save-file 读取或创建存档、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少存档迁移、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审，但尚未由真人填写审校记录并通过，因此 Runtime 当前只展示 MetaProgress 图鉴计数，不接入候选文本。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
