@@ -256,6 +256,8 @@ summary.md 内容：
 - 推荐人工试玩内容
 - 推荐 AI 修正任务
 
+发布候选探针应使用比候选晋级更保守的样本规模。Phase 4 full pack 的 5 seed / 600 秒候选仿真曾能进入 `simulated_candidates`，但 20 seed / 600 秒发布探针发现 GreedyXpBot 65.0% 和 TankBot 80.0% 胜率超出中技能目标上限，结论必须记录为 `repair` / `blocked`，不能继续用较小样本的 pass 充当 Release Candidate 证据。对应报告位于 `harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md`，Replay 回归 `180/180` 和 headless 性能预算 valid 只能证明复现与实体预算，不会抵消 Bot 平衡失败。
+
 ## 失败案例沉淀
 
 每次出现失败，需要记录：

@@ -1,9 +1,9 @@
 {
   "template_version": 1,
   "candidate_id": "current-local-2026-05-26",
-  "generated_at": "2026-05-26",
+  "generated_at": "2026-05-27",
   "release_stage": "prototype-local",
-  "summary": "当前本地工作区的 Release Candidate 证据清单。本地新生成 Mach-O 二进制启动已恢复，Phase 4 full pack 的 headless、Bot 矩阵和 Replay 自动门禁已有当前证据；本清单仍用于记录 not-ready 状态，因为内容冻结、Runtime 性能、人工审查和发布包门禁尚未全部通过。",
+  "summary": "当前本地工作区的 Release Candidate 证据清单。本地新生成 Mach-O 二进制启动已恢复，Phase 4 full pack 已完成 20 seed 发布探针：headless 无死锁、Replay 180/180 和 headless 性能预算通过，但 GreedyXpBot 与 TankBot 胜率超出中技能目标，bot_matrix gate 保持 blocked；本清单仍用于记录 not-ready 状态，因为内容冻结、人工审查、Runtime 发布级性能和发布包门禁尚未全部通过。",
   "gates": [
     {
       "id": "content_frozen",
@@ -37,21 +37,23 @@
     {
       "id": "headless_simulation",
       "status": "pass",
-      "summary": "Phase 4 full pack 已完成 all Bot、5 seed、600 秒 headless candidate simulation，1 个候选进入 simulated_candidates，0 个进入 repair。",
+      "summary": "Phase 4 full pack 已完成 all Bot、5 seed、600 秒候选仿真并进入 simulated_candidates；后续 9 Bot x 20 seed x 600 秒发布探针全部达到终局，但该探针暴露 GreedyXpBot / TankBot 平衡回归，Bot gate 另行保持 blocked。",
       "evidence_paths": [
         "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
-        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md"
+        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "multi_seed_no_deadlock",
       "status": "pass",
-      "summary": "Phase 4 full pack 的 9 Bot x 5 seed x 600 秒矩阵全部达到终局，未发现死锁或无限运行；45 条 representative replay 已生成。",
+      "summary": "Phase 4 full pack 的 9 Bot x 20 seed x 600 秒发布探针共 180 局全部达到终局，未发现死锁或无限运行；180 条 representative replay 已生成。",
       "evidence_paths": [
         "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
-        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md"
+        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md"
       ],
       "synthetic": false
     },
@@ -78,32 +80,33 @@
     },
     {
       "id": "bot_matrix",
-      "status": "pass",
-      "summary": "Phase 4 full pack 的 9 Bot x 5 seed x 600 秒矩阵已通过，Idle/Random/低中高技能 Bot 胜率均处于当前原型目标区间。",
+      "status": "blocked",
+      "summary": "Phase 4 full pack 的 9 Bot x 20 seed x 600 秒发布探针显示 GreedyXpBot 胜率 65.0%、TankBot 胜率 80.0%，均高于中技能 Bot 25%-55% 目标区间；5 seed 通过结果不能作为当前 Release Candidate Bot gate 通过证据。",
       "evidence_paths": [
-        "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
-        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
-        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md"
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
+        "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json"
       ],
       "synthetic": false
     },
     {
       "id": "replay_regression",
       "status": "pass",
-      "summary": "replay-batch 已对 Phase 4 full pack simulation_005 生成的 45 条 representative replay 完成 strict 回归，45/45 通过，content hash 为 fnv1a64:774827e3e24f8154。",
+      "summary": "replay-batch 已对 Phase 4 full pack 20 seed 发布探针生成的 180 条 representative replay 完成 strict 回归，180/180 通过，content hash 为 fnv1a64:774827e3e24f8154；该结果不抵消 Bot 平衡 gate 的 blocked 结论。",
       "evidence_paths": [
         "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md",
-        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md"
+        "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_replay_regression_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "performance",
       "status": "waiting",
-      "summary": "Phase 4 full pack 的 9 Bot x 5 seed x 600 秒 headless 性能预算校验已通过，最大敌人数 43/140 且无 NaN/Infinity；release Runtime 10 秒本机 smoke capture 平均 48.31 FPS 且实体/投射物上限通过。60 FPS 目标、大规模怪潮 45 FPS、GPU、内存增长和 Steam Deck 仍未覆盖，因此 release performance gate 保持 waiting。",
+      "summary": "Phase 4 full pack 的 9 Bot x 20 seed x 600 秒 headless 性能预算校验已通过，最大敌人数 75/140 且无 warning；release Runtime 10 秒本机 smoke capture 平均 48.31 FPS 且实体/投射物上限通过。60 FPS 目标、大规模怪潮 45 FPS、GPU、内存增长和 Steam Deck 仍未覆盖，因此 release performance gate 保持 waiting。",
       "evidence_paths": [
         "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
         "harness/reports/2026-05-26_harness_performance_budget_phase4_full_pack_001/summary.md",
+        "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md",
         "harness/reports/2026-05-26_runtime_performance_capture_004/summary.md"
       ],
       "synthetic": false
@@ -185,11 +188,12 @@
     {
       "id": "failure_case_review",
       "status": "pass",
-      "summary": "本地二进制启动阻塞已通过当前会话 after_restart 诊断确认恢复；新增 map-conditioned behavior clone watch 复盘后，当前 harness/failed_cases 全量 33 条正式 failure case 记录已通过结构与审计字段校验，0 error、0 warning。人工审查缺口仍由 manual_playtest、asset_manual_review、story_codex_review 和 telemetry_privacy gate 单独保持 waiting。",
+      "summary": "本地二进制启动阻塞已通过当前会话 after_restart 诊断确认恢复；新增 map-conditioned behavior clone watch 与 Phase 4 full pack 20 seed 中技能 Bot 过强复盘后，当前 harness/failed_cases 全量 34 条正式 failure case 记录已通过结构与审计字段校验，0 error、0 warning。人工审查缺口仍由 manual_playtest、asset_manual_review、story_codex_review 和 telemetry_privacy gate 单独保持 waiting。",
       "evidence_paths": [
         "harness/reports/2026-05-27_local_binary_launch_diagnostic_after_restart_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/failure_case_validation.md",
-        "harness/reports/2026-05-27_failure_case_validation_003/summary.md"
+        "harness/reports/2026-05-27_failure_case_validation_003/summary.md",
+        "harness/reports/2026-05-27_failure_case_validation_004/summary.md"
       ],
       "synthetic": false
     },

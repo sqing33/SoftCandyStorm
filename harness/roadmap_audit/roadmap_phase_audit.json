@@ -1,6 +1,6 @@
 {
   "report_version": 1,
-  "updated_at": "2026-05-26",
+  "updated_at": "2026-05-27",
   "scope": "docs/12 phase roadmap implementation audit",
   "summary": "逐阶段记录 Phase 0-10 的当前实现状态、可审计证据、剩余 gap、blocker 和下一步。状态必须保守：缺少运行验证、人工试玩、正式素材或发布证据时，不得标为 complete。",
   "phases": [
@@ -107,15 +107,18 @@
         "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md",
-        "harness/reports/2026-05-26_progress_report_reference_validation_phase4_full_pack_simulated_001/summary.md"
+        "harness/reports/2026-05-26_progress_report_reference_validation_phase4_full_pack_simulated_001/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_replay_regression_001/summary.md",
+        "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md"
       ],
       "gaps": [
-        "Rust Harness 已可重新运行，当前 full pack 候选 all Bot 长局矩阵与 45 条代表 Replay 回归已通过；release 级仍需扩展性能与更大 seed 验证。",
-        "progress 引用已刷新到 291/291 有报告且 0 error、0 warning。"
+        "Rust Harness 已可重新运行，当前 full pack 候选 5 seed all Bot 长局矩阵与 45 条代表 Replay 回归已通过；20 seed 发布探针也完成了 180 条 Replay 回归和 headless 性能预算，但 GreedyXpBot / TankBot 胜率超出中技能目标，release 级 Bot gate 保持 blocked。",
+        "progress 引用已刷新到 302/302 有报告且 0 error、0 warning。"
       ],
       "blockers": [],
       "next_actions": [
-        "扩展 release 级 seed 数和性能门禁证据。",
+        "修复 GreedyXpBot / TankBot 在 20 seed 发布探针中的过强问题，并重跑 20 seed 以上 all Bot matrix、strict replay-batch 和 headless 性能预算。",
         "准备 full pack 人工设计审查与 9 局人工试玩记录。"
       ]
     },
@@ -147,17 +150,22 @@
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_replay_regression_001/summary.md",
+        "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
         "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
       ],
       "gaps": [
-        "Phase 4 full pack 已通过 validation_005，并在 5 seed / 600 秒 all Bot simulation_005 与 45 条代表 Replay 回归后进入 simulated_candidates；这是候选自动门禁通过，不是正式内容接受。",
+        "Phase 4 full pack 已通过 validation_005，并在 5 seed / 600 秒 all Bot simulation_005 与 45 条代表 Replay 回归后进入 simulated_candidates；但 20 seed / 600 秒发布探针显示 GreedyXpBot 65.0%、TankBot 80.0%，中技能 Bot 超出目标区间，这是 release 级 Bot gate blocked，不是正式内容接受。",
         "validation_005 保留 sprinkle-spitter 声明威胁高于公式计算值的 warning，后续人工审查和试玩应关注远程预警压力是否可读。",
         "Phase 4 full pack 仍缺真人设计审查、9 局人工试玩、final acceptance、acceptance manifest 和非空 accepted_content lockfile。"
       ],
       "blockers": [
-        "manual_playtest_still_pending"
+        "manual_playtest_still_pending",
+        "phase4_full_pack_20seed_balance_repair"
       ],
       "next_actions": [
+        "先修复 20 seed 发布探针暴露的中技能 Bot 过强问题并复测。",
         "准备 full pack 人工设计审查与 9 局人工试玩记录。",
         "真人审查和试玩通过后，再用 acceptance manifest / lockfile 推进 accepted_content。"
       ]
@@ -187,10 +195,12 @@
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
+        "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
         "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
       ],
       "gaps": [
-        "AI 候选闭环已能把 full pack 从 generated_candidates 推进到 validated_candidates，并在 simulation_005 与 replay_regression_001 后推进到 simulated_candidates，同时保留历史 repair failure case；仍未进入 playtest_candidates 或 accepted_content。",
+        "AI 候选闭环已能把 full pack 从 generated_candidates 推进到 validated_candidates，并在 simulation_005 与 replay_regression_001 后推进到 simulated_candidates，同时保留历史 repair failure case；20 seed 发布探针新增 GreedyXpBot / TankBot 中技能过强 failure case，仍未进入 playtest_candidates 或 accepted_content。",
         "候选进入 accepted_content 的链路仍只能用模板和 smoke 证明结构，不能证明内容质量；缺少真实人工试玩接受记录。"
       ],
       "blockers": [
@@ -308,11 +318,12 @@
       ],
       "gaps": [
         "Demo readiness 报告明确 demo_not_ready。",
-        "正式 content/base_demo 普通敌人数量仍低于 Demo 目标；Phase 4 full pack 候选仍在 generated_candidates，未通过正式 Harness 仿真、人工试玩和 accepted content lockfile。",
+        "正式 content/base_demo 普通敌人数量仍低于 Demo 目标；Phase 4 full pack 候选已进入 simulated_candidates，但 20 seed 发布探针暴露中技能 Bot 过强，仍未通过发布级 Bot gate、人工试玩和 accepted content lockfile。",
         "已有当前会话 240 秒 Runtime demo capture 作为内部 smoke，但仍缺公开 Demo 所需的稳定运行矩阵、外部玩家反馈、真实人工试玩、Runtime 设置、本地存档 UI、图鉴 UI 和隐私说明。"
       ],
       "blockers": [
         "manual_playtest_still_pending",
+        "phase4_full_pack_20seed_balance_repair",
         "release_candidate_not_ready"
       ],
       "next_actions": [
@@ -339,14 +350,17 @@
         "harness/reports/2026-05-26_release_candidate_evidence_current_local_007/summary.md",
         "harness/reports/2026-05-26_release_package_manifest_current_local_003/summary.md",
         "harness/reports/2026-05-26_harness_performance_budget_phase4_full_pack_001/summary.md",
+        "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md",
+        "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
         "harness/reports/2026-05-26_runtime_performance_capture_004/summary.md"
       ],
       "gaps": [
-        "内容规模、成就、设置、手柄支持、Steam 页面素材、首小时人工体验和发布级 Runtime FPS / 内存性能证据都未达到上线前要求；headless 实体预算已有 Phase 4 full pack 45 局 valid 报告，Runtime 仅有 10 秒本机 smoke valid 报告。",
+        "内容规模、成就、设置、手柄支持、Steam 页面素材、首小时人工体验和发布级 Runtime FPS / 内存性能证据都未达到上线前要求；headless 实体预算已有 Phase 4 full pack 180 局 valid 报告，但同批 Bot matrix 暴露 GreedyXpBot / TankBot 中技能过强，Runtime 仅有 10 秒本机 smoke valid 报告。",
         "当前 release candidate 与 release package manifest 都仍为 not-ready。"
       ],
       "blockers": [
         "manual_playtest_still_pending",
+        "phase4_full_pack_20seed_balance_repair",
         "release_candidate_not_ready"
       ],
       "next_actions": [

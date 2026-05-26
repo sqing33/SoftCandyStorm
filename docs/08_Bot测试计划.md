@@ -251,6 +251,8 @@ UpgradePolicy {
 
 快速 CI 可减少 seed，nightly 批跑再扩大。
 
+候选晋级和发布探针要分开解释：较小 seed 的候选仿真可以用于进入 `simulated_candidates`，但 Release Candidate 前应至少用更大样本复查关键 Bot。当前 Phase 4 full pack 的 20 seed / 600 秒发布探针显示 GreedyXpBot 胜率 65.0%、TankBot 胜率 80.0%，均超过中技能 Bot 25%-55% 目标区间，因此 Bot matrix release gate 为 `repair` / `blocked`，不得把 5 seed 通过结果继续当作发布级通过证据。
+
 ## Bot 输出指标
 
 每局记录：
@@ -288,4 +290,3 @@ Replay 用途：
 - 复现 bug
 - 比较版本
 - 训练模仿学习，后续可选
-

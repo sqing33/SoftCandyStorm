@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-05-26",
+  "updated_at": "2026-05-27",
   "phase": "goal-phase-2-runtime-prototype",
   "completed": [
     {
@@ -1076,6 +1076,16 @@
       "id": "bot_policy_terminal_baseline_calibration",
       "summary": "校准 Route 与 BossHunter 终局基线行为，使 full pack 600 秒矩阵中 BossHunter 保持高技能 3/5、Route 保持低技能 1/5，并保留 Bot 单测、workspace clippy 与正式候选仿真证据。",
       "report": "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md"
+    },
+    {
+      "id": "phase4_full_pack_release_probe_20seed",
+      "summary": "Phase 4 full pack 完成 9 Bot x 20 seed x 600 秒发布探针、180 条代表 Replay 回归和 headless 性能预算校验：Replay 180/180 通过、最大敌人数 75/140 且无性能 warning，但 GreedyXpBot 65.0% 和 TankBot 80.0% 超出中技能胜率目标，RC bot_matrix gate 保持 blocked。",
+      "report": "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md"
+    },
+    {
+      "id": "release_candidate_20seed_probe_refreshed",
+      "summary": "刷新 current_local_rc_evidence：Phase 4 full pack 的 20 seed 发布探针接管当前 Bot gate 判断，headless / Replay / 性能证据已记录，但 bot_matrix 因 GreedyXpBot 与 TankBot 过强保持 blocked，RC 仍为 release_candidate_not_ready。",
+      "report": "harness/reports/2026-05-27_release_candidate_evidence_current_local_004/summary.md"
     }
   ],
   "current_findings": [
@@ -1148,6 +1158,11 @@
       "id": "nightly_bot_policy_bounds_repaired",
       "summary": "更大样本 nightly 曾暴露 TankBot 偏弱和 ZoneControlBot 偏强；已记录 failure case 并通过策略校准修复，后续仍应在新增内容或平衡改动后复跑 nightly 矩阵。",
       "report": "harness/failed_cases/fail_20260525_003_nightly_bot_policy_bounds.json"
+    },
+    {
+      "id": "phase4_full_pack_20seed_mid_skill_overperformance",
+      "summary": "Phase 4 full pack 的 20 seed 发布探针暴露中技能 Bot 过强：GreedyXpBot 65.0%、TankBot 80.0%，均高于 25%-55% 目标区间；应先修经济 / 防御续航或中后期压力，再重跑 20 seed 以上矩阵、Replay 和性能预算。",
+      "report": "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json"
     },
     {
       "id": "manual_playtest_still_pending",
@@ -1511,7 +1526,7 @@
     },
     {
       "id": "phase4_full_pack_manual_review",
-      "summary": "基于 simulated_candidates 中的 Phase 4 full pack 准备设计审查与 9 局人工试玩；真人证据通过前不得写入 accepted_content 或 Runtime 正式内容。"
+      "summary": "先修复 Phase 4 full pack 在 20 seed 发布探针中暴露的 GreedyXpBot / TankBot 过强问题并重跑矩阵；之后再基于 simulated_candidates 准备设计审查与 9 局人工试玩，真人证据通过前不得写入 accepted_content 或 Runtime 正式内容。"
     }
   ]
 }
