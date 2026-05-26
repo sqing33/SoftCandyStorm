@@ -124,7 +124,7 @@
     },
     {
       "id": "release_candidate_evidence_gate",
-      "summary": "增加纯 Python Release Candidate 证据清单校验器，覆盖内容冻结、编译、单测、headless 仿真、多 seed、Schema、预算、Bot、Replay、性能、人工试玩、素材 provenance、failure case 和打包门禁；当前本地清单输出 not-ready，明确记录二进制启动阻塞和人工试玩缺失。",
+      "summary": "增加纯 Python Release Candidate 证据清单校验器，覆盖内容冻结、编译、单测、headless 仿真、多 seed、Schema、预算、Bot、Replay、性能、人工试玩、素材 provenance、failure case 和打包门禁；初版本地清单曾记录宿主执行策略缺口，后续清单已转为人工试玩、Bot 矩阵和发布包缺口。",
       "report": "harness/reports/2026-05-26_release_candidate_evidence_current_local_001/summary.md"
     },
     {
@@ -739,7 +739,7 @@
     },
     {
       "id": "local_binary_launch_diagnostic_gate",
-      "summary": "增加本地 Mach-O 启动诊断工具，编译最小 cc hello 并捕获 Developer Mode、spctl、xattr、codesign 和 AppleSystemPolicy 日志；当前报告结论为 local_binary_launch_blocked，确认阻塞来自本机会话执行策略而非 GameCore/Harness 代码。",
+      "summary": "增加本地 Mach-O 启动诊断工具，编译最小 cc hello 并捕获 Developer Mode、spctl、xattr、codesign 和 AppleSystemPolicy 日志；首份报告确认当时阻塞来自本机会话执行策略而非 GameCore/Harness 代码，后续诊断已恢复为 local_binary_launch_ok。",
       "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md"
     },
     {
@@ -919,7 +919,7 @@
     },
     {
       "id": "gamecore_status_effects_and_metrics_contract",
-      "summary": "补齐 GameCore v0 公共 API 的状态效果与指标字段：PlayerSnapshot 暴露 status_effects / StatusEffectSnapshot，RunMetrics 暴露 damage_taken_by_source、boss_damage 和 boss_kill_times，并刷新 source-shape 契约报告；当前只证明源码形状，语义仍需恢复二进制后验证。",
+      "summary": "补齐 GameCore v0 公共 API 的状态效果与指标字段：PlayerSnapshot 暴露 status_effects / StatusEffectSnapshot，RunMetrics 暴露 damage_taken_by_source、boss_damage 和 boss_kill_times，并刷新 source-shape 契约报告；基础语义已随恢复后的 Rust 测试重新通过，release 级矩阵仍需继续验证。",
       "report": "harness/reports/2026-05-26_gamecore_api_contract_001/summary.md"
     },
     {
@@ -929,7 +929,7 @@
     },
     {
       "id": "goal_evidence_consistency_gate",
-      "summary": "增加 Goal 证据一致性门禁，串联 docs 覆盖、路线图审计、progress、Release Candidate evidence 和 release package manifest，确认当前 local_binary_launch_blocked、人工审查等待、RC not-ready 与 package blocked 结论在总账之间一致；该报告不替代编译、Harness、Replay、性能或人工试玩。",
+      "summary": "增加 Goal 证据一致性门禁，串联 docs 覆盖、路线图审计、progress、Release Candidate evidence 和 release package manifest；初版报告确认当时二进制阻塞、人工审查等待、RC not-ready 与 package blocked 结论在总账之间一致，该报告不替代编译、Harness、Replay、性能或人工试玩。",
       "report": "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
     },
     {
@@ -1019,7 +1019,7 @@
     },
     {
       "id": "rl_policy_acceptance_gate",
-      "summary": "增加 RL policy acceptance manifest 和纯 Python 校验器，要求模型、训练报告、本机二进制诊断、60/300 秒 high-pressure 对比、规则 Bot 基线和 unresolved failure case 同时满足后才能标记为 RL 测试 Bot 候选；当前 context3 BC 模板保持 not-ready，明确 local_binary_launch_blocked 和缺失 Gym 对比仍是阻塞。",
+      "summary": "增加 RL policy acceptance manifest 和纯 Python 校验器，要求模型、训练报告、本机二进制诊断、60/300 秒 high-pressure 对比、规则 Bot 基线和 unresolved failure case 同时满足后才能标记为 RL 测试 Bot 候选；当前 context3 BC 模板保持 not-ready，缺失 Gym 对比和规则 Bot 追平证据仍是阻塞。",
       "report": "harness/reports/2026-05-26_rl_policy_acceptance_template_001/summary.md"
     },
     {
@@ -1039,8 +1039,8 @@
     },
     {
       "id": "goal_blocker_priority_audit",
-      "summary": "增加 Goal 阻塞优先级审计器，汇总本机二进制启动已恢复、人工证据缺口、Release Candidate、发布包、docs 覆盖和 roadmap 状态；当前报告为 goal_blockers_present，P0 为 local_binary_launch_blocked 与 manual_evidence_gaps。",
-      "report": "harness/reports/2026-05-26_goal_blocker_priority_audit_001/summary.md"
+      "summary": "增加 Goal 阻塞优先级审计器，汇总本机二进制启动、人工证据缺口、Release Candidate、发布包、docs 覆盖和 roadmap 状态；重启后最新报告仍为 goal_blockers_present，但 P0 已只剩 manual_evidence_gaps。",
+      "report": "harness/reports/2026-05-26_goal_blocker_priority_audit_after_restart_002/summary.md"
     },
     {
       "id": "local_binary_launch_recovery_verified",
@@ -1413,6 +1413,11 @@
       "id": "local_binary_launch_recovered",
       "summary": "本机新生成 Mach-O binary 启动已恢复：retry_003 诊断返回 local_binary_launch_ok，game_harness 可启动，cargo fmt/clippy/test、Harness 矩阵、Replay、Gym smoke 和训练入口 dry-run 已重新执行；后续阻塞转为 Bot 矩阵 repair、RL 依赖缺口和真人证据缺口。",
       "report": "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
+    },
+    {
+      "id": "local_binary_launch_after_restart_verified",
+      "summary": "用户按权限指引开启 Developer Mode / Terminal developer tool 后重启；after_restart 诊断返回 local_binary_launch_ok，target/debug/game_harness --help、cargo test --workspace 和 60 秒 KiteBot simulate 均在当前会话通过。",
+      "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1423,11 +1428,6 @@
     {
       "id": "rl_policy_multimap_training",
       "summary": "不要继续单图补强；危险状态重采样已缓解 soda-creek 回归但未追平 cracked-star-jar 规则 Bot，下一步改为序列上下文、分阶段 policy 或 PPO 蒸馏初始化，再验证 300 秒 high-pressure 对比"
-    },
-    {
-      "id": "local_binary_launch_recovery",
-      "summary": "优先恢复本机新编译 Mach-O 可执行文件启动能力：为当前开发宿主启用 Developer Mode，或提供可信 code-signing identity / trusted host；恢复后先让 `tools/diagnose_local_binary_launch.py` 返回 local_binary_launch_ok，再按恢复包顺序重跑 `game_harness --help`、`cargo test --workspace` 和 context3 BC 60/300 秒 high-pressure 对比",
-      "report": "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md"
     }
   ]
 }

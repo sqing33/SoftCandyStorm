@@ -40,18 +40,18 @@
         "crates/game_core/src/lib.rs",
         "harness/reports/2026-05-26_gamecore_api_contract_001/summary.md",
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+        "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md"
       ],
       "gaps": [
-        "当前只能证明源码形状和历史实现痕迹，不能重新运行 cargo test 或 headless simulate。",
-        "恢复二进制后需要重跑 GameCore 单测、Harness simulate、Replay 回归和 Gym smoke。"
+        "本机 Mach-O 启动已恢复，cargo test --workspace 和 60 秒 headless simulate 已在当前会话重新通过。",
+        "仍需把恢复后的验证扩展为 release 级多 seed、长局矩阵、Replay 回归和 Gym 对比证据。"
       ],
       "blockers": [],
       "next_actions": [
-        "恢复本机新编译 Mach-O 可执行文件启动能力。",
-        "恢复后先运行 cargo test --workspace 和 game_harness simulate quick。"
+        "继续运行 600 秒 all Bot matrix、strict replay-batch 和 Gym high-pressure 对比。"
       ]
     },
     {
@@ -69,17 +69,18 @@
         "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md",
         "harness/playtest/runtime_manual_review_pack.md",
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+        "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
       ],
       "gaps": [
-        "历史 Runtime capture 只能证明曾经能写报告，当前二进制启动阻塞后不能重新验证。",
+        "本机二进制启动已恢复，但仍缺当前会话下新的 Runtime demo capture 和完整人工试玩记录。",
         "缺少真实人工完整试玩记录和可读性评分。"
       ],
       "blockers": [
         "manual_playtest_still_pending"
       ],
       "next_actions": [
-        "恢复 Runtime 启动后运行 demo capture 和 9 局人工试玩审查。"
+        "运行当前会话 Runtime demo capture，并准备 9 局人工试玩审查。"
       ]
     },
     {
@@ -98,17 +99,18 @@
         "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md",
         "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md",
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+        "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md"
       ],
       "gaps": [
-        "纯 Python 报告引用和 failure case 校验可用，但当前不能重跑 Rust Harness matrix、simulate 或 replay-batch。",
+        "Rust Harness 已可重新运行，当前仍需把恢复后的 smoke 扩展为 all Bot 长局矩阵和 strict replay-batch 正式证据。",
         "历史 progress 仍有缺少 report 的条目，需要继续回填或整理。"
       ],
       "blockers": [],
       "next_actions": [
-        "恢复二进制后重跑 all Bot matrix 与 strict replay-batch。",
+        "重跑 all Bot matrix 与 strict replay-batch，并修复当前 Bot 矩阵门禁失败。",
         "继续减少 progress 无 report warning。"
       ]
     },
@@ -133,14 +135,14 @@
       ],
       "gaps": [
         "Phase 4 full pack 仍在 generated_candidates，不是正式 accepted_content。",
-        "缺少恢复二进制后的正式 validate-candidates、Bot 仿真和人工试玩接受证据。",
+        "缺少当前恢复会话下的正式 validate-candidates、长局 Bot 仿真和人工试玩接受证据。",
         "Demo readiness 审计显示正式 content/base_demo 普通敌人只有 8 个，低于首个 Demo 目标的 12 个；Phase 4 full pack 候选已补齐但仍未被正式接受。"
       ],
       "blockers": [
         "manual_playtest_still_pending"
       ],
       "next_actions": [
-        "恢复二进制后推进 full pack 到 validate-candidates / simulate-candidates。",
+        "推进 full pack 到 validate-candidates / simulate-candidates，并保留失败或晋级报告。",
         "人工试玩通过后再考虑 accepted_content。"
       ]
     },
@@ -170,7 +172,7 @@
         "manual_playtest_still_pending"
       ],
       "next_actions": [
-        "恢复二进制后对候选执行正式 simulate-candidates。",
+        "对候选执行正式 simulate-candidates。",
         "收集人工审查记录并运行 strict acceptance 校验。"
       ]
     },
@@ -202,7 +204,7 @@
         "rl_training_dependencies_missing"
       ],
       "next_actions": [
-        "恢复二进制后完成 context3 BC 60/300 秒 high-pressure 对比。",
+        "完成 context3 BC 60/300 秒 high-pressure 对比。",
         "继续做多图 curriculum 或策略蒸馏，不用单图微调替代泛化修复。",
         "安装 RL 依赖后完成 context3 BC 60/300 秒 high-pressure 对比。"
       ]
@@ -225,7 +227,7 @@
       ],
       "gaps": [
         "多批 mmx 素材仍为 repair，尚未由真人审查通过并接入正式 Runtime。",
-        "不能录制发布级宣传片段，因为 Runtime 当前无法重新启动验证。"
+        "本机二进制已恢复，但仍缺当前会话 Runtime 录制证据、真人素材审查和发布级宣传片段。"
       ],
       "blockers": [
         "manual_asset_review_still_pending"
@@ -265,7 +267,7 @@
         "release_candidate_not_ready"
       ],
       "next_actions": [
-        "恢复二进制后先完成内部 Runtime smoke 和人工试玩包。",
+        "先完成内部 Runtime smoke 和人工试玩包。",
         "将 release_candidate_evidence 中 waiting/fail gate 逐项修到 pass。"
       ]
     },

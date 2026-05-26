@@ -69,10 +69,11 @@
             "crates/game_core/src/lib.rs",
             "crates/game_runtime/src/main.rs",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+            "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
-            "恢复本机 Mach-O 启动后需重跑 GameCore、Harness 和 Runtime 验证。",
+            "本机 Mach-O 启动已恢复，cargo test --workspace 和 60 秒 headless simulate 已在当前会话重新通过；Runtime 仍需新的可视化 smoke 和人工试玩验证。",
             "仍需真实人工试玩确认玩法循环的可读性和节奏。"
           ],
           "blockers": []
@@ -177,7 +178,7 @@
           ],
           "gaps": [
             "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板、final acceptance 模板和 acceptance manifest 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。",
-            "缺少恢复二进制后的正式 Harness validate-candidates、Bot 仿真和人工试玩接受证据。"
+            "缺少当前恢复会话下的正式 Harness validate-candidates、长局 Bot 仿真和人工试玩接受证据。"
           ]
         }
       ]
@@ -275,10 +276,11 @@
             "crates/game_core/Cargo.toml",
             "crates/game_runtime/Cargo.toml",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+            "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
-            "恢复本机二进制启动后需重跑 cargo fmt、clippy、test 和 Runtime smoke。",
+            "本机二进制启动已恢复，cargo test --workspace 已在当前会话通过；仍需刷新 cargo fmt/clippy 和 Runtime smoke 的当前会话证据。",
             "仍需更完整的 Runtime 视觉、音频和设置系统。"
           ],
           "blockers": []
@@ -307,13 +309,14 @@
             "tools/test_create_local_binary_launch_recovery_packet.py",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md",
             "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md",
+            "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
             "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md",
             "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
-            "恢复二进制后需按恢复包顺序重跑 game_harness --help、cargo fmt、clippy、test、simulate、matrix、replay-batch 和候选晋级命令。",
-            "本地二进制启动已有可复现诊断门禁和恢复交接包，但当前结论仍是 local_binary_launch_blocked。",
+            "本地二进制启动已恢复，game_harness --help、cargo test --workspace 和 60 秒 simulate 已在当前会话通过；仍需刷新 cargo fmt、clippy、长局 matrix、replay-batch 和候选晋级命令。",
+            "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 after_restart 报告结论为 local_binary_launch_ok。",
             "Progress 账本已完成两批历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": []
@@ -324,7 +327,7 @@
       "doc_id": "08",
       "doc_path": "docs/08_Bot测试计划.md",
       "status": "partial",
-      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；最新验证仍需二进制恢复后重跑。",
+      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，最新重点转为长局矩阵 repair 与人工试玩证据。",
       "coverage": [
         {
           "id": "rule-bot-baselines",
@@ -337,7 +340,7 @@
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
-            "新增内容和平衡改动后需要恢复二进制并重跑多地图、多 seed Bot 矩阵。",
+            "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵。",
             "规则 Bot 不是人工乐趣证明，仍需真人审查。"
           ],
           "blockers": []
@@ -368,9 +371,9 @@
             "harness/reports/2026-05-26_post_recovery_behavior_clone_dry_run_001/run_output.json"
           ],
           "gaps": [
-            "context3 behavior clone 已训练但 Gym 评估被本机二进制启动阻塞；恢复后必须先取得 local_binary_launch_ok，再重跑 60/300 秒 high-pressure 对比。",
+            "context3 behavior clone 已训练且本机二进制启动已恢复；仍需重跑 60/300 秒 high-pressure 对比。",
             "PPO/BC 高压多地图仍有泛化 failure case，不能作为正式 RL 测试 Bot。",
-            "当前 RL policy acceptance 模板结论为 rl_policy_acceptance_not_ready，缺少恢复后的 60/300 秒 high-pressure 对比和规则 Bot 追平证据。"
+            "当前 RL policy acceptance 模板结论为 rl_policy_acceptance_not_ready，缺少 60/300 秒 high-pressure 对比和规则 Bot 追平证据。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
@@ -559,7 +562,7 @@
           "gaps": [
             "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete；Demo readiness 审计也明确当前为 demo_not_ready。",
             "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending；当前 release package manifest 仍 blocked，Goal 证据一致性门禁确认该 not-ready 状态没有被其他账本误标为 ready。",
-            "恢复二进制、补齐正式内容、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
+            "补齐正式内容、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
           ]
         }
       ]
@@ -625,7 +628,7 @@
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
-            "恢复二进制后需重跑 cargo test、game_harness replay-batch 和 Gym smoke。",
+            "cargo test --workspace 已在当前会话通过；仍需刷新 game_harness replay-batch 和 Gym smoke。",
             "source-shape 契约不能证明固定 seed 语义、Replay 兼容性、Runtime 集成或 Gym bridge 行为。",
             "RunMetrics per-source / Boss 指标与 PlayerSnapshot status_effects 已进入 v0 契约，但真实指标语义、Runtime 可读性和 Gym observation 映射仍需运行级验证。"
           ],
@@ -637,7 +640,7 @@
       "doc_id": "15",
       "doc_path": "docs/15_经济与数值平衡模型.md",
       "status": "partial",
-      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、Bot 矩阵、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需恢复二进制和真人试玩。",
+      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、Bot 矩阵、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需长局复测和真人试玩。",
       "coverage": [
         {
           "id": "balance-budget-and-regression",
@@ -660,7 +663,7 @@
             "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/summary.md"
           ],
           "gaps": [
-            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack，但正式 game_harness budget-content、Bot 矩阵和 Replay 回归仍需恢复二进制后重跑。",
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack，但正式 game_harness budget-content、Bot 矩阵和 Replay 回归仍需在当前恢复会话下重跑。",
             "平衡已有 9 局人工试玩审查包、strict acceptance invalid 报告和最终接受证据包覆盖新手、熟练和流派视角，但仍缺真人填写后的新手 / 熟练反馈。"
           ],
           "blockers": [
@@ -742,7 +745,7 @@
             "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md"
           ],
           "gaps": [
-            "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
+            "需要在当前恢复会话下重跑 replay-batch 与 Runtime capture。",
             "隐私策略、Runtime 设置页契约、上传传输契约、Runtime surface 源码形状契约、v0/v1 存档契约、平台路径策略、存档迁移计划、人工隐私审查包、人工平台路径审查包和人工法律 / 合规审查包已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，并在配置 --runtime-settings-file 时写回 JSON；Runtime 源码默认把存档、设置、遥测、Replay 和崩溃报告绑定到 platform_user_data/soft-candy-storm 逻辑平台数据根。但真人填写的人工隐私审查、人工平台路径审查、法律 / 合规审查、发布级导出 / 删除按钮、Runtime 网络上传实现、真实平台原生路径和运行级验证仍未完成。"
           ],
           "blockers": []
@@ -929,10 +932,10 @@
             "harness/reports/2026-05-26_manual_evidence_gap_audit_001/summary.md"
           ],
           "gaps": [
-            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包、基地 UI 人工审查模板和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根或显式 --platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F1 可显示素材 Runtime 候选 manifest 的待预览状态，F3 可显示剧情 / 图鉴 UI 候选 manifest 的安全状态，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少恢复二进制后的 Rust 单测 / Runtime smoke、真实平台原生路径、真人平台路径审查通过、真人基地 UI 审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
+            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包、基地 UI 人工审查模板和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根或显式 --platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F1 可显示素材 Runtime 候选 manifest 的待预览状态，F3 可显示剧情 / 图鉴 UI 候选 manifest 的安全状态，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少当前恢复会话下的 Runtime smoke、真实平台原生路径、真人平台路径审查通过、真人基地 UI 审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审、审校包、ui_candidate 晋级工具、UI 候选 manifest 门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审校记录、Runtime UI review 或 final human acceptance 并通过；Runtime 不读取或展示候选正文，也不把候选标记为 Runtime 集成或正式接受。",
             "素材候选已有人工审查草稿、审查包、asset_candidate 晋级工具、Runtime 候选 manifest 门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录、Runtime preview review、audio loudness review 或 final human acceptance 并通过；Runtime 不读取候选图片或音频，也不替换正式 Runtime 素材。",
-            "Runtime meta panel 需要恢复二进制后重新验证。",
+            "Runtime meta panel 需要在当前恢复会话下重新验证。",
             "accepted_content lockfile 当前为 blocked / empty，只记录暂无候选通过 9 局人工试玩、acceptance gate、内容 hash 复核和版本锁定；人工试玩接受证据包当前为 needs_evidence，严格校验为 manual_review_invalid，局外完整闭环仍缺少非空正式内容锁与真人接受证据。",
             "人工证据缺口审计当前汇总 20 个 gap，其中 content、story、asset、playtest、privacy、platform、base_ui 和 release 全部仍缺真人通过证据；该审计只帮助排队，不替代任何人工记录。"
           ],
