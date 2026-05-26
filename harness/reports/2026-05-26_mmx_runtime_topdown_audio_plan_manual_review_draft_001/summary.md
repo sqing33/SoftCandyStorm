@@ -3,8 +3,8 @@
 - Source: `harness/asset_review/drafts/2026-05-26_mmx_runtime_topdown_audio_plan_review_draft.json`
 - Decision: `asset_candidate_manual_review_invalid`
 - Gate decision: `needs_more_review`
-- Assets reviewed: 5 / 5
-- Repair items: 5
+- Assets reviewed: 6 / 6
+- Repair items: 6
 - Global risks: 1
 
 ## Errors
@@ -42,6 +42,13 @@
 - sting_boss_arrival_v002_trim8s: audio_clarity must be an integer from 1 to 5
 - sting_boss_arrival_v002_trim8s: loudness_readiness must be an integer from 1 to 5
 - sting_boss_arrival_v002_trim8s: duration_fit must be an integer from 1 to 5
+- boss_arrival_voice_sting_mix_v001: style_fit must be an integer from 1 to 5
+- boss_arrival_voice_sting_mix_v001: gameplay_readability must be an integer from 1 to 5
+- boss_arrival_voice_sting_mix_v001: provenance_confidence must be an integer from 1 to 5
+- boss_arrival_voice_sting_mix_v001: technical_readiness must be an integer from 1 to 5
+- boss_arrival_voice_sting_mix_v001: audio_clarity must be an integer from 1 to 5
+- boss_arrival_voice_sting_mix_v001: loudness_readiness must be an integer from 1 to 5
+- boss_arrival_voice_sting_mix_v001: duration_fit must be an integer from 1 to 5
 
 ## Warnings
 

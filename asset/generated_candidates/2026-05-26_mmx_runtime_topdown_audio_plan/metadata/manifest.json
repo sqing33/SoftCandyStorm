@@ -38,7 +38,8 @@
     "python3 tools/asset_postprocess.py key-singles asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/images/player_jar_keeper_topdown_v005_001.jpg asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/images/player_jar_keeper_topdown_v005_002.jpg --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005 --background auto --threshold 42 --padding 8 --manifest asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/metadata/postprocess_topdown_v005.json",
     "python3 tools/asset_postprocess.py clean-components asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005/player_jar_keeper_topdown_v005_001.png asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005/player_jar_keeper_topdown_v005_002.png --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005_clean --min-alpha 24 --keep-components 1 --padding 8 --manifest asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/metadata/component_cleanup_topdown_v005.json",
     "python3 tools/asset_postprocess.py make-previews asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005_clean/player_jar_keeper_topdown_v005_001_clean.png asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005_clean/player_jar_keeper_topdown_v005_002_clean.png --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/review_previews/topdown_v005 --canvas-size 128 --preview-sizes 128,64,32 --occupancy 0.86 --contact-cols 2 --manifest asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/metadata/preview_topdown_v005.json",
-    "ffmpeg -y -hide_banner -ss 0.40 -t 8.0 -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/music/sting_boss_arrival_v002_source.mp3 -af 'afade=t=in:st=0:d=0.05,afade=t=out:st=7.35:d=0.65,loudnorm=I=-16:TP=-1.5:LRA=11' -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3"
+    "ffmpeg -y -hide_banner -ss 0.40 -t 8.0 -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/music/sting_boss_arrival_v002_source.mp3 -af 'afade=t=in:st=0:d=0.05,afade=t=out:st=7.35:d=0.65,loudnorm=I=-16:TP=-1.5:LRA=11' -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3",
+    "ffmpeg -y -hide_banner -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3 -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/audio/voice_boss_arrival_cn_v002.mp3 -filter_complex \"[0:a]volume=0.78[sting];[1:a]adelay=500|500,volume=1.10[voice];[sting][voice]amix=inputs=2:duration=first:dropout_transition=0,loudnorm=I=-16:TP=-1.5:LRA=11[mix]\" -map \"[mix]\" -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_mix_v001/boss_arrival_voice_sting_mix_v001.mp3"
   ],
   "generation_prompts": {
     "player_jar_keeper_topdown_v005": "Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark.",
@@ -162,6 +163,25 @@
         "长度符合 6-10 秒 Boss 出场 sting 目标。",
         "仍需人工听感审查起落点、可爱紧张感、结尾和与 Boss 语音叠放效果。",
         "正式接入前需要响度统一和触发频率检查。"
+      ]
+    },
+    {
+      "id": "boss_arrival_voice_sting_mix_v001",
+      "type": "music",
+      "path": "processed/audio_mix_v001/boss_arrival_voice_sting_mix_v001.mp3",
+      "source_path": "processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3",
+      "format": "mp3",
+      "duration_seconds": 8.0,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "194.9 kbps",
+      "size": "190K",
+      "postprocess_manifest": "metadata/audio_mix_v001.json",
+      "qa_status": "needs_listening_review",
+      "qa_notes": [
+        "该文件是 Boss 语音叠放 8 秒 sting 的听感预览，不替代单独语音或音乐源。",
+        "loudnorm 探测值已记录，但不能证明听感通过。",
+        "仍需人工确认语音清晰度、音乐遮挡、ducking 需求、字幕时序和可关闭设置。"
       ]
     }
   ],

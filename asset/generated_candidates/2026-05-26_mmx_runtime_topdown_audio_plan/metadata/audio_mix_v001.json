@@ -1,0 +1,77 @@
+{
+  "batch_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "postprocessed_at": "2026-05-26",
+  "tool": "ffmpeg",
+  "purpose": "Create a candidate-only listening preview that overlays the Boss arrival voice on the 8 second sting.",
+  "inputs": [
+    {
+      "id": "sting_boss_arrival_v002_trim8s",
+      "path": "processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3",
+      "duration_seconds": 8.0,
+      "loudnorm_probe": {
+        "input_i": "-15.27",
+        "input_tp": "-1.75",
+        "input_lra": "1.50",
+        "input_thresh": "-25.34",
+        "target_i": "-16",
+        "target_tp": "-1.5",
+        "target_lra": "11"
+      }
+    },
+    {
+      "id": "voice_boss_arrival_cn_v002",
+      "path": "audio/voice_boss_arrival_cn_v002.mp3",
+      "duration_seconds": 3.239188,
+      "loudnorm_probe": {
+        "input_i": "-18.45",
+        "input_tp": "-2.68",
+        "input_lra": "0.50",
+        "input_thresh": "-28.60",
+        "target_i": "-16",
+        "target_tp": "-1.5",
+        "target_lra": "11"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "id": "boss_arrival_voice_sting_mix_v001",
+      "path": "processed/audio_mix_v001/boss_arrival_voice_sting_mix_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 8.0,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "194.9 kbps",
+      "size": "190K",
+      "mix_plan": [
+        "Use 8 second sting as the base layer at 0.78 volume.",
+        "Delay Boss voice by 500ms and mix at 1.10 volume.",
+        "Normalize the mixed preview toward I=-16, TP=-1.5, LRA=11."
+      ],
+      "loudnorm_probe": {
+        "input_i": "-14.88",
+        "input_tp": "-1.65",
+        "input_lra": "2.50",
+        "input_thresh": "-24.88",
+        "target_i": "-16",
+        "target_tp": "-1.5",
+        "target_lra": "11"
+      },
+      "qa_status": "needs_listening_review",
+      "qa_notes": [
+        "This is a listening preview only and must not replace separate source assets.",
+        "Human review must confirm whether the voice stays intelligible over the sting.",
+        "The mix settings are provisional and may need ducking, subtitle timing, or a different voice before Runtime integration."
+      ]
+    }
+  ],
+  "commands": [
+    "ffmpeg -y -hide_banner -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3 -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/audio/voice_boss_arrival_cn_v002.mp3 -filter_complex \"[0:a]volume=0.78[sting];[1:a]adelay=500|500,volume=1.10[voice];[sting][voice]amix=inputs=2:duration=first:dropout_transition=0,loudnorm=I=-16:TP=-1.5:LRA=11[mix]\" -map \"[mix]\" -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_mix_v001/boss_arrival_voice_sting_mix_v001.mp3",
+    "ffprobe -v error -show_entries stream=codec_name,sample_rate,channels -show_entries format=duration,bit_rate -of json asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_mix_v001/boss_arrival_voice_sting_mix_v001.mp3",
+    "ffmpeg -hide_banner -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_mix_v001/boss_arrival_voice_sting_mix_v001.mp3 -af loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json -f null -"
+  ],
+  "limitations": [
+    "loudnorm probes are technical measurements only and do not prove listening quality.",
+    "The mix preview is still a generated candidate and is not accepted_content, runtime_integrated, or release_ready."
+  ]
+}

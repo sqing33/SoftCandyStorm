@@ -3,7 +3,7 @@
 - Root: `asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan`
 - Decision: `asset_candidates_valid`
 - Batch count: 1
-- Asset count: 5
+- Asset count: 6
 - Require commands: True
 
 ## Errors

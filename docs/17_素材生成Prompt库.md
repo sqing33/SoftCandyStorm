@@ -243,6 +243,7 @@ harness/reports/2026-05-26_mmx_asset_generation_plan_template_001/summary.md
 - `voice_boss_arrival_cn_v002`：中文 Boss 出场提示语音候选，文本为“警报！裂星糖罐核心苏醒了！”。计划声线 `Chinese_female_news_anchor` 不存在，实际使用 `Chinese (Mandarin)_News_Anchor`。
 - `sting_boss_arrival_v002_source`：Boss 出场音乐源候选，约 72.9 秒，只能作为剪辑来源。
 - `sting_boss_arrival_v002_trim8s`：从音乐源剪出的 8 秒 Boss 出场 sting 候选，仍需人工听感、响度和语音叠放审查。
+- `boss_arrival_voice_sting_mix_v001`：Boss 语音叠放 8 秒 sting 的听感预览候选，已记录 loudnorm 探测值，仍需人工确认语音清晰度和混音比例。
 
 已生成 strict metadata 报告：
 
@@ -250,7 +251,7 @@ harness/reports/2026-05-26_mmx_asset_generation_plan_template_001/summary.md
 harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_metadata_001/summary.md
 ```
 
-已生成覆盖全部 5 个素材 id 的人工审查草稿：
+已生成覆盖全部 6 个素材 id 的人工审查草稿：
 
 ```text
 harness/asset_review/drafts/2026-05-26_mmx_runtime_topdown_audio_plan_review_draft.json

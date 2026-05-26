@@ -10,9 +10,11 @@
 - `audio/voice_boss_arrival_cn_v002.mp3`：Boss 出场中文语音候选。
 - `music/sting_boss_arrival_v002_source.mp3`：Boss 出场音乐源候选。
 - `processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3`：从音乐源候选裁剪出的 8 秒 sting 候选。
+- `processed/audio_mix_v001/boss_arrival_voice_sting_mix_v001.mp3`：Boss 语音叠放 8 秒 sting 的听感预览候选。
 - `metadata/manifest.json`：候选文件、prompt、命令、来源、状态和下一步。
 - `metadata/postprocess_topdown_v005.json`、`metadata/component_cleanup_topdown_v005.json`、`metadata/preview_topdown_v005.json`：图像后处理记录。
 - `metadata/postprocess_audio_v002.json`：音频裁剪记录。
+- `metadata/audio_mix_v001.json`：音频叠放预览与 loudnorm 探测记录。
 - `metadata/review_2026-05-26.md`：初步审查结论。
 
 ## 状态
