@@ -4,87 +4,108 @@
   "completed": [
     {
       "id": "workspace_and_game_core",
-      "summary": "建立 Rust workspace、headless GameCore、固定 tick/seed 仿真、基础内容加载与校验"
+      "summary": "建立 Rust workspace、headless GameCore、固定 tick/seed 仿真、基础内容加载与校验",
+      "report": "Cargo.toml"
     },
     {
       "id": "base_demo_content_pack",
-      "summary": "建立 base_demo 内容包，覆盖角色、武器、被动、敌人、Boss、地图和波次"
+      "summary": "建立 base_demo 内容包，覆盖角色、武器、被动、敌人、Boss、地图和波次",
+      "report": "content/base_demo"
     },
     {
       "id": "rule_bot_policies",
-      "summary": "实现 Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 规则 Bot"
+      "summary": "实现 Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 规则 Bot",
+      "report": "crates/bot_policies/src/lib.rs"
     },
     {
       "id": "harness_batch_report",
-      "summary": "实现 validate-content、simulate、batch，以及 Markdown/JSON 报告与失败案例输出"
+      "summary": "实现 validate-content、simulate、batch，以及 Markdown/JSON 报告与失败案例输出",
+      "report": "harness/reports/2026-05-25_kite_batch_001/summary.md"
     },
     {
       "id": "harness_bot_matrix",
-      "summary": "实现 matrix 命令，支持多 Bot 多 seed 汇总、门禁目标、失败案例和矩阵报告"
+      "summary": "实现 matrix 命令，支持多 Bot 多 seed 汇总、门禁目标、失败案例和矩阵报告",
+      "report": "harness/reports/2026-05-25_matrix_smoke_001/summary.md"
     },
     {
       "id": "prototype_replay_records",
-      "summary": "Harness 报告写入原型 replay JSON，包含 RunConfig、content hash、action stream、升级选择和 final metrics"
+      "summary": "Harness 报告写入原型 replay JSON，包含 RunConfig、content hash、action stream、升级选择和 final metrics",
+      "report": "harness/reports/2026-05-25_replay_baseline_001/summary.md"
     },
     {
       "id": "strict_replay_runner",
-      "summary": "实现 replay 命令，严格校验 content hash、升级选项和 final metrics，可用于同版本 Replay 回归"
+      "summary": "实现 replay 命令，严格校验 content hash、升级选项和 final metrics，可用于同版本 Replay 回归",
+      "report": "harness/reports/2026-05-25_replay_regression_smoke_001/summary.md"
     },
     {
       "id": "candidate_validation_pipeline",
-      "summary": "实现 validate-candidates 命令，将 generated_candidates 中的候选包校验后复制到 validated_candidates 或 rejected_content，并保留拒绝原因"
+      "summary": "实现 validate-candidates 命令，将 generated_candidates 中的候选包校验后复制到 validated_candidates 或 rejected_content，并保留拒绝原因",
+      "report": "harness/reports/2026-05-25_candidates_smoke_001/summary.md"
     },
     {
       "id": "static_budget_gates",
-      "summary": "实现 budget-content 和候选池静态预算门禁，覆盖武器理论 DPS、敌人威胁/接触压力、波次压力和性能上限"
+      "summary": "实现 budget-content 和候选池静态预算门禁，覆盖武器理论 DPS、敌人威胁/接触压力、波次压力和性能上限",
+      "report": "crates/game_harness/src/main.rs"
     },
     {
       "id": "candidate_simulation_promotion",
-      "summary": "实现 simulate-candidates 命令，对 validated_candidates 执行 Bot 矩阵，通过后进入 simulated_candidates，未通过进入 repair_queue"
+      "summary": "实现 simulate-candidates 命令，对 validated_candidates 执行 Bot 矩阵，通过后进入 simulated_candidates，未通过进入 repair_queue",
+      "report": "harness/reports/2026-05-25_candidate_simulation_smoke_001/summary.md"
     },
     {
       "id": "replay_regression_batch",
-      "summary": "实现 replay-batch 命令，递归扫描 replay JSON 并汇总 strict 回归结果；代表性矩阵样本 12/12 通过"
+      "summary": "实现 replay-batch 命令，递归扫描 replay JSON 并汇总 strict 回归结果；代表性矩阵样本 12/12 通过",
+      "report": "harness/reports/2026-05-25_replay_baseline_regression_001/summary.md"
     },
     {
       "id": "runtime_visualization_client",
-      "summary": "建立最小 Bevy Runtime 客户端，键盘输入转换为 PlayerAction，固定 tick 调用 GameCore，并通过 snapshot/events 绘制基础画面、HUD、升级提示和结算信息"
+      "summary": "建立最小 Bevy Runtime 客户端，键盘输入转换为 PlayerAction，固定 tick 调用 GameCore，并通过 snapshot/events 绘制基础画面、HUD、升级提示和结算信息",
+      "report": "crates/game_runtime/src/main.rs"
     },
     {
       "id": "runtime_playability_pass",
-      "summary": "补齐 Runtime 基础可玩性：ASCII 调试 HUD、暂停/继续、重开、地图边界、低血量颜色反馈和升级选项按键提示"
+      "summary": "补齐 Runtime 基础可玩性：ASCII 调试 HUD、暂停/继续、重开、地图边界、低血量颜色反馈和升级选项按键提示",
+      "report": "crates/game_runtime/src/main.rs"
     },
     {
       "id": "runtime_asset_audio_pass",
-      "summary": "补齐 Runtime 表现反馈：GameCore 事件映射到 HUD 分类和内存生成的短 WAV 占位音效，覆盖发射、拾取、升级、受伤、终局和系统操作"
+      "summary": "补齐 Runtime 表现反馈：GameCore 事件映射到 HUD 分类和内存生成的短 WAV 占位音效，覆盖发射、拾取、升级、受伤、终局和系统操作",
+      "report": "crates/game_runtime/src/main.rs"
     },
     {
       "id": "asset_candidate_generation",
-      "summary": "使用 mmx 生成第一批素材候选，包含 Runtime spritesheet 图像、中文风暴提示语音和糖果风战斗 BGM，并保存 prompt、来源、格式、QA 结论和后处理要求"
+      "summary": "使用 mmx 生成第一批素材候选，包含 Runtime spritesheet 图像、中文风暴提示语音和糖果风战斗 BGM，并保存 prompt、来源、格式、QA 结论和后处理要求",
+      "report": "asset/generated_candidates/2026-05-25_mmx_first_pass/metadata/manifest.json"
     },
     {
       "id": "asset_candidate_postprocess_tool",
-      "summary": "增加素材候选后处理脚本，支持按网格裁切 spritesheet、移除连通背景、输出 PNG 候选和 JSON 后处理报告；已对第一批 mmx spritesheet 生成 25 个裁切候选"
+      "summary": "增加素材候选后处理脚本，支持按网格裁切 spritesheet、移除连通背景、输出 PNG 候选和 JSON 后处理报告；已对第一批 mmx spritesheet 生成 25 个裁切候选",
+      "report": "asset/generated_candidates/2026-05-25_mmx_first_pass/metadata/postprocess_runtime_spritesheet_v001.json"
     },
     {
       "id": "expanded_replay_baseline_set",
-      "summary": "扩充代表性 Replay 基线：使用 all Bot、5 seed、300 秒生成 45 条 replay，并通过 strict replay-batch 回归验证 45/45 可复现"
+      "summary": "扩充代表性 Replay 基线：使用 all Bot、5 seed、300 秒生成 45 条 replay，并通过 strict replay-batch 回归验证 45/45 可复现",
+      "report": "harness/reports/2026-05-25_replay_baseline_regression_001/summary.md"
     },
     {
       "id": "rule_bot_policy_calibration",
-      "summary": "完成规则 Bot 基线策略校准：Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 在 300 秒 5 seed 全矩阵中全部进入目标区间，45 条代表性 replay strict 回归 45/45 通过"
+      "summary": "完成规则 Bot 基线策略校准：Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 在 300 秒 5 seed 全矩阵中全部进入目标区间，45 条代表性 replay strict 回归 45/45 通过",
+      "report": "harness/reports/2026-05-25_bot_policy_calibration_010/summary.md"
     },
     {
       "id": "asset_candidate_review",
-      "summary": "完成第一批 mmx 素材候选审查，结论为 repair：少量 PNG 可进入二次清理，语音和 BGM 保留为人工听感审查候选，全部仍不得接入正式 Runtime"
+      "summary": "完成第一批 mmx 素材候选审查，结论为 repair：少量 PNG 可进入二次清理，语音和 BGM 保留为人工听感审查候选，全部仍不得接入正式 Runtime",
+      "report": "asset/generated_candidates/2026-05-25_mmx_first_pass/metadata/review_2026-05-25.md"
     },
     {
       "id": "asset_candidate_preview_pass",
-      "summary": "为第一批素材 shortlist 生成 128px 统一透明画布和 64/32px 棋盘格预览，用于人工检查小尺寸可读性；预览仍保留在候选目录"
+      "summary": "为第一批素材 shortlist 生成 128px 统一透明画布和 64/32px 棋盘格预览，用于人工检查小尺寸可读性；预览仍保留在候选目录",
+      "report": "asset/generated_candidates/2026-05-25_mmx_first_pass/metadata/preview_runtime_spritesheet_v001.json"
     },
     {
       "id": "asset_candidate_second_pass",
-      "summary": "使用 mmx 生成第二批单体素材候选，覆盖玩家、普通软糖怪、XP 糖晶、彩虹弹效果和暴走搅糖机 Boss，并完成抠图、预览和审查；结论为 repair，彩虹弹因水印和身份偏差需重生成"
+      "summary": "使用 mmx 生成第二批单体素材候选，覆盖玩家、普通软糖怪、XP 糖晶、彩虹弹效果和暴走搅糖机 Boss，并完成抠图、预览和审查；结论为 repair，彩虹弹因水印和身份偏差需重生成",
+      "report": "asset/generated_candidates/2026-05-25_mmx_second_pass/metadata/review_2026-05-25.md"
     },
     {
       "id": "asset_map_boss_audio_candidate_pass",
@@ -113,75 +134,93 @@
     },
     {
       "id": "asset_projectile_retry_candidates",
-      "summary": "使用 mmx 重生成彩虹糖弹候选，完成抠图、64px/32px 预览和审查；v003_002 身份最稳定但仍需人工清理阴影、星光和透明边缘"
+      "summary": "使用 mmx 重生成彩虹糖弹候选，完成抠图、64px/32px 预览和审查；v003_002 身份最稳定但仍需人工清理阴影、星光和透明边缘",
+      "report": "asset/generated_candidates/2026-05-25_mmx_projectile_retry/metadata/review_2026-05-25.md"
     },
     {
       "id": "expanded_bot_matrix_validation",
-      "summary": "将规则 Bot 基线扩展到 all Bot、10 seed、300 秒共 90 局，并通过 strict replay-batch 回归验证 90/90 可复现；扩样本发现 coward、tank、route 三个 Bot 需要策略或平衡复查"
+      "summary": "将规则 Bot 基线扩展到 all Bot、10 seed、300 秒共 90 局，并通过 strict replay-batch 回归验证 90/90 可复现；扩样本发现 coward、tank、route 三个 Bot 需要策略或平衡复查",
+      "report": "harness/reports/2026-05-25_bot_matrix_expanded_001/summary.md"
     },
     {
       "id": "bot_policy_recalibration_10_seed",
-      "summary": "复校 coward、tank、route 规则 Bot 策略后重跑 all Bot、10 seed、300 秒共 90 局；所有 Bot 进入原型胜率目标区间，strict replay-batch 回归 90/90 通过"
+      "summary": "复校 coward、tank、route 规则 Bot 策略后重跑 all Bot、10 seed、300 秒共 90 局；所有 Bot 进入原型胜率目标区间，strict replay-batch 回归 90/90 通过",
+      "report": "harness/reports/2026-05-25_bot_policy_recalibration_001/summary.md"
     },
     {
       "id": "asset_candidate_cleanup_pass",
-      "summary": "为第二批 repair 素材和彩虹糖弹 preferred 候选增加 alpha 连通组件清理，输出 128/64/32px 透明 runtime-size 候选与棋盘格预览；清理结果仍停留在 generated_candidates"
+      "summary": "为第二批 repair 素材和彩虹糖弹 preferred 候选增加 alpha 连通组件清理，输出 128/64/32px 透明 runtime-size 候选与棋盘格预览；清理结果仍停留在 generated_candidates",
+      "report": "asset/generated_candidates/2026-05-25_asset_cleanup_pass/metadata/review_2026-05-25.md"
     },
     {
       "id": "asset_topdown_retry_candidates",
-      "summary": "使用 mmx 生成玩家和暴走搅糖机 Boss 严格俯视角重试候选，完成抠图、alpha 连通组件清理和 128/64/32px 预览；审查结论仍为 repair，原因是候选偏正面吉祥物"
+      "summary": "使用 mmx 生成玩家和暴走搅糖机 Boss 严格俯视角重试候选，完成抠图、alpha 连通组件清理和 128/64/32px 预览；审查结论仍为 repair，原因是候选偏正面吉祥物",
+      "report": "asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/review_2026-05-25.md"
     },
     {
       "id": "prototype_topdown_placeholder_assets",
-      "summary": "生成程序化 top-down Runtime 原型占位素材包，覆盖玩家、四类敌人、Boss、XP 糖晶、彩虹糖弹和糖霜草地图块，并保存生成脚本、manifest 与 contact sheet"
+      "summary": "生成程序化 top-down Runtime 原型占位素材包，覆盖玩家、四类敌人、Boss、XP 糖晶、彩虹糖弹和糖霜草地图块，并保存生成脚本、manifest 与 contact sheet",
+      "report": "assets/prototype_topdown/manifest.json"
     },
     {
       "id": "runtime_prototype_asset_loading",
-      "summary": "Bevy Runtime 启动时加载 `assets/prototype_topdown` 程序化占位纹理，并用玩家、敌人、Boss、XP 糖晶和地图 tile 替换几何色块绘制"
+      "summary": "Bevy Runtime 启动时加载 `assets/prototype_topdown` 程序化占位纹理，并用玩家、敌人、Boss、XP 糖晶和地图 tile 替换几何色块绘制",
+      "report": "crates/game_runtime/src/main.rs"
     },
     {
       "id": "runtime_asset_smoke_check",
-      "summary": "补充 Runtime 原型素材路径冒烟测试，并手动启动 Bevy Runtime 确认程序化占位纹理加载不再报资源缺失"
+      "summary": "补充 Runtime 原型素材路径冒烟测试，并手动启动 Bevy Runtime 确认程序化占位纹理加载不再报资源缺失",
+      "report": "assets/prototype_topdown/manifest.json"
     },
     {
       "id": "projectile_snapshot_visualization",
-      "summary": "GameCore RunSnapshot 暴露活跃 projectile，Runtime 使用彩虹糖弹原型贴图绘制 `visible_projectiles`，补齐 WeaponFired 事件之外的投射物可视化"
+      "summary": "GameCore RunSnapshot 暴露活跃 projectile，Runtime 使用彩虹糖弹原型贴图绘制 `visible_projectiles`，补齐 WeaponFired 事件之外的投射物可视化",
+      "report": "crates/game_core/src/lib.rs"
     },
     {
       "id": "runtime_effect_and_hit_feedback",
-      "summary": "Runtime 增加短生命周期视觉反馈队列，基于 GameCore events 为 projectile 命中、XP 掉落/拾取、玩家受击和 Boss 出场绘制瞬时闪烁效果"
+      "summary": "Runtime 增加短生命周期视觉反馈队列，基于 GameCore events 为 projectile 命中、XP 掉落/拾取、玩家受击和 Boss 出场绘制瞬时闪烁效果",
+      "report": "crates/game_runtime/src/main.rs"
     },
     {
       "id": "larger_bot_baseline_nightly",
-      "summary": "将规则 Bot 基线扩展到 all Bot、20 seed、300 秒共 180 局；校准 Tank 与 ZoneControl 策略后所有 Bot 进入目标区间，strict replay-batch 回归 180/180 通过"
+      "summary": "将规则 Bot 基线扩展到 all Bot、20 seed、300 秒共 180 局；校准 Tank 与 ZoneControl 策略后所有 Bot 进入目标区间，strict replay-batch 回归 180/180 通过",
+      "report": "harness/reports/2026-05-25_bot_matrix_nightly_001/summary.md"
     },
     {
       "id": "runtime_playtest_capture_tool",
-      "summary": "Runtime 增加本地人工试玩捕获参数 `--playtest-report`、`--player-skill` 和 `--capture-interval`，可持续写入关键可观测样本、事件计数、最终 metrics 与人工评分模板"
+      "summary": "Runtime 增加本地人工试玩捕获参数 `--playtest-report`、`--player-skill` 和 `--capture-interval`，可持续写入关键可观测样本、事件计数、最终 metrics 与人工评分模板",
+      "report": "crates/game_runtime/src/main.rs"
     },
     {
       "id": "runtime_playtest_capture_smoke",
-      "summary": "启动 Runtime 生成 60 秒本地 capture 冒烟报告，验证 per-second samples、事件计数、final metrics 和人工评分模板能写盘；该报告只证明捕获链路，不替代真人试玩"
+      "summary": "启动 Runtime 生成 60 秒本地 capture 冒烟报告，验证 per-second samples、事件计数、final metrics 和人工评分模板能写盘；该报告只证明捕获链路，不替代真人试玩",
+      "report": "harness/reports/2026-05-25_runtime_playtest_capture_smoke_001/summary.md"
     },
     {
       "id": "runtime_demo_input_mode",
-      "summary": "Runtime 增加 `--demo-input` 确定性演示输入，并生成 90 秒 demo capture；报告覆盖移动、XP 拾取、升级 offer/choice、事件计数和 final metrics"
+      "summary": "Runtime 增加 `--demo-input` 确定性演示输入，并生成 90 秒 demo capture；报告覆盖移动、XP 拾取、升级 offer/choice、事件计数和 final metrics",
+      "report": "harness/reports/2026-05-25_runtime_demo_input_001/summary.md"
     },
     {
       "id": "runtime_boss_capture_pass",
-      "summary": "运行 240 秒 Runtime demo capture，验证 Boss 出场、玩家受伤、终局 terminal、事件计数和 final metrics 均能写入报告"
+      "summary": "运行 240 秒 Runtime demo capture，验证 Boss 出场、玩家受伤、终局 terminal、事件计数和 final metrics 均能写入报告",
+      "report": "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md"
     },
     {
       "id": "runtime_capture_auto_exit",
-      "summary": "Runtime 增加 `--auto-exit-after-report` 可选参数，并用 5 秒 demo capture 验证终局报告写盘后进程会自动退出"
+      "summary": "Runtime 增加 `--auto-exit-after-report` 可选参数，并用 5 秒 demo capture 验证终局报告写盘后进程会自动退出",
+      "report": "harness/reports/2026-05-25_runtime_auto_exit_smoke_001/summary.md"
     },
     {
       "id": "runtime_capture_simulation_speed",
-      "summary": "Runtime 增加 `--simulation-speed` 可选参数，并用 60 秒 8x demo capture 验证加速步进、报告字段和自动退出链路"
+      "summary": "Runtime 增加 `--simulation-speed` 可选参数，并用 60 秒 8x demo capture 验证加速步进、报告字段和自动退出链路",
+      "report": "harness/reports/2026-05-25_runtime_simulation_speed_smoke_001/summary.md"
     },
     {
       "id": "runtime_manual_review_pack",
-      "summary": "增加 Runtime 人工试玩审查包和 JSON 模板，覆盖 9 局最小人工试玩矩阵、评分字段、标签、门禁结论和 failure case 记录要求"
+      "summary": "增加 Runtime 人工试玩审查包和 JSON 模板，覆盖 9 局最小人工试玩矩阵、评分字段、标签、门禁结论和 failure case 记录要求",
+      "report": "harness/playtest/runtime_manual_review_pack.md"
     },
     {
       "id": "manual_playtest_review_validator",
@@ -225,143 +264,178 @@
     },
     {
       "id": "python_gym_bridge_smoke",
-      "summary": "实现 `game_harness gym-bridge` JSONL 协议和 `python/gym_env` Gymnasium 包装器，完成 9 动作、82 维 observation、reward 映射和 2 秒 episode 冒烟"
+      "summary": "实现 `game_harness gym-bridge` JSONL 协议和 `python/gym_env` Gymnasium 包装器，完成 9 动作、82 维 observation、reward 映射和 2 秒 episode 冒烟",
+      "report": "harness/reports/2026-05-25_gym_bridge_smoke_001/summary.md"
     },
     {
       "id": "rl_training_smoke_config",
-      "summary": "增加 Stable-Baselines3 DQN/PPO 训练配置、训练入口、依赖检查、dry-run 和评估报告模板；当前环境缺少训练依赖，已验证配置与 bridge dry-run"
+      "summary": "增加 Stable-Baselines3 DQN/PPO 训练配置、训练入口、依赖检查、dry-run 和评估报告模板；当前环境缺少训练依赖，已验证配置与 bridge dry-run",
+      "report": "harness/reports/2026-05-25_rl_training_smoke_config_001/summary.md"
     },
     {
       "id": "rl_training_evaluation_outputs",
-      "summary": "扩展 `python/train/train_sb3.py`，真实训练可覆盖 timesteps/eval 规模并写模型 metadata、training report、evaluation report 和 known exploit notes"
+      "summary": "扩展 `python/train/train_sb3.py`，真实训练可覆盖 timesteps/eval 规模并写模型 metadata、training report、evaluation report 和 known exploit notes",
+      "report": "harness/reports/2026-05-25_rl_training_eval_path_001/summary.md"
     },
     {
       "id": "mmx_ui_audio_candidate_batch",
-      "summary": "使用 mmx 生成升级卡牌框、升级提示语音和局后结算 jingle 候选，全部保留在 asset/generated_candidates 并记录 prompt、命令、格式和审查结论"
+      "summary": "使用 mmx 生成升级卡牌框、升级提示语音和局后结算 jingle 候选，全部保留在 asset/generated_candidates 并记录 prompt、命令、格式和审查结论",
+      "report": "asset/generated_candidates/2026-05-25_mmx_ui_audio_pass/metadata/manifest.json"
     },
     {
       "id": "candidate_playtest_promotion",
-      "summary": "实现 simulated_candidates 到 playtest_candidates 的人工试玩候选推进门禁，写入 playtest_gate 并验证不会进入 accepted_content"
+      "summary": "实现 simulated_candidates 到 playtest_candidates 的人工试玩候选推进门禁，写入 playtest_gate 并验证不会进入 accepted_content",
+      "report": "harness/reports/2026-05-25_candidate_playtest_promotion_smoke_001/summary.md"
     },
     {
       "id": "accepted_content_manual_gate",
-      "summary": "实现 playtest_candidates 到 accepted_content 的人工审查推进门禁，要求 9 局人工试玩证据、内容 hash 复核和 accept_candidate 结论；缺少审查时保持 waiting"
+      "summary": "实现 playtest_candidates 到 accepted_content 的人工审查推进门禁，要求 9 局人工试玩证据、内容 hash 复核和 accept_candidate 结论；缺少审查时保持 waiting",
+      "report": "harness/reports/2026-05-25_accepted_content_manual_gate_smoke_001/summary.md"
     },
     {
       "id": "accepted_content_version_lock",
-      "summary": "实现 accepted_content 版本锁定命令，复核 acceptance_gate、内容 hash、人工审查引用和静态预算后生成 lockfile 与报告"
+      "summary": "实现 accepted_content 版本锁定命令，复核 acceptance_gate、内容 hash、人工审查引用和静态预算后生成 lockfile 与报告",
+      "report": "harness/reports/2026-05-25_accepted_content_lock_smoke_001/summary.md"
     },
     {
       "id": "runtime_locked_content_selection",
-      "summary": "Runtime 增加 accepted lockfile 内容选择入口，只有 lockfile 中 status=locked 的候选可通过 --accepted-lock-file / --accepted-content-id 被读取"
+      "summary": "Runtime 增加 accepted lockfile 内容选择入口，只有 lockfile 中 status=locked 的候选可通过 --accepted-lock-file / --accepted-content-id 被读取",
+      "report": "harness/reports/2026-05-25_runtime_lock_content_smoke_001/summary.md"
     },
     {
       "id": "meta_progression_core",
-      "summary": "GameCore 增加最小局外进度模型，覆盖糖晶碎片、星片、风暴糖粒、章节目标、图鉴进度、内容解锁和局后结算；Harness 增加 meta-settlement 报告入口"
+      "summary": "GameCore 增加最小局外进度模型，覆盖糖晶碎片、星片、风暴糖粒、章节目标、图鉴进度、内容解锁和局后结算；Harness 增加 meta-settlement 报告入口",
+      "report": "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md"
     },
     {
       "id": "meta_progression_runtime_ui",
-      "summary": "Runtime 增加最小糖罐守护站局外面板，终局时调用 game_core::meta 展示糖晶碎片、星片、章节目标、图鉴更新和新解锁"
+      "summary": "Runtime 增加最小糖罐守护站局外面板，终局时调用 game_core::meta 展示糖晶碎片、星片、章节目标、图鉴更新和新解锁",
+      "report": "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md"
     },
     {
       "id": "content_evolution_event_schema",
-      "summary": "GameCore 内容包支持加载与校验 evolutions/events 目录，base_demo 增加彩虹糖流星雨进化和彩虹糖潮事件配置，并由 snapshot 从内容包暴露可追踪进化路径"
+      "summary": "GameCore 内容包支持加载与校验 evolutions/events 目录，base_demo 增加彩虹糖流星雨进化和彩虹糖潮事件配置，并由 snapshot 从内容包暴露可追踪进化路径",
+      "report": "content/base_demo/evolutions/rainbow-candy-meteor.json"
     },
     {
       "id": "base_demo_passive_completion",
-      "summary": "补齐 docs/04 首批 8 个被动中的防粘围裙、酸味调节器和糖霜手套，并让 damage_reduction、effect_duration、projectile_size 在 GameCore 中影响接触伤害、投射物持续时间和投射物半径"
+      "summary": "补齐 docs/04 首批 8 个被动中的防粘围裙、酸味调节器和糖霜手套，并让 damage_reduction、effect_duration、projectile_size 在 GameCore 中影响接触伤害、投射物持续时间和投射物半径",
+      "report": "content/base_demo/passives/nonstick-apron.json"
     },
     {
       "id": "upgrade_new_weapon_options",
-      "summary": "GameCore 升级池支持授予内容包中的新武器，武器目标选择支持 boss_priority、highest_health_enemy、random_enemy、random_direction、movement_direction 和地面/自身附近目标；base_demo 增加糖晶长枪和汽水喷泉配置"
+      "summary": "GameCore 升级池支持授予内容包中的新武器，武器目标选择支持 boss_priority、highest_health_enemy、random_enemy、random_direction、movement_direction 和地面/自身附近目标；base_demo 增加糖晶长枪和汽水喷泉配置",
+      "report": "content/base_demo/weapons/soda-fountain.json"
     },
     {
       "id": "boss_chest_evolution_flow",
-      "summary": "GameCore 增加最小 Boss 宝箱进化流程：Boss 击杀后提供进化机会，满足武器和被动等级要求时可选择进化，进化会替换原武器并写入 BuildSnapshot.evolutions"
+      "summary": "GameCore 增加最小 Boss 宝箱进化流程：Boss 击杀后提供进化机会，满足武器和被动等级要求时可选择进化，进化会替换原武器并写入 BuildSnapshot.evolutions",
+      "report": "crates/game_core/src/lib.rs"
     },
     {
       "id": "content_event_runtime_effects",
-      "summary": "GameCore 增加内容事件实际触发与持续效果，支持 time_window 事件按 seed 判定后启用 xp_multiplier、spawn_rate_multiplier、pickup_radius_multiplier、damage_multiplier 和 heal；Runtime/Harness 可记录 content_event_triggered"
+      "summary": "GameCore 增加内容事件实际触发与持续效果，支持 time_window 事件按 seed 判定后启用 xp_multiplier、spawn_rate_multiplier、pickup_radius_multiplier、damage_multiplier 和 heal；Runtime/Harness 可记录 content_event_triggered",
+      "report": "content/base_demo/events/rainbow-candy-rush.json"
     },
     {
       "id": "starting_passive_loadout",
-      "summary": "GameCore reset 会应用 RunConfig 或角色 initial_loadout 中的初始被动，使初始被动进入 BuildSnapshot 并立即修改生命、减伤、经验、投射物等玩家属性"
+      "summary": "GameCore reset 会应用 RunConfig 或角色 initial_loadout 中的初始被动，使初始被动进入 BuildSnapshot 并立即修改生命、减伤、经验、投射物等玩家属性",
+      "report": "crates/game_core/src/lib.rs"
     },
     {
       "id": "base_demo_enemy_roster_completion",
-      "summary": "补齐 docs/04 首批 8 个普通敌人配置，新增粘粘熊糖、汽水泡泡、棉花糖团和辣味软糖，并将糖霜草地中后段波次接入完整敌人池"
+      "summary": "补齐 docs/04 首批 8 个普通敌人配置，新增粘粘熊糖、汽水泡泡、棉花糖团和辣味软糖，并将糖霜草地中后段波次接入完整敌人池",
+      "report": "content/base_demo/enemies/sticky-bear-gummy.json"
     },
     {
       "id": "enemy_behavior_runtime_effects",
-      "summary": "GameCore 增加首批敌人行为运行时效果：辣味软糖 dash 冲刺、汽水泡泡死亡分裂、焦糖史莱姆 leave_hazard 黏地减速，以及粘粘熊糖接触减速"
+      "summary": "GameCore 增加首批敌人行为运行时效果：辣味软糖 dash 冲刺、汽水泡泡死亡分裂、焦糖史莱姆 leave_hazard 黏地减速，以及粘粘熊糖接触减速",
+      "report": "crates/game_core/src/lib.rs"
     },
     {
       "id": "base_demo_weapon_roster_completion",
-      "summary": "补齐 docs/04 首批 10 个武器配置，新增棉花糖护盾、棒棒糖回旋镖、跳跳糖地雷、焦糖黏地、布丁炮台、薄荷旋风和星糖射线，并同步内置 base_demo 内容包"
+      "summary": "补齐 docs/04 首批 10 个武器配置，新增棉花糖护盾、棒棒糖回旋镖、跳跳糖地雷、焦糖黏地、布丁炮台、薄荷旋风和星糖射线，并同步内置 base_demo 内容包",
+      "report": "content/base_demo/weapons/marshmallow-shield.json"
     },
     {
       "id": "weapon_type_runtime_semantics",
-      "summary": "GameCore 开始按武器 type 执行首版运行时语义：orbit 从玩家周围生成环绕弹，burst/zone 在目标地面生成区域，summon 从玩家附近发射，beam 使用持续时间和更高穿透"
+      "summary": "GameCore 开始按武器 type 执行首版运行时语义：orbit 从玩家周围生成环绕弹，burst/zone 在目标地面生成区域，summon 从玩家附近发射，beam 使用持续时间和更高穿透",
+      "report": "crates/game_core/src/lib.rs"
     },
     {
       "id": "base_demo_evolution_roster_completion",
-      "summary": "补齐 docs/04 首批 8 个进化配置，新增棉花堡垒、汽水火山、旋糖风车、跳跳糖连锁反应、焦糖漩涡、布丁要塞和星糖棱镜，并同步内置 base_demo 内容包"
+      "summary": "补齐 docs/04 首批 8 个进化配置，新增棉花堡垒、汽水火山、旋糖风车、跳跳糖连锁反应、焦糖漩涡、布丁要塞和星糖棱镜，并同步内置 base_demo 内容包",
+      "report": "content/base_demo/evolutions/marshmallow-fortress.json"
     },
     {
       "id": "base_demo_character_roster_completion",
-      "summary": "补齐 docs/04 首批 5 个角色配置，新增泡泡邮差、奶油骑士、酸梅博士和布丁工匠，并补充汽水泡泡与酸梅喷雾两个角色初始武器"
+      "summary": "补齐 docs/04 首批 5 个角色配置，新增泡泡邮差、奶油骑士、酸梅博士和布丁工匠，并补充汽水泡泡与酸梅喷雾两个角色初始武器",
+      "report": "content/base_demo/characters/bubble-courier.json"
     },
     {
       "id": "base_demo_map_roster_completion",
-      "summary": "补齐 docs/04 首批 6 张地图配置，新增汽水溪谷、棉花云牧场、焦糖工坊、果冻月台和裂星糖罐，并同步内置 base_demo 内容包"
+      "summary": "补齐 docs/04 首批 6 张地图配置，新增汽水溪谷、棉花云牧场、焦糖工坊、果冻月台和裂星糖罐，并同步内置 base_demo 内容包",
+      "report": "content/base_demo/maps/soda-creek.json"
     },
     {
       "id": "base_demo_boss_roster_completion",
-      "summary": "补齐 docs/04 首批 6 个 Boss 配置，新增汽水喷泉龙、巨型棉花团、焦糖熔炉、巨型熊糖王和裂星糖罐核心，并同步内置 base_demo 内容包"
+      "summary": "补齐 docs/04 首批 6 个 Boss 配置，新增汽水喷泉龙、巨型棉花团、焦糖熔炉、巨型熊糖王和裂星糖罐核心，并同步内置 base_demo 内容包",
+      "report": "content/base_demo/bosses/soda-fountain-dragon.json"
     },
     {
       "id": "content_event_extended_runtime_effects",
-      "summary": "GameCore 内容事件扩展运行时语义，支持事件触发升级三选一、按 enemy_id 刷怪和生成临时地面危险区，并补充对应单测"
+      "summary": "GameCore 内容事件扩展运行时语义，支持事件触发升级三选一、按 enemy_id 刷怪和生成临时地面危险区，并补充对应单测",
+      "report": "crates/game_core/src/lib.rs"
     },
     {
       "id": "base_demo_random_event_roster_completion",
-      "summary": "补齐 docs/04 随机事件名录，新增糖罐补给、酸味雨、棉花云遮挡和焦糖地震，并同步内置 base_demo 内容包"
+      "summary": "补齐 docs/04 随机事件名录，新增糖罐补给、酸味雨、棉花云遮挡和焦糖地震，并同步内置 base_demo 内容包",
+      "report": "content/base_demo/events/sugar-jar-supply.json"
     },
     {
       "id": "base_demo_map_wave_roster_completion",
-      "summary": "为 docs/04 首批 6 张地图补齐标准波次和对应 Boss 事件，使每张 base_demo 地图都能初始化 GameCore"
+      "summary": "为 docs/04 首批 6 张地图补齐标准波次和对应 Boss 事件，使每张 base_demo 地图都能初始化 GameCore",
+      "report": "content/base_demo/waves/soda-creek-standard.json"
     },
     {
       "id": "map_selection_cli_runtime",
-      "summary": "Harness simulate、batch、matrix、meta-settlement、gym-bridge 和 Bevy Runtime 均支持 --map-id 选择运行地图，报告与 Gym bridge info 会保留 map_id，并通过 soda-creek / cracked-star-jar / jelly-platform smoke 验证"
+      "summary": "Harness simulate、batch、matrix、meta-settlement、gym-bridge 和 Bevy Runtime 均支持 --map-id 选择运行地图，报告与 Gym bridge info 会保留 map_id，并通过 soda-creek / cracked-star-jar / jelly-platform smoke 验证",
+      "report": "crates/game_harness/src/main.rs"
     },
     {
       "id": "runtime_map_visual_feedback",
-      "summary": "GameCore snapshot 暴露 active_hazards，Runtime 按 map_id 切换地图色调、边界色、HUD 地图名称和危险区可视反馈，Telemetry sample 记录 active_hazards 数量；caramel-workshop 5 秒 Runtime smoke 通过"
+      "summary": "GameCore snapshot 暴露 active_hazards，Runtime 按 map_id 切换地图色调、边界色、HUD 地图名称和危险区可视反馈，Telemetry sample 记录 active_hazards 数量；caramel-workshop 5 秒 Runtime smoke 通过",
+      "report": "crates/game_runtime/src/main.rs"
     },
     {
       "id": "boss_runtime_ability_semantics",
-      "summary": "GameCore 增加 BossPhaseChanged / BossAbilityUsed 事件和首版 Boss phase ability 调度，按配置能力生成召唤敌人、地面危险区和阶段变化；Runtime/Harness 已接入事件标签、计数、音画反馈，caramel-workshop 220 秒 Runtime smoke 记录到 Boss 技能与 active hazards"
+      "summary": "GameCore 增加 BossPhaseChanged / BossAbilityUsed 事件和首版 Boss phase ability 调度，按配置能力生成召唤敌人、地面危险区和阶段变化；Runtime/Harness 已接入事件标签、计数、音画反馈，caramel-workshop 220 秒 Runtime smoke 记录到 Boss 技能与 active hazards",
+      "report": "harness/reports/2026-05-26_boss_map_matrix_caramel_workshop_002/summary.md"
     },
     {
       "id": "caramel_workshop_boss_matrix_regression",
-      "summary": "围绕 caramel-workshop 首版 Boss 技能语义运行 600 秒 3 seed 多 Bot 矩阵并执行 strict replay-batch 回归；Kite、BossHunter、Tank 均 100% 胜率，Replay 回归 9/9 通过，已记录偏易 failure case"
+      "summary": "围绕 caramel-workshop 首版 Boss 技能语义运行 600 秒 3 seed 多 Bot 矩阵并执行 strict replay-batch 回归；Kite、BossHunter、Tank 均 100% 胜率，Replay 回归 9/9 通过，已记录偏易 failure case",
+      "report": "harness/reports/2026-05-26_boss_map_matrix_caramel_workshop_002/summary.md"
     },
     {
       "id": "caramel_workshop_balance_repair",
-      "summary": "修复焦糖工坊偏易问题：地面危险区增加伤害语义，焦糖熔炉和中后期怪潮提高压力，防御被动略降，BossHunter 改为保持 Boss 间距；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
+      "summary": "修复焦糖工坊偏易问题：地面危险区增加伤害语义，焦糖熔炉和中后期怪潮提高压力，防御被动略降，BossHunter 改为保持 Boss 间距；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过",
+      "report": "harness/reports/2026-05-26_caramel_workshop_balance_repair_001/summary.md"
     },
     {
       "id": "six_map_boss_matrix_scoping",
-      "summary": "使用 Kite、BossHunter、Tank 对 6 张地图执行 600 秒 3 seed 小矩阵范围扫描；焦糖工坊已 pass，其他地图暴露偏易或 Tank 早死问题，并记录 aggregate failure case"
+      "summary": "使用 Kite、BossHunter、Tank 对 6 张地图执行 600 秒 3 seed 小矩阵范围扫描；焦糖工坊已 pass，其他地图暴露偏易或 Tank 早死问题，并记录 aggregate failure case",
+      "report": "harness/reports/2026-05-26_six_map_boss_matrix_scoping_001/summary.md"
     },
     {
       "id": "soda_creek_balance_repair",
-      "summary": "修复汽水溪谷分裂问题：降低 0-210 秒泡泡远程占比，提高汽水喷泉龙本体/技能压力，并将 BossHunter 调整为更激进的近身猎 Boss 策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
+      "summary": "修复汽水溪谷分裂问题：降低 0-210 秒泡泡远程占比，提高汽水喷泉龙本体/技能压力，并将 BossHunter 调整为更激进的近身猎 Boss 策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过",
+      "report": "harness/reports/2026-05-26_soda_creek_balance_repair_001/summary.md"
     },
     {
       "id": "cracked_star_jar_balance_repair",
-      "summary": "修复裂星糖罐最终图偏易问题：裂星核心提高预算内 HP、延后高压阶段、补充阶段风暴伤害语义并提高 300 秒后怪潮压力，同时让规则 Bot 在最终图使用专属风险策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过"
+      "summary": "修复裂星糖罐最终图偏易问题：裂星核心提高预算内 HP、延后高压阶段、补充阶段风暴伤害语义并提高 300 秒后怪潮压力，同时让规则 Bot 在最终图使用专属风险策略；同 map/seed/bot 的 600 秒矩阵全部进入目标区间，strict replay-batch 9/9 通过",
+      "report": "harness/reports/2026-05-26_cracked_star_jar_balance_repair_001/summary.md"
     },
     {
       "id": "rl_dqn_training_smoke",
@@ -550,7 +624,7 @@
     },
     {
       "id": "progress_report_reference_validator",
-      "summary": "增加纯 Python progress 证据引用校验器，检查 harness/progress.json 结构、同一 section 内重复 id，以及所有已填写 report 字段的本地路径是否存在；当前 87 个 report 引用全部存在，历史无 report 条目保留为 warning。",
+      "summary": "增加纯 Python progress 证据引用校验器，检查 harness/progress.json 结构、同一 section 内重复 id，以及所有已填写 report 字段的本地路径是否存在；历史无 report 条目保留为 warning，并由最新报告记录当前引用数量。",
       "report": "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
     },
     {
@@ -602,6 +676,11 @@
       "id": "roadmap_phase_audit_gate",
       "summary": "增加 docs/12 Phase 0-10 路线图阶段审计清单和纯 Python 校验器，逐阶段记录验收项、证据、gap、blocker 和 next action；当前报告为 roadmap_phase_audit_incomplete，明确 Phase 7-10 尚未达到公开 Demo、上线和运营要求。",
       "report": "harness/reports/2026-05-26_roadmap_phase_audit_001/summary.md"
+    },
+    {
+      "id": "progress_report_backfill_batch_001",
+      "summary": "为第一批历史 completed 条目回填 report 证据路径，覆盖早期 GameCore、Runtime、Harness、候选池、素材、Meta 和多地图平衡记录；回填只指向已存在的本地源码、内容或报告，不改变这些条目的完成结论。",
+      "report": "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
     }
   ],
   "current_findings": [

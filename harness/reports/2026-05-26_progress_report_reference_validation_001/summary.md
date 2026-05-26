@@ -2,15 +2,15 @@
 
 - Source: `harness/progress.json`
 - Decision: `progress_reports_valid`
-- Items: 219
-- Report references: 97 / 97
-- Items without report: 119
+- Items: 220
+- Report references: 172 / 172
+- Items without report: 45
 
 ## Sections
 
 | Section | Items |
 |---|---:|
-| `completed` | 144 |
+| `completed` | 145 |
 | `current_findings` | 72 |
 | `next_recommended` | 3 |
 
@@ -20,80 +20,6 @@
 
 ## Warnings
 
-- workspace_and_game_core: no report evidence path recorded
-- base_demo_content_pack: no report evidence path recorded
-- rule_bot_policies: no report evidence path recorded
-- harness_batch_report: no report evidence path recorded
-- harness_bot_matrix: no report evidence path recorded
-- prototype_replay_records: no report evidence path recorded
-- strict_replay_runner: no report evidence path recorded
-- candidate_validation_pipeline: no report evidence path recorded
-- static_budget_gates: no report evidence path recorded
-- candidate_simulation_promotion: no report evidence path recorded
-- replay_regression_batch: no report evidence path recorded
-- runtime_visualization_client: no report evidence path recorded
-- runtime_playability_pass: no report evidence path recorded
-- runtime_asset_audio_pass: no report evidence path recorded
-- asset_candidate_generation: no report evidence path recorded
-- asset_candidate_postprocess_tool: no report evidence path recorded
-- expanded_replay_baseline_set: no report evidence path recorded
-- rule_bot_policy_calibration: no report evidence path recorded
-- asset_candidate_review: no report evidence path recorded
-- asset_candidate_preview_pass: no report evidence path recorded
-- asset_candidate_second_pass: no report evidence path recorded
-- asset_projectile_retry_candidates: no report evidence path recorded
-- expanded_bot_matrix_validation: no report evidence path recorded
-- bot_policy_recalibration_10_seed: no report evidence path recorded
-- asset_candidate_cleanup_pass: no report evidence path recorded
-- asset_topdown_retry_candidates: no report evidence path recorded
-- prototype_topdown_placeholder_assets: no report evidence path recorded
-- runtime_prototype_asset_loading: no report evidence path recorded
-- runtime_asset_smoke_check: no report evidence path recorded
-- projectile_snapshot_visualization: no report evidence path recorded
-- runtime_effect_and_hit_feedback: no report evidence path recorded
-- larger_bot_baseline_nightly: no report evidence path recorded
-- runtime_playtest_capture_tool: no report evidence path recorded
-- runtime_playtest_capture_smoke: no report evidence path recorded
-- runtime_demo_input_mode: no report evidence path recorded
-- runtime_boss_capture_pass: no report evidence path recorded
-- runtime_capture_auto_exit: no report evidence path recorded
-- runtime_capture_simulation_speed: no report evidence path recorded
-- runtime_manual_review_pack: no report evidence path recorded
-- python_gym_bridge_smoke: no report evidence path recorded
-- rl_training_smoke_config: no report evidence path recorded
-- rl_training_evaluation_outputs: no report evidence path recorded
-- mmx_ui_audio_candidate_batch: no report evidence path recorded
-- candidate_playtest_promotion: no report evidence path recorded
-- accepted_content_manual_gate: no report evidence path recorded
-- accepted_content_version_lock: no report evidence path recorded
-- runtime_locked_content_selection: no report evidence path recorded
-- meta_progression_core: no report evidence path recorded
-- meta_progression_runtime_ui: no report evidence path recorded
-- content_evolution_event_schema: no report evidence path recorded
-- base_demo_passive_completion: no report evidence path recorded
-- upgrade_new_weapon_options: no report evidence path recorded
-- boss_chest_evolution_flow: no report evidence path recorded
-- content_event_runtime_effects: no report evidence path recorded
-- starting_passive_loadout: no report evidence path recorded
-- base_demo_enemy_roster_completion: no report evidence path recorded
-- enemy_behavior_runtime_effects: no report evidence path recorded
-- base_demo_weapon_roster_completion: no report evidence path recorded
-- weapon_type_runtime_semantics: no report evidence path recorded
-- base_demo_evolution_roster_completion: no report evidence path recorded
-- base_demo_character_roster_completion: no report evidence path recorded
-- base_demo_map_roster_completion: no report evidence path recorded
-- base_demo_boss_roster_completion: no report evidence path recorded
-- content_event_extended_runtime_effects: no report evidence path recorded
-- base_demo_random_event_roster_completion: no report evidence path recorded
-- base_demo_map_wave_roster_completion: no report evidence path recorded
-- map_selection_cli_runtime: no report evidence path recorded
-- runtime_map_visual_feedback: no report evidence path recorded
-- boss_runtime_ability_semantics: no report evidence path recorded
-- caramel_workshop_boss_matrix_regression: no report evidence path recorded
-- caramel_workshop_balance_repair: no report evidence path recorded
-- six_map_boss_matrix_scoping: no report evidence path recorded
-- soda_creek_balance_repair: no report evidence path recorded
-- cracked_star_jar_balance_repair: no report evidence path recorded
 - rl_dqn_training_smoke: no report evidence path recorded
 - rl_policy_rule_bot_comparison: no report evidence path recorded
 - rl_policy_observability_fields: no report evidence path recorded
