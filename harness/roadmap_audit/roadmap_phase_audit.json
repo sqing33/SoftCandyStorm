@@ -455,11 +455,18 @@
         "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/comparison_60s_10seed.json",
         "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/failure_analysis.md",
         "harness/failed_cases/fail_20260527_021_directional_corner_reward_smoke_soda_gap.json",
-        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/stage01_corner_reward_directional_smoke.zip"
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/stage01_corner_reward_directional_smoke.zip",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/summary.md",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/ppo_training_report.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/comparison_60s_10seed.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/comparison_60s_10seed_stochastic.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/failure_analysis.md",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/failure_analysis_stochastic.md",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/stage01_corner_risk_delta_smoke.zip"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认旧坏路径是右下角 action 4，首个 action-specific 20k 重训又转为 action 8 塌缩。directional corner_action_risk smoke 避免 action 8 塌缩，但 soda-creek 60 秒 10 seed 仍只有 70% 胜率，opening blocker 继续存在。",
+        "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认旧坏路径是右下角 action 4，首个 action-specific 20k 重训又转为 action 8 塌缩。corner_risk_delta smoke 已让 stage 01 opening 60 秒 deterministic / stochastic 10 seed 三图 100% 胜率，但尚未证明 stage 02 mid-window、300 秒长局或 RL policy acceptance。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
@@ -469,8 +476,8 @@
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
-        "延长或复查 time-bucket curriculum stage_01 opening，并用更多 seed 证明 soda-creek 开局稳定后，再继续 stage_02 mid。",
-        "将 corner reward 从 per-step action-specific 惩罚改为 risk-delta 或状态目标化奖励，先做 short deterministic/stochastic smoke，再决定是否完整重训 stage 01；通过前不得进入 stage_02 mid。"
+        "基于 corner_risk_delta checkpoint 启动 stage_02 mid-window 实验，并分别记录 180 秒与后续 300 秒 high-pressure 对比；长局通过前不得推进为 RL 测试 Bot。",
+        "继续保留 rule Bot 与 replay/failure analysis 作为 RL policy acceptance 前置门禁。"
       ]
     },
     {

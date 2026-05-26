@@ -36,7 +36,8 @@ const GYM_REWARD_HAZARD_RISK_PENALTY: f32 = -0.0025;
 const GYM_REWARD_BOSS_PRESSURE_PENALTY: f32 = -0.0015;
 const GYM_REWARD_SAFETY_DELTA_WEIGHT: f32 = 0.02;
 const GYM_REWARD_SAFETY_DELTA_CLAMP: f32 = 0.25;
-const GYM_REWARD_OPENING_CORNER_ACTION_PENALTY: f32 = -0.003;
+const GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT: f32 = 0.012;
+const GYM_REWARD_OPENING_CORNER_DELTA_CLAMP: f32 = 0.25;
 const GYM_REWARD_OPENING_CORNER_SECONDS: f32 = 60.0;
 const GYM_REWARD_CORNER_DISTANCE_RATIO: f32 = 0.12;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
@@ -835,6 +836,7 @@ struct GymRewardBreakdown {
     boss_pressure: f32,
     safety_delta: f32,
     corner_action_risk: f32,
+    corner_risk_delta: f32,
     terminal: f32,
     total: f32,
 }
@@ -966,6 +968,7 @@ struct GymBridgeState {
     last_action_index: Option<usize>,
     repeated_action_steps: u32,
     last_safety_risk: Option<f32>,
+    last_opening_corner_risk: Option<f32>,
 }
 
 fn main() {
@@ -2570,6 +2573,7 @@ impl GymBridgeState {
     ) -> Self {
         let core = reset_gym_core(&content.pack, seed, &map_id, seconds, tick_rate);
         let last_safety_risk = Some(gym_safety_risk_score(&core.snapshot()));
+        let last_opening_corner_risk = Some(gym_opening_corner_pressure_risk(&core.snapshot()));
         Self {
             content,
             core,
@@ -2582,6 +2586,7 @@ impl GymBridgeState {
             last_action_index: None,
             repeated_action_steps: 0,
             last_safety_risk,
+            last_opening_corner_risk,
         }
     }
 
@@ -2595,6 +2600,8 @@ impl GymBridgeState {
         self.last_action_index = None;
         self.repeated_action_steps = 0;
         self.last_safety_risk = Some(gym_safety_risk_score(&self.core.snapshot()));
+        self.last_opening_corner_risk =
+            Some(gym_opening_corner_pressure_risk(&self.core.snapshot()));
     }
 
     fn handle_request(&mut self, request: GymBridgeRequest) -> GymBridgeResponse {
@@ -2700,13 +2707,22 @@ impl GymBridgeState {
         let previous_safety_risk = self.last_safety_risk.unwrap_or(current_safety_risk);
         let safety_delta = gym_safety_delta_reward(previous_safety_risk, current_safety_risk);
         self.last_safety_risk = Some(current_safety_risk);
+        let current_opening_corner_risk = gym_opening_corner_pressure_risk(&result.snapshot);
+        let previous_opening_corner_risk = self
+            .last_opening_corner_risk
+            .unwrap_or(current_opening_corner_risk);
+        let corner_risk_delta = gym_opening_corner_risk_delta_reward(
+            previous_opening_corner_risk,
+            current_opening_corner_risk,
+        );
+        self.last_opening_corner_risk = Some(current_opening_corner_risk);
         let reward_breakdown = gym_reward_breakdown(
             &result.reward_hint,
             &result.events,
             result.terminal.as_ref(),
             action_repeat,
-            movement_action_active.then_some(action_index),
             safety_delta,
+            corner_risk_delta,
             Some(&result.snapshot),
         );
 
@@ -2881,8 +2897,8 @@ fn gym_reward_breakdown(
     events: &[GameEvent],
     terminal: Option<&game_core::TerminalState>,
     action_repeat: f32,
-    action_index: Option<usize>,
     safety_delta: f32,
+    corner_risk_delta: f32,
     snapshot: Option<&game_core::RunSnapshot>,
 ) -> GymRewardBreakdown {
     let kill_delta = events
@@ -2899,9 +2915,7 @@ fn gym_reward_breakdown(
     let enemy_pressure = snapshot.map_or(0.0, gym_enemy_pressure_reward);
     let hazard_risk = snapshot.map_or(0.0, gym_hazard_risk_reward);
     let boss_pressure = snapshot.map_or(0.0, gym_boss_pressure_reward);
-    let corner_action_risk = snapshot.map_or(0.0, |snapshot| {
-        gym_opening_corner_action_reward(snapshot, action_index)
-    });
+    let corner_action_risk = 0.0;
 
     let terminal = if let Some(terminal) = terminal {
         match terminal.kind {
@@ -2928,6 +2942,7 @@ fn gym_reward_breakdown(
         + boss_pressure
         + safety_delta
         + corner_action_risk
+        + corner_risk_delta
         + terminal;
     GymRewardBreakdown {
         survival,
@@ -2943,6 +2958,7 @@ fn gym_reward_breakdown(
         boss_pressure,
         safety_delta,
         corner_action_risk,
+        corner_risk_delta,
         terminal,
         total,
     }
@@ -2982,18 +2998,16 @@ fn gym_safety_delta_reward(previous_risk: f32, current_risk: f32) -> f32 {
     risk_delta * GYM_REWARD_SAFETY_DELTA_WEIGHT
 }
 
-fn gym_opening_corner_action_reward(
-    snapshot: &game_core::RunSnapshot,
-    action_index: Option<usize>,
-) -> f32 {
+fn gym_opening_corner_risk_delta_reward(previous_risk: f32, current_risk: f32) -> f32 {
+    let risk_delta = (previous_risk - current_risk).clamp(
+        -GYM_REWARD_OPENING_CORNER_DELTA_CLAMP,
+        GYM_REWARD_OPENING_CORNER_DELTA_CLAMP,
+    );
+    risk_delta * GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT
+}
+
+fn gym_opening_corner_pressure_risk(snapshot: &game_core::RunSnapshot) -> f32 {
     if snapshot.time_seconds > GYM_REWARD_OPENING_CORNER_SECONDS {
-        return 0.0;
-    }
-    let Some(action_index) = action_index else {
-        return 0.0;
-    };
-    let movement = gym_discrete_movement(action_index);
-    if movement.length() <= 0.05 {
         return 0.0;
     }
 
@@ -3019,22 +3033,8 @@ fn gym_opening_corner_action_reward(
         top_distance,
         snapshot.map.height.max(1.0) * GYM_REWARD_CORNER_DISTANCE_RATIO,
     );
-    let horizontal_risk = if movement.x > 0.05 {
-        right_risk
-    } else if movement.x < -0.05 {
-        left_risk
-    } else {
-        0.0
-    };
-    let vertical_risk = if movement.y > 0.05 {
-        top_risk
-    } else if movement.y < -0.05 {
-        bottom_risk
-    } else {
-        0.0
-    };
-    let corner_risk = horizontal_risk.min(vertical_risk);
-    GYM_REWARD_OPENING_CORNER_ACTION_PENALTY * corner_risk * enemy_pressure_risk(snapshot)
+    let corner_risk = left_risk.max(right_risk).min(bottom_risk.max(top_risk));
+    corner_risk * enemy_pressure_risk(snapshot)
 }
 
 fn gym_safety_risk_score(snapshot: &game_core::RunSnapshot) -> f32 {
@@ -6635,9 +6635,11 @@ fn escape_json(value: &str) -> String {
 mod tests {
     use super::{
         content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_action_index,
-        gym_discrete_movement, gym_observation, gym_observation_len, gym_reward_breakdown,
-        gym_safety_delta_reward, gym_safety_risk_score, gym_snapshot_diagnostics, movement_changed,
-        GymBridgeRequest, ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
+        gym_discrete_movement, gym_observation, gym_observation_len,
+        gym_opening_corner_pressure_risk, gym_opening_corner_risk_delta_reward,
+        gym_reward_breakdown, gym_safety_delta_reward, gym_safety_risk_score,
+        gym_snapshot_diagnostics, movement_changed, GymBridgeRequest, ManualAcceptanceDecision,
+        GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN, GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT,
         GYM_REWARD_SAFETY_DELTA_WEIGHT, REQUIRED_PLAYTEST_RUN_IDS,
     };
     use game_core::{
@@ -6711,7 +6713,7 @@ mod tests {
             final_level: 1,
             kills: 0,
         };
-        let breakdown = gym_reward_breakdown(&hint, &[], Some(&terminal), -0.002, None, 0.0, None);
+        let breakdown = gym_reward_breakdown(&hint, &[], Some(&terminal), -0.002, 0.0, 0.0, None);
 
         assert!((breakdown.survival - 0.02).abs() < 0.0001);
         assert!((breakdown.xp - 0.12).abs() < 0.0001);
@@ -6725,6 +6727,7 @@ mod tests {
         assert_eq!(breakdown.boss_pressure, 0.0);
         assert_eq!(breakdown.safety_delta, 0.0);
         assert_eq!(breakdown.corner_action_risk, 0.0);
+        assert_eq!(breakdown.corner_risk_delta, 0.0);
         assert!((breakdown.terminal - 1.0).abs() < 0.0001);
         assert!(
             (breakdown.total
@@ -6741,6 +6744,7 @@ mod tests {
                     + breakdown.boss_pressure
                     + breakdown.safety_delta
                     + breakdown.corner_action_risk
+                    + breakdown.corner_risk_delta
                     + breakdown.terminal))
                 .abs()
                 < 0.0001
@@ -6786,7 +6790,7 @@ mod tests {
             &[],
             None,
             0.0,
-            None,
+            0.0,
             0.0,
             Some(&snapshot),
         );
@@ -6798,6 +6802,7 @@ mod tests {
         assert!(breakdown.boss_pressure < 0.0);
         assert_eq!(breakdown.safety_delta, 0.0);
         assert_eq!(breakdown.corner_action_risk, 0.0);
+        assert_eq!(breakdown.corner_risk_delta, 0.0);
         assert!(
             (breakdown.total
                 - (breakdown.low_health
@@ -6806,14 +6811,15 @@ mod tests {
                     + breakdown.hazard_risk
                     + breakdown.boss_pressure
                     + breakdown.safety_delta
-                    + breakdown.corner_action_risk))
+                    + breakdown.corner_action_risk
+                    + breakdown.corner_risk_delta))
                 .abs()
                 < 0.0001
         );
     }
 
     #[test]
-    fn gym_reward_breakdown_penalizes_opening_corner_action_risk() {
+    fn gym_reward_breakdown_tracks_opening_corner_risk_delta() {
         let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
         let half_width = snapshot.map.width * 0.5;
         let half_height = snapshot.map.height * 0.5;
@@ -6833,24 +6839,13 @@ mod tests {
             is_elite: false,
         });
 
-        let risky_breakdown = gym_reward_breakdown(
-            &RewardHint::default(),
-            &[],
-            None,
-            0.0,
-            Some(4),
-            0.0,
-            Some(&snapshot),
-        );
-        let escape_breakdown = gym_reward_breakdown(
-            &RewardHint::default(),
-            &[],
-            None,
-            0.0,
-            Some(7),
-            0.0,
-            Some(&snapshot),
-        );
+        let corner_risk = gym_opening_corner_pressure_risk(&snapshot);
+
+        let mut safer_snapshot = snapshot.clone();
+        safer_snapshot.player.position = Vec2::new(half_width - 140.0, -half_height + 140.0);
+        let safer_risk = gym_opening_corner_pressure_risk(&safer_snapshot);
+        let recovery_reward = gym_opening_corner_risk_delta_reward(corner_risk, safer_risk);
+        let worsening_reward = gym_opening_corner_risk_delta_reward(safer_risk, corner_risk);
 
         let mut top_left_snapshot = snapshot.clone();
         top_left_snapshot.player.position = Vec2::new(-half_width, half_height);
@@ -6868,46 +6863,34 @@ mod tests {
             is_boss: false,
             is_elite: false,
         });
-        let top_left_risky_breakdown = gym_reward_breakdown(
+        let top_left_corner_risk = gym_opening_corner_pressure_risk(&top_left_snapshot);
+
+        let recovery_breakdown = gym_reward_breakdown(
             &RewardHint::default(),
             &[],
             None,
             0.0,
-            Some(8),
             0.0,
-            Some(&top_left_snapshot),
-        );
-        let top_left_escape_breakdown = gym_reward_breakdown(
-            &RewardHint::default(),
-            &[],
-            None,
-            0.0,
-            Some(4),
-            0.0,
-            Some(&top_left_snapshot),
+            recovery_reward,
+            Some(&safer_snapshot),
         );
 
         snapshot.time_seconds = 61.0;
-        let late_breakdown = gym_reward_breakdown(
-            &RewardHint::default(),
-            &[],
-            None,
-            0.0,
-            Some(4),
-            0.0,
-            Some(&snapshot),
-        );
+        let late_risk = gym_opening_corner_pressure_risk(&snapshot);
 
-        assert!(risky_breakdown.corner_action_risk < 0.0);
-        assert_eq!(escape_breakdown.corner_action_risk, 0.0);
-        assert!(top_left_risky_breakdown.corner_action_risk < 0.0);
-        assert_eq!(top_left_escape_breakdown.corner_action_risk, 0.0);
-        assert_eq!(late_breakdown.corner_action_risk, 0.0);
+        assert!(corner_risk > safer_risk);
+        assert!(top_left_corner_risk > 0.0);
+        assert!(recovery_reward > 0.0);
+        assert!(worsening_reward < 0.0);
+        assert!((recovery_reward - 0.25 * GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT).abs() < 0.0001);
+        assert_eq!(late_risk, 0.0);
+        assert_eq!(recovery_breakdown.corner_action_risk, 0.0);
+        assert!(recovery_breakdown.corner_risk_delta > 0.0);
         assert!(
-            (risky_breakdown.total
-                - (risky_breakdown.boundary_risk
-                    + risky_breakdown.enemy_pressure
-                    + risky_breakdown.corner_action_risk))
+            (recovery_breakdown.total
+                - (recovery_breakdown.boundary_risk
+                    + recovery_breakdown.enemy_pressure
+                    + recovery_breakdown.corner_risk_delta))
                 .abs()
                 < 0.0001
         );
