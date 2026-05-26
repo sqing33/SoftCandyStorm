@@ -267,6 +267,55 @@ harness/reports/2026-05-26_mmx_runtime_topdown_audio_review_packet_001/summary.m
 
 结论：该批次全部仍在 `generated_candidates`，不得直接进入正式 Runtime 素材。
 
+### 升级反馈图标、TTS 与 jingle
+
+批次路径：
+
+```text
+asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/
+```
+
+该批次来自独立生成前计划：
+
+```text
+harness/asset_review/mmx_level_up_feedback_plan.json
+```
+
+计划报告：
+
+```text
+harness/reports/2026-05-26_mmx_level_up_feedback_plan_001/summary.md
+```
+
+生成内容：
+
+- `ui_level_up_spark_icon_v001_001`：升级反馈 UI 图标候选，包含原图、透明 PNG 后处理和 128/64/32 小尺寸预览。
+- `voice_level_up_cn_v001`：中文升级提示语音候选，文本为“糖晶能量升级完成！选择新的糖果魔法吧！”，仍需人工确认是否太长、是否适合频繁升级触发。
+- `jingle_level_up_v001_source`：升级 jingle 音乐源候选，约 78.2 秒，只能作为剪辑来源。
+- `jingle_level_up_v001_trim3s`：从音乐源剪出的 3.2 秒升级 jingle 候选，仍需人工听感、响度和重复触发疲劳审查。
+
+已生成 strict metadata 报告：
+
+```text
+harness/reports/2026-05-26_mmx_level_up_feedback_pack_metadata_001/summary.md
+```
+
+已生成覆盖全部 4 个素材 id 的人工审查草稿：
+
+```text
+harness/asset_review/drafts/2026-05-26_mmx_level_up_feedback_pack_review_draft.json
+```
+
+已生成真人审查包：
+
+```text
+harness/reports/2026-05-26_mmx_level_up_feedback_review_packet_001/summary.md
+```
+
+草稿校验报告当前为 `asset_candidate_manual_review_invalid`，原因是 TODO 评分尚未由真人填写；这正是预期状态，不能作为人工通过证据。
+
+结论：该批次全部仍在 `generated_candidates`，不得直接进入正式 Runtime 素材。
+
 ## 生图后处理流程
 
 1. 生成图片。

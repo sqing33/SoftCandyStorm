@@ -1,0 +1,148 @@
+{
+  "plan_contract_id": "mmx-asset-generation-plan-v0",
+  "plan_version": 1,
+  "plan_id": "2026-05-26_mmx_level_up_feedback_pack",
+  "created_at": "2026-05-26",
+  "target_batch_id": "2026-05-26_mmx_level_up_feedback_pack",
+  "target_batch_path": "asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_source": "local configured mmx credentials",
+    "region": "cn"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "release_ready": false,
+    "requires_metadata_manifest": true,
+    "requires_command_provenance": true,
+    "requires_human_review": true
+  },
+  "asset_count": 3,
+  "planned_assets": [
+    {
+      "id": "ui_level_up_spark_icon_v001",
+      "type": "image",
+      "purpose": "ui_feedback_candidate",
+      "prompt": "Square top-down game UI feedback icon for a cute candy roguelite, level-up burst made of golden star sugar, pink candy sparkles, tiny blue sugar crystals, centered object, thick high contrast outline, simple readable silhouette at 32px, flat #00ff00 chroma-key background, no text, no watermark.",
+      "negative_prompt": "text, letters, numbers, watermark, logo, realistic gore, horror, dark sci-fi, busy background, thin fragile details, shadows crossing the icon boundary",
+      "planned_outputs": [
+        "images/ui_level_up_spark_icon_v001_001.jpg"
+      ],
+      "command": [
+        "mmx",
+        "image",
+        "generate",
+        "--prompt",
+        "Square top-down game UI feedback icon for a cute candy roguelite, level-up burst made of golden star sugar, pink candy sparkles, tiny blue sugar crystals, centered object, thick high contrast outline, simple readable silhouette at 32px, flat #00ff00 chroma-key background, no text, no watermark.",
+        "--aspect-ratio",
+        "1:1",
+        "--n",
+        "1",
+        "--out-dir",
+        "asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/images",
+        "--out-prefix",
+        "ui_level_up_spark_icon_v001",
+        "--output",
+        "json",
+        "--non-interactive",
+        "--quiet"
+      ],
+      "postprocess_plan": [
+        "Remove the chroma-key background only inside the target candidate batch.",
+        "Generate 128px, 64px, and 32px previews before human readability review."
+      ],
+      "review_focus": [
+        "no text or watermark",
+        "32px readability",
+        "transparent edge quality",
+        "fits the candy level-up feedback role"
+      ]
+    },
+    {
+      "id": "voice_level_up_cn_v001",
+      "type": "speech",
+      "purpose": "ui_feedback_audio_candidate",
+      "text": "糖晶能量升级完成！选择新的糖果魔法吧！",
+      "voice": "Chinese (Mandarin)_Warm_Girl",
+      "planned_outputs": [
+        "audio/voice_level_up_cn_v001.mp3"
+      ],
+      "command": [
+        "mmx",
+        "speech",
+        "synthesize",
+        "--text",
+        "糖晶能量升级完成！选择新的糖果魔法吧！",
+        "--voice",
+        "Chinese (Mandarin)_Warm_Girl",
+        "--language",
+        "zh",
+        "--format",
+        "mp3",
+        "--out",
+        "asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/audio/voice_level_up_cn_v001.mp3",
+        "--output",
+        "json",
+        "--non-interactive",
+        "--quiet"
+      ],
+      "postprocess_plan": [
+        "Preserve the raw mmx output.",
+        "Check speech clarity and whether the line is too long for level-up UI."
+      ],
+      "review_focus": [
+        "Chinese pronunciation",
+        "line length",
+        "tone matches cute candy action",
+        "no extra speech"
+      ]
+    },
+    {
+      "id": "jingle_level_up_v001",
+      "type": "music",
+      "purpose": "ui_feedback_audio_candidate",
+      "prompt": "Three second instrumental level-up jingle for a cute candy roguelite, bright candy bells, tiny sugar crystal arpeggio, fizzy sparkle tail, cheerful success feeling, no vocals, no lyrics, clean ending, suitable for repeated game UI feedback.",
+      "instrumental": true,
+      "planned_outputs": [
+        "music/jingle_level_up_v001_source.mp3"
+      ],
+      "command": [
+        "mmx",
+        "music",
+        "generate",
+        "--prompt",
+        "Three second instrumental level-up jingle for a cute candy roguelite, bright candy bells, tiny sugar crystal arpeggio, fizzy sparkle tail, cheerful success feeling, no vocals, no lyrics, clean ending, suitable for repeated game UI feedback.",
+        "--instrumental",
+        "--format",
+        "mp3",
+        "--out",
+        "asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/music/jingle_level_up_v001_source.mp3",
+        "--output",
+        "json",
+        "--non-interactive",
+        "--quiet"
+      ],
+      "postprocess_plan": [
+        "Trim or fade a short processed candidate if mmx returns a longer track.",
+        "Record the trim command in metadata before manual listening review."
+      ],
+      "review_focus": [
+        "short repeated-use UI fit",
+        "no vocals or lyrics",
+        "clean ending",
+        "does not mask upgrade selection readability"
+      ]
+    }
+  ],
+  "post_generation_checks": [
+    "python3 tools/validate_asset_candidates.py asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack --require-commands --report harness/reports/2026-05-26_mmx_level_up_feedback_pack_metadata_001/asset_candidate_metadata_validation.json --markdown harness/reports/2026-05-26_mmx_level_up_feedback_pack_metadata_001/summary.md",
+    "python3 harness/asset_review/create_asset_candidate_review_draft.py asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack --repo-root . --metadata-report harness/reports/2026-05-26_mmx_level_up_feedback_pack_metadata_001/summary.md --out harness/asset_review/drafts/2026-05-26_mmx_level_up_feedback_pack_review_draft.json"
+  ],
+  "manual_review_required": true,
+  "notes": [
+    "This is a pre-generation plan only.",
+    "Generated files must remain in asset/generated_candidates until metadata, postprocess, preview, and human review gates are complete."
+  ]
+}

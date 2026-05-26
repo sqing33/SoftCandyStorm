@@ -1,0 +1,18 @@
+{
+  "postprocess_id": "level-up-jingle-trim-v001",
+  "created_at": "2026-05-26",
+  "source": "music/jingle_level_up_v001_source.mp3",
+  "output": "processed/audio_v001/jingle_level_up_v001_trim3s.mp3",
+  "tool": "ffmpeg",
+  "command": "ffmpeg -y -hide_banner -ss 0.00 -t 3.2 -i asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/music/jingle_level_up_v001_source.mp3 -af 'afade=t=in:st=0:d=0.03,afade=t=out:st=2.75:d=0.45,loudnorm=I=-16:TP=-1.5:LRA=11' -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/processed/audio_v001/jingle_level_up_v001_trim3s.mp3",
+  "source_duration_seconds": 78.204807,
+  "output_duration_seconds": 3.2,
+  "output_sample_rate_hz": 44100,
+  "output_channels": 2,
+  "output_bitrate_bps": 192000,
+  "qa_notes": [
+    "原始 mmx music 输出长于升级反馈目标，因此只作为剪辑来源候选。",
+    "3.2 秒版本经过淡入、淡出和 loudnorm 处理，仍需真人听感、响度和重复触发疲劳审查。",
+    "该处理不代表素材已经通过人工审查或可以接入 Runtime。"
+  ]
+}

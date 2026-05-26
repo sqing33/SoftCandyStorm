@@ -1,0 +1,146 @@
+{
+  "batch_id": "2026-05-26_mmx_level_up_feedback_pack",
+  "generated_at": "2026-05-26",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_method": "api-key",
+    "source": "local configured mmx credentials",
+    "region": "cn"
+  },
+  "plan": {
+    "source": "harness/asset_review/mmx_level_up_feedback_plan.json",
+    "validation_report": "harness/reports/2026-05-26_mmx_level_up_feedback_plan_001/summary.md",
+    "deviations": []
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "候选 metadata 校验",
+      "人工美术审查",
+      "人工听感审查",
+      "升级 UI 触发频率审查",
+      "正式接入前再次确认来源、prompt、版本和后处理说明"
+    ]
+  },
+  "commands": [
+    "mmx image generate --prompt 'Square top-down game UI feedback icon for a cute candy roguelite, level-up burst made of golden star sugar, pink candy sparkles, tiny blue sugar crystals, centered object, thick high contrast outline, simple readable silhouette at 32px, flat #00ff00 chroma-key background, no text, no watermark.' --aspect-ratio 1:1 --n 1 --out-dir asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/images --out-prefix ui_level_up_spark_icon_v001 --output json --non-interactive --quiet",
+    "mmx speech synthesize --text '糖晶能量升级完成！选择新的糖果魔法吧！' --voice 'Chinese (Mandarin)_Warm_Girl' --language zh --format mp3 --out asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/audio/voice_level_up_cn_v001.mp3 --output json --non-interactive --quiet",
+    "mmx music generate --prompt 'Three second instrumental level-up jingle for a cute candy roguelite, bright candy bells, tiny sugar crystal arpeggio, fizzy sparkle tail, cheerful success feeling, no vocals, no lyrics, clean ending, suitable for repeated game UI feedback.' --instrumental --format mp3 --out asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/music/jingle_level_up_v001_source.mp3 --output json --non-interactive --quiet",
+    "python3 tools/asset_postprocess.py key-singles asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/images/ui_level_up_spark_icon_v001_001.jpg --out-dir asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/processed/ui_level_up_v001 --background auto --threshold 42 --padding 8 --manifest asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/metadata/postprocess_ui_level_up_v001.json",
+    "python3 tools/asset_postprocess.py clean-components asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/processed/ui_level_up_v001/ui_level_up_spark_icon_v001_001.png --out-dir asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/processed/ui_level_up_v001_clean --min-alpha 24 --keep-components 1 --padding 8 --manifest asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/metadata/component_cleanup_ui_level_up_v001.json",
+    "python3 tools/asset_postprocess.py make-previews asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/processed/ui_level_up_v001_clean/ui_level_up_spark_icon_v001_001_clean.png --out-dir asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/review_previews/ui_level_up_v001 --canvas-size 128 --preview-sizes 128,64,32 --occupancy 0.86 --contact-cols 1 --manifest asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/metadata/preview_ui_level_up_v001.json",
+    "ffmpeg -y -hide_banner -ss 0.00 -t 3.2 -i asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/music/jingle_level_up_v001_source.mp3 -af 'afade=t=in:st=0:d=0.03,afade=t=out:st=2.75:d=0.45,loudnorm=I=-16:TP=-1.5:LRA=11' -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/processed/audio_v001/jingle_level_up_v001_trim3s.mp3"
+  ],
+  "generation_prompts": {
+    "ui_level_up_spark_icon_v001": "Square top-down game UI feedback icon for a cute candy roguelite, level-up burst made of golden star sugar, pink candy sparkles, tiny blue sugar crystals, centered object, thick high contrast outline, simple readable silhouette at 32px, flat #00ff00 chroma-key background, no text, no watermark.",
+    "jingle_level_up_v001": "Three second instrumental level-up jingle for a cute candy roguelite, bright candy bells, tiny sugar crystal arpeggio, fizzy sparkle tail, cheerful success feeling, no vocals, no lyrics, clean ending, suitable for repeated game UI feedback."
+  },
+  "assets": [
+    {
+      "id": "ui_level_up_spark_icon_v001_001",
+      "type": "image",
+      "source_path": "images/ui_level_up_spark_icon_v001_001.jpg",
+      "processed_path": "processed/ui_level_up_v001_clean/ui_level_up_spark_icon_v001_001_clean.png",
+      "runtime_32_path": "review_previews/ui_level_up_v001/runtime_32/ui_level_up_spark_icon_v001_001_clean_runtime_32.png",
+      "preview_paths": [
+        "review_previews/ui_level_up_v001/preview_128/ui_level_up_spark_icon_v001_001_clean_preview_128.png",
+        "review_previews/ui_level_up_v001/preview_64/ui_level_up_spark_icon_v001_001_clean_preview_64.png",
+        "review_previews/ui_level_up_v001/preview_32/ui_level_up_spark_icon_v001_001_clean_preview_32.png"
+      ],
+      "format": "jpg/png",
+      "dimensions": {
+        "source_width": 1024,
+        "source_height": 1024,
+        "processed_width": 771,
+        "processed_height": 767
+      },
+      "size_bytes": {
+        "source": 210785,
+        "processed": 690259
+      },
+      "prompt": "Square top-down game UI feedback icon for a cute candy roguelite, level-up burst made of golden star sugar, pink candy sparkles, tiny blue sugar crystals, centered object, thick high contrast outline, simple readable silhouette at 32px, flat #00ff00 chroma-key background, no text, no watermark.",
+      "negative_prompt": "text, letters, numbers, watermark, logo, realistic gore, horror, dark sci-fi, busy background, thin fragile details, shadows crossing the icon boundary",
+      "postprocess_manifest": "metadata/preview_ui_level_up_v001.json",
+      "qa_status": "needs_visual_review",
+      "qa_notes": [
+        "已生成透明 PNG 和 128/64/32 小尺寸预览。",
+        "需要人工确认是否有伪文字、水印、透明边缘残留和 32px 可读性问题。",
+        "当前只是升级反馈 UI 候选，不可直接接入 Runtime。"
+      ]
+    },
+    {
+      "id": "voice_level_up_cn_v001",
+      "type": "speech",
+      "path": "audio/voice_level_up_cn_v001.mp3",
+      "format": "mp3",
+      "duration_seconds": 3.494625,
+      "sample_rate_hz": 32000,
+      "channels": 1,
+      "bitrate_bps": 128000,
+      "size_bytes": 58740,
+      "text": "糖晶能量升级完成！选择新的糖果魔法吧！",
+      "voice": "Chinese (Mandarin)_Warm_Girl",
+      "prompt": "Chinese prototype level-up voice prompt for a cute candy roguelite: 糖晶能量升级完成！选择新的糖果魔法吧！",
+      "qa_status": "needs_listening_review",
+      "qa_notes": [
+        "需要人工确认中文发音、语气、响度和升级 UI 节奏。",
+        "3.49 秒可能偏长，若用于频繁升级提示可能需要短句或只保留首局教程。",
+        "接入前需要字幕、可关闭设置和与 jingle 的混音审查。"
+      ]
+    },
+    {
+      "id": "jingle_level_up_v001_source",
+      "type": "music",
+      "path": "music/jingle_level_up_v001_source.mp3",
+      "format": "mp3",
+      "duration_seconds": 78.204807,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate_bps": 256000,
+      "size_bytes": 2505550,
+      "prompt": "Three second instrumental level-up jingle for a cute candy roguelite, bright candy bells, tiny sugar crystal arpeggio, fizzy sparkle tail, cheerful success feeling, no vocals, no lyrics, clean ending, suitable for repeated game UI feedback.",
+      "generation_options": {
+        "instrumental": true,
+        "format": "mp3"
+      },
+      "qa_status": "repair_trim",
+      "qa_notes": [
+        "生成结果约 78.2 秒，长于 3 秒升级反馈目标。",
+        "原始长版本仅可作为音乐剪辑来源候选，不可直接接入升级事件。",
+        "已生成 3.2 秒剪辑候选 processed/audio_v001/jingle_level_up_v001_trim3s.mp3。"
+      ]
+    },
+    {
+      "id": "jingle_level_up_v001_trim3s",
+      "type": "music",
+      "path": "processed/audio_v001/jingle_level_up_v001_trim3s.mp3",
+      "source_path": "music/jingle_level_up_v001_source.mp3",
+      "format": "mp3",
+      "duration_seconds": 3.2,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate_bps": 192000,
+      "size_bytes": 79506,
+      "postprocess_manifest": "metadata/postprocess_audio_v001.json",
+      "qa_status": "needs_listening_review",
+      "qa_notes": [
+        "长度符合短 UI jingle 候选目标。",
+        "仍需人工听感审查起落点、响度、可爱感和频繁触发疲劳。",
+        "正式接入前需要与升级暂停界面、TTS 和其他音效一起复核。"
+      ]
+    }
+  ],
+  "batch_qa": {
+    "gate_result": "needs_review",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "release_ready": false,
+    "notes": [
+      "本批次补充了升级反馈图标、TTS 和短 jingle 候选。",
+      "素材仍需要真人美术 / 听感审查，不可直接进入 Runtime 或 accepted_content。",
+      "音乐源长于目标，已保留 source 与 trim3s 两种候选以便审查。"
+    ]
+  }
+}

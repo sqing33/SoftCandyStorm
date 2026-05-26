@@ -37,3 +37,8 @@ Each batch should include:
 
 Every `mmx` manifest should record the prompt, negative prompt when relevant,
 the command used, tool/source metadata, QA status, and required next steps.
+
+## Current mmx Batches
+
+- `2026-05-26_mmx_runtime_topdown_audio_plan`: Runtime 俯视角玩家与 Boss 出场音频候选，含小尺寸预览、8 秒 sting 和语音 / sting 叠放预览。
+- `2026-05-26_mmx_level_up_feedback_pack`: 升级反馈图标、中文 TTS 和 3.2 秒 jingle 候选，仍需人工美术 / 听感审查。

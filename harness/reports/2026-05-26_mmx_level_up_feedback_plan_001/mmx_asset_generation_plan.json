@@ -1,0 +1,40 @@
+{
+  "report_version": 1,
+  "source": "harness/asset_review/mmx_level_up_feedback_plan.json",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "mmx_asset_generation_plan_valid",
+  "plan_id": "2026-05-26_mmx_level_up_feedback_pack",
+  "target_batch_id": "2026-05-26_mmx_level_up_feedback_pack",
+  "target_batch_path": "asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack",
+  "asset_count": 3,
+  "errors": [],
+  "warnings": [],
+  "planned_assets": [
+    {
+      "id": "ui_level_up_spark_icon_v001",
+      "type": "image",
+      "planned_output_count": 1,
+      "command": "mmx image generate --prompt Square top-down game UI feedback icon for a cute candy roguelite, level-up burst made of golden star sugar, pink candy sparkles, tiny blue sugar crystals, centered object, thick high contrast outline, simple readable silhouette at 32px, flat #00ff00 chroma-key background, no text, no watermark. --aspect-ratio 1:1 --n 1 --out-dir asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/images --out-prefix ui_level_up_spark_icon_v001 --output json --non-interactive --quiet",
+      "review_focus_count": 4
+    },
+    {
+      "id": "voice_level_up_cn_v001",
+      "type": "speech",
+      "planned_output_count": 1,
+      "command": "mmx speech synthesize --text 糖晶能量升级完成！选择新的糖果魔法吧！ --voice Chinese (Mandarin)_Warm_Girl --language zh --format mp3 --out asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/audio/voice_level_up_cn_v001.mp3 --output json --non-interactive --quiet",
+      "review_focus_count": 4
+    },
+    {
+      "id": "jingle_level_up_v001",
+      "type": "music",
+      "planned_output_count": 1,
+      "command": "mmx music generate --prompt Three second instrumental level-up jingle for a cute candy roguelite, bright candy bells, tiny sugar crystal arpeggio, fizzy sparkle tail, cheerful success feeling, no vocals, no lyrics, clean ending, suitable for repeated game UI feedback. --instrumental --format mp3 --out asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack/music/jingle_level_up_v001_source.mp3 --output json --non-interactive --quiet",
+      "review_focus_count": 4
+    }
+  ],
+  "limitations": [
+    "This validator checks an mmx generation plan only; it does not call mmx or create media files.",
+    "A valid plan must still produce metadata manifests, candidate validation reports, postprocess outputs, and human review records before any Runtime candidate promotion.",
+    "A valid plan does not mark assets as accepted_content, runtime_integrated, release_ready, or visually/audio approved."
+  ]
+}

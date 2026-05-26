@@ -1,9 +1,9 @@
 # Asset Candidate Metadata Validation
 
-- Root: `asset/generated_candidates`
+- Root: `asset/generated_candidates/2026-05-26_mmx_level_up_feedback_pack`
 - Decision: `asset_candidates_valid`
-- Batch count: 9
-- Asset count: 36
+- Batch count: 1
+- Asset count: 4
 - Require commands: True
 
 ## Errors
