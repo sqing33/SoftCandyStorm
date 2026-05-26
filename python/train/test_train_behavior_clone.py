@@ -1,3 +1,4 @@
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -6,8 +7,12 @@ from python.train.train_behavior_clone import (
     build_sample_weights,
     diagnose_sequence_dataset,
     filter_dataset_by_time_phase,
+    load_trajectory_dataset,
+    load_upgrade_choice_dataset,
     load_behavior_clone_policy,
     save_staged_behavior_clone_policy,
+    summarize_dataset,
+    summarize_upgrade_choice_dataset,
     train_behavior_clone,
 )
 
@@ -223,3 +228,77 @@ def test_staged_behavior_clone_dispatches_between_phase_models(tmp_path):
         scores = policy.action_scores(observation)
         assert 0 <= action < 3
         assert len(scores["scores"]) == 3
+
+
+def test_upgrade_samples_are_loaded_separately_from_movement_dataset(tmp_path):
+    dataset_path = tmp_path / "trajectory.jsonl"
+    records = [
+        {
+            "record_type": "metadata",
+            "bot": "kite",
+            "map_id": "soda-creek",
+            "observation_version": 2,
+            "observation_len": 3,
+            "action_count": 9,
+            "include_upgrade_samples": True,
+            "content_hash": "fixture",
+        },
+        {
+            "record_type": "sample",
+            "seed": 1,
+            "map_id": "soda-creek",
+            "bot": "kite",
+            "tick": 10,
+            "time_seconds": 1.0,
+            "health_ratio": 1.0,
+            "level": 1,
+            "kills": 2,
+            "action": 3,
+            "movement": [1.0, 0.0],
+            "observation": [0.1, 0.2, 0.3],
+        },
+        {
+            "record_type": "upgrade_sample",
+            "seed": 1,
+            "map_id": "soda-creek",
+            "bot": "kite",
+            "tick": 20,
+            "time_seconds": 2.0,
+            "health_ratio": 0.9,
+            "level": 2,
+            "kills": 4,
+            "upgrade_options": ["rainbow-candy-shot-level-2", "gum-shield-level-1"],
+            "chosen_index": 1,
+            "chosen_upgrade_id": "gum-shield-level-1",
+            "observation": [0.2, 0.3, 0.4],
+        },
+        {
+            "record_type": "episode",
+            "seed": 1,
+            "map_id": "soda-creek",
+            "bot": "kite",
+            "terminal": "victory",
+            "reason": "duration_reached",
+            "duration_seconds": 60.0,
+            "kills": 4,
+            "level": 2,
+            "damage_taken": 1.0,
+            "samples": 1,
+            "upgrade_samples": 1,
+            "skipped_upgrade_samples": 1,
+        },
+    ]
+    dataset_path.write_text(
+        "\n".join(json.dumps(record) for record in records) + "\n",
+        encoding="utf-8",
+    )
+
+    movement_dataset = load_trajectory_dataset(dataset_path)
+    movement_summary = summarize_dataset(movement_dataset)
+    upgrade_dataset = load_upgrade_choice_dataset(dataset_path)
+    upgrade_summary = summarize_upgrade_choice_dataset(upgrade_dataset)
+
+    assert movement_summary["sample_count"] == 1
+    assert movement_summary["upgrade_sample_records"] == 1
+    assert upgrade_summary["sample_count"] == 1
+    assert upgrade_summary["chosen_upgrade_distribution"]["gum-shield-level-1"]["count"] == 1

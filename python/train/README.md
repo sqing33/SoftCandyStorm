@@ -135,7 +135,24 @@ Use the Harness trajectory exporter to produce JSONL movement datasets from rule
 cargo run -p game_harness -- export-bot-trajectories --bot kite --seed-start 30000 --seeds 10 --map-id soda-creek --seconds 300 --observation-version 2 --out harness/reports/local_bot_trajectories/kite_soda.jsonl
 ```
 
-The first record is `metadata`, each `sample` contains an observation vector and discrete movement action, and the final record is `summary`. Upgrade-choice states are skipped because Phase 1 RL still trains movement only.
+The first record is `metadata`, each `sample` contains an observation vector and discrete movement action, and the final record is `summary`. Upgrade-choice states are skipped by default because Phase 1 RL still trains movement only.
+
+Use `--include-upgrade-samples true` when a run should also emit upgrade-choice supervision records. This keeps normal movement `sample` records unchanged and adds `upgrade_sample` records at upgrade prompts:
+
+```bash
+cargo run -p game_harness -- export-bot-trajectories \
+  --bot kite \
+  --seed-start 56000 \
+  --seeds 2 \
+  --map-id soda-creek \
+  --seconds 60 \
+  --observation-version 2 \
+  --sample-stride 15 \
+  --include-upgrade-samples true \
+  --out harness/reports/local_bot_trajectories/kite_soda_upgrade_samples.jsonl
+```
+
+`load_trajectory_dataset` skips `upgrade_sample` records and reports their count as `upgrade_sample_records`. Use `load_upgrade_choice_dataset` and `summarize_upgrade_choice_dataset` to inspect upgrade supervision separately; this path is dataset plumbing only, not an RL policy gate.
 
 Use `--sample-start-seconds` and `--sample-end-seconds` to export only a time window while still simulating the full run. This is useful for collecting 300-second middle/late-game states without over-weighting the opening:
 
@@ -352,6 +369,8 @@ The first full target-entropy distillation used `--teacher-temperature 1.5 --uni
 Warm-start runs can override PPO entropy coefficient with `--model-in ... --ent-coef <value>`. The training report records `algorithm_parameters_source` as `warm_start_metadata_with_overrides` when metadata is loaded and a CLI override is applied, so entropy/curriculum experiments remain auditable instead of silently inheriting the distilled zip defaults.
 
 The first `ent_coef = 0.02` target-entropy warm-start lifted the 60-second high-pressure normalized entropy to 0.5801 / 0.5823 / 0.5307, but short-window win rates remained 80% / 60% / 80% and all three 300-second maps still recorded 0% win rate. Entropy override is a useful movement-diversity repair knob, not a replacement for long-run goals or upgrade supervision.
+
+The first upgrade-choice export smoke produced 241 movement samples and 4 upgrade samples from 2 KiteBot seeds on `soda-creek`. Treat this as a supervised data-entry proof only; it does not prove upgrade policy quality, Gym action-mode support, or high-pressure long-run repair.
 
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 

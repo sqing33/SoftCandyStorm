@@ -92,6 +92,7 @@ def load_trajectory_dataset(path, limit=None):
     metadata = []
     episode_count = 0
     skipped_upgrade_samples = 0
+    upgrade_sample_records = 0
     paths = dataset_paths(path)
 
     for dataset_path in paths:
@@ -121,6 +122,9 @@ def load_trajectory_dataset(path, limit=None):
                 if record_type == "episode":
                     episode_count += 1
                     skipped_upgrade_samples += int(record.get("skipped_upgrade_samples", 0))
+                    continue
+                if record_type == "upgrade_sample":
+                    upgrade_sample_records += 1
                     continue
                 if record_type == "summary":
                     continue
@@ -170,8 +174,105 @@ def load_trajectory_dataset(path, limit=None):
         "metadata": metadata,
         "episode_count": episode_count,
         "skipped_upgrade_samples": skipped_upgrade_samples,
+        "upgrade_sample_records": upgrade_sample_records,
         "observation_len": observation_len,
         "action_count": action_count,
+    }
+
+
+def load_upgrade_choice_dataset(path, limit=None):
+    samples = []
+    metadata = []
+    paths = dataset_paths(path)
+
+    for dataset_path in paths:
+        with dataset_path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if limit is not None and len(samples) >= limit:
+                    break
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                record_type = record.get("record_type")
+                if record_type == "metadata":
+                    metadata.append(
+                        {
+                            "path": str(dataset_path),
+                            "bot": record.get("bot"),
+                            "map_id": record.get("map_id"),
+                            "observation_version": record.get("observation_version"),
+                            "observation_len": record.get("observation_len"),
+                            "include_upgrade_samples": record.get("include_upgrade_samples"),
+                            "content_hash": record.get("content_hash"),
+                        }
+                    )
+                    continue
+                if record_type != "upgrade_sample":
+                    continue
+                options = record.get("upgrade_options")
+                if not isinstance(options, list) or not options:
+                    raise ValueError(
+                        f"upgrade_sample missing upgrade_options in {dataset_path}:{line_number}"
+                    )
+                chosen_index = record.get("chosen_index")
+                if chosen_index is not None and not isinstance(chosen_index, int):
+                    raise ValueError(
+                        f"upgrade_sample chosen_index must be integer or null in {dataset_path}:{line_number}"
+                    )
+                observation = record.get("observation")
+                if not isinstance(observation, list) or not observation:
+                    raise ValueError(
+                        f"upgrade_sample missing observation in {dataset_path}:{line_number}"
+                    )
+                samples.append(
+                    {
+                        "path": str(dataset_path),
+                        "seed": int(record.get("seed", 0)),
+                        "map_id": record.get("map_id"),
+                        "bot": record.get("bot"),
+                        "tick": int(record.get("tick", 0)),
+                        "time_seconds": float(record.get("time_seconds", 0.0)),
+                        "health_ratio": float(record.get("health_ratio", 1.0)),
+                        "level": int(record.get("level", 0)),
+                        "kills": int(record.get("kills", 0)),
+                        "upgrade_options": [str(option) for option in options],
+                        "chosen_index": chosen_index,
+                        "chosen_upgrade_id": record.get("chosen_upgrade_id"),
+                        "observation": [float(value) for value in observation],
+                    }
+                )
+
+    if not samples:
+        raise ValueError("upgrade choice dataset contains no upgrade_sample records")
+
+    return {
+        "paths": [str(path) for path in paths],
+        "metadata": metadata,
+        "samples": samples,
+    }
+
+
+def summarize_upgrade_choice_dataset(dataset):
+    chosen_counts = {}
+    option_count_distribution = {}
+    map_counts = {}
+    for sample in dataset["samples"]:
+        map_id = sample.get("map_id") or "unknown"
+        map_counts[map_id] = map_counts.get(map_id, 0) + 1
+        option_count = len(sample["upgrade_options"])
+        option_count_distribution[str(option_count)] = (
+            option_count_distribution.get(str(option_count), 0) + 1
+        )
+        chosen = sample.get("chosen_upgrade_id") or "none"
+        chosen_counts[chosen] = chosen_counts.get(chosen, 0) + 1
+    sample_count = len(dataset["samples"])
+    return {
+        "paths": dataset["paths"],
+        "sample_count": sample_count,
+        "map_distribution": ratio_counts(map_counts, sample_count),
+        "option_count_distribution": ratio_counts(option_count_distribution, sample_count),
+        "chosen_upgrade_distribution": ratio_counts(chosen_counts, sample_count),
+        "metadata": dataset["metadata"],
     }
 
 
@@ -185,6 +286,7 @@ def summarize_dataset(dataset):
         "sample_count": sample_count,
         "episode_count": dataset["episode_count"],
         "skipped_upgrade_samples": dataset["skipped_upgrade_samples"],
+        "upgrade_sample_records": dataset.get("upgrade_sample_records", 0),
         "observation_len": dataset["observation_len"],
         "action_count": dataset["action_count"],
         "action_distribution": {

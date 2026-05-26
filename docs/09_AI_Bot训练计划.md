@@ -185,7 +185,9 @@ cargo run -p game_harness -- export-bot-trajectories \
   --out harness/reports/local_bot_trajectories/kite_soda.jsonl
 ```
 
-导出格式为 JSONL：第一行 `metadata`，中间为 `sample`，最后为 `summary`。每个 sample 包含 observation v2 和离散 movement action，可用于后续行为克隆、规则 Bot 轨迹蒸馏或 curriculum 诊断。Phase 1 只导出 movement 状态；升级选择状态会跳过并计数，避免把 Build 决策混入移动生存训练。
+导出格式为 JSONL：第一行 `metadata`，中间为 `sample`，最后为 `summary`。每个 sample 包含 observation v2 和离散 movement action，可用于后续行为克隆、规则 Bot 轨迹蒸馏或 curriculum 诊断。默认导出仍只写 movement 状态；升级选择状态会从 movement sample 中跳过并计数，避免把 Build 决策混入移动生存训练。
+
+如果需要为升级选择或阶段目标监督收集数据，可以显式加上 `--include-upgrade-samples true`。该模式会在遇到升级 prompt 时额外写入 `upgrade_sample` 记录，包含当前 observation、升级选项、规则 Bot 选择的 index 和 upgrade id；旧 movement loader 会继续跳过这些记录，Python 侧需用 `load_upgrade_choice_dataset` 单独读取。首个 `soda-creek` / KiteBot / 2 seed / 60 秒 smoke 导出了 241 条 movement sample 和 4 条 upgrade sample，只证明数据入口可用，不代表升级策略或 RL 长局修复已经完成。
 
 若要专门覆盖 300 秒中后期状态，可在导出时使用时间窗口：
 
@@ -274,6 +276,8 @@ target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mi
 `train_sb3.py` 的 warm-start 路径现在允许 `--model-in ... --ent-coef <value>` 覆盖 PPO entropy coefficient，并在训练报告中把 `algorithm_parameters_source` 标记为 `warm_start_metadata_with_overrides`。该能力用于可审计地测试 PPO 探索修复；默认不改变旧模型行为，也不能绕过 high-pressure 对比和 RL acceptance。
 
 首个 `ent_coef = 0.02` 的 target-entropy warm-start 候选改善了 60 秒动作分布：high-pressure 三图 normalized entropy 为 0.5801 / 0.5823 / 0.5307，dominant action ratio 均低于 0.45；但短窗胜率仍只有 80% / 60% / 80%，300 秒三图仍全部 0%。结论：entropy coefficient 是短窗动作多样性修复方向，但不能解决 movement-only policy 的长局目标缺失。
+
+升级选择监督入口已经补上最小数据链路：`export-bot-trajectories --include-upgrade-samples true` 会在不破坏 movement dataset 的前提下输出 `upgrade_sample`，`train_behavior_clone.py` 的 movement loader 默认跳过并统计这些记录，`load_upgrade_choice_dataset` / `summarize_upgrade_choice_dataset` 可单独读取升级选择样本。当前 smoke 报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_export_smoke_001/summary.md`；下一步应基于该记录训练升级选择模型、把升级 action mode 纳入 Gym，或设计阶段目标监督，而不是继续只调 movement entropy。
 
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 

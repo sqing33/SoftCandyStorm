@@ -339,6 +339,7 @@ struct BotTrajectoryExportArgs {
     sample_stride: u32,
     sample_start_seconds: f32,
     sample_end_seconds: Option<f32>,
+    include_upgrade_samples: bool,
 }
 
 impl Default for BotTrajectoryExportArgs {
@@ -356,6 +357,7 @@ impl Default for BotTrajectoryExportArgs {
             sample_stride: 1,
             sample_start_seconds: 0.0,
             sample_end_seconds: None,
+            include_upgrade_samples: false,
         }
     }
 }
@@ -792,7 +794,9 @@ struct BotTrajectoryExportReport {
     sample_stride: u32,
     sample_start_seconds: f32,
     sample_end_seconds: Option<f32>,
+    include_upgrade_samples: bool,
     sample_count: u64,
+    upgrade_sample_count: u64,
     skipped_upgrade_samples: u64,
     episode_count: u64,
     victory_count: u64,
@@ -815,6 +819,7 @@ struct BotTrajectoryMetadataRecord {
     sample_stride: u32,
     sample_start_seconds: f32,
     sample_end_seconds: Option<f32>,
+    include_upgrade_samples: bool,
     content_hash: String,
     content_dir: String,
 }
@@ -836,6 +841,23 @@ struct BotTrajectorySampleRecord {
 }
 
 #[derive(Debug, Serialize)]
+struct BotTrajectoryUpgradeSampleRecord {
+    record_type: &'static str,
+    seed: u64,
+    map_id: String,
+    bot: String,
+    tick: u64,
+    time_seconds: f32,
+    health_ratio: f32,
+    level: u32,
+    kills: u32,
+    upgrade_options: Vec<String>,
+    chosen_index: Option<usize>,
+    chosen_upgrade_id: Option<String>,
+    observation: Vec<f32>,
+}
+
+#[derive(Debug, Serialize)]
 struct BotTrajectoryEpisodeRecord {
     record_type: &'static str,
     seed: u64,
@@ -848,6 +870,7 @@ struct BotTrajectoryEpisodeRecord {
     level: u32,
     damage_taken: f32,
     samples: u64,
+    upgrade_samples: u64,
     skipped_upgrade_samples: u64,
 }
 
@@ -855,6 +878,7 @@ struct BotTrajectoryEpisodeRecord {
 struct BotTrajectorySummaryRecord {
     record_type: &'static str,
     sample_count: u64,
+    upgrade_sample_count: u64,
     skipped_upgrade_samples: u64,
     episode_count: u64,
     victory_count: u64,
@@ -1650,6 +1674,11 @@ fn parse_bot_trajectory_export_args(
                         .map_err(|_| format!("invalid --sample-end-seconds `{value}`"))?,
                 );
             }
+            "--include-upgrade-samples" => {
+                parsed.include_upgrade_samples = value
+                    .parse()
+                    .map_err(|_| format!("invalid --include-upgrade-samples `{value}`"))?;
+            }
             _ => return Err(format!("unknown flag `{key}`")),
         }
         index += 2;
@@ -2285,12 +2314,14 @@ fn export_bot_trajectories(
             sample_stride: args.sample_stride,
             sample_start_seconds: args.sample_start_seconds,
             sample_end_seconds: args.sample_end_seconds,
+            include_upgrade_samples: args.include_upgrade_samples,
             content_hash: content.hash.clone(),
             content_dir,
         },
     )?;
 
     let mut total_samples = 0u64;
+    let mut total_upgrade_samples = 0u64;
     let mut total_skipped_upgrade_samples = 0u64;
     let mut victory_count = 0u64;
     for seed_offset in 0..args.seeds {
@@ -2301,6 +2332,7 @@ fn export_bot_trajectories(
             victory_count += 1;
         }
         total_samples += episode.samples;
+        total_upgrade_samples += episode.upgrade_samples;
         total_skipped_upgrade_samples += episode.skipped_upgrade_samples;
         write_jsonl_record(&mut writer, &episode)?;
     }
@@ -2310,6 +2342,7 @@ fn export_bot_trajectories(
         &BotTrajectorySummaryRecord {
             record_type: "summary",
             sample_count: total_samples,
+            upgrade_sample_count: total_upgrade_samples,
             skipped_upgrade_samples: total_skipped_upgrade_samples,
             episode_count: args.seeds,
             victory_count,
@@ -2332,7 +2365,9 @@ fn export_bot_trajectories(
         sample_stride: args.sample_stride,
         sample_start_seconds: args.sample_start_seconds,
         sample_end_seconds: args.sample_end_seconds,
+        include_upgrade_samples: args.include_upgrade_samples,
         sample_count: total_samples,
+        upgrade_sample_count: total_upgrade_samples,
         skipped_upgrade_samples: total_skipped_upgrade_samples,
         episode_count: args.seeds,
         victory_count,
@@ -2355,6 +2390,7 @@ fn export_bot_trajectory_episode<W: Write>(
     let mut steps = 0usize;
     let mut controller = BotController::new(args.bot, seed);
     let mut samples = 0u64;
+    let mut upgrade_samples = 0u64;
     let mut skipped_upgrade_samples = 0u64;
 
     while !core.is_terminal() && steps < max_steps {
@@ -2386,6 +2422,37 @@ fn export_bot_trajectory_episode<W: Write>(
                 samples += 1;
             }
         } else {
+            if args.include_upgrade_samples {
+                let observation = gym_observation(&snapshot, args.observation_version);
+                debug_assert_eq!(observation.len(), observation_len);
+                let upgrade_options = snapshot
+                    .upgrade_options
+                    .iter()
+                    .map(|option| option.id.clone())
+                    .collect::<Vec<_>>();
+                let chosen_index = action.upgrade_choice;
+                let chosen_upgrade_id =
+                    chosen_index.and_then(|index| upgrade_options.get(index).cloned());
+                write_jsonl_record(
+                    writer,
+                    &BotTrajectoryUpgradeSampleRecord {
+                        record_type: "upgrade_sample",
+                        seed,
+                        map_id: args.map_id.clone(),
+                        bot: args.bot.as_str().to_string(),
+                        tick: steps as u64,
+                        time_seconds: snapshot.time_seconds,
+                        health_ratio: ratio(snapshot.player.health, snapshot.player.max_health),
+                        level: snapshot.player.level,
+                        kills: snapshot.metrics_partial.kills,
+                        upgrade_options,
+                        chosen_index,
+                        chosen_upgrade_id,
+                        observation,
+                    },
+                )?;
+                upgrade_samples += 1;
+            }
             skipped_upgrade_samples += 1;
         }
 
@@ -2411,6 +2478,7 @@ fn export_bot_trajectory_episode<W: Write>(
         level: metrics.level,
         damage_taken: metrics.damage_taken,
         samples,
+        upgrade_samples,
         skipped_upgrade_samples,
     })
 }
@@ -6310,7 +6378,7 @@ fn print_help() {
         DEFAULT_MAP_ID
     );
     eprintln!(
-        "  cargo run -p game_harness -- export-bot-trajectories [--seed-start N] [--seeds N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--observation-version 1|2] [--sample-stride N] [--sample-start-seconds N] [--sample-end-seconds N] [--content-dir content/base_demo] [--out harness/reports/local_bot_trajectories/trajectories.jsonl]",
+        "  cargo run -p game_harness -- export-bot-trajectories [--seed-start N] [--seeds N] [--map-id {}] [--seconds N] [--tick-rate N] [--bot {}] [--observation-version 1|2] [--sample-stride N] [--sample-start-seconds N] [--sample-end-seconds N] [--include-upgrade-samples true|false] [--content-dir content/base_demo] [--out harness/reports/local_bot_trajectories/trajectories.jsonl]",
         DEFAULT_MAP_ID,
         BotKind::all_names()
     );
