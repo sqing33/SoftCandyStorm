@@ -68,6 +68,15 @@ python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
 人工法律 / 合规审查校验示例：
 
 ```bash
+python3 harness/telemetry_privacy/create_manual_legal_review_packet.py \
+  --review-template harness/telemetry_privacy/manual_legal_review_template.json \
+  --repo-root . \
+  --out harness/reports/2026-05-26_manual_legal_review_packet_001/summary.md
+```
+
+人工法律 / 合规审查包会把隐私策略、Runtime 隐私设置契约、v0 存档契约、上传传输契约、相关校验报告引用、人工隐私 / 平台路径审查报告占位、辖区范围占位、上传默认关闭状态、禁止字段、发布要求和 9 个 TODO 检查项汇总成 Markdown，方便真人审查。它不填写审查结论、不提供法律建议、不提供平台 / 商店批准，也不证明 Release Candidate 通过。
+
+```bash
 python3 harness/telemetry_privacy/validate_manual_legal_review.py \
   harness/telemetry_privacy/reviews/<legal-review>.json \
   --repo-root . \

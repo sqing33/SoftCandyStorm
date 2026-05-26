@@ -263,8 +263,10 @@ harness/telemetry_privacy/manual_privacy_review_template.json
 harness/telemetry_privacy/create_manual_privacy_review_packet.py
 harness/telemetry_privacy/validate_manual_privacy_review.py
 harness/telemetry_privacy/manual_legal_review_template.json
+harness/telemetry_privacy/create_manual_legal_review_packet.py
 harness/telemetry_privacy/validate_manual_legal_review.py
 harness/reports/2026-05-26_manual_privacy_review_packet_001/summary.md
+harness/reports/2026-05-26_manual_legal_review_packet_001/summary.md
 ```
 
 该策略门禁要求：
@@ -319,6 +321,11 @@ python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
   --report harness/reports/<manual-privacy-review>/manual_privacy_review.json \
   --markdown harness/reports/<manual-privacy-review>/summary.md
 
+python3 harness/telemetry_privacy/create_manual_legal_review_packet.py \
+  --review-template harness/telemetry_privacy/manual_legal_review_template.json \
+  --repo-root . \
+  --out harness/reports/2026-05-26_manual_legal_review_packet_001/summary.md
+
 python3 harness/telemetry_privacy/validate_manual_legal_review.py \
   harness/telemetry_privacy/reviews/<legal-review>.json \
   --repo-root . \
@@ -326,7 +333,7 @@ python3 harness/telemetry_privacy/validate_manual_legal_review.py \
   --markdown harness/reports/<manual-legal-review>/summary.md
 ```
 
-上传传输契约当前结论为 `upload_transport_contract_valid` 且 `implementation_status=planned`。它只证明未来上传链路的 payload、队列、同意、raw replay 和发布证据边界可校验；不证明 Runtime 已经实现网络上传、队列 flush、平台隐私合规或法律审查。人工法律 / 合规审查模板当前也只是记录完整性门禁，真人填写并通过前不能作为法律、平台或 Release Candidate 通过证据。
+上传传输契约当前结论为 `upload_transport_contract_valid` 且 `implementation_status=planned`。它只证明未来上传链路的 payload、队列、同意、raw replay 和发布证据边界可校验；不证明 Runtime 已经实现网络上传、队列 flush、平台隐私合规或法律审查。人工法律 / 合规审查包只汇总绑定证据、报告引用、辖区范围占位、上传默认关闭状态、禁止字段、发布要求和 9 个 TODO 检查项；真人填写并通过前不能作为法律、平台或 Release Candidate 通过证据。
 
 Runtime 局外设置和本地数据入口还有独立源码形状契约：
 
