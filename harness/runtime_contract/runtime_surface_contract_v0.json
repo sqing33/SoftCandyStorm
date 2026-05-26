@@ -22,7 +22,8 @@
         "save_file",
         "explicit_save_file",
         "export_save",
-        "delete_save"
+        "delete_save",
+        "story_codex_ui_candidate_manifest"
       ]
     },
     {
@@ -167,6 +168,29 @@
         "skipped_missing_roots",
         "local_data_dirs"
       ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeStoryCodexUiCandidateManifest",
+      "required_fields": [
+        "manifest_contract_id",
+        "stage",
+        "candidate_pack_id",
+        "manual_gate_decision",
+        "chapter_count",
+        "codex_entry_count",
+        "rules"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeStoryCodexUiCandidateRules",
+      "required_fields": [
+        "accepted_content",
+        "runtime_integrated",
+        "requires_runtime_ui_review",
+        "requires_final_human_acceptance"
+      ]
     }
   ],
   "required_enums": [
@@ -210,6 +234,8 @@
     "write_runtime_save_state",
     "export_runtime_save",
     "delete_runtime_save",
+    "load_runtime_story_codex_ui_candidate_manifest",
+    "validate_runtime_story_codex_ui_candidate_manifest",
     "render_meta_progress_panel",
     "render_meta_overview_panel",
     "render_meta_chapter_panel",
@@ -228,7 +254,8 @@
     "--print-privacy-notice",
     "--save-file",
     "--export-save",
-    "--delete-save"
+    "--delete-save",
+    "--story-codex-ui-candidate-manifest"
   ],
   "required_key_bindings": [
     {
@@ -297,7 +324,15 @@
     "base_ui_state",
     "migrated_from_v0",
     "runtime save must use save-state-v0 schema_version 1 or save-state-v1 schema_version 2",
-    "export_format: \"json\""
+    "export_format: \"json\"",
+    "story-codex-ui-candidate-manifest-v0",
+    "story_codex_ui_candidate",
+    "manual_gate_decision must be ui_candidate",
+    "accepted_content=false, runtime_integrated=false",
+    "剧情/图鉴 UI 候选",
+    "状态 ui_candidate 待验收",
+    "不读取 generated candidate 正文",
+    "仍需 Runtime UI review 和最终人工接受"
   ],
   "default_privacy_settings": {
     "telemetry_upload_enabled": false,

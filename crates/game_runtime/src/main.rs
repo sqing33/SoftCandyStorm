@@ -33,6 +33,9 @@ const RUNTIME_SAVE_V0_SCHEMA_VERSION: u32 = 1;
 const RUNTIME_SAVE_V1_SCHEMA_VERSION: u32 = 2;
 const RUNTIME_SAVE_MIGRATION_ID: &str = "save-state-v0-to-v1";
 const RUNTIME_SAVE_TIMESTAMP: &str = "2026-05-26T00:00:00Z";
+const STORY_CODEX_UI_CANDIDATE_MANIFEST_CONTRACT_ID: &str =
+    "story-codex-ui-candidate-manifest-v0";
+const STORY_CODEX_UI_CANDIDATE_STAGE: &str = "story_codex_ui_candidate";
 const CAMERA_Z: f32 = 999.0;
 const EFFECT_Z: f32 = 35.0;
 const PLAYER_Z: f32 = 20.0;
@@ -150,6 +153,7 @@ struct RuntimeCli {
     explicit_save_file: bool,
     export_save: Option<PathBuf>,
     delete_save: bool,
+    story_codex_ui_candidate_manifest: Option<PathBuf>,
 }
 
 impl Default for RuntimeCli {
@@ -186,6 +190,7 @@ impl Default for RuntimeCli {
             explicit_save_file: false,
             export_save: None,
             delete_save: false,
+            story_codex_ui_candidate_manifest: None,
         }
     }
 }
@@ -226,6 +231,7 @@ struct RuntimeState {
     save_file: Option<PathBuf>,
     meta_panel_view: RuntimeMetaPanelView,
     meta_progress: MetaProgress,
+    story_codex_ui_candidate: Option<RuntimeStoryCodexUiCandidateManifest>,
     last_meta_settlement: Option<MetaSettlementReport>,
     settled_run_number: Option<u32>,
 }
@@ -396,6 +402,25 @@ struct RuntimeSaveDataControls {
     export_save_available: bool,
     export_format: String,
     retention_days: u32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct RuntimeStoryCodexUiCandidateManifest {
+    manifest_contract_id: String,
+    stage: String,
+    candidate_pack_id: String,
+    manual_gate_decision: String,
+    chapter_count: u32,
+    codex_entry_count: u32,
+    rules: RuntimeStoryCodexUiCandidateRules,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct RuntimeStoryCodexUiCandidateRules {
+    accepted_content: bool,
+    runtime_integrated: bool,
+    requires_runtime_ui_review: bool,
+    requires_final_human_acceptance: bool,
 }
 
 impl Default for RuntimeSaveDataControls {
@@ -669,6 +694,8 @@ fn setup_runtime(
                     .unwrap_or_else(|| "demo defaults".to_string())
             )
         });
+    let story_codex_ui_candidate = load_runtime_story_codex_ui_candidate_manifest(&cli)
+        .unwrap_or_else(|error| panic!("failed to load story/codex UI candidate manifest: {error}"));
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
         panic!(
             "failed to load runtime content from `{}`: {error}",
@@ -777,6 +804,7 @@ fn setup_runtime(
         save_file: cli.save_file.clone(),
         meta_panel_view: RuntimeMetaPanelView::Overview,
         meta_progress,
+        story_codex_ui_candidate,
         last_meta_settlement: None,
         settled_run_number: None,
     });
@@ -1435,6 +1463,7 @@ fn update_hud(
             state.meta_panel_view,
             &state.privacy_settings,
             state.runtime_settings_file.as_deref(),
+            state.story_codex_ui_candidate.as_ref(),
         );
     }
 }
@@ -1753,11 +1782,14 @@ fn render_meta_progress_panel(
     view: RuntimeMetaPanelView,
     privacy_settings: &RuntimePrivacySettings,
     runtime_settings_file: Option<&Path>,
+    story_codex_ui_candidate: Option<&RuntimeStoryCodexUiCandidateManifest>,
 ) -> String {
     match view {
         RuntimeMetaPanelView::Overview => render_meta_overview_panel(progress, settlement),
         RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(progress, settlement),
-        RuntimeMetaPanelView::Codex => render_meta_codex_panel(progress, settlement),
+        RuntimeMetaPanelView::Codex => {
+            render_meta_codex_panel(progress, settlement, story_codex_ui_candidate)
+        }
         RuntimeMetaPanelView::Settings => {
             render_meta_settings_panel(privacy_settings, runtime_settings_file)
         }
@@ -1839,6 +1871,7 @@ fn render_meta_chapter_panel(
 fn render_meta_codex_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
+    story_codex_ui_candidate: Option<&RuntimeStoryCodexUiCandidateManifest>,
 ) -> String {
     let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置".to_string()];
     lines.push("图鉴进度".to_string());
@@ -1854,6 +1887,22 @@ fn render_meta_codex_panel(
         ));
     } else {
         lines.push("本局图鉴更新会在结算后显示".to_string());
+    }
+    if let Some(candidate) = story_codex_ui_candidate {
+        lines.push(format!(
+            "\n剧情/图鉴 UI 候选: {}",
+            candidate.candidate_pack_id
+        ));
+        lines.push(format!(
+            "章节 {}  图鉴条目 {}  状态 ui_candidate 待验收",
+            candidate.chapter_count, candidate.codex_entry_count
+        ));
+        lines.push(
+            "仅显示候选状态，不读取 generated candidate 正文；仍需 Runtime UI review 和最终人工接受"
+                .to_string(),
+        );
+    } else {
+        lines.push("\n剧情/图鉴 UI 候选: 未加载".to_string());
     }
     lines.join("\n")
 }
@@ -2275,6 +2324,11 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--delete-save" => {
                 cli.delete_save = true;
             }
+            "--story-codex-ui-candidate-manifest" => {
+                if let Some(value) = args.next() {
+                    cli.story_codex_ui_candidate_manifest = Some(PathBuf::from(value));
+                }
+            }
             _ => {}
         }
     }
@@ -2379,6 +2433,66 @@ fn load_runtime_meta_progress(
     privacy_settings: &RuntimePrivacySettings,
 ) -> std::io::Result<MetaProgress> {
     Ok(load_runtime_save_state(cli, privacy_settings)?.meta_progress)
+}
+
+fn load_runtime_story_codex_ui_candidate_manifest(
+    cli: &RuntimeCli,
+) -> std::io::Result<Option<RuntimeStoryCodexUiCandidateManifest>> {
+    let Some(path) = &cli.story_codex_ui_candidate_manifest else {
+        return Ok(None);
+    };
+    let text = fs::read_to_string(path)?;
+    let manifest = serde_json::from_str::<RuntimeStoryCodexUiCandidateManifest>(&text).map_err(
+        |error| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}")),
+    )?;
+    validate_runtime_story_codex_ui_candidate_manifest(&manifest)?;
+    Ok(Some(manifest))
+}
+
+fn validate_runtime_story_codex_ui_candidate_manifest(
+    manifest: &RuntimeStoryCodexUiCandidateManifest,
+) -> std::io::Result<()> {
+    if manifest.manifest_contract_id != STORY_CODEX_UI_CANDIDATE_MANIFEST_CONTRACT_ID {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "story/codex UI candidate manifest must use story-codex-ui-candidate-manifest-v0",
+        ));
+    }
+    if manifest.stage != STORY_CODEX_UI_CANDIDATE_STAGE {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "story/codex UI candidate manifest stage must be story_codex_ui_candidate",
+        ));
+    }
+    if manifest.manual_gate_decision != "ui_candidate" {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "story/codex UI candidate manifest manual_gate_decision must be ui_candidate",
+        ));
+    }
+    if manifest.candidate_pack_id.trim().is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "story/codex UI candidate manifest candidate_pack_id must be non-empty",
+        ));
+    }
+    if manifest.chapter_count == 0 || manifest.codex_entry_count == 0 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "story/codex UI candidate manifest chapter_count and codex_entry_count must be positive",
+        ));
+    }
+    if manifest.rules.accepted_content
+        || manifest.rules.runtime_integrated
+        || !manifest.rules.requires_runtime_ui_review
+        || !manifest.rules.requires_final_human_acceptance
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "story/codex UI candidate manifest must keep accepted_content=false, runtime_integrated=false, requires_runtime_ui_review=true, and requires_final_human_acceptance=true",
+        ));
+    }
+    Ok(())
 }
 
 fn load_runtime_save_state(
@@ -3053,14 +3167,15 @@ mod tests {
     use super::{
         collect_runtime_local_data_files, delete_runtime_local_data, demo_movement,
         demo_upgrade_choice, effects_for_events, event_kind_for_events, export_runtime_local_data,
-        load_runtime_privacy_settings, make_tone_wav, map_visual_style, parse_runtime_cli,
-        persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
-        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
-        runtime_asset_root, runtime_can_upload, runtime_privacy_notice, runtime_sprite_paths,
-        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
-        write_runtime_save_state,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
+        resolve_runtime_platform_paths, run_config_from_cli, runtime_asset_root,
+        runtime_can_upload, runtime_privacy_notice, runtime_sprite_paths, sounds_for_events,
+        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
         RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSound,
+        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
+        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeSound,
         RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_SAVE_ID,
         PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
         PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
@@ -3116,6 +3231,97 @@ mod tests {
             ))
         );
         assert_eq!(cli.accepted_content_id, Some("base-demo-smoke".to_string()));
+    }
+
+    #[test]
+    fn parses_story_codex_ui_candidate_manifest_option() {
+        let cli = parse_runtime_cli([
+            "--story-codex-ui-candidate-manifest".to_string(),
+            "harness/story_review/ui_candidates/example/ui_candidate_manifest.json".to_string(),
+        ]);
+
+        assert_eq!(
+            cli.story_codex_ui_candidate_manifest,
+            Some(PathBuf::from(
+                "harness/story_review/ui_candidates/example/ui_candidate_manifest.json"
+            ))
+        );
+    }
+
+    #[test]
+    fn loads_story_codex_ui_candidate_manifest_metadata_only() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-story-codex-runtime-manifest-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let manifest_path = root.join("ui_candidate_manifest.json");
+        fs::write(
+            &manifest_path,
+            r#"{
+  "manifest_version": 1,
+  "manifest_contract_id": "story-codex-ui-candidate-manifest-v0",
+  "stage": "story_codex_ui_candidate",
+  "candidate_pack_id": "2026-05-26_story_codex_seed_pack",
+  "promoted_at": "2026-05-26T00:00:00Z",
+  "source_candidate_pack": "harness/generated_candidates/2026-05-26_story_codex_seed_pack",
+  "manual_review_file": "harness/story_review/ui_candidates/2026-05-26_story_codex_seed_pack/manual_review.json",
+  "manual_gate_decision": "ui_candidate",
+  "candidate_validation_report": "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md",
+  "chapter_count": 6,
+  "codex_entry_count": 26,
+  "rules": {
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "requires_runtime_ui_review": true,
+    "requires_final_human_acceptance": true
+  }
+}
+"#,
+        )
+        .unwrap();
+
+        let manifest = load_runtime_story_codex_ui_candidate_manifest(&RuntimeCli {
+            story_codex_ui_candidate_manifest: Some(manifest_path),
+            ..RuntimeCli::default()
+        })
+        .unwrap()
+        .unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(
+            manifest.candidate_pack_id,
+            "2026-05-26_story_codex_seed_pack"
+        );
+        assert_eq!(manifest.chapter_count, 6);
+        assert_eq!(manifest.codex_entry_count, 26);
+        assert!(!manifest.rules.accepted_content);
+        assert!(!manifest.rules.runtime_integrated);
+    }
+
+    #[test]
+    fn rejects_runtime_integrated_story_codex_ui_candidate_manifest() {
+        let manifest = RuntimeStoryCodexUiCandidateManifest {
+            manifest_contract_id: "story-codex-ui-candidate-manifest-v0".to_string(),
+            stage: "story_codex_ui_candidate".to_string(),
+            candidate_pack_id: "candidate".to_string(),
+            manual_gate_decision: "ui_candidate".to_string(),
+            chapter_count: 1,
+            codex_entry_count: 1,
+            rules: RuntimeStoryCodexUiCandidateRules {
+                accepted_content: false,
+                runtime_integrated: true,
+                requires_runtime_ui_review: true,
+                requires_final_human_acceptance: true,
+            },
+        };
+
+        let error = super::validate_runtime_story_codex_ui_candidate_manifest(&manifest)
+            .unwrap_err();
+
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+        assert!(error.to_string().contains("runtime_integrated=false"));
     }
 
     #[test]
@@ -4025,6 +4231,7 @@ mod tests {
             RuntimeMetaPanelView::Overview,
             &RuntimePrivacySettings::default(),
             None,
+            None,
         );
 
         assert!(panel.contains("糖罐守护站"));
@@ -4058,6 +4265,7 @@ mod tests {
             Some(&report),
             RuntimeMetaPanelView::Chapters,
             &RuntimePrivacySettings::default(),
+            None,
             None,
         );
 
@@ -4093,12 +4301,46 @@ mod tests {
             RuntimeMetaPanelView::Codex,
             &RuntimePrivacySettings::default(),
             None,
+            None,
         );
 
         assert!(panel.contains("图鉴进度"));
         assert!(panel.contains("角色: 1/1 已发现"));
         assert!(panel.contains("character:jar-keeper"));
         assert!(panel.contains("本局更新"));
+    }
+
+    #[test]
+    fn meta_panel_renders_story_codex_ui_candidate_status_without_text() {
+        let candidate = RuntimeStoryCodexUiCandidateManifest {
+            manifest_contract_id: "story-codex-ui-candidate-manifest-v0".to_string(),
+            stage: "story_codex_ui_candidate".to_string(),
+            candidate_pack_id: "2026-05-26_story_codex_seed_pack".to_string(),
+            manual_gate_decision: "ui_candidate".to_string(),
+            chapter_count: 6,
+            codex_entry_count: 26,
+            rules: RuntimeStoryCodexUiCandidateRules {
+                accepted_content: false,
+                runtime_integrated: false,
+                requires_runtime_ui_review: true,
+                requires_final_human_acceptance: true,
+            },
+        };
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Codex,
+            &RuntimePrivacySettings::default(),
+            None,
+            Some(&candidate),
+        );
+
+        assert!(panel.contains("剧情/图鉴 UI 候选"));
+        assert!(panel.contains("2026-05-26_story_codex_seed_pack"));
+        assert!(panel.contains("章节 6"));
+        assert!(panel.contains("图鉴条目 26"));
+        assert!(panel.contains("不读取 generated candidate 正文"));
+        assert!(!panel.contains("糖罐星不是坏掉了"));
     }
 
     #[test]
@@ -4115,6 +4357,7 @@ mod tests {
             RuntimeMetaPanelView::Settings,
             &settings,
             Some(settings_path.as_path()),
+            None,
         );
 
         assert!(panel.contains("隐私与本地数据"));
