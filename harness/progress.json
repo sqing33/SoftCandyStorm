@@ -731,6 +731,11 @@
       "id": "progress_report_backfill_batch_002",
       "summary": "为剩余 RL completed 条目回填 report 证据路径，并将 current_findings 中与 completed 重名的 RL 发现项改为唯一 id；刷新 progress 校验后应不再存在缺 report 或跨 section 重复 id warning。",
       "report": "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
+    },
+    {
+      "id": "local_binary_launch_diagnostic_gate",
+      "summary": "增加本地 Mach-O 启动诊断工具，编译最小 cc hello 并捕获 Developer Mode、spctl、xattr、codesign 和 AppleSystemPolicy 日志；当前报告结论为 local_binary_launch_blocked，确认阻塞来自本机会话执行策略而非 GameCore/Harness 代码。",
+      "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1091,8 +1096,8 @@
     },
     {
       "id": "local_binary_launch_blocked",
-      "summary": "当前本机新生成 Mach-O binary 启动异常：game_harness、rustc hello 和 cc hello 都会停在 _dyld_start；补充诊断显示 binary 只有 com.apple.provenance、spctl rejected，复制到 /tmp、cp -X、删除 provenance 和重新 ad-hoc codesign 都未恢复启动。恢复前不要继续依赖 Harness/Runtime/Gym 运行结果。",
-      "report": "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+      "summary": "当前本机新生成 Mach-O binary 启动异常：新增诊断工具确认 /bin/echo 可执行、最小 cc hello 可编译但 5 秒超时，Developer Mode disabled，spctl rejected，策略日志捕获 AppleSystemPolicy 拒绝本地进程。恢复前不要继续依赖 Harness/Runtime/Gym 运行结果。",
+      "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1106,7 +1111,7 @@
     },
     {
       "id": "local_binary_launch_recovery",
-      "summary": "优先恢复本机新编译 Mach-O 可执行文件启动能力；恢复后先重跑 `game_harness --help`、`cargo test --workspace` 和 context3 BC 60/300 秒 high-pressure 对比"
+      "summary": "优先恢复本机新编译 Mach-O 可执行文件启动能力：为当前开发宿主启用 Developer Mode，或提供可信 code-signing identity / trusted host；恢复后先让 `tools/diagnose_local_binary_launch.py` 返回 local_binary_launch_ok，再重跑 `game_harness --help`、`cargo test --workspace` 和 context3 BC 60/300 秒 high-pressure 对比"
     }
   ]
 }

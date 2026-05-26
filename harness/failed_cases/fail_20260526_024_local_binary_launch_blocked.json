@@ -6,8 +6,8 @@
   "bot": null,
   "time_seconds": null,
   "symptom": "本机新生成 Mach-O 可执行文件启动后无输出且不进入 main，Rust game_harness、rustc hello 和 cc hello 均会卡住，导致 game_harness gym-bridge 不能可靠响应",
-  "root_cause": "macOS policy 对本地新生成二进制返回 rejected，进程采样停在 _dyld_start；原因可能是当前桌面会话的本地执行策略、quarantine/provenance 或系统安全服务异常",
-  "fix": "先恢复本地新编译二进制的启动能力，再重跑 Harness、Runtime 和 Gym 对比；在恢复前不要把依赖 game_harness 的评估失败误判为策略或 GameCore 失败",
+  "root_cause": "macOS policy 对本地新生成二进制返回 rejected，进程采样停在 _dyld_start；最新诊断显示当前 Developer Mode 为 disabled，最小 cc hello 可编译但 5 秒超时，策略日志出现 AppleSystemPolicy 拒绝本地进程，说明问题集中在当前会话的本地 Mach-O 执行策略而非仓库代码",
+  "fix": "先恢复本地新编译二进制的启动能力，例如为当前开发宿主启用 Developer Mode，或使用能产生 CMS 签名的可信 code-signing identity；恢复后再重跑 Harness、Runtime 和 Gym 对比。在恢复前不要把依赖 game_harness 的评估失败误判为策略或 GameCore 失败",
   "diagnostics": [
     {
       "checked_at": "2026-05-26",
@@ -38,7 +38,17 @@
       "checked_at": "2026-05-26",
       "command": "codesign --force --sign - --timestamp=none /tmp/soft_candy_game_harness_no_xattr_test",
       "result": "重新 ad-hoc 签名成功，但 spctl 仍 rejected，执行仍 5 秒超时"
+    },
+    {
+      "checked_at": "2026-05-26",
+      "command": "python3 tools/diagnose_local_binary_launch.py --repo-root . --report harness/reports/2026-05-26_local_binary_launch_diagnostic_001/local_binary_launch_diagnostic.json --markdown harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md --timeout 5",
+      "result": "报告结论为 local_binary_launch_blocked；/bin/echo 可执行，最小 cc hello 可编译但无法进入 main，Developer Mode disabled，spctl rejected，com.apple.provenance 存在，策略日志捕获 Security policy would not allow process"
+    },
+    {
+      "checked_at": "2026-05-26",
+      "command": "security find-identity -v -p codesigning",
+      "result": "当前 keychain 没有可用 code-signing identity；临时自签名信任测试需要系统授权，已中止，未作为自动修复路径"
     }
   ],
-  "validation": "spctl -a -vv target/debug/game_harness；target/debug/game_harness --help；最小 rustc/cc hello binary 启动测试；恢复后重跑 context3 behavior clone 60/300 秒 high-pressure 对比"
+  "validation": "先运行 tools/diagnose_local_binary_launch.py 并得到 local_binary_launch_ok；再运行 spctl -a -vv target/debug/game_harness、target/debug/game_harness --help、cargo test --workspace；恢复后重跑 context3 behavior clone 60/300 秒 high-pressure 对比"
 }
