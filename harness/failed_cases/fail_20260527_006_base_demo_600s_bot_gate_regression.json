@@ -2,11 +2,11 @@
   "case_id": "fail_20260527_006",
   "category": "balance",
   "content_id": "content/base_demo",
-  "seed": "53000-53004",
-  "bot": "CowardBot,GreedyXpBot,KiteBot,TankBot,BossHunterBot,ZoneControlBot,RouteBot",
+  "seed": "53000-53019",
+  "bot": "GreedyXpBot,KiteBot,TankBot,BossHunterBot,ZoneControlBot,RouteBot",
   "time_seconds": 600.0,
-  "symptom": "DevTools Terminal 权限重启后，base_demo 9 Bot x 5 seed x 600 秒矩阵可执行且 Replay 45/45 严格回归通过，但 CowardBot 0.0%、GreedyXpBot 60.0%、KiteBot 100.0%、TankBot 100.0%、BossHunterBot 100.0%、ZoneControlBot 100.0%、RouteBot 40.0% 均落在对应胜率目标区间外，Bot matrix gate 只能判为 repair。",
-  "root_cause": "本次运行确认本机二进制启动与 Replay 确定性已经恢复，因此偏差更可能来自 base_demo 长局压力、XP/防御成长、Boss 终局压力和规则 Bot 策略目标区间之间的重新失配；高技能和中技能 Bot 在 frosting-grassland 长局中仍过稳，CowardBot 又低于低技能下限。",
-  "fix": "不要把该 600 秒矩阵作为 release 或平衡通过证据；下一步应在不放宽门禁的前提下校准 base_demo 长局压力和规则 Bot 风险策略，并用同 seed 53000-53004 或更大样本重跑 all Bot 600 秒矩阵、strict replay-batch 和 headless performance budget。",
-  "validation": "target/debug/game_harness matrix --seed-start 53000 --seeds 5 --seconds 600 --tick-rate 30 --bots all --content-dir content/base_demo --report-dir harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001；target/debug/game_harness replay-batch --replay-dir harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/representative_replays --content-dir content/base_demo --report-dir harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001；python3 tools/validate_harness_performance_budget.py harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/metrics.json --report harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/harness_performance_budget.json --markdown harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md"
+  "symptom": "DevTools Terminal 权限重启后，base_demo 9 Bot x 20 seed x 600 秒矩阵可执行且 Replay 180/180 严格回归通过，但 GreedyXpBot 75.0%、KiteBot 85.0%、TankBot 100.0%、BossHunterBot 100.0%、ZoneControlBot 90.0%、RouteBot 45.0% 均高于对应胜率目标上限，Bot matrix gate 只能判为 repair。",
+  "root_cause": "本次运行确认本机二进制启动、Replay 确定性和 headless 实体预算都不是阻塞，因此偏差更可能来自 base_demo frosting-grassland 长局压力不足、XP/防御成长滚雪球、Boss 终局压力和规则 Bot 策略目标区间之间的重新失配；中高技能 Bot 在 seed 53000-53019 长局中明显过稳。",
+  "fix": "不要把该 600 秒矩阵作为 release 或平衡通过证据；下一步应在不放宽门禁的前提下校准 base_demo 长局压力、升级经济或规则 Bot 风险策略，并用同 seed 53000-53019 和先前通过窗口 52000-52019 重跑 all Bot 600 秒矩阵、strict replay-batch 和 headless performance budget。",
+  "validation": "target/debug/game_harness matrix --seed-start 53000 --seeds 20 --seconds 600 --tick-rate 30 --bots all --content-dir content/base_demo --report-dir harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001；target/debug/game_harness replay-batch --replay-dir harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/representative_replays --content-dir content/base_demo --report-dir harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001；python3 tools/validate_harness_performance_budget.py harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/metrics.json --report harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/harness_performance_budget.json --markdown harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/summary.md"
 }

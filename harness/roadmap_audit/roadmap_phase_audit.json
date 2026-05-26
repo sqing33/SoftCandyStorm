@@ -50,15 +50,18 @@
         "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
         "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
         "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md",
+        "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
+        "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
+        "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/summary.md",
         "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
       ],
       "gaps": [
         "本机 Mach-O 启动已恢复，cargo test --workspace 和 60 秒 headless simulate 已在当前会话重新通过；Terminal DevTools 重启后 cargo test --workspace 112/112 通过，base_demo 9 Bot x 5 seed x 600 秒矩阵、45/45 strict replay-batch 和 headless 性能预算均能运行。",
-        "600 秒 base_demo 矩阵暴露 CowardBot、GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率偏离目标，已记录 repair failure case；仍需修复长局 Bot/平衡目标并刷新 Gym high-pressure 对比证据。"
+        "同 seed 起点扩到 20 seed 后，CowardBot 回到目标区间，但 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 仍高于目标；180/180 strict replay-batch 和 headless 性能预算 valid，已记录 repair failure case，仍需修复长局 Bot/平衡目标并刷新 Gym high-pressure 对比证据。"
       ],
       "blockers": [],
       "next_actions": [
-        "修复 base_demo 600 秒 all Bot gate 回归，并用同 seed 或更大样本重跑 matrix、strict replay-batch 和 headless performance budget。",
+        "修复 base_demo 600 秒 all Bot gate 回归，并用 seed 53000-53019 与 52000-52019 重跑 matrix、strict replay-batch 和 headless performance budget。",
         "继续刷新 Gym high-pressure 对比。"
       ]
     },
@@ -124,11 +127,14 @@
         "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
         "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
         "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md",
+        "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
+        "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
+        "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/summary.md",
         "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
       ],
       "gaps": [
         "Rust Harness 已可重新运行，当前 full pack 候选 5 seed all Bot 长局矩阵与 45 条代表 Replay 回归已通过；20 seed 发布探针曾暴露 GreedyXpBot / TankBot 胜率超出中技能目标，现已通过策略校准复测让 9 Bot 全部回到目标区间。",
-        "重启后 base_demo 600 秒 all Bot 矩阵可执行且 Replay 45/45、headless 性能预算 valid，但 7 个 Bot 偏离目标区间，说明 Harness 已能拒绝明显坏信号，后续需修复该 gate。",
+        "重启后 base_demo 600 秒 all Bot 矩阵可执行；20 seed 复测中 Replay 180/180、headless 性能预算 valid，但 6 个中高技能 Bot 与 RouteBot 仍高于目标区间，说明 Harness 已能拒绝明显坏信号，后续需修复该 gate。",
         "progress 引用已刷新到当前报告且 0 error、0 warning。"
       ],
       "blockers": [],
