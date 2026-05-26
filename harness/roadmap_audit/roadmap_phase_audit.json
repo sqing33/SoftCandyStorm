@@ -406,11 +406,20 @@
         "tools/create_rl_curriculum_plan.py",
         "tools/test_create_rl_curriculum_plan.py",
         "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/summary.md",
-        "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/curriculum_plan.json"
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/curriculum_plan.json",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_opening_001/summary.md",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/stages/stage_01_opening_lt_60/ppo_training_report.json",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/stages/stage_01_opening_lt_60/ppo_evaluation_report.json",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/stages/stage_01_opening_lt_60/comparison_60s.json",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60_metadata.json",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_opening_001/failure_analysis.json",
+        "harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_opening_001/failure_analysis.md",
+        "harness/failed_cases/fail_20260527_018_curriculum_stage01_soda_opening_gap.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "context3、context5、caramel-recovery context5、map-conditioned context5 和 GRU context8 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化 MLP 让 300 秒三图同 seed 对比不再出现 0% 胜率但仍低于规则 Bot 基线，首个 GRU context8 候选则三图 300 秒均为 0% 胜率，结论只能是 repair。新增 sequence_diagnostics 表明 context8 数据本身无 context padding、晚期低血量覆盖或地图样本占比直接异常；entropy regularization 完整训练后 60 秒短窗略有改善，但 300 秒 soda-creek 与 cracked-star-jar 仍为 0% 胜率。time-phase conditioning 完整候选改善了 60 秒短窗，但 300 秒 soda-creek 与 caramel-workshop 仍为 0%；time_phase_balance curriculum 入口已能按 opening/mid/late 训练样本占比记录反比采样倍率，并通过 1 epoch GRU context8 smoke 与 5 秒 Gym 加载评估；完整 time_phase_balance_danger_action_change GRU context8 候选让 60 秒三图 gate 通过且 300 秒动作分布不再塌缩，但 soda-creek 300 秒仍为 0%；将该 teacher 蒸馏为 SB3 PPO zip 后，10 秒 deterministic 评估又出现 action 3 100% 塌缩；再做 10k timestep PPO 闭环后 60 秒三图 gate 通过，但 300 秒 soda-creek / caramel-workshop 仍为 0%；新增 failure analysis 工具确认 soda-creek 失败偏 opening 早死，而 caramel-workshop 偏 late 180-300 秒崩盘。完整 staged GRU context8 候选在 60 秒 soda-creek 即出现动作偏置 repair，300 秒 soda-creek 仍为 0%。phase-aligned staged 重导出 300 秒轨迹并修正 opening 0-60 秒覆盖后，60 秒 soda-creek 仍为 0% 且动作偏置，300 秒 soda-creek / caramel-workshop 仍为 0%。action-change weighting 改善了 60 秒动作分布，但 300 秒三图全部 0%。PPO 蒸馏初始化入口、首个全量蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 已完成；ent_coef 改善 60 秒动作熵，但 300 秒三图仍全部 0%。升级选择监督入口已能导出、单独读取 upgrade_sample、训练最小监督 ranker、接入 Gym action mode，并扩展到 high-pressure 三图 64 条 upgrade sample 的多地图 ranker smoke；联合对比确认 ranker 不能修复旧 movement clone 的 action 3 100% 塌缩，300 秒三图仍全部 0%。 基于失败分析已生成 opening/mid/late 三阶段 PPO curriculum manifest，但尚未执行任何 stage 训练或通过新的 high-pressure 对比。",
+        "context3、context5、caramel-recovery context5、map-conditioned context5 和 GRU context8 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化 MLP 让 300 秒三图同 seed 对比不再出现 0% 胜率但仍低于规则 Bot 基线，首个 GRU context8 候选则三图 300 秒均为 0% 胜率，结论只能是 repair。新增 sequence_diagnostics 表明 context8 数据本身无 context padding、晚期低血量覆盖或地图样本占比直接异常；entropy regularization 完整训练后 60 秒短窗略有改善，但 300 秒 soda-creek 与 cracked-star-jar 仍为 0% 胜率。time-phase conditioning 完整候选改善了 60 秒短窗，但 300 秒 soda-creek 与 caramel-workshop 仍为 0%；time_phase_balance curriculum 入口已能按 opening/mid/late 训练样本占比记录反比采样倍率，并通过 1 epoch GRU context8 smoke 与 5 秒 Gym 加载评估；完整 time_phase_balance_danger_action_change GRU context8 候选让 60 秒三图 gate 通过且 300 秒动作分布不再塌缩，但 soda-creek 300 秒仍为 0%；将该 teacher 蒸馏为 SB3 PPO zip 后，10 秒 deterministic 评估又出现 action 3 100% 塌缩；再做 10k timestep PPO 闭环后 60 秒三图 gate 通过，但 300 秒 soda-creek / caramel-workshop 仍为 0%；新增 failure analysis 工具确认 soda-creek 失败偏 opening 早死，而 caramel-workshop 偏 late 180-300 秒崩盘。完整 staged GRU context8 候选在 60 秒 soda-creek 即出现动作偏置 repair，300 秒 soda-creek 仍为 0%。phase-aligned staged 重导出 300 秒轨迹并修正 opening 0-60 秒覆盖后，60 秒 soda-creek 仍为 0% 且动作偏置，300 秒 soda-creek / caramel-workshop 仍为 0%。action-change weighting 改善了 60 秒动作分布，但 300 秒三图全部 0%。PPO 蒸馏初始化入口、首个全量蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 已完成；ent_coef 改善 60 秒动作熵，但 300 秒三图仍全部 0%。升级选择监督入口已能导出、单独读取 upgrade_sample、训练最小监督 ranker、接入 Gym action mode，并扩展到 high-pressure 三图 64 条 upgrade sample 的多地图 ranker smoke；联合对比确认 ranker 不能修复旧 movement clone 的 action 3 100% 塌缩，300 秒三图仍全部 0%。 基于失败分析已生成 opening/mid/late 三阶段 PPO curriculum manifest，但尚未执行任何 stage 训练或通过新的 high-pressure 对比。 time-bucket curriculum stage 01 opening 已跑通训练与 60 秒对比，但 soda-creek 仍有 opening 死亡，不能视为 RL Bot 基线通过。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
@@ -419,7 +428,8 @@
       "next_actions": [
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
-        "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。"
+        "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
+        "延长或复查 time-bucket curriculum stage_01 opening，并用更多 seed 证明 soda-creek 开局稳定后，再继续 stage_02 mid。"
       ]
     },
     {

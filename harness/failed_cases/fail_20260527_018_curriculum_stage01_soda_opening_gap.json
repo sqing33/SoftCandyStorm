@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_018",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage01_opening_lt_60",
+  "seed": 62101,
+  "bot": "PpoCurriculumStage01Opening",
+  "time_seconds": 29.1666,
+  "symptom": "失败分桶课程 stage 01 从阶段平衡 PPO 10k 模型 warm start 后，60 秒 high-pressure 对比在 caramel-workshop 与 cracked-star-jar 达到 100% 胜率，但 soda-creek 只有 66.67%，seed 62101 在 29.1666 秒因 player_health_depleted 死亡。",
+  "root_cause": "5000 timestep opening 课程缓解了旧 action 3 deterministic 塌缩，但还没有稳定修复 soda-creek 的开局避险；失败局中 dominant action 2 占 85.83%，承伤达到 119.9999，说明开局路径仍可能贴近危险压力而快速失血。",
+  "fix": "不要把 stage 01 当作已通过的 opening 修复。下一步应延长 opening 课程、提高 opening seed 覆盖或调整 soda-creek 开局危险奖励，再用更多 seed 复查 60 秒 high-pressure；通过前不要把 stage 02/03 结果解读为完整课程修复。",
+  "validation": "运行 stage 01 训练命令生成 stage_01_opening_lt_60.zip，并执行 60 秒 high-pressure 三图 compare-rule-bots，结果写入 harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/stages/stage_01_opening_lt_60/comparison_60s.json；随后用 tools/analyze_rl_policy_failures.py 生成 harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_opening_001/failure_analysis.json。"
+}

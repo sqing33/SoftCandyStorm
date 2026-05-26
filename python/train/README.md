@@ -329,6 +329,8 @@ Use `tools/analyze_rl_policy_failures.py <comparison.json>` after failed multima
 
 Use `tools/create_rl_curriculum_plan.py <failure_analysis.json>` to turn those failure buckets into a staged PPO curriculum manifest. The first plan starts from the 10k time-phase PPO model and creates chained opening, mid, and late stages with generated train/compare commands. It is a planning artifact only: each stage still needs to be trained, compared against rule Bots, and recorded as watch/repair/failure evidence before it can affect RL policy acceptance.
 
+The first stage 01 opening run trained for 5120 actual timesteps on `cracked-star-jar` and `soda-creek`, then ran the planned 60-second high-pressure comparison. It reached 100% win rate on `caramel-workshop` and `cracked-star-jar`, but `soda-creek` stayed at 66.67% with one opening death at 29.1666 seconds. Treat this as repair evidence only; do not chain later curriculum stages as if opening survival has passed.
+
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
 For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:

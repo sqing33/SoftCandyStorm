@@ -1673,6 +1673,11 @@
       "id": "rl_curriculum_time_bucket_plan",
       "summary": "新增 tools/create_rl_curriculum_plan.py，可把 RL 失败分析分桶转为 staged PPO curriculum manifest；首份计划从 time_phase_balance PPO 10k 失败生成 opening/mid/late 三阶段链路，仍只是待执行计划，不是 policy gate。",
       "report": "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_time_bucket_stage01_opening_repair",
+      "summary": "执行 time-bucket curriculum stage 01 opening：训练 5120 actual timesteps 后，60 秒 high-pressure 中 caramel-workshop 与 cracked-star-jar 为 100%，但 soda-creek 仅 66.67%，seed 62101 在 29.1666 秒死亡，已记录 fail_20260527_018。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_opening_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1682,7 +1687,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分析已生成 opening/mid/late 分桶课程计划，下一步应按计划逐阶段训练和对比，而不是继续用单一平均胜率调参。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分桶课程 stage 01 已跑完但 soda-creek opening 仍有 29.1666 秒死亡，下一步应先延长/复查 opening 课程，再谨慎推进 stage 02/03。"
     },
     {
       "id": "phase4_full_pack_manual_review",
