@@ -346,6 +346,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 训练入口还新增 `--time-phase-conditioning one_hot`，用于把 Gym observation 的归一化时间进度显式拆成 opening / mid / late 三段 one-hot 特征。默认阈值为 0.2 和 0.6，在线评估也从当前 observation 计算同一组特征，旧 checkpoint 默认 `none` 保持兼容。当前 high-pressure 轨迹 dry-run 中 opening / mid / late 样本占比分别为 4.92% / 42.51% / 52.56%，说明阶段条件化可以把中后期分布显式暴露给 policy；但该 dry-run 只证明特征管线，不代表分阶段策略已经通过。
 
+首个完整 time-phase GRU context8 候选在 60 秒 high-pressure 三图中达到 100% / 80% / 100%，动作熵保持健康；但 300 秒三图为 `soda-creek` 0%、`caramel-workshop` 0%、`cracked-star-jar` 33.33%，multi-map gate 仍为 `repair`。结论：阶段进度 one-hot 能改善短窗行为，但不能替代阶段目标、升级监督或 PPO 蒸馏；下一轮应真正拆分阶段 policy 或把阶段目标纳入训练损失。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

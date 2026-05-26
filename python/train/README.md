@@ -298,6 +298,8 @@ python3 python/train/train_behavior_clone.py \
 
 The first dry-run on the current high-pressure trajectory set found `opening` / `mid` / `late` ratios of `4.92%` / `42.51%` / `52.56%`. This only proves feature plumbing and dataset visibility; it is not policy repair until a checkpoint passes the same high-pressure comparison and acceptance gate.
 
+The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash
