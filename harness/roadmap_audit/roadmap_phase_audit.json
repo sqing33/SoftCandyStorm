@@ -222,20 +222,25 @@
         "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_multimap_300s_001/summary.md",
         "harness/failed_cases/fail_20260526_027_behavior_clone_context3_caramel_gap.json",
         "harness/reports/2026-05-26_rl_policy_acceptance_template_002/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_smoke_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_multimap_60s_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_multimap_300s_seed43000_001/summary.md",
+        "harness/reports/2026-05-27_rl_policy_acceptance_context5_danger_weighted_001/summary.md",
+        "harness/failed_cases/fail_20260527_001_behavior_clone_context5_caramel_gap.json",
         "harness/reports/2026-05-26_post_recovery_rl_dry_run_001/dqn_dry_run.json",
         "harness/reports/2026-05-26_post_recovery_behavior_clone_dry_run_001/run_output.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "context3 behavior clone 已训练，当前会话本机二进制启动和 RL 依赖均已恢复；60 秒 high-pressure 三图 5 seed 对比全胜且动作熵健康，但 300 秒三图 3 seed 对比仍为 repair，caramel-workshop 胜率 0%，cracked-star-jar 低于规则 Bot 对照。",
+        "context3 和 context5 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；60 秒 high-pressure 三图 5 seed 对比全胜且动作熵健康，但 300 秒三图 3 seed 对比仍为 repair，caramel-workshop 胜率 0%，说明同构 MLP 堆 context_frames 不是修复方向。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
       ],
       "next_actions": [
-        "围绕 caramel-workshop 300 秒失败面收集中后期轨迹或 replay 诊断。",
-        "继续做多图 curriculum、长序列模型、分阶段 policy 或 PPO 蒸馏初始化，不用单图微调替代泛化修复。"
+        "围绕 caramel-workshop 180-300 秒失败面收集中后期恢复轨迹或 replay 诊断。",
+        "改用 GRU / Transformer、分阶段 policy 或 PPO 蒸馏初始化，不再继续堆同构 MLP context_frames。"
       ]
     },
     {

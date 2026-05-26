@@ -305,6 +305,14 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 结论：3 帧上下文修复了短窗动作塌缩，但没有解决 300 秒长局泛化，尤其是 `caramel-workshop` 中后期压力。该模型只能保持 `repair`，不能推进为 `rl_test_bot_candidate`。对应 failure case 为 `harness/failed_cases/fail_20260526_027_behavior_clone_context3_caramel_gap.json`。
 
+继续把同一批 high-pressure 轨迹训练为 5 帧 danger-weighted MLP 后，离线 validation accuracy 为 86.74%，短窗仍健康：
+
+- 60 秒 high-pressure 三图、5 seed：三图胜率均为 100%，normalized action entropy 为 0.9116 / 0.9119 / 0.9063，最大动作占比不超过 21.40%。
+- 300 秒 high-pressure 三图、3 seed、同 context3 seed 窗口：`soda-creek` 胜率 66.67%，`caramel-workshop` 胜率 0%，`cracked-star-jar` 胜率 33.33%；`caramel-workshop` 仍触发 `zero_policy_win_rate` repair。
+- 额外 seed 窗口中 `cracked-star-jar` 可到 100%，但 `caramel-workshop` 仍为 0%，说明失败面集中在 caramel-workshop 中后期恢复路径，而不是 observation 短窗动作熵。
+
+结论：简单把 MLP context 从 3 帧堆到 5 帧不是修复方向。下一步应停止堆同构短序列输入，改为收集 `caramel-workshop` 180-300 秒恢复轨迹，或尝试 GRU / Transformer、分阶段 policy、PPO 蒸馏初始化。对应 failure case 为 `harness/failed_cases/fail_20260527_001_behavior_clone_context5_caramel_gap.json`。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
@@ -324,7 +332,7 @@ python3 tools/validate_rl_policy_acceptance.py \
 - rule Bot comparison、action entropy、dominant action、failure case 和 unresolved blocker 都被同一份报告引用。
 - `gate_decision` 只能是 `blocked_by_local_binary_launch`、`watch`、`repair`、`reject` 或 `rl_test_bot_candidate`，不能写成 release、playtest、balance 或 fun 通过。
 
-当前 `behavior_clone_kite_context3_danger_weighted_smoke` manifest 只能是 `repair`：它已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 `caramel-workshop` 0% 胜率和未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
+当前 `behavior_clone_kite_context3_danger_weighted_smoke` 和 `behavior_clone_kite_context5_danger_weighted_smoke` manifest 都只能是 `repair`：它们已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 `caramel-workshop` 0% 胜率和未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
 
 ## 奖励函数
 

@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_001",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_context5_danger_weighted_smoke",
+  "seed": 43000,
+  "bot": "BehaviorCloneKiteContext5DangerWeightedSmoke",
+  "time_seconds": 300.0,
+  "symptom": "5 帧 danger-weighted behavior clone 在 60 秒 high-pressure 三图 5 seed 中全胜且动作熵健康，但 300 秒三图 3 seed 同窗口对比仍失败：caramel-workshop 胜率 0%，cracked-star-jar 胜率 33.33%，multi-map gate 为 repair",
+  "root_cause": "简单扩大 MLP 输入上下文到 5 帧没有提供足够的长期记忆或阶段策略切换；模型在 caramel-workshop 中后期仍缺少低血量恢复、Boss / hazard 节奏和路线选择能力，且 action 7 偏好变强，说明失败面不是短窗动作熵不足",
+  "fix": "停止继续用同一 MLP 架构堆 context_frames；下一步应收集 caramel-workshop 180-300 秒恢复轨迹并尝试 GRU/Transformer、分阶段 policy 或 PPO 蒸馏初始化，同时保留同 seed 300 秒规则 Bot 对比作为回归门禁",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_context5_danger_weighted_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 43000 --rule-bots random,kite,tank --report harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_multimap_300s_seed43000_001/comparison.json"
+}

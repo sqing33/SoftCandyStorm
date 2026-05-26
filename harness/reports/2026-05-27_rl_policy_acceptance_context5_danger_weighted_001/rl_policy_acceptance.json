@@ -1,0 +1,93 @@
+{
+  "report_version": 1,
+  "source": "python/train/rl_policy_acceptance_context5_danger_weighted.json",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "rl_policy_acceptance_not_ready",
+  "gate_decision": "repair",
+  "policy": {
+    "policy_id": "behavior_clone_kite_context5_danger_weighted_smoke",
+    "policy_type": "behavior_clone",
+    "policy_phase": "rl_phase_1_movement_survival",
+    "model_path": "python/train/models/behavior_clone_kite_high_pressure_context5_danger_weighted_smoke.pt",
+    "model_metadata_path": null
+  },
+  "criteria": {
+    "required_map_preset": "high-pressure",
+    "min_map_count": 3,
+    "min_short_seconds": 60,
+    "min_long_seconds": 300,
+    "min_normalized_action_entropy": 0.5,
+    "max_dominant_action_ratio": 0.7,
+    "min_short_policy_win_rate": 1.0,
+    "min_long_policy_win_rate": 1.0,
+    "must_match_best_rule_bot": true
+  },
+  "evidence": {
+    "training_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_smoke_001/run_output.json",
+    "short_eval_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_multimap_60s_001/comparison.json",
+    "long_eval_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_multimap_300s_seed43000_001/comparison.json",
+    "rule_bot_comparison_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_multimap_300s_seed43000_001/comparison.json",
+    "local_binary_diagnostic_report_path": "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_002/local_binary_launch.json",
+    "local_binary_decision": "local_binary_launch_ok",
+    "failure_case_count": 2,
+    "unresolved_failure_case_count": 1
+  },
+  "training_report": {
+    "status": "trained",
+    "gate_decision": "behavior_clone_smoke_only_not_policy_gate",
+    "model_path": "python/train/models/behavior_clone_kite_high_pressure_context5_danger_weighted_smoke.pt"
+  },
+  "evaluation_reports": [
+    {
+      "label": "short_eval_report",
+      "present": true,
+      "status": "compared",
+      "gate_decision": "multimap_comparison_recorded_not_balance_gate",
+      "seconds": 60.0,
+      "map_count": 3,
+      "minimum_policy_win_rate": 1.0
+    },
+    {
+      "label": "long_eval_report",
+      "present": true,
+      "status": "compared",
+      "gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+      "seconds": 300.0,
+      "map_count": 3,
+      "minimum_policy_win_rate": 0.0
+    },
+    {
+      "label": "rule_bot_comparison_report",
+      "present": true,
+      "status": "compared",
+      "gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+      "seconds": 300.0,
+      "map_count": 3,
+      "minimum_policy_win_rate": 0.0
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "model_metadata_path: missing metadata is allowed only because this is not a candidate"
+  ],
+  "blockers": [
+    "training_report: gate_decision `behavior_clone_smoke_only_not_policy_gate` is not policy acceptance evidence",
+    "long_eval_report: minimum policy win rate must be >= 1, got `0.0`",
+    "long_eval_report: report gate_decision `multimap_comparison_recorded_needs_policy_repair` still indicates repair/watch",
+    "long_eval_report: report still contains 2 finding(s)",
+    "long_eval_report.soda-creek: policy win rate 0.6667 is below best rule Bot 0.667",
+    "long_eval_report.caramel-workshop: policy win rate 0 is below best rule Bot 1",
+    "long_eval_report.cracked-star-jar: policy win rate 0.3333 is below best rule Bot 0.667",
+    "rule_bot_comparison_report: minimum policy win rate must be >= 1, got `0.0`",
+    "rule_bot_comparison_report: report gate_decision `multimap_comparison_recorded_needs_policy_repair` still indicates repair/watch",
+    "rule_bot_comparison_report: report still contains 2 finding(s)",
+    "rule_bot_comparison_report.soda-creek: policy win rate 0.6667 is below best rule Bot 0.667",
+    "rule_bot_comparison_report.caramel-workshop: policy win rate 0 is below best rule Bot 1",
+    "rule_bot_comparison_report.cracked-star-jar: policy win rate 0.3333 is below best rule Bot 0.667"
+  ],
+  "limitations": [
+    "This validator checks evidence shape and recorded metrics only; it does not run Rust, Gym, Harness, or training.",
+    "An rl_test_bot_candidate decision is still not a fun, balance, playtest, release, or accepted-content gate.",
+    "When local_binary_launch_blocked is active, no RL/Gym comparison depending on game_harness can be promoted."
+  ]
+}
