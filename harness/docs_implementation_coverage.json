@@ -495,7 +495,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel、v0 存档契约、Runtime 隐私设置契约和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告和人工审校草稿；完整基地、真实存取档、图鉴 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel、v0 存档契约、Runtime v0 存档读写、Runtime 隐私设置契约和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告和人工审校草稿；完整基地、图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -506,8 +506,10 @@
             "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md",
             "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md",
             "harness/save_contract/save_state_v0_template.json",
+            "harness/save_contract/README.md",
             "tools/validate_save_state_contract.py",
             "harness/reports/2026-05-26_save_state_contract_001/summary.md",
+            "crates/game_runtime/src/main.rs",
             "harness/generated_candidates/2026-05-26_story_codex_seed_pack/README.md",
             "harness/story_review/story_codex_manual_review_template.json",
             "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md",
@@ -518,11 +520,10 @@
             "harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py",
             "harness/telemetry_privacy/test_validate_runtime_privacy_settings_contract.py",
             "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md",
-            "crates/game_runtime/src/main.rs",
             "harness/telemetry_privacy/README.md"
           ],
           "gaps": [
-            "已有 v0 存档 JSON 契约、Runtime 隐私设置契约和 CLI 级本地导出 / 显式删除能力，但缺少 Runtime 真实存取档、存档迁移、基地 UI、章节目标链、图鉴 UI、真实设置按钮和真实 10 分钟完整局验证。",
+            "已有 v0 存档 JSON 契约，Runtime 可通过 --save-file 读取或创建存档、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；但缺少存档迁移、基地 UI、章节目标链、图鉴 UI、真实设置按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审，但尚未由真人填写审校记录并通过，也未进入任何 Runtime UI 候选接入。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],

@@ -19,6 +19,9 @@ const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const DEFAULT_LOCAL_TELEMETRY_DIR: &str = "harness/telemetry/local";
 const DEFAULT_LOCAL_REPLAY_DIR: &str = "harness/replay";
+const DEFAULT_SAVE_ID: &str = "local-demo-profile";
+const DEFAULT_PROFILE_ID: &str = "local-player";
+const RUNTIME_SAVE_TIMESTAMP: &str = "2026-05-26T00:00:00Z";
 const CAMERA_Z: f32 = 999.0;
 const EFFECT_Z: f32 = 35.0;
 const PLAYER_Z: f32 = 20.0;
@@ -131,6 +134,9 @@ struct RuntimeCli {
     export_local_data: Option<PathBuf>,
     delete_local_data: bool,
     print_privacy_notice: bool,
+    save_file: Option<PathBuf>,
+    export_save: Option<PathBuf>,
+    delete_save: bool,
 }
 
 impl Default for RuntimeCli {
@@ -159,6 +165,9 @@ impl Default for RuntimeCli {
             export_local_data: None,
             delete_local_data: false,
             print_privacy_notice: false,
+            save_file: None,
+            export_save: None,
+            delete_save: false,
         }
     }
 }
@@ -167,6 +176,7 @@ impl Default for RuntimeCli {
 struct RuntimeState {
     content: ContentPack,
     content_dir: PathBuf,
+    content_pack_ids: Vec<String>,
     config: RunConfig,
     core: GameCore,
     dt: FixedDt,
@@ -184,6 +194,7 @@ struct RuntimeState {
     paused: bool,
     run_number: u32,
     privacy_settings: RuntimePrivacySettings,
+    save_file: Option<PathBuf>,
     meta_progress: MetaProgress,
     last_meta_settlement: Option<MetaSettlementReport>,
     settled_run_number: Option<u32>,
@@ -263,6 +274,45 @@ struct RuntimePrivacySettings {
     raw_replay_upload_enabled: bool,
     #[serde(default)]
     crash_report_upload_enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RuntimeSaveStateV0 {
+    schema_version: u32,
+    contract_id: String,
+    save_id: String,
+    profile_id: String,
+    created_at: String,
+    updated_at: String,
+    game_version: String,
+    ruleset_version: String,
+    content_pack_ids: Vec<String>,
+    settings: RuntimePrivacySettings,
+    data_controls: RuntimeSaveDataControls,
+    meta_progress: MetaProgress,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RuntimeSaveDataControls {
+    local_only_by_default: bool,
+    upload_requires_opt_in: bool,
+    delete_save_available: bool,
+    export_save_available: bool,
+    export_format: String,
+    retention_days: u32,
+}
+
+impl Default for RuntimeSaveDataControls {
+    fn default() -> Self {
+        Self {
+            local_only_by_default: true,
+            upload_requires_opt_in: true,
+            delete_save_available: true,
+            export_save_available: true,
+            export_format: "json".to_string(),
+            retention_days: 90,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -494,6 +544,16 @@ fn setup_runtime(
                 .unwrap_or_else(|| "defaults".to_string())
         )
     });
+    let meta_progress =
+        load_runtime_meta_progress(&cli, &privacy_settings).unwrap_or_else(|error| {
+            panic!(
+                "failed to load runtime save from `{}`: {error}",
+                cli.save_file
+                    .as_ref()
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_else(|| "demo defaults".to_string())
+            )
+        });
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
         panic!(
             "failed to load runtime content from `{}`: {error}",
@@ -580,6 +640,7 @@ fn setup_runtime(
     commands.insert_resource(RuntimeState {
         content,
         content_dir: cli.content_dir.clone(),
+        content_pack_ids: cli.content_pack_ids.clone(),
         config,
         core,
         dt,
@@ -597,7 +658,8 @@ fn setup_runtime(
         paused: false,
         run_number: 1,
         privacy_settings,
-        meta_progress: MetaProgress::demo_start(),
+        save_file: cli.save_file.clone(),
+        meta_progress,
         last_meta_settlement: None,
         settled_run_number: None,
     });
@@ -1496,6 +1558,10 @@ fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
     let report = state.meta_progress.apply_run_summary(&summary);
     state.last_meta_settlement = Some(report);
     state.settled_run_number = Some(state.run_number);
+    if let Err(error) = persist_runtime_save_if_configured(state) {
+        state.last_event = format!("save failed: {error}");
+        state.last_event_kind = RuntimeEventKind::System;
+    }
 }
 
 fn render_meta_progress_panel(
@@ -1813,6 +1879,19 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--print-privacy-notice" => {
                 cli.print_privacy_notice = true;
             }
+            "--save-file" => {
+                if let Some(value) = args.next() {
+                    cli.save_file = Some(PathBuf::from(value));
+                }
+            }
+            "--export-save" => {
+                if let Some(value) = args.next() {
+                    cli.export_save = Some(PathBuf::from(value));
+                }
+            }
+            "--delete-save" => {
+                cli.delete_save = true;
+            }
             _ => {}
         }
     }
@@ -1847,6 +1926,25 @@ fn run_runtime_prelaunch_actions(cli: &RuntimeCli) -> Result<bool, String> {
         handled = true;
     }
 
+    if let Some(export_path) = &cli.export_save {
+        export_runtime_save(cli, &privacy_settings, export_path)
+            .map_err(|error| format!("failed to export save: {error}"))?;
+        println!("{}", export_path.display());
+        handled = true;
+    }
+
+    if cli.delete_save {
+        delete_runtime_save(cli).map_err(|error| format!("failed to delete save: {error}"))?;
+        println!(
+            "deleted save {}",
+            cli.save_file
+                .as_ref()
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| "<missing>".to_string())
+        );
+        handled = true;
+    }
+
     Ok(handled)
 }
 
@@ -1859,6 +1957,102 @@ fn load_runtime_privacy_settings(cli: &RuntimeCli) -> std::io::Result<RuntimePri
         std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
     })?;
     Ok(settings)
+}
+
+fn load_runtime_meta_progress(
+    cli: &RuntimeCli,
+    privacy_settings: &RuntimePrivacySettings,
+) -> std::io::Result<MetaProgress> {
+    let Some(path) = &cli.save_file else {
+        return Ok(MetaProgress::demo_start());
+    };
+    if !path.exists() {
+        write_runtime_save_state(path, cli, privacy_settings, &MetaProgress::demo_start())?;
+    }
+    let save = read_runtime_save_state(path)?;
+    Ok(save.meta_progress)
+}
+
+fn read_runtime_save_state(path: &Path) -> std::io::Result<RuntimeSaveStateV0> {
+    let text = fs::read_to_string(path)?;
+    let save = serde_json::from_str::<RuntimeSaveStateV0>(&text).map_err(|error| {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
+    })?;
+    if save.schema_version != 1 || save.contract_id != "save-state-v0" {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "runtime save must use save-state-v0 schema_version 1",
+        ));
+    }
+    Ok(save)
+}
+
+fn build_runtime_save_state(
+    cli: &RuntimeCli,
+    privacy_settings: &RuntimePrivacySettings,
+    progress: &MetaProgress,
+) -> RuntimeSaveStateV0 {
+    RuntimeSaveStateV0 {
+        schema_version: 1,
+        contract_id: "save-state-v0".to_string(),
+        save_id: DEFAULT_SAVE_ID.to_string(),
+        profile_id: DEFAULT_PROFILE_ID.to_string(),
+        created_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+        updated_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+        game_version: "prototype-v0".to_string(),
+        ruleset_version: "prototype-v0".to_string(),
+        content_pack_ids: cli.content_pack_ids.clone(),
+        settings: privacy_settings.clone(),
+        data_controls: RuntimeSaveDataControls::default(),
+        meta_progress: progress.clone(),
+    }
+}
+
+fn write_runtime_save_state(
+    path: &Path,
+    cli: &RuntimeCli,
+    privacy_settings: &RuntimePrivacySettings,
+    progress: &MetaProgress,
+) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let save = build_runtime_save_state(cli, privacy_settings, progress);
+    let json = serde_json::to_string_pretty(&save)?;
+    fs::write(path, format!("{json}\n"))
+}
+
+fn persist_runtime_save_if_configured(state: &RuntimeState) -> std::io::Result<()> {
+    let Some(path) = &state.save_file else {
+        return Ok(());
+    };
+    let cli = RuntimeCli {
+        content_pack_ids: state.content_pack_ids.clone(),
+        ..RuntimeCli::default()
+    };
+    write_runtime_save_state(path, &cli, &state.privacy_settings, &state.meta_progress)
+}
+
+fn export_runtime_save(
+    cli: &RuntimeCli,
+    privacy_settings: &RuntimePrivacySettings,
+    output_path: &Path,
+) -> std::io::Result<()> {
+    let progress = load_runtime_meta_progress(cli, privacy_settings)?;
+    write_runtime_save_state(output_path, cli, privacy_settings, &progress)
+}
+
+fn delete_runtime_save(cli: &RuntimeCli) -> std::io::Result<()> {
+    let Some(path) = &cli.save_file else {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "delete save requires --save-file",
+        ));
+    };
+    if path.exists() {
+        fs::remove_file(path)?;
+    }
+    Ok(())
 }
 
 fn runtime_can_upload(settings: &RuntimePrivacySettings, kind: RuntimeUploadKind) -> bool {
@@ -2292,10 +2486,10 @@ mod tests {
         load_runtime_privacy_settings, make_tone_wav, map_visual_style, parse_runtime_cli,
         player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
         run_config_from_cli, runtime_asset_root, runtime_can_upload, runtime_privacy_notice,
-        runtime_sprite_paths, sounds_for_events, RuntimeCaptureState, RuntimeCli,
-        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimePrivacyReport,
+        runtime_sprite_paths, sounds_for_events, write_runtime_save_state, RuntimeCaptureState,
+        RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimePrivacyReport,
         RuntimePrivacySettings, RuntimeSound, RuntimeUploadKind, DEFAULT_CONTENT_DIR,
-        DEFAULT_LOCAL_REPLAY_DIR, DEFAULT_LOCAL_TELEMETRY_DIR,
+        DEFAULT_LOCAL_REPLAY_DIR, DEFAULT_LOCAL_TELEMETRY_DIR, DEFAULT_SAVE_ID,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -2444,6 +2638,27 @@ mod tests {
         );
         assert!(cli.delete_local_data);
         assert!(cli.print_privacy_notice);
+    }
+
+    #[test]
+    fn parses_runtime_save_options() {
+        let cli = parse_runtime_cli([
+            "--save-file".to_string(),
+            "harness/save/local/profile.json".to_string(),
+            "--export-save".to_string(),
+            "harness/save/local/export.json".to_string(),
+            "--delete-save".to_string(),
+        ]);
+
+        assert_eq!(
+            cli.save_file,
+            Some(PathBuf::from("harness/save/local/profile.json"))
+        );
+        assert_eq!(
+            cli.export_save,
+            Some(PathBuf::from("harness/save/local/export.json"))
+        );
+        assert!(cli.delete_save);
     }
 
     #[test]
@@ -2647,6 +2862,129 @@ mod tests {
         let error = delete_runtime_local_data(&RuntimeCli::default()).unwrap_err();
 
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn load_runtime_meta_progress_creates_default_save() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-create-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        let cli = RuntimeCli {
+            save_file: Some(save_file.clone()),
+            ..RuntimeCli::default()
+        };
+
+        let progress =
+            super::load_runtime_meta_progress(&cli, &RuntimePrivacySettings::default()).unwrap();
+        let save_text = fs::read_to_string(&save_file).unwrap();
+        let save_json: serde_json::Value = serde_json::from_str(&save_text).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert!(progress.unlocks.characters.contains("jar-keeper"));
+        assert_eq!(save_json["contract_id"], "save-state-v0");
+        assert_eq!(save_json["save_id"], DEFAULT_SAVE_ID);
+        assert_eq!(save_json["settings"]["telemetry_upload_enabled"], false);
+        assert_eq!(save_json["data_controls"]["export_format"], "json");
+    }
+
+    #[test]
+    fn runtime_save_round_trip_preserves_meta_progress() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-roundtrip-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        let mut progress = MetaProgress::demo_start();
+        progress.resources.candy_crystal_shards = 42;
+        write_runtime_save_state(
+            &save_file,
+            &RuntimeCli::default(),
+            &RuntimePrivacySettings::default(),
+            &progress,
+        )
+        .unwrap();
+
+        let loaded = super::load_runtime_meta_progress(
+            &RuntimeCli {
+                save_file: Some(save_file.clone()),
+                ..RuntimeCli::default()
+            },
+            &RuntimePrivacySettings::default(),
+        )
+        .unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(loaded.resources.candy_crystal_shards, 42);
+    }
+
+    #[test]
+    fn export_runtime_save_writes_json_copy() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-export-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        let export_file = root.join("export/profile_export.json");
+        let mut progress = MetaProgress::demo_start();
+        progress.completed_runs = 3;
+        write_runtime_save_state(
+            &save_file,
+            &RuntimeCli::default(),
+            &RuntimePrivacySettings::default(),
+            &progress,
+        )
+        .unwrap();
+
+        super::export_runtime_save(
+            &RuntimeCli {
+                save_file: Some(save_file),
+                ..RuntimeCli::default()
+            },
+            &RuntimePrivacySettings::default(),
+            &export_file,
+        )
+        .unwrap();
+        let export_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&export_file).unwrap()).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(export_json["meta_progress"]["completed_runs"], 3);
+    }
+
+    #[test]
+    fn delete_runtime_save_requires_save_file() {
+        let error = super::delete_runtime_save(&RuntimeCli::default()).unwrap_err();
+
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn delete_runtime_save_removes_only_named_file() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-delete-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let save_file = root.join("profile.json");
+        let other_file = root.join("other.json");
+        fs::write(&save_file, "{}\n").unwrap();
+        fs::write(&other_file, "{}\n").unwrap();
+
+        super::delete_runtime_save(&RuntimeCli {
+            save_file: Some(save_file.clone()),
+            ..RuntimeCli::default()
+        })
+        .unwrap();
+
+        assert!(!save_file.exists());
+        assert!(other_file.exists());
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]

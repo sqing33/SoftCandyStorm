@@ -10,4 +10,14 @@
 - 删除存档和导出存档控制项是否存在。
 - 存档中是否出现明显禁止的个人身份或本地路径字段。
 
-它不能替代 Runtime 真实存取档、UI 删除/导出按钮、平台隐私审查或人工试玩流程。
+Runtime 现在已有 CLI 级 v0 存档读写能力：
+
+```bash
+cargo run -p game_runtime -- --save-file harness/save/local/profile.json
+cargo run -p game_runtime -- --save-file harness/save/local/profile.json --export-save harness/save/local/profile_export.json
+cargo run -p game_runtime -- --save-file harness/save/local/profile.json --delete-save
+```
+
+`--save-file` 会读取或创建 `save-state-v0`，局后结算时写回 `MetaProgress`；`--export-save` 导出同形状 JSON；`--delete-save` 必须显式指定 save 文件，只删除该文件。
+
+它不能替代迁移版本、基地 UI 删除/导出按钮、平台隐私审查或人工试玩流程。
