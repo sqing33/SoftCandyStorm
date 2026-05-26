@@ -831,15 +831,51 @@ def time_phase_one_hot(time_progress_values, thresholds, np_module):
 def summarize_time_phase_distribution(dataset, thresholds):
     counts = {label: 0 for label in TIME_PHASE_LABELS}
     for observation in dataset["observations"]:
-        progress = clamp(float(observation[0]) if observation else 0.0, 0.0, 1.0)
-        if progress < thresholds[0]:
-            label = TIME_PHASE_LABELS[0]
-        elif progress < thresholds[1]:
-            label = TIME_PHASE_LABELS[1]
-        else:
-            label = TIME_PHASE_LABELS[2]
+        label = time_phase_label(float(observation[0]) if observation else 0.0, thresholds)
         counts[label] += 1
     return ratio_counts(counts, len(dataset["observations"]))
+
+
+def time_phase_label(progress, thresholds):
+    progress = clamp(float(progress), 0.0, 1.0)
+    if progress < thresholds[0]:
+        return TIME_PHASE_LABELS[0]
+    if progress < thresholds[1]:
+        return TIME_PHASE_LABELS[1]
+    return TIME_PHASE_LABELS[2]
+
+
+def filter_dataset_by_time_phase(dataset, phase, thresholds):
+    thresholds = normalize_time_phase_thresholds(thresholds)
+    if phase == "all":
+        return dataset, {
+            "mode": "all",
+            "thresholds": thresholds,
+            "before_sample_count": len(dataset["actions"]),
+            "after_sample_count": len(dataset["actions"]),
+            "phase_distribution": summarize_time_phase_distribution(dataset, thresholds),
+        }
+    if phase not in TIME_PHASE_LABELS:
+        raise ValueError(f"unsupported time phase filter: {phase}")
+
+    keep_indices = [
+        index
+        for index, observation in enumerate(dataset["observations"])
+        if time_phase_label(float(observation[0]) if observation else 0.0, thresholds) == phase
+    ]
+    if len(keep_indices) < 2:
+        raise ValueError(f"time phase filter `{phase}` leaves fewer than two samples")
+    filtered = dict(dataset)
+    filtered["observations"] = [dataset["observations"][index] for index in keep_indices]
+    filtered["actions"] = [dataset["actions"][index] for index in keep_indices]
+    filtered["sample_metadata"] = [dataset["sample_metadata"][index] for index in keep_indices]
+    return filtered, {
+        "mode": phase,
+        "thresholds": thresholds,
+        "before_sample_count": len(dataset["actions"]),
+        "after_sample_count": len(keep_indices),
+        "phase_distribution": summarize_time_phase_distribution(filtered, thresholds),
+    }
 
 
 def build_sample_weights(sample_metadata, indices, args, np_module):
@@ -892,13 +928,13 @@ def clamp(value, minimum, maximum):
 
 
 class BehaviorClonePolicy:
-    def __init__(self, checkpoint_path):
+    def __init__(self, checkpoint_path, checkpoint=None):
         require_dependencies()
         import torch
         from torch import nn
 
         self.checkpoint_path = str(checkpoint_path)
-        self.checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        self.checkpoint = checkpoint or torch.load(checkpoint_path, map_location="cpu")
         self.architecture = self.checkpoint.get(
             "architecture",
             "gru" if self.checkpoint.get("kind") == "behavior_clone_gru" else "mlp",
@@ -1125,11 +1161,162 @@ class BehaviorClonePolicy:
         return time_phase_one_hot(sequence[:, 0], thresholds, np_module)
 
 
+class StagedBehaviorClonePolicy:
+    def __init__(self, checkpoint_path, checkpoint):
+        self.checkpoint_path = Path(checkpoint_path)
+        self.checkpoint = checkpoint
+        self.phase_thresholds = normalize_time_phase_thresholds(
+            checkpoint.get("phase_thresholds", DEFAULT_TIME_PHASE_THRESHOLDS)
+        )
+        self.phase_labels = list(checkpoint.get("phase_labels", TIME_PHASE_LABELS))
+        subpolicies = checkpoint.get("subpolicies", [])
+        if self.phase_labels != TIME_PHASE_LABELS:
+            raise ValueError("staged behavior clone checkpoint has unsupported phase labels")
+        self.subpolicies = {}
+        for item in subpolicies:
+            if not isinstance(item, dict):
+                raise ValueError("staged behavior clone subpolicies must be objects")
+            phase = item.get("phase")
+            model_path = item.get("model_path")
+            if phase not in TIME_PHASE_LABELS or not isinstance(model_path, str):
+                raise ValueError("staged behavior clone subpolicy must include phase and model_path")
+            self.subpolicies[phase] = load_behavior_clone_policy(
+                resolve_staged_model_path(self.checkpoint_path, model_path)
+            )
+        missing = [phase for phase in TIME_PHASE_LABELS if phase not in self.subpolicies]
+        if missing:
+            raise ValueError(f"staged behavior clone checkpoint missing phases: {', '.join(missing)}")
+        first_policy = self.subpolicies[TIME_PHASE_LABELS[0]]
+        self.action_count = first_policy.action_count
+        self.base_observation_len = first_policy.base_observation_len
+        for phase, policy in self.subpolicies.items():
+            if policy.action_count != self.action_count:
+                raise ValueError(f"staged behavior clone `{phase}` action_count mismatch")
+            if policy.base_observation_len != self.base_observation_len:
+                raise ValueError(f"staged behavior clone `{phase}` observation length mismatch")
+
+    def reset(self):
+        for policy in self.subpolicies.values():
+            policy.reset()
+
+    def set_map_id(self, map_id):
+        for policy in self.subpolicies.values():
+            policy.set_map_id(map_id)
+
+    def predict(self, observation, deterministic=True):
+        return self._policy_for_observation(observation).predict(observation, deterministic=deterministic)
+
+    def action_scores(self, observation):
+        return self._policy_for_observation(observation).action_scores(observation)
+
+    def _policy_for_observation(self, observation):
+        import numpy as np
+
+        values = np.asarray(observation, dtype=np.float32).reshape(-1)
+        if values.shape[0] != self.base_observation_len:
+            raise ValueError(
+                f"expected observation length {self.base_observation_len}, got {values.shape[0]}"
+            )
+        phase = time_phase_label(float(values[0]), self.phase_thresholds)
+        return self.subpolicies[phase]
+
+
 def load_behavior_clone_policy(path):
     checkpoint_path = Path(path)
     if not checkpoint_path.exists():
         raise ValueError(f"behavior clone model does not exist: {checkpoint_path}")
-    return BehaviorClonePolicy(checkpoint_path)
+    require_dependencies()
+    import torch
+
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    if checkpoint.get("kind") == "behavior_clone_staged":
+        return StagedBehaviorClonePolicy(checkpoint_path, checkpoint)
+    return BehaviorClonePolicy(checkpoint_path, checkpoint=checkpoint)
+
+
+def resolve_staged_model_path(checkpoint_path, model_path):
+    path = Path(model_path)
+    if path.is_absolute():
+        return path
+    return Path(checkpoint_path).parent / path
+
+
+def relativize_staged_model_path(bundle_path, model_path):
+    bundle_parent = Path(bundle_path).parent.resolve()
+    path = Path(model_path)
+    if not path.is_absolute():
+        path = path.resolve()
+    try:
+        return str(path.relative_to(bundle_parent))
+    except ValueError:
+        return str(path)
+
+
+def save_staged_behavior_clone_policy(model_out, phase_model_paths, thresholds):
+    require_dependencies()
+    import torch
+
+    thresholds = normalize_time_phase_thresholds(thresholds)
+    model_out = Path(model_out)
+    missing = [phase for phase in TIME_PHASE_LABELS if phase not in phase_model_paths]
+    if missing:
+        raise ValueError(f"missing staged policy phase models: {', '.join(missing)}")
+
+    loaded = {}
+    for phase in TIME_PHASE_LABELS:
+        path = Path(phase_model_paths[phase])
+        if not path.exists():
+            raise ValueError(f"staged policy model does not exist: {path}")
+        policy = load_behavior_clone_policy(path)
+        if isinstance(policy, StagedBehaviorClonePolicy):
+            raise ValueError("nested staged behavior clone policies are not supported")
+        loaded[phase] = policy
+
+    first = loaded[TIME_PHASE_LABELS[0]]
+    mismatches = []
+    for phase, policy in loaded.items():
+        if policy.action_count != first.action_count:
+            mismatches.append(f"{phase}: action_count {policy.action_count} != {first.action_count}")
+        if policy.base_observation_len != first.base_observation_len:
+            mismatches.append(
+                f"{phase}: base_observation_len {policy.base_observation_len} != {first.base_observation_len}"
+            )
+    if mismatches:
+        raise ValueError("staged policy submodel mismatch: " + "; ".join(mismatches))
+
+    model_out.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint = {
+        "model_version": 1,
+        "kind": "behavior_clone_staged",
+        "phase_labels": TIME_PHASE_LABELS,
+        "phase_thresholds": thresholds,
+        "action_count": first.action_count,
+        "base_observation_len": first.base_observation_len,
+        "subpolicies": [
+            {
+                "phase": phase,
+                "model_path": relativize_staged_model_path(model_out, phase_model_paths[phase]),
+            }
+            for phase in TIME_PHASE_LABELS
+        ],
+    }
+    torch.save(checkpoint, model_out)
+    return {
+        "status": "packaged",
+        "gate_decision": "staged_behavior_clone_packaged_not_policy_gate",
+        "model_path": str(model_out),
+        "phase_thresholds": thresholds,
+        "phase_labels": TIME_PHASE_LABELS,
+        "subpolicies": checkpoint["subpolicies"],
+        "validation": {
+            "action_count": first.action_count,
+            "base_observation_len": first.base_observation_len,
+        },
+        "limitations": [
+            "A staged behavior clone only dispatches between supervised movement clones; it is not an RL test Bot gate.",
+            "Each staged checkpoint must still pass high-pressure comparison and RL policy acceptance review.",
+        ],
+    }
 
 
 def evaluate_classifier(model, x, y, loss_fn):
@@ -1206,6 +1393,12 @@ def main():
         metavar=("OPENING_END", "MID_END"),
         help="Normalized run-progress thresholds for opening/mid/late phase conditioning.",
     )
+    parser.add_argument(
+        "--time-phase-filter",
+        choices=["all", *TIME_PHASE_LABELS],
+        default="all",
+        help="Train or dry-run only samples whose normalized run-progress falls in this phase.",
+    )
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--validation-split", type=float, default=0.2)
     parser.add_argument(
@@ -1275,6 +1468,11 @@ def main():
 
     try:
         dataset = load_trajectory_dataset(args.dataset, limit=args.limit_samples)
+        dataset, time_phase_filter_report = filter_dataset_by_time_phase(
+            dataset,
+            args.time_phase_filter,
+            args.time_phase_thresholds,
+        )
         if args.dry_run:
             write_report(
                 args.report,
@@ -1301,11 +1499,14 @@ def main():
                             args.time_phase_thresholds,
                         ),
                     },
+                    "time_phase_filter": time_phase_filter_report,
                     "dependencies": dependency_status(),
                 },
             )
             return
-        write_report(args.report, train_behavior_clone(dataset, args))
+        report = train_behavior_clone(dataset, args)
+        report["time_phase_filter"] = time_phase_filter_report
+        write_report(args.report, report)
     except (OSError, RuntimeError, ValueError) as exc:
         parser.error(str(exc))
 

@@ -4,7 +4,9 @@ import pytest
 
 from python.train.train_behavior_clone import (
     diagnose_sequence_dataset,
+    filter_dataset_by_time_phase,
     load_behavior_clone_policy,
+    save_staged_behavior_clone_policy,
     train_behavior_clone,
 )
 
@@ -165,3 +167,37 @@ def test_time_phase_conditioning_stays_loadable_online(tmp_path):
 
     assert 0 <= action < 3
     assert len(scores["scores"]) == 3
+
+
+def test_time_phase_filter_keeps_only_requested_samples():
+    filtered, report = filter_dataset_by_time_phase(
+        tiny_dataset(),
+        "mid",
+        [0.25, 0.35],
+    )
+
+    assert report["mode"] == "mid"
+    assert report["after_sample_count"] == 2
+    assert filtered["observations"] == [[0.3, 0.1, 0.4], [0.3, 0.6, 0.5]]
+
+
+def test_staged_behavior_clone_dispatches_between_phase_models(tmp_path):
+    phase_paths = {}
+    thresholds = [0.15, 0.25]
+    for phase in ("opening", "mid", "late"):
+        dataset, _ = filter_dataset_by_time_phase(tiny_dataset(), phase, thresholds)
+        args = args_for(tmp_path / phase, architecture="mlp", context_frames=1)
+        args.time_phase_filter = phase
+        report = train_behavior_clone(dataset, args)
+        phase_paths[phase] = report["model_path"]
+
+    staged_path = tmp_path / "staged.pt"
+    package_report = save_staged_behavior_clone_policy(staged_path, phase_paths, thresholds)
+    policy = load_behavior_clone_policy(package_report["model_path"])
+    policy.set_map_id("soda-creek")
+
+    for observation in ([0.1, 0.0, 0.2], [0.3, 0.1, 0.4], [0.4, 0.2, 0.5]):
+        action, _ = policy.predict(observation)
+        scores = policy.action_scores(observation)
+        assert 0 <= action < 3
+        assert len(scores["scores"]) == 3

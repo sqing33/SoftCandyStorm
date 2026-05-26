@@ -300,6 +300,23 @@ The first dry-run on the current high-pressure trajectory set found `opening` / 
 
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
+For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:
+
+```bash
+python3 python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --time-phase-filter opening \
+  --model-out harness/reports/local_staged/opening.pt
+
+python3 python/train/create_staged_behavior_clone_policy.py \
+  --opening-model harness/reports/local_staged/opening.pt \
+  --mid-model harness/reports/local_staged/mid.pt \
+  --late-model harness/reports/local_staged/late.pt \
+  --model-out harness/reports/local_staged/staged.pt
+```
+
+The first packaging smoke proved the staged checkpoint can be loaded through the existing Gym comparison path, but the 1 epoch subpolicies still showed action-bias repair findings. Treat staged packaging as plumbing until a fully trained staged policy passes the normal acceptance gate.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash
