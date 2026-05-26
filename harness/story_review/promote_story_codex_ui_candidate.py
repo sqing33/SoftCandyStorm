@@ -19,6 +19,7 @@ from validate_story_codex_manual_review import build_report, load_json_object
 
 
 DEFAULT_PROMOTED_AT = "2026-05-26T00:00:00Z"
+UI_CANDIDATE_MANIFEST_CONTRACT_ID = "story-codex-ui-candidate-manifest-v0"
 
 
 def is_nonempty_string(value: Any) -> bool:
@@ -77,11 +78,13 @@ def promote_story_codex_ui_candidate(
     chapter_count, codex_count = read_candidate_counts(destination)
     ui_manifest = {
         "manifest_version": 1,
+        "manifest_contract_id": UI_CANDIDATE_MANIFEST_CONTRACT_ID,
         "stage": "story_codex_ui_candidate",
         "candidate_pack_id": candidate_pack_id,
         "promoted_at": promoted_at,
         "source_candidate_pack": relative_repo_path(repo_root, source_candidate),
         "manual_review_file": relative_repo_path(repo_root, review_copy),
+        "manual_gate_decision": "ui_candidate",
         "candidate_validation_report": review.get("candidate_validation_report"),
         "chapter_count": chapter_count,
         "codex_entry_count": codex_count,

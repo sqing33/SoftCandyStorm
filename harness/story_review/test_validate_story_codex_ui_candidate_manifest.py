@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
-"""Regression tests for story/codex UI candidate promotion.
+"""Regression tests for story/codex UI candidate manifest validation.
 
 Run with:
-    python3 harness/story_review/test_promote_story_codex_ui_candidate.py
+    python3 harness/story_review/test_validate_story_codex_ui_candidate_manifest.py
 """
 
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from promote_story_codex_ui_candidate import promote_story_codex_ui_candidate
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parents[1]
+TEMPLATE = SCRIPT_DIR / "story_codex_ui_candidate_manifest_template.json"
+
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from promote_story_codex_ui_candidate import promote_story_codex_ui_candidate  # noqa: E402
+from validate_story_codex_ui_candidate_manifest import build_report, load_json_object  # noqa: E402
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -90,65 +99,63 @@ def valid_ui_review(repo_root: Path) -> Path:
     return review_path
 
 
-class StoryCodexUiCandidatePromotionTests(unittest.TestCase):
-    def test_promotes_valid_ui_candidate_without_accepting_content(self) -> None:
+class StoryCodexUiCandidateManifestValidatorTests(unittest.TestCase):
+    def test_promoted_manifest_validates(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = Path(temp_dir)
             create_candidate_pack(repo_root)
             review = valid_ui_review(repo_root)
             out_dir = repo_root / "harness/story_review/ui_candidates"
-
-            report = promote_story_codex_ui_candidate(review, repo_root, out_dir)
-            manifest = json.loads(
-                (out_dir / "story-pack/ui_candidate_manifest.json").read_text(
-                    encoding="utf-8"
-                )
-            )
-
-            self.assertEqual(report["decision"], "story_codex_ui_candidate_promoted")
-            self.assertEqual(report["chapter_count"], 1)
-            self.assertEqual(report["codex_entry_count"], 1)
-            self.assertEqual(
-                manifest["manifest_contract_id"],
-                "story-codex-ui-candidate-manifest-v0",
-            )
-            self.assertEqual(manifest["manual_gate_decision"], "ui_candidate")
-            self.assertFalse(manifest["rules"]["accepted_content"])
-            self.assertFalse(manifest["rules"]["runtime_integrated"])
-            self.assertTrue((out_dir / "story-pack/manual_review.json").exists())
-
-    def test_rejects_non_ui_candidate_review(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_root = Path(temp_dir)
-            create_candidate_pack(repo_root)
-            review = valid_ui_review(repo_root)
-            payload = json.loads(review.read_text(encoding="utf-8"))
-            payload["gate_decision"] = "repair"
-            payload["chapter_reviews"][0]["decision"] = "revise"
-            payload["chapter_reviews"][0]["tone_rating"] = 3
-            payload["chapter_reviews"][0]["required_changes"] = ["缩短章节导语"]
-            payload["global_risks"] = ["章节导语略长"]
-            payload["next_actions"] = ["修订后重新审校"]
-            write_json(review, payload)
-
-            with self.assertRaisesRegex(ValueError, "gate_decision"):
-                promote_story_codex_ui_candidate(
-                    review,
-                    repo_root,
-                    repo_root / "harness/story_review/ui_candidates",
-                )
-
-    def test_refuses_to_overwrite_existing_ui_candidate(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_root = Path(temp_dir)
-            create_candidate_pack(repo_root)
-            review = valid_ui_review(repo_root)
-            out_dir = repo_root / "harness/story_review/ui_candidates"
-
             promote_story_codex_ui_candidate(review, repo_root, out_dir)
 
-            with self.assertRaises(FileExistsError):
-                promote_story_codex_ui_candidate(review, repo_root, out_dir)
+            manifest = out_dir / "story-pack/ui_candidate_manifest.json"
+            report = build_report(manifest, repo_root)
+
+            self.assertEqual(report["decision"], "story_codex_ui_candidate_manifest_valid")
+            self.assertEqual(report["manual_gate_decision"], "ui_candidate")
+            self.assertEqual(report["chapter_count"], 1)
+            self.assertEqual(report["codex_entry_count"], 1)
+
+    def test_template_is_invalid_until_human_review_exists(self) -> None:
+        report = build_report(TEMPLATE, REPO_ROOT)
+
+        self.assertEqual(report["decision"], "story_codex_ui_candidate_manifest_invalid")
+        self.assertTrue(any("placeholder" in error for error in report["errors"]))
+        self.assertTrue(any("manual_review_file" in error for error in report["errors"]))
+
+    def test_rejects_manifest_that_claims_accepted_content(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            create_candidate_pack(repo_root)
+            review = valid_ui_review(repo_root)
+            out_dir = repo_root / "harness/story_review/ui_candidates"
+            promote_story_codex_ui_candidate(review, repo_root, out_dir)
+            manifest = out_dir / "story-pack/ui_candidate_manifest.json"
+            payload = load_json_object(manifest)
+            payload["rules"]["accepted_content"] = True
+            write_json(manifest, payload)
+
+            report = build_report(manifest, repo_root)
+
+            self.assertEqual(report["decision"], "story_codex_ui_candidate_manifest_invalid")
+            self.assertTrue(any("rules.accepted_content" in error for error in report["errors"]))
+
+    def test_counts_must_match_candidate_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            create_candidate_pack(repo_root)
+            review = valid_ui_review(repo_root)
+            out_dir = repo_root / "harness/story_review/ui_candidates"
+            promote_story_codex_ui_candidate(review, repo_root, out_dir)
+            manifest = out_dir / "story-pack/ui_candidate_manifest.json"
+            payload = load_json_object(manifest)
+            payload["chapter_count"] = 99
+            write_json(manifest, payload)
+
+            report = build_report(manifest, repo_root)
+
+            self.assertEqual(report["decision"], "story_codex_ui_candidate_manifest_invalid")
+            self.assertTrue(any("chapter_count" in error for error in report["errors"]))
 
 
 if __name__ == "__main__":

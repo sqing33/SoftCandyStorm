@@ -15,6 +15,7 @@
 4. 运行 `validate_story_codex_manual_review.py` 校验审校记录完整性。
 5. 只有人工审校通过后，未来 story/codex UI 才能把该批内容当作 UI 候选处理。
 6. 如果人工审校结论为 `ui_candidate`，可运行 `promote_story_codex_ui_candidate.py` 复制到 `harness/story_review/ui_candidates/`，作为后续 Runtime UI 接入候选。
+7. UI 候选目录中的 `ui_candidate_manifest.json` 必须再通过 `validate_story_codex_ui_candidate_manifest.py`，确认它仍不写入 `accepted_content`、不标记 Runtime 集成，并绑定有效人工审校记录。
 
 该门禁和 UI 候选晋级都不会把剧情或图鉴内容推进到 `accepted_content`，也不会替代未来 Runtime UI 验收。
 
@@ -42,3 +43,15 @@ python3 harness/story_review/promote_story_codex_ui_candidate.py \
 ```
 
 晋级前必须先有真人填写并通过校验的 `ui_candidate` 审校记录；自动草稿、`needs_more_review` 或 `repair` 结论都不能晋级。
+
+UI 候选 manifest 校验示例：
+
+```bash
+python3 harness/story_review/validate_story_codex_ui_candidate_manifest.py \
+  harness/story_review/ui_candidates/<candidate>/ui_candidate_manifest.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/story_codex_ui_candidate_manifest.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+模板 `story_codex_ui_candidate_manifest_template.json` 保留 TODO 和占位人工审校路径，当前报告应为 `story_codex_ui_candidate_manifest_invalid`。这用于证明真人审校前不能生成可用 UI 候选证据。
