@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_017",
+  "category": "rl",
+  "content_id": "ppo_time_phase_balance_closed_loop_10k",
+  "seed": 61600,
+  "bot": "PpoTimePhaseBalanceClosedLoop10k",
+  "time_seconds": 300.0,
+  "symptom": "阶段平衡 teacher 蒸馏 zip 经过 10000 timestep PPO 闭环训练后，60 秒 high-pressure 三图通过记录门禁，但 300 秒 high-pressure 中 soda-creek 与 caramel-workshop 胜率均为 0%，cracked-star-jar 胜率仅 33.33%。",
+  "root_cause": "短 PPO 闭环和 ent_coef=0.02 能缓解 deterministic action 3 塌缩，但仍缺少长局路线规划、升级协同与跨地图阶段目标；策略在长局中只是移动到新的失败面。",
+  "fix": "下一步应引入更明确的长局课程或奖励目标，复查 soda-creek / caramel-workshop 中后期死亡轨迹，并考虑与 upgrade policy 联合训练；不要把 60 秒 gate 通过视为长局修复。",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --model-in harness/reports/2026-05-27_rl_sb3_distill_time_phase_balance_teacher_001/ppo_time_phase_balance_distilled.zip --model-out harness/reports/2026-05-27_rl_ppo_time_phase_balance_closed_loop_10k_001/ppo_time_phase_balance_closed_loop_10k.zip --report-dir harness/reports/2026-05-27_rl_ppo_time_phase_balance_closed_loop_10k_001 --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --timesteps 10000 --ent-coef 0.02 --eval-episodes 3 --eval-seconds 60 --map-id soda-creek --report harness/reports/2026-05-27_rl_ppo_time_phase_balance_closed_loop_10k_001/ppo_training_report.json；随后运行 high-pressure 三图 60 秒与 300 秒 compare-rule-bots，分别写入 comparison_60s.json 和 comparison_300s.json。"
+}

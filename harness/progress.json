@@ -1658,6 +1658,11 @@
       "id": "rl_sb3_distill_time_phase_balance_teacher_smoke",
       "summary": "将阶段平衡 GRU teacher 蒸馏为 SB3 PPO zip；teacher agreement 0.8898、validation policy entropy 1.295753，但 10 秒 soda-creek deterministic 加载评估 action 3 占比 100%，已记录 fail_20260527_016。",
       "report": "harness/reports/2026-05-27_rl_sb3_distill_time_phase_balance_teacher_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_time_phase_balance_closed_loop_repair",
+      "summary": "从阶段平衡 teacher distilled zip 出发，完成 high-pressure 三图随机采样 10k timestep PPO 闭环训练；60 秒三图 gate 通过，但 300 秒 soda-creek 与 caramel-workshop 胜率均为 0%，已记录 fail_20260527_017。",
+      "report": "harness/reports/2026-05-27_rl_ppo_time_phase_balance_closed_loop_10k_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1667,7 +1672,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；下一步应进入 PPO 闭环训练或进一步提高 target entropy。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；下一步应做更明确的长局课程 / 奖励目标或 movement + upgrade 联合训练。"
     },
     {
       "id": "phase4_full_pack_manual_review",
