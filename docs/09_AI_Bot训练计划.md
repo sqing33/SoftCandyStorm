@@ -281,6 +281,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 stage 01 opening 课程已按计划跑完 5120 actual timesteps，并完成 60 秒 high-pressure 三图对比。`caramel-workshop` 与 `cracked-star-jar` 均为 100% 胜率，但 `soda-creek` 只有 66.67%，seed `62101` 在 29.1666 秒因 `player_health_depleted` 死亡；报告位于 `harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_opening_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_018_curriculum_stage01_soda_opening_gap.json`。结论：stage 01 缓解了旧动作塌缩，但 opening 修复仍不完整，不能直接当作后续课程已通过的前置证据。
 
+从 stage 01 继续 20k timesteps 的 opening retry 也已完成，并用 10 seed 60 秒 high-pressure 复查。`soda-creek` 提升到 80% 胜率，但仍有 seed `62406` / `62409` 在 opening 阶段死亡，失败局 dominant action 转向 `4`；报告位于 `harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_retry_20k_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_019_curriculum_stage01_retry_soda_opening_gap.json`。结论：单纯延长 generic opening PPO 不足以解除 `soda-creek` 开局 blocker，stage 02 不应被解释为建立在已修复 opening 之上。
+
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
 
 `python/train/distill_behavior_clone_to_sb3.py` 已提供 PPO 蒸馏初始化入口：它从规则 Bot 轨迹读取 observation，用 behavior clone teacher 输出 soft action probability，再监督训练 SB3 PPO `MlpPolicy` 并保存标准 `.zip` 与 metadata。蒸馏入口现在支持 `--teacher-temperature` 与 `--uniform-target-mix`，用于在 teacher probability 过尖或动作偏置过重时显式提高 target entropy；这些旋钮只属于 repair 实验，不是 policy gate。首个 256 样本 smoke 已证明 distilled `.zip` 可以被 `train_sb3.py --evaluate-model` 加载，但 1 epoch 模型仍为动作 3 deterministic smoke，不是策略通过证据；后续应在更大数据上蒸馏后继续 PPO 环境训练，并跑 high-pressure 60/300 秒对比。

@@ -331,6 +331,8 @@ Use `tools/create_rl_curriculum_plan.py <failure_analysis.json>` to turn those f
 
 The first stage 01 opening run trained for 5120 actual timesteps on `cracked-star-jar` and `soda-creek`, then ran the planned 60-second high-pressure comparison. It reached 100% win rate on `caramel-workshop` and `cracked-star-jar`, but `soda-creek` stayed at 66.67% with one opening death at 29.1666 seconds. Treat this as repair evidence only; do not chain later curriculum stages as if opening survival has passed.
 
+Continuing stage 01 for 20k more requested timesteps improved the 10-seed 60-second check but still did not pass: `soda-creek` reached 80% while `caramel-workshop` and `cracked-star-jar` stayed at 100%. The remaining `soda-creek` failures died at 46.1996s and 28.8332s with action `4` dominating the failed episodes, so the next repair should inspect opening trajectories and map pressure instead of only adding generic PPO timesteps.
+
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
 For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:

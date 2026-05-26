@@ -1678,6 +1678,11 @@
       "id": "rl_curriculum_time_bucket_stage01_opening_repair",
       "summary": "执行 time-bucket curriculum stage 01 opening：训练 5120 actual timesteps 后，60 秒 high-pressure 中 caramel-workshop 与 cracked-star-jar 为 100%，但 soda-creek 仅 66.67%，seed 62101 在 29.1666 秒死亡，已记录 fail_20260527_018。",
       "report": "harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_opening_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_time_bucket_stage01_retry_20k_repair",
+      "summary": "stage 01 opening 继续 20k requested timesteps 后，10 seed 60 秒 high-pressure 中 soda-creek 仍只有 80% 胜率，seed 62406 / 62409 opening 死亡且失败局 action 4 占优，已记录 fail_20260527_019。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_retry_20k_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1687,7 +1692,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分桶课程 stage 01 已跑完但 soda-creek opening 仍有 29.1666 秒死亡，下一步应先延长/复查 opening 课程，再谨慎推进 stage 02/03。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分桶课程 stage 01 retry 20k 后 soda-creek 仍有 opening death，下一步应诊断 soda-creek 开局轨迹和 action 4 高占比，而不是继续盲目堆 generic PPO timesteps。"
     },
     {
       "id": "phase4_full_pack_manual_review",
