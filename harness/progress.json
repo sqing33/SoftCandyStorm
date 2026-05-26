@@ -1688,6 +1688,11 @@
       "id": "rl_curriculum_stage01_retry_trace_repair",
       "summary": "新增 train_sb3.py policy episode trace 入口，并对 stage 01 retry 的 soda-creek seed 62406-62409 复跑失败局 trace；seed 62406 / 62409 均在死亡前高置信持续 action 4，说明 opening blocker 是稳定坏路径而非随机抖动。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage01_retry_trace_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage01_retry_snapshot_trace_repair",
+      "summary": "Gym bridge trace diagnostics 现在输出玩家位置、边界距离、最近敌人和风险分数；同一组 soda-creek 失败 seed 显示 policy 持续 action 4 走到右下角，死亡时 boundary.min_distance = 0、enemy_pressure_risk = 1、nearest_enemy.hitbox_distance = 0。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage01_retry_snapshot_trace_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1697,7 +1702,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分桶课程 stage 01 retry trace 已确认 soda-creek opening death 是 action 4 高置信坏路径，下一步应对比失败/成功 seed 的地图压力并补充更丰富的 GameCore snapshot trace，而不是继续盲目堆 generic PPO timesteps。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分桶课程 stage 01 retry snapshot trace 已确认 soda-creek opening death 是 action 4 高置信走向右下边界并在敌人接触压力下死亡，下一步应比较成功 seed 的转向时机并设计 opening 贴边压力修复。"
     },
     {
       "id": "phase4_full_pack_manual_review",

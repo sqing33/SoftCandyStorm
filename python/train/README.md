@@ -352,6 +352,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 The first stage 01 retry trace confirmed that the two failed `soda-creek` episodes were not random jitter: both sustained action `4` at high policy probability through the final health collapse. Trace files are sampled from Gym evaluation info and do not replace Replay or full GameCore snapshots; use them for action/reward/health diagnostics, then add richer snapshot fields if map pressure remains ambiguous.
 
+Trace rows now include `diagnostics` from the Gym bridge: player position and velocity, map size, boundary distances, nearest enemy, nearby enemy counts, and positive risk scores for low health, enemy pressure, hazards, bosses, and overall safety. The first snapshot trace showed both failed `soda-creek` seeds pinned at the bottom-right map edge with `boundary.min_distance = 0`, `enemy_pressure_risk = 1`, and direct enemy contact, while action `4` remained the chosen policy action.
+
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
 For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:

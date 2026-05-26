@@ -756,9 +756,65 @@ struct GymBridgeInfo {
     events: Vec<String>,
     terminal: Option<GymTerminalInfo>,
     reward_breakdown: GymRewardBreakdown,
+    diagnostics: GymSnapshotDiagnostics,
     content_hash: String,
     observation_len: usize,
     action_count: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct GymSnapshotDiagnostics {
+    player_position: GymVec2,
+    player_velocity: GymVec2,
+    map_size: GymMapSize,
+    boundary: GymBoundaryDiagnostics,
+    nearest_enemy: Option<GymEnemyDiagnostics>,
+    visible_enemy_count: usize,
+    nearby_enemy_count_160: usize,
+    nearby_enemy_count_240: usize,
+    active_hazard_count: usize,
+    low_health_risk: f32,
+    enemy_pressure_risk: f32,
+    hazard_pressure_risk: f32,
+    boss_pressure_risk: f32,
+    safety_risk_score: f32,
+}
+
+#[derive(Debug, Serialize)]
+struct GymVec2 {
+    x: f32,
+    y: f32,
+}
+
+#[derive(Debug, Serialize)]
+struct GymMapSize {
+    width: f32,
+    height: f32,
+}
+
+#[derive(Debug, Serialize)]
+struct GymBoundaryDiagnostics {
+    left_distance: f32,
+    right_distance: f32,
+    bottom_distance: f32,
+    top_distance: f32,
+    min_distance: f32,
+    edge_risk: f32,
+}
+
+#[derive(Debug, Serialize)]
+struct GymEnemyDiagnostics {
+    enemy_id: String,
+    behavior: &'static str,
+    position: GymVec2,
+    velocity: GymVec2,
+    center_distance: f32,
+    hitbox_distance: f32,
+    radius: f32,
+    threat: f32,
+    health_ratio: f32,
+    is_boss: bool,
+    is_elite: bool,
 }
 
 #[derive(Debug, Serialize, Clone, Copy, Default)]
@@ -2725,6 +2781,7 @@ impl GymBridgeState {
                 kills: terminal.kills,
             }),
             reward_breakdown,
+            diagnostics: gym_snapshot_diagnostics(&snapshot),
             content_hash: self.content.hash.clone(),
             observation_len: gym_observation_len(self.observation_version)
                 .expect("validated gym observation version"),
@@ -2923,6 +2980,102 @@ fn gym_safety_risk_score(snapshot: &game_core::RunSnapshot) -> f32 {
     clamp_unit(
         low_health * 0.24 + boundary * 0.18 + enemy_pressure * 0.28 + hazard * 0.20 + boss * 0.10,
     )
+}
+
+fn gym_snapshot_diagnostics(snapshot: &game_core::RunSnapshot) -> GymSnapshotDiagnostics {
+    let player_position = snapshot.player.position;
+    let enemy_distances: Vec<f32> = snapshot
+        .visible_enemies
+        .iter()
+        .take(GYM_MAX_ENEMIES)
+        .map(|enemy| enemy_hitbox_distance(player_position, enemy))
+        .collect();
+
+    GymSnapshotDiagnostics {
+        player_position: gym_vec2(snapshot.player.position),
+        player_velocity: gym_vec2(snapshot.player.velocity),
+        map_size: GymMapSize {
+            width: snapshot.map.width,
+            height: snapshot.map.height,
+        },
+        boundary: boundary_diagnostics(snapshot),
+        nearest_enemy: nearest_enemy_diagnostics(snapshot),
+        visible_enemy_count: snapshot.visible_enemies.len(),
+        nearby_enemy_count_160: enemy_distances
+            .iter()
+            .filter(|distance| **distance <= 160.0)
+            .count(),
+        nearby_enemy_count_240: enemy_distances
+            .iter()
+            .filter(|distance| **distance <= 240.0)
+            .count(),
+        active_hazard_count: snapshot.active_hazards.len(),
+        low_health_risk: low_health_risk(snapshot),
+        enemy_pressure_risk: enemy_pressure_risk(snapshot),
+        hazard_pressure_risk: hazard_pressure_risk(snapshot),
+        boss_pressure_risk: boss_pressure_risk(snapshot),
+        safety_risk_score: gym_safety_risk_score(snapshot),
+    }
+}
+
+fn gym_vec2(value: Vec2) -> GymVec2 {
+    GymVec2 {
+        x: value.x,
+        y: value.y,
+    }
+}
+
+fn boundary_diagnostics(snapshot: &game_core::RunSnapshot) -> GymBoundaryDiagnostics {
+    let half_width = (snapshot.map.width * 0.5).max(1.0);
+    let half_height = (snapshot.map.height * 0.5).max(1.0);
+    let left_distance = (snapshot.player.position.x + half_width).max(0.0);
+    let right_distance = (half_width - snapshot.player.position.x).max(0.0);
+    let bottom_distance = (snapshot.player.position.y + half_height).max(0.0);
+    let top_distance = (half_height - snapshot.player.position.y).max(0.0);
+    let min_distance = left_distance
+        .min(right_distance)
+        .min(bottom_distance)
+        .min(top_distance);
+    GymBoundaryDiagnostics {
+        left_distance,
+        right_distance,
+        bottom_distance,
+        top_distance,
+        min_distance,
+        edge_risk: boundary_edge_risk(snapshot),
+    }
+}
+
+fn nearest_enemy_diagnostics(snapshot: &game_core::RunSnapshot) -> Option<GymEnemyDiagnostics> {
+    let player_position = snapshot.player.position;
+    snapshot
+        .visible_enemies
+        .iter()
+        .take(GYM_MAX_ENEMIES)
+        .min_by(|left, right| {
+            enemy_hitbox_distance(player_position, left)
+                .total_cmp(&enemy_hitbox_distance(player_position, right))
+        })
+        .map(|enemy| {
+            let center_distance = (enemy.position - player_position).length();
+            GymEnemyDiagnostics {
+                enemy_id: enemy.enemy_id.clone(),
+                behavior: enemy_behavior_label(enemy.behavior),
+                position: gym_vec2(enemy.position),
+                velocity: gym_vec2(enemy.velocity),
+                center_distance,
+                hitbox_distance: (center_distance - enemy.radius).max(0.0),
+                radius: enemy.radius,
+                threat: enemy.threat,
+                health_ratio: ratio(enemy.health, enemy.max_health),
+                is_boss: enemy.is_boss,
+                is_elite: enemy.is_elite,
+            }
+        })
+}
+
+fn enemy_hitbox_distance(player_position: Vec2, enemy: &game_core::EnemySnapshot) -> f32 {
+    ((enemy.position - player_position).length() - enemy.radius).max(0.0)
 }
 
 fn boundary_edge_risk(snapshot: &game_core::RunSnapshot) -> f32 {
@@ -3201,6 +3354,19 @@ fn enemy_behavior_embedding(behavior: EnemyBehavior) -> f32 {
         EnemyBehavior::Jump => 5.0 / 7.0,
         EnemyBehavior::RangedSpit => 6.0 / 7.0,
         EnemyBehavior::Shielded => 1.0,
+    }
+}
+
+fn enemy_behavior_label(behavior: EnemyBehavior) -> &'static str {
+    match behavior {
+        EnemyBehavior::Chase => "chase",
+        EnemyBehavior::Dash => "dash",
+        EnemyBehavior::Split => "split",
+        EnemyBehavior::LeaveHazard => "leave_hazard",
+        EnemyBehavior::OrbitPlayer => "orbit_player",
+        EnemyBehavior::Jump => "jump",
+        EnemyBehavior::RangedSpit => "ranged_spit",
+        EnemyBehavior::Shielded => "shielded",
     }
 }
 
@@ -6404,8 +6570,8 @@ mod tests {
     use super::{
         content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_action_index,
         gym_discrete_movement, gym_observation, gym_observation_len, gym_reward_breakdown,
-        gym_safety_delta_reward, gym_safety_risk_score, movement_changed, GymBridgeRequest,
-        ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
+        gym_safety_delta_reward, gym_safety_risk_score, gym_snapshot_diagnostics, movement_changed,
+        GymBridgeRequest, ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
         GYM_REWARD_SAFETY_DELTA_WEIGHT, REQUIRED_PLAYTEST_RUN_IDS,
     };
     use game_core::{
@@ -6607,6 +6773,52 @@ mod tests {
         assert!((0.0..=1.0).contains(&calm_risk));
         assert!((0.0..=1.0).contains(&pressured_risk));
         assert!(pressured_risk > calm_risk);
+    }
+
+    #[test]
+    fn gym_snapshot_diagnostics_reports_trace_pressure_context() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        let half_width = snapshot.map.width * 0.5;
+        snapshot.player.position = Vec2::new(-half_width + 12.0, 18.0);
+        snapshot.player.velocity = Vec2::new(2.0, -3.0);
+        snapshot.player.health = snapshot.player.max_health * 0.25;
+        snapshot.visible_enemies.push(EnemySnapshot {
+            entity_id: 301,
+            enemy_id: "soda-bubble".to_string(),
+            position: snapshot.player.position + Vec2::new(50.0, 0.0),
+            velocity: Vec2::new(-1.0, 0.0),
+            health: 15.0,
+            max_health: 30.0,
+            radius: 16.0,
+            threat: 70.0,
+            behavior: EnemyBehavior::Dash,
+            is_boss: false,
+            is_elite: true,
+        });
+
+        let diagnostics = gym_snapshot_diagnostics(&snapshot);
+
+        assert!(diagnostics.boundary.min_distance <= 12.0 + f32::EPSILON);
+        assert!(diagnostics.boundary.edge_risk > 0.0);
+        assert_eq!(diagnostics.visible_enemy_count, 1);
+        assert_eq!(diagnostics.nearby_enemy_count_160, 1);
+        assert_eq!(
+            diagnostics
+                .nearest_enemy
+                .as_ref()
+                .map(|enemy| enemy.enemy_id.as_str()),
+            Some("soda-bubble")
+        );
+        assert_eq!(
+            diagnostics
+                .nearest_enemy
+                .as_ref()
+                .map(|enemy| enemy.behavior),
+            Some("dash")
+        );
+        assert!(diagnostics.enemy_pressure_risk > 0.0);
+        assert!(diagnostics.low_health_risk > 0.0);
+        assert!(diagnostics.safety_risk_score > 0.0);
     }
 
     #[test]

@@ -695,7 +695,7 @@ def should_record_trace_step(trace_dir, step_number, terminated, truncated, samp
 
 
 def build_trace_step(step_number, action_index, reward, info, action_scores):
-    return {
+    step = {
         "step": step_number,
         "tick": info.get("tick"),
         "time_seconds": round(float(info.get("time_seconds", 0.0)), 4),
@@ -712,6 +712,9 @@ def build_trace_step(step_number, action_index, reward, info, action_scores):
         "reward_breakdown": round_reward_breakdown(info.get("reward_breakdown", {})),
         "action_score": compact_action_score(action_scores, action_index),
     }
+    if info.get("diagnostics") is not None:
+        step["diagnostics"] = info["diagnostics"]
+    return step
 
 
 def compact_action_score(action_scores, chosen_action):

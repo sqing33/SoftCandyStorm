@@ -67,6 +67,11 @@ def test_build_trace_step_compacts_policy_scores():
         "events": ["hit"],
         "terminal": None,
         "reward_breakdown": {"survival": 0.1, "total": -0.25},
+        "diagnostics": {
+            "player_position": {"x": 12.0, "y": -3.0},
+            "boundary": {"min_distance": 42.0, "edge_risk": 0.0},
+            "nearest_enemy": {"enemy_id": "soda-bubble", "hitbox_distance": 55.0},
+        },
     }
 
     step = build_trace_step(
@@ -82,6 +87,7 @@ def test_build_trace_step_compacts_policy_scores():
     assert step["reward_breakdown"] == {"survival": 0.1, "total": -0.25}
     assert step["action_score"]["chosen_action_score"] == 0.5
     assert step["action_score"]["top_actions"][0] == {"action": "4", "score": 0.5}
+    assert step["diagnostics"]["nearest_enemy"]["enemy_id"] == "soda-bubble"
 
 
 def test_write_episode_trace_respects_failed_only(tmp_path):
