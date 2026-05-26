@@ -329,6 +329,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 训练入口现已支持 `--architecture gru`，用于把 `--context-frames` 保持为时间序列输入，而不是像旧 MLP 一样把多帧 observation 直接拼平成一个长向量。GRU checkpoint 会记录 `architecture`、`sequence_input_len`、`context_frames` 和 map-conditioning vocabulary，`train_sb3.py --behavior-clone-model` 可以直接加载并通过同一套 Gym evaluation / rule Bot comparison 评估。该能力只是修复方向的技术入口；任何 GRU 候选仍必须通过 60/300 秒 high-pressure 三图对比、RL policy acceptance manifest 和 failure case 审查，不能因为模型结构更复杂就直接推进。
 
+首个 `gru context8 + map-conditioning one_hot + danger sampling` 候选使用 expanded、lategame、cracked lategame 和 caramel recovery 轨迹训练，离线 validation accuracy 为 87.90%，但 Gym 对比显示该方向需要重新诊断：60 秒 high-pressure 三图只有 80% 胜率，300 秒三图同 seed 对比全部为 0% 胜率，multi-map gate 为 `repair`。这说明 GRU 支持链路可用，但当前训练目标 / 超参没有解决长局泛化，反而比 map-conditioned MLP watch 结果更差。后续应先做序列模型诊断、动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，而不是直接扩大 GRU 训练轮数。对应 failure case 为 `harness/failed_cases/fail_20260527_005_behavior_clone_gru_context8_regression.json`。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
@@ -348,7 +350,7 @@ python3 tools/validate_rl_policy_acceptance.py \
 - rule Bot comparison、action entropy、dominant action、failure case 和 unresolved blocker 都被同一份报告引用。
 - `gate_decision` 只能是 `blocked_by_local_binary_launch`、`watch`、`repair`、`reject` 或 `rl_test_bot_candidate`，不能写成 release、playtest、balance 或 fun 通过。
 
-当前 `behavior_clone_kite_context3_danger_weighted_smoke`、`behavior_clone_kite_context5_danger_weighted_smoke` 和 `behavior_clone_kite_context5_caramel_recovery_smoke` manifest 都只能是 `repair`，`behavior_clone_kite_context5_map_conditioned_smoke` 只能是 `watch`：它们已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 0% 胜率、跨图回归、低于规则 Bot 基线或未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
+当前 `behavior_clone_kite_context3_danger_weighted_smoke`、`behavior_clone_kite_context5_danger_weighted_smoke`、`behavior_clone_kite_context5_caramel_recovery_smoke` 和 `behavior_clone_kite_gru_context8_map_conditioned_smoke` manifest 都只能是 `repair`，`behavior_clone_kite_context5_map_conditioned_smoke` 只能是 `watch`：它们已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 0% 胜率、跨图回归、低于规则 Bot 基线或未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
 
 ## 奖励函数
 

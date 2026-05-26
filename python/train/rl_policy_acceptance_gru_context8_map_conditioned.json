@@ -1,0 +1,33 @@
+{
+  "report_version": 1,
+  "generated_at": "2026-05-27",
+  "policy_id": "behavior_clone_kite_gru_context8_map_conditioned_smoke",
+  "policy_type": "behavior_clone",
+  "policy_phase": "rl_phase_1_movement_survival",
+  "summary": "GRU context8 map-conditioned behavior clone 训练和 Gym 对比链路已跑通，但 60 秒三图只有 80% 胜率，300 秒三图均为 0% 胜率，结论为 repair。",
+  "model_path": "python/train/models/behavior_clone_kite_high_pressure_gru_context8_map_conditioned_smoke.pt",
+  "model_metadata_path": null,
+  "training_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_smoke_001/run_output.json",
+  "short_eval_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_multimap_60s_001/comparison.json",
+  "long_eval_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_multimap_300s_001/comparison.json",
+  "rule_bot_comparison_report_path": "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_multimap_300s_001/comparison.json",
+  "local_binary_diagnostic_report_path": "harness/reports/2026-05-27_local_binary_launch_diagnostic_after_devtools_terminal_001/local_binary_launch_diagnostic.json",
+  "failure_case_paths": [
+    "harness/failed_cases/fail_20260527_005_behavior_clone_gru_context8_regression.json"
+  ],
+  "unresolved_failure_case_paths": [
+    "harness/failed_cases/fail_20260527_005_behavior_clone_gru_context8_regression.json"
+  ],
+  "acceptance_criteria": {
+    "required_map_preset": "high-pressure",
+    "min_map_count": 3,
+    "min_short_seconds": 60,
+    "min_long_seconds": 300,
+    "min_normalized_action_entropy": 0.5,
+    "max_dominant_action_ratio": 0.7,
+    "min_short_policy_win_rate": 1.0,
+    "min_long_policy_win_rate": 1.0,
+    "must_match_best_rule_bot": true
+  },
+  "gate_decision": "repair"
+}

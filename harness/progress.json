@@ -1523,6 +1523,11 @@
       "id": "rl_behavior_clone_map_conditioned_watch",
       "summary": "新增 behavior clone 地图 one-hot 条件化并保持旧 checkpoint 兼容；context5 map-conditioned BC 在 60 秒 high-pressure 三图 5 seed 全胜，300 秒同 seed 三图不再出现 0% 胜率，但 caramel-workshop 与 cracked-star-jar 仍低于规则 Bot 基线，结论为 watch，不能推进为 RL 测试 Bot。",
       "report": "harness/reports/2026-05-27_rl_policy_acceptance_context5_map_conditioned_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_gru_context8_regression",
+      "summary": "新增 GRU behavior clone 训练 / Gym 评估链路并训练 context8 map-conditioned 候选；链路可用且 validation accuracy 87.90%，但 60 秒三图只有 80% 胜率，300 秒三图均为 0%，结论为 repair，不能推进为 RL 测试 Bot。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_gru_context8_map_conditioned_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1532,7 +1537,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "地图条件化已消除 0% 胜率回归但仍只是 watch；不要继续单图补强或堆同构 MLP context_frames，下一步转 GRU/Transformer、分阶段 policy 或 PPO 蒸馏初始化，再验证三图同 seed 300 秒 high-pressure 对比"
+      "summary": "地图条件化 MLP 仍只是 watch，首个 GRU context8 候选反而三图 300 秒 0% 胜率；下一步先做序列模型诊断、动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，不要直接扩大同一 GRU 配方"
     },
     {
       "id": "phase4_full_pack_manual_review",

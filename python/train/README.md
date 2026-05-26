@@ -251,6 +251,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
   --sample-weighting danger
 ```
 
+The first context8 map-conditioned GRU smoke proved the training and evaluation path, but it is not a policy repair: 60-second high-pressure comparison reached only 80% win rate on all three maps, and 300-second comparison reached 0% on all three maps. Treat it as a `repair` failure case before trying larger GRU runs.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

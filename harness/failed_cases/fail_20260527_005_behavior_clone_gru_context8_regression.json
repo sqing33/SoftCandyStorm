@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_005",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_gru_context8_map_conditioned_smoke",
+  "seed": "47000-47002",
+  "bot": "BehaviorCloneKiteGruContext8MapConditionedSmoke",
+  "time_seconds": 300.0,
+  "symptom": "首个 GRU context8 map-conditioned behavior clone 在 60 秒 high-pressure 三图中只有 80% 胜率，300 秒三图同 seed 对比中 soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，multi-map gate 为 repair。",
+  "root_cause": "GRU 技术入口已跑通，但当前训练目标仍只是模仿规则 Bot movement action，且没有处理升级选择、阶段目标、低血量恢复和 Boss / hazard 节奏；sequence 模型在当前数据和超参下偏向 action 7，并没有学到高压长局的稳定恢复策略。",
+  "fix": "不要把该 GRU checkpoint 推进为 RL 测试 Bot；下一步应先做序列模型诊断，例如 class weighting / teacher forcing 窗口、分阶段 policy、动作平滑约束或 PPO 蒸馏初始化，并在 60 秒短局重新达到三图 100% 后再跑 300 秒高压对比。",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_gru_context8_map_conditioned_smoke.pt --seed-start 47000 --eval-episodes 3 --eval-seconds 300 --rule-bots random,kite,tank --report harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_multimap_300s_001/comparison.json"
+}

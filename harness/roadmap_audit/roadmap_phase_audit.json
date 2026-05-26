@@ -255,12 +255,18 @@
         "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_map_conditioned_multimap_300s_seed43000_001/summary.md",
         "harness/reports/2026-05-27_rl_policy_acceptance_context5_map_conditioned_001/summary.md",
         "harness/failed_cases/fail_20260527_003_behavior_clone_map_conditioned_watch.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_gru_support_smoke_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_smoke_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_multimap_60s_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_multimap_300s_001/summary.md",
+        "harness/reports/2026-05-27_rl_policy_acceptance_gru_context8_map_conditioned_001/summary.md",
+        "harness/failed_cases/fail_20260527_005_behavior_clone_gru_context8_regression.json",
         "harness/reports/2026-05-26_post_recovery_rl_dry_run_001/dqn_dry_run.json",
         "harness/reports/2026-05-26_post_recovery_behavior_clone_dry_run_001/run_output.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "context3、context5、caramel-recovery context5 和 map-conditioned context5 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化让 300 秒三图同 seed 对比不再出现 0% 胜率，但 caramel-workshop 与 cracked-star-jar 仍低于规则 Bot 基线，结论只能是 watch。",
+        "context3、context5、caramel-recovery context5、map-conditioned context5 和 GRU context8 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化 MLP 让 300 秒三图同 seed 对比不再出现 0% 胜率但仍低于规则 Bot 基线，首个 GRU context8 候选则三图 300 秒均为 0% 胜率，结论只能是 repair。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
@@ -268,7 +274,7 @@
       ],
       "next_actions": [
         "停止继续堆同构 MLP 样本或单图补强。",
-        "改用 GRU / Transformer、分阶段 policy 或 PPO 蒸馏初始化，并用三图同 seed 300 秒对比防止回归。"
+        "先做序列模型诊断、动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，再用三图同 seed 300 秒对比防止回归。"
       ]
     },
     {
