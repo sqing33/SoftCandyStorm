@@ -1051,6 +1051,11 @@
       "id": "runtime_demo_capture_after_restart",
       "summary": "当前会话 Runtime demo capture 已覆盖 demo input、Boss spawn/phase/ability、player damage、XP、upgrade、terminal report 和 auto-exit：240 秒运行产生 121 个 telemetry sample，结论为 automated technical smoke，不替代人工试玩。",
       "report": "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md"
+    },
+    {
+      "id": "phase4_full_pack_candidate_600s_repair",
+      "summary": "Phase 4 full pack 已完成当前会话 5 seed / 600 秒 all Bot 候选仿真；结果为 repair，Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 胜率高于目标，候选不得晋级 playtest 或 accepted_content。",
+      "report": "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1423,9 +1428,18 @@
       "id": "local_binary_launch_after_restart_verified",
       "summary": "用户按权限指引开启 Developer Mode / Terminal developer tool 后重启；after_restart 诊断返回 local_binary_launch_ok，target/debug/game_harness --help、cargo test --workspace 和 60 秒 KiteBot simulate 均在当前会话通过。",
       "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md"
+    },
+    {
+      "id": "phase4_full_pack_candidate_bot_gate_repair",
+      "summary": "full pack 候选静态校验通过但长局 Bot 门禁失败，已写入 repair_queue 和 fail_20260526_026；下一步要先修候选平衡，而不是推进人工试玩候选。",
+      "report": "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
     }
   ],
   "next_recommended": [
+    {
+      "id": "phase4_full_pack_candidate_balance_repair",
+      "summary": "根据 fail_20260526_026 拆分修复 Phase 4 full pack：先压低高技能 / 路线类 Bot 长局滚雪球和 Random 超标胜率，再重跑 5 seed / 600 秒 all Bot simulate-candidates"
+    },
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"

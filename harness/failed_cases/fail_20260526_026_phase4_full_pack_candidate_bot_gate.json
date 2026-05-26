@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_026",
+  "category": "balance",
+  "content_id": "2026-05-26_phase4_roster_gap_full_pack",
+  "seed": 12345,
+  "bot": "all-bot-candidate-simulation",
+  "time_seconds": 600.0,
+  "symptom": "Phase 4 full pack 候选在 5 seed / 600 秒 all Bot 仿真中进入 repair：Random 胜率 40%，Greedy 80%，Kite 80%，Tank 60%，BossHunter 100%，ZoneControl 100%，Route 80%，均高于当前目标区间；Idle 和 Coward 通过。",
+  "root_cause": "full pack 候选在糖霜草地默认地图上的长局压力、经验成长和新增武器 / 被动组合尚未重新校准，高技能与路线类 Bot 可以稳定滚雪球，随机 Bot 也出现超过目标的胜率。",
+  "fix": "后续应拆分修复候选包而不是直接晋级：先审查新增武器 / 被动的成长效率和波次后期压力，再针对 BossHunter、ZoneControl、Route 与 Random 的胜率分别做小步数值调整。",
+  "validation": "以 harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001 为基线，修复后重跑 game_harness simulate-candidates --source-dir harness/validated_candidates --seed-start 12345 --seeds 5 --seconds 600 --bots all，并在通过后扩展更多 seed。"
+}

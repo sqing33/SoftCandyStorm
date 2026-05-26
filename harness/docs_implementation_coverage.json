@@ -143,7 +143,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 新增候选已有设计审查草稿、审查包、校验器、simulation candidate manifest 门禁和最终接受证据包；正式 accepted_content 仍受仿真与人工试玩门禁限制。",
+      "summary": "base_demo 与 generated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已完成当前会话长局候选仿真但进入 repair，正式 accepted_content 仍受候选修复、仿真通过与人工试玩门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -175,11 +175,18 @@
             "harness/content_review/content_acceptance_manifest_template.json",
             "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_candidates_smoke_001/summary.md",
-            "harness/reports/2026-05-26_post_recovery_candidate_simulation_smoke_001/summary.md"
+            "harness/reports/2026-05-26_post_recovery_candidate_simulation_smoke_001/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/2026-05-26_phase4_roster_gap_full_pack/summary.md",
+            "harness/repair_queue/2026-05-26_phase4_roster_gap_full_pack/repair.json",
+            "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板、final acceptance 模板和 acceptance manifest 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。",
-            "缺少当前恢复会话下的正式 Harness validate-candidates、长局 Bot 仿真和人工试玩接受证据。"
+            "Phase 4 full pack 仍在候选池 / repair_queue，不是正式内容池；当前 5 seed / 600 秒 all Bot 仿真结论为 repair，失败 Bot 覆盖 Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route。",
+            "设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板、final acceptance 模板和 acceptance manifest 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。"
+          ],
+          "blockers": [
+            "phase4_full_pack_candidate_bot_gate_repair"
           ]
         }
       ]
@@ -387,7 +394,7 @@
       "doc_id": "10",
       "doc_path": "docs/10_AI内容生成流水线.md",
       "status": "partial",
-      "summary": "内容候选、物化、预检、内容设计审查草稿 / 审查包 / 校验器、simulation candidate manifest 门禁、内容最终接受证据包、素材 metadata 和 provenance 校验、accepted content lockfile 形状校验已实现；候选进入 accepted_content 仍需要仿真与人工确认。",
+      "summary": "内容候选、物化、预检、内容设计审查草稿 / 审查包 / 校验器、simulation candidate manifest 门禁、内容最终接受证据包、素材 metadata 和 provenance 校验、accepted content lockfile 形状校验已实现；full pack 已能在恢复后的 Harness 中进入 repair_queue，候选进入 accepted_content 仍需要修复、仿真通过与人工确认。",
       "coverage": [
         {
           "id": "candidate-pipeline",
@@ -421,11 +428,17 @@
             "tools/validate_accepted_content_lockfile.py",
             "tools/test_validate_accepted_content_lockfile.py",
             "harness/accepted_content/accepted_content.lock.json",
-            "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md"
+            "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
+            "harness/repair_queue/2026-05-26_phase4_roster_gap_full_pack/repair.json",
+            "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "当前 full pack 仍是 generated candidate，尚未通过恢复后的正式 Harness 仿真。",
+            "当前 full pack 已完成恢复后的正式 Harness 候选仿真，但 gate_status 为 repair，尚未进入 simulated_candidates 或 playtest_candidates。",
             "内容设计审查已有草稿、审查包、校验器、simulation candidate manifest 门禁、final acceptance 门禁、acceptance manifest 门禁和最终接受证据包；accepted content lockfile 已有 blocked 空锁和校验报告，但尚未存在真人 9 局试玩接受、acceptance gate、内容 hash 复核后的非空正式内容锁。"
+          ],
+          "blockers": [
+            "phase4_full_pack_candidate_bot_gate_repair"
           ]
         }
       ]
@@ -521,15 +534,19 @@
             "tools/test_audit_manual_evidence_gaps.py",
             "harness/reports/2026-05-26_manual_evidence_gap_audit_001/summary.md",
             "harness/reports/2026-05-26_release_candidate_evidence_current_local_005/summary.md",
-            "harness/reports/2026-05-26_release_package_manifest_current_local_003/summary.md"
+            "harness/reports/2026-05-26_release_package_manifest_current_local_003/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
+            "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
             "当前 release_candidate_evidence、accepted_content_lockfile 与 release_package_manifest 报告均为 not-ready / blocked；Goal 证据一致性报告确认这些 not-ready / blocked 结论与 docs 覆盖、路线图和 progress 账本一致。",
-            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板、审查包、完整性校验器和最终接受证据包；人工试玩已有真人审查包、strict acceptance invalid 报告和最终接受证据包，内容和素材最终接受已有证据状态包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、非空正式内容锁、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。",
+            "当前 Phase 4 full pack 600 秒 all Bot 候选仿真为 repair，内容 Bot 门禁未过；因此不能进入人工试玩候选、accepted_content 或 Release Candidate。",
+            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板、审查包、完整性校验器和最终接受证据包；人工试玩已有真人审查包、strict acceptance invalid 报告和最终接受证据包，内容和素材最终接受已有证据状态包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、非空正式内容锁、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和 release 级运行证据。",
             "人工证据缺口审计当前结论为 manual_evidence_gaps_present：20 个真人证据条目全部仍是 gap，0 个缺失报告；该报告只用于集中排队，不代表任何人工门禁通过。"
           ],
           "blockers": [
-            "manual_playtest_still_pending"
+            "manual_playtest_still_pending",
+            "phase4_full_pack_candidate_bot_gate_repair"
           ]
         }
       ]
@@ -573,7 +590,7 @@
       "doc_id": "13",
       "doc_path": "docs/13_内容数据Schema设计.md",
       "status": "partial",
-      "summary": "JSON 内容格式、独立 Schema 契约、跨文件语义引用、候选预检、内容设计审查门禁、simulation candidate manifest 门禁和 accepted content lockfile 形状校验已有实现；恢复后的正式 Rust/GameCore 校验闭环仍待补齐。",
+      "summary": "JSON 内容格式、独立 Schema 契约、跨文件语义引用、候选预检、恢复后的 Harness validate-candidates、内容设计审查门禁、simulation candidate manifest 门禁和 accepted content lockfile 形状校验已有实现；full pack 行为仿真当前进入 repair。",
       "coverage": [
         {
           "id": "content-schema-contract",
@@ -597,11 +614,17 @@
             "tools/validate_accepted_content_lockfile.py",
             "tools/test_validate_accepted_content_lockfile.py",
             "harness/accepted_content/accepted_content.lock.json",
-            "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md"
+            "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_candidates_smoke_001/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
+            "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "需要恢复 Rust 二进制后重跑 GameCore 内容加载和 Harness validate-content。",
-            "Schema 契约已覆盖结构、必填字段、枚举、id、简单数值边界、跨文件引用和基础时间 / 距离 / 阶段语义；content final acceptance 与 acceptance manifest 门禁已要求最终接受绑定 simulation candidate 和有效 lockfile；accepted_content lockfile 当前为 blocked 空锁，只证明暂无真人接受后的正式内容，更深的 GameCore 行为语义、预算和仿真仍依赖恢复后的 GameCore/Harness。"
+            "Rust 二进制恢复后，full pack 已能通过 Harness validate-candidates 并进入 simulate-candidates；但 600 秒 all Bot 行为门禁当前为 repair。",
+            "Schema 契约已覆盖结构、必填字段、枚举、id、简单数值边界、跨文件引用和基础时间 / 距离 / 阶段语义；content final acceptance 与 acceptance manifest 门禁已要求最终接受绑定 simulation candidate 和有效 lockfile；accepted_content lockfile 当前为 blocked 空锁，只证明暂无真人接受后的正式内容，更深的 GameCore 行为语义、预算和仿真仍依赖候选修复后的复测。"
+          ],
+          "blockers": [
+            "phase4_full_pack_candidate_bot_gate_repair"
           ]
         }
       ]
@@ -642,7 +665,7 @@
       "doc_id": "15",
       "doc_path": "docs/15_经济与数值平衡模型.md",
       "status": "partial",
-      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、Bot 矩阵、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需长局复测和真人试玩。",
+      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、地图平衡修复和多条 failure case；full pack 当前偏易进入 repair，完整跨地图、长局、人类体验平衡仍需修复、复测和真人试玩。",
       "coverage": [
         {
           "id": "balance-budget-and-regression",
@@ -662,14 +685,18 @@
             "harness/playtest/create_manual_playtest_acceptance_review_packet.py",
             "harness/playtest/test_create_manual_playtest_acceptance_review_packet.py",
             "harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/summary.md",
-            "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/summary.md"
+            "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/2026-05-26_phase4_roster_gap_full_pack/summary.md",
+            "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack，但正式 game_harness budget-content、Bot 矩阵和 Replay 回归仍需在当前恢复会话下重跑。",
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；恢复后的 full pack 5 seed / 600 秒 all Bot 仿真显示候选偏易，Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 胜率高于目标，必须修复后复跑。",
             "平衡已有 9 局人工试玩审查包、strict acceptance invalid 报告和最终接受证据包覆盖新手、熟练和流派视角，但仍缺真人填写后的新手 / 熟练反馈。"
           ],
           "blockers": [
-            "manual_playtest_still_pending"
+            "manual_playtest_still_pending",
+            "phase4_full_pack_candidate_bot_gate_repair"
           ]
         }
       ]
