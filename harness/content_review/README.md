@@ -26,6 +26,19 @@ python3 harness/content_review/create_content_candidate_design_review_draft.py \
   --out harness/content_review/drafts/<full-pack>_design_review_draft.json
 ```
 
+生成审查包示例：
+
+```bash
+python3 harness/content_review/create_content_candidate_review_packet.py \
+  harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack \
+  --repo-root . \
+  --preflight-report harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md \
+  --review-draft harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json \
+  --out harness/reports/2026-05-26_phase4_roster_content_review_packet_001/summary.md
+```
+
+审查包会汇总 `source_patch_manifest.contents`、候选文件摘要、预检报告、TODO 审查草稿状态、平衡风险和门禁关注点，方便真人逐项审查。它不填写评分、不校验人工结论、不运行 Schema / 预算 / 仿真，也不晋级候选。
+
 校验示例：
 
 ```bash
