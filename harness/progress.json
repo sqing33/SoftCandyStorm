@@ -1588,6 +1588,11 @@
       "id": "rl_behavior_clone_action_change_repair",
       "summary": "完整训练 danger_action_change staged GRU context8 候选并完成 high-pressure 60/300 秒三图对比；60 秒 soda-creek 动作熵从 0.2356 提升到 0.6104、胜率从 0% 到 40%，但 300 秒三图全部 0%，结论仍为 repair。",
       "report": "harness/reports/2026-05-27_rl_policy_acceptance_staged_gru_context8_action_change_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_bc_distillation_smoke",
+      "summary": "新增 distill_behavior_clone_to_sb3.py，可用 behavior clone teacher soft probabilities 监督初始化 SB3 PPO MlpPolicy 并保存标准 zip / metadata；256 样本 smoke 和 train_sb3 evaluate-model 加载 smoke 通过，但不作为 policy gate。",
+      "report": "harness/reports/2026-05-27_rl_sb3_bc_distillation_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1597,7 +1602,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU 和 danger_action_change staged GRU 都已验证为 repair；动作变化点加权能改善短窗动作熵但不能解决 300 秒长局，下一步应停止 movement-only BC 堆叠，转向升级 / 阶段目标监督、teacher soft targets 或 PPO 蒸馏初始化。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU 和 danger_action_change staged GRU 都已验证为 repair；动作变化点加权能改善短窗动作熵但不能解决 300 秒长局。PPO 蒸馏初始化入口已完成 smoke，下一步应在更大数据上蒸馏后继续 PPO 环境训练并跑 high-pressure 60/300 秒对比。"
     },
     {
       "id": "phase4_full_pack_manual_review",

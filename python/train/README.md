@@ -331,6 +331,18 @@ When `sequence_diagnostics` reports high action persistence, use `--sample-weigh
 
 The first full `danger_action_change` staged GRU context8 candidate improved the short-window action distribution: 60-second `soda-creek` moved from 0% to 40% win rate, normalized entropy rose from 0.2356 to 0.6104, and dominant action ratio fell from 0.7911 to 0.5226. The 300-second comparison still recorded 0% win rate on all three high-pressure maps, so action-change weighting is a useful diagnostic repair but not a long-run policy fix.
 
+`distill_behavior_clone_to_sb3.py` can now initialize an SB3 PPO `MlpPolicy` from behavior clone teacher probabilities:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/distill_behavior_clone_to_sb3.py \
+  --dataset harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001 \
+  --teacher-model harness/reports/2026-05-27_rl_behavior_clone_kite_staged_gru_context8_action_change_smoke_001/staged.pt \
+  --model-out harness/reports/local_distillation/ppo_bc_distilled.zip \
+  --report harness/reports/local_distillation/run_output.json
+```
+
+The first smoke proved the distilled `.zip` can be loaded by `train_sb3.py --evaluate-model`, but it is only an initialization/plumbing gate until followed by PPO training and high-pressure comparison.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash
