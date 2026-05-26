@@ -1723,6 +1723,11 @@
       "id": "rl_curriculum_stage02_corner_risk_delta_mid_regression",
       "summary": "基于 stage 01 corner_risk_delta checkpoint 训练 stage 02 mid-window 后，目标图 caramel-workshop 训练评估 100%，但 180 秒 high-pressure 三图 3 seed 对比中 soda-creek 只有 33.33%，并重新出现 opening death；caramel-workshop action 2 占比 77.81%，记录 fail_20260527_022，结论为 policy repair。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_corner_risk_delta_mid_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_mixed_retention_regression",
+      "summary": "stage 02 mixed retention 将训练地图改为 soda-creek + caramel-workshop 后，目标图动作分布改善，但 60 秒 opening 回归中 soda-creek 只有 80%，180 秒三图 3 seed 中 soda-creek 只有 66.67%，记录 fail_20260527_023，仍不能进入 stage 03。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1732,7 +1737,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage 02 单图 mid-window 训练把 failure face 拉回 soda-creek opening/mid，不能进入 stage 03。下一步应把 stage 02 改成 mixed opening retention + mid-window 训练，并同时跑 60 秒 opening 回归与 180 秒三图对比。"
+      "summary": "stage 02 mixed retention 改善了目标图 action bias，但仍让 soda-creek opening gate 从 100% 回落到 80%。下一步应尝试更短 continuation、较低学习率或显式 opening replay/regularization；每轮必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",

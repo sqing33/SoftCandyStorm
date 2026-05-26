@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_023",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage02_mixed_retention",
+  "seed": 62405,
+  "bot": "PpoStage02MixedRetention",
+  "time_seconds": 47.3663,
+  "symptom": "stage 02 mixed retention 将训练地图改为 soda-creek + caramel-workshop 后，目标图训练评估 180 秒 3 局全胜且动作分布比单图 stage 02 更健康，但 60 秒 high-pressure 10 seed opening 回归中 soda-creek 只有 80% 胜率，seed 62405 在 47.3663 秒死亡，seed 62407 在 55.7328 秒死亡；180 秒三图 3 seed 中 soda-creek 也只有 66.67%。",
+  "root_cause": "混合 soda-creek retention 缓解了 caramel-workshop 的 action 2 塌缩，但 5000 timestep 的 mid-window PPO 仍会覆盖 stage 01 opening checkpoint 的部分稳定性；当前训练没有显式保护已通过的 60 秒 opening seed 集合。",
+  "fix": "不要进入 stage 03；下一步应把 stage 02 拆成更短 continuation 或增加 explicit opening replay gate，例如每次 mid-window 更新后先回归 60 秒 10 seed，或降低学习率 / timesteps 并加入 soda-creek opening trace 约束。",
+  "validation": "训练报告：harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/ppo_training_report.json；60 秒 opening 回归：harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/comparison_60s_10seed.json；180 秒对比：harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/comparison_180s_3seed.json；失败分析：harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/failure_analysis_60s.md 和 harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/failure_analysis_180s.md。结论为 policy repair。"
+}
