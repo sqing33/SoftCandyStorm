@@ -8,12 +8,25 @@
 
 基本流程：
 
-1. 先运行 `tools/validate_asset_candidates.py`，确认候选批次 metadata、文件引用、prompt/source/postprocess provenance 和候选池标记有效。
-2. 可以复制 `asset_candidate_manual_review_template.json` 手工填写，也可以用 `create_asset_candidate_review_draft.py` 从候选 manifest 生成覆盖所有素材 id 的草稿。
-3. 真人审查人必须替换草稿中的 `TODO` 占位，填写审查人、时间、每个素材的评分、问题、允许用途和下一步。
-4. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
-5. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
-6. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
+1. 新 `mmx` 批次生成前先运行 `validate_mmx_asset_generation_plan.py`，确认计划中的命令、输出路径和后续审查链路都只指向候选目录。
+2. 生成和后处理完成后运行 `tools/validate_asset_candidates.py`，确认候选批次 metadata、文件引用、prompt/source/postprocess provenance 和候选池标记有效。
+3. 可以复制 `asset_candidate_manual_review_template.json` 手工填写，也可以用 `create_asset_candidate_review_draft.py` 从候选 manifest 生成覆盖所有素材 id 的草稿。
+4. 真人审查人必须替换草稿中的 `TODO` 占位，填写审查人、时间、每个素材的评分、问题、允许用途和下一步。
+5. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
+6. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
+7. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
+
+mmx 生成计划示例：
+
+```bash
+python3 harness/asset_review/validate_mmx_asset_generation_plan.py \
+  harness/asset_review/mmx_asset_generation_plan_template.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/mmx_asset_generation_plan.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+该计划校验不会调用 `mmx`，只证明作业准备遵守候选池、命令 provenance 和人工审查纪律。
 
 生成审查草稿示例：
 

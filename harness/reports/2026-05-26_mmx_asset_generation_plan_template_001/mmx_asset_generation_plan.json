@@ -1,0 +1,40 @@
+{
+  "report_version": 1,
+  "source": "harness/asset_review/mmx_asset_generation_plan_template.json",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "mmx_asset_generation_plan_valid",
+  "plan_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "target_batch_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "target_batch_path": "asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan",
+  "asset_count": 3,
+  "errors": [],
+  "warnings": [],
+  "planned_assets": [
+    {
+      "id": "player_jar_keeper_topdown_v005",
+      "type": "image",
+      "planned_output_count": 2,
+      "command": "mmx image generate --prompt Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark. --aspect-ratio 1:1 --n 2 --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/images --out-prefix player_jar_keeper_topdown_v005 --output json --non-interactive --quiet",
+      "review_focus_count": 4
+    },
+    {
+      "id": "voice_boss_arrival_cn_v002",
+      "type": "speech",
+      "planned_output_count": 1,
+      "command": "mmx speech synthesize --text 警报！裂星糖罐核心苏醒了！ --voice Chinese_female_news_anchor --language zh --format mp3 --out asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/audio/voice_boss_arrival_cn_v002.mp3 --output json --non-interactive --quiet",
+      "review_focus_count": 4
+    },
+    {
+      "id": "sting_boss_arrival_v002",
+      "type": "music",
+      "planned_output_count": 1,
+      "command": "mmx music generate --prompt Eight second instrumental boss arrival sting for a cute candy roguelite, playful but dramatic candy machine rumble, bright bells, fizzy synth bubbles, short clean ending, no vocals, no lyrics, suitable for game UI transition. --instrumental --format mp3 --out asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/music/sting_boss_arrival_v002_source.mp3 --output json --non-interactive --quiet",
+      "review_focus_count": 4
+    }
+  ],
+  "limitations": [
+    "This validator checks an mmx generation plan only; it does not call mmx or create media files.",
+    "A valid plan must still produce metadata manifests, candidate validation reports, postprocess outputs, and human review records before any Runtime candidate promotion.",
+    "A valid plan does not mark assets as accepted_content, runtime_integrated, release_ready, or visually/audio approved."
+  ]
+}

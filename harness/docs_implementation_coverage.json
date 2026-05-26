@@ -139,7 +139,7 @@
       "doc_id": "05",
       "doc_path": "docs/05_美术与音频素材计划.md",
       "status": "partial",
-      "summary": "已有程序化 top-down 占位素材、多批 mmx 图像/TTS/music 候选，以及素材人工审查模板、草稿生成器、校验器、Runtime 候选晋级工具和 Runtime 候选 manifest 门禁；正式美术音频仍未由真人审查并接入。",
+      "summary": "已有程序化 top-down 占位素材、多批 mmx 图像/TTS/music 候选、mmx 生成前作业计划门禁，以及素材人工审查模板、草稿生成器、校验器、Runtime 候选晋级工具和 Runtime 候选 manifest 门禁；正式美术音频仍未由真人审查并接入。",
       "coverage": [
         {
           "id": "asset-candidate-pipeline",
@@ -148,6 +148,10 @@
           "evidence": [
             "assets/prototype_topdown/manifest.json",
             "asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/metadata/postprocess_audio_v001.json",
+            "harness/asset_review/mmx_asset_generation_plan_template.json",
+            "harness/asset_review/validate_mmx_asset_generation_plan.py",
+            "harness/asset_review/test_validate_mmx_asset_generation_plan.py",
+            "harness/reports/2026-05-26_mmx_asset_generation_plan_template_001/summary.md",
             "harness/asset_review/create_asset_candidate_review_draft.py",
             "harness/asset_review/drafts/2026-05-26_mmx_map_boss_audio_pass_review_draft.json",
             "harness/asset_review/validate_asset_candidate_manual_review.py",
@@ -160,7 +164,7 @@
             "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md"
           ],
           "gaps": [
-            "mmx 候选仍在 asset/generated_candidates；已有 asset_candidate 后进入 Runtime 候选 staging 的工具和 manifest 门禁，但尚未由真人填写审查记录并通过。",
+            "mmx 候选仍在 asset/generated_candidates；已有生成前作业计划门禁、asset_candidate 后进入 Runtime 候选 staging 的工具和 manifest 门禁，但尚未由真人填写审查记录并通过。",
             "已有人工审查草稿覆盖当前 map/Boss/audio 候选，但缺少真人填写后的最终 sprite、音效、BGM 接受记录和 Runtime 预览证据。"
           ]
         }
@@ -559,7 +563,7 @@
       "doc_id": "17",
       "doc_path": "docs/17_素材生成Prompt库.md",
       "status": "partial",
-      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理，素材人工审查草稿生成、校验门禁、Runtime 候选晋级工具和 Runtime 候选 manifest 门禁也已补齐；候选质量仍多为 repair，正式素材缺真人接受。",
+      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理，新增 mmx 生成前作业计划门禁，素材人工审查草稿生成、校验门禁、Runtime 候选晋级工具和 Runtime 候选 manifest 门禁也已补齐；候选质量仍多为 repair，正式素材缺真人接受。",
       "coverage": [
         {
           "id": "prompt-provenance",
@@ -567,6 +571,10 @@
           "status": "partial",
           "evidence": [
             "tools/validate_asset_candidates.py",
+            "harness/asset_review/mmx_asset_generation_plan_template.json",
+            "harness/asset_review/validate_mmx_asset_generation_plan.py",
+            "harness/asset_review/test_validate_mmx_asset_generation_plan.py",
+            "harness/reports/2026-05-26_mmx_asset_generation_plan_template_001/summary.md",
             "harness/asset_review/asset_candidate_manual_review_template.json",
             "harness/asset_review/create_asset_candidate_review_draft.py",
             "harness/asset_review/promote_asset_runtime_candidate.py",

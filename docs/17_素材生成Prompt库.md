@@ -234,6 +234,40 @@ asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/
 7. 放入 `asset/generated_candidates`。
 8. 人工选择后进入正式素材目录。
 
+## mmx 生成前计划门禁
+
+任何新的 `mmx image generate`、`mmx speech synthesize` 或 `mmx music generate` 作业，先写入生成计划：
+
+```text
+harness/asset_review/mmx_asset_generation_plan_template.json
+```
+
+并运行：
+
+```bash
+python3 harness/asset_review/validate_mmx_asset_generation_plan.py \
+  harness/asset_review/mmx_asset_generation_plan_template.json \
+  --repo-root . \
+  --report harness/reports/<plan-report>/mmx_asset_generation_plan.json \
+  --markdown harness/reports/<plan-report>/summary.md
+```
+
+生成计划必须明确：
+
+- 目标批次路径只能是 `asset/generated_candidates/<batch>/`。
+- `project_rules.candidate_only=true`，且 `accepted_content=false`、`runtime_integrated=false`、`release_ready=false`。
+- 每条 `mmx` 命令必须使用 `--output json --non-interactive --quiet`，并记录输出路径。
+- 命令不得内联 API key，不得把媒体流直接写 stdout。
+- 计划必须列出 `tools/validate_asset_candidates.py --require-commands` 和人工审查草稿生成命令。
+
+当前示例计划报告：
+
+```text
+harness/reports/2026-05-26_mmx_asset_generation_plan_template_001/summary.md
+```
+
+该报告结论为 `mmx_asset_generation_plan_valid`，只证明后续生成作业的目录、命令和审查链路计划有效；它不代表素材已经生成、通过 metadata 校验、通过人工审查或可以进入 Runtime。
+
 ## 候选素材 Metadata 校验
 
 每个 `asset/generated_candidates/<batch>/metadata/manifest.json` 都必须证明该批次仍是候选素材，而不是正式接入内容。

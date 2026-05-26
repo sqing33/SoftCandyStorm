@@ -1,0 +1,149 @@
+{
+  "plan_contract_id": "mmx-asset-generation-plan-v0",
+  "plan_version": 1,
+  "plan_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "created_at": "2026-05-26",
+  "target_batch_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "target_batch_path": "asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_source": "local configured mmx credentials",
+    "region": "cn"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "release_ready": false,
+    "requires_metadata_manifest": true,
+    "requires_command_provenance": true,
+    "requires_human_review": true
+  },
+  "asset_count": 3,
+  "planned_assets": [
+    {
+      "id": "player_jar_keeper_topdown_v005",
+      "type": "image",
+      "purpose": "runtime_sprite_candidate",
+      "prompt": "Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark.",
+      "negative_prompt": "front view, side view, standing mascot, text, watermark, logo, realistic gore, horror, dark sci-fi, busy background, shadows crossing sprite boundaries",
+      "planned_outputs": [
+        "images/player_jar_keeper_topdown_v005_001.jpg",
+        "images/player_jar_keeper_topdown_v005_002.jpg"
+      ],
+      "command": [
+        "mmx",
+        "image",
+        "generate",
+        "--prompt",
+        "Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark.",
+        "--aspect-ratio",
+        "1:1",
+        "--n",
+        "2",
+        "--out-dir",
+        "asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/images",
+        "--out-prefix",
+        "player_jar_keeper_topdown_v005",
+        "--output",
+        "json",
+        "--non-interactive",
+        "--quiet"
+      ],
+      "postprocess_plan": [
+        "Run chroma-key or component cleanup only inside the target batch directory.",
+        "Generate 128px, 64px, and 32px checkerboard previews before human review."
+      ],
+      "review_focus": [
+        "strict top-down silhouette",
+        "small-size readability",
+        "transparent edge quality",
+        "no text or watermark"
+      ]
+    },
+    {
+      "id": "voice_boss_arrival_cn_v002",
+      "type": "speech",
+      "purpose": "audio_preview_candidate",
+      "text": "警报！裂星糖罐核心苏醒了！",
+      "voice": "Chinese_female_news_anchor",
+      "planned_outputs": [
+        "audio/voice_boss_arrival_cn_v002.mp3"
+      ],
+      "command": [
+        "mmx",
+        "speech",
+        "synthesize",
+        "--text",
+        "警报！裂星糖罐核心苏醒了！",
+        "--voice",
+        "Chinese_female_news_anchor",
+        "--language",
+        "zh",
+        "--format",
+        "mp3",
+        "--out",
+        "asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/audio/voice_boss_arrival_cn_v002.mp3",
+        "--output",
+        "json",
+        "--non-interactive",
+        "--quiet"
+      ],
+      "postprocess_plan": [
+        "Normalize loudness in a copied processed file, preserving the raw mmx output.",
+        "Check voice timing against Boss arrival sting before any Runtime candidate promotion."
+      ],
+      "review_focus": [
+        "Chinese pronunciation",
+        "loudness readiness",
+        "mix readability over combat audio",
+        "no unwanted extra speech"
+      ]
+    },
+    {
+      "id": "sting_boss_arrival_v002",
+      "type": "music",
+      "purpose": "audio_preview_candidate",
+      "prompt": "Eight second instrumental boss arrival sting for a cute candy roguelite, playful but dramatic candy machine rumble, bright bells, fizzy synth bubbles, short clean ending, no vocals, no lyrics, suitable for game UI transition.",
+      "instrumental": true,
+      "planned_outputs": [
+        "music/sting_boss_arrival_v002_source.mp3"
+      ],
+      "command": [
+        "mmx",
+        "music",
+        "generate",
+        "--prompt",
+        "Eight second instrumental boss arrival sting for a cute candy roguelite, playful but dramatic candy machine rumble, bright bells, fizzy synth bubbles, short clean ending, no vocals, no lyrics, suitable for game UI transition.",
+        "--instrumental",
+        "--format",
+        "mp3",
+        "--out",
+        "asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/music/sting_boss_arrival_v002_source.mp3",
+        "--output",
+        "json",
+        "--non-interactive",
+        "--quiet"
+      ],
+      "postprocess_plan": [
+        "Trim or fade a short processed candidate if mmx returns a longer track.",
+        "Record the trim command in metadata before manual listening review."
+      ],
+      "review_focus": [
+        "short sting usability",
+        "no vocals or lyrics",
+        "loop or fade cleanliness",
+        "voice overlay compatibility"
+      ]
+    }
+  ],
+  "post_generation_checks": [
+    "python3 tools/validate_asset_candidates.py asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan --require-commands --report harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_metadata_001/asset_candidate_metadata_validation.json --markdown harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_metadata_001/summary.md",
+    "python3 harness/asset_review/create_asset_candidate_review_draft.py asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan --repo-root . --metadata-report harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_metadata_001/summary.md --out harness/asset_review/drafts/2026-05-26_mmx_runtime_topdown_audio_plan_review_draft.json"
+  ],
+  "manual_review_required": true,
+  "notes": [
+    "This is a pre-generation plan only.",
+    "Generated files must remain in asset/generated_candidates until metadata, postprocess, preview, and human review gates are complete."
+  ]
+}
