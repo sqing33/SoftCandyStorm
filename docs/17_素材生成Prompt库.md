@@ -257,6 +257,12 @@ harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_metadata_001/summary.m
 harness/asset_review/drafts/2026-05-26_mmx_runtime_topdown_audio_plan_review_draft.json
 ```
 
+已生成真人审查包：
+
+```text
+harness/reports/2026-05-26_mmx_runtime_topdown_audio_review_packet_001/summary.md
+```
+
 草稿校验报告当前为 `asset_candidate_manual_review_invalid`，原因是 TODO 评分尚未由真人填写；这正是预期状态，不能作为人工通过证据。
 
 结论：该批次全部仍在 `generated_candidates`，不得直接进入正式 Runtime 素材。

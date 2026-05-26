@@ -11,10 +11,11 @@
 1. 新 `mmx` 批次生成前先运行 `validate_mmx_asset_generation_plan.py`，确认计划中的命令、输出路径和后续审查链路都只指向候选目录。
 2. 生成和后处理完成后运行 `tools/validate_asset_candidates.py`，确认候选批次 metadata、文件引用、prompt/source/postprocess provenance 和候选池标记有效。
 3. 可以复制 `asset_candidate_manual_review_template.json` 手工填写，也可以用 `create_asset_candidate_review_draft.py` 从候选 manifest 生成覆盖所有素材 id 的草稿。
-4. 真人审查人必须替换草稿中的 `TODO` 占位，填写审查人、时间、每个素材的评分、问题、允许用途和下一步。
-5. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
-6. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
-7. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
+4. 可以运行 `create_asset_review_packet.py` 把候选 manifest、metadata 报告和人工审查草稿整理成 Markdown 审查包，方便真人逐项打开文件和填写评分。
+5. 真人审查人必须替换草稿中的 `TODO` 占位，填写审查人、时间、每个素材的评分、问题、允许用途和下一步。
+6. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
+7. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
+8. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
 
 mmx 生成计划示例：
 
@@ -37,6 +38,19 @@ python3 harness/asset_review/create_asset_candidate_review_draft.py \
   --metadata-report harness/reports/<asset-validation-report>/summary.md \
   --out harness/asset_review/drafts/<batch>_review_draft.json
 ```
+
+生成审查包示例：
+
+```bash
+python3 harness/asset_review/create_asset_review_packet.py \
+  asset/generated_candidates/<batch> \
+  --repo-root . \
+  --metadata-report harness/reports/<asset-validation-report>/summary.md \
+  --review-draft harness/asset_review/drafts/<batch>_review_draft.json \
+  --out harness/reports/<report-id>/summary.md
+```
+
+审查包只是把 manifest、文件链接、QA 状态和草稿 TODO 集中到一个 Markdown 文件，方便真人审查；它不校验人工评分，不判断美术 / 听感质量，也不能作为通过证据。
 
 Runtime 候选晋级示例：
 
