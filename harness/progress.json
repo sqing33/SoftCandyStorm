@@ -1056,6 +1056,26 @@
       "id": "phase4_full_pack_candidate_600s_repair",
       "summary": "Phase 4 full pack 已完成当前会话 5 seed / 600 秒 all Bot 候选仿真；结果为 repair，Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 胜率高于目标，候选不得晋级 playtest 或 accepted_content。",
       "report": "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md"
+    },
+    {
+      "id": "phase4_full_pack_candidate_bot_gate_repair",
+      "summary": "历史 full pack 候选 Bot 门禁失败已保留为 fail_20260526_026；后续修复补齐 GameCore 多 Boss / regen 语义、校准终局 Bot 基线并调整候选终局压力后，simulation_005 已让 5 seed / 600 秒 all Bot 门禁通过。",
+      "report": "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
+    },
+    {
+      "id": "phase4_full_pack_candidate_balance_repair",
+      "summary": "Phase 4 full pack 完成当前修复闭环：validate-candidates 通过，simulate-candidates 以 all Bot、5 seed、600 秒通过全部胜率目标，候选晋级 simulated_candidates；仍不得进入 accepted_content，需真人设计审查、9 局人工试玩和最终接受。",
+      "report": "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md"
+    },
+    {
+      "id": "phase4_full_pack_replay_regression",
+      "summary": "Phase 4 full pack 基于 simulation_005 的 45 条代表 Replay 已通过 replay-batch，content hash 为 fnv1a64:774827e3e24f8154，0 个 mismatch；该结论只证明当前候选回放稳定，不替代人工试玩或 release 级性能门禁。",
+      "report": "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md"
+    },
+    {
+      "id": "bot_policy_terminal_baseline_calibration",
+      "summary": "校准 Route 与 BossHunter 终局基线行为，使 full pack 600 秒矩阵中 BossHunter 保持高技能 3/5、Route 保持低技能 1/5，并保留 Bot 单测、workspace clippy 与正式候选仿真证据。",
+      "report": "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md"
     }
   ],
   "current_findings": [
@@ -1421,7 +1441,7 @@
     },
     {
       "id": "local_binary_launch_recovered",
-      "summary": "本机新生成 Mach-O binary 启动已恢复：retry_003 诊断返回 local_binary_launch_ok，game_harness 可启动，cargo fmt/clippy/test、Harness 矩阵、Replay、Gym smoke 和训练入口 dry-run 已重新执行；后续阻塞转为 Bot 矩阵 repair、RL 依赖缺口和真人证据缺口。",
+      "summary": "本机新生成 Mach-O binary 启动已恢复：retry_003 诊断返回 local_binary_launch_ok，game_harness 可启动，cargo fmt/clippy/test、Harness 矩阵、Replay、Gym smoke 和训练入口 dry-run 已重新执行；Phase 4 full pack 候选 Bot 门禁已在 simulation_005 通过，后续阻塞转为真人证据、RL 依赖缺口和发布包门禁。",
       "report": "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
     },
     {
@@ -1430,26 +1450,17 @@
       "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md"
     },
     {
-      "id": "phase4_full_pack_candidate_bot_gate_repair",
-      "summary": "full pack 候选静态校验通过但长局 Bot 门禁失败，已写入 repair_queue 和 fail_20260526_026；下一步要先修候选平衡，而不是推进人工试玩候选。",
-      "report": "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
-    },
-    {
-      "id": "phase4_full_pack_balance_repair_probe",
-      "summary": "完成一轮 full pack 候选保守修复：削弱 honey-heart 与 cocoa-safety-badge，调整糖霜草地 480-600 秒敌人池，并重跑 validation_003 / simulation_003；Coward 回到目标区间，但 Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 仍因胜率偏高保持 repair，且暴露 GameCore 尚未实现 jump / orbit_player / ranged_spit / shielded 行为压力。",
-      "report": "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md"
+      "id": "phase4_full_pack_balance_repair_simulated",
+      "summary": "完成 full pack 候选修复闭环：GameCore 多 Boss / regen / 敌人行为压力、终局 Bot 基线校准和候选终局压力修复后，validation_005 通过，simulation_005 以 all Bot、5 seed、600 秒进入 simulated_candidates，45 条代表 Replay 回归通过。",
+      "report": "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md"
     },
     {
       "id": "gamecore_enemy_behavior_pressure_support",
-      "summary": "GameCore 增加 jump 突进、orbit_player 绕身、ranged_spit 伤害 hazard、shielded 正面减伤的确定性行为与单测；workspace fmt、clippy、test 全部通过。用 full pack 候选复测后仍为 repair，说明下一步需继续修候选波次和敌人参数。",
+      "summary": "GameCore 增加 jump 突进、orbit_player 绕身、ranged_spit 伤害 hazard、shielded 正面减伤、多 Boss 事件、regen_per_second 和最近 Boss snapshot 语义；相关 fmt/clippy/test 通过，并支撑 full pack 后续 simulation_005 通过 Bot 门禁。",
       "report": "harness/reports/2026-05-26_gamecore_enemy_behavior_pressure_audit_001/summary.md"
     }
   ],
   "next_recommended": [
-    {
-      "id": "phase4_full_pack_candidate_balance_repair",
-      "summary": "根据 fail_20260526_026 小步修复 Phase 4 full pack 终局波次、候选敌人参数和长局胜率，再重跑 5 seed / 600 秒 all Bot simulate-candidates"
-    },
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
@@ -1457,6 +1468,10 @@
     {
       "id": "rl_policy_multimap_training",
       "summary": "不要继续单图补强；危险状态重采样已缓解 soda-creek 回归但未追平 cracked-star-jar 规则 Bot，下一步改为序列上下文、分阶段 policy 或 PPO 蒸馏初始化，再验证 300 秒 high-pressure 对比"
+    },
+    {
+      "id": "phase4_full_pack_manual_review",
+      "summary": "基于 simulated_candidates 中的 Phase 4 full pack 准备设计审查与 9 局人工试玩；真人证据通过前不得写入 accepted_content 或 Runtime 正式内容。"
     }
   ]
 }
