@@ -14,8 +14,9 @@
 3. 填写审校人、时间、每个章节和图鉴条目的评分、问题和下一步。
 4. 运行 `validate_story_codex_manual_review.py` 校验审校记录完整性。
 5. 只有人工审校通过后，未来 story/codex UI 才能把该批内容当作 UI 候选处理。
+6. 如果人工审校结论为 `ui_candidate`，可运行 `promote_story_codex_ui_candidate.py` 复制到 `harness/story_review/ui_candidates/`，作为后续 Runtime UI 接入候选。
 
-该门禁不会把剧情或图鉴内容推进到 `accepted_content`，也不会替代未来 Runtime UI 验收。
+该门禁和 UI 候选晋级都不会把剧情或图鉴内容推进到 `accepted_content`，也不会替代未来 Runtime UI 验收。
 
 草稿生成示例：
 
@@ -28,3 +29,16 @@ python3 harness/story_review/create_story_codex_review_draft.py \
 ```
 
 生成的草稿包含 `draft_notice` 和 `TODO` 占位，默认 `gate_decision` 为 `needs_more_review`。它只用于防止漏审，不能作为人工审校通过证据。
+
+UI 候选晋级示例：
+
+```bash
+python3 harness/story_review/promote_story_codex_ui_candidate.py \
+  harness/story_review/reviews/<review>.json \
+  --repo-root . \
+  --out-dir harness/story_review/ui_candidates \
+  --report harness/reports/<report-id>/story_codex_ui_candidate.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+晋级前必须先有真人填写并通过校验的 `ui_candidate` 审校记录；自动草稿、`needs_more_review` 或 `repair` 结论都不能晋级。
