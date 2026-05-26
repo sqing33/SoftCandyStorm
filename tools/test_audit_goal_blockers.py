@@ -20,7 +20,7 @@ VALIDATOR = SCRIPT_DIR / "audit_goal_blockers.py"
 
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from audit_goal_blockers import build_report  # noqa: E402
+from audit_goal_blockers import build_report, latest_report_path  # noqa: E402
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -151,6 +151,32 @@ class GoalBlockerAuditTests(unittest.TestCase):
             self.assertNotIn("local_binary_launch_blocked", ids)
             for item in report["blockers"]:
                 self.assertNotIn("local_binary_launch_blocked", item.get("blocked_by", []))
+
+    def test_default_report_selection_prefers_generated_at_over_path_order(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            older_terminal_report = (
+                root
+                / "harness/reports/2026-05-26_local_binary_launch_diagnostic_terminal_001"
+                / "local_binary_launch_diagnostic.json"
+            )
+            newer_retry_report = (
+                root
+                / "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_004"
+                / "local_binary_launch_diagnostic.json"
+            )
+            write_json(
+                older_terminal_report,
+                {"generated_at": "2026-05-26T18:52:28+0800", "decision": "local_binary_launch_blocked"},
+            )
+            write_json(
+                newer_retry_report,
+                {"generated_at": "2026-05-26T19:21:02+0800", "decision": "local_binary_launch_ok"},
+            )
+
+            selected = latest_report_path(root, "local_binary", None, root / "fallback.json")
+
+            self.assertEqual(selected, newer_retry_report)
 
     def test_cli_writes_report_with_allow_blockers(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

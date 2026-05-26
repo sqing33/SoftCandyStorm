@@ -66,14 +66,31 @@ def read_optional_report(repo_root: Path, value: str, errors: list[str]) -> tupl
         return None, relative_repo_path(repo_root, path)
 
 
+def report_sort_key(path: Path) -> tuple[str, int, str]:
+    """Prefer machine report timestamps over path names when picking defaults."""
+    generated_at = ""
+    try:
+        payload = load_json_object(path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        payload = {}
+    value = payload.get("generated_at")
+    if isinstance(value, str):
+        generated_at = value
+    try:
+        modified_at = path.stat().st_mtime_ns
+    except OSError:
+        modified_at = 0
+    return generated_at, modified_at, str(path)
+
+
 def latest_report_path(repo_root: Path, label: str, explicit: Path | None, fallback: Path) -> Path:
     if explicit is not None:
         return explicit
     pattern = DEFAULT_REPORT_PATTERNS.get(label)
     if pattern:
-        matches = sorted(repo_root.glob(pattern))
+        matches = list(repo_root.glob(pattern))
         if matches:
-            return matches[-1]
+            return max(matches, key=report_sort_key)
     return fallback
 
 

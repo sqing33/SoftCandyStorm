@@ -1,0 +1,211 @@
+{
+  "report_version": 1,
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "generated_at": "2026-05-26T19:21:02+0800",
+  "environment": {
+    "platform": {
+      "command": [
+        "/usr/bin/uname",
+        "-a"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.005,
+      "stdout": "Darwin ITadmindeMacBook-Air.local 25.3.0 Darwin Kernel Version 25.3.0: Wed Jan 28 20:53:31 PST 2026; root:xnu-12377.91.3~2/RELEASE_ARM64_T8103 arm64\n",
+      "stderr": ""
+    },
+    "macos": {
+      "command": [
+        "/usr/bin/sw_vers"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.011,
+      "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.3.1\nBuildVersion:\t\t25D2128\n",
+      "stderr": ""
+    },
+    "arch": {
+      "command": [
+        "/usr/bin/arch"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.006,
+      "stdout": "arm64",
+      "stderr": ""
+    },
+    "cwd": "/Users/chongqing/Codes/软糖风暴",
+    "path": "/Users/chongqing/.codex/tmp/arg0/codex-arg0TYyXwk:/Users/chongqing/Library/pnpm:/Users/chongqing/.npm-global/bin:/Users/chongqing/.nvm/versions/node/v24.14.1/bin:/Users/chongqing/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/pmk/env/global/bin:/opt/homebrew/bin:/Users/chongqing/.cargo/bin:/Users/chongqing/.orbstack/bin:/Applications/Visual Studio Code.app/Contents/Resources/app/bin:/Applications/Codex.app/Contents/Resources"
+  },
+  "checks": {
+    "system_echo": {
+      "command": [
+        "/bin/echo",
+        "system-binary-ok"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.004,
+      "stdout": "system-binary-ok\n",
+      "stderr": ""
+    },
+    "developer_mode": {
+      "command": [
+        "/usr/sbin/DevToolsSecurity",
+        "-status"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.01,
+      "stdout": "Developer mode is currently enabled.\n",
+      "stderr": ""
+    },
+    "spctl_status": {
+      "command": [
+        "/usr/sbin/spctl",
+        "--status"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.006,
+      "stdout": "assessments enabled\n",
+      "stderr": ""
+    },
+    "cc_compile": {
+      "command": [
+        "/usr/bin/cc",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/hello.c",
+        "-o",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.308,
+      "stdout": "",
+      "stderr": ""
+    },
+    "file": {
+      "command": [
+        "/usr/bin/file",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.013,
+      "stdout": "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello: Mach-O 64-bit executable arm64\n",
+      "stderr": ""
+    },
+    "xattr": {
+      "command": [
+        "/usr/bin/xattr",
+        "-lr",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.007,
+      "stdout": "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello: com.apple.provenance: \\x01\\x02\n",
+      "stderr": ""
+    },
+    "codesign": {
+      "command": [
+        "/usr/bin/codesign",
+        "-dv",
+        "--verbose=4",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.007,
+      "stdout": "",
+      "stderr": "Executable=/private/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello\nIdentifier=softcandy_hello\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20400 size=392 flags=0x20002(adhoc,linker-signed) hashes=9+0 location=embedded\nVersionPlatform=1\nVersionMin=1703936\nVersionSDK=1704960\nHash type=sha256 size=32\nCandidateCDHash sha256=058f93bd60e0de75a97ec6606bc65d5f8a57c0bd\nCandidateCDHashFull sha256=058f93bd60e0de75a97ec6606bc65d5f8a57c0bdbce0b75264d7b34a9b6b5185\nHash choices=sha256\nCMSDigest=058f93bd60e0de75a97ec6606bc65d5f8a57c0bdbce0b75264d7b34a9b6b5185\nCMSDigestType=2\nExecutable Segment base=0\nExecutable Segment limit=52\nExecutable Segment flags=0x1\nPage size=4096\nCDHash=058f93bd60e0de75a97ec6606bc65d5f8a57c0bd\nSignature=adhoc\nInfo.plist=not bound\nTeamIdentifier=not set\nSealed Resources=none\nInternal requirements=none\n"
+    },
+    "spctl_assess": {
+      "command": [
+        "/usr/sbin/spctl",
+        "-a",
+        "-vvv",
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello"
+      ],
+      "returncode": 3,
+      "timed_out": false,
+      "elapsed_seconds": 0.442,
+      "stdout": "",
+      "stderr": "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello: rejected\n"
+    },
+    "hello_run": {
+      "command": [
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.004,
+      "stdout": "softcandy-local-binary-ok\n",
+      "stderr": ""
+    }
+  },
+  "policy_log": {
+    "available": true,
+    "command": [
+      "/usr/bin/log",
+      "stream",
+      "--style",
+      "compact",
+      "--predicate",
+      "process == \"syspolicyd\" OR process == \"amfid\" OR eventMessage CONTAINS[c] \"Security policy\" OR eventMessage CONTAINS[c] \"CMS blob\" OR eventMessage CONTAINS[c] \"provenance\" OR eventMessage CONTAINS[c] \"Gatekeeper\" OR eventMessage CONTAINS[c] \"softcandy\""
+    ],
+    "trigger_run": {
+      "command": [
+        "/var/folders/b5/2g_p41b51hs3mspctvst_6lr0000gp/T/softcandy_binary_launch_n7xp0dd1/softcandy_hello"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.009,
+      "stdout": "softcandy-local-binary-ok\n",
+      "stderr": ""
+    },
+    "line_count": 19,
+    "lines": [
+      "Filtering the log data using \"process == \"syspolicyd\" OR process == \"amfid\" OR composedMessage CONTAINS[c] \"Security policy\" OR composedMessage CONTAINS[c] \"CMS blob\" OR composedMessage CONTAINS[c] \"provenance\" OR composedMessage CONTAINS[c] \"Gatekeeper\" OR composedMessage CONTAINS[c] \"softcandy\"\"",
+      "Timestamp               Ty Process[PID:TID]",
+      "2026-05-26 19:21:01.125 Df syspolicyd[220:609fc0] [com.apple.CFNetwork:Default] Connection 1209: encountered bidirectional stream limit updated event",
+      "2026-05-26 19:21:01.246 E  syspolicyd[220:609fc0] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.246 E  syspolicyd[220:609fc0] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.246 E  syspolicyd[220:609fc0] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 19:21:01.246 E  syspolicyd[220:608faf] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.246 E  syspolicyd[220:608faf] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.246 E  syspolicyd[220:608faf] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 19:21:01.246 E  syspolicyd[220:609fc0] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.247 E  syspolicyd[220:609fc0] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.247 E  syspolicyd[220:609fc0] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 19:21:01.247 E  syspolicyd[220:608faf] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.247 E  syspolicyd[220:608faf] [com.apple.syspolicy.exec:default] Unable to initialize qtn_proc: 3",
+      "2026-05-26 19:21:01.246 Df kernel[0:60a183] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 55788, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 19:21:01.247 E  syspolicyd[220:608faf] [com.apple.syspolicy.exec:default] dispatch_mig_server returned 268435459",
+      "2026-05-26 19:21:01.246 Df kernel[0:60a184] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 55789, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 19:21:01.246 Df kernel[0:60a185] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 55790, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)",
+      "2026-05-26 19:21:01.247 Df kernel[0:60a186] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 55791, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)"
+    ]
+  },
+  "limitations": [
+    "This diagnostic proves only the current local session's ability to launch a newly compiled Mach-O binary.",
+    "It does not validate GameCore, Harness, Runtime, Gym, replay semantics, or gameplay balance.",
+    "A blocked result should prevent interpreting Rust Harness, Runtime, or Gym timeouts as game logic failures."
+  ],
+  "decision": "local_binary_launch_ok",
+  "signals": {
+    "system_binary_runs": true,
+    "hello_compiled": true,
+    "hello_runs": true,
+    "hello_timed_out": false,
+    "developer_mode_disabled": false,
+    "spctl_rejected": true,
+    "provenance_xattr_present": true,
+    "amfi_no_cms_blob": false,
+    "security_policy_would_not_allow": false
+  },
+  "next_actions": [
+    "Run target/debug/game_harness --help with the same timeout guard.",
+    "If game_harness launches, rerun cargo test --workspace and the blocked Harness/Gym reports."
+  ]
+}
