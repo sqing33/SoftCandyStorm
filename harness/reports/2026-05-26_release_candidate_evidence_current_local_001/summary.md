@@ -25,7 +25,7 @@
 | `asset_provenance` | `pass` | 1 | False |
 | `asset_manual_review` | `waiting` | 2 | False |
 | `story_codex_review` | `waiting` | 2 | False |
-| `telemetry_privacy` | `waiting` | 6 | False |
+| `telemetry_privacy` | `waiting` | 9 | False |
 | `failure_case_review` | `blocked` | 1 | False |
 | `release_package` | `blocked` | 3 | False |
 

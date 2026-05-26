@@ -1,0 +1,82 @@
+{
+  "review_version": 1,
+  "review_id": "<manual-platform-path-review-id>",
+  "path_policy_path": "harness/save_contract/platform_save_path_policy_v0.json",
+  "path_policy_validation_report": "harness/reports/2026-05-26_save_path_policy_v0_001/summary.md",
+  "save_contract_paths": [
+    "harness/save_contract/save_state_v0_template.json",
+    "harness/save_contract/save_state_v1_template.json"
+  ],
+  "save_contract_validation_reports": [
+    "harness/reports/2026-05-26_save_state_contract_001/summary.md",
+    "harness/reports/2026-05-26_save_state_contract_v1_001/summary.md"
+  ],
+  "reviewer": "<human platform path reviewer>",
+  "reviewed_at": "YYYY-MM-DD",
+  "gate_decision": "needs_more_review",
+  "summary": "TODO: human reviewer must verify platform save path policy, local data boundaries, deletion/export scope, and remaining release blockers.",
+  "checks": [
+    {
+      "id": "logical_roots",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm save, settings, telemetry, replay, and crash report logical roots are platform-safe.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "no_host_absolute_paths",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm saves and exported records do not persist /Users, drive letters, home paths, or other host-specific absolute paths.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "delete_scope",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm delete operations can only affect configured local data roots and require explicit user action.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "export_scope",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm export operations produce JSON from configured local data roots without personal host paths.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "migration_original_retention",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm migration keeps the original save until target write and validation succeed.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "cloud_sync_policy",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm cloud sync remains disabled or has a separate reviewed policy before release.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "runtime_evidence_limits",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm this review does not claim Runtime platform path implementation, platform approval, legal approval, cloud save support, or release readiness.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    }
+  ],
+  "global_risks": [
+    "TODO: list unresolved platform path, cloud save, Runtime implementation, privacy, legal, or release blockers."
+  ],
+  "next_actions": [
+    "TODO: replace TODO placeholders, run validate_manual_platform_path_review.py, and attach the resulting report to Release Candidate evidence only when complete."
+  ]
+}
