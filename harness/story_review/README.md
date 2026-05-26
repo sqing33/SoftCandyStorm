@@ -16,6 +16,7 @@
 5. 只有人工审校通过后，未来 story/codex UI 才能把该批内容当作 UI 候选处理。
 6. 如果人工审校结论为 `ui_candidate`，可运行 `promote_story_codex_ui_candidate.py` 复制到 `harness/story_review/ui_candidates/`，作为后续 Runtime UI 接入候选。
 7. UI 候选目录中的 `ui_candidate_manifest.json` 必须再通过 `validate_story_codex_ui_candidate_manifest.py`，确认它仍不写入 `accepted_content`、不标记 Runtime 集成，并绑定有效人工审校记录。
+8. UI 候选经过 Runtime UI review 和最终人工接受后，才可以写入 `story_codex_acceptance_manifest_template.json` 对应的最终接受 manifest，并用 `validate_story_codex_acceptance_manifest.py` 校验。
 
 该门禁和 UI 候选晋级都不会把剧情或图鉴内容推进到 `accepted_content`，也不会替代未来 Runtime UI 验收。
 
@@ -68,3 +69,15 @@ python3 harness/story_review/validate_story_codex_ui_candidate_manifest.py \
 ```
 
 模板 `story_codex_ui_candidate_manifest_template.json` 保留 TODO 和占位人工审校路径，当前报告应为 `story_codex_ui_candidate_manifest_invalid`。这用于证明真人审校前不能生成可用 UI 候选证据。
+
+最终接受 manifest 校验示例：
+
+```bash
+python3 harness/story_review/validate_story_codex_acceptance_manifest.py \
+  harness/story_review/accepted/<candidate>/acceptance_manifest.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/story_codex_acceptance_manifest.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+模板 `story_codex_acceptance_manifest_template.json` 也保留 TODO 和占位 review 路径，当前报告应为 `story_codex_acceptance_manifest_invalid`。它要求绑定已通过的 UI 候选 manifest、Runtime UI review 记录和 final human acceptance 记录；即使将来报告有效，也只说明剧情 / 图鉴文本可以作为 accepted story/codex 内容，仍不代表 Runtime 已集成、发布包 ready 或可以跳过试玩 / 隐私 / 打包门禁。
