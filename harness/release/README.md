@@ -20,6 +20,24 @@ while the local Mach-O binary launch blocker remains unresolved.
 Use `--allow-not-ready` when recording a known not-ready report in
 `harness/reports/`; do not use it as a release approval.
 
+## Manual Evidence Gap Audit
+
+Manual evidence is intentionally split across playtest, content, story/codex,
+asset, privacy, platform path, base UI, and release candidate gates. Use the
+cross-cutting audit before calling any human-dependent gate complete:
+
+```bash
+python3 tools/audit_manual_evidence_gaps.py \
+  --repo-root . \
+  --report /tmp/manual_evidence_gap_audit.json \
+  --markdown /tmp/manual_evidence_gap_audit.md
+```
+
+Use `--allow-gaps` only when recording the current known gap state. The current
+local report is expected to return `manual_evidence_gaps_present`; it reads
+existing reports only and does not fill reviews, run Runtime, or approve a
+release.
+
 ## Required Gates
 
 - `content_frozen`

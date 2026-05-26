@@ -1,0 +1,1102 @@
+{
+  "report_version": 1,
+  "repo_root": ".",
+  "decision": "manual_evidence_gaps_present",
+  "scope": "manual evidence gates across playtest, content, story, asset, privacy, platform, base UI, and release",
+  "requirement_count": 20,
+  "satisfied_count": 0,
+  "gap_count": 20,
+  "missing_report_count": 0,
+  "domain_counts": {
+    "asset": {
+      "total": 6,
+      "satisfied": 0,
+      "gaps": 6
+    },
+    "base_ui": {
+      "total": 1,
+      "satisfied": 0,
+      "gaps": 1
+    },
+    "content": {
+      "total": 3,
+      "satisfied": 0,
+      "gaps": 3
+    },
+    "platform": {
+      "total": 1,
+      "satisfied": 0,
+      "gaps": 1
+    },
+    "playtest": {
+      "total": 1,
+      "satisfied": 0,
+      "gaps": 1
+    },
+    "privacy": {
+      "total": 3,
+      "satisfied": 0,
+      "gaps": 3
+    },
+    "release": {
+      "total": 1,
+      "satisfied": 0,
+      "gaps": 1
+    },
+    "story": {
+      "total": 4,
+      "satisfied": 0,
+      "gaps": 4
+    }
+  },
+  "missing_reports": [],
+  "invalid_reports": [],
+  "errors": [],
+  "gaps": [
+    {
+      "id": "manual_playtest_acceptance",
+      "domain": "playtest",
+      "decision": "manual_playtest_acceptance_review_packet_needs_evidence",
+      "gate_decision": "",
+      "required_action": "Replace TODO playtest draft values with real human ratings, notes, tags, and acceptance evidence."
+    },
+    {
+      "id": "content_acceptance_packet",
+      "domain": "content",
+      "decision": "content_acceptance_review_packet_needs_evidence",
+      "gate_decision": "",
+      "required_action": "Finish human design review, manual playtest acceptance, demo readiness, and accepted-content lock evidence before validation."
+    },
+    {
+      "id": "content_final_acceptance",
+      "domain": "content",
+      "decision": "content_final_acceptance_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Bind a valid simulation candidate manifest and accepted-content lockfile, then record real final acceptance observations."
+    },
+    {
+      "id": "content_acceptance_manifest",
+      "domain": "content",
+      "decision": "content_acceptance_manifest_invalid",
+      "gate_decision": "",
+      "required_action": "Create a manifest backed by valid simulation-candidate, final human acceptance, and accepted-content lockfile reports."
+    },
+    {
+      "id": "asset_candidate_review_runtime_topdown_audio",
+      "domain": "asset",
+      "decision": "asset_candidate_manual_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Replace generated review draft ratings and TODO notes with real art/audio review observations."
+    },
+    {
+      "id": "asset_candidate_review_level_up_feedback",
+      "domain": "asset",
+      "decision": "asset_candidate_manual_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Fill the level-up feedback review draft with human visual, listening, provenance, and technical-readiness observations."
+    },
+    {
+      "id": "asset_runtime_preview_review",
+      "domain": "asset",
+      "decision": "asset_runtime_preview_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Preview staged runtime candidates in context and record concrete small-size/readability observations."
+    },
+    {
+      "id": "asset_audio_loudness_review",
+      "domain": "asset",
+      "decision": "asset_audio_loudness_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Record real listening, clipping, loudness, dialogue clarity, and loop/duration-fit observations."
+    },
+    {
+      "id": "asset_final_acceptance",
+      "domain": "asset",
+      "decision": "asset_final_acceptance_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Bind passing Runtime preview and audio loudness reviews before recording final asset acceptance."
+    },
+    {
+      "id": "asset_acceptance_manifest",
+      "domain": "asset",
+      "decision": "asset_acceptance_manifest_invalid",
+      "gate_decision": "",
+      "required_action": "Create a manifest backed by valid runtime-candidate, runtime preview, loudness, and final acceptance evidence."
+    },
+    {
+      "id": "story_codex_ui_candidate_manifest",
+      "domain": "story",
+      "decision": "story_codex_ui_candidate_manifest_invalid",
+      "gate_decision": "",
+      "required_action": "Complete real story/codex manual review before promoting the text pack to UI-candidate staging."
+    },
+    {
+      "id": "story_codex_runtime_ui_review",
+      "domain": "story",
+      "decision": "story_codex_runtime_ui_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Review the F3 candidate metadata UI in Runtime and record concrete observations without loading generated body text."
+    },
+    {
+      "id": "story_codex_final_acceptance",
+      "domain": "story",
+      "decision": "story_codex_final_acceptance_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Bind a passing Runtime UI review and record final human acceptance for story/codex text."
+    },
+    {
+      "id": "story_codex_acceptance_manifest",
+      "domain": "story",
+      "decision": "story_codex_acceptance_manifest_invalid",
+      "gate_decision": "",
+      "required_action": "Create a manifest backed by valid UI-candidate, Runtime UI review, and final human acceptance evidence."
+    },
+    {
+      "id": "manual_privacy_review",
+      "domain": "privacy",
+      "decision": "manual_privacy_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Fill the privacy review with real checks for consent, prohibited fields, notices, retention, and local data controls."
+    },
+    {
+      "id": "manual_platform_path_review",
+      "domain": "platform",
+      "decision": "manual_platform_path_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Review logical roots, delete/export scope, migration retention, cloud sync limits, and Runtime evidence limits on the target platform."
+    },
+    {
+      "id": "manual_legal_review",
+      "domain": "privacy",
+      "decision": "manual_legal_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Complete real legal/compliance review after privacy and platform-path reviews are passing."
+    },
+    {
+      "id": "telemetry_privacy_acceptance_packet",
+      "domain": "privacy",
+      "decision": "telemetry_privacy_acceptance_review_packet_needs_evidence",
+      "gate_decision": "",
+      "required_action": "Bring policy, runtime contract, upload transport, platform path, privacy, legal, and RC telemetry gate evidence to passing state."
+    },
+    {
+      "id": "base_ui_manual_review",
+      "domain": "base_ui",
+      "decision": "base_ui_manual_review_invalid",
+      "gate_decision": "needs_more_review",
+      "required_action": "Review F1-F4 base UI flows, local data controls, candidate boundaries, and evidence limits with concrete human observations."
+    },
+    {
+      "id": "release_candidate_evidence",
+      "domain": "release",
+      "decision": "release_candidate_not_ready",
+      "gate_decision": "",
+      "required_action": "Clear every release gate, including compile, tests, Harness, Replay, performance, manual reviews, content, asset, privacy, and package gates."
+    }
+  ],
+  "items": [
+    {
+      "id": "manual_playtest_acceptance",
+      "domain": "playtest",
+      "title": "9-run human playtest acceptance",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "manual_playtest_acceptance_review_packet_needs_evidence",
+      "expected_decisions": [
+        "manual_playtest_acceptance_review_packet_ready_for_content_lock"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/manual_playtest_acceptance_review_packet.json",
+      "source": null,
+      "required_action": "Replace TODO playtest draft values with real human ratings, notes, tags, and acceptance evidence.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/manual_playtest_acceptance_review_packet.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "blockers": [
+          "manual review source still contains TODO placeholders",
+          "manual review has not accepted the candidate",
+          "manual review has fewer than 9 completed playtest_pass runs",
+          "strict manual review validation is `manual_review_invalid`",
+          "release candidate manual_playtest gate is `waiting`"
+        ],
+        "required_next_steps": [
+          "Run the 9 human playtest sessions and replace every TODO rating, note, tag, and next action.",
+          "Run validate_manual_review.py --strict-acceptance and keep a manual_review_valid JSON/Markdown report.",
+          "Update the release candidate manual_playtest gate only after real human evidence exists.",
+          "Use the validated manual review as evidence for content acceptance and accepted content lockfile generation."
+        ],
+        "limitations": [
+          "This packet organizes manual playtest acceptance evidence only.",
+          "It does not run Runtime, inspect gameplay, fill human review fields, promote content, write lockfiles, or approve release.",
+          "Automated capture, Bot results, and fixture reviews cannot replace the real human review source."
+        ]
+      }
+    },
+    {
+      "id": "content_acceptance_packet",
+      "domain": "content",
+      "title": "Content acceptance evidence packet",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "content_acceptance_review_packet_needs_evidence",
+      "expected_decisions": [
+        "content_acceptance_review_packet_ready_for_validation"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/content_acceptance_review_packet.json",
+      "source": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack",
+      "required_action": "Finish human design review, manual playtest acceptance, demo readiness, and accepted-content lock evidence before validation.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/content_acceptance_review_packet.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "blockers": [
+          "design review draft still contains TODO placeholders",
+          "design review has not reached simulate_candidate",
+          "manual playtest draft still contains TODO placeholders",
+          "manual playtest has not accepted the candidate",
+          "demo readiness is `demo_not_ready`"
+        ],
+        "required_next_steps": [
+          "Replace design review TODO values with a real human design review and validate it.",
+          "After binary recovery, run formal Harness validate-candidates, budget-content, Bot simulation, and replay regression.",
+          "Run and fill the 9-run manual playtest review with human ratings and notes.",
+          "Only after strict human acceptance, generate a non-empty accepted content lockfile."
+        ],
+        "limitations": [
+          "This packet organizes content acceptance evidence only.",
+          "It does not validate human reviews, simulate content, promote candidates, write accepted_content, or approve release readiness.",
+          "Candidate content remains generated_candidates until every required gate passes."
+        ]
+      }
+    },
+    {
+      "id": "content_final_acceptance",
+      "domain": "content",
+      "title": "Final human content acceptance",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "content_final_acceptance_invalid",
+      "expected_decisions": [
+        "content_final_acceptance_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "accepted_content"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_content_final_acceptance_template_001/content_final_acceptance.json",
+      "source": "harness/content_review/content_final_acceptance_template.json",
+      "required_action": "Bind a valid simulation candidate manifest and accepted-content lockfile, then record real final acceptance observations.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_content_final_acceptance_template_001/content_final_acceptance.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_content_final_acceptance_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "checks.accepts_content_pack must be true",
+          "checks.accepted_content_only_after_reviews must be true",
+          "checks.lockfile_valid must be true"
+        ],
+        "limitations": [
+          "This validator checks final content acceptance record completeness only.",
+          "It does not run Harness simulation, copy candidate content, compute content hashes, or approve release readiness.",
+          "Accepted content still needs release candidate, package, privacy, playtest, and Runtime smoke gates before release."
+        ]
+      }
+    },
+    {
+      "id": "content_acceptance_manifest",
+      "domain": "content",
+      "title": "Accepted content manifest",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "content_acceptance_manifest_invalid",
+      "expected_decisions": [
+        "content_acceptance_manifest_valid"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_content_acceptance_manifest_template_001/content_acceptance_manifest.json",
+      "source": "harness/content_review/content_acceptance_manifest_template.json",
+      "required_action": "Create a manifest backed by valid simulation-candidate, final human acceptance, and accepted-content lockfile reports.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_content_acceptance_manifest_template_001/content_acceptance_manifest.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "accepted_at must not contain TODO or placeholder markers",
+          "source_simulation_candidate_manifest must not contain TODO or placeholder markers",
+          "final_human_acceptance_file must not contain TODO or placeholder markers",
+          "accepted_content_lockfile_report must not contain TODO or placeholder markers",
+          "TODO: content id from source simulation candidate: id must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks final content acceptance evidence only.",
+          "A valid acceptance manifest may mark content accepted, but it does not prove Runtime integration.",
+          "A valid acceptance manifest is not release readiness and cannot bypass future package, privacy, playtest, or Runtime smoke gates."
+        ]
+      }
+    },
+    {
+      "id": "asset_candidate_review_runtime_topdown_audio",
+      "domain": "asset",
+      "title": "Runtime top-down/audio candidate human review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "asset_candidate_manual_review_invalid",
+      "expected_decisions": [
+        "asset_candidate_manual_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "asset_candidate"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_manual_review_draft_001/asset_candidate_manual_review.json",
+      "source": "harness/asset_review/drafts/2026-05-26_mmx_runtime_topdown_audio_plan_review_draft.json",
+      "required_action": "Replace generated review draft ratings and TODO notes with real art/audio review observations.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_manual_review_draft_001/asset_candidate_manual_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_manual_review_draft_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "player_jar_keeper_topdown_v005_001: style_fit must be an integer from 1 to 5",
+          "player_jar_keeper_topdown_v005_001: gameplay_readability must be an integer from 1 to 5",
+          "player_jar_keeper_topdown_v005_001: provenance_confidence must be an integer from 1 to 5",
+          "player_jar_keeper_topdown_v005_001: technical_readiness must be an integer from 1 to 5",
+          "player_jar_keeper_topdown_v005_001: small_size_readability must be an integer from 1 to 5"
+        ],
+        "limitations": [
+          "This validator checks manual review record completeness only.",
+          "It cannot judge visual quality, listening quality, licensing, or in-engine feel.",
+          "An asset_candidate decision does not promote assets into Runtime, accepted_content, or release assets."
+        ]
+      }
+    },
+    {
+      "id": "asset_candidate_review_level_up_feedback",
+      "domain": "asset",
+      "title": "Level-up feedback candidate human review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "asset_candidate_manual_review_invalid",
+      "expected_decisions": [
+        "asset_candidate_manual_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "asset_candidate"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/asset_manual_review.json",
+      "source": "harness/asset_review/drafts/2026-05-26_mmx_level_up_feedback_pack_review_draft.json",
+      "required_action": "Fill the level-up feedback review draft with human visual, listening, provenance, and technical-readiness observations.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/asset_manual_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "ui_level_up_spark_icon_v001_001: style_fit must be an integer from 1 to 5",
+          "ui_level_up_spark_icon_v001_001: gameplay_readability must be an integer from 1 to 5",
+          "ui_level_up_spark_icon_v001_001: provenance_confidence must be an integer from 1 to 5",
+          "ui_level_up_spark_icon_v001_001: technical_readiness must be an integer from 1 to 5",
+          "ui_level_up_spark_icon_v001_001: small_size_readability must be an integer from 1 to 5"
+        ],
+        "limitations": [
+          "This validator checks manual review record completeness only.",
+          "It cannot judge visual quality, listening quality, licensing, or in-engine feel.",
+          "An asset_candidate decision does not promote assets into Runtime, accepted_content, or release assets."
+        ]
+      }
+    },
+    {
+      "id": "asset_runtime_preview_review",
+      "domain": "asset",
+      "title": "Asset Runtime preview human review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "asset_runtime_preview_review_invalid",
+      "expected_decisions": [
+        "asset_runtime_preview_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "runtime_preview_pass"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/asset_runtime_preview_review.json",
+      "source": "harness/asset_review/asset_runtime_preview_review_template.json",
+      "required_action": "Preview staged runtime candidates in context and record concrete small-size/readability observations.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/asset_runtime_preview_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "candidate_batch_id must not contain TODO or placeholder markers",
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "checks.all_assets_visible_or_audible must be true",
+          "checks.small_size_readable must be true"
+        ],
+        "limitations": [
+          "This validator checks human Runtime preview review record completeness only.",
+          "It does not load asset files, inspect pixels or waveforms, integrate Runtime content, or approve final acceptance.",
+          "A valid Runtime preview review is not release readiness and cannot bypass audio or final human acceptance."
+        ]
+      }
+    },
+    {
+      "id": "asset_audio_loudness_review",
+      "domain": "asset",
+      "title": "Audio loudness/listening human review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "asset_audio_loudness_review_invalid",
+      "expected_decisions": [
+        "asset_audio_loudness_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "audio_loudness_pass"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/asset_audio_loudness_review.json",
+      "source": "harness/asset_review/asset_audio_loudness_review_template.json",
+      "required_action": "Record real listening, clipping, loudness, dialogue clarity, and loop/duration-fit observations.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/asset_audio_loudness_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "candidate_batch_id must not contain TODO or placeholder markers",
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "checks.dialogue_clear_if_present must be true",
+          "checks.loudness_review_passed must be true"
+        ],
+        "limitations": [
+          "This validator checks human audio loudness/listening review record completeness only.",
+          "It does not inspect waveforms, normalize files, integrate Runtime audio, or approve final acceptance.",
+          "A valid audio loudness review is not release readiness and cannot bypass Runtime preview or final human acceptance."
+        ]
+      }
+    },
+    {
+      "id": "asset_final_acceptance",
+      "domain": "asset",
+      "title": "Final human asset acceptance",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "asset_final_acceptance_invalid",
+      "expected_decisions": [
+        "asset_final_acceptance_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "accepted_content"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_asset_final_acceptance_template_001/asset_final_acceptance.json",
+      "source": "harness/asset_review/asset_final_acceptance_template.json",
+      "required_action": "Bind passing Runtime preview and audio loudness reviews before recording final asset acceptance.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_asset_final_acceptance_template_001/asset_final_acceptance.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_asset_final_acceptance_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "candidate_batch_id must not contain TODO or placeholder markers",
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "checks.accepts_asset_batch must be true",
+          "checks.accepted_content_only_after_reviews must be true"
+        ],
+        "limitations": [
+          "This validator checks final asset acceptance record completeness only.",
+          "It does not copy assets, integrate Runtime content, or approve release readiness.",
+          "Accepted assets still need package, privacy, playtest, and Runtime smoke gates before release."
+        ]
+      }
+    },
+    {
+      "id": "asset_acceptance_manifest",
+      "domain": "asset",
+      "title": "Accepted asset manifest",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "asset_acceptance_manifest_invalid",
+      "expected_decisions": [
+        "asset_acceptance_manifest_valid"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/asset_acceptance_manifest.json",
+      "source": "harness/asset_review/asset_acceptance_manifest_template.json",
+      "required_action": "Create a manifest backed by valid runtime-candidate, runtime preview, loudness, and final acceptance evidence.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/asset_acceptance_manifest.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "candidate_batch_id must not contain TODO or placeholder markers",
+          "accepted_at must not contain TODO or placeholder markers",
+          "source_runtime_candidate_manifest must not contain TODO or placeholder markers",
+          "runtime_preview_review_file must not contain TODO or placeholder markers",
+          "audio_loudness_review_file must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks final asset acceptance evidence only.",
+          "A valid acceptance manifest may mark assets accepted, but it does not prove Runtime integration.",
+          "A valid acceptance manifest is not release readiness and cannot bypass future packaging, privacy, playtest, or Runtime smoke gates."
+        ]
+      }
+    },
+    {
+      "id": "story_codex_ui_candidate_manifest",
+      "domain": "story",
+      "title": "Story/codex UI candidate manifest",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "story_codex_ui_candidate_manifest_invalid",
+      "expected_decisions": [
+        "story_codex_ui_candidate_manifest_valid"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/story_codex_ui_candidate_manifest.json",
+      "source": "harness/story_review/story_codex_ui_candidate_manifest_template.json",
+      "required_action": "Complete real story/codex manual review before promoting the text pack to UI-candidate staging.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/story_codex_ui_candidate_manifest.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "promoted_at must not contain TODO or placeholder markers",
+          "manual_review_file must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks UI candidate manifest completeness only.",
+          "A valid UI candidate manifest does not promote content into accepted_content.",
+          "A valid UI candidate manifest does not prove Runtime UI integration, final human acceptance, or release readiness."
+        ]
+      }
+    },
+    {
+      "id": "story_codex_runtime_ui_review",
+      "domain": "story",
+      "title": "Story/codex Runtime UI human review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "story_codex_runtime_ui_review_invalid",
+      "expected_decisions": [
+        "story_codex_runtime_ui_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "runtime_ui_review_pass"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_story_codex_runtime_ui_review_template_001/story_codex_runtime_ui_review.json",
+      "source": "harness/story_review/story_codex_runtime_ui_review_template.json",
+      "required_action": "Review the F3 candidate metadata UI in Runtime and record concrete observations without loading generated body text.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_story_codex_runtime_ui_review_template_001/story_codex_runtime_ui_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_story_codex_runtime_ui_review_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "checks.f3_entry_visible must be true",
+          "checks.no_generated_candidate_text_loaded must be true",
+          "checks.no_runtime_integration_claim must be true"
+        ],
+        "limitations": [
+          "This validator checks human Runtime UI review record completeness only.",
+          "It does not run Bevy, inspect pixels, load story/codex body text, or approve final acceptance.",
+          "A valid Runtime UI review is not release readiness and cannot bypass final human acceptance."
+        ]
+      }
+    },
+    {
+      "id": "story_codex_final_acceptance",
+      "domain": "story",
+      "title": "Final human story/codex acceptance",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "story_codex_final_acceptance_invalid",
+      "expected_decisions": [
+        "story_codex_final_acceptance_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "accepted_content"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_story_codex_final_acceptance_template_001/story_codex_final_acceptance.json",
+      "source": "harness/story_review/story_codex_final_acceptance_template.json",
+      "required_action": "Bind a passing Runtime UI review and record final human acceptance for story/codex text.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_story_codex_final_acceptance_template_001/story_codex_final_acceptance.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_story_codex_final_acceptance_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "checks.accepts_story_codex_text must be true",
+          "checks.accepted_content_only_after_reviews must be true",
+          "concrete_observations must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks final story/codex acceptance record completeness only.",
+          "It does not copy candidate text, integrate Runtime UI, or approve release readiness.",
+          "Accepted story/codex text still needs package, privacy, playtest, and Runtime smoke gates before release."
+        ]
+      }
+    },
+    {
+      "id": "story_codex_acceptance_manifest",
+      "domain": "story",
+      "title": "Accepted story/codex manifest",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "story_codex_acceptance_manifest_invalid",
+      "expected_decisions": [
+        "story_codex_acceptance_manifest_valid"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_story_codex_acceptance_manifest_template_001/story_codex_acceptance_manifest.json",
+      "source": "harness/story_review/story_codex_acceptance_manifest_template.json",
+      "required_action": "Create a manifest backed by valid UI-candidate, Runtime UI review, and final human acceptance evidence.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_story_codex_acceptance_manifest_template_001/story_codex_acceptance_manifest.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_story_codex_acceptance_manifest_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "accepted_at must not contain TODO or placeholder markers",
+          "source_ui_candidate_manifest must not contain TODO or placeholder markers",
+          "runtime_ui_review_file must not contain TODO or placeholder markers",
+          "final_human_acceptance_file must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks final story/codex acceptance evidence only.",
+          "A valid acceptance manifest may mark story/codex text accepted, but it does not prove Runtime integration.",
+          "A valid acceptance manifest is not release readiness and cannot bypass future packaging, privacy, playtest, or Runtime smoke gates."
+        ]
+      }
+    },
+    {
+      "id": "manual_privacy_review",
+      "domain": "privacy",
+      "title": "Manual privacy review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "manual_privacy_review_invalid",
+      "expected_decisions": [
+        "manual_privacy_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "pass"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_manual_privacy_review_template_001/manual_privacy_review.json",
+      "source": "harness/telemetry_privacy/manual_privacy_review_template.json",
+      "required_action": "Fill the privacy review with real checks for consent, prohibited fields, notices, retention, and local data controls.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_manual_privacy_review_template_001/manual_privacy_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_manual_privacy_review_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "review_id must not contain TODO or placeholder markers",
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "default_off: notes must not contain TODO or placeholder markers",
+          "default_off: required_changes must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks manual privacy review completeness only.",
+          "It does not provide legal advice or platform compliance approval.",
+          "A pass decision does not prove upload transport, executable Runtime behavior, or release readiness."
+        ]
+      }
+    },
+    {
+      "id": "manual_platform_path_review",
+      "domain": "platform",
+      "title": "Manual platform path review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "manual_platform_path_review_invalid",
+      "expected_decisions": [
+        "manual_platform_path_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "pass"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_manual_platform_path_review_template_001/manual_platform_path_review.json",
+      "source": "harness/save_contract/manual_platform_path_review_template.json",
+      "required_action": "Review logical roots, delete/export scope, migration retention, cloud sync limits, and Runtime evidence limits on the target platform.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_manual_platform_path_review_template_001/manual_platform_path_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_manual_platform_path_review_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "review_id must not contain TODO or placeholder markers",
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "logical_roots: notes must not contain TODO or placeholder markers",
+          "logical_roots: required_changes must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks manual platform path review completeness only.",
+          "It does not provide legal advice, platform approval, cloud save approval, or release readiness.",
+          "A pass decision does not prove executable Runtime platform path behavior."
+        ]
+      }
+    },
+    {
+      "id": "manual_legal_review",
+      "domain": "privacy",
+      "title": "Manual legal/compliance review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "manual_legal_review_invalid",
+      "expected_decisions": [
+        "manual_legal_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "pass"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_manual_legal_review_template_001/manual_legal_review.json",
+      "source": "harness/telemetry_privacy/manual_legal_review_template.json",
+      "required_action": "Complete real legal/compliance review after privacy and platform-path reviews are passing.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_manual_legal_review_template_001/manual_legal_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_manual_legal_review_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "review_id must not contain TODO or placeholder markers",
+          "reviewer must not contain TODO or placeholder markers",
+          "reviewer_role must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "jurisdiction_scope must contain only concrete strings"
+        ],
+        "limitations": [
+          "This validator checks manual legal/compliance review record completeness only.",
+          "It does not provide legal advice, platform approval, or release readiness.",
+          "A pass gate still requires executable Runtime evidence and Release Candidate gates."
+        ]
+      }
+    },
+    {
+      "id": "telemetry_privacy_acceptance_packet",
+      "domain": "privacy",
+      "title": "Telemetry/privacy acceptance evidence packet",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "telemetry_privacy_acceptance_review_packet_needs_evidence",
+      "expected_decisions": [
+        "telemetry_privacy_acceptance_review_packet_ready_for_release_gate"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/telemetry_privacy_acceptance_review_packet.json",
+      "source": null,
+      "required_action": "Bring policy, runtime contract, upload transport, platform path, privacy, legal, and RC telemetry gate evidence to passing state.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/telemetry_privacy_acceptance_review_packet.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "blockers": [
+          "manual_privacy_review_validation_report decision is `manual_privacy_review_invalid`; expected `manual_privacy_review_valid`",
+          "manual_platform_path_review_validation_report decision is `manual_platform_path_review_invalid`; expected `manual_platform_path_review_valid`",
+          "manual_legal_review_validation_report decision is `manual_legal_review_invalid`; expected `manual_legal_review_valid`",
+          "privacy manual review source still contains TODO placeholders",
+          "privacy manual review gate is `needs_more_review`"
+        ],
+        "required_next_steps": [
+          "Replace TODO placeholders in manual privacy, platform path, and legal/compliance review records.",
+          "Run each manual review validator and keep valid JSON/Markdown reports.",
+          "Implement or explicitly remove upload transport from the release scope, then attach Runtime evidence for the chosen path.",
+          "Update the Release Candidate telemetry_privacy gate only after real human review and Runtime evidence exist."
+        ],
+        "limitations": [
+          "This packet organizes telemetry/privacy release acceptance evidence only.",
+          "It does not provide legal advice, platform approval, store approval, upload approval, or release approval.",
+          "Template packets, TODO review drafts, and fixture reports cannot replace real human review evidence."
+        ]
+      }
+    },
+    {
+      "id": "base_ui_manual_review",
+      "domain": "base_ui",
+      "title": "Base UI manual review",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "base_ui_manual_review_invalid",
+      "expected_decisions": [
+        "base_ui_manual_review_valid"
+      ],
+      "gate_decision": "needs_more_review",
+      "expected_gate_decisions": [
+        "base_ui_review_pass"
+      ],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_base_ui_manual_review_template_001/base_ui_manual_review.json",
+      "source": "harness/save_contract/base_ui_manual_review_template.json",
+      "required_action": "Review F1-F4 base UI flows, local data controls, candidate boundaries, and evidence limits with concrete human observations.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_base_ui_manual_review_template_001/base_ui_manual_review.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_base_ui_manual_review_template_001/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "errors": [
+          "review_id must not contain TODO or placeholder markers",
+          "reviewer must not contain TODO or placeholder markers",
+          "summary must not contain TODO or placeholder markers",
+          "overview_panel: notes must not contain TODO or placeholder markers",
+          "overview_panel: required_changes must not contain TODO or placeholder markers"
+        ],
+        "limitations": [
+          "This validator checks manual base UI review record completeness only.",
+          "It does not run Bevy, inspect screenshots, certify UX quality, integrate candidates, or approve release readiness.",
+          "A valid base UI manual review does not replace manual playtest, privacy, platform path, content, or asset acceptance gates."
+        ]
+      }
+    },
+    {
+      "id": "release_candidate_evidence",
+      "domain": "release",
+      "title": "Release candidate evidence",
+      "status": "gap",
+      "satisfied": false,
+      "decision": "release_candidate_not_ready",
+      "expected_decisions": [
+        "release_candidate_ready"
+      ],
+      "gate_decision": "",
+      "expected_gate_decisions": [],
+      "report_status": "loaded",
+      "report": "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/release_candidate_evidence.json",
+      "source": "harness/release/current_local_rc_evidence.json",
+      "required_action": "Clear every release gate, including compile, tests, Harness, Replay, performance, manual reviews, content, asset, privacy, and package gates.",
+      "evidence_paths": [
+        {
+          "kind": "report",
+          "path": "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/release_candidate_evidence.json",
+          "exists": true
+        },
+        {
+          "kind": "summary",
+          "path": "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/summary.md",
+          "exists": true
+        }
+      ],
+      "details": {
+        "blockers": [
+          "content_frozen: gate status is `waiting`",
+          "compile: gate status is `blocked`",
+          "unit_tests: gate status is `blocked`",
+          "headless_simulation: gate status is `blocked`",
+          "multi_seed_no_deadlock: gate status is `blocked`"
+        ],
+        "limitations": [
+          "This validator checks release evidence completeness only; it does not run compile, tests, harness, replay, performance, or manual playtests.",
+          "Historical smoke reports are only acceptable when they directly cover the current release candidate and are marked non-synthetic.",
+          "A ready decision requires every required gate to be present, passing, and backed by existing evidence paths."
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "This audit reads existing evidence reports only; it does not run Rust, Bevy, Harness simulations, Replay, performance tests, or manual reviews.",
+    "A satisfied row means the referenced machine report has the expected passing decision; it still does not replace release candidate aggregation.",
+    "Template reports and generated drafts with TODO placeholders must remain gaps until a real human fills and validates them."
+  ]
+}
