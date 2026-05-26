@@ -14,7 +14,9 @@
 6. 运行 `validate_upload_transport_contract.py` 检查上传传输契约是否绑定隐私策略和 Runtime 设置契约。
 7. 真人隐私审查人复制 `manual_privacy_review_template.json`，填写默认关闭、明确同意、raw replay 单独同意、禁止字段、删除 / 导出、本地保留和 Runtime 证据限制等检查项。
 8. 运行 `validate_manual_privacy_review.py` 校验人工审查记录完整性。
-9. 只有策略、设置契约、上传传输契约和人工隐私审查都通过后，才能把上传型匿名遥测纳入 Release Candidate 证据；Replay 原始输入不得默认上传。
+9. 真人法律 / 合规审查人复制 `manual_legal_review_template.json`，绑定隐私策略、Runtime 设置契约、上传传输契约、人工隐私审查报告和人工平台路径审查报告。
+10. 运行 `validate_manual_legal_review.py` 校验法律 / 合规审查记录完整性。
+11. 只有策略、设置契约、上传传输契约、人工隐私审查、人工平台路径审查和人工法律 / 合规审查都通过后，才能把上传型匿名遥测纳入 Release Candidate 证据；Replay 原始输入不得默认上传。
 
 设置契约校验示例：
 
@@ -53,6 +55,18 @@ python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
 ```
 
 `manual_privacy_review_template.json` 默认包含 `TODO` 和 `needs_more_review`，不能作为通过证据。人工审查通过也不等于法律批准、上传链路完成或 Release Candidate ready。
+
+人工法律 / 合规审查校验示例：
+
+```bash
+python3 harness/telemetry_privacy/validate_manual_legal_review.py \
+  harness/telemetry_privacy/reviews/<legal-review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/manual_legal_review.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+`manual_legal_review_template.json` 默认包含 `TODO` 和 `needs_more_review`，不能作为通过证据。该校验只检查记录完整性和绑定证据，不提供法律建议、平台批准或发布通过结论。
 
 当前 Runtime 已实现 CLI 级本地数据控制，并提供 `F4` Bevy 设置页用于显式切换上传型同意项：
 

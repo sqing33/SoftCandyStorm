@@ -1,0 +1,101 @@
+{
+  "review_version": 1,
+  "review_id": "<manual-legal-review-id>",
+  "policy_path": "harness/telemetry_privacy/telemetry_privacy_policy_template.json",
+  "runtime_privacy_contract_path": "harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json",
+  "save_contract_path": "harness/save_contract/save_state_v0_template.json",
+  "upload_transport_contract_path": "harness/telemetry_privacy/upload_transport_contract_v0.json",
+  "policy_validation_report": "harness/reports/2026-05-26_telemetry_privacy_policy_001/summary.md",
+  "runtime_contract_validation_report": "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md",
+  "upload_transport_validation_report": "harness/reports/2026-05-26_upload_transport_contract_001/summary.md",
+  "manual_privacy_review_report": "harness/reports/<manual-privacy-review>/manual_privacy_review.json",
+  "manual_platform_path_review_report": "harness/reports/<manual-platform-path-review>/manual_platform_path_review.json",
+  "reviewer": "<human legal or compliance reviewer>",
+  "reviewer_role": "<legal_or_compliance>",
+  "reviewed_at": "YYYY-MM-DD",
+  "jurisdiction_scope": [
+    "TODO: prototype_local | steam_pc | cn | global"
+  ],
+  "gate_decision": "needs_more_review",
+  "summary": "TODO: human legal/compliance reviewer must summarize privacy notice claims, consent, data handling, platform path, jurisdiction/store scope, and remaining release blockers.",
+  "checks": [
+    {
+      "id": "privacy_notice_claims",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm privacy notice claims match actual Runtime behavior and do not overstate upload, deletion, export, or platform compliance.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "consent_and_default_off",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm telemetry, raw replay upload, and crash report upload remain default-off and require explicit consent.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "prohibited_data_fields",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm policy and upload contract prohibit personal identity, IP address, host paths, free text, and raw action streams by default.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "raw_replay_and_crash_reports",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm raw replay and crash report handling has separate consent and does not claim implementation before evidence exists.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "retention_delete_export",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm retention, delete, and export statements match policy, local data controls, and release evidence.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "platform_path_and_local_data_scope",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm platform path, save, settings, telemetry, replay, and crash report local data scope has a passed platform path review.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "upload_transport_status",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm upload transport status is accurately represented and does not imply network upload exists while implementation_status is planned.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "jurisdiction_and_store_requirements",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm target jurisdiction/store scope has been reviewed by a qualified human and unresolved requirements are listed.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    },
+    {
+      "id": "release_evidence_limits",
+      "decision": "needs_more_review",
+      "notes": "TODO: confirm this review does not claim release readiness, platform approval, accepted content, or Runtime implementation beyond actual evidence.",
+      "required_changes": [
+        "TODO: replace with concrete issue or empty list when passed."
+      ]
+    }
+  ],
+  "global_risks": [
+    "TODO: list unresolved legal, compliance, platform, privacy notice, upload transport, Runtime evidence, or store submission risks."
+  ],
+  "next_actions": [
+    "TODO: replace TODO placeholders, attach passed manual privacy/platform reports, run validate_manual_legal_review.py, and attach the resulting report to Release Candidate evidence only when complete."
+  ]
+}
