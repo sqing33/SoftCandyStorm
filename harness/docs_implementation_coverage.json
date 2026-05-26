@@ -464,7 +464,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、素材最终接受证据包、剧情审校、剧情最终接受证据包、正式内容 lockfile、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；跨域人工证据缺口审计器会集中列出所有真人证据 gap；当前本地候选明确为 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、素材最终接受证据包、剧情审校、剧情最终接受证据包、正式内容 lockfile、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；headless 性能预算校验器已能检查 bot_matrix 终局、时长、有限数值和敌人数上限；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；跨域人工证据缺口审计器会集中列出所有真人证据 gap；当前本地候选明确为 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -559,10 +559,13 @@
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_validation_005/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md",
+            "tools/validate_harness_performance_budget.py",
+            "tools/test_validate_harness_performance_budget.py",
+            "harness/reports/2026-05-26_harness_performance_budget_phase4_full_pack_001/summary.md",
             "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
           ],
           "gaps": [
-            "Phase 4 full pack 候选 Bot 门禁已在 simulation_005 中通过，但 Release Candidate 仍未 ready：content_frozen、accepted_content_lockfile、manual_playtest、asset_manual_review、story_codex_review、telemetry/privacy、performance、failure_case_review 和 release_package 等门禁仍未通过或未刷新为 release 级证据。",
+            "Phase 4 full pack 候选 Bot 门禁和 headless 性能预算已在 simulation_005 派生报告中通过，但 Release Candidate 仍未 ready：content_frozen、accepted_content_lockfile、manual_playtest、asset_manual_review、story_codex_review、telemetry/privacy、Runtime performance、failure_case_review 和 release_package 等门禁仍未通过或未刷新为 release 级证据。",
             "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板与审查包；但缺少真人填写并通过的人工隐私审查、平台路径审查、法律 / 合规审查、人工试玩、素材人工接受和剧情审校。",
             "人工证据缺口审计当前仍用于集中排队，不代表任何人工门禁通过。"
           ],
