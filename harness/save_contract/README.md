@@ -1,8 +1,8 @@
 # 局外存档契约
 
-本目录记录局外成长、图鉴、章节进度和本地数据控制的存档契约。当前有 `save-state-v0` 和计划中的 `save-state-v1` 模板；v1 只定义契约，不代表 Runtime 已实现迁移。
+本目录记录局外成长、图鉴、章节进度、本地数据控制和基地 UI 人工审查的契约。当前有 `save-state-v0` 和 `save-state-v1` 模板；v1 覆盖迁移历史与 `base_ui_state` 形状，但本机 Rust/Mach-O 二进制启动仍阻塞，所以这些证据不能替代 Runtime 运行验证。
 
-当前本机 Rust/Mach-O 二进制启动仍被阻塞，因此这里的校验只做 JSON 存档形状和平台路径策略检查：
+当前本机 Rust/Mach-O 二进制启动仍被阻塞，因此这里的校验只做 JSON 存档形状、平台路径策略和人工审查记录完整性检查：
 
 - 局外资源、解锁、图鉴和章节字段是否完整。
 - 六章主线骨架是否可被存档保存，其中首章默认解锁，后续章节默认锁定。
@@ -11,18 +11,34 @@
 - 删除存档和导出存档控制项是否存在。
 - 存档中是否出现明显禁止的个人身份或本地路径字段。
 - 存档、设置、遥测、Replay 和崩溃报告的逻辑平台目录是否有可审计边界。
+- F1-F4 基地 UI、选择入口、图鉴导航、候选内容边界和本地数据控件是否有真人审查记录。
 
-Runtime 现在已有 CLI 级 v0 存档读写能力：
+Runtime 源码路径现在已有 v1 本地存档读写、v0 到 v1 迁移、平台数据根、导出和删除入口：
 
 ```bash
 cargo run -p game_runtime -- --save-file harness/save/local/profile.json
 cargo run -p game_runtime -- --save-file harness/save/local/profile.json --export-save harness/save/local/profile_export.json
 cargo run -p game_runtime -- --save-file harness/save/local/profile.json --delete-save
+cargo run -p game_runtime -- --platform-data-root platform_user_data/soft-candy-storm
 ```
 
-`--save-file` 会读取或创建 `save-state-v0`，局后结算时写回 `MetaProgress`；`--export-save` 导出同形状 JSON；`--delete-save` 必须显式指定 save 文件，只删除该文件。
+`--save-file` 会读取或创建 `save-state-v1`；如果读到 `save-state-v0`，源码路径会迁移到带 `migration_history` 和 `base_ui_state` 的 v1。局后结算时写回 `MetaProgress`；`--export-save` 导出同形状 JSON；`--delete-save` 必须显式指定 save 文件，只删除该文件。
 
-它不能替代迁移版本、基地 UI 删除/导出按钮、平台隐私审查或人工试玩流程。
+它不能替代二进制运行验证、基地 UI 删除/导出按钮、平台隐私审查或人工试玩流程。
+
+## 基地 UI 人工审查
+
+基地 UI 人工审查模板位于：
+
+```bash
+python3 tools/validate_base_ui_manual_review.py \
+  harness/save_contract/base_ui_manual_review_template.json \
+  --repo-root . \
+  --report harness/reports/2026-05-26_base_ui_manual_review_template_001/base_ui_manual_review.json \
+  --markdown harness/reports/2026-05-26_base_ui_manual_review_template_001/summary.md
+```
+
+模板默认包含 `TODO` 和 `needs_more_review`，报告结论为 `base_ui_manual_review_invalid`。该门禁要求真人覆盖 F1 概览、F2 章节、角色 / 地图选择入口、F3 图鉴导航、F4 隐私设置、本地数据导出 / 删除、剧情 / 素材候选内容边界和证据限制。它不运行 Bevy，不检查截图，不证明 UX 质量，也不能替代人工试玩、内容接受、素材接受、隐私或发布门禁。
 
 ## 平台路径策略
 
