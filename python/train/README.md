@@ -329,6 +329,8 @@ cargo run -q -p game_harness -- export-bot-trajectories --bot kite --seed-start 
 
 When `sequence_diagnostics` reports high action persistence, use `--sample-weighting action_change` or `--sample-weighting danger_action_change` to oversample action transition points inside each episode. This is a diagnostic/training knob only; it still needs the normal high-pressure comparison and acceptance manifest before a policy can move forward.
 
+The first full `danger_action_change` staged GRU context8 candidate improved the short-window action distribution: 60-second `soda-creek` moved from 0% to 40% win rate, normalized entropy rose from 0.2356 to 0.6104, and dominant action ratio fell from 0.7911 to 0.5226. The 300-second comparison still recorded 0% win rate on all three high-pressure maps, so action-change weighting is a useful diagnostic repair but not a long-run policy fix.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash

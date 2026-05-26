@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_010",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_staged_gru_context8_action_change",
+  "seed": 47000,
+  "bot": "BehaviorCloneKiteStagedGruContext8ActionChange",
+  "time_seconds": 300.0,
+  "symptom": "danger_action_change staged GRU context8 修复了 60 秒 soda-creek 的动作熵和 dominant action repair，但 300 秒 high-pressure 三图全部为 0% 胜率：soda-creek 平均存活 114.1384 秒，caramel-workshop 214.3168 秒，cracked-star-jar 104.8389 秒。",
+  "root_cause": "动作变化点加权能缓解短窗确定性动作偏置，但模型仍只学习 movement imitation；它没有升级选择、阶段目标、地图路线目标、Boss/hazard 应对目标或长局资源规划监督，因此长局仍在三个高压图上失败。",
+  "fix": "停止把 movement-only behavior clone 当作主要修复方向；下一步应引入升级选择数据、阶段目标监督、teacher soft targets / value targets，或用 PPO 蒸馏初始化做闭环优化。",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py --dataset harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001 --architecture gru --context-frames 8 --map-conditioning one_hot --sample-weighting danger_action_change --action-change-weight 2.0 --time-phase-filter opening|mid|late --epochs 20 --batch-size 256 --hidden-size 128；uv run --with-requirements python/train/requirements.txt python python/train/create_staged_behavior_clone_policy.py --opening-model .../opening.pt --mid-model .../mid.pt --late-model .../late.pt --model-out .../staged.pt；uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model harness/reports/2026-05-27_rl_behavior_clone_kite_staged_gru_context8_action_change_smoke_001/staged.pt --seed-start 46000 --eval-episodes 5 --eval-seconds 60 --rule-bots random,kite,tank；同模型再以 --seed-start 47000 --eval-episodes 3 --eval-seconds 300 复查长局。"
+}
