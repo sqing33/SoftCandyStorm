@@ -47,6 +47,7 @@ const MAP_Z: f32 = -20.0;
 const MAP_BORDER_Z: f32 = -19.0;
 const PLACEHOLDER_SAMPLE_RATE: u32 = 22_050;
 const MAX_RUNTIME_EFFECTS: usize = 96;
+const MAX_PROFILED_FRAME_SECONDS: f32 = 0.10;
 const PLAYER_SPRITE: &str = "prototype_topdown/sprites/player_jar_keeper_v001.png";
 const BOUNCY_GUMMY_SPRITE: &str = "prototype_topdown/sprites/enemy_bouncy_gummy_v001.png";
 const SOUR_GUMMY_SPRITE: &str = "prototype_topdown/sprites/enemy_sour_gummy_v001.png";
@@ -304,7 +305,18 @@ struct RuntimeCaptureState {
     next_sample_seconds: f32,
     event_counts: RuntimeEventCounts,
     samples: Vec<RuntimeTelemetrySample>,
+    frame_metrics: RuntimeFrameMetricsState,
     finished: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+struct RuntimeFrameMetricsState {
+    frame_count: u32,
+    total_frame_seconds: f32,
+    min_frame_seconds: Option<f32>,
+    max_frame_seconds: f32,
+    slow_frame_count_45fps: u32,
+    slow_frame_count_30fps: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -573,6 +585,7 @@ struct RuntimePlaytestReport {
     run_number: u32,
     content_dir: String,
     run_config: RuntimeRunConfigReport,
+    frame_metrics: RuntimeFrameMetricsReport,
     event_counts: RuntimeEventCounts,
     samples: Vec<RuntimeTelemetrySample>,
     final_metrics: RuntimeMetricsReport,
@@ -592,6 +605,19 @@ struct RuntimeRunConfigReport {
     content_pack_ids: Vec<String>,
     starting_weapons: Vec<String>,
     starting_passives: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeFrameMetricsReport {
+    frame_count: u32,
+    total_frame_seconds: f32,
+    average_frame_seconds: f32,
+    average_fps: f32,
+    min_frame_seconds: f32,
+    max_frame_seconds: f32,
+    worst_frame_fps: f32,
+    slow_frame_count_45fps: u32,
+    slow_frame_count_30fps: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -857,6 +883,8 @@ fn step_game_core(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut state: ResMut<RuntimeState>,
 ) {
+    state.capture.record_frame(time.delta_seconds());
+
     let dt = state.dt;
     if keyboard.just_pressed(KeyCode::KeyP) {
         state.paused = !state.paused;
@@ -3143,6 +3171,7 @@ impl RuntimeCaptureState {
             next_sample_seconds: 0.0,
             event_counts: RuntimeEventCounts::default(),
             samples: Vec::new(),
+            frame_metrics: RuntimeFrameMetricsState::default(),
             finished: false,
         }
     }
@@ -3162,11 +3191,38 @@ impl RuntimeCaptureState {
         }
     }
 
+    fn record_frame(&mut self, frame_seconds: f32) {
+        if !self.enabled() || !frame_seconds.is_finite() || frame_seconds <= 0.0 {
+            return;
+        }
+        self.frame_metrics
+            .record_frame(frame_seconds.min(MAX_PROFILED_FRAME_SECONDS));
+    }
+
     fn reset_for_next_run(&mut self) {
         self.next_sample_seconds = 0.0;
         self.event_counts = RuntimeEventCounts::default();
         self.samples.clear();
+        self.frame_metrics = RuntimeFrameMetricsState::default();
         self.finished = false;
+    }
+}
+
+impl RuntimeFrameMetricsState {
+    fn record_frame(&mut self, frame_seconds: f32) {
+        self.frame_count += 1;
+        self.total_frame_seconds += frame_seconds;
+        self.min_frame_seconds = Some(
+            self.min_frame_seconds
+                .map_or(frame_seconds, |current| current.min(frame_seconds)),
+        );
+        self.max_frame_seconds = self.max_frame_seconds.max(frame_seconds);
+        if frame_seconds > 1.0 / 45.0 {
+            self.slow_frame_count_45fps += 1;
+        }
+        if frame_seconds > 1.0 / 30.0 {
+            self.slow_frame_count_30fps += 1;
+        }
     }
 }
 
@@ -3231,6 +3287,7 @@ impl RuntimePlaytestReport {
             run_number: state.run_number,
             content_dir: state.content_dir.display().to_string(),
             run_config: RuntimeRunConfigReport::from_config(&state.config),
+            frame_metrics: RuntimeFrameMetricsReport::from_state(&state.capture.frame_metrics),
             event_counts: state.capture.event_counts.clone(),
             samples: state.capture.samples.clone(),
             final_metrics: RuntimeMetricsReport::from_metrics(metrics),
@@ -3266,6 +3323,35 @@ impl RuntimeRunConfigReport {
             starting_weapons: config.starting_loadout.weapons.clone(),
             starting_passives: config.starting_loadout.passives.clone(),
         }
+    }
+}
+
+impl RuntimeFrameMetricsReport {
+    fn from_state(state: &RuntimeFrameMetricsState) -> Self {
+        let average_frame_seconds = if state.frame_count > 0 {
+            state.total_frame_seconds / state.frame_count as f32
+        } else {
+            0.0
+        };
+        Self {
+            frame_count: state.frame_count,
+            total_frame_seconds: state.total_frame_seconds,
+            average_frame_seconds,
+            average_fps: fps_from_frame_seconds(average_frame_seconds),
+            min_frame_seconds: state.min_frame_seconds.unwrap_or(0.0),
+            max_frame_seconds: state.max_frame_seconds,
+            worst_frame_fps: fps_from_frame_seconds(state.max_frame_seconds),
+            slow_frame_count_45fps: state.slow_frame_count_45fps,
+            slow_frame_count_30fps: state.slow_frame_count_30fps,
+        }
+    }
+}
+
+fn fps_from_frame_seconds(frame_seconds: f32) -> f32 {
+    if frame_seconds > 0.0 {
+        1.0 / frame_seconds
+    } else {
+        0.0
     }
 }
 
@@ -3347,13 +3433,13 @@ mod tests {
         toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
         RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules,
         RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
-        RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
-        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind,
-        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
-        PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
-        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT, RUNTIME_SAVE_TIMESTAMP,
-        RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
+        RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeMetaPanelView,
+        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0,
+        RuntimeSound, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
+        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID,
+        DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT,
+        PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
+        RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -3699,6 +3785,40 @@ mod tests {
         );
         assert_eq!(cli.player_skill, "new");
         assert_eq!(cli.capture_interval_seconds, 2.5);
+    }
+
+    #[test]
+    fn runtime_frame_metrics_report_tracks_slow_frames() {
+        let mut state = RuntimeFrameMetricsState::default();
+        state.record_frame(1.0 / 60.0);
+        state.record_frame(1.0 / 30.0);
+        state.record_frame(0.05);
+
+        let report = RuntimeFrameMetricsReport::from_state(&state);
+
+        assert_eq!(report.frame_count, 3);
+        assert!((report.average_fps - 30.0).abs() < 0.01);
+        assert!((report.worst_frame_fps - 20.0).abs() < 0.01);
+        assert_eq!(report.slow_frame_count_45fps, 2);
+        assert_eq!(report.slow_frame_count_30fps, 1);
+    }
+
+    #[test]
+    fn capture_frame_metrics_ignores_zero_and_caps_outliers() {
+        let mut capture = RuntimeCaptureState::from_cli(&RuntimeCli {
+            playtest_report: Some(PathBuf::from("harness/telemetry/local/report.json")),
+            ..RuntimeCli::default()
+        });
+
+        capture.record_frame(0.0);
+        capture.record_frame(1.0 / 60.0);
+        capture.record_frame(0.25);
+
+        let report = RuntimeFrameMetricsReport::from_state(&capture.frame_metrics);
+
+        assert_eq!(report.frame_count, 2);
+        assert!((report.max_frame_seconds - MAX_PROFILED_FRAME_SECONDS).abs() < 0.001);
+        assert!((report.worst_frame_fps - 10.0).abs() < 0.01);
     }
 
     #[test]

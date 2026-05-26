@@ -18,21 +18,18 @@
 
 | Check | Status | Summary |
 |---|---|---|
-| `binary_blocker_sources` | `pass` | local_binary_launch_blocked is recorded in docs coverage, roadmap audit, progress, and package blockers. |
-| `binary_release_gates` | `pass` | Binary-dependent release gates are checked against the active local binary launch blocker. |
 | `manual_playtest_waiting` | `pass` | Manual playtest evidence is kept as a waiting release gate until a real human review exists. |
 | `manual_gates_not_overclaimed` | `pass` | Manual review gates are not overclaimed as passing evidence. |
 | `not_ready_state_coherence` | `pass` | Docs, roadmap, RC evidence, and package manifest agree that the current local build is not ready. |
-| `binary_dependent_docs_not_complete` | `pass` | Binary-dependent docs remain incomplete while local binary launch is blocked. |
 
 ## Blockers Seen
 
-- `local_binary_launch_blocked`
 - `manual_asset_review_still_pending`
 - `manual_playtest_still_pending`
 - `phase8_public_demo_not_ready`
 - `release_candidate_not_ready`
 - `rl_policy_multimap_generalization_gap`
+- `rl_training_dependencies_missing`
 
 ## Errors
 
@@ -40,7 +37,7 @@
 
 ## Warnings
 
-- None
+- local_binary_launch_blocked: not present in any checked ledger
 
 ## Limitations
 

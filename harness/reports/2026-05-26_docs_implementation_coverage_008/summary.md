@@ -16,9 +16,9 @@
 
 | Status | Count |
 |---|---:|
-| `blocked` | 10 |
+| `blocked` | 4 |
 | `complete` | 2 |
-| `partial` | 8 |
+| `partial` | 14 |
 
 ## Docs
 
