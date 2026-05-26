@@ -328,3 +328,16 @@ python3 tools/validate_save_state_contract.py \
 ```
 
 该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值，不代表 Runtime 已经实现真实按钮、设置页、平台隐私文本或上传链路。
+
+未来存档升级必须继续遵守这些本地优先和 opt-in 规则。当前迁移计划可用以下命令校验：
+
+```bash
+python3 tools/validate_save_migration_plan.py \
+  harness/save_contract/save_migration_plan_v0_to_v1.json \
+  --repo-root . \
+  --report harness/reports/2026-05-26_save_migration_plan_v0_to_v1_001/save_migration_plan.json \
+  --markdown harness/reports/2026-05-26_save_migration_plan_v0_to_v1_001/summary.md \
+  --allow-planned
+```
+
+该计划要求迁移不得默认开启上传型遥测、raw replay 上传或崩溃报告上传，并要求局外进度、图鉴、章节和本地数据控制被保留。当前结论只是 `save_migration_plan_planned`，不代表 Runtime 已实现迁移。

@@ -22,3 +22,18 @@ cargo run -p game_runtime -- --save-file harness/save/local/profile.json --delet
 `--save-file` 会读取或创建 `save-state-v0`，局后结算时写回 `MetaProgress`；`--export-save` 导出同形状 JSON；`--delete-save` 必须显式指定 save 文件，只删除该文件。
 
 它不能替代迁移版本、基地 UI 删除/导出按钮、平台隐私审查或人工试玩流程。
+
+## 迁移计划
+
+当前 v0 存档形状已有首个未来 schema 升级迁移契约：
+
+```bash
+python3 tools/validate_save_migration_plan.py \
+  harness/save_contract/save_migration_plan_v0_to_v1.json \
+  --repo-root . \
+  --report /tmp/save_migration_plan.json \
+  --markdown /tmp/save_migration_plan.md \
+  --allow-planned
+```
+
+当前计划报告 `save_migration_plan_planned`。它要求迁移保留隐私默认值、本地数据控制、图鉴进度、章节进度、完成局数和最佳存活时间，并在未来 v1 中新增 `migration_history` 和基地 UI 状态字段。它只是契约和 blocker 记录；Runtime 迁移代码与 v1 存档校验器仍需后续实现。

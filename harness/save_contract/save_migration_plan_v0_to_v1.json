@@ -1,0 +1,96 @@
+{
+  "plan_version": 1,
+  "migration_id": "save-state-v0-to-v1",
+  "source_contract_id": "save-state-v0",
+  "source_schema_version": 1,
+  "target_contract_id": "save-state-v1",
+  "target_schema_version": 2,
+  "status": "planned",
+  "summary": "v0 到 v1 的本地存档迁移计划，用于在未来加入基地 UI、平台路径或更多局外字段时保留现有进度和隐私默认值。当前仅是可校验迁移契约，不代表 Runtime 已实现迁移。",
+  "source_template": "harness/save_contract/save_state_v0_template.json",
+  "required_preserved_sections": [
+    "settings",
+    "data_controls",
+    "meta_progress.resources",
+    "meta_progress.unlocks",
+    "meta_progress.codex",
+    "meta_progress.chapters",
+    "meta_progress.completed_runs",
+    "meta_progress.best_survival_seconds"
+  ],
+  "required_new_sections": [
+    "migration_history",
+    "base_ui_state"
+  ],
+  "privacy_invariants": {
+    "telemetry_upload_enabled": false,
+    "raw_replay_upload_enabled": false,
+    "crash_report_upload_enabled": false,
+    "local_only_by_default": true,
+    "upload_requires_opt_in": true,
+    "delete_save_available": true,
+    "export_save_available": true
+  },
+  "field_mappings": [
+    {
+      "source": "settings",
+      "target": "settings",
+      "mode": "preserve"
+    },
+    {
+      "source": "data_controls",
+      "target": "data_controls",
+      "mode": "preserve"
+    },
+    {
+      "source": "meta_progress",
+      "target": "meta_progress",
+      "mode": "preserve"
+    },
+    {
+      "source": "schema_version",
+      "target": "schema_version",
+      "mode": "set",
+      "target_value": 2
+    },
+    {
+      "source": "contract_id",
+      "target": "contract_id",
+      "mode": "set",
+      "target_value": "save-state-v1"
+    },
+    {
+      "source": "save_id",
+      "target": "migration_history[0].source_save_id",
+      "mode": "copy"
+    },
+    {
+      "source": "contract_id",
+      "target": "migration_history[0].source_contract_id",
+      "mode": "copy"
+    }
+  ],
+  "failure_policy": {
+    "on_missing_required_section": "abort_migration",
+    "on_unknown_source_version": "abort_migration",
+    "on_privacy_invariant_violation": "abort_migration",
+    "on_partial_write": "keep_original_save"
+  },
+  "validation_requirements": [
+    "source save must pass tools/validate_save_state_contract.py before migration",
+    "target save must pass the future v1 save contract validator before Runtime accepts it",
+    "migration must preserve explicit upload opt-in flags and must never enable uploads by default",
+    "migration must append migration_history without deleting original progress evidence",
+    "migration must write atomically or keep the original v0 save unchanged"
+  ],
+  "blockers": [
+    "Runtime migration implementation is not present",
+    "v1 save-state contract is not defined",
+    "platform save path policy is not reviewed"
+  ],
+  "next_actions": [
+    "define save-state-v1 template when base UI state fields are finalized",
+    "implement Runtime migration only after v1 validator exists",
+    "run migration fixtures for valid v0, missing section, privacy invariant violation, and unknown source version"
+  ]
+}
