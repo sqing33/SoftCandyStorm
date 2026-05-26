@@ -41,6 +41,7 @@ class SaveStateContractValidatorTests(unittest.TestCase):
 
         self.assertEqual(report["decision"], "save_state_contract_valid")
         self.assertEqual(report["errors"], [])
+        self.assertEqual(report["chapter_count"], 6)
 
     def test_upload_defaults_fail_when_enabled(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -89,6 +90,37 @@ class SaveStateContractValidatorTests(unittest.TestCase):
 
             self.assertEqual(report["decision"], "save_state_contract_invalid")
             self.assertTrue(any("forbidden" in error for error in report["errors"]))
+
+    def test_missing_required_chapter_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = copy.deepcopy(load_template())
+            del payload["meta_progress"]["chapters"]["soda-creek"]
+            path = Path(temp_dir) / "save.json"
+            write_json(path, payload)
+
+            report = build_report(path)
+
+            self.assertEqual(report["decision"], "save_state_contract_invalid")
+            self.assertTrue(
+                any("required chapter `soda-creek`" in error for error in report["errors"])
+            )
+
+    def test_chapter_unlocks_must_match_progress_flags(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = copy.deepcopy(load_template())
+            payload["meta_progress"]["unlocks"]["chapters"].append("soda-creek")
+            path = Path(temp_dir) / "save.json"
+            write_json(path, payload)
+
+            report = build_report(path)
+
+            self.assertEqual(report["decision"], "save_state_contract_invalid")
+            self.assertTrue(
+                any(
+                    "soda-creek" in error and "chapter.unlocked true" in error
+                    for error in report["errors"]
+                )
+            )
 
     def test_cli_writes_report_and_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -4,7 +4,7 @@
 - Contract: `save-state-v0`
 - Decision: `save_state_contract_valid`
 - Codex entries: 3
-- Chapters: 1
+- Chapters: 6
 
 ## Errors
 

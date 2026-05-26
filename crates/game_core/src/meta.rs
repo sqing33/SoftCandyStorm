@@ -91,23 +91,11 @@ impl MetaProgress {
         unlocks.maps.insert("frosting-grassland".to_string());
         unlocks.chapters.insert("frosting-grassland".to_string());
 
-        let mut chapters = BTreeMap::new();
-        chapters.insert(
-            "frosting-grassland".to_string(),
-            ChapterProgress {
-                chapter_id: "frosting-grassland".to_string(),
-                map_id: "frosting-grassland".to_string(),
-                boss_id: "runaway-sugar-mixer".to_string(),
-                unlocked: true,
-                completed_goals: BTreeSet::new(),
-            },
-        );
-
         Self {
             resources: MetaResourceWallet::default(),
             unlocks,
             codex: MetaCodex::default(),
-            chapters,
+            chapters: demo_chapter_roster(),
             completed_runs: 0,
             best_survival_seconds: 0.0,
         }
@@ -378,14 +366,63 @@ fn apply_frosting_grassland_goals(
             "soda-creek",
             "collected enough star shards",
         );
-        unlock(
-            &mut progress.unlocks.chapters,
+        unlock_chapter(
+            progress,
             report,
-            "chapter",
             "soda-creek",
             "collected enough star shards",
         );
     }
+}
+
+fn demo_chapter_roster() -> BTreeMap<String, ChapterProgress> {
+    [
+        (
+            "frosting-grassland",
+            "frosting-grassland",
+            "runaway-sugar-mixer",
+            true,
+        ),
+        ("soda-creek", "soda-creek", "soda-fountain-dragon", false),
+        (
+            "cotton-cloud-pasture",
+            "cotton-cloud-pasture",
+            "giant-cotton-clump",
+            false,
+        ),
+        (
+            "caramel-workshop",
+            "caramel-workshop",
+            "caramel-furnace",
+            false,
+        ),
+        (
+            "jelly-platform",
+            "jelly-platform",
+            "giant-gummy-bear-king",
+            false,
+        ),
+        (
+            "cracked-star-jar",
+            "cracked-star-jar",
+            "cracked-star-jar-core",
+            false,
+        ),
+    ]
+    .into_iter()
+    .map(|(chapter_id, map_id, boss_id, unlocked)| {
+        (
+            chapter_id.to_string(),
+            ChapterProgress {
+                chapter_id: chapter_id.to_string(),
+                map_id: map_id.to_string(),
+                boss_id: boss_id.to_string(),
+                unlocked,
+                completed_goals: BTreeSet::new(),
+            },
+        )
+    })
+    .collect()
 }
 
 fn complete_goal(
@@ -416,13 +453,36 @@ fn unlock(
     kind: &str,
     id: &str,
     reason: &str,
-) {
+) -> bool {
     if set.insert(id.to_string()) {
         report.unlocked.push(MetaUnlock {
             kind: kind.to_string(),
             id: id.to_string(),
             reason: reason.to_string(),
         });
+        true
+    } else {
+        false
+    }
+}
+
+fn unlock_chapter(
+    progress: &mut MetaProgress,
+    report: &mut MetaSettlementReport,
+    chapter_id: &str,
+    reason: &str,
+) {
+    let newly_unlocked = unlock(
+        &mut progress.unlocks.chapters,
+        report,
+        "chapter",
+        chapter_id,
+        reason,
+    );
+    if newly_unlocked || progress.unlocks.chapters.contains(chapter_id) {
+        if let Some(chapter) = progress.chapters.get_mut(chapter_id) {
+            chapter.unlocked = true;
+        }
     }
 }
 
@@ -499,6 +559,21 @@ mod tests {
     }
 
     #[test]
+    fn demo_start_contains_full_chapter_roster() {
+        let progress = MetaProgress::demo_start();
+
+        assert_eq!(progress.chapters.len(), 6);
+        assert!(progress.chapters["frosting-grassland"].unlocked);
+        assert!(!progress.chapters["soda-creek"].unlocked);
+        assert_eq!(
+            progress.chapters["cracked-star-jar"].boss_id,
+            "cracked-star-jar-core"
+        );
+        assert!(progress.unlocks.chapters.contains("frosting-grassland"));
+        assert!(!progress.unlocks.chapters.contains("soda-creek"));
+    }
+
+    #[test]
     fn failed_run_still_grants_resources_and_codex_progress() {
         let mut progress = MetaProgress::demo_start();
         let report = progress.apply_run_summary(&base_summary());
@@ -536,6 +611,7 @@ mod tests {
             .completed_goals
             .contains(&"frosting-grassland:survive-10-minutes".to_string()));
         assert!(progress.unlocks.maps.contains("soda-creek"));
+        assert!(progress.chapters["soda-creek"].unlocked);
         assert!(progress.unlocks.characters.contains("bubble-courier"));
         assert!(progress.resources.star_shards >= 2);
     }

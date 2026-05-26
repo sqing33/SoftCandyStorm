@@ -51,6 +51,15 @@ FORBIDDEN_KEYS = {
 ISO_UTC_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$")
 
+REQUIRED_CHAPTERS = {
+    "frosting-grassland": ("frosting-grassland", "runaway-sugar-mixer"),
+    "soda-creek": ("soda-creek", "soda-fountain-dragon"),
+    "cotton-cloud-pasture": ("cotton-cloud-pasture", "giant-cotton-clump"),
+    "caramel-workshop": ("caramel-workshop", "caramel-furnace"),
+    "jelly-platform": ("jelly-platform", "giant-gummy-bear-king"),
+    "cracked-star-jar": ("cracked-star-jar", "cracked-star-jar-core"),
+}
+
 
 def load_json_object(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
@@ -204,8 +213,34 @@ def validate_codex(meta: dict[str, Any], errors: list[str]) -> int:
     return entry_count
 
 
-def validate_chapters(meta: dict[str, Any], errors: list[str]) -> int:
+def validate_chapters(
+    meta: dict[str, Any],
+    unlocks: dict[str, list[str]],
+    errors: list[str],
+) -> int:
     chapters = require_object(meta.get("chapters"), "meta_progress.chapters", errors)
+    unlocked_chapters = set(unlocks.get("chapters", []))
+
+    for required_id, (expected_map_id, expected_boss_id) in REQUIRED_CHAPTERS.items():
+        chapter = chapters.get(required_id)
+        if not isinstance(chapter, dict):
+            errors.append(f"meta_progress.chapters must include required chapter `{required_id}`")
+            continue
+        if chapter.get("map_id") != expected_map_id:
+            errors.append(
+                f"meta_progress.chapters.{required_id}.map_id must be `{expected_map_id}`"
+            )
+        if chapter.get("boss_id") != expected_boss_id:
+            errors.append(
+                f"meta_progress.chapters.{required_id}.boss_id must be `{expected_boss_id}`"
+            )
+
+    for unlocked_id in unlocked_chapters:
+        if unlocked_id not in chapters:
+            errors.append(
+                f"meta_progress.unlocks.chapters includes `{unlocked_id}` without chapter progress"
+            )
+
     for chapter_key, chapter in chapters.items():
         require_id(chapter_key, "meta_progress.chapters key", errors)
         chapter_obj = require_object(chapter, f"meta_progress.chapters.{chapter_key}", errors)
@@ -219,15 +254,23 @@ def validate_chapters(meta: dict[str, Any], errors: list[str]) -> int:
             f"meta_progress.chapters.{chapter_key}.completed_goals",
             errors,
         )
+        if chapter_obj.get("unlocked") is True and chapter_key not in unlocked_chapters:
+            errors.append(
+                f"meta_progress.chapters.{chapter_key}.unlocked requires unlocks.chapters entry"
+            )
+        if chapter_key in unlocked_chapters and chapter_obj.get("unlocked") is not True:
+            errors.append(
+                f"meta_progress.unlocks.chapters `{chapter_key}` requires chapter.unlocked true"
+            )
     return len(chapters)
 
 
 def validate_meta_progress(payload: dict[str, Any], errors: list[str]) -> tuple[int, int]:
     meta = require_object(payload.get("meta_progress"), "meta_progress", errors)
     validate_resources(meta, errors)
-    validate_unlocks(meta, errors)
+    unlocks = validate_unlocks(meta, errors)
     codex_count = validate_codex(meta, errors)
-    chapter_count = validate_chapters(meta, errors)
+    chapter_count = validate_chapters(meta, unlocks, errors)
     require_nonnegative_int(meta.get("completed_runs"), "meta_progress.completed_runs", errors)
     require_nonnegative_number(meta.get("best_survival_seconds"), "meta_progress.best_survival_seconds", errors)
     return codex_count, chapter_count
