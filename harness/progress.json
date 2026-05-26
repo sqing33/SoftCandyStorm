@@ -1668,6 +1668,11 @@
       "id": "rl_policy_failure_analysis_tool",
       "summary": "新增 tools/analyze_rl_policy_failures.py，可从 multimap compare JSON 汇总失败 seed、死亡时间桶、终局原因和动作摘要；首份报告显示 soda-creek 以 opening 早死为主，caramel-workshop 以 late 180-300 秒失败为主。",
       "report": "harness/reports/2026-05-27_rl_failure_analysis_time_phase_balance_ppo_300s_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_time_bucket_plan",
+      "summary": "新增 tools/create_rl_curriculum_plan.py，可把 RL 失败分析分桶转为 staged PPO curriculum manifest；首份计划从 time_phase_balance PPO 10k 失败生成 opening/mid/late 三阶段链路，仍只是待执行计划，不是 policy gate。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_time_bucket_plan_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1677,7 +1682,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分析显示 soda-creek opening 早死与 caramel-workshop late 崩盘需要分开修。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分析已生成 opening/mid/late 分桶课程计划，下一步应按计划逐阶段训练和对比，而不是继续用单一平均胜率调参。"
     },
     {
       "id": "phase4_full_pack_manual_review",

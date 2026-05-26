@@ -327,6 +327,8 @@ The first 10k timestep PPO closed-loop run from that distilled zip used high-pre
 
 Use `tools/analyze_rl_policy_failures.py <comparison.json>` after failed multimap comparisons to bucket defeated episodes by time window and map. The first analysis of the 10k closed-loop PPO report showed `soda-creek` failures skewing toward opening deaths while `caramel-workshop` failures skewed toward late 180-300 second deaths, which should drive separate curriculum fixes.
 
+Use `tools/create_rl_curriculum_plan.py <failure_analysis.json>` to turn those failure buckets into a staged PPO curriculum manifest. The first plan starts from the 10k time-phase PPO model and creates chained opening, mid, and late stages with generated train/compare commands. It is a planning artifact only: each stage still needs to be trained, compared against rule Bots, and recorded as watch/repair/failure evidence before it can affect RL policy acceptance.
+
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
 For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:
