@@ -325,6 +325,8 @@ Distilling that teacher into an SB3 PPO zip with `--teacher-temperature 1.5 --un
 
 The first 10k timestep PPO closed-loop run from that distilled zip used high-pressure random map sampling, 300-second train episodes, and `ent_coef=0.02`. It passed the 60-second high-pressure comparison, but failed the 300-second comparison with 0% win rate on `soda-creek` and `caramel-workshop`. Treat this as evidence that short warm-start PPO can reduce collapse but still needs long-run curriculum, reward targets, or movement + upgrade joint training.
 
+Use `tools/analyze_rl_policy_failures.py <comparison.json>` after failed multimap comparisons to bucket defeated episodes by time window and map. The first analysis of the 10k closed-loop PPO report showed `soda-creek` failures skewing toward opening deaths while `caramel-workshop` failures skewed toward late 180-300 second deaths, which should drive separate curriculum fixes.
+
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
 For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:

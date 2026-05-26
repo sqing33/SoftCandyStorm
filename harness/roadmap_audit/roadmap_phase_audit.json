@@ -397,12 +397,16 @@
         "harness/reports/2026-05-27_rl_ppo_time_phase_balance_closed_loop_10k_001/ppo_time_phase_balance_closed_loop_10k.zip",
         "harness/reports/2026-05-27_rl_ppo_time_phase_balance_closed_loop_10k_001/ppo_time_phase_balance_closed_loop_10k_metadata.json",
         "harness/failed_cases/fail_20260527_017_time_phase_balance_ppo_closed_loop_gap.json",
+        "tools/analyze_rl_policy_failures.py",
+        "tools/test_analyze_rl_policy_failures.py",
+        "harness/reports/2026-05-27_rl_failure_analysis_time_phase_balance_ppo_300s_001/summary.md",
+        "harness/reports/2026-05-27_rl_failure_analysis_time_phase_balance_ppo_300s_001/failure_analysis.json",
         "harness/reports/2026-05-26_post_recovery_rl_dry_run_001/dqn_dry_run.json",
         "harness/reports/2026-05-26_post_recovery_behavior_clone_dry_run_001/run_output.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "context3、context5、caramel-recovery context5、map-conditioned context5 和 GRU context8 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化 MLP 让 300 秒三图同 seed 对比不再出现 0% 胜率但仍低于规则 Bot 基线，首个 GRU context8 候选则三图 300 秒均为 0% 胜率，结论只能是 repair。新增 sequence_diagnostics 表明 context8 数据本身无 context padding、晚期低血量覆盖或地图样本占比直接异常；entropy regularization 完整训练后 60 秒短窗略有改善，但 300 秒 soda-creek 与 cracked-star-jar 仍为 0% 胜率。time-phase conditioning 完整候选改善了 60 秒短窗，但 300 秒 soda-creek 与 caramel-workshop 仍为 0%；time_phase_balance curriculum 入口已能按 opening/mid/late 训练样本占比记录反比采样倍率，并通过 1 epoch GRU context8 smoke 与 5 秒 Gym 加载评估；完整 time_phase_balance_danger_action_change GRU context8 候选让 60 秒三图 gate 通过且 300 秒动作分布不再塌缩，但 soda-creek 300 秒仍为 0%；将该 teacher 蒸馏为 SB3 PPO zip 后，10 秒 deterministic 评估又出现 action 3 100% 塌缩；再做 10k timestep PPO 闭环后 60 秒三图 gate 通过，但 300 秒 soda-creek / caramel-workshop 仍为 0%，说明短闭环训练也不能单独修复长局目标。完整 staged GRU context8 候选在 60 秒 soda-creek 即出现动作偏置 repair，300 秒 soda-creek 仍为 0%。phase-aligned staged 重导出 300 秒轨迹并修正 opening 0-60 秒覆盖后，60 秒 soda-creek 仍为 0% 且动作偏置，300 秒 soda-creek / caramel-workshop 仍为 0%。action-change weighting 改善了 60 秒动作分布，但 300 秒三图全部 0%。PPO 蒸馏初始化入口、首个全量蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 已完成；ent_coef 改善 60 秒动作熵，但 300 秒三图仍全部 0%。升级选择监督入口已能导出、单独读取 upgrade_sample、训练最小监督 ranker、接入 Gym action mode，并扩展到 high-pressure 三图 64 条 upgrade sample 的多地图 ranker smoke；联合对比确认 ranker 不能修复旧 movement clone 的 action 3 100% 塌缩，300 秒三图仍全部 0%。",
+        "context3、context5、caramel-recovery context5、map-conditioned context5 和 GRU context8 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化 MLP 让 300 秒三图同 seed 对比不再出现 0% 胜率但仍低于规则 Bot 基线，首个 GRU context8 候选则三图 300 秒均为 0% 胜率，结论只能是 repair。新增 sequence_diagnostics 表明 context8 数据本身无 context padding、晚期低血量覆盖或地图样本占比直接异常；entropy regularization 完整训练后 60 秒短窗略有改善，但 300 秒 soda-creek 与 cracked-star-jar 仍为 0% 胜率。time-phase conditioning 完整候选改善了 60 秒短窗，但 300 秒 soda-creek 与 caramel-workshop 仍为 0%；time_phase_balance curriculum 入口已能按 opening/mid/late 训练样本占比记录反比采样倍率，并通过 1 epoch GRU context8 smoke 与 5 秒 Gym 加载评估；完整 time_phase_balance_danger_action_change GRU context8 候选让 60 秒三图 gate 通过且 300 秒动作分布不再塌缩，但 soda-creek 300 秒仍为 0%；将该 teacher 蒸馏为 SB3 PPO zip 后，10 秒 deterministic 评估又出现 action 3 100% 塌缩；再做 10k timestep PPO 闭环后 60 秒三图 gate 通过，但 300 秒 soda-creek / caramel-workshop 仍为 0%；新增 failure analysis 工具确认 soda-creek 失败偏 opening 早死，而 caramel-workshop 偏 late 180-300 秒崩盘。完整 staged GRU context8 候选在 60 秒 soda-creek 即出现动作偏置 repair，300 秒 soda-creek 仍为 0%。phase-aligned staged 重导出 300 秒轨迹并修正 opening 0-60 秒覆盖后，60 秒 soda-creek 仍为 0% 且动作偏置，300 秒 soda-creek / caramel-workshop 仍为 0%。action-change weighting 改善了 60 秒动作分布，但 300 秒三图全部 0%。PPO 蒸馏初始化入口、首个全量蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 已完成；ent_coef 改善 60 秒动作熵，但 300 秒三图仍全部 0%。升级选择监督入口已能导出、单独读取 upgrade_sample、训练最小监督 ranker、接入 Gym action mode，并扩展到 high-pressure 三图 64 条 upgrade sample 的多地图 ranker smoke；联合对比确认 ranker 不能修复旧 movement clone 的 action 3 100% 塌缩，300 秒三图仍全部 0%。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
@@ -410,7 +414,7 @@
       ],
       "next_actions": [
         "停止继续堆同构 MLP 样本或单图补强。",
-        "设计更明确的长局课程 / 奖励目标，或做 movement + upgrade 联合训练，并优先复查 soda-creek / caramel-workshop 中后期死亡轨迹；不要把 60 秒 gate 通过当成长局修复。"
+        "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。"
       ]
     },
     {
