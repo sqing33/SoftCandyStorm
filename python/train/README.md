@@ -317,6 +317,8 @@ python3 python/train/create_staged_behavior_clone_policy.py \
 
 The first packaging smoke proved the staged checkpoint can be loaded through the existing Gym comparison path, but the 1 epoch subpolicies still showed action-bias repair findings. Treat staged packaging as plumbing until a fully trained staged policy passes the normal acceptance gate.
 
+The first full staged GRU context8 candidate trained separate opening, mid, and late subpolicies and packaged them with relative paths. It still failed earlier than the time-phase single model: the 60-second high-pressure comparison marked `soda-creek` as repair with 20% win rate and action 3 at 76.72%, and the 300-second comparison kept `soda-creek` at 0%. This confirms that staged dispatch alone is not enough; the next repair should add phase objectives, upgrade-choice supervision, broader opening data, or PPO distillation.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

@@ -1568,6 +1568,11 @@
       "id": "rl_behavior_clone_staged_policy_packaging",
       "summary": "新增 staged behavior clone policy 入口：训练可用 --time-phase-filter 拆分 opening/mid/late 样本，create_staged_behavior_clone_policy.py 可打包三段子模型，Gym 比较路径可加载 staged.pt；首个 1 epoch packaging smoke 仅证明管线，动作偏置仍为 repair。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_staged_policy_packaging_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_staged_gru_context8_repair",
+      "summary": "完整训练 opening/mid/late 三段 staged GRU context8 候选并完成 high-pressure 60/300 秒三图对比；60 秒 soda-creek 仅 20% 且动作偏置，300 秒 soda-creek 仍为 0%，结论为 repair。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_staged_gru_context8_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1577,7 +1582,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU 和 time-phase GRU 都已验证为 repair；staged policy 打包和加载入口已跑通。下一步应训练完整 staged 候选、引入升级 / 阶段目标监督或转向 PPO 蒸馏初始化，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
+      "summary": "完整正则化 GRU、time-phase GRU 和 staged GRU 都已验证为 repair；下一步应引入升级 / 阶段目标监督、补 opening 覆盖或转向 PPO 蒸馏初始化，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
     },
     {
       "id": "phase4_full_pack_manual_review",
