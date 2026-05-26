@@ -4,8 +4,8 @@
 - Candidate: `current-local-2026-05-26`
 - Release stage: `prototype-local`
 - Decision: `release_candidate_not_ready`
-- Required gates: 14
-- Provided gates: 14
+- Required gates: 17
+- Provided gates: 17
 
 ## Gate Summary
 
@@ -23,6 +23,9 @@
 | `performance` | `blocked` | 1 | False |
 | `manual_playtest` | `waiting` | 1 | False |
 | `asset_provenance` | `pass` | 1 | False |
+| `asset_manual_review` | `waiting` | 2 | False |
+| `story_codex_review` | `waiting` | 2 | False |
+| `telemetry_privacy` | `waiting` | 1 | False |
 | `failure_case_review` | `blocked` | 1 | False |
 | `release_package` | `blocked` | 1 | False |
 
@@ -39,6 +42,9 @@
 - replay_regression: gate status is `blocked`
 - performance: gate status is `blocked`
 - manual_playtest: gate status is `waiting`
+- asset_manual_review: gate status is `waiting`
+- story_codex_review: gate status is `waiting`
+- telemetry_privacy: gate status is `waiting`
 - failure_case_review: gate status is `blocked`
 - release_package: gate status is `blocked`
 

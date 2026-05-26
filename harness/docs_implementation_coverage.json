@@ -274,7 +274,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已存在，当前本地候选明确为 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私和发布包门禁；当前本地候选明确为 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -283,11 +283,14 @@
           "evidence": [
             "tools/validate_release_candidate_evidence.py",
             "harness/release/current_local_rc_evidence.json",
-            "harness/reports/2026-05-26_release_candidate_evidence_current_local_001/summary.md"
+            "harness/reports/2026-05-26_release_candidate_evidence_current_local_001/summary.md",
+            "harness/asset_review/validate_asset_candidate_manual_review.py",
+            "harness/story_review/validate_story_codex_manual_review.py",
+            "harness/telemetry_privacy/validate_telemetry_privacy_policy.py"
           ],
           "gaps": [
             "当前 release_candidate_evidence 报告为 not-ready。",
-            "缺少真实人工试玩、性能门禁、完整 Release package 和恢复后的编译测试证据。"
+            "缺少真实人工试玩、素材人工接受、剧情审校通过、Runtime 隐私开关、性能门禁、完整 Release package 和恢复后的编译测试证据。"
           ],
           "blockers": [
             "local_binary_launch_blocked",

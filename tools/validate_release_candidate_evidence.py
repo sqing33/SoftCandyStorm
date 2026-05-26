@@ -28,6 +28,9 @@ REQUIRED_GATES = [
     "performance",
     "manual_playtest",
     "asset_provenance",
+    "asset_manual_review",
+    "story_codex_review",
+    "telemetry_privacy",
     "failure_case_review",
     "release_package",
 ]
