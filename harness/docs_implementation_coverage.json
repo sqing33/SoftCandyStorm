@@ -61,7 +61,7 @@
       "doc_id": "02",
       "doc_path": "docs/02_核心玩法规格.md",
       "status": "partial",
-      "summary": "GameCore、Runtime 和内容包已覆盖移动、自动攻击、XP、升级、Boss、结算等原型链路；本地二进制启动已恢复，当前会话 Runtime demo capture 已跑满 240 秒并写出 telemetry，但完整可玩局仍缺少真人试玩验收。",
+      "summary": "GameCore、Runtime 和内容包已覆盖移动、自动攻击、XP、升级、Boss、结算等原型链路；本地二进制启动已恢复，重启后 workspace test、600 秒 base_demo all Bot 矩阵、Replay 回归和 headless 性能预算均可运行，但完整可玩局仍缺少真人试玩验收，且 base_demo 长局 Bot gate 新增 repair 证据。",
       "coverage": [
         {
           "id": "core-loop-runtime-semantics",
@@ -73,10 +73,16 @@
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
-            "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md"
+            "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md",
+            "harness/reports/2026-05-27_local_binary_launch_diagnostic_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_workspace_tests_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
-            "本机 Mach-O 启动已恢复，cargo test --workspace、60 秒 headless simulate 和当前会话 240 秒 Runtime demo capture 已重新通过。",
+            "本机 Mach-O 启动已恢复，cargo test --workspace、60 秒 headless simulate、240 秒 Runtime demo capture、重启后的 600 秒 base_demo all Bot 矩阵、45/45 Replay 回归和 headless 性能预算均可运行；但该 600 秒矩阵发现 CowardBot、GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 仍在目标胜率区间外，记录为 repair failure case。",
             "仍需真实人工试玩确认玩法循环的可读性、节奏、受伤反馈和升级选择体验。"
           ],
           "blockers": []
@@ -318,7 +324,7 @@
       "doc_id": "07",
       "doc_path": "docs/07_Harness工程计划.md",
       "status": "partial",
-      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，Phase 4 full pack 的 20 seed Bot 平衡阻塞已通过策略校准复测解除，当前主要缺口转为 release 级 Runtime 性能和人工证据。",
+      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，Phase 4 full pack 的 20 seed Bot 平衡阻塞已通过策略校准复测解除，重启后 base_demo 600 秒 all Bot 矩阵又暴露长局 Bot gate repair，当前主要缺口转为该回归、release 级 Runtime 性能和人工证据。",
       "coverage": [
         {
           "id": "harness-gates-and-reports",
@@ -346,11 +352,17 @@
             "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
-            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md",
+            "harness/reports/2026-05-27_local_binary_launch_diagnostic_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_workspace_tests_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
             "本地二进制启动已恢复，game_harness --help、cargo test --workspace 和 60 秒 simulate 已在当前会话通过；Phase 4 full pack 的 20 seed Bot 策略校准矩阵、180 条 Replay 回归和 headless 性能预算均已通过，自动 Bot gate 已从 blocked 回到 pass。",
-            "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 after_restart 报告结论为 local_binary_launch_ok。",
+            "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 Terminal DevTools 重启后诊断仍为 local_binary_launch_ok；新跑 base_demo 9 Bot x 5 seed x 600 秒矩阵可执行，45 条 Replay 严格回归通过且 headless 性能预算 valid，但 7 个 Bot 胜率偏离目标，已作为 repair failure case 记录。",
             "Progress 账本已完成历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": []
@@ -361,7 +373,7 @@
       "doc_id": "08",
       "doc_path": "docs/08_Bot测试计划.md",
       "status": "partial",
-      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过策略校准复测解除，后续重点转为多地图复测和人工试玩证据。",
+      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过策略校准复测解除，重启后 base_demo 600 秒 all Bot 矩阵暴露新的长局目标区间回归，后续重点转为修复该 Bot gate、继续多地图复测和人工试玩证据。",
       "coverage": [
         {
           "id": "rule-bot-baselines",
@@ -376,11 +388,16 @@
             "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
-            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
-            "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵；当前 20 seed 发布探针证明 5 seed 候选仿真不足以支撑 Release Candidate Bot gate。",
+            "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵；当前 20 seed 发布探针证明 5 seed 候选仿真不足以支撑 Release Candidate Bot gate。重启后 base_demo 5 seed / 600 秒 all Bot 复测进一步证明长局 Bot gate 仍会暴露目标区间回归。",
             "Phase 4 full pack 已完成同等样本复测：GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部进入目标区间，Replay 180/180 和 headless 性能预算 valid。",
+            "base_demo 600 秒 all Bot 矩阵中 CowardBot 0.0%、GreedyXpBot 60.0%、KiteBot / TankBot / BossHunterBot / ZoneControlBot 100.0%、RouteBot 40.0% 均偏离目标；Replay 45/45 通过说明该问题可复现，后续应修复 Bot 策略或长局压力，不得放宽门禁。",
             "规则 Bot 不是人工乐趣证明，仍需真人审查。"
           ],
           "blockers": []
@@ -738,7 +755,7 @@
       "doc_id": "14",
       "doc_path": "docs/14_GameCore接口规格.md",
       "status": "partial",
-      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，v0 公共接口 source-shape 契约已覆盖 PlayerSnapshot.status_effects、StatusEffectSnapshot、RunMetrics per-source 受击来源和 Boss 指标；当前会话已通过 workspace fmt / clippy / test，并补齐 jump、orbit_player、ranged_spit、shielded 敌人行为压力。",
+      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，v0 公共接口 source-shape 契约已覆盖 PlayerSnapshot.status_effects、StatusEffectSnapshot、RunMetrics per-source 受击来源和 Boss 指标；当前会话已通过 workspace test、600 秒 base_demo 矩阵和 45/45 Replay 回归，并补齐 jump、orbit_player、ranged_spit、shielded 敌人行为压力。",
       "coverage": [
         {
           "id": "gamecore-runtime-harness-api",
@@ -756,10 +773,13 @@
             "harness/interface_contract/README.md",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
-            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md"
+            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
+            "harness/reports/2026-05-27_workspace_tests_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md"
           ],
           "gaps": [
-            "cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace 已在当前会话通过；仍需刷新 release 级 game_harness replay-batch 和 Gym smoke。",
+            "cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace 已在当前会话通过；Terminal DevTools 重启后 cargo test --workspace 再次 112/112 通过，base_demo 600 秒 all Bot 矩阵可写出 metrics 和 representative replays，45/45 strict replay-batch 通过；仍需刷新 Gym high-pressure smoke。",
             "source-shape 契约不能证明固定 seed 语义、Replay 兼容性、Runtime 集成或 Gym bridge 行为。",
             "RunMetrics per-source / Boss 指标与 PlayerSnapshot status_effects 已进入 v0 契约，但真实指标语义、Runtime 可读性和 Gym observation 映射仍需运行级验证。"
           ],
@@ -771,7 +791,7 @@
       "doc_id": "15",
       "doc_path": "docs/15_经济与数值平衡模型.md",
       "status": "partial",
-      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、20 seed Bot 策略校准复测、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需真人试玩。",
+      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、20 seed Bot 策略校准复测、重启后 base_demo 600 秒 Bot gate 回归、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需真人试玩。",
       "coverage": [
         {
           "id": "balance-budget-and-regression",
@@ -805,10 +825,14 @@
             "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
-            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md",
+            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
-            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0%，现已通过策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot 全部回到目标区间。",
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0%，现已通过策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot 全部回到目标区间。重启后 base_demo 600 秒 5 seed all Bot 矩阵又暴露 7 个 Bot 偏离目标区间，Replay 45/45 和 headless 性能预算 valid，说明问题集中在长局 Bot/平衡目标而不是确定性或实体预算。",
             "平衡仍缺真人新手 / 熟练 / 流派视角试玩反馈；Bot 门禁通过也不能替代乐趣、可读性和疲劳度验收。"
           ],
           "blockers": [
@@ -887,10 +911,12 @@
             "harness/reports/2026-05-26_runtime_surface_contract_platform_paths_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md",
-            "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md"
+            "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md"
           ],
           "gaps": [
-            "需要在当前恢复会话下重跑 replay-batch 与 Runtime capture。",
+            "当前恢复会话已重跑 base_demo 600 秒 all Bot representative replay-batch，45/45 strict 回归通过；仍需重跑最新 Runtime capture 并刷新 Gym / Runtime 运行级证据。",
             "隐私策略、Runtime 设置页契约、上传传输契约、Runtime surface 源码形状契约、v0/v1 存档契约、平台路径策略、存档迁移计划、人工隐私审查包、人工平台路径审查包和人工法律 / 合规审查包已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，并在配置 --runtime-settings-file 时写回 JSON；Runtime 源码默认把存档、设置、遥测、Replay 和崩溃报告绑定到 platform_user_data/soft-candy-storm 逻辑平台数据根。但真人填写的人工隐私审查、人工平台路径审查、法律 / 合规审查、发布级导出 / 删除按钮、Runtime 网络上传实现、真实平台原生路径和运行级验证仍未完成。"
           ],
           "blockers": []

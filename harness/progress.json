@@ -1528,9 +1528,18 @@
       "id": "rl_behavior_clone_gru_context8_regression",
       "summary": "新增 GRU behavior clone 训练 / Gym 评估链路并训练 context8 map-conditioned 候选；链路可用且 validation accuracy 87.90%，但 60 秒三图只有 80% 胜率，300 秒三图均为 0%，结论为 repair，不能推进为 RL 测试 Bot。",
       "report": "harness/reports/2026-05-27_rl_policy_acceptance_gru_context8_map_conditioned_001/summary.md"
+    },
+    {
+      "id": "base_demo_after_terminal_devtools_restart_600s_matrix_regression",
+      "summary": "用户开启 Terminal / VS Code / Codex Developer Tool 权限并重启后复测：local binary launch 仍为 ok，cargo test --workspace 112/112 通过，base_demo 9 Bot x 5 seed x 600 秒矩阵、45/45 strict Replay 和 headless 性能预算均可运行；矩阵发现 7 个 Bot 胜率偏离目标，结论为 repair，已记录 failure case。",
+      "report": "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md"
     }
   ],
   "next_recommended": [
+    {
+      "id": "base_demo_600s_bot_gate_repair",
+      "summary": "base_demo 600 秒 all Bot 复测暴露 CowardBot、GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 偏离目标；下一步修复长局 Bot / 平衡目标并重跑同 seed matrix、strict replay-batch 和 headless performance budget。"
+    },
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
