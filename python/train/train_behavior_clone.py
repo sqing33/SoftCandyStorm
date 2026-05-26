@@ -224,6 +224,217 @@ def summarize_sample_metadata(sample_metadata):
     }
 
 
+def diagnose_sequence_dataset(
+    dataset,
+    context_frames,
+    late_start_seconds=60.0,
+    low_health_threshold=0.7,
+):
+    context_frames = max(1, int(context_frames))
+    history_limit = context_frames - 1
+    states = {}
+    sample_count = len(dataset["actions"])
+    per_map = {}
+    time_buckets = {
+        "opening_lt_late_start": 0,
+        "mid_late_start_to_180": 0,
+        "late_gte_180": 0,
+    }
+    span_values = []
+    total_missing_frames = 0
+    fully_seeded_samples = 0
+    transition_count = 0
+    same_action_count = 0
+    late_low_health_samples = 0
+
+    for action, sample in zip(dataset["actions"], dataset["sample_metadata"]):
+        map_id = str(sample.get("map_id") or "unknown")
+        time_seconds = float(sample.get("time_seconds", 0.0))
+        health_ratio = float(sample.get("health_ratio", 1.0))
+        key = (sample.get("path"), sample.get("seed"))
+        state = states.setdefault(key, {"times": [], "last_action": None})
+        previous_times = state["times"][-history_limit:] if history_limit > 0 else []
+        missing_frames = max(0, history_limit - len(previous_times))
+        span_seconds = time_seconds - previous_times[0] if previous_times else 0.0
+
+        total_missing_frames += missing_frames
+        if missing_frames == 0:
+            fully_seeded_samples += 1
+        span_values.append(max(0.0, span_seconds))
+
+        if state["last_action"] is not None:
+            transition_count += 1
+            if int(state["last_action"]) == int(action):
+                same_action_count += 1
+        state["last_action"] = int(action)
+        state["times"].append(time_seconds)
+        if history_limit > 0:
+            state["times"] = state["times"][-history_limit:]
+
+        if time_seconds < late_start_seconds:
+            time_buckets["opening_lt_late_start"] += 1
+        elif time_seconds < 180.0:
+            time_buckets["mid_late_start_to_180"] += 1
+        else:
+            time_buckets["late_gte_180"] += 1
+
+        if time_seconds >= late_start_seconds and health_ratio <= low_health_threshold:
+            late_low_health_samples += 1
+
+        map_bucket = per_map.setdefault(
+            map_id,
+            {
+                "sample_count": 0,
+                "action_counts": {
+                    str(index): 0 for index in range(dataset["action_count"])
+                },
+                "missing_frames_total": 0,
+                "fully_seeded_samples": 0,
+                "span_seconds_total": 0.0,
+                "late_low_health_samples": 0,
+                "time_seconds_min": time_seconds,
+                "time_seconds_max": time_seconds,
+            },
+        )
+        map_bucket["sample_count"] += 1
+        action_key = str(action)
+        map_bucket["action_counts"][action_key] = map_bucket["action_counts"].get(action_key, 0) + 1
+        map_bucket["missing_frames_total"] += missing_frames
+        map_bucket["fully_seeded_samples"] += 1 if missing_frames == 0 else 0
+        map_bucket["span_seconds_total"] += max(0.0, span_seconds)
+        if time_seconds >= late_start_seconds and health_ratio <= low_health_threshold:
+            map_bucket["late_low_health_samples"] += 1
+        map_bucket["time_seconds_min"] = min(map_bucket["time_seconds_min"], time_seconds)
+        map_bucket["time_seconds_max"] = max(map_bucket["time_seconds_max"], time_seconds)
+
+    diagnostics = {
+        "context_frames": context_frames,
+        "history_limit": history_limit,
+        "sample_count": sample_count,
+        "episode_key_count": len(states),
+        "padding": {
+            "total_missing_frames": int(total_missing_frames),
+            "average_missing_frames": round(total_missing_frames / max(1, sample_count), 4),
+            "fully_seeded_samples": int(fully_seeded_samples),
+            "fully_seeded_ratio": round(fully_seeded_samples / max(1, sample_count), 4),
+        },
+        "sequence_span_seconds": summarize_float_values(span_values),
+        "action_transitions": {
+            "transition_count": transition_count,
+            "same_action_count": same_action_count,
+            "same_action_ratio": round(same_action_count / max(1, transition_count), 4),
+            "changed_action_ratio": round(
+                (transition_count - same_action_count) / max(1, transition_count),
+                4,
+            ),
+        },
+        "time_buckets": ratio_counts(time_buckets, sample_count),
+        "late_low_health": {
+            "threshold_time_seconds": late_start_seconds,
+            "threshold_health_ratio": low_health_threshold,
+            "sample_count": late_low_health_samples,
+            "ratio": round(late_low_health_samples / max(1, sample_count), 4),
+        },
+        "per_map": finalize_sequence_map_diagnostics(per_map),
+    }
+    diagnostics["diagnosis_flags"] = sequence_diagnosis_flags(diagnostics)
+    return diagnostics
+
+
+def summarize_float_values(values):
+    if not values:
+        return {"min": 0.0, "average": 0.0, "max": 0.0}
+    return {
+        "min": round(min(values), 4),
+        "average": round(sum(values) / len(values), 4),
+        "max": round(max(values), 4),
+    }
+
+
+def ratio_counts(counts, total):
+    return {
+        key: {
+            "count": int(value),
+            "ratio": round(value / max(1, total), 4),
+        }
+        for key, value in counts.items()
+    }
+
+
+def finalize_sequence_map_diagnostics(per_map):
+    finalized = {}
+    for map_id, item in sorted(per_map.items()):
+        sample_count = int(item["sample_count"])
+        finalized[map_id] = {
+            "sample_count": sample_count,
+            "sample_ratio": 0.0,
+            "time_seconds_min": round(float(item["time_seconds_min"]), 4),
+            "time_seconds_max": round(float(item["time_seconds_max"]), 4),
+            "average_missing_frames": round(
+                item["missing_frames_total"] / max(1, sample_count),
+                4,
+            ),
+            "fully_seeded_ratio": round(
+                item["fully_seeded_samples"] / max(1, sample_count),
+                4,
+            ),
+            "average_sequence_span_seconds": round(
+                item["span_seconds_total"] / max(1, sample_count),
+                4,
+            ),
+            "late_low_health_ratio": round(
+                item["late_low_health_samples"] / max(1, sample_count),
+                4,
+            ),
+            "action_distribution": ratio_counts(item["action_counts"], sample_count),
+        }
+    total_samples = sum(item["sample_count"] for item in finalized.values())
+    for item in finalized.values():
+        item["sample_ratio"] = round(item["sample_count"] / max(1, total_samples), 4)
+    return finalized
+
+
+def sequence_diagnosis_flags(diagnostics):
+    flags = []
+    fully_seeded_ratio = diagnostics["padding"]["fully_seeded_ratio"]
+    if diagnostics["history_limit"] > 0 and fully_seeded_ratio < 0.5:
+        flags.append(
+            {
+                "id": "high_context_padding",
+                "severity": "watch",
+                "summary": "More than half of samples use padded context frames; export longer contiguous windows or lower context_frames before increasing model size.",
+            }
+        )
+    if diagnostics["action_transitions"]["same_action_ratio"] >= 0.75:
+        flags.append(
+            {
+                "id": "high_action_persistence",
+                "severity": "watch",
+                "summary": "Consecutive samples often keep the same action; inspect sample stride and deterministic target bias.",
+            }
+        )
+    if diagnostics["late_low_health"]["ratio"] < 0.05:
+        flags.append(
+            {
+                "id": "low_late_low_health_coverage",
+                "severity": "watch",
+                "summary": "Few samples cover late low-health recovery states; this can hide long-run policy failures.",
+            }
+        )
+    map_ratios = [
+        item["sample_ratio"] for item in diagnostics["per_map"].values() if item["sample_count"] > 0
+    ]
+    if map_ratios and min(map_ratios) > 0.0 and max(map_ratios) / min(map_ratios) >= 2.0:
+        flags.append(
+            {
+                "id": "map_sample_imbalance",
+                "severity": "watch",
+                "summary": "Map sample coverage is imbalanced; map-conditioned policies should be checked for shifted failure surfaces.",
+            }
+        )
+    return flags
+
+
 def train_behavior_clone(dataset, args):
     require_dependencies()
     import numpy as np
@@ -372,6 +583,12 @@ def train_behavior_clone(dataset, args):
         "completed_at": completed_at,
         "dependency_status": dependency_status(),
         "dataset": summarize_dataset(dataset),
+        "sequence_diagnostics": diagnose_sequence_dataset(
+            dataset,
+            args.context_frames,
+            args.danger_late_start_seconds,
+            args.danger_health_threshold,
+        ),
         "training": {
             "seed": args.seed,
             "architecture": args.architecture,
@@ -880,6 +1097,12 @@ def main():
                     "mode": "dry_run",
                     "gate_decision": "dataset_validated_not_training_gate",
                     "dataset": summarize_dataset(dataset),
+                    "sequence_diagnostics": diagnose_sequence_dataset(
+                        dataset,
+                        args.context_frames,
+                        args.danger_late_start_seconds,
+                        args.danger_health_threshold,
+                    ),
                     "dependencies": dependency_status(),
                 },
             )

@@ -253,6 +253,23 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 The first context8 map-conditioned GRU smoke proved the training and evaluation path, but it is not a policy repair: 60-second high-pressure comparison reached only 80% win rate on all three maps, and 300-second comparison reached 0% on all three maps. Treat it as a `repair` failure case before trying larger GRU runs.
 
+Before expanding a recurrent run, use behavior clone dry-run reports as sequence diagnostics. Dry-run now records context padding, sequence span, action persistence, late low-health coverage, and per-map action distributions, so GRU failures can be separated into data coverage issues versus architecture or loss issues:
+
+```bash
+python3 python/train/train_behavior_clone.py \
+  --dry-run \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_lategame_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_cracked_lategame_001 \
+  --dataset harness/reports/2026-05-27_rl_rule_bot_trajectory_caramel_recovery_001 \
+  --architecture gru \
+  --context-frames 8 \
+  --map-conditioning one_hot \
+  --report harness/reports/local_rl_sequence_diagnostic/run_output.json
+```
+
+Treat `high_context_padding`, `high_action_persistence`, `low_late_low_health_coverage`, or `map_sample_imbalance` as `watch` signals that should be explained before another long GRU training run.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

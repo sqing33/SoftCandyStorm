@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from python.train.train_behavior_clone import (
+    diagnose_sequence_dataset,
     load_behavior_clone_policy,
     train_behavior_clone,
 )
@@ -105,3 +106,23 @@ def test_mlp_behavior_clone_checkpoint_stays_loadable(tmp_path):
 
     assert report["training"]["architecture"] == "mlp"
     assert 0 <= action < 3
+
+
+def test_sequence_diagnostics_report_context_padding_and_transitions():
+    diagnostics = diagnose_sequence_dataset(
+        tiny_dataset(),
+        context_frames=3,
+        late_start_seconds=4.0,
+        low_health_threshold=0.9,
+    )
+
+    assert diagnostics["context_frames"] == 3
+    assert diagnostics["padding"]["total_missing_frames"] == 6
+    assert diagnostics["padding"]["fully_seeded_samples"] == 4
+    assert diagnostics["padding"]["fully_seeded_ratio"] == 0.5
+    assert diagnostics["action_transitions"]["transition_count"] == 6
+    assert diagnostics["action_transitions"]["same_action_count"] == 1
+    assert diagnostics["late_low_health"]["sample_count"] == 4
+    assert set(diagnostics["per_map"]) == {"caramel-workshop", "soda-creek"}
+    assert diagnostics["per_map"]["soda-creek"]["sample_count"] == 4
+    assert diagnostics["per_map"]["caramel-workshop"]["sample_count"] == 4

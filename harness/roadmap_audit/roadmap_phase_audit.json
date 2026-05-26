@@ -290,12 +290,14 @@
         "harness/reports/2026-05-27_rl_behavior_clone_kite_gru_context8_map_conditioned_multimap_300s_001/summary.md",
         "harness/reports/2026-05-27_rl_policy_acceptance_gru_context8_map_conditioned_001/summary.md",
         "harness/failed_cases/fail_20260527_005_behavior_clone_gru_context8_regression.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_sequence_diagnostic_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_sequence_diagnostic_001/run_output.json",
         "harness/reports/2026-05-26_post_recovery_rl_dry_run_001/dqn_dry_run.json",
         "harness/reports/2026-05-26_post_recovery_behavior_clone_dry_run_001/run_output.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "context3、context5、caramel-recovery context5、map-conditioned context5 和 GRU context8 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化 MLP 让 300 秒三图同 seed 对比不再出现 0% 胜率但仍低于规则 Bot 基线，首个 GRU context8 候选则三图 300 秒均为 0% 胜率，结论只能是 repair。",
+        "context3、context5、caramel-recovery context5、map-conditioned context5 和 GRU context8 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；地图条件化 MLP 让 300 秒三图同 seed 对比不再出现 0% 胜率但仍低于规则 Bot 基线，首个 GRU context8 候选则三图 300 秒均为 0% 胜率，结论只能是 repair。新增 sequence_diagnostics 表明 context8 数据本身无 context padding、晚期低血量覆盖或地图样本占比直接异常，下一步需要动作约束、阶段策略或蒸馏初始化。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
@@ -303,7 +305,7 @@
       ],
       "next_actions": [
         "停止继续堆同构 MLP 样本或单图补强。",
-        "先做序列模型诊断、动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，再用三图同 seed 300 秒对比防止回归。"
+        "基于 sequence_diagnostics 继续做动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，再用三图同 seed 300 秒对比防止回归。"
       ]
     },
     {

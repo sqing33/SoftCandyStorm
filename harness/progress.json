@@ -1538,6 +1538,11 @@
       "id": "base_demo_bot_policy_calibration_600s_repair",
       "summary": "完成 base_demo 600 秒长局 Bot gate 修复：在不放宽胜率目标、不改 base_demo 内容数值的前提下校准 6 个规则 Bot 的移动、拾取、避让和升级策略；seed52000-52019 与 seed53000-53019 两个 20 seed 窗口均为 9 Bot 全部 pass，strict replay-batch 各 180/180 通过，headless 性能预算均 valid。",
       "report": "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_sequence_diagnostics",
+      "summary": "为 behavior clone dry-run / training report 增加 sequence_diagnostics，记录 context padding、sequence span、动作持续性、per-map 分布和晚期低血量覆盖；context8 GRU 数据诊断 21950 条样本，fully seeded ratio 98.56%、late low-health ratio 23.43%，无诊断 flag，说明下一步应转向动作约束、分阶段 policy 或 PPO 蒸馏初始化。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_sequence_diagnostic_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1547,7 +1552,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "地图条件化 MLP 仍只是 watch，首个 GRU context8 候选反而三图 300 秒 0% 胜率；下一步先做序列模型诊断、动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，不要直接扩大同一 GRU 配方"
+      "summary": "序列模型诊断已完成且未发现 context padding、晚期低血量覆盖或地图样本占比的直接异常；下一步应做动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
     },
     {
       "id": "phase4_full_pack_manual_review",

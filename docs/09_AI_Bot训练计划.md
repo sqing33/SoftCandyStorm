@@ -331,6 +331,15 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 首个 `gru context8 + map-conditioning one_hot + danger sampling` 候选使用 expanded、lategame、cracked lategame 和 caramel recovery 轨迹训练，离线 validation accuracy 为 87.90%，但 Gym 对比显示该方向需要重新诊断：60 秒 high-pressure 三图只有 80% 胜率，300 秒三图同 seed 对比全部为 0% 胜率，multi-map gate 为 `repair`。这说明 GRU 支持链路可用，但当前训练目标 / 超参没有解决长局泛化，反而比 map-conditioned MLP watch 结果更差。后续应先做序列模型诊断、动作分布约束、分阶段 policy 或 PPO 蒸馏初始化，而不是直接扩大 GRU 训练轮数。对应 failure case 为 `harness/failed_cases/fail_20260527_005_behavior_clone_gru_context8_regression.json`。
 
+序列模型诊断已经接入 behavior clone dry-run 与训练报告。`sequence_diagnostics` 会记录：
+
+- context padding 与 fully seeded sample 比例，用来判断 `context_frames` 是否主要由重复首帧填充。
+- sequence span 秒数，用来确认 GRU 看到的是足够长的真实时间窗口，而不是过密或过短的局部片段。
+- action transition / same action ratio，用来识别规则 Bot 轨迹是否本身存在动作持续性偏置。
+- per-map sample ratio、动作分布和晚期低血量覆盖，用来解释地图条件化模型是否因为数据覆盖不均而移动失败面。
+
+下一次 GRU、Transformer 或分阶段 policy 实验前，应先保存该诊断报告；若出现 `high_context_padding`、`high_action_persistence`、`low_late_low_health_coverage` 或 `map_sample_imbalance`，应先补轨迹窗口、调整 sample stride 或拆分阶段 policy，再考虑扩大训练轮数。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
