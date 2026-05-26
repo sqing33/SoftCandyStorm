@@ -106,3 +106,15 @@ python3 tools/validate_goal_evidence_consistency.py --repo-root .
 ```
 
 如果需要留下可交接报告，应写入 `harness/reports/<report-id>/goal_evidence_consistency.json` 和对应 `summary.md`。该报告只证明账本之间没有互相矛盾；它不能替代编译、Harness、Replay、性能、人工试玩、素材审查、隐私审查、法律 / 合规审查或发布包 smoke。
+
+当 Goal 长跑已经积累多个未完成项时，还应运行阻塞优先级审计，把宿主环境、人工证据、Release Candidate、发布包、docs 覆盖和 roadmap 状态排成下一步队列：
+
+```bash
+python3 tools/audit_goal_blockers.py \
+  --repo-root . \
+  --report harness/reports/<blocker-report>/goal_blocker_priority_audit.json \
+  --markdown harness/reports/<blocker-report>/summary.md \
+  --allow-blockers
+```
+
+该报告只负责排序和交接，不解决阻塞本身。若输出 `goal_blockers_present`，后续实现必须继续保持对应 docs、release 和 roadmap 状态为 partial / blocked，直到真实验证或真人证据补齐。
