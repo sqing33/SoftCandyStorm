@@ -7,6 +7,8 @@ from pathlib import Path
 
 
 REQUIRED_MODULES = ["numpy", "torch"]
+TIME_PHASE_LABELS = ["opening", "mid", "late"]
+DEFAULT_TIME_PHASE_THRESHOLDS = [0.2, 0.6]
 
 
 def build_behavior_clone_model(architecture, input_observation_len, hidden_size, action_count, nn_module):
@@ -463,6 +465,13 @@ def train_behavior_clone(dataset, args):
         args.map_conditioning,
         np,
     )
+    observations, time_phase_conditioning_report = apply_time_phase_conditioning(
+        observations,
+        dataset,
+        args.time_phase_conditioning,
+        args.time_phase_thresholds,
+        np,
+    )
     actions = np.asarray(dataset["actions"], dtype=np.int64)
     indices = np.arange(len(actions))
     np.random.default_rng(args.seed).shuffle(indices)
@@ -573,6 +582,7 @@ def train_behavior_clone(dataset, args):
             "base_observation_len": dataset["observation_len"],
             "context_frames": args.context_frames,
             "map_conditioning": map_conditioning_report,
+            "time_phase_conditioning": time_phase_conditioning_report,
             "sequence_input_len": model_input_width(observations),
             "total_input_observation_len": model_total_input_len(observations),
             "action_count": dataset["action_count"],
@@ -614,6 +624,7 @@ def train_behavior_clone(dataset, args):
             "sequence_input_len": model_input_width(observations),
             "base_observation_len": dataset["observation_len"],
             "map_conditioning": map_conditioning_report,
+            "time_phase_conditioning": time_phase_conditioning_report,
             "validation_split": args.validation_split,
             "class_weighting": args.class_weighting,
             "class_weights": class_weight_report,
@@ -748,6 +759,89 @@ def apply_map_conditioning(observations, dataset, mode, np_module):
     return conditioned, report
 
 
+def normalize_time_phase_thresholds(thresholds):
+    values = [float(value) for value in thresholds]
+    if len(values) != 2:
+        raise ValueError("time phase conditioning requires exactly two thresholds")
+    if not (0.0 < values[0] < values[1] < 1.0):
+        raise ValueError("time phase thresholds must satisfy 0 < first < second < 1")
+    return values
+
+
+def apply_time_phase_conditioning(observations, dataset, mode, thresholds, np_module):
+    thresholds = normalize_time_phase_thresholds(thresholds)
+    base_len = int(observations.shape[-1])
+    sequence_len = int(observations.shape[1]) if len(observations.shape) == 3 else None
+    if mode == "none":
+        report = {
+            "mode": "none",
+            "labels": [],
+            "thresholds": thresholds,
+            "dimension": 0,
+            "base_input_observation_len": base_len,
+            "input_observation_len": base_len,
+            "phase_distribution": summarize_time_phase_distribution(dataset, thresholds),
+        }
+        if sequence_len is not None:
+            report["sequence_len"] = sequence_len
+            report["total_input_observation_len"] = sequence_len * base_len
+        return observations, report
+
+    if mode != "one_hot":
+        raise ValueError(f"unsupported time phase conditioning mode: {mode}")
+
+    if len(observations.shape) == 3:
+        phase_features = time_phase_one_hot(observations[:, :, 0], thresholds, np_module)
+        conditioned = np_module.concatenate([observations, phase_features], axis=2).astype(
+            np_module.float32
+        )
+    else:
+        base_observations = np_module.asarray(dataset["observations"], dtype=np_module.float32)
+        phase_features = time_phase_one_hot(base_observations[:, 0], thresholds, np_module)
+        conditioned = np_module.concatenate([observations, phase_features], axis=1).astype(
+            np_module.float32
+        )
+
+    report = {
+        "mode": "one_hot",
+        "labels": TIME_PHASE_LABELS,
+        "thresholds": thresholds,
+        "dimension": len(TIME_PHASE_LABELS),
+        "base_input_observation_len": base_len,
+        "input_observation_len": int(conditioned.shape[-1]),
+        "phase_distribution": summarize_time_phase_distribution(dataset, thresholds),
+    }
+    if sequence_len is not None:
+        report["sequence_len"] = sequence_len
+        report["total_input_observation_len"] = int(conditioned.shape[1] * conditioned.shape[2])
+    return conditioned, report
+
+
+def time_phase_one_hot(time_progress_values, thresholds, np_module):
+    progress = np_module.clip(np_module.asarray(time_progress_values, dtype=np_module.float32), 0.0, 1.0)
+    indices = np_module.zeros(progress.shape, dtype=np_module.int64)
+    indices += progress >= thresholds[0]
+    indices += progress >= thresholds[1]
+    features = np_module.zeros((*progress.shape, len(TIME_PHASE_LABELS)), dtype=np_module.float32)
+    for index in range(len(TIME_PHASE_LABELS)):
+        features[..., index] = indices == index
+    return features
+
+
+def summarize_time_phase_distribution(dataset, thresholds):
+    counts = {label: 0 for label in TIME_PHASE_LABELS}
+    for observation in dataset["observations"]:
+        progress = clamp(float(observation[0]) if observation else 0.0, 0.0, 1.0)
+        if progress < thresholds[0]:
+            label = TIME_PHASE_LABELS[0]
+        elif progress < thresholds[1]:
+            label = TIME_PHASE_LABELS[1]
+        else:
+            label = TIME_PHASE_LABELS[2]
+        counts[label] += 1
+    return ratio_counts(counts, len(dataset["observations"]))
+
+
 def build_sample_weights(sample_metadata, indices, args, np_module):
     if args.sample_weighting == "none":
         return None, {
@@ -824,8 +918,28 @@ class BehaviorClonePolicy:
                 "input_observation_len": self.context_observation_len,
             },
         )
+        self.time_phase_conditioning = self.checkpoint.get(
+            "time_phase_conditioning",
+            {
+                "mode": "none",
+                "labels": [],
+                "thresholds": DEFAULT_TIME_PHASE_THRESHOLDS,
+                "dimension": 0,
+                "base_input_observation_len": self.map_conditioning.get(
+                    "input_observation_len",
+                    self.context_observation_len,
+                ),
+                "input_observation_len": self.map_conditioning.get(
+                    "input_observation_len",
+                    self.context_observation_len,
+                ),
+            },
+        )
         self.input_observation_len = int(
-            self.map_conditioning.get("input_observation_len", self.context_observation_len)
+            self.time_phase_conditioning.get(
+                "input_observation_len",
+                self.map_conditioning.get("input_observation_len", self.context_observation_len),
+            )
         )
         self.sequence_input_len = int(
             self.checkpoint.get("sequence_input_len", self.input_observation_len)
@@ -925,6 +1039,9 @@ class BehaviorClonePolicy:
                 features = np_module.concatenate([context_sequence, repeated], axis=1).astype(np_module.float32)
             else:
                 features = context_sequence
+            phase_features = self._time_phase_sequence_features(context_sequence, np_module)
+            if phase_features.shape[1] > 0:
+                features = np_module.concatenate([features, phase_features], axis=1).astype(np_module.float32)
             if features.shape[1] != self.sequence_input_len:
                 raise ValueError(
                     f"expected behavior clone sequence feature length {self.sequence_input_len}, got {features.shape[1]}"
@@ -937,6 +1054,9 @@ class BehaviorClonePolicy:
             features = np_module.concatenate([context_features, map_features]).astype(np_module.float32)
         else:
             features = context_features
+        phase_features = self._time_phase_features(values, np_module)
+        if phase_features.shape[0] > 0:
+            features = np_module.concatenate([features, phase_features]).astype(np_module.float32)
         if features.shape[0] != self.input_observation_len:
             raise ValueError(
                 f"expected behavior clone feature length {self.input_observation_len}, got {features.shape[0]}"
@@ -985,6 +1105,24 @@ class BehaviorClonePolicy:
                 f"map_id `{self.current_map_id}` is not in behavior clone map conditioning vocabulary"
             ) from exc
         return features
+
+    def _time_phase_features(self, values, np_module):
+        mode = self.time_phase_conditioning.get("mode", "none")
+        if mode == "none":
+            return np_module.zeros(0, dtype=np_module.float32)
+        thresholds = normalize_time_phase_thresholds(
+            self.time_phase_conditioning.get("thresholds", DEFAULT_TIME_PHASE_THRESHOLDS)
+        )
+        return time_phase_one_hot([float(values[0])], thresholds, np_module)[0]
+
+    def _time_phase_sequence_features(self, sequence, np_module):
+        mode = self.time_phase_conditioning.get("mode", "none")
+        if mode == "none":
+            return np_module.zeros((sequence.shape[0], 0), dtype=np_module.float32)
+        thresholds = normalize_time_phase_thresholds(
+            self.time_phase_conditioning.get("thresholds", DEFAULT_TIME_PHASE_THRESHOLDS)
+        )
+        return time_phase_one_hot(sequence[:, 0], thresholds, np_module)
 
 
 def load_behavior_clone_policy(path):
@@ -1054,6 +1192,20 @@ def main():
         default="none",
         help="Append map-id features to behavior clone observations.",
     )
+    parser.add_argument(
+        "--time-phase-conditioning",
+        choices=["none", "one_hot"],
+        default="none",
+        help="Append normalized run-progress phase features to behavior clone observations.",
+    )
+    parser.add_argument(
+        "--time-phase-thresholds",
+        type=float,
+        nargs=2,
+        default=DEFAULT_TIME_PHASE_THRESHOLDS,
+        metavar=("OPENING_END", "MID_END"),
+        help="Normalized run-progress thresholds for opening/mid/late phase conditioning.",
+    )
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--validation-split", type=float, default=0.2)
     parser.add_argument(
@@ -1116,6 +1268,10 @@ def main():
         parser.error("--danger-late-horizon-seconds must be greater than --danger-late-start-seconds")
     if args.entropy_regularization < 0.0:
         parser.error("--entropy-regularization must be greater than or equal to zero")
+    try:
+        args.time_phase_thresholds = normalize_time_phase_thresholds(args.time_phase_thresholds)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     try:
         dataset = load_trajectory_dataset(args.dataset, limit=args.limit_samples)
@@ -1133,6 +1289,18 @@ def main():
                         args.danger_late_start_seconds,
                         args.danger_health_threshold,
                     ),
+                    "time_phase_conditioning": {
+                        "mode": args.time_phase_conditioning,
+                        "labels": TIME_PHASE_LABELS if args.time_phase_conditioning != "none" else [],
+                        "thresholds": args.time_phase_thresholds,
+                        "dimension": len(TIME_PHASE_LABELS)
+                        if args.time_phase_conditioning != "none"
+                        else 0,
+                        "phase_distribution": summarize_time_phase_distribution(
+                            dataset,
+                            args.time_phase_thresholds,
+                        ),
+                    },
                     "dependencies": dependency_status(),
                 },
             )

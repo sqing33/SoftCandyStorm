@@ -344,6 +344,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 首个完整 `entropy_regularization = 0.02` 的 `gru context8 + map-conditioning one_hot + danger sampling` 候选使用同一批 expanded、lategame、cracked lategame 和 caramel recovery 轨迹训练，离线 validation accuracy 为 87.84%，validation entropy 为 0.437509。60 秒 high-pressure 三图结果为 `soda-creek` 80%、`caramel-workshop` 100%、`cracked-star-jar` 80%；300 秒三图结果为 `soda-creek` 0%、`caramel-workshop` 33.33%、`cracked-star-jar` 0%，multi-map gate 仍为 `repair`。结论：entropy regularization 能改善动作分布可读性，但没有解决 movement-only imitation 的长局策略缺口；下一步应转向分阶段 policy、PPO 蒸馏初始化或把升级 / 阶段目标纳入训练，而不是继续扩大同一 GRU 轮数。
 
+训练入口还新增 `--time-phase-conditioning one_hot`，用于把 Gym observation 的归一化时间进度显式拆成 opening / mid / late 三段 one-hot 特征。默认阈值为 0.2 和 0.6，在线评估也从当前 observation 计算同一组特征，旧 checkpoint 默认 `none` 保持兼容。当前 high-pressure 轨迹 dry-run 中 opening / mid / late 样本占比分别为 4.92% / 42.51% / 52.56%，说明阶段条件化可以把中后期分布显式暴露给 policy；但该 dry-run 只证明特征管线，不代表分阶段策略已经通过。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

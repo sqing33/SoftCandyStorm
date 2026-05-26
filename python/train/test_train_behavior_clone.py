@@ -58,6 +58,8 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         seed=123,
         context_frames=context_frames,
         map_conditioning=map_conditioning,
+        time_phase_conditioning="none",
+        time_phase_thresholds=[0.2, 0.6],
         validation_split=0.25,
         sample_weighting="none",
         danger_health_threshold=0.7,
@@ -138,3 +140,28 @@ def test_entropy_regularization_is_reported(tmp_path):
     assert report["final"]["train_entropy_nats"] > 0.0
     assert report["final"]["validation_entropy_nats"] > 0.0
     assert report["final"]["train_cross_entropy_loss"] >= report["final"]["train_loss"]
+
+
+def test_time_phase_conditioning_stays_loadable_online(tmp_path):
+    args = args_for(
+        tmp_path,
+        architecture="gru",
+        context_frames=2,
+        map_conditioning="one_hot",
+    )
+    args.time_phase_conditioning = "one_hot"
+    args.time_phase_thresholds = [0.15, 0.3]
+    report = train_behavior_clone(tiny_dataset(), args)
+
+    phase_report = report["training"]["time_phase_conditioning"]
+    assert phase_report["mode"] == "one_hot"
+    assert phase_report["dimension"] == 3
+    assert phase_report["phase_distribution"]["late"]["count"] > 0
+
+    policy = load_behavior_clone_policy(report["model_path"])
+    policy.set_map_id("caramel-workshop")
+    action, _ = policy.predict([0.8, 0.2, 0.3])
+    scores = policy.action_scores([0.8, 0.2, 0.3])
+
+    assert 0 <= action < 3
+    assert len(scores["scores"]) == 3

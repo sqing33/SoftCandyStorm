@@ -285,6 +285,19 @@ This is only an action-distribution diagnostic knob. A checkpoint trained with e
 
 The first full `--entropy-regularization 0.02` GRU context8 run trained on the same expanded, lategame, cracked lategame, and caramel recovery trajectories. Offline validation accuracy stayed at `87.84%`, and 60-second high-pressure comparison improved `caramel-workshop` to 100%, but the 300-second comparison still recorded 0% win rate on `soda-creek` and `cracked-star-jar` with a `repair` gate. Treat entropy regularization as useful diagnostics for action spread, not as the long-window policy repair.
 
+Use `--time-phase-conditioning one_hot` to append normalized run-progress phase features to behavior clone inputs. The default thresholds split the observation's time-progress value into opening, mid, and late phases at `0.2` and `0.6`; online evaluation computes the same features from the current Gym observation, so old checkpoints remain compatible while staged-policy experiments can make phase evidence explicit:
+
+```bash
+python3 python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --architecture gru \
+  --context-frames 8 \
+  --map-conditioning one_hot \
+  --time-phase-conditioning one_hot
+```
+
+The first dry-run on the current high-pressure trajectory set found `opening` / `mid` / `late` ratios of `4.92%` / `42.51%` / `52.56%`. This only proves feature plumbing and dataset visibility; it is not policy repair until a checkpoint passes the same high-pressure comparison and acceptance gate.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

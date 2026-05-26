@@ -1553,6 +1553,11 @@
       "id": "rl_behavior_clone_gru_entropy_regularized_repair",
       "summary": "完整训练 entropy_regularization=0.02 的 GRU context8 map-conditioned BC 并完成 high-pressure 60/300 秒三图对比；60 秒为 80% / 100% / 80%，300 秒 soda-creek 与 cracked-star-jar 仍为 0%，结论为 repair，不能推进为 RL 测试 Bot。",
       "report": "harness/reports/2026-05-27_rl_policy_acceptance_gru_context8_entropy002_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_time_phase_conditioning",
+      "summary": "Behavior clone 训练和在线 policy wrapper 增加 --time-phase-conditioning one_hot，按归一化时间进度注入 opening/mid/late 阶段特征；真实 high-pressure 轨迹 dry-run 显示阶段分布为 4.92% / 42.51% / 52.56%，512 样本 CLI smoke 可训练并写出 checkpoint。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_time_phase_conditioning_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1562,7 +1567,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU 已验证为 repair；下一步应停止继续扩大同一 GRU 轮数，转向分阶段 policy、PPO 蒸馏初始化或把升级 / 阶段目标纳入训练，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
+      "summary": "完整正则化 GRU 已验证为 repair，time-phase conditioning 入口已完成 dry-run；下一步应训练阶段条件化候选或转向 PPO 蒸馏初始化，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
     },
     {
       "id": "phase4_full_pack_manual_review",
