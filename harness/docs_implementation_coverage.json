@@ -282,7 +282,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私和发布包门禁；人工试玩已有 9 局草稿生成器和完整性 validator；当前本地候选明确为 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私、Runtime 隐私设置契约和发布包门禁；人工试玩已有 9 局草稿生成器和完整性 validator；当前本地候选明确为 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -297,11 +297,15 @@
             "harness/telemetry_privacy/validate_telemetry_privacy_policy.py",
             "harness/playtest/create_manual_playtest_review_draft.py",
             "harness/playtest/test_create_manual_playtest_review_draft.py",
-            "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json"
+            "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+            "harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json",
+            "harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py",
+            "harness/telemetry_privacy/test_validate_runtime_privacy_settings_contract.py",
+            "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md"
           ],
           "gaps": [
             "当前 release_candidate_evidence 报告为 not-ready。",
-            "人工试玩已有 9 局草稿防漏项，但缺少真人填写后的人工试玩、素材人工接受、剧情审校通过、Runtime 隐私开关、性能门禁、完整 Release package 和恢复后的编译测试证据。"
+            "Runtime 隐私设置已有可校验契约，但缺少真实 Bevy 设置页、持久化、删除 / 导出流程、人工隐私审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package 和恢复后的编译测试证据。"
           ],
           "blockers": [
             "local_binary_launch_blocked",
@@ -424,7 +428,7 @@
       "doc_id": "16",
       "doc_path": "docs/16_Replay与遥测设计.md",
       "status": "partial",
-      "summary": "Replay strict 回归、Runtime capture、遥测样本、隐私策略校验模板和本地存档数据控制契约已有实现；Runtime 设置开关、真实删除/导出流程、法律审查和真实遥测闭环尚未完成。",
+      "summary": "Replay strict 回归、Runtime capture、遥测样本、隐私策略校验模板、本地存档数据控制契约和 Runtime 隐私设置契约已有实现；真实 Runtime 设置页、删除/导出流程、法律审查和真实遥测闭环尚未完成。",
       "coverage": [
         {
           "id": "replay-and-telemetry",
@@ -438,11 +442,15 @@
             "harness/save_contract/save_state_v0_template.json",
             "tools/validate_save_state_contract.py",
             "harness/reports/2026-05-26_save_state_contract_001/summary.md",
-            "crates/game_runtime/src/main.rs"
+            "crates/game_runtime/src/main.rs",
+            "harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json",
+            "harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py",
+            "harness/telemetry_privacy/test_validate_runtime_privacy_settings_contract.py",
+            "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md"
           ],
           "gaps": [
             "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
-            "隐私策略和存档契约已有可校验模板，但 Runtime 设置开关、真实删除/导出按钮、法律审查和实际上传禁用/同意逻辑尚未完成。"
+            "隐私策略、Runtime 设置页契约和存档契约已有可校验模板，但真实 Bevy 设置页、删除/导出按钮、法律审查和实际上传禁用/同意逻辑尚未完成。"
           ],
           "blockers": [
             "local_binary_launch_blocked"
@@ -479,7 +487,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel 和 v0 存档契约已有原型，章节剧情 / 图鉴候选内容已有 generated candidate、校验报告和人工审校草稿；完整基地、真实存取档、图鉴 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel、v0 存档契约和 Runtime 隐私设置契约已有原型/校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告和人工审校草稿；完整基地、真实存取档、图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -497,10 +505,14 @@
             "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md",
             "harness/story_review/create_story_codex_review_draft.py",
             "harness/story_review/test_create_story_codex_review_draft.py",
-            "harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json"
+            "harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json",
+            "harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json",
+            "harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py",
+            "harness/telemetry_privacy/test_validate_runtime_privacy_settings_contract.py",
+            "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md"
           ],
           "gaps": [
-            "已有 v0 存档 JSON 契约，但缺少 Runtime 真实存取档、存档迁移、基地 UI、章节目标链、图鉴 UI 和真实 10 分钟完整局验证。",
+            "已有 v0 存档 JSON 契约和 Runtime 隐私设置契约，但缺少 Runtime 真实存取档、存档迁移、基地 UI、章节目标链、图鉴 UI、真实删除 / 导出按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审，但尚未由真人填写审校记录并通过，也未进入任何 Runtime UI 候选接入。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],

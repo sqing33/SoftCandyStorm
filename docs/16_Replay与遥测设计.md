@@ -237,6 +237,8 @@ P1：
 ```text
 harness/telemetry_privacy/telemetry_privacy_policy_template.json
 harness/telemetry_privacy/validate_telemetry_privacy_policy.py
+harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json
+harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py
 ```
 
 该策略门禁要求：
@@ -246,7 +248,8 @@ harness/telemetry_privacy/validate_telemetry_privacy_policy.py
 - 使用匿名 session id，不采集个人身份、IP、文件路径或自由文本。
 - `allowed_event_fields` 不能包含禁止字段或 replay 原始输入。
 - 本地数据需要有保留天数、删除和导出控制项。
-- 发布前仍需要人工隐私审查、Runtime 设置开关、隐私说明文本和 Release Candidate 证据。
+- Runtime 隐私设置页契约必须提供上传开关、raw replay 单独同意、崩溃报告同意、删除本地数据、导出本地数据和隐私说明入口。
+- 发布前仍需要人工隐私审查、真实 Runtime 设置页验证、隐私说明文本和 Release Candidate 证据。
 
 当前校验命令：
 
@@ -255,6 +258,13 @@ python3 harness/telemetry_privacy/validate_telemetry_privacy_policy.py \
   harness/telemetry_privacy/telemetry_privacy_policy_template.json \
   --report harness/reports/2026-05-26_telemetry_privacy_policy_001/telemetry_privacy_policy.json \
   --markdown harness/reports/2026-05-26_telemetry_privacy_policy_001/summary.md
+
+python3 harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py \
+  harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json \
+  --policy harness/telemetry_privacy/telemetry_privacy_policy_template.json \
+  --save-contract harness/save_contract/save_state_v0_template.json \
+  --report harness/reports/2026-05-26_runtime_privacy_settings_contract_001/runtime_privacy_settings_contract.json \
+  --markdown harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md
 ```
 
 ## 本地存档与数据控制

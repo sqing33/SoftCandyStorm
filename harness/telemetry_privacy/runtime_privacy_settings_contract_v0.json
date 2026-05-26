@@ -1,0 +1,121 @@
+{
+  "contract_version": 1,
+  "contract_id": "runtime-privacy-settings-v0",
+  "scope": "runtime-settings-ui",
+  "policy_id": "local-first-telemetry-privacy-v001",
+  "save_contract_id": "save-state-v0",
+  "summary": "Runtime 隐私设置页 v0 契约：上传型遥测、raw replay 上传和崩溃报告上传默认关闭，必须显式同意，并提供本地数据删除、导出和隐私说明入口。",
+  "settings_bindings": {
+    "telemetry_upload_enabled": false,
+    "raw_replay_upload_enabled": false,
+    "crash_report_upload_enabled": false
+  },
+  "ui_controls": [
+    {
+      "id": "telemetry_upload_toggle",
+      "label": "上传匿名遥测",
+      "type": "toggle",
+      "setting": "telemetry_upload_enabled",
+      "default_enabled": false,
+      "visible": true,
+      "requires_explicit_consent": true,
+      "can_disable": true,
+      "separate_consent": true,
+      "notice_topics": [
+        "purposes",
+        "anonymous_session",
+        "default_off",
+        "delete_export"
+      ]
+    },
+    {
+      "id": "raw_replay_upload_toggle",
+      "label": "允许上传原始 Replay 输入",
+      "type": "toggle",
+      "setting": "raw_replay_upload_enabled",
+      "default_enabled": false,
+      "visible": true,
+      "requires_explicit_consent": true,
+      "can_disable": true,
+      "separate_consent": true,
+      "notice_topics": [
+        "raw_replay_separate_consent",
+        "debug_only",
+        "default_off",
+        "delete_export"
+      ]
+    },
+    {
+      "id": "crash_report_upload_toggle",
+      "label": "上传崩溃报告",
+      "type": "toggle",
+      "setting": "crash_report_upload_enabled",
+      "default_enabled": false,
+      "visible": true,
+      "requires_explicit_consent": true,
+      "can_disable": true,
+      "separate_consent": true,
+      "notice_topics": [
+        "crash_analysis",
+        "anonymous_session",
+        "default_off",
+        "delete_export"
+      ]
+    }
+  ],
+  "data_action_controls": [
+    {
+      "id": "delete_local_telemetry",
+      "label": "删除本地遥测与 Replay 数据",
+      "action": "delete_local_data",
+      "visible": true,
+      "confirmation_required": true,
+      "destructive": true
+    },
+    {
+      "id": "export_local_telemetry",
+      "label": "导出本地遥测与 Replay 数据",
+      "action": "export_local_data",
+      "visible": true,
+      "format": "json"
+    },
+    {
+      "id": "open_privacy_notice",
+      "label": "查看隐私说明",
+      "action": "open_privacy_notice",
+      "visible": true
+    }
+  ],
+  "privacy_notice": {
+    "language": "zh-CN",
+    "short_text": "遥测和 Replay 默认只保存在本机。上传匿名遥测、原始 Replay 输入或崩溃报告前，游戏必须先征得你的明确同意；你可以随时关闭上传、删除本地数据或导出 JSON 副本。",
+    "required_topics": [
+      "purposes",
+      "anonymous_session",
+      "default_off",
+      "delete_export",
+      "raw_replay_separate_consent",
+      "prohibited_fields",
+      "retention_days"
+    ],
+    "prohibited_claims": [
+      "always_on",
+      "cannot_disable",
+      "personal_identity_tracking",
+      "raw_replay_upload_by_default"
+    ],
+    "purpose_labels": {
+      "balance": "帮助发现武器、波次和地图压力异常。",
+      "crash_analysis": "帮助定位崩溃或卡死原因。",
+      "gameplay_improvement": "帮助判断升级节奏、死亡原因和可读性问题。"
+    }
+  },
+  "release_requirements": [
+    "manual_privacy_review",
+    "runtime_settings_toggle",
+    "privacy_notice_text",
+    "delete_export_controls",
+    "save_contract_binding",
+    "release_candidate_evidence_gate"
+  ]
+}
