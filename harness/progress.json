@@ -1693,6 +1693,11 @@
       "id": "rl_curriculum_stage01_retry_snapshot_trace_repair",
       "summary": "Gym bridge trace diagnostics 现在输出玩家位置、边界距离、最近敌人和风险分数；同一组 soda-creek 失败 seed 显示 policy 持续 action 4 走到右下角，死亡时 boundary.min_distance = 0、enemy_pressure_risk = 1、nearest_enemy.hitbox_distance = 0。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage01_retry_snapshot_trace_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage01_retry_snapshot_compare_repair",
+      "summary": "对同一组 soda-creek seed 输出成功/失败 snapshot trace：所有 episode 都会接触边界，但成功 seed 最终转为 action 7 并把 enemy_pressure_risk 降回 0；失败 seed 长尾持续 action 4 卡右下角。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage01_retry_snapshot_compare_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1702,7 +1707,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；失败分桶课程 stage 01 retry snapshot trace 已确认 soda-creek opening death 是 action 4 高置信走向右下边界并在敌人接触压力下死亡，下一步应比较成功 seed 的转向时机并设计 opening 贴边压力修复。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、time_phase_balance curriculum GRU、阶段平衡 teacher 蒸馏、阶段平衡 PPO 10k 闭环、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；stage 01 retry snapshot compare 显示成功 seed 也会贴边，但会转 action 7 释放敌压，下一步应针对右下角敌压上升时持续 action 4 设计 opening 修复。"
     },
     {
       "id": "phase4_full_pack_manual_review",

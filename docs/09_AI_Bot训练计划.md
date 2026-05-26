@@ -289,6 +289,8 @@ stage 01 opening 课程已按计划跑完 5120 actual timesteps，并完成 60 �
 
 Gym bridge 的 trace diagnostics 已补充玩家位置 / 速度、地图尺寸、边界距离、最近敌人、附近敌人计数和 low-health / boundary / enemy / hazard / boss / safety 风险分数。带 diagnostics 的复跑报告位于 `harness/reports/2026-05-27_rl_curriculum_stage01_retry_snapshot_trace_001/summary.md`：两个失败 seed 都走到 `soda-creek` 右下角，终点 `boundary.min_distance = 0`、`boundary.edge_risk = 1`、`enemy_pressure_risk = 1`、`nearest_enemy.hitbox_distance = 0`，同时仍高置信选择 action `4`。结论更具体：stage 01 retry 的 opening blocker 是 bottom-right 贴边被围，而不是单纯动作熵不足。
 
+同一 seed 段的成功/失败 snapshot trace 对比位于 `harness/reports/2026-05-27_rl_curriculum_stage01_retry_snapshot_compare_001/summary.md`。四个 episode 都会早期接触边界，因此“贴边”本身不是唯一失败条件；失败 seed 的差异是到达右下角后持续 action `4`，而成功 seed 最终转为 action `7` 并在 60 秒截止前把 `enemy_pressure_risk` 拉回 `0`。下一轮修复应针对“右下角 `boundary.min_distance = 0` 且敌压上升时继续 action `4`”的状态-动作组合，而不是泛泛继续加 PPO timesteps。
+
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
 
 `python/train/distill_behavior_clone_to_sb3.py` 已提供 PPO 蒸馏初始化入口：它从规则 Bot 轨迹读取 observation，用 behavior clone teacher 输出 soft action probability，再监督训练 SB3 PPO `MlpPolicy` 并保存标准 `.zip` 与 metadata。蒸馏入口现在支持 `--teacher-temperature` 与 `--uniform-target-mix`，用于在 teacher probability 过尖或动作偏置过重时显式提高 target entropy；这些旋钮只属于 repair 实验，不是 policy gate。首个 256 样本 smoke 已证明 distilled `.zip` 可以被 `train_sb3.py --evaluate-model` 加载，但 1 epoch 模型仍为动作 3 deterministic smoke，不是策略通过证据；后续应在更大数据上蒸馏后继续 PPO 环境训练，并跑 high-pressure 60/300 秒对比。
