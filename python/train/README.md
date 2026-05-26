@@ -349,6 +349,8 @@ The first full distillation + PPO warm-start used 21,726 phase-aligned samples a
 
 The first full target-entropy distillation used `--teacher-temperature 1.5 --uniform-target-mix 0.05`, raising target entropy to 1.186717. It improved the 60-second high-pressure comparison to 80% win rate on all three maps without triggering the compare script's action-bias repair, but the 300-second comparison still recorded 0% win rate on all three maps and shifted the long-run bias to action 6. Treat it as a short-window repair signal only.
 
+Warm-start runs can override PPO entropy coefficient with `--model-in ... --ent-coef <value>`. The training report records `algorithm_parameters_source` as `warm_start_metadata_with_overrides` when metadata is loaded and a CLI override is applied, so entropy/curriculum experiments remain auditable instead of silently inheriting the distilled zip defaults.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash

@@ -82,6 +82,28 @@ def algorithm_overrides_from_args(args):
     return overrides
 
 
+def merge_algorithm_parameters(base_parameters, overrides):
+    merged = dict(base_parameters or {})
+    merged.update(overrides or {})
+    return merged
+
+
+def algorithm_parameters_source_label(warm_start_metadata, warm_start_model, overrides):
+    suffix = "_with_overrides" if overrides else ""
+    if warm_start_metadata is not None:
+        return f"warm_start_metadata{suffix}"
+    if warm_start_model is not None:
+        return f"config_fallback_missing_warm_start_metadata{suffix}"
+    return f"config{suffix}"
+
+
+def apply_loaded_model_overrides(model, overrides):
+    for key, value in (overrides or {}).items():
+        if not hasattr(model, key):
+            raise ValueError(f"loaded model does not expose algorithm parameter `{key}`")
+        setattr(model, key, value)
+
+
 def parse_map_list(value):
     if value is None:
         return None
@@ -240,22 +262,26 @@ def train(
     warm_start_metadata = None
     if warm_start_model is not None:
         warm_start_metadata_path, warm_start_metadata = load_model_metadata(warm_start_model)
-    algorithm_parameters = (
+    base_algorithm_parameters = (
         warm_start_metadata.get("algorithm_parameters", kwargs)
         if warm_start_metadata is not None
         else kwargs
     )
-    if warm_start_metadata is not None:
-        algorithm_parameters_source = "warm_start_metadata"
-    elif warm_start_model is not None:
-        algorithm_parameters_source = "config_fallback_missing_warm_start_metadata"
-    else:
-        algorithm_parameters_source = "config"
+    algorithm_parameters = merge_algorithm_parameters(
+        base_algorithm_parameters,
+        algorithm_overrides,
+    )
+    algorithm_parameters_source = algorithm_parameters_source_label(
+        warm_start_metadata,
+        warm_start_model,
+        algorithm_overrides,
+    )
 
     try:
         if warm_start_model is not None:
             model = model_class.load(warm_start_model, env=env)
             model.verbose = 1
+            apply_loaded_model_overrides(model, algorithm_overrides)
         else:
             model = model_class(selected["policy"], env, verbose=1, **kwargs)
         model.learn(total_timesteps=train_steps)
@@ -1382,8 +1408,6 @@ def main():
         parser.error("--behavior-clone-model cannot be combined with --model")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
-    if args.model_in and algorithm_overrides:
-        parser.error("--model-in cannot be combined with algorithm override flags yet")
 
     if args.copy_template:
         write_report(args.report, copy_template(args.copy_template))
