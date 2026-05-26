@@ -1488,6 +1488,11 @@
       "id": "rl_behavior_clone_context5_repair",
       "summary": "训练 5 帧 danger-weighted BC 并完成 high-pressure 对比：60 秒三图 5 seed 全胜且动作熵健康，但同 seed 300 秒三图中 caramel-workshop 仍为 0% 胜率，结论为 repair；下一步不再堆同构 MLP context_frames，转向 caramel-workshop 中后期恢复轨迹、GRU/Transformer 或分阶段 policy。",
       "report": "harness/reports/2026-05-27_rl_policy_acceptance_context5_danger_weighted_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_caramel_recovery_regression",
+      "summary": "导出 caramel-workshop 180-300 秒 KiteBot 恢复轨迹并训练 context5 caramel-recovery BC；同 seed 300 秒对比中 caramel-workshop 从 0% 提升到 66.67%，但 cracked-star-jar 回归到 0%、soda-creek 降到 33.33%，说明单图恢复数据会移动失败面。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_context5_caramel_recovery_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1497,7 +1502,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "不要继续单图补强，也不要继续堆同构 MLP context_frames；context5 BC 仍在 300 秒 caramel-workshop 0% 胜率，下一步围绕 180-300 秒恢复路径做 GRU/Transformer、分阶段 policy 或 PPO 蒸馏初始化，再验证 300 秒 high-pressure 对比"
+      "summary": "不要继续单图补强，也不要继续堆同构 MLP context_frames；caramel recovery 数据会把失败面移动到 cracked-star-jar，下一步做地图条件化、GRU/Transformer、分阶段 policy 或 PPO 蒸馏初始化，再验证三图同 seed 300 秒 high-pressure 对比"
     },
     {
       "id": "phase4_full_pack_manual_review",

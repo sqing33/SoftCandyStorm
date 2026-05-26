@@ -227,20 +227,25 @@
         "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_danger_weighted_multimap_300s_seed43000_001/summary.md",
         "harness/reports/2026-05-27_rl_policy_acceptance_context5_danger_weighted_001/summary.md",
         "harness/failed_cases/fail_20260527_001_behavior_clone_context5_caramel_gap.json",
+        "harness/reports/2026-05-27_rl_rule_bot_trajectory_caramel_recovery_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_caramel_recovery_smoke_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_kite_context5_caramel_recovery_multimap_300s_seed43000_001/summary.md",
+        "harness/reports/2026-05-27_rl_policy_acceptance_context5_caramel_recovery_001/summary.md",
+        "harness/failed_cases/fail_20260527_002_behavior_clone_caramel_recovery_regression.json",
         "harness/reports/2026-05-26_post_recovery_rl_dry_run_001/dqn_dry_run.json",
         "harness/reports/2026-05-26_post_recovery_behavior_clone_dry_run_001/run_output.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "context3 和 context5 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；60 秒 high-pressure 三图 5 seed 对比全胜且动作熵健康，但 300 秒三图 3 seed 对比仍为 repair，caramel-workshop 胜率 0%，说明同构 MLP 堆 context_frames 不是修复方向。",
+        "context3、context5 和 caramel-recovery context5 behavior clone 均已训练，当前会话本机二进制启动和 RL 依赖均已恢复；60 秒 high-pressure 三图 5 seed 对比全胜且动作熵健康，但 300 秒三图 3 seed 对比仍为 repair，目标图修复会导致跨图回归。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
       ],
       "next_actions": [
-        "围绕 caramel-workshop 180-300 秒失败面收集中后期恢复轨迹或 replay 诊断。",
-        "改用 GRU / Transformer、分阶段 policy 或 PPO 蒸馏初始化，不再继续堆同构 MLP context_frames。"
+        "把 caramel-workshop 恢复轨迹纳入地图条件化或分阶段 policy，而不是继续单图补强。",
+        "改用 GRU / Transformer、分阶段 policy 或 PPO 蒸馏初始化，并用三图同 seed 300 秒对比防止回归。"
       ]
     },
     {

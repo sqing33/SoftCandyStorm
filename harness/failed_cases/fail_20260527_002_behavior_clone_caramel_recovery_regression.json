@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_002",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_high_pressure_context5_caramel_recovery_smoke",
+  "seed": 43000,
+  "bot": "BehaviorCloneKiteContext5CaramelRecoverySmoke",
+  "time_seconds": 300.0,
+  "symptom": "追加 caramel-workshop 180-300 秒恢复轨迹后，同 seed 300 秒 high-pressure 对比中 caramel-workshop 从 0% 提升到 66.67%，但 cracked-star-jar 回归到 0%，soda-creek 也降到 33.33%，multi-map gate 仍为 repair",
+  "root_cause": "caramel-workshop 后期恢复轨迹提高了目标图生存，但同构 MLP behavior clone 缺少地图条件化和阶段化策略隔离，定向样本会改变共享动作偏好并把失败面移动到 cracked-star-jar 与 soda-creek",
+  "fix": "不要把 caramel recovery 单图补强模型推进为 RL 测试 Bot；下一步应使用地图条件化、分阶段 policy、序列模型或 PPO 蒸馏初始化，并保留三图同 seed 300 秒对比防止目标图修复造成跨图回归",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_context5_caramel_recovery_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 43000 --rule-bots random,kite,tank --report harness/reports/2026-05-27_rl_behavior_clone_kite_context5_caramel_recovery_multimap_300s_seed43000_001/comparison.json"
+}
