@@ -347,7 +347,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2 和多地图训练诊断已建立；RL Bot 还没有达到正式压力测试基线。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断和 RL policy acceptance 门禁已建立；RL Bot 还没有达到正式压力测试基线。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -359,11 +359,15 @@
             "python/train/train_behavior_clone.py",
             "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_smoke_001/summary.md",
             "tools/create_local_binary_launch_recovery_packet.py",
-            "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md"
+            "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md",
+            "tools/validate_rl_policy_acceptance.py",
+            "python/train/rl_policy_acceptance_template.json",
+            "harness/reports/2026-05-26_rl_policy_acceptance_template_001/summary.md"
           ],
           "gaps": [
             "context3 behavior clone 已训练但 Gym 评估被本机二进制启动阻塞；恢复后必须先取得 local_binary_launch_ok，再重跑 60/300 秒 high-pressure 对比。",
-            "PPO/BC 高压多地图仍有泛化 failure case，不能作为正式 RL 测试 Bot。"
+            "PPO/BC 高压多地图仍有泛化 failure case，不能作为正式 RL 测试 Bot。",
+            "当前 RL policy acceptance 模板结论为 rl_policy_acceptance_not_ready，缺少恢复后的 60/300 秒 high-pressure 对比和规则 Bot 追平证据。"
           ],
           "blockers": [
             "local_binary_launch_blocked",

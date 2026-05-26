@@ -300,6 +300,27 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 在本地新生成 Mach-O binary 启动问题恢复前，不应继续解读 RL/Gym/Harness 运行结果。恢复交接包由 `tools/create_local_binary_launch_recovery_packet.py` 生成，用来固定当前诊断、failure case 和恢复后重跑清单；它不是 RL policy gate 通过证据。恢复后必须先让 `tools/diagnose_local_binary_launch.py` 返回 `local_binary_launch_ok`，再依次重跑 `game_harness --help`、`cargo test --workspace`，最后重跑 context3 behavior clone 的 60/300 秒 high-pressure 对比。
 
+## RL Policy Acceptance Gate
+
+训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
+
+```bash
+python3 tools/validate_rl_policy_acceptance.py \
+  python/train/rl_policy_acceptance_template.json \
+  --repo-root .
+```
+
+该门禁至少检查：
+
+- 模型文件、模型 metadata 或训练报告存在，并且训练报告不是 `smoke_only` 结论。
+- 本机二进制诊断必须是 `local_binary_launch_ok`。
+- high-pressure 三图 60 秒短中局对比存在，动作分布没有明显塌缩。
+- high-pressure 三图 300 秒长局对比存在，不能低于规则 Bot 基线。
+- rule Bot comparison、action entropy、dominant action、failure case 和 unresolved blocker 都被同一份报告引用。
+- `gate_decision` 只能是 `blocked_by_local_binary_launch`、`watch`、`repair`、`reject` 或 `rl_test_bot_candidate`，不能写成 release、playtest、balance 或 fun 通过。
+
+当前 `behavior_clone_kite_context3_danger_weighted_smoke` manifest 只能是 `blocked_by_local_binary_launch`：它有训练 smoke 和上下文输入证据，但缺少恢复后的 60/300 秒 high-pressure 对比，也仍引用本机二进制启动 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
+
 ## 奖励函数
 
 奖励函数不能只奖励活得久，否则 Bot 可能只逃跑。

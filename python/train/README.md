@@ -111,6 +111,22 @@ Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` wit
 
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
+## Policy Acceptance Gate
+
+Use `rl_policy_acceptance_template.json` as the manifest shape for deciding whether a trained policy can become an RL test Bot candidate:
+
+```bash
+python3 tools/validate_rl_policy_acceptance.py \
+  python/train/rl_policy_acceptance_template.json \
+  --repo-root . \
+  --report harness/reports/local_rl_policy_acceptance/rl_policy_acceptance.json \
+  --markdown harness/reports/local_rl_policy_acceptance/summary.md
+```
+
+The validator requires a model artifact, training report, local binary diagnostic, 60-second high-pressure comparison, 300-second high-pressure comparison, rule Bot comparison, and unresolved failure-case review before `gate_decision` may be `rl_test_bot_candidate`. It rejects release/playtest/balance wording because RL policy acceptance is only a testing-tool gate.
+
+The current template is intentionally `blocked_by_local_binary_launch`: the context3 danger-weighted behavior clone trained successfully, but Gym comparison was blocked by the local Mach-O launch policy and therefore cannot be promoted.
+
 ## Rule Bot Trajectory Export
 
 Use the Harness trajectory exporter to produce JSONL movement datasets from rule Bots before behavior cloning or policy distillation experiments:
