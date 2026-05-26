@@ -103,7 +103,7 @@ impl BotController {
             self.route_angle.cos() * radius_x,
             self.route_angle.sin() * radius_y,
         );
-        (target - snapshot.player.position).normalized_or_zero() * 0.88
+        (target - snapshot.player.position).normalized_or_zero() * 0.957
     }
 }
 
@@ -219,7 +219,7 @@ mod tests {
             boss_id: "cracked-star-jar-core".to_string(),
             health: 1000.0,
             max_health: 1000.0,
-            position: Vec2::new(90.0, 0.0),
+            position: Vec2::new(82.0, 0.0),
         });
         final_map.visible_enemies.push(game_core::EnemySnapshot {
             entity_id: 99,
@@ -497,9 +497,9 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         let to_boss = boss.position - snapshot.player.position;
         let boss_distance = to_boss.length();
         let boss_direction = to_boss.normalized_or_zero();
-        let spacing = if boss_distance < 34.0 {
+        let spacing = if boss_distance < 30.0 {
             boss_direction * -1.0
-        } else if boss_distance > 110.0 {
+        } else if boss_distance > 84.0 {
             boss_direction
         } else {
             Vec2::ZERO
@@ -507,10 +507,10 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         let avoidance_radius = if snapshot.map.map_id == "cracked-star-jar" {
             95.0
         } else {
-            48.0
+            43.0
         };
         let avoidance = avoid_enemies(snapshot, avoidance_radius, 6);
-        return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.45).normalized_or_zero();
+        return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.34).normalized_or_zero();
     }
 
     greedy_movement(snapshot)
