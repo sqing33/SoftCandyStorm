@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_022",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage02_corner_risk_delta_mid",
+  "seed": 62202,
+  "bot": "PpoStage02CornerRiskDeltaMid",
+  "time_seconds": 52.7995,
+  "symptom": "基于 stage 01 corner_risk_delta checkpoint 继续训练 stage 02 mid-window 后，180 秒 high-pressure 3 seed 对比中 soda-creek 胜率掉到 33.33%，seed 62202 在 opening 阶段 52.7995 秒死亡，seed 62201 在 177.0755 秒死亡；目标图 caramel-workshop 虽然 100% 胜率，但 action 2 占比 77.81%，触发 action-bias repair。",
+  "root_cause": "stage 02 只在 caramel-workshop 训练 180 秒，强化了偏 action 2/7 的窄策略，并把 stage 01 已修复的 soda-creek opening 泛化能力拉回不稳定；单图 mid-window curriculum 会移动失败面，不能保证跨图开局保留。",
+  "fix": "不要进入 stage 03；下一步应在 stage 02 加入 stage 01 opening replay/regularization 或混合 soda-creek opening seed，再用 deterministic/stochastic 60 秒回归和 180 秒 high-pressure 对比同时验证。",
+  "validation": "训练报告：harness/reports/2026-05-27_rl_curriculum_stage02_corner_risk_delta_mid_001/ppo_training_report.json；180 秒 high-pressure 3 seed 对比：harness/reports/2026-05-27_rl_curriculum_stage02_corner_risk_delta_mid_001/comparison_180s_3seed.json；失败分析：harness/reports/2026-05-27_rl_curriculum_stage02_corner_risk_delta_mid_001/failure_analysis.md。结论为 policy repair，不得进入 stage 03。"
+}
