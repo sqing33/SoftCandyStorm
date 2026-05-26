@@ -70,6 +70,18 @@ python3 harness/story_review/validate_story_codex_ui_candidate_manifest.py \
 
 模板 `story_codex_ui_candidate_manifest_template.json` 保留 TODO 和占位人工审校路径，当前报告应为 `story_codex_ui_candidate_manifest_invalid`。这用于证明真人审校前不能生成可用 UI 候选证据。
 
+最终接受审查包生成示例：
+
+```bash
+python3 harness/story_review/create_story_codex_acceptance_review_packet.py \
+  harness/story_review/story_codex_acceptance_manifest_template.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/story_codex_acceptance_review_packet.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+最终接受审查包会汇总 UI 候选 manifest、Runtime UI review、final human acceptance 和 manifest 顶层占位状态，方便真人补齐证据。它不校验最终接受通过、不复制剧情或图鉴正文、不接入 Runtime，也不批准发布。
+
 最终接受 manifest 校验示例：
 
 ```bash

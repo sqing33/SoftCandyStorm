@@ -1,0 +1,81 @@
+{
+  "report_version": 1,
+  "source": "harness/story_review/story_codex_acceptance_manifest_template.json",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "story_codex_acceptance_review_packet_needs_evidence",
+  "candidate_pack_id": "2026-05-26_story_codex_seed_pack",
+  "chapter_count": 6,
+  "codex_entry_count": 26,
+  "evidence_count": 3,
+  "existing_evidence_count": 0,
+  "placeholder_evidence_count": 3,
+  "missing_evidence_count": 0,
+  "outside_repo_evidence_count": 0,
+  "placeholder_manifest_field_count": 1,
+  "missing_manifest_field_count": 0,
+  "top_level_fields": [
+    {
+      "field": "candidate_pack_id",
+      "value": "2026-05-26_story_codex_seed_pack",
+      "status": "filled"
+    },
+    {
+      "field": "accepted_at",
+      "value": "TODO: YYYY-MM-DDTHH:MM:SSZ",
+      "status": "placeholder"
+    }
+  ],
+  "evidence": [
+    {
+      "field": "source_ui_candidate_manifest",
+      "label": "UI candidate manifest",
+      "value": "harness/story_review/ui_candidates/<candidate>/ui_candidate_manifest.json",
+      "status": "placeholder",
+      "resolved_path": null,
+      "expected_review_type": null,
+      "expected_decision": "story_codex_ui_candidate_manifest_valid",
+      "required_checks": []
+    },
+    {
+      "field": "runtime_ui_review_file",
+      "label": "Runtime UI review",
+      "value": "harness/story_review/runtime_ui_reviews/<human-runtime-ui-review>.json",
+      "status": "placeholder",
+      "resolved_path": null,
+      "expected_review_type": "story_codex_runtime_ui_review",
+      "expected_decision": "runtime_ui_review_pass",
+      "required_checks": [
+        "f3_entry_visible",
+        "no_generated_candidate_text_loaded",
+        "no_runtime_integration_claim",
+        "layout_readable"
+      ]
+    },
+    {
+      "field": "final_human_acceptance_file",
+      "label": "Final human acceptance",
+      "value": "harness/story_review/final_acceptance/<human-final-acceptance>.json",
+      "status": "placeholder",
+      "resolved_path": null,
+      "expected_review_type": "story_codex_final_acceptance",
+      "expected_decision": "accepted_content",
+      "required_checks": [
+        "accepts_story_codex_text",
+        "accepted_content_only_after_reviews",
+        "release_ready",
+        "runtime_integrated"
+      ]
+    }
+  ],
+  "required_next_steps": [
+    "Fill or replace the UI candidate manifest evidence after human story/codex review passes.",
+    "Fill or replace Runtime UI review evidence with concrete F3 visibility and text-loading observations.",
+    "Fill or replace final human acceptance evidence only after prior reviews pass.",
+    "Run harness/story_review/validate_story_codex_acceptance_manifest.py after every TODO is removed."
+  ],
+  "limitations": [
+    "This packet organizes final story/codex acceptance evidence only.",
+    "It does not validate the acceptance manifest as passing.",
+    "It does not copy candidate story/codex text, mark Runtime integration, or approve release readiness."
+  ]
+}
