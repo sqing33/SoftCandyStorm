@@ -2283,11 +2283,12 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--platform-data-root" => {
                 if let Some(value) = args.next() {
                     let platform_paths = resolve_runtime_platform_paths(value);
+                    let local_data_dirs = platform_paths.local_data_dirs();
                     cli.platform_data_root = platform_paths.data_root.clone();
                     cli.runtime_settings_file = Some(platform_paths.runtime_settings_file);
                     cli.save_file = Some(platform_paths.save_file);
                     cli.explicit_save_file = false;
-                    cli.local_data_dirs = platform_paths.local_data_dirs();
+                    cli.local_data_dirs = local_data_dirs;
                     cli.explicit_local_data_dirs.clear();
                 }
             }
@@ -3346,11 +3347,13 @@ mod tests {
         toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
         RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules,
         RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSound,
+        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
+        RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
         RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind,
-        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_SAVE_ID,
+        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
         PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
-        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
+        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT, RUNTIME_SAVE_TIMESTAMP,
+        RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -4037,7 +4040,7 @@ mod tests {
         fs::write(included.join("nested/replay.json"), "{\"tick\":1}\n").unwrap();
         fs::write(excluded.join("private.json"), "{\"skip\":true}\n").unwrap();
 
-        let files = collect_runtime_local_data_files(&[included.clone()]).unwrap();
+        let files = collect_runtime_local_data_files(std::slice::from_ref(&included)).unwrap();
 
         let _ = fs::remove_dir_all(&root);
         assert_eq!(files.len(), 2);
