@@ -10,9 +10,11 @@
 2. 运行 `validate_telemetry_privacy_policy.py` 检查默认关闭、显式同意、匿名 session、禁止字段、保留周期和玩家控制项。
 3. 用 `runtime_privacy_settings_contract_v0.json` 约束 Runtime 设置页必须提供的关闭开关、隐私说明、删除本地数据和导出本地数据入口。
 4. 运行 `validate_runtime_privacy_settings_contract.py` 检查设置契约是否绑定隐私策略和 v0 存档契约。
-5. 真人隐私审查人复制 `manual_privacy_review_template.json`，填写默认关闭、明确同意、raw replay 单独同意、禁止字段、删除 / 导出、本地保留和 Runtime 证据限制等检查项。
-6. 运行 `validate_manual_privacy_review.py` 校验人工审查记录完整性。
-7. 只有策略、设置契约和人工隐私审查都通过后，才能把上传型匿名遥测纳入 Release Candidate 证据；Replay 原始输入不得默认上传。
+5. 用 `upload_transport_contract_v0.json` 约束未来上传传输层的字段白名单、本地队列、默认关闭、显式同意、raw replay 阻断和 Release Candidate 证据限制。
+6. 运行 `validate_upload_transport_contract.py` 检查上传传输契约是否绑定隐私策略和 Runtime 设置契约。
+7. 真人隐私审查人复制 `manual_privacy_review_template.json`，填写默认关闭、明确同意、raw replay 单独同意、禁止字段、删除 / 导出、本地保留和 Runtime 证据限制等检查项。
+8. 运行 `validate_manual_privacy_review.py` 校验人工审查记录完整性。
+9. 只有策略、设置契约、上传传输契约和人工隐私审查都通过后，才能把上传型匿名遥测纳入 Release Candidate 证据；Replay 原始输入不得默认上传。
 
 设置契约校验示例：
 
@@ -26,6 +28,19 @@ python3 harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py 
 ```
 
 该门禁不替代法律审查，也不代表遥测实现已经接入 Runtime。`runtime_privacy_settings_contract_valid` 只证明预期设置页和数据控制项有可校验契约；真实上传链路、发布级导出 / 删除按钮、平台路径和人工隐私审查仍需要后续验证。
+
+上传传输契约校验示例：
+
+```bash
+python3 harness/telemetry_privacy/validate_upload_transport_contract.py \
+  harness/telemetry_privacy/upload_transport_contract_v0.json \
+  --policy harness/telemetry_privacy/telemetry_privacy_policy_template.json \
+  --runtime-contract harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json \
+  --report harness/reports/2026-05-26_upload_transport_contract_001/upload_transport_contract.json \
+  --markdown harness/reports/2026-05-26_upload_transport_contract_001/summary.md
+```
+
+`upload_transport_contract_valid` 只证明未来上传链路的 guardrail、字段白名单和发布证据边界完整；当前 `implementation_status=planned`，仍不代表 Runtime 网络上传、队列 flush、平台隐私合规或法律审查已经完成。
 
 人工隐私审查校验示例：
 

@@ -1,0 +1,85 @@
+{
+  "contract_version": 1,
+  "contract_id": "telemetry-upload-transport-v0",
+  "scope": "upload-transport-contract",
+  "policy_id": "local-first-telemetry-privacy-v001",
+  "runtime_privacy_contract_id": "runtime-privacy-settings-v0",
+  "implementation_status": "planned",
+  "summary": "上传传输层 v0 契约：当前不启用网络上传；未来实现前必须继续保持默认关闭、显式同意、匿名字段白名单、本地队列边界和 Release Candidate 证据门禁。",
+  "transport": {
+    "upload_enabled": false,
+    "implementation_ready": false,
+    "endpoint": null,
+    "method": null,
+    "default_enabled": false,
+    "requires_explicit_consent": true,
+    "requires_manual_privacy_review": true,
+    "requires_release_candidate_gate": true,
+    "failure_mode": "local_spool_or_drop",
+    "retry_policy": "none_until_implemented"
+  },
+  "queue": {
+    "local_spool_only": true,
+    "path_root": "telemetry",
+    "retention_days": 30,
+    "max_batch_events": 100,
+    "max_batch_bytes": 65536,
+    "flush_requires_consent": true,
+    "delete_with_local_data": true,
+    "export_with_local_data": true
+  },
+  "payload": {
+    "format": "json",
+    "event_fields": [
+      "timestamp",
+      "run_id",
+      "session_id",
+      "game_version",
+      "content_hash",
+      "map_id",
+      "character_id",
+      "difficulty",
+      "elapsed_seconds",
+      "event_type",
+      "event_counts",
+      "final_metrics"
+    ],
+    "aggregate_only": true,
+    "includes_personal_identity": false,
+    "includes_ip_address": false,
+    "includes_file_paths": false,
+    "includes_free_text": false,
+    "includes_raw_replay": false,
+    "session_id_mode": "anonymous",
+    "content_hash_required": true,
+    "run_id_required": true
+  },
+  "raw_replay": {
+    "upload_enabled": false,
+    "default_enabled": false,
+    "separate_consent_required": true,
+    "debug_only": true,
+    "payload_allowed": false
+  },
+  "crash_reports": {
+    "upload_enabled": false,
+    "default_enabled": false,
+    "requires_explicit_consent": true,
+    "includes_stack_trace": false,
+    "includes_file_paths": false,
+    "includes_personal_identity": false
+  },
+  "release_requirements": [
+    "telemetry_privacy_policy",
+    "runtime_privacy_settings_contract",
+    "manual_privacy_review",
+    "manual_platform_path_review",
+    "upload_transport_runtime_smoke",
+    "release_candidate_evidence_gate"
+  ],
+  "limitations": [
+    "does_not_prove_runtime_upload_transport",
+    "does_not_provide_legal_or_platform_approval",
+    "does_not_make_release_candidate_ready"
+  ]
+}
