@@ -4,9 +4,9 @@
   "content_id": "2026-05-26_phase4_roster_gap_full_pack",
   "seed": 12345,
   "bot": "all-bot-candidate-simulation",
-  "time_seconds": 600.0,
-  "symptom": "Phase 4 full pack 候选在 5 seed / 600 秒 all Bot 仿真中仍进入 repair：最新 simulation_003 中 Random 胜率 40%，Greedy 80%，Kite 80%，Tank 60%，BossHunter 100%，ZoneControl 100%，Route 80%，均高于当前目标区间；Idle 0% 与 Coward 20% 通过。",
-  "root_cause": "候选包已削弱 honey-heart 与 cocoa-safety-badge，并把糖霜草地 480-600 秒敌人池换入 licorice-skipper、sugar-moth、taffy-shieldling、sprinkle-spitter 等高阶候选敌人；GameCore 已补 jump、orbit_player、ranged_spit、shielded 的最小可测行为后，simulation_001 仍显示胜率分布基本未回到目标区间，说明当前主要缺口已转为候选波次 / 敌人参数本身的长局压力不足，以及基础糖霜草地同 seed 600 秒对照偏易。",
-  "fix": "已完成两步修复：1) honey-heart regen_per_second 0.22 -> 0.14，cocoa-safety-badge damage_reduction 0.025 -> 0.015，并提高糖霜草地 480-600 秒 blocker / flanker / ranged 候选占比；2) GameCore 增加 jump 突进、orbit_player 绕身、ranged_spit 伤害 hazard、shielded 正面减伤行为与单测。下一步应继续小步调整候选敌人参数、终局敌人池和波次压力，并复测 Random、Route 与高技能 Bot。",
-  "validation": "对照报告 harness/reports/2026-05-26_base_demo_matrix_600s_seed12345_probe_001、候选修复验证 harness/reports/2026-05-26_phase4_full_pack_balance_repair_validation_003、候选仿真 harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003、行为实现后仿真 harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001 均已生成；代码验证通过 cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace。后续候选修复后继续重跑 game_harness simulate-candidates --source-dir harness/validated_candidates --seed-start 12345 --seeds 5 --seconds 600 --bots all，并在通过后扩展更多 seed。"
+  "time_seconds": 600,
+  "symptom": "历史失败：Phase 4 full pack 候选曾在 5 seed / 600 秒 all Bot 仿真中进入 repair，simulation_003 / enemy_behavior_simulation_001 暴露 Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 等 Bot 胜率偏离目标；当前 failure case 保留为已修复问题的审计记录。",
+  "root_cause": "原始失败由三类问题叠加：候选终局波次压力不足，jump / orbit_player / ranged_spit / shielded 敌人行为压力当时尚未完整落入 GameCore，以及 Route / BossHunter 终局 Bot 基线与 600 秒门禁目标不匹配。",
+  "fix": "已修复：GameCore 支持多个 Boss 事件、regen_per_second、最近 Boss snapshot 与候选敌人行为压力；候选 full pack 调整终局敌人参数、糖霜草地 480-600 秒敌人池、honey-heart、bubble-shoes 和 star-sugar-ray；Bot policy 校准 Route 固定路线速度与 BossHunter 贴近 Boss 的终局行为。",
+  "validation": "已验证：cargo fmt --check、cargo test -p game_core、cargo test -p bot_policies、cargo clippy --workspace --all-targets 通过；正式 validate-candidates 报告见 harness/reports/2026-05-26_phase4_full_pack_balance_repair_validation_005/summary.md；正式 simulate-candidates --bots all --seed-start 12345 --seeds 5 --seconds 600 报告见 harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md，结果为 simulated_count 1、repair_count 0、全部 9 个 Bot gate_status pass。"
 }
