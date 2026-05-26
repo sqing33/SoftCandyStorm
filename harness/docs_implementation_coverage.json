@@ -131,7 +131,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 新增候选已有设计审查草稿、审查包、校验器和 simulation candidate manifest 门禁；正式 accepted_content 仍受仿真与人工试玩门禁限制。",
+      "summary": "base_demo 与 generated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 新增候选已有设计审查草稿、审查包、校验器、simulation candidate manifest 门禁和最终接受证据包；正式 accepted_content 仍受仿真与人工试玩门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -150,10 +150,13 @@
             "harness/content_review/validate_content_simulation_candidate_manifest.py",
             "harness/content_review/content_simulation_candidate_manifest_template.json",
             "harness/reports/2026-05-26_content_simulation_candidate_manifest_template_001/summary.md",
-            "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json"
+            "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json",
+            "harness/content_review/create_content_acceptance_review_packet.py",
+            "harness/content_review/test_create_content_acceptance_review_packet.py",
+            "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md"
           ],
           "gaps": [
-            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板当前也必须保持 invalid。",
+            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。",
             "缺少恢复二进制后的正式 Harness validate-candidates、Bot 仿真和人工试玩接受证据。"
           ]
         }
@@ -342,7 +345,7 @@
       "doc_id": "10",
       "doc_path": "docs/10_AI内容生成流水线.md",
       "status": "partial",
-      "summary": "内容候选、物化、预检、内容设计审查草稿 / 审查包 / 校验器、simulation candidate manifest 门禁、素材 metadata 和 provenance 校验、accepted content lockfile 形状校验已实现；候选进入 accepted_content 仍需要仿真与人工确认。",
+      "summary": "内容候选、物化、预检、内容设计审查草稿 / 审查包 / 校验器、simulation candidate manifest 门禁、内容最终接受证据包、素材 metadata 和 provenance 校验、accepted content lockfile 形状校验已实现；候选进入 accepted_content 仍需要仿真与人工确认。",
       "coverage": [
         {
           "id": "candidate-pipeline",
@@ -362,6 +365,9 @@
             "harness/content_review/validate_content_simulation_candidate_manifest.py",
             "harness/reports/2026-05-26_content_simulation_candidate_manifest_template_001/summary.md",
             "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json",
+            "harness/content_review/create_content_acceptance_review_packet.py",
+            "harness/content_review/test_create_content_acceptance_review_packet.py",
+            "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md",
             "tools/validate_accepted_content_lockfile.py",
             "tools/test_validate_accepted_content_lockfile.py",
             "harness/accepted_content/accepted_content.lock.json",
@@ -369,7 +375,7 @@
           ],
           "gaps": [
             "当前 full pack 仍是 generated candidate，尚未通过恢复后的正式 Harness 仿真。",
-            "内容设计审查已有草稿、审查包、校验器和 simulation candidate manifest 门禁；accepted content lockfile 已有 blocked 空锁和校验报告，但尚未存在真人 9 局试玩接受、acceptance gate、内容 hash 复核后的非空正式内容锁。"
+            "内容设计审查已有草稿、审查包、校验器、simulation candidate manifest 门禁和最终接受证据包；accepted content lockfile 已有 blocked 空锁和校验报告，但尚未存在真人 9 局试玩接受、acceptance gate、内容 hash 复核后的非空正式内容锁。"
           ]
         }
       ]
@@ -442,6 +448,9 @@
             "harness/release/current_local_package_manifest.json",
             "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md",
             "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md",
+            "harness/content_review/create_content_acceptance_review_packet.py",
+            "harness/content_review/test_create_content_acceptance_review_packet.py",
+            "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md",
             "tools/validate_accepted_content_lockfile.py",
             "tools/test_validate_accepted_content_lockfile.py",
             "harness/accepted_content/accepted_content.lock.json",
@@ -451,7 +460,7 @@
           ],
           "gaps": [
             "当前 release_candidate_evidence、accepted_content_lockfile 与 release_package_manifest 报告均为 not-ready / blocked；Goal 证据一致性报告确认这些 not-ready / blocked 结论与 docs 覆盖、路线图和 progress 账本一致。",
-            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板、审查包和完整性校验器，人工试玩也已有真人审查包，素材最终接受已有证据状态包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、非空正式内容锁、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。"
+            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板、审查包和完整性校验器，人工试玩也已有真人审查包，内容和素材最终接受已有证据状态包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、非空正式内容锁、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。"
           ],
           "blockers": [
             "local_binary_launch_blocked",

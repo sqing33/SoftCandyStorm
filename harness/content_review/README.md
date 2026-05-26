@@ -69,3 +69,19 @@ python3 harness/content_review/validate_content_simulation_candidate_manifest.py
 ```
 
 该 staging 只说明人工设计审查允许进入后续仿真候选；它不会写入 `validated_candidates`、`simulated_candidates`、`playtest_candidates`、`accepted_content` 或 Runtime。
+
+## 最终接受证据包
+
+候选内容进入 `accepted_content` 前，还应先生成最终接受证据包，确认所有必需证据都已存在且没有把 generated candidate 直接放行：
+
+```bash
+python3 harness/content_review/create_content_acceptance_review_packet.py \
+  harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack \
+  --repo-root . \
+  --report harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/content_acceptance_review_packet.json \
+  --markdown harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md
+```
+
+该证据包会串联完整候选包预检、静态预算、人工设计审查、设计审查包、Demo readiness、9 局人工试玩草稿和 accepted content lockfile。当前 Phase 4 报告结论为 `content_acceptance_review_packet_needs_evidence`，因为设计审查与人工试玩仍含 `TODO`，`demo_readiness` 仍是 `demo_not_ready`，accepted content lockfile 仍是 `accepted_content_lockfile_blocked`。
+
+最终接受证据包只负责防漏和交接；它不验证真人审查、不运行 Harness 仿真、不复制候选、不写 `accepted_content`，也不批准发布。

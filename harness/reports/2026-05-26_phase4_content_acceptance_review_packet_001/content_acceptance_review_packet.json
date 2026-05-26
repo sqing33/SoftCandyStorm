@@ -1,0 +1,229 @@
+{
+  "report_version": 1,
+  "source": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "content_acceptance_review_packet_needs_evidence",
+  "candidate_pack_id": "2026-05-26_phase4_roster_gap_full_pack",
+  "candidate_kind": "full_content_pack",
+  "content_count": 8,
+  "type_counts": {
+    "enemy": 4,
+    "passive": 4
+  },
+  "evidence_count": 7,
+  "existing_evidence_count": 7,
+  "errors": [],
+  "blockers": [
+    "design review draft still contains TODO placeholders",
+    "design review has not reached simulate_candidate",
+    "manual playtest draft still contains TODO placeholders",
+    "manual playtest has not accepted the candidate",
+    "demo readiness is `demo_not_ready`",
+    "accepted content lockfile is `accepted_content_lockfile_blocked`"
+  ],
+  "evidence": [
+    {
+      "field": "candidate_preflight_report",
+      "label": "Candidate preflight",
+      "value": "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md",
+      "expected": "materialized full pack preflight exists",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "static_budget_report",
+      "label": "Static budget",
+      "value": "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md",
+      "expected": "pure Python static budget exists",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "design_review_draft",
+      "label": "Design review draft",
+      "value": "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json",
+      "status": "exists",
+      "resolved_path": "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json",
+      "expected": "human-filled design review must replace TODO values",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "design_review_packet",
+      "label": "Design review packet",
+      "value": "harness/reports/2026-05-26_phase4_roster_content_review_packet_001/summary.md",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_phase4_roster_content_review_packet_001/summary.md",
+      "expected": "review packet exists for human review",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "demo_readiness_report",
+      "label": "Demo readiness",
+      "value": "harness/reports/2026-05-26_demo_readiness_current_local_001/demo_readiness.json",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_demo_readiness_current_local_001/demo_readiness.json",
+      "expected": "demo readiness must not be demo_ready until gates pass",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "manual_playtest_draft",
+      "label": "Manual playtest draft",
+      "value": "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+      "status": "exists",
+      "resolved_path": "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+      "expected": "9-run human playtest must be filled by a human",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "accepted_content_lockfile_report",
+      "label": "Accepted content lockfile",
+      "value": "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json",
+      "expected": "non-empty lockfile only after strict human acceptance",
+      "blocking_if_missing": true
+    }
+  ],
+  "design_review_status": {
+    "decision": null,
+    "gate_decision": "needs_more_review",
+    "content_review_count": 8,
+    "todo_count": 71,
+    "status": "draft_todo"
+  },
+  "manual_playtest_status": {
+    "acceptance_decision": "needs_more_runs",
+    "run_count": 9,
+    "todo_count": 104,
+    "status": "draft_todo"
+  },
+  "demo_readiness_decision": "demo_not_ready",
+  "accepted_content_lockfile_decision": "accepted_content_lockfile_blocked",
+  "items": [
+    {
+      "id": "honey-heart",
+      "type": "passive",
+      "role": "低速恢复",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/passives/honey-heart.json",
+      "name": "蜂蜜糖心",
+      "tags": [
+        "recovery",
+        "defense",
+        "beginner"
+      ],
+      "balance_risk": "回复叠加可能让防御流过于安全",
+      "gate_focus": "IdleBot 不能只靠续航活到 600 秒"
+    },
+    {
+      "id": "peppermint-pocket-watch",
+      "type": "passive",
+      "role": "轻量冷却平滑",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/passives/peppermint-pocket-watch.json",
+      "name": "薄荷怀表",
+      "tags": [
+        "cooldown",
+        "control",
+        "timing"
+      ],
+      "balance_risk": "冷却乘区叠加可能让投射物流过度加速",
+      "gate_focus": "武器释放频率和投射物数量必须留在性能预算内"
+    },
+    {
+      "id": "jelly-lens-polish",
+      "type": "passive",
+      "role": "投射物可读性与命中可靠性",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/passives/jelly-lens-polish.json",
+      "name": "果冻镜片油",
+      "tags": [
+        "projectile",
+        "readability",
+        "support"
+      ],
+      "balance_risk": "投射物过大会抬高实际群体伤害",
+      "gate_focus": "投射物尺寸流不应统治群体 DPS"
+    },
+    {
+      "id": "cocoa-safety-badge",
+      "type": "passive",
+      "role": "低血量防御缓冲",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/passives/cocoa-safety-badge.json",
+      "name": "可可安全徽章",
+      "tags": [
+        "defense",
+        "low-health",
+        "beginner"
+      ],
+      "balance_risk": "可能与防粘围裙重叠，让 TankBot 过于稳定",
+      "gate_focus": "TankBot 胜率和接触承伤"
+    },
+    {
+      "id": "licorice-skipper",
+      "type": "enemy",
+      "role": "跳跃干扰怪",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/enemies/licorice-skipper.json",
+      "name": "甘草跳跳",
+      "tags": [
+        "jump",
+        "disruptor",
+        "midgame"
+      ],
+      "balance_risk": "跳跃时机不可读会造成不公平接触伤害",
+      "gate_focus": "死亡原因清晰度和中前期压力"
+    },
+    {
+      "id": "sugar-moth",
+      "type": "enemy",
+      "role": "环绕压力怪",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/enemies/sugar-moth.json",
+      "name": "糖粉飞蛾",
+      "tags": [
+        "orbit",
+        "flanker",
+        "visual-clarity"
+      ],
+      "balance_risk": "环绕怪过多会困住低移速玩家",
+      "gate_focus": "CowardBot 路线安全和视觉清晰度"
+    },
+    {
+      "id": "taffy-shieldling",
+      "type": "enemy",
+      "role": "护盾阻挡怪",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/enemies/taffy-shieldling.json",
+      "name": "太妃盾糖",
+      "tags": [
+        "shielded",
+        "blocker",
+        "tank"
+      ],
+      "balance_risk": "阻挡怪过多会让投射物流派显得无效",
+      "gate_focus": "投射物流派清怪时间和路线压缩"
+    },
+    {
+      "id": "sprinkle-spitter",
+      "type": "enemy",
+      "role": "远程预警压力怪",
+      "path": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/enemies/sprinkle-spitter.json",
+      "name": "糖针吐吐",
+      "tags": [
+        "ranged",
+        "warning",
+        "projectile-pressure"
+      ],
+      "balance_risk": "远程吐针会增加投射物可读性压力",
+      "gate_focus": "投射物可读性和活跃投射物数量"
+    }
+  ],
+  "required_next_steps": [
+    "Replace design review TODO values with a real human design review and validate it.",
+    "After binary recovery, run formal Harness validate-candidates, budget-content, Bot simulation, and replay regression.",
+    "Run and fill the 9-run manual playtest review with human ratings and notes.",
+    "Only after strict human acceptance, generate a non-empty accepted content lockfile."
+  ],
+  "limitations": [
+    "This packet organizes content acceptance evidence only.",
+    "It does not validate human reviews, simulate content, promote candidates, write accepted_content, or approve release readiness.",
+    "Candidate content remains generated_candidates until every required gate passes."
+  ]
+}
