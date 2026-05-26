@@ -15,6 +15,7 @@
 4. 运行 `validate_content_candidate_design_review.py` 校验审查记录完整性。
 5. 只有人工设计审查通过且 `gate_decision=simulate_candidate` 后，候选才可以进入后续仿真或人工试玩候选流程；这仍不等于进入 `accepted_content`。
 6. 若需要记录“设计审查通过、等待正式 Harness 仿真”的 staging，可运行 `promote_content_simulation_candidate.py` 并继续用 `validate_content_simulation_candidate_manifest.py` 校验生成的 `simulation_candidate_manifest.json`。
+7. 候选最终接受必须先用 `validate_content_final_acceptance.py` 校验真人 final acceptance 记录，再用 `validate_content_acceptance_manifest.py` 汇总 simulation candidate manifest、final acceptance 和 accepted content lockfile 三段证据。
 
 生成审查草稿示例：
 
@@ -85,3 +86,27 @@ python3 harness/content_review/create_content_acceptance_review_packet.py \
 该证据包会串联完整候选包预检、静态预算、人工设计审查、设计审查包、Demo readiness、9 局人工试玩草稿和 accepted content lockfile。当前 Phase 4 报告结论为 `content_acceptance_review_packet_needs_evidence`，因为设计审查与人工试玩仍含 `TODO`，`demo_readiness` 仍是 `demo_not_ready`，accepted content lockfile 仍是 `accepted_content_lockfile_blocked`。
 
 最终接受证据包只负责防漏和交接；它不验证真人审查、不运行 Harness 仿真、不复制候选、不写 `accepted_content`，也不批准发布。
+
+Final content acceptance 校验示例：
+
+```bash
+python3 harness/content_review/validate_content_final_acceptance.py \
+  harness/content_review/final_acceptance/<review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/content_final_acceptance.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+模板 `content_final_acceptance_template.json` 保留 TODO、占位 simulation candidate manifest 和占位 accepted content lockfile 报告路径，当前报告应为 `content_final_acceptance_invalid`。它只接受已通过 simulation-candidate staging 且 accepted content lockfile 报告为 `accepted_content_lockfile_valid` 的候选，并继续要求 `release_ready=false`、`runtime_integrated=false`。
+
+Content acceptance manifest 校验示例：
+
+```bash
+python3 harness/content_review/validate_content_acceptance_manifest.py \
+  harness/content_review/accepted/<candidate>/acceptance_manifest.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/content_acceptance_manifest.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+模板 `content_acceptance_manifest_template.json` 保留 TODO 和占位证据路径，当前报告应为 `content_acceptance_manifest_invalid`。它要求绑定有效 simulation candidate manifest、已通过 final human acceptance 和有效 accepted content lockfile；即使将来报告有效，也只说明内容包可以作为 accepted content 证据，不代表 Runtime 已集成、发布包 ready 或可以跳过 RC / 隐私 / 打包门禁。

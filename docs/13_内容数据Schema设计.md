@@ -587,3 +587,12 @@ python3 harness/content_review/validate_content_candidate_design_review.py harne
 ```
 
 该审查会绑定 `source_patch_manifest.contents`，要求覆盖每个新增候选 id，并检查主题适配、差异性、流派潜力、反制可读性、美术 / 音效适配和风险。通过结论只能是后续 `simulate_candidate` 候选，不能替代 Schema、预算、仿真、Replay 或最终人工试玩。若生成 `simulation_candidate_manifest.json`，还必须用 `harness/content_review/validate_content_simulation_candidate_manifest.py` 确认它继续绑定源候选、source patch、preflight 报告和人工设计审查，且不声明已写入 validated/simulated/playtest/accepted 阶段。
+
+候选最终进入 accepted content 证据链前，还必须用 `harness/content_review/validate_content_final_acceptance.py` 校验真人 final acceptance 记录，并用 `harness/content_review/validate_content_acceptance_manifest.py` 校验最终 acceptance manifest。final acceptance 记录必须绑定有效 simulation candidate manifest 和 `accepted_content_lockfile_valid` 报告；acceptance manifest 必须确认 accepted contents 的 id、type、path 与 source simulation candidate 一致，并继续声明 `runtime_integrated=false`、`release_ready=false`、`generated_candidate_direct_acceptance_allowed=false`。当前模板报告位于：
+
+```text
+harness/reports/2026-05-26_content_final_acceptance_template_001/summary.md
+harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md
+```
+
+两个模板都应保持 invalid，直到真人最终接受和非空 accepted content lockfile 真实存在。

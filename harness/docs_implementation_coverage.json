@@ -164,10 +164,18 @@
             "harness/content_review/drafts/2026-05-26_phase4_roster_gap_full_pack_design_review_draft.json",
             "harness/content_review/create_content_acceptance_review_packet.py",
             "harness/content_review/test_create_content_acceptance_review_packet.py",
-            "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md"
+            "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md",
+            "harness/content_review/validate_content_final_acceptance.py",
+            "harness/content_review/test_validate_content_final_acceptance.py",
+            "harness/content_review/content_final_acceptance_template.json",
+            "harness/reports/2026-05-26_content_final_acceptance_template_001/summary.md",
+            "harness/content_review/validate_content_acceptance_manifest.py",
+            "harness/content_review/test_validate_content_acceptance_manifest.py",
+            "harness/content_review/content_acceptance_manifest_template.json",
+            "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md"
           ],
           "gaps": [
-            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。",
+            "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板、final acceptance 模板和 acceptance manifest 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。",
             "缺少恢复二进制后的正式 Harness validate-candidates、Bot 仿真和人工试玩接受证据。"
           ]
         }
@@ -379,6 +387,14 @@
             "harness/content_review/create_content_acceptance_review_packet.py",
             "harness/content_review/test_create_content_acceptance_review_packet.py",
             "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md",
+            "harness/content_review/validate_content_final_acceptance.py",
+            "harness/content_review/test_validate_content_final_acceptance.py",
+            "harness/content_review/content_final_acceptance_template.json",
+            "harness/reports/2026-05-26_content_final_acceptance_template_001/summary.md",
+            "harness/content_review/validate_content_acceptance_manifest.py",
+            "harness/content_review/test_validate_content_acceptance_manifest.py",
+            "harness/content_review/content_acceptance_manifest_template.json",
+            "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md",
             "tools/validate_accepted_content_lockfile.py",
             "tools/test_validate_accepted_content_lockfile.py",
             "harness/accepted_content/accepted_content.lock.json",
@@ -386,7 +402,7 @@
           ],
           "gaps": [
             "当前 full pack 仍是 generated candidate，尚未通过恢复后的正式 Harness 仿真。",
-            "内容设计审查已有草稿、审查包、校验器、simulation candidate manifest 门禁和最终接受证据包；accepted content lockfile 已有 blocked 空锁和校验报告，但尚未存在真人 9 局试玩接受、acceptance gate、内容 hash 复核后的非空正式内容锁。"
+            "内容设计审查已有草稿、审查包、校验器、simulation candidate manifest 门禁、final acceptance 门禁、acceptance manifest 门禁和最终接受证据包；accepted content lockfile 已有 blocked 空锁和校验报告，但尚未存在真人 9 局试玩接受、acceptance gate、内容 hash 复核后的非空正式内容锁。"
           ]
         }
       ]
@@ -544,6 +560,12 @@
             "tools/validate_materialized_content_pack.py",
             "harness/content_review/validate_content_simulation_candidate_manifest.py",
             "harness/reports/2026-05-26_content_simulation_candidate_manifest_template_001/summary.md",
+            "harness/content_review/validate_content_final_acceptance.py",
+            "harness/content_review/content_final_acceptance_template.json",
+            "harness/reports/2026-05-26_content_final_acceptance_template_001/summary.md",
+            "harness/content_review/validate_content_acceptance_manifest.py",
+            "harness/content_review/content_acceptance_manifest_template.json",
+            "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md",
             "tools/validate_accepted_content_lockfile.py",
             "tools/test_validate_accepted_content_lockfile.py",
             "harness/accepted_content/accepted_content.lock.json",
@@ -551,7 +573,7 @@
           ],
           "gaps": [
             "需要恢复 Rust 二进制后重跑 GameCore 内容加载和 Harness validate-content。",
-            "Schema 契约已覆盖结构、必填字段、枚举、id、简单数值边界、跨文件引用和基础时间 / 距离 / 阶段语义；accepted_content lockfile 当前为 blocked 空锁，只证明暂无真人接受后的正式内容，更深的 GameCore 行为语义、预算和仿真仍依赖恢复后的 GameCore/Harness。"
+            "Schema 契约已覆盖结构、必填字段、枚举、id、简单数值边界、跨文件引用和基础时间 / 距离 / 阶段语义；content final acceptance 与 acceptance manifest 门禁已要求最终接受绑定 simulation candidate 和有效 lockfile；accepted_content lockfile 当前为 blocked 空锁，只证明暂无真人接受后的正式内容，更深的 GameCore 行为语义、预算和仿真仍依赖恢复后的 GameCore/Harness。"
           ]
         }
       ]
