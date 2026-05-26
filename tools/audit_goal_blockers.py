@@ -284,6 +284,13 @@ def build_roadmap_blocker(report: dict[str, Any], source: str) -> dict[str, Any]
     )
 
 
+def drop_inactive_blocker_dependency(blockers: list[dict[str, Any]], blocker_id: str) -> None:
+    for item in blockers:
+        blocked_by = item.get("blocked_by")
+        if isinstance(blocked_by, list):
+            item["blocked_by"] = [value for value in blocked_by if value != blocker_id]
+
+
 def build_report(
     repo_root: Path,
     *,
@@ -328,6 +335,9 @@ def build_report(
         item = builder(payload, sources[label])
         if item is not None:
             blockers.append(item)
+
+    if loaded.get("local_binary", {}).get("decision") == "local_binary_launch_ok":
+        drop_inactive_blocker_dependency(blockers, "local_binary_launch_blocked")
 
     consistency = loaded.get("goal_consistency", {})
     if consistency.get("decision") != "goal_evidence_consistent":

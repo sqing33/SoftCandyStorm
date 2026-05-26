@@ -138,6 +138,20 @@ class GoalBlockerAuditTests(unittest.TestCase):
             self.assertEqual(report["decision"], "goal_blockers_present")
             self.assertIn("docs_implementation_incomplete", ids)
 
+    def test_recovered_local_binary_is_not_listed_as_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            paths = fixture_reports(root)
+            write_json(paths["local_binary"], {"decision": "local_binary_launch_ok", "next_actions": []})
+
+            report = build_report(root, **paths)
+
+            self.assertEqual(report["decision"], "goal_blockers_present")
+            ids = {item["id"] for item in report["blockers"]}
+            self.assertNotIn("local_binary_launch_blocked", ids)
+            for item in report["blockers"]:
+                self.assertNotIn("local_binary_launch_blocked", item.get("blocked_by", []))
+
     def test_cli_writes_report_with_allow_blockers(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
