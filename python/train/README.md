@@ -319,6 +319,8 @@ The first packaging smoke proved the staged checkpoint can be loaded through the
 
 The first full staged GRU context8 candidate trained separate opening, mid, and late subpolicies and packaged them with relative paths. It still failed earlier than the time-phase single model: the 60-second high-pressure comparison marked `soda-creek` as repair with 20% win rate and action 3 at 76.72%, and the 300-second comparison kept `soda-creek` at 0%. This confirms that staged dispatch alone is not enough; the next repair should add phase objectives, upgrade-choice supervision, broader opening data, or PPO distillation.
 
+The phase-aligned staged retry exported fresh 300-second high-pressure trajectories so the `opening` filter covered 0-60 seconds instead of only the first 12 seconds of a 60-second episode. This raised opening samples from 1080 to 5388, but the policy still collapsed on `soda-creek`: 0% win rate in the 60-second comparison with action 3 at 79.11%, and 0% `soda-creek` plus 0% `caramel-workshop` in the 300-second comparison. Treat this as evidence that data-window alignment alone is not enough; the next repair needs phase objectives, upgrade-choice data, teacher soft targets, or PPO distillation.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_009",
+  "category": "rl",
+  "content_id": "behavior_clone_kite_staged_gru_context8_phase_aligned",
+  "seed": 46000,
+  "bot": "BehaviorCloneKiteStagedGruContext8PhaseAligned",
+  "time_seconds": 60.0,
+  "symptom": "使用 300 秒 phase-aligned high-pressure 轨迹后，opening 样本从 1080 提升到 5388，但 staged GRU context8 在 60 秒 soda-creek 仍为 0% 胜率，action 3 占 79.11%，normalized action entropy 只有 0.2356；300 秒中 soda-creek 和 caramel-workshop 也都是 0% 胜率。",
+  "root_cause": "原 staged 数据窗口错配已修正，但三段子策略仍是 movement-only imitation，缺少升级选择、阶段目标、危险区/Boss 目标和低血量恢复监督；opening 轨迹本身还有 high_action_persistence 诊断，GRU 会把早期 KiteBot 的方向偏置学成确定性动作。",
+  "fix": "不要继续只补 opening 样本或拆分 movement-only 子模型；下一步应引入阶段目标监督、升级选择数据、teacher action soft targets 或 PPO 蒸馏初始化，并在训练前检查目标动作持续性。",
+  "validation": "target/debug/game_harness export-bot-trajectories --bot kite --seed-start 48000 --seeds 10 --map-id <high-pressure-map> --seconds 300 --sample-stride 10 --observation-version 2；uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py --dataset harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001 --architecture gru --context-frames 8 --map-conditioning one_hot --sample-weighting danger --time-phase-filter opening|mid|late --epochs 20 --batch-size 256 --hidden-size 128；uv run --with-requirements python/train/requirements.txt python python/train/create_staged_behavior_clone_policy.py --opening-model .../opening.pt --mid-model .../mid.pt --late-model .../late.pt --model-out .../staged.pt；uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model harness/reports/2026-05-27_rl_behavior_clone_kite_staged_gru_context8_phase_aligned_smoke_001/staged.pt --seed-start 46000 --eval-episodes 5 --eval-seconds 60 --rule-bots random,kite,tank；同模型再以 --seed-start 47000 --eval-episodes 3 --eval-seconds 300 复查长局。"
+}

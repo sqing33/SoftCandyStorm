@@ -352,6 +352,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 首个完整 staged GRU context8 候选分别训练 opening、mid、late 三段子策略并用相对路径打包；结果仍为 `repair`：60 秒 high-pressure 中 `soda-creek` 只有 20% 胜率且动作 3 占 76.72%，300 秒中 `soda-creek` 为 0%、`caramel-workshop` 和 `cracked-star-jar` 各 33.33%。这说明只按时间切换子模型不足以形成长局规划，下一步需要阶段目标监督、升级选择数据、更多 opening 覆盖或 PPO 蒸馏。
 
+为排查 staged 子策略的数据窗口错配，已重新导出 300 秒 high-pressure 三图 10 seed phase-aligned 轨迹，使 `opening` 覆盖 0-60 秒而不是 60 秒短局中的前 12 秒。该修复把 opening 样本从 1080 提升到 5388，但 phase-aligned staged GRU context8 仍为 `repair`：60 秒 `soda-creek` 0% 胜率、动作 3 占 79.11%，300 秒 `soda-creek` 和 `caramel-workshop` 均为 0%。结论是补 opening 覆盖不足以修复 movement-only imitation，下一步应引入阶段目标监督、升级选择数据、teacher soft targets 或 PPO 蒸馏初始化。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
