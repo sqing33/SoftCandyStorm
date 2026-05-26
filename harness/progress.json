@@ -567,6 +567,11 @@
       "id": "story_codex_seed_candidates",
       "summary": "为 docs/03 和 docs/18 增加剧情 / 图鉴 generated candidate 包，覆盖 6 个章节剧情片段和 26 条图鉴文本；新增纯 Python 校验器检查候选池标记、章节到 base_demo 地图/Boss 引用、图鉴解锁引用、related_ids、文案长度和主题红线，当前报告 0 error、0 warning。",
       "report": "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md"
+    },
+    {
+      "id": "story_codex_manual_review_gate",
+      "summary": "增加剧情 / 图鉴人工审校门禁模板和纯 Python 校验器，要求审校记录覆盖候选包中的所有章节与图鉴 id，并检查语气、世界观一致性、UI fit、剧透/解锁节奏评分、修订项、全局风险和 gate 决策；该门禁只允许进入 future UI candidate，不会推进到 accepted_content。",
+      "report": "harness/story_review/validate_story_codex_manual_review.py"
     }
   ],
   "current_findings": [
