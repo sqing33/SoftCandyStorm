@@ -10,7 +10,9 @@
 2. 运行 `validate_telemetry_privacy_policy.py` 检查默认关闭、显式同意、匿名 session、禁止字段、保留周期和玩家控制项。
 3. 用 `runtime_privacy_settings_contract_v0.json` 约束 Runtime 设置页必须提供的关闭开关、隐私说明、删除本地数据和导出本地数据入口。
 4. 运行 `validate_runtime_privacy_settings_contract.py` 检查设置契约是否绑定隐私策略和 v0 存档契约。
-5. 只有策略和设置契约都通过后，才能把上传型匿名遥测纳入 Release Candidate 证据；Replay 原始输入不得默认上传。
+5. 真人隐私审查人复制 `manual_privacy_review_template.json`，填写默认关闭、明确同意、raw replay 单独同意、禁止字段、删除 / 导出、本地保留和 Runtime 证据限制等检查项。
+6. 运行 `validate_manual_privacy_review.py` 校验人工审查记录完整性。
+7. 只有策略、设置契约和人工隐私审查都通过后，才能把上传型匿名遥测纳入 Release Candidate 证据；Replay 原始输入不得默认上传。
 
 设置契约校验示例：
 
@@ -24,6 +26,18 @@ python3 harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py 
 ```
 
 该门禁不替代法律审查，也不代表遥测实现已经接入 Runtime。`runtime_privacy_settings_contract_valid` 只证明预期设置页和数据控制项有可校验契约；真实上传链路、发布级导出 / 删除按钮、平台路径和人工隐私审查仍需要后续验证。
+
+人工隐私审查校验示例：
+
+```bash
+python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
+  harness/telemetry_privacy/reviews/<review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/manual_privacy_review.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+`manual_privacy_review_template.json` 默认包含 `TODO` 和 `needs_more_review`，不能作为通过证据。人工审查通过也不等于法律批准、上传链路完成或 Release Candidate ready。
 
 当前 Runtime 已实现 CLI 级本地数据控制，并提供 `F4` Bevy 设置页用于显式切换上传型同意项：
 

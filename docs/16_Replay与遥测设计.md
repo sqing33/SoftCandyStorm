@@ -257,6 +257,8 @@ harness/telemetry_privacy/telemetry_privacy_policy_template.json
 harness/telemetry_privacy/validate_telemetry_privacy_policy.py
 harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json
 harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py
+harness/telemetry_privacy/manual_privacy_review_template.json
+harness/telemetry_privacy/validate_manual_privacy_review.py
 ```
 
 该策略门禁要求：
@@ -267,7 +269,7 @@ harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py
 - `allowed_event_fields` 不能包含禁止字段或 replay 原始输入。
 - 本地数据需要有保留天数、删除和导出控制项。
 - Runtime 隐私设置页契约必须提供上传开关、raw replay 单独同意、崩溃报告同意、删除本地数据、导出本地数据和隐私说明入口。
-- 发布前仍需要人工隐私审查、真实 Runtime 设置页验证、隐私说明文本和 Release Candidate 证据。
+- 发布前仍需要填写并通过人工隐私审查、真实 Runtime 设置页验证、隐私说明文本和 Release Candidate 证据。
 
 Runtime 当前实现状态：
 
@@ -275,7 +277,7 @@ Runtime 当前实现状态：
 - `--print-privacy-notice` 可输出本地优先、默认关闭、明确同意、删除 / 导出、禁止个人身份信息和 90 天保留主题。
 - `--export-local-data <path>` 可导出本地遥测 / replay JSON 文件内容，并附带当前隐私设置。
 - `--delete-local-data` 可删除显式传入的本地遥测 / replay 目录内容；为了避免误删开发证据，未传 `--local-data-dir` 时会拒绝执行。
-- Runtime 已有 `F4` 隐私设置页，可显式切换三个上传同意项并在配置了 `--runtime-settings-file` 时写回 JSON；仍未完成平台存档位置、法律审查、上传传输、发布级导出 / 删除按钮验证和人工隐私审查，因此 Release Candidate 仍不得标为通过。
+- Runtime 已有 `F4` 隐私设置页，可显式切换三个上传同意项并在配置了 `--runtime-settings-file` 时写回 JSON；人工隐私审查已有模板和完整性校验器，但尚未由真人填写通过。仍未完成平台存档位置、法律审查、上传传输、发布级导出 / 删除按钮验证，因此 Release Candidate 仍不得标为通过。
 
 当前校验命令：
 
@@ -291,6 +293,12 @@ python3 harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py 
   --save-contract harness/save_contract/save_state_v0_template.json \
   --report harness/reports/2026-05-26_runtime_privacy_settings_contract_001/runtime_privacy_settings_contract.json \
   --markdown harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md
+
+python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
+  harness/telemetry_privacy/reviews/<review>.json \
+  --repo-root . \
+  --report harness/reports/<manual-privacy-review>/manual_privacy_review.json \
+  --markdown harness/reports/<manual-privacy-review>/summary.md
 ```
 
 ## 本地存档与数据控制
