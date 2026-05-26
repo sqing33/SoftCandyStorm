@@ -439,183 +439,228 @@
     },
     {
       "id": "rl_dqn_training_smoke",
-      "summary": "使用 uv 临时依赖环境完成最小 DQN 训练冒烟，生成 SB3 模型 zip、metadata、训练报告、评估报告和已知 exploit 记录；最新 Gate 结论为 trained_needs_action_bias_repair"
+      "summary": "使用 uv 临时依赖环境完成最小 DQN 训练冒烟，生成 SB3 模型 zip、metadata、训练报告、评估报告和已知 exploit 记录；最新 Gate 结论为 trained_needs_action_bias_repair",
+      "report": "harness/reports/2026-05-26_rl_dqn_training_smoke_001/summary.md"
     },
     {
       "id": "rl_policy_rule_bot_comparison",
-      "summary": "增加并运行 DQN policy 与规则 Bot 同 seed / 同 map 对比报告；确认对比链路可用，同时记录 DQN smoke policy 100% 选择动作 1 的动作塌缩 failure case"
+      "summary": "增加并运行 DQN policy 与规则 Bot 同 seed / 同 map 对比报告；确认对比链路可用，同时记录 DQN smoke policy 100% 选择动作 1 的动作塌缩 failure case",
+      "report": "harness/reports/2026-05-26_rl_policy_rule_bot_comparison_001/summary.md"
     },
     {
       "id": "rl_policy_observability_fields",
-      "summary": "Gym bridge 和 SB3 评估报告补充 reward_breakdown、action_entropy_bits 和 normalized_action_entropy，并用 DQN recheck 证明动作塌缩与终局奖励主导问题可被报告捕捉"
+      "summary": "Gym bridge 和 SB3 评估报告补充 reward_breakdown、action_entropy_bits 和 normalized_action_entropy，并用 DQN recheck 证明动作塌缩与终局奖励主导问题可被报告捕捉",
+      "report": "harness/reports/2026-05-26_rl_policy_observability_recheck_001/summary.md"
     },
     {
       "id": "rl_training_metadata_isolation",
-      "summary": "训练输出改为按算法写入 metadata，并在报告中同时记录 requested_timesteps 和 actual_timesteps，避免 DQN/PPO 产物互相覆盖或误报实际采样规模"
+      "summary": "训练输出改为按算法写入 metadata，并在报告中同时记录 requested_timesteps 和 actual_timesteps，避免 DQN/PPO 产物互相覆盖或误报实际采样规模",
+      "report": "python/train/train_sb3.py"
     },
     {
       "id": "rl_ppo_training_smoke",
-      "summary": "使用 uv 临时依赖环境完成最小 PPO 训练冒烟，生成 PPO 模型、metadata、训练报告、评估报告和 known exploit 记录；最新 Gate 结论为 trained_needs_action_bias_repair"
+      "summary": "使用 uv 临时依赖环境完成最小 PPO 训练冒烟，生成 PPO 模型、metadata、训练报告、评估报告和 known exploit 记录；最新 Gate 结论为 trained_needs_action_bias_repair",
+      "report": "harness/reports/2026-05-26_rl_ppo_training_smoke_001/summary.md"
     },
     {
       "id": "rl_action_bias_gate",
-      "summary": "将 dominant_action_bias、low_action_entropy 和 terminal_reward_dominance 纳入 RL 训练/对比报告，DQN 与 PPO 冒烟报告现在会阻断在 action_bias_repair 阶段"
+      "summary": "将 dominant_action_bias、low_action_entropy 和 terminal_reward_dominance 纳入 RL 训练/对比报告，DQN 与 PPO 冒烟报告现在会阻断在 action_bias_repair 阶段",
+      "report": "harness/reports/2026-05-26_rl_policy_observability_recheck_001/summary.md"
     },
     {
       "id": "rl_dqn_action_bias_repair_experiment",
-      "summary": "运行 DQN 2000-step / 30 秒与 5000-step / 60 秒动作塌缩修复实验，并用独立模型与报告目录隔离产物；结果仍为 trained_needs_action_bias_repair，说明单纯增加训练步数不足以修复塌缩"
+      "summary": "运行 DQN 2000-step / 30 秒与 5000-step / 60 秒动作塌缩修复实验，并用独立模型与报告目录隔离产物；结果仍为 trained_needs_action_bias_repair，说明单纯增加训练步数不足以修复塌缩",
+      "report": "harness/reports/2026-05-26_rl_action_bias_repair_experiment_001/summary.md"
     },
     {
       "id": "rl_reward_shaping_action_bias_repair",
-      "summary": "调整 Gym reward 降低短局终局奖励主导性，并增加轻量 action_repeat 惩罚；DQN 5000-step / 60 秒评估最大动作占比降至 35.68%、归一化动作熵升至 0.6524，进入规则 Bot 对比记录阶段"
+      "summary": "调整 Gym reward 降低短局终局奖励主导性，并增加轻量 action_repeat 惩罚；DQN 5000-step / 60 秒评估最大动作占比降至 35.68%、归一化动作熵升至 0.6524，进入规则 Bot 对比记录阶段",
+      "report": "harness/reports/2026-05-26_rl_reward_shaping_experiment_001/summary.md"
     },
     {
       "id": "rl_reward_shaping_ppo_comparison",
-      "summary": "使用相同新 Gym reward 运行 PPO 5000 requested timesteps 对照实验，实际采样 5120 timesteps；最大动作占比降至 55.47%、归一化动作熵升至 0.3905，进入规则 Bot 对比记录阶段"
+      "summary": "使用相同新 Gym reward 运行 PPO 5000 requested timesteps 对照实验，实际采样 5120 timesteps；最大动作占比降至 55.47%、归一化动作熵升至 0.3905，进入规则 Bot 对比记录阶段",
+      "report": "harness/reports/2026-05-26_rl_reward_shaping_ppo_comparison_001/summary.md"
     },
     {
       "id": "rl_policy_extended_comparison",
-      "summary": "使用新 reward 下的 DQN/PPO 模型扩展到 10 seed、180 秒，并覆盖 frosting-grassland 与 caramel-workshop；两者动作分布均未复发塌缩，但 DQN 在 caramel-workshop 胜率只有 50%、平均承伤 97.6005，PPO 泛化更稳"
+      "summary": "使用新 reward 下的 DQN/PPO 模型扩展到 10 seed、180 秒，并覆盖 frosting-grassland 与 caramel-workshop；两者动作分布均未复发塌缩，但 DQN 在 caramel-workshop 胜率只有 50%、平均承伤 97.6005，PPO 泛化更稳",
+      "report": "harness/reports/2026-05-26_rl_policy_extended_comparison_001/summary.md"
     },
     {
       "id": "rl_ppo_multimap_extended_comparison",
-      "summary": "将新 reward 下的 PPO 扩展到全部 6 张 base_demo 地图、10 seed、300 秒；动作分布保持健康，但 soda-creek、caramel-workshop、cracked-star-jar 胜率分别只有 20%、20%、40%，已记录跨地图泛化 failure case"
+      "summary": "将新 reward 下的 PPO 扩展到全部 6 张 base_demo 地图、10 seed、300 秒；动作分布保持健康，但 soda-creek、caramel-workshop、cracked-star-jar 胜率分别只有 20%、20%、40%，已记录跨地图泛化 failure case",
+      "report": "harness/reports/2026-05-26_rl_ppo_multimap_extended_001/summary.md"
     },
     {
       "id": "rl_ppo_multimap_training_experiment",
-      "summary": "新增多地图训练入口后运行 PPO 6 地图 cycle 训练 10000 requested timesteps；训练入口可用但模型塌缩到动作 6 占 100%，已记录多地图训练动作塌缩 failure case"
+      "summary": "新增多地图训练入口后运行 PPO 6 地图 cycle 训练 10000 requested timesteps；训练入口可用但模型塌缩到动作 6 占 100%，已记录多地图训练动作塌缩 failure case",
+      "report": "harness/reports/2026-05-26_rl_ppo_multimap_training_experiment_001/summary.md"
     },
     {
       "id": "rl_ppo_multimap_random_training_experiment",
-      "summary": "尝试 PPO 6 地图 random 训练 10000 requested timesteps；随机地图采样仍塌缩到动作 7 占 100%、归一化动作熵 0.0，已记录随机多地图训练动作塌缩 failure case"
+      "summary": "尝试 PPO 6 地图 random 训练 10000 requested timesteps；随机地图采样仍塌缩到动作 7 占 100%、归一化动作熵 0.0，已记录随机多地图训练动作塌缩 failure case",
+      "report": "harness/reports/2026-05-26_rl_ppo_multimap_random_training_001/summary.md"
     },
     {
       "id": "rl_ppo_multimap_entropy_experiment",
-      "summary": "新增 PPO entropy 系数覆盖后运行 6 地图 random 训练 10000 requested timesteps，ent_coef=0.02 仍塌缩到动作 5 占 100%、归一化动作熵 0.0，已记录 entropy 实验动作塌缩 failure case"
+      "summary": "新增 PPO entropy 系数覆盖后运行 6 地图 random 训练 10000 requested timesteps，ent_coef=0.02 仍塌缩到动作 5 占 100%、归一化动作熵 0.0，已记录 entropy 实验动作塌缩 failure case",
+      "report": "harness/reports/2026-05-26_rl_ppo_multimap_ent_coef_001/summary.md"
     },
     {
       "id": "rl_ppo_stochastic_eval_diagnostic",
-      "summary": "新增 saved policy 随机采样评估诊断，并复查 ent_coef=0.02 PPO 模型；stochastic 评估最大动作占比 33.35%、归一化动作熵 0.8869，说明问题集中在确定性 argmax 门禁路径"
+      "summary": "新增 saved policy 随机采样评估诊断，并复查 ent_coef=0.02 PPO 模型；stochastic 评估最大动作占比 33.35%、归一化动作熵 0.8869，说明问题集中在确定性 argmax 门禁路径",
+      "report": "harness/reports/2026-05-26_rl_ppo_eval_stochastic_diagnostic_001/summary.md"
     },
     {
       "id": "rl_ppo_repeat_penalty_experiment",
-      "summary": "增强 Gym action_repeat 惩罚后重训 6 地图 random PPO，固定动作 reward 已转负但确定性策略仍塌缩到动作 6 占 100%、归一化动作熵 0.0，已记录重复动作惩罚失败案例"
+      "summary": "增强 Gym action_repeat 惩罚后重训 6 地图 random PPO，固定动作 reward 已转负但确定性策略仍塌缩到动作 6 占 100%、归一化动作熵 0.0，已记录重复动作惩罚失败案例",
+      "report": "harness/failed_cases/fail_20260526_009_ppo_repeat_penalty_action_collapse.json"
     },
     {
       "id": "rl_ppo_repeat_penalty_stochastic_diagnostic",
-      "summary": "复查增强 action_repeat 后的 PPO 模型 stochastic 分布，最大动作占比 33.63%、归一化动作熵 0.8295，确认概率策略仍有熵但确定性 argmax 路径不可用"
+      "summary": "复查增强 action_repeat 后的 PPO 模型 stochastic 分布，最大动作占比 33.63%、归一化动作熵 0.8295，确认概率策略仍有熵但确定性 argmax 路径不可用",
+      "report": "harness/reports/2026-05-26_rl_ppo_repeat_penalty_stochastic_diagnostic_001/summary.md"
     },
     {
       "id": "rl_ppo_repeat_penalty_longer_training",
-      "summary": "将增强 action_repeat 后的 PPO 多地图训练提升到 50000 requested timesteps；确定性动作熵升至 0.2876 但最大动作占比仍为 80.23%，接近但未通过动作 gate"
+      "summary": "将增强 action_repeat 后的 PPO 多地图训练提升到 50000 requested timesteps；确定性动作熵升至 0.2876 但最大动作占比仍为 80.23%，接近但未通过动作 gate",
+      "report": "harness/failed_cases/fail_20260526_010_ppo_longer_training_action_bias.json"
     },
     {
       "id": "rl_ppo_longer_training_stochastic_diagnostic",
-      "summary": "复查 50000-step PPO 模型 stochastic 分布，最大动作占比 27.60%、归一化动作熵 0.8648、平均承伤 2.05，确认概率策略健康但确定性 gate 仍未过线"
+      "summary": "复查 50000-step PPO 模型 stochastic 分布，最大动作占比 27.60%、归一化动作熵 0.8648、平均承伤 2.05，确认概率策略健康但确定性 gate 仍未过线",
+      "report": "harness/reports/2026-05-26_rl_ppo_longer_training_stochastic_diagnostic_001/summary.md"
     },
     {
       "id": "rl_ppo_repeat_penalty_100k_training_gate",
-      "summary": "将增强 action_repeat 后的 PPO 多地图 random 训练提升到 100000 requested timesteps；确定性评估最大动作占比降至 52.93%、归一化动作熵升至 0.4491，首次通过动作分布 gate，并用 stochastic 评估确认概率策略健康"
+      "summary": "将增强 action_repeat 后的 PPO 多地图 random 训练提升到 100000 requested timesteps；确定性评估最大动作占比降至 52.93%、归一化动作熵升至 0.4491，首次通过动作分布 gate，并用 stochastic 评估确认概率策略健康",
+      "report": "harness/reports/2026-05-26_rl_ppo_repeat_penalty_100k_training_001/summary.md"
     },
     {
       "id": "rl_ppo_100k_multimap_comparison",
-      "summary": "使用 100000-step PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布全地图过线，但 soda-creek 胜率 10%、caramel-workshop 和 cracked-star-jar 胜率 0%，已记录跨地图泛化 failure case"
+      "summary": "使用 100000-step PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布全地图过线，但 soda-creek 胜率 10%、caramel-workshop 和 cracked-star-jar 胜率 0%，已记录跨地图泛化 failure case",
+      "report": "harness/failed_cases/fail_20260526_011_ppo_100k_multimap_generalization_gap.json"
     },
     {
       "id": "rl_policy_action_score_diagnostic",
-      "summary": "SB3 评估报告增加 action_score_diagnostic 字段，PPO 记录动作概率、DQN 记录 q-value，并通过 5 秒 PPO/DQN smoke 验证 summary 与 episode 均输出 top-k 动作分数诊断"
+      "summary": "SB3 评估报告增加 action_score_diagnostic 字段，PPO 记录动作概率、DQN 记录 q-value，并通过 5 秒 PPO/DQN smoke 验证 summary 与 episode 均输出 top-k 动作分数诊断",
+      "report": "harness/reports/2026-05-26_rl_policy_action_score_diagnostic_smoke_001/summary.md"
     },
     {
       "id": "rl_ppo_100k_action_score_multimap_diagnostic",
-      "summary": "使用 action_score_diagnostic 复查 100000-step PPO 的 6 地图 10 seed / 300 秒评估；动作 7 在全地图都是平均最高概率动作，但概率仅 0.2387-0.3029，确认跨地图失败不是单纯动作熵问题"
+      "summary": "使用 action_score_diagnostic 复查 100000-step PPO 的 6 地图 10 seed / 300 秒评估；动作 7 在全地图都是平均最高概率动作，但概率仅 0.2387-0.3029，确认跨地图失败不是单纯动作熵问题",
+      "report": "harness/reports/2026-05-26_rl_ppo_100k_action_score_multimap_diagnostic_001/summary.md"
     },
     {
       "id": "rl_observation_v2",
-      "summary": "Gym bridge 增加 observation v2，默认 145 维，补齐玩家倍率、敌人相对速度/半径/精英/行为嵌入、active hazard、Boss、地图尺寸和角落距离；v1 82 维保留用于旧模型分析"
+      "summary": "Gym bridge 增加 observation v2，默认 145 维，补齐玩家倍率、敌人相对速度/半径/精英/行为嵌入、active hazard、Boss、地图尺寸和角落距离；v1 82 维保留用于旧模型分析",
+      "report": "harness/reports/2026-05-26_rl_observation_v2_smoke_001/summary.md"
     },
     {
       "id": "rl_ppo_observation_v2_training_baseline",
-      "summary": "基于 observation v2 运行 PPO 6 地图 random 训练 10000 requested timesteps；确定性评估最大动作占比 54.01%、归一化动作熵 0.4613，stochastic 评估最大动作占比 20.56%、归一化动作熵 0.9666，已进入规则 Bot 对比阶段"
+      "summary": "基于 observation v2 运行 PPO 6 地图 random 训练 10000 requested timesteps；确定性评估最大动作占比 54.01%、归一化动作熵 0.4613，stochastic 评估最大动作占比 20.56%、归一化动作熵 0.9666，已进入规则 Bot 对比阶段",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_training_001/summary.md"
     },
     {
       "id": "rl_ppo_observation_v2_multimap_comparison",
-      "summary": "使用 observation v2 10k PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布全地图过线，但 soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，已记录 v2 跨地图泛化 failure case"
+      "summary": "使用 observation v2 10k PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布全地图过线，但 soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，已记录 v2 跨地图泛化 failure case",
+      "report": "harness/failed_cases/fail_20260526_012_ppo_observation_v2_multimap_gap.json"
     },
     {
       "id": "rl_ppo_observation_v2_50k_training",
-      "summary": "将 observation v2 PPO 多地图 random 训练提升到 50000 requested timesteps；确定性评估最大动作占比降至 31.91%、归一化动作熵 0.7418，stochastic 评估最大动作占比 16.01%、归一化动作熵 0.9803，已进入 300 秒跨地图对比阶段"
+      "summary": "将 observation v2 PPO 多地图 random 训练提升到 50000 requested timesteps；确定性评估最大动作占比降至 31.91%、归一化动作熵 0.7418，stochastic 评估最大动作占比 16.01%、归一化动作熵 0.9803，已进入 300 秒跨地图对比阶段",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_50k_training_001/summary.md"
     },
     {
       "id": "rl_ppo_observation_v2_50k_multimap_comparison",
-      "summary": "使用 observation v2 50k PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布健康但 soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，已记录 50k v2 跨地图 failure case"
+      "summary": "使用 observation v2 50k PPO 模型重跑 6 地图 10 seed / 300 秒 deterministic 规则 Bot 对比；动作分布健康但 soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，已记录 50k v2 跨地图 failure case",
+      "report": "harness/failed_cases/fail_20260526_013_ppo_observation_v2_50k_multimap_gap.json"
     },
     {
       "id": "rl_training_episode_controls",
-      "summary": "训练入口增加 --train-seconds 与 --train-map-preset，可独立拉长训练 episode，并直接选择 all-base-demo、high-pressure 或 stable-open 地图集合用于 curriculum/定向实验"
+      "summary": "训练入口增加 --train-seconds 与 --train-map-preset，可独立拉长训练 episode，并直接选择 all-base-demo、high-pressure 或 stable-open 地图集合用于 curriculum/定向实验",
+      "report": "python/train/train_sb3.py"
     },
     {
       "id": "rl_multimap_comparison_entrypoint",
-      "summary": "训练入口的 --compare-rule-bots 增加 --compare-map-preset 聚合模式，可一次输出 all-base-demo、high-pressure 或 stable-open 的多地图 policy/rule Bot 对比报告"
+      "summary": "训练入口的 --compare-rule-bots 增加 --compare-map-preset 聚合模式，可一次输出 all-base-demo、high-pressure 或 stable-open 的多地图 policy/rule Bot 对比报告",
+      "report": "python/train/train_sb3.py"
     },
     {
       "id": "rl_ppo_observation_v2_high_pressure_train300_50k_training",
-      "summary": "使用 observation v2、high-pressure 地图预设和 300 秒训练 episode 重训 PPO 50000 requested timesteps；60 秒 deterministic 评估胜率 100%、最大动作 54.50%、归一化动作熵 0.4614，已进入高压地图 300 秒对比阶段"
+      "summary": "使用 observation v2、high-pressure 地图预设和 300 秒训练 episode 重训 PPO 50000 requested timesteps；60 秒 deterministic 评估胜率 100%、最大动作 54.50%、归一化动作熵 0.4614，已进入高压地图 300 秒对比阶段",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_train300_50k_training_001/summary.md"
     },
     {
       "id": "rl_ppo_observation_v2_high_pressure_train300_50k_comparison",
-      "summary": "使用 high-pressure train300 50k PPO 模型跑 3 地图 10 seed / 300 秒聚合对比；长局存活明显改善，但 caramel-workshop 胜率仍为 0%，soda-creek 和 cracked-star-jar 只有 10%，已记录 failure case"
+      "summary": "使用 high-pressure train300 50k PPO 模型跑 3 地图 10 seed / 300 秒聚合对比；长局存活明显改善，但 caramel-workshop 胜率仍为 0%，soda-creek 和 cracked-star-jar 只有 10%，已记录 failure case",
+      "report": "harness/failed_cases/fail_20260526_014_ppo_high_pressure_train300_gap.json"
     },
     {
       "id": "rl_reward_safety_shaping",
-      "summary": "Gym reward 增加 low_health、boundary_risk、enemy_pressure、hazard_risk 和 boss_pressure 安全塑形字段，用于减少固定方向逃生、低血量贴边、忽略危险区和 Boss 压力的 RL policy exploit"
+      "summary": "Gym reward 增加 low_health、boundary_risk、enemy_pressure、hazard_risk 和 boss_pressure 安全塑形字段，用于减少固定方向逃生、低血量贴边、忽略危险区和 Boss 压力的 RL policy exploit",
+      "report": "crates/game_harness/src/main.rs"
     },
     {
       "id": "rl_ppo_observation_v2_high_pressure_safety_train300_50k_training",
-      "summary": "基于安全塑形 reward 重训 observation v2 high-pressure 300 秒 PPO 50000 requested timesteps；60 秒 deterministic 评估胜率 100%、平均承伤 1.8、最大动作 46.40%、归一化动作熵 0.5048，已进入 300 秒高压对比"
+      "summary": "基于安全塑形 reward 重训 observation v2 high-pressure 300 秒 PPO 50000 requested timesteps；60 秒 deterministic 评估胜率 100%、平均承伤 1.8、最大动作 46.40%、归一化动作熵 0.5048，已进入 300 秒高压对比",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_safety_train300_50k_training_001/summary.md"
     },
     {
       "id": "rl_ppo_observation_v2_high_pressure_safety_train300_50k_comparison",
-      "summary": "安全塑形 reward 的 high-pressure train300 50k PPO 在 3 地图 10 seed / 300 秒对比中全部 0% 胜率；动作熵更高但长局生存退化，已记录 safety reward overcorrection failure case"
+      "summary": "安全塑形 reward 的 high-pressure train300 50k PPO 在 3 地图 10 seed / 300 秒对比中全部 0% 胜率；动作熵更高但长局生存退化，已记录 safety reward overcorrection failure case",
+      "report": "harness/failed_cases/fail_20260526_015_ppo_safety_reward_overcorrection.json"
     },
     {
       "id": "rl_reward_safety_delta_available",
-      "summary": "Gym reward 增加 safety_delta 风险变化奖励，记录上一帧聚合安全风险并奖励风险下降、惩罚风险上升；静态安全惩罚已下调为轻量诊断信号，下一步需重训 high-pressure 300 秒 PPO"
+      "summary": "Gym reward 增加 safety_delta 风险变化奖励，记录上一帧聚合安全风险并奖励风险下降、惩罚风险上升；静态安全惩罚已下调为轻量诊断信号，下一步需重训 high-pressure 300 秒 PPO",
+      "report": "crates/game_harness/src/main.rs"
     },
     {
       "id": "rl_ppo_safety_delta_train300_action_bias",
-      "summary": "基于 safety_delta reward 重训 high-pressure train300 50k PPO 后，60 秒 deterministic 评估胜率 100% 但动作 6 占 90.74%、归一化动作熵 0.1982；同一模型 stochastic 诊断动作熵 0.9007，说明需要修 deterministic 选择或明确 seeded stochastic Bot 规则"
+      "summary": "基于 safety_delta reward 重训 high-pressure train300 50k PPO 后，60 秒 deterministic 评估胜率 100% 但动作 6 占 90.74%、归一化动作熵 0.1982；同一模型 stochastic 诊断动作熵 0.9007，说明需要修 deterministic 选择或明确 seeded stochastic Bot 规则",
+      "report": "harness/failed_cases/fail_20260526_016_ppo_safety_delta_action_collapse.json"
     },
     {
       "id": "rl_ppo_safety_delta_stochastic_gap",
-      "summary": "Safety_delta PPO 使用 seeded stochastic 选择后动作分布健康，但 high-pressure 3 地图 10 seed / 300 秒仍全部 0% 胜率；平均存活 138.6009 秒，说明问题不只是 deterministic argmax"
+      "summary": "Safety_delta PPO 使用 seeded stochastic 选择后动作分布健康，但 high-pressure 3 地图 10 seed / 300 秒仍全部 0% 胜率；平均存活 138.6009 秒，说明问题不只是 deterministic argmax",
+      "report": "harness/failed_cases/fail_20260526_017_ppo_safety_delta_stochastic_gap.json"
     },
     {
       "id": "rl_warm_start_training_available",
-      "summary": "SB3 训练入口增加 --model-in warm start 能力，可从已有模型继续训练并在 metadata/report 中记录源模型与源 metadata，为课程学习和失败策略修复实验提供基础入口"
+      "summary": "SB3 训练入口增加 --model-in warm start 能力，可从已有模型继续训练并在 metadata/report 中记录源模型与源 metadata，为课程学习和失败策略修复实验提供基础入口",
+      "report": "python/train/train_sb3.py"
     },
     {
       "id": "rl_ppo_warm_start_safety_delta_action_gate",
-      "summary": "从 high-pressure train300 50k PPO 模型 warm start 后继续用 safety_delta reward 训练 20224 step，60 秒 deterministic 评估通过动作 gate：胜率 100%、平均承伤 7.68、最大动作 48.98%、归一化动作熵 0.564"
+      "summary": "从 high-pressure train300 50k PPO 模型 warm start 后继续用 safety_delta reward 训练 20224 step，60 秒 deterministic 评估通过动作 gate：胜率 100%、平均承伤 7.68、最大动作 48.98%、归一化动作熵 0.564",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_warm_start_safety_delta_plus20k_training_001/summary.md"
     },
     {
       "id": "rl_ppo_warm_start_safety_delta_high_pressure_watch",
-      "summary": "Warm-start safety_delta 模型在 high-pressure 3 地图 10 seed / 300 秒对比中全部脱离 0% 胜率，平均胜率 13.33%、平均存活 196.3743 秒；但 soda-creek 与 cracked-star-jar 仍低于最强规则 Bot 一半，gate 为 watch"
+      "summary": "Warm-start safety_delta 模型在 high-pressure 3 地图 10 seed / 300 秒对比中全部脱离 0% 胜率，平均胜率 13.33%、平均存活 196.3743 秒；但 soda-creek 与 cracked-star-jar 仍低于最强规则 Bot 一半，gate 为 watch",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_warm_start_safety_delta_plus20k_comparison_001/summary.md"
     },
     {
       "id": "rl_training_eval_map_available",
-      "summary": "SB3 训练入口在训练模式下支持用 --map-id 指定训练后评估地图，避免 high-pressure 或 curriculum 实验继续默认用 frosting-grassland 作为短局动作 gate"
+      "summary": "SB3 训练入口在训练模式下支持用 --map-id 指定训练后评估地图，避免 high-pressure 或 curriculum 实验继续默认用 frosting-grassland 作为短局动作 gate",
+      "report": "python/train/train_sb3.py"
     },
     {
       "id": "rl_ppo_soda_focus_warm_start_action_gate",
-      "summary": "从 warm-start safety_delta 模型继续在 soda-creek 单图训练 20224 step，并用 soda-creek 做 60 秒短局评估；动作熵健康 0.7681，但短局胜率只有 40%、平均承伤 85.966"
+      "summary": "从 warm-start safety_delta 模型继续在 soda-creek 单图训练 20224 step，并用 soda-creek 做 60 秒短局评估；动作熵健康 0.7681，但短局胜率只有 40%、平均承伤 85.966",
+      "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_soda_focus_warm_start_safety_delta_plus20k_training_001/summary.md"
     },
     {
       "id": "rl_ppo_soda_focus_warm_start_regression",
-      "summary": "Soda-focused warm-start 在 high-pressure 3 地图 10 seed / 300 秒对比中退化：soda-creek 和 caramel-workshop 均为 0% 胜率，平均胜率降到 3.33%，已记录单图微调泛化失败"
+      "summary": "Soda-focused warm-start 在 high-pressure 3 地图 10 seed / 300 秒对比中退化：soda-creek 和 caramel-workshop 均为 0% 胜率，平均胜率降到 3.33%，已记录单图微调泛化失败",
+      "report": "harness/failed_cases/fail_20260526_018_soda_focus_warm_start_regression.json"
     },
     {
       "id": "rl_rule_bot_trajectory_export_available",
-      "summary": "Harness 增加 export-bot-trajectories JSONL 导出命令，可把规则 Bot 的 observation v2 与离散 movement action 作为行为克隆/轨迹蒸馏数据集输出，并保留 metadata、episode 和 summary 记录"
+      "summary": "Harness 增加 export-bot-trajectories JSONL 导出命令，可把规则 Bot 的 observation v2 与离散 movement action 作为行为克隆/轨迹蒸馏数据集输出，并保留 metadata、episode 和 summary 记录",
+      "report": "crates/game_harness/src/main.rs"
     },
     {
       "id": "docs_index_validation_gate",
@@ -680,6 +725,11 @@
     {
       "id": "progress_report_backfill_batch_001",
       "summary": "为第一批历史 completed 条目回填 report 证据路径，覆盖早期 GameCore、Runtime、Harness、候选池、素材、Meta 和多地图平衡记录；回填只指向已存在的本地源码、内容或报告，不改变这些条目的完成结论。",
+      "report": "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
+    },
+    {
+      "id": "progress_report_backfill_batch_002",
+      "summary": "为剩余 RL completed 条目回填 report 证据路径，并将 current_findings 中与 completed 重名的 RL 发现项改为唯一 id；刷新 progress 校验后应不再存在缺 report 或跨 section 重复 id warning。",
       "report": "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
     }
   ],
@@ -925,52 +975,52 @@
       "report": "harness/failed_cases/fail_20260526_015_ppo_safety_reward_overcorrection.json"
     },
     {
-      "id": "rl_reward_safety_delta_available",
+      "id": "finding_rl_reward_safety_delta_available",
       "summary": "Gym bridge 的 reward_breakdown 现在会输出 safety_delta，使用上一帧与当前帧的聚合安全风险差值来奖励脱险并惩罚风险升高；该实现只改变训练信号，仍需 high-pressure 300 秒 PPO 重训和规则 Bot 对比验证。",
       "report": "crates/game_harness/src/main.rs"
     },
     {
-      "id": "rl_ppo_safety_delta_train300_action_bias",
+      "id": "finding_rl_ppo_safety_delta_train300_action_bias",
       "summary": "Safety_delta high-pressure train300 50k PPO 没有通过 deterministic 动作 gate：动作 6 占 90.74%、归一化动作熵 0.1982；stochastic 诊断动作分布健康但不能替代默认 deterministic 门禁。",
       "report": "harness/failed_cases/fail_20260526_016_ppo_safety_delta_action_collapse.json"
     },
     {
-      "id": "rl_ppo_safety_delta_stochastic_gap",
+      "id": "finding_rl_ppo_safety_delta_stochastic_gap",
       "summary": "Safety_delta PPO 的 seeded stochastic 高压对比解决了动作熵，但没有解决长局生存：soda-creek、caramel-workshop、cracked-star-jar 胜率均为 0%，需回到训练目标和 curriculum 修复。",
       "report": "harness/failed_cases/fail_20260526_017_ppo_safety_delta_stochastic_gap.json"
     },
     {
-      "id": "rl_warm_start_training_available",
+      "id": "finding_rl_warm_start_training_available",
       "summary": "训练入口现在支持 --model-in 从既有 SB3 模型继续训练；warm-start 报告会记录源模型、源 metadata 和算法参数来源，避免继续训练实验丢失 provenance。",
       "report": "python/train/train_sb3.py"
     },
     {
-      "id": "rl_ppo_warm_start_safety_delta_action_gate",
+      "id": "finding_rl_ppo_warm_start_safety_delta_action_gate",
       "summary": "Warm-start + safety_delta 比从零训练更稳：60 秒短局承伤 7.68，动作熵 0.564，已具备进入 high-pressure 300 秒对比的条件。",
       "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_warm_start_safety_delta_plus20k_training_001/summary.md"
     },
     {
-      "id": "rl_ppo_warm_start_safety_delta_high_pressure_watch",
+      "id": "finding_rl_ppo_warm_start_safety_delta_high_pressure_watch",
       "summary": "Warm-start + safety_delta 是目前 RL 方向的正向信号：caramel-workshop 从 0% 到 10%，cracked-star-jar 从 10% 到 20%，但 soda-creek 平均存活退到 136.8586 秒，仍需中后期续航修复。",
       "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_high_pressure_warm_start_safety_delta_plus20k_comparison_001/summary.md"
     },
     {
-      "id": "rl_training_eval_map_available",
+      "id": "finding_rl_training_eval_map_available",
       "summary": "训练报告现在会记录 evaluation_map_id；后续 soda-focused warm-start 可以直接用 --map-id soda-creek 验证短局 gate，不再误读默认地图。",
       "report": "python/train/train_sb3.py"
     },
     {
-      "id": "rl_ppo_soda_focus_warm_start_action_gate",
+      "id": "finding_rl_ppo_soda_focus_warm_start_action_gate",
       "summary": "Soda-focused warm-start 没有动作塌缩，但 soda-creek 短局已明显吃力：60 秒胜率 40%、平均承伤 85.966，应通过 300 秒高压聚合确认是否过拟合或伤到其他地图。",
       "report": "harness/reports/2026-05-26_rl_ppo_observation_v2_soda_focus_warm_start_safety_delta_plus20k_training_001/summary.md"
     },
     {
-      "id": "rl_ppo_soda_focus_warm_start_regression",
+      "id": "finding_rl_ppo_soda_focus_warm_start_regression",
       "summary": "单图 soda-creek 继续训练不是好方向：动作熵提高但目标图胜率掉到 0%，还牺牲 caramel-workshop；后续应改用多图 curriculum 或规则 Bot 轨迹蒸馏。",
       "report": "harness/failed_cases/fail_20260526_018_soda_focus_warm_start_regression.json"
     },
     {
-      "id": "rl_rule_bot_trajectory_export_available",
+      "id": "finding_rl_rule_bot_trajectory_export_available",
       "summary": "规则 Bot 轨迹现在能导出为 JSONL，Phase 1 只记录 movement 样本并跳过升级选择状态，为后续 behavior cloning / policy distillation 提供可复现数据源。",
       "report": "crates/game_harness/src/main.rs"
     },
