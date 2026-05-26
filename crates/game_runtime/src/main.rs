@@ -4,9 +4,9 @@ use bevy::{
     prelude::*,
 };
 use game_core::{
-    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaProgress, MetaRunSummary,
-    MetaSettlementReport, PlayerAction, RunConfig, RunMetrics, RunSnapshot, StartingLoadout,
-    TerminalKind, TerminalState, Vec2 as CoreVec2,
+    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaCodexEntry, MetaProgress,
+    MetaRunSummary, MetaSettlementReport, PlayerAction, RunConfig, RunMetrics, RunSnapshot,
+    StartingLoadout, TerminalKind, TerminalState, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -195,6 +195,7 @@ struct RuntimeState {
     run_number: u32,
     privacy_settings: RuntimePrivacySettings,
     save_file: Option<PathBuf>,
+    meta_panel_view: RuntimeMetaPanelView,
     meta_progress: MetaProgress,
     last_meta_settlement: Option<MetaSettlementReport>,
     settled_run_number: Option<u32>,
@@ -229,6 +230,13 @@ enum RuntimeEffectKind {
     PlayerDamage,
     BossSpawn,
     BossAbility,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeMetaPanelView {
+    Overview,
+    Chapters,
+    Codex,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -659,6 +667,7 @@ fn setup_runtime(
         run_number: 1,
         privacy_settings,
         save_file: cli.save_file.clone(),
+        meta_panel_view: RuntimeMetaPanelView::Overview,
         meta_progress,
         last_meta_settlement: None,
         settled_run_number: None,
@@ -686,6 +695,21 @@ fn step_game_core(
     if keyboard.just_pressed(KeyCode::KeyR) {
         reset_runtime_run(&mut state);
         return;
+    }
+    if keyboard.just_pressed(KeyCode::F1) {
+        state.meta_panel_view = RuntimeMetaPanelView::Overview;
+        state.last_event = "guardian station overview".to_string();
+        state.last_event_kind = RuntimeEventKind::System;
+    }
+    if keyboard.just_pressed(KeyCode::F2) {
+        state.meta_panel_view = RuntimeMetaPanelView::Chapters;
+        state.last_event = "chapter goals view".to_string();
+        state.last_event_kind = RuntimeEventKind::System;
+    }
+    if keyboard.just_pressed(KeyCode::F3) {
+        state.meta_panel_view = RuntimeMetaPanelView::Codex;
+        state.last_event = "codex progress view".to_string();
+        state.last_event_kind = RuntimeEventKind::System;
     }
 
     if state.core.is_terminal() {
@@ -1188,7 +1212,7 @@ fn update_hud(
         let mode = if state.paused { "Paused" } else { "Playing" };
         let map_style = map_visual_style(&snapshot.map.map_id);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1/F2/F3 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -1251,8 +1275,11 @@ fn update_hud(
     }
 
     if let Ok(mut text) = meta_query.get_single_mut() {
-        text.sections[0].value =
-            render_meta_progress_panel(&state.meta_progress, state.last_meta_settlement.as_ref());
+        text.sections[0].value = render_meta_progress_panel(
+            &state.meta_progress,
+            state.last_meta_settlement.as_ref(),
+            state.meta_panel_view,
+        );
     }
 }
 
@@ -1567,6 +1594,18 @@ fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
 fn render_meta_progress_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
+    view: RuntimeMetaPanelView,
+) -> String {
+    match view {
+        RuntimeMetaPanelView::Overview => render_meta_overview_panel(progress, settlement),
+        RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(progress, settlement),
+        RuntimeMetaPanelView::Codex => render_meta_codex_panel(progress, settlement),
+    }
+}
+
+fn render_meta_overview_panel(
+    progress: &MetaProgress,
+    settlement: Option<&MetaSettlementReport>,
 ) -> String {
     let discovered = meta_codex_discovered_count(progress);
     let completed_goals = meta_completed_goal_count(progress);
@@ -1574,7 +1613,7 @@ fn render_meta_progress_panel(
     let maps = format_string_set(&progress.unlocks.maps, 3);
 
     let mut output = format!(
-        "糖罐守护站\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
         progress.resources.candy_crystal_shards,
         progress.resources.star_shards,
         progress.resources.storm_grains,
@@ -1582,6 +1621,8 @@ fn render_meta_progress_panel(
         discovered,
         unlocked_content,
         maps,
+        progress.completed_runs,
+        progress.best_survival_seconds,
     );
 
     if let Some(report) = settlement {
@@ -1601,6 +1642,61 @@ fn render_meta_progress_panel(
     output
 }
 
+fn render_meta_chapter_panel(
+    progress: &MetaProgress,
+    settlement: Option<&MetaSettlementReport>,
+) -> String {
+    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴".to_string()];
+    lines.push("章节目标".to_string());
+    for chapter in progress.chapters.values().take(4) {
+        lines.push(format!(
+            "{} [{}]  {}",
+            chapter.chapter_id,
+            if chapter.unlocked {
+                "已解锁"
+            } else {
+                "未解锁"
+            },
+            format_string_set(&chapter.completed_goals, 3),
+        ));
+        lines.push(format!("地图 {}  Boss {}", chapter.map_id, chapter.boss_id));
+    }
+    if progress.chapters.len() > 4 {
+        lines.push(format!("还有 {} 个章节未显示", progress.chapters.len() - 4));
+    }
+    if let Some(report) = settlement {
+        lines.push(format!(
+            "\n本局完成 {}",
+            format_string_slice(&report.completed_goals, 3)
+        ));
+    } else {
+        lines.push("\n完成章节目标后会在这里显示本局变化".to_string());
+    }
+    lines.join("\n")
+}
+
+fn render_meta_codex_panel(
+    progress: &MetaProgress,
+    settlement: Option<&MetaSettlementReport>,
+) -> String {
+    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴".to_string()];
+    lines.push("图鉴进度".to_string());
+    for (label, discovered, total) in meta_codex_category_counts(progress) {
+        lines.push(format!("{label}: {discovered}/{total} 已发现"));
+    }
+    let highlights = meta_codex_recent_discoveries(progress, 5);
+    lines.push(format!("\n已发现 {}", format_string_slice(&highlights, 5)));
+    if let Some(report) = settlement {
+        lines.push(format!(
+            "本局更新 {}",
+            format_string_slice(&report.codex_updates, 3)
+        ));
+    } else {
+        lines.push("本局图鉴更新会在结算后显示".to_string());
+    }
+    lines.join("\n")
+}
+
 fn meta_codex_discovered_count(progress: &MetaProgress) -> usize {
     let groups = [
         &progress.codex.characters,
@@ -1616,6 +1712,77 @@ fn meta_codex_discovered_count(progress: &MetaProgress) -> usize {
         .iter()
         .map(|group| group.values().filter(|entry| entry.discovered).count())
         .sum()
+}
+
+fn meta_codex_category_counts(progress: &MetaProgress) -> Vec<(&'static str, usize, usize)> {
+    vec![
+        (
+            "角色",
+            discovered_meta_entries(&progress.codex.characters),
+            progress.codex.characters.len(),
+        ),
+        (
+            "武器",
+            discovered_meta_entries(&progress.codex.weapons),
+            progress.codex.weapons.len(),
+        ),
+        (
+            "被动",
+            discovered_meta_entries(&progress.codex.passives),
+            progress.codex.passives.len(),
+        ),
+        (
+            "敌人",
+            discovered_meta_entries(&progress.codex.enemies),
+            progress.codex.enemies.len(),
+        ),
+        (
+            "Boss",
+            discovered_meta_entries(&progress.codex.bosses),
+            progress.codex.bosses.len(),
+        ),
+        (
+            "地图",
+            discovered_meta_entries(&progress.codex.maps),
+            progress.codex.maps.len(),
+        ),
+        (
+            "进化",
+            discovered_meta_entries(&progress.codex.evolutions),
+            progress.codex.evolutions.len(),
+        ),
+        (
+            "事件",
+            discovered_meta_entries(&progress.codex.events),
+            progress.codex.events.len(),
+        ),
+    ]
+}
+
+fn discovered_meta_entries(group: &std::collections::BTreeMap<String, MetaCodexEntry>) -> usize {
+    group.values().filter(|entry| entry.discovered).count()
+}
+
+fn meta_codex_recent_discoveries(progress: &MetaProgress, limit: usize) -> Vec<String> {
+    let groups = [
+        ("character", &progress.codex.characters),
+        ("weapon", &progress.codex.weapons),
+        ("passive", &progress.codex.passives),
+        ("enemy", &progress.codex.enemies),
+        ("boss", &progress.codex.bosses),
+        ("map", &progress.codex.maps),
+        ("evolution", &progress.codex.evolutions),
+        ("event", &progress.codex.events),
+    ];
+    let mut items = Vec::new();
+    for (label, group) in groups {
+        for (id, entry) in group {
+            if entry.discovered {
+                items.push(format!("{label}:{id}"));
+            }
+        }
+    }
+    items.into_iter().take(limit).collect()
 }
 
 fn meta_completed_goal_count(progress: &MetaProgress) -> usize {
@@ -2487,9 +2654,10 @@ mod tests {
         player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
         run_config_from_cli, runtime_asset_root, runtime_can_upload, runtime_privacy_notice,
         runtime_sprite_paths, sounds_for_events, write_runtime_save_state, RuntimeCaptureState,
-        RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimePrivacyReport,
-        RuntimePrivacySettings, RuntimeSound, RuntimeUploadKind, DEFAULT_CONTENT_DIR,
-        DEFAULT_LOCAL_REPLAY_DIR, DEFAULT_LOCAL_TELEMETRY_DIR, DEFAULT_SAVE_ID,
+        RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeMetaPanelView,
+        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSound, RuntimeUploadKind,
+        DEFAULT_CONTENT_DIR, DEFAULT_LOCAL_REPLAY_DIR, DEFAULT_LOCAL_TELEMETRY_DIR,
+        DEFAULT_SAVE_ID,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -3129,12 +3297,71 @@ mod tests {
             bosses_defeated: Default::default(),
         };
         let report = progress.apply_run_summary(&summary);
-        let panel = render_meta_progress_panel(&progress, Some(&report));
+        let panel =
+            render_meta_progress_panel(&progress, Some(&report), RuntimeMetaPanelView::Overview);
 
         assert!(panel.contains("糖罐守护站"));
         assert!(panel.contains("局后结算"));
         assert!(panel.contains("collect-200-candy-crystals"));
         assert!(panel.contains("discovered:jar-keeper"));
+    }
+
+    #[test]
+    fn meta_panel_renders_chapter_view() {
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 600.0,
+            victory: true,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 95,
+            level: 5,
+            xp_collected: 210.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 5)]),
+            passives_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        let report = progress.apply_run_summary(&summary);
+        let panel =
+            render_meta_progress_panel(&progress, Some(&report), RuntimeMetaPanelView::Chapters);
+
+        assert!(panel.contains("章节目标"));
+        assert!(panel.contains("frosting-grassland"));
+        assert!(panel.contains("survive-10-minutes"));
+        assert!(panel.contains("本局完成"));
+    }
+
+    #[test]
+    fn meta_panel_renders_codex_view() {
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 120.0,
+            victory: false,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 95,
+            level: 5,
+            xp_collected: 210.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
+            passives_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        let report = progress.apply_run_summary(&summary);
+        let panel =
+            render_meta_progress_panel(&progress, Some(&report), RuntimeMetaPanelView::Codex);
+
+        assert!(panel.contains("图鉴进度"));
+        assert!(panel.contains("角色: 1/1 已发现"));
+        assert!(panel.contains("character:jar-keeper"));
+        assert!(panel.contains("本局更新"));
     }
 
     #[test]
