@@ -921,6 +921,11 @@
       "id": "story_codex_review_packet_generator",
       "summary": "增加剧情 / 图鉴人工审校包生成器，将 6 个章节、26 条图鉴、候选校验报告、TODO 审校草稿和缺失审校项汇总为 Markdown，方便真人逐项审校；该包不评分、不验收、不晋级 UI 候选。",
       "report": "harness/reports/2026-05-26_story_codex_review_packet_001/summary.md"
+    },
+    {
+      "id": "local_binary_launch_recovery_packet_generator",
+      "summary": "增加本机新编译 Mach-O 启动阻塞恢复交接包生成器，汇总现有诊断、failure case、被阻塞 docs、恢复动作和恢复后重跑清单；该包不修复宿主策略，也不证明 Rust/Bevy/Harness/Gym 运行通过。",
+      "report": "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1301,7 +1306,8 @@
     },
     {
       "id": "local_binary_launch_recovery",
-      "summary": "优先恢复本机新编译 Mach-O 可执行文件启动能力：为当前开发宿主启用 Developer Mode，或提供可信 code-signing identity / trusted host；恢复后先让 `tools/diagnose_local_binary_launch.py` 返回 local_binary_launch_ok，再重跑 `game_harness --help`、`cargo test --workspace` 和 context3 BC 60/300 秒 high-pressure 对比"
+      "summary": "优先恢复本机新编译 Mach-O 可执行文件启动能力：为当前开发宿主启用 Developer Mode，或提供可信 code-signing identity / trusted host；恢复后先让 `tools/diagnose_local_binary_launch.py` 返回 local_binary_launch_ok，再按恢复包顺序重跑 `game_harness --help`、`cargo test --workspace` 和 context3 BC 60/300 秒 high-pressure 对比",
+      "report": "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md"
     }
   ]
 }

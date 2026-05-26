@@ -242,13 +242,16 @@
             "tools/validate_goal_evidence_consistency.py",
             "tools/test_validate_goal_evidence_consistency.py",
             "tools/diagnose_local_binary_launch.py",
+            "tools/create_local_binary_launch_recovery_packet.py",
+            "tools/test_create_local_binary_launch_recovery_packet.py",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md",
+            "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md",
             "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md",
             "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
           ],
           "gaps": [
-            "恢复二进制后需重跑 game_harness simulate、matrix、replay-batch 和候选晋级命令。",
-            "本地二进制启动已有可复现诊断门禁，但当前结论仍是 local_binary_launch_blocked。",
+            "恢复二进制后需按恢复包顺序重跑 game_harness --help、cargo fmt、clippy、test、simulate、matrix、replay-batch 和候选晋级命令。",
+            "本地二进制启动已有可复现诊断门禁和恢复交接包，但当前结论仍是 local_binary_launch_blocked。",
             "Progress 账本已完成两批历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": [
@@ -296,10 +299,12 @@
             "python/gym_env/soft_candy_env.py",
             "python/train/train_sb3.py",
             "python/train/train_behavior_clone.py",
-            "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_smoke_001/summary.md"
+            "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_smoke_001/summary.md",
+            "tools/create_local_binary_launch_recovery_packet.py",
+            "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md"
           ],
           "gaps": [
-            "context3 behavior clone 已训练但 Gym 评估被本机二进制启动阻塞。",
+            "context3 behavior clone 已训练但 Gym 评估被本机二进制启动阻塞；恢复后必须先取得 local_binary_launch_ok，再重跑 60/300 秒 high-pressure 对比。",
             "PPO/BC 高压多地图仍有泛化 failure case，不能作为正式 RL 测试 Bot。"
           ],
           "blockers": [

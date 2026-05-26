@@ -298,6 +298,14 @@ python3 tools/diagnose_local_binary_launch.py --repo-root . --report harness/rep
 
 该诊断会编译最小 `cc` hello，检查 `/bin/echo`、Developer Mode、`spctl`、`xattr`、`codesign` 和 AppleSystemPolicy / AMFI 日志。只有结论为 `local_binary_launch_ok` 后，才应把 Harness、Runtime 或 Gym 的执行结果当作游戏逻辑验证证据；如果结论为 `local_binary_launch_blocked`，必须先恢复开发宿主执行策略或提供可信 code-signing identity。
 
+如果需要把阻塞状态交接给真人或下一轮 Agent，先用现有诊断和 failure case 生成恢复包：
+
+```bash
+python3 tools/create_local_binary_launch_recovery_packet.py --repo-root . --out harness/reports/<report-id>/summary.md --json-out harness/reports/<report-id>/local_binary_launch_recovery_packet.json
+```
+
+恢复包只整理当前诊断信号、failure case、被阻塞文档、恢复动作和恢复后重跑清单；它不修复宿主策略，也不能作为 Rust、Bevy、Harness、Runtime、Gym、Replay、性能或发布门禁通过证据。
+
 ## Progress 证据引用校验
 
 `harness/progress.json` 是 Goal 模式长跑时的进度账本。新增或修改 `completed`、`current_findings`、`next_recommended` 后，应运行：
