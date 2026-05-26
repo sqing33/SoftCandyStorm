@@ -327,6 +327,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 结论：地图条件化是正向修复方向，能消除 caramel-recovery 模型的 0% 跨图回归，但同构 MLP 仍没有达到 `rl_test_bot_candidate` 门槛。下一步应转向分阶段 policy、GRU / Transformer 或 PPO 蒸馏初始化，并继续使用三图 300 秒同 seed high-pressure 对比防止回归。对应 failure case 为 `harness/failed_cases/fail_20260527_003_behavior_clone_map_conditioned_watch.json`。
 
+训练入口现已支持 `--architecture gru`，用于把 `--context-frames` 保持为时间序列输入，而不是像旧 MLP 一样把多帧 observation 直接拼平成一个长向量。GRU checkpoint 会记录 `architecture`、`sequence_input_len`、`context_frames` 和 map-conditioning vocabulary，`train_sb3.py --behavior-clone-model` 可以直接加载并通过同一套 Gym evaluation / rule Bot comparison 评估。该能力只是修复方向的技术入口；任何 GRU 候选仍必须通过 60/300 秒 high-pressure 三图对比、RL policy acceptance manifest 和 failure case 审查，不能因为模型结构更复杂就直接推进。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

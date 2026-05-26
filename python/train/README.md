@@ -239,6 +239,18 @@ The first `--context-frames 3` danger-weighted model trained successfully with `
 
 The current high-pressure recheck keeps the checkpoint in `repair`: the 60-second `seed-start 42000` comparison reached 100% win rate on all three maps with healthy action entropy, but the 300-second `seed-start 43000` comparison still recorded 0% win rate on `caramel-workshop`. An alternate `seed-start 45000` window moved the weakness to `soda-creek` and `cracked-star-jar`, so this is a policy generalization issue rather than a host launch issue.
 
+To move beyond flat MLP context windows, train a recurrent clone with `--architecture gru`. The GRU path keeps `--context-frames` as a sequence, supports `--map-conditioning one_hot`, and produces checkpoints that can be evaluated by the same `train_sb3.py --behavior-clone-model` comparison flow:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001 \
+  --dataset harness/reports/2026-05-26_rl_rule_bot_trajectory_lategame_001 \
+  --architecture gru \
+  --context-frames 8 \
+  --map-conditioning one_hot \
+  --sample-weighting danger
+```
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

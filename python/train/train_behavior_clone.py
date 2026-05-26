@@ -9,6 +9,46 @@ from pathlib import Path
 REQUIRED_MODULES = ["numpy", "torch"]
 
 
+def build_behavior_clone_model(architecture, input_observation_len, hidden_size, action_count, nn_module):
+    if architecture == "mlp":
+        return nn_module.Sequential(
+            nn_module.Linear(input_observation_len, hidden_size),
+            nn_module.ReLU(),
+            nn_module.Linear(hidden_size, hidden_size),
+            nn_module.ReLU(),
+            nn_module.Linear(hidden_size, action_count),
+        )
+    if architecture == "gru":
+        class GruPolicy(nn_module.Module):
+            def __init__(self):
+                super().__init__()
+                self.gru = nn_module.GRU(
+                    input_size=input_observation_len,
+                    hidden_size=hidden_size,
+                    batch_first=True,
+                )
+                self.head = nn_module.Linear(hidden_size, action_count)
+
+            def forward(self, values):
+                output, _ = self.gru(values)
+                return self.head(output[:, -1, :])
+
+        return GruPolicy()
+    raise ValueError(f"unsupported behavior clone architecture: {architecture}")
+
+
+def model_input_width(observations):
+    if len(observations.shape) == 3:
+        return int(observations.shape[2])
+    return int(observations.shape[1])
+
+
+def model_total_input_len(observations):
+    if len(observations.shape) == 3:
+        return int(observations.shape[1] * observations.shape[2])
+    return int(observations.shape[1])
+
+
 def dependency_status():
     return {
         module: importlib.util.find_spec(module) is not None for module in REQUIRED_MODULES
@@ -198,7 +238,14 @@ def train_behavior_clone(dataset, args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    observations, context_report = build_context_observations(dataset, args.context_frames, np)
+    if args.architecture == "gru":
+        observations, context_report = build_context_observation_sequences(
+            dataset,
+            args.context_frames,
+            np,
+        )
+    else:
+        observations, context_report = build_context_observations(dataset, args.context_frames, np)
     observations, map_conditioning_report = apply_map_conditioning(
         observations,
         dataset,
@@ -245,12 +292,12 @@ def train_behavior_clone(dataset, args):
     validation_x = torch.from_numpy(observations[validation_indices])
     validation_y = torch.from_numpy(actions[validation_indices])
 
-    model = nn.Sequential(
-        nn.Linear(map_conditioning_report["input_observation_len"], args.hidden_size),
-        nn.ReLU(),
-        nn.Linear(args.hidden_size, args.hidden_size),
-        nn.ReLU(),
-        nn.Linear(args.hidden_size, dataset["action_count"]),
+    model = build_behavior_clone_model(
+        args.architecture,
+        model_input_width(observations),
+        args.hidden_size,
+        dataset["action_count"],
+        nn,
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     class_weight_values, class_weight_report = build_class_weights(
@@ -297,11 +344,14 @@ def train_behavior_clone(dataset, args):
     torch.save(
         {
             "model_version": 2,
-            "kind": "behavior_clone_mlp",
+            "kind": f"behavior_clone_{args.architecture}",
+            "architecture": args.architecture,
             "observation_len": context_report["input_observation_len"],
             "base_observation_len": dataset["observation_len"],
             "context_frames": args.context_frames,
             "map_conditioning": map_conditioning_report,
+            "sequence_input_len": model_input_width(observations),
+            "total_input_observation_len": model_total_input_len(observations),
             "action_count": dataset["action_count"],
             "hidden_size": args.hidden_size,
             "class_weighting": args.class_weighting,
@@ -324,12 +374,14 @@ def train_behavior_clone(dataset, args):
         "dataset": summarize_dataset(dataset),
         "training": {
             "seed": args.seed,
+            "architecture": args.architecture,
             "epochs": args.epochs,
             "batch_size": args.batch_size,
             "learning_rate": args.learning_rate,
             "hidden_size": args.hidden_size,
             "context_frames": args.context_frames,
-            "input_observation_len": map_conditioning_report["input_observation_len"],
+            "input_observation_len": model_total_input_len(observations),
+            "sequence_input_len": model_input_width(observations),
             "base_observation_len": dataset["observation_len"],
             "map_conditioning": map_conditioning_report,
             "validation_split": args.validation_split,
@@ -395,16 +447,46 @@ def build_context_observations(dataset, context_frames, np_module):
     }
 
 
+def build_context_observation_sequences(dataset, context_frames, np_module):
+    base_observations = np_module.asarray(dataset["observations"], dtype=np_module.float32)
+    histories = {}
+    sequence_rows = []
+    history_limit = context_frames - 1
+    for observation, sample in zip(base_observations, dataset["sample_metadata"]):
+        key = (sample.get("path"), sample.get("seed"))
+        history = histories.get(key, [])
+        previous = history[-history_limit:] if history_limit > 0 else []
+        missing = history_limit - len(previous)
+        frames = [observation for _ in range(missing)]
+        frames.extend(previous)
+        frames.append(observation)
+        sequence_rows.append(np_module.stack(frames).astype(np_module.float32))
+        history.append(observation)
+        histories[key] = history[-history_limit:] if history_limit > 0 else []
+
+    return np_module.asarray(sequence_rows, dtype=np_module.float32), {
+        "context_frames": context_frames,
+        "base_observation_len": dataset["observation_len"],
+        "input_observation_len": dataset["observation_len"] * context_frames,
+        "sequence_input_len": dataset["observation_len"],
+    }
+
+
 def apply_map_conditioning(observations, dataset, mode, np_module):
-    base_len = int(observations.shape[1])
+    base_len = int(observations.shape[-1])
+    sequence_len = int(observations.shape[1]) if len(observations.shape) == 3 else None
     if mode == "none":
-        return observations, {
+        report = {
             "mode": "none",
             "map_ids": [],
             "dimension": 0,
             "base_input_observation_len": base_len,
             "input_observation_len": base_len,
         }
+        if sequence_len is not None:
+            report["sequence_len"] = sequence_len
+            report["total_input_observation_len"] = sequence_len * base_len
+        return observations, report
 
     map_ids = sorted(
         {
@@ -417,14 +499,22 @@ def apply_map_conditioning(observations, dataset, mode, np_module):
     for row, sample in enumerate(dataset["sample_metadata"]):
         map_id = str(sample.get("map_id") or "unknown")
         one_hot[row, map_index[map_id]] = 1.0
-    conditioned = np_module.concatenate([observations, one_hot], axis=1).astype(np_module.float32)
-    return conditioned, {
+    if len(observations.shape) == 3:
+        repeated = np_module.repeat(one_hot[:, None, :], observations.shape[1], axis=1)
+        conditioned = np_module.concatenate([observations, repeated], axis=2).astype(np_module.float32)
+    else:
+        conditioned = np_module.concatenate([observations, one_hot], axis=1).astype(np_module.float32)
+    report = {
         "mode": "one_hot",
         "map_ids": map_ids,
         "dimension": len(map_ids),
         "base_input_observation_len": base_len,
-        "input_observation_len": int(conditioned.shape[1]),
+        "input_observation_len": int(conditioned.shape[-1]),
     }
+    if sequence_len is not None:
+        report["sequence_len"] = sequence_len
+        report["total_input_observation_len"] = int(conditioned.shape[1] * conditioned.shape[2])
+    return conditioned, report
 
 
 def build_sample_weights(sample_metadata, indices, args, np_module):
@@ -484,6 +574,10 @@ class BehaviorClonePolicy:
 
         self.checkpoint_path = str(checkpoint_path)
         self.checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        self.architecture = self.checkpoint.get(
+            "architecture",
+            "gru" if self.checkpoint.get("kind") == "behavior_clone_gru" else "mlp",
+        )
         self.context_observation_len = int(self.checkpoint["observation_len"])
         self.base_observation_len = int(
             self.checkpoint.get("base_observation_len", self.context_observation_len)
@@ -502,18 +596,26 @@ class BehaviorClonePolicy:
         self.input_observation_len = int(
             self.map_conditioning.get("input_observation_len", self.context_observation_len)
         )
+        self.sequence_input_len = int(
+            self.checkpoint.get("sequence_input_len", self.input_observation_len)
+        )
         self.current_map_id = None
         self.action_count = int(self.checkpoint["action_count"])
         self.hidden_size = int(self.checkpoint["hidden_size"])
         self.history = []
         self._last_observation = None
         self._last_scores = None
-        self.model = nn.Sequential(
-            nn.Linear(self.input_observation_len, self.hidden_size),
-            nn.ReLU(),
-            nn.Linear(self.hidden_size, self.hidden_size),
-            nn.ReLU(),
-            nn.Linear(self.hidden_size, self.action_count),
+        model_input_len = (
+            self.sequence_input_len
+            if self.architecture == "gru"
+            else self.input_observation_len
+        )
+        self.model = build_behavior_clone_model(
+            self.architecture,
+            model_input_len,
+            self.hidden_size,
+            self.action_count,
+            nn,
         )
         self.model.load_state_dict(self.checkpoint["state_dict"])
         self.model.eval()
@@ -563,7 +665,10 @@ class BehaviorClonePolicy:
         values = self._base_observation_values(observation)
         features = self._features(values, np, update_history=update_history)
         with torch.no_grad():
-            logits = self.model(torch.from_numpy(features.reshape(1, -1)))
+            if self.architecture == "gru":
+                logits = self.model(torch.from_numpy(features.reshape(1, features.shape[0], features.shape[1])))
+            else:
+                logits = self.model(torch.from_numpy(features.reshape(1, -1)))
             probabilities = torch.softmax(logits, dim=1)
         if update_history:
             self._last_observation = values.copy()
@@ -581,6 +686,20 @@ class BehaviorClonePolicy:
         return values
 
     def _features(self, values, np_module, update_history):
+        if self.architecture == "gru":
+            context_sequence = self._context_sequence(values, np_module, update_history)
+            map_features = self._map_features(np_module)
+            if map_features.shape[0] > 0:
+                repeated = np_module.repeat(map_features.reshape(1, -1), context_sequence.shape[0], axis=0)
+                features = np_module.concatenate([context_sequence, repeated], axis=1).astype(np_module.float32)
+            else:
+                features = context_sequence
+            if features.shape[1] != self.sequence_input_len:
+                raise ValueError(
+                    f"expected behavior clone sequence feature length {self.sequence_input_len}, got {features.shape[1]}"
+                )
+            return features
+
         context_features = self._context_features(values, np_module, update_history)
         map_features = self._map_features(np_module)
         if map_features.shape[0] > 0:
@@ -607,6 +726,18 @@ class BehaviorClonePolicy:
             self.history = self.history[-history_limit:]
         features = np_module.concatenate(frames).astype(np_module.float32)
         return features
+
+    def _context_sequence(self, values, np_module, update_history):
+        history_limit = self.context_frames - 1
+        previous = self.history[-history_limit:] if history_limit > 0 else []
+        missing = history_limit - len(previous)
+        frames = [values for _ in range(missing)]
+        frames.extend(previous)
+        frames.append(values)
+        if update_history and history_limit > 0:
+            self.history.append(values.copy())
+            self.history = self.history[-history_limit:]
+        return np_module.stack(frames).astype(np_module.float32)
 
     def _map_features(self, np_module):
         mode = self.map_conditioning.get("mode", "none")
@@ -671,6 +802,12 @@ def main():
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--hidden-size", type=int, default=128)
+    parser.add_argument(
+        "--architecture",
+        choices=["mlp", "gru"],
+        default="mlp",
+        help="Classifier architecture. gru keeps context frames as a sequence instead of a flat vector.",
+    )
     parser.add_argument("--context-frames", type=int, default=1)
     parser.add_argument(
         "--map-conditioning",
