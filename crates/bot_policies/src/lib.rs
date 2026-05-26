@@ -182,7 +182,7 @@ mod tests {
             boss_id: "caramel-furnace".to_string(),
             health: 1000.0,
             max_health: 1000.0,
-            position: Vec2::new(40.0, 0.0),
+            position: Vec2::new(28.0, 0.0),
         });
 
         let mut bot = BotController::new(BotKind::BossHunter, 5);
@@ -396,7 +396,13 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
             "cream-clockwork",
             "bubble-shoes",
         ],
-        BotKind::Route => &["bubble-shoes", "star-spoon", "cream-clockwork"],
+        BotKind::Route => &[
+            "bubble-shoes",
+            "big-candy-jar",
+            "star-spoon",
+            "rainbow-candy-shot",
+            "cream-clockwork",
+        ],
     }
 }
 
@@ -423,7 +429,7 @@ fn weapon_level(snapshot: &RunSnapshot, weapon_id: &str) -> u32 {
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
     if let Some(enemy) = snapshot.visible_enemies.first() {
         let away = snapshot.player.position - enemy.position;
-        if away.length() < 95.0 {
+        if away.length() < 45.0 {
             return away.normalized_or_zero();
         }
     }
@@ -469,10 +475,10 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let retreat_threshold = if snapshot.map.map_id == "cracked-star-jar" {
         0.55
     } else {
-        0.70
+        0.25
     };
     if health_ratio < retreat_threshold {
-        let avoidance = avoid_enemies(snapshot, 250.0, 10);
+        let avoidance = avoid_enemies(snapshot, 120.0, 10);
         if avoidance.length_squared() > 0.0 {
             return avoidance.normalized_or_zero();
         }
@@ -491,9 +497,9 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         let to_boss = boss.position - snapshot.player.position;
         let boss_distance = to_boss.length();
         let boss_direction = to_boss.normalized_or_zero();
-        let spacing = if boss_distance < 50.0 {
+        let spacing = if boss_distance < 34.0 {
             boss_direction * -1.0
-        } else if boss_distance > 170.0 {
+        } else if boss_distance > 110.0 {
             boss_direction
         } else {
             Vec2::ZERO
@@ -501,19 +507,19 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         let avoidance_radius = if snapshot.map.map_id == "cracked-star-jar" {
             95.0
         } else {
-            60.0
+            48.0
         };
         let avoidance = avoid_enemies(snapshot, avoidance_radius, 6);
-        return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.85).normalized_or_zero();
+        return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.45).normalized_or_zero();
     }
 
     greedy_movement(snapshot)
 }
 
 fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 70.0, 4);
+    let avoidance = avoid_enemies(snapshot, 52.0, 4);
     if avoidance.length_squared() > 0.0 {
-        return avoidance.normalized_or_zero() * 0.13;
+        return avoidance.normalized_or_zero() * 0.10;
     }
 
     best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.40
