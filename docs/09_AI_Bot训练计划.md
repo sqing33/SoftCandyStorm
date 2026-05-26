@@ -285,6 +285,8 @@ Gym bridge 现在支持在 `step` 请求中传入 `upgrade_choice`。`SoftCandyS
 
 多地图升级选择 ranker smoke 已使用 high-pressure 三图各 5 seed / 120 秒导出 64 条 upgrade sample，训练出 27 个升级词表项的 checkpoint，并在 `soda-creek`、`caramel-workshop`、`cracked-star-jar` 的 Gym evaluation smoke 中实际记录升级决策。报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/summary.md`；gate 为 `upgrade_choice_multimap_ranker_smoke_not_policy_gate`。该结果仍只证明多地图数据、训练和 action mode 组合链路，不代表升级策略质量或长局修复。
 
+把多地图升级 ranker 与旧 movement behavior clone 组合后，high-pressure 三图 60 秒 / 300 秒对比仍为 repair：ranker 在多局中被调用，但 movement policy deterministic action `3` 占比为 100%，300 秒三图胜率全部为 0%。报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_joint_high_pressure_compare_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_014_upgrade_ranker_joint_action_bias.json`。结论：升级 action mode 不是当前主瓶颈，下一步必须修 movement policy、阶段目标或联合 curriculum。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。

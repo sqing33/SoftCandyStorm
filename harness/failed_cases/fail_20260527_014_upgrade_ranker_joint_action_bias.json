@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_014",
+  "category": "rl",
+  "content_id": "upgrade_choice_multimap_ranker_with_legacy_behavior_clone",
+  "seed": 59700,
+  "bot": "BehaviorCloneMovementPlusUpgradeRanker",
+  "time_seconds": 300.0,
+  "symptom": "多地图升级选择 ranker 接入 Gym 后，60 秒 high-pressure 三图仍触发动作分布 repair，300 秒 high-pressure 三图胜率全部为 0%。policy 在三图中 deterministic action 3 占比均为 100%，normalized action entropy 为 0.0。",
+  "root_cause": "升级 ranker 只处理升级 prompt，不能修复旧 movement behavior clone 的确定性动作塌缩。长局失败仍由 movement policy 缺少路线规划、避险和阶段目标信号主导。",
+  "fix": "下一步应把 movement policy 作为主修复对象，设计阶段目标 curriculum 或重新训练 movement+upgrade 联合策略；不要把升级 ranker plumbing 当成 RL policy acceptance。",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_smoke.pt --upgrade-choice-model harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt --eval-episodes 3 --eval-seconds 60 --seed-start 59600 --rule-bots random,kite,tank --report harness/reports/2026-05-27_rl_upgrade_choice_joint_high_pressure_compare_001/comparison_60s.json；随后以 --eval-seconds 300 --seed-start 59700 写入 comparison_300s.json。"
+}

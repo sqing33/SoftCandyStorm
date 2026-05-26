@@ -1638,6 +1638,11 @@
       "id": "rl_upgrade_choice_multimap_ranker_smoke",
       "summary": "用 high-pressure 三图各 5 seed / 120 秒导出 64 条 upgrade_sample，训练 27 词表监督升级选择 ranker，并在 soda-creek、caramel-workshop、cracked-star-jar 的 Gym evaluation 中记录升级决策；结论为 smoke-only，不是 RL policy gate。",
       "report": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_upgrade_ranker_joint_action_bias_repair",
+      "summary": "将多地图升级 ranker 与旧 movement behavior clone 组合后完成 high-pressure 60 秒和 300 秒三图对比；ranker 被调用，但 movement policy action 3 占比 100%，300 秒三图胜率均为 0%，已记录 fail_20260527_014。",
+      "report": "harness/reports/2026-05-27_rl_upgrade_choice_joint_high_pressure_compare_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1647,7 +1652,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 均为 repair；升级选择多地图 ranker smoke 已补上，下一步应做多 seed 60/300 秒 movement+upgrade 联合对比或设计阶段目标 curriculum。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；下一步应优先修 movement policy 或设计阶段目标 curriculum。"
     },
     {
       "id": "phase4_full_pack_manual_review",

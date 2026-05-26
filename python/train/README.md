@@ -417,6 +417,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 The first high-pressure multimap smoke used 64 upgrade prompts from `soda-creek`, `caramel-workshop`, and `cracked-star-jar`, then recorded Gym upgrade decisions on all three maps. It is still a smoke-only result, because the movement policy and ranker pair have not passed multi-seed 60/300-second acceptance.
 
+The first movement+upgrade high-pressure comparison kept the upgrade ranker active but still failed: the legacy movement behavior clone selected action `3` for 100% of deterministic steps, and the 300-second high-pressure comparison reached 0% policy win rate on all three maps. Treat this as movement-policy repair evidence, not as a reason to continue scaling upgrade samples alone.
+
 For movement behavior-clone experiments, train from exported movement trajectories:
 
 ```bash
