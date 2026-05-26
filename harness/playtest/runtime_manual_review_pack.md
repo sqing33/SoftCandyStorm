@@ -139,3 +139,14 @@ python3 harness/playtest/validate_manual_review.py \
 ```
 
 该工具只检查证据完整性，不会替代人工判断；空模板、空评分、少于 9 局、非法门禁或缺少 `notes` / `next_actions` 都会失败。
+
+严格校验报告生成后，可以再汇总最终接受证据包：
+
+```bash
+python3 harness/playtest/create_manual_playtest_acceptance_review_packet.py \
+  --repo-root . \
+  --report harness/reports/<date>_manual_playtest_acceptance_review_packet/manual_playtest_acceptance_review_packet.json \
+  --markdown harness/reports/<date>_manual_playtest_acceptance_review_packet/summary.md
+```
+
+该证据包会同时展示人工试玩源记录、严格校验、Release Candidate `manual_playtest` gate、内容接受证据包和 accepted content lockfile 状态。当前本地证据包仍为 `manual_playtest_acceptance_review_packet_needs_evidence`，因为草稿含 TODO、严格校验为 `manual_review_invalid`、RC gate 为 `waiting`。它不运行 Runtime、不填写真人评分、不把内容推进到 `accepted_content`。

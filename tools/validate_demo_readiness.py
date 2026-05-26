@@ -306,8 +306,19 @@ def runtime_asset_gate(repo_root: Path, manifest_path: Path) -> dict[str, Any]:
     )
 
 
-def manual_playtest_gate(repo_root: Path, draft_path: Path, packet_path: Path) -> dict[str, Any]:
-    evidence = [relative_repo_path(repo_root, draft_path), relative_repo_path(repo_root, packet_path)]
+def manual_playtest_gate(
+    repo_root: Path,
+    draft_path: Path,
+    packet_path: Path,
+    strict_validation_path: Path,
+    acceptance_packet_path: Path,
+) -> dict[str, Any]:
+    evidence = [
+        relative_repo_path(repo_root, draft_path),
+        relative_repo_path(repo_root, packet_path),
+        relative_repo_path(repo_root, strict_validation_path),
+        relative_repo_path(repo_root, acceptance_packet_path),
+    ]
     errors: list[str] = []
     warnings: list[str] = []
     try:
@@ -328,10 +339,22 @@ def manual_playtest_gate(repo_root: Path, draft_path: Path, packet_path: Path) -
     decision = payload.get("acceptance_decision")
     if decision != "needs_more_runs":
         warnings.append("manual playtest draft should remain needs_more_runs until real human review exists")
+    try:
+        strict_validation = load_json_object(strict_validation_path)
+        if strict_validation.get("decision") != "manual_review_invalid":
+            warnings.append("current local strict validation should stay invalid until real human review exists")
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"strict manual review validation report unreadable: {error}")
+    try:
+        acceptance_packet = load_json_object(acceptance_packet_path)
+        if acceptance_packet.get("decision") != "manual_playtest_acceptance_review_packet_needs_evidence":
+            warnings.append("manual playtest acceptance packet should stay needs_evidence until real human review exists")
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"manual playtest acceptance packet unreadable: {error}")
     return report_gate(
         "manual_playtest",
         "waiting" if not errors else "blocked",
-        "9-run manual playtest draft and packet exist, but TODO ratings are not acceptance evidence",
+        "9-run manual playtest draft, packet, strict validation, and acceptance evidence packet exist, but TODO ratings are not acceptance evidence",
         evidence,
         repo_root,
         errors=errors,
@@ -427,10 +450,12 @@ def build_report(repo_root: Path, formal_content_dir: Path, candidate_content_di
             repo_root,
             repo_root / "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
             repo_root / "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md",
+            repo_root / "harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/manual_review_validation.json",
+            repo_root / "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/manual_playtest_acceptance_review_packet.json",
         ),
         release_gate(
             repo_root,
-            repo_root / "harness/reports/2026-05-26_release_candidate_evidence_current_local_002/release_candidate_evidence.json",
+            repo_root / "harness/reports/2026-05-26_release_candidate_evidence_current_local_003/release_candidate_evidence.json",
             repo_root / "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json",
         ),
     ]

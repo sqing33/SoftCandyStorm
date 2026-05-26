@@ -1,0 +1,294 @@
+{
+  "report_version": 1,
+  "source": "docs/01 first-demo target",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "demo_not_ready",
+  "status_counts": {
+    "blocked": 2,
+    "pass": 2,
+    "waiting": 7
+  },
+  "gate_count": 11,
+  "errors": [],
+  "warnings": [],
+  "blockers": [
+    "formal_content_pack: content shape is not sufficient for a demo-ready formal content pack",
+    "candidate_full_pack: Phase 4 full pack candidate reaches demo roster shape but remains candidate-only",
+    "schema_preflight: candidate full pack preflight exists; formal Rust/GameCore schema gate remains blocked by local binary launch",
+    "static_budget: pure Python static budgets exist for base_demo and full pack; game_harness budget-content still needs binary recovery",
+    "historical_bot_matrix: historical 9-bot 20-seed matrix and replay regression exist, but current binary blocker prevents fresh release evidence",
+    "runtime_capture: historical Runtime captures prove wiring but not current playable demo readiness",
+    "meta_progression: meta progression smoke and save contracts exist, but complete base UI and fresh runtime validation remain missing",
+    "manual_playtest: 9-run manual playtest draft, packet, strict validation, and acceptance evidence packet exist, but TODO ratings are not acceptance evidence",
+    "release_state: release candidate is not ready and accepted content lockfile is empty/blocked"
+  ],
+  "gates": [
+    {
+      "id": "formal_content_pack",
+      "status": "blocked",
+      "candidate": false,
+      "content_dir": "content/base_demo",
+      "summary": "content shape is not sufficient for a demo-ready formal content pack",
+      "counts": {
+        "characters": 5,
+        "weapons": 12,
+        "passives": 8,
+        "enemies": 8,
+        "bosses": 6,
+        "maps": 6,
+        "waves": 6,
+        "evolutions": 8
+      },
+      "targets": {
+        "characters": 1,
+        "maps": 1,
+        "weapons": 12,
+        "passives": 8,
+        "enemies": 12,
+        "bosses": 3
+      },
+      "valid_600_second_waves": [
+        "caramel-workshop-standard",
+        "cotton-cloud-pasture-standard",
+        "cracked-star-jar-standard",
+        "frosting-grassland-standard",
+        "jelly-platform-standard",
+        "soda-creek-standard"
+      ],
+      "invalid_waves": [],
+      "build_tag_groups": {
+        "projectile": [
+          "candy-crystal-lance",
+          "frosting-gloves",
+          "lollipop-boomerang",
+          "rainbow-candy-shot",
+          "soda-bubble-pop",
+          "star-sugar-ray"
+        ],
+        "defense": [
+          "big-candy-jar",
+          "marshmallow-shield",
+          "mint-cyclone",
+          "nonstick-apron"
+        ],
+        "control": [
+          "caramel-sticky-ground",
+          "mint-cyclone",
+          "sour-plum-spray",
+          "sour-tuner"
+        ],
+        "burst": [
+          "popping-candy-mine",
+          "soda-fountain"
+        ],
+        "summon": [
+          "pudding-turret"
+        ],
+        "boss": [
+          "candy-crystal-lance",
+          "star-sugar-ray"
+        ],
+        "economy": [
+          "candy-crystal-lens",
+          "star-spoon"
+        ]
+      },
+      "present_build_group_count": 7,
+      "readiness_gaps": [
+        "enemies count 8 is below target 12"
+      ],
+      "errors": [],
+      "evidence": [
+        "content/base_demo"
+      ]
+    },
+    {
+      "id": "candidate_content_pack",
+      "status": "pass",
+      "candidate": true,
+      "content_dir": "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack",
+      "summary": "content counts and build tags satisfy docs/01 demo shape",
+      "counts": {
+        "characters": 5,
+        "weapons": 12,
+        "passives": 12,
+        "enemies": 12,
+        "bosses": 6,
+        "maps": 6,
+        "waves": 6,
+        "evolutions": 8
+      },
+      "targets": {
+        "characters": 1,
+        "maps": 1,
+        "weapons": 12,
+        "passives": 8,
+        "enemies": 12,
+        "bosses": 3
+      },
+      "valid_600_second_waves": [
+        "caramel-workshop-standard",
+        "cotton-cloud-pasture-standard",
+        "cracked-star-jar-standard",
+        "frosting-grassland-standard",
+        "jelly-platform-standard",
+        "soda-creek-standard"
+      ],
+      "invalid_waves": [],
+      "build_tag_groups": {
+        "projectile": [
+          "candy-crystal-lance",
+          "frosting-gloves",
+          "jelly-lens-polish",
+          "lollipop-boomerang",
+          "rainbow-candy-shot",
+          "soda-bubble-pop",
+          "star-sugar-ray"
+        ],
+        "defense": [
+          "big-candy-jar",
+          "cocoa-safety-badge",
+          "honey-heart",
+          "marshmallow-shield",
+          "mint-cyclone",
+          "nonstick-apron"
+        ],
+        "control": [
+          "caramel-sticky-ground",
+          "mint-cyclone",
+          "peppermint-pocket-watch",
+          "sour-plum-spray",
+          "sour-tuner"
+        ],
+        "burst": [
+          "popping-candy-mine",
+          "soda-fountain"
+        ],
+        "summon": [
+          "pudding-turret"
+        ],
+        "boss": [
+          "candy-crystal-lance",
+          "star-sugar-ray"
+        ],
+        "economy": [
+          "candy-crystal-lens",
+          "star-spoon"
+        ]
+      },
+      "present_build_group_count": 7,
+      "readiness_gaps": [],
+      "errors": [],
+      "evidence": [
+        "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack"
+      ]
+    },
+    {
+      "id": "candidate_full_pack",
+      "status": "waiting",
+      "summary": "Phase 4 full pack candidate reaches demo roster shape but remains candidate-only",
+      "evidence": [
+        "harness/generated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "schema_preflight",
+      "status": "waiting",
+      "summary": "candidate full pack preflight exists; formal Rust/GameCore schema gate remains blocked by local binary launch",
+      "evidence": [
+        "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md",
+        "harness/reports/2026-05-26_content_schema_contract_001/summary.md"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "static_budget",
+      "status": "waiting",
+      "summary": "pure Python static budgets exist for base_demo and full pack; game_harness budget-content still needs binary recovery",
+      "evidence": [
+        "harness/reports/2026-05-26_static_balance_budget_base_demo_001/summary.md",
+        "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "historical_bot_matrix",
+      "status": "waiting",
+      "summary": "historical 9-bot 20-seed matrix and replay regression exist, but current binary blocker prevents fresh release evidence",
+      "evidence": [
+        "harness/reports/2026-05-25_bot_matrix_nightly_001/summary.md",
+        "harness/reports/2026-05-25_bot_matrix_nightly_regression_001/summary.md"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "runtime_capture",
+      "status": "waiting",
+      "summary": "historical Runtime captures prove wiring but not current playable demo readiness",
+      "evidence": [
+        "harness/reports/2026-05-25_runtime_demo_input_001/summary.md",
+        "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md",
+        "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "prototype_assets",
+      "status": "pass",
+      "summary": "programmatic top-down prototype assets cover core demo readability placeholders",
+      "evidence": [
+        "assets/prototype_topdown/manifest.json"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "meta_progression",
+      "status": "waiting",
+      "summary": "meta progression smoke and save contracts exist, but complete base UI and fresh runtime validation remain missing",
+      "evidence": [
+        "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md",
+        "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md",
+        "harness/reports/2026-05-26_save_state_contract_v1_001/summary.md"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "manual_playtest",
+      "status": "waiting",
+      "summary": "9-run manual playtest draft, packet, strict validation, and acceptance evidence packet exist, but TODO ratings are not acceptance evidence",
+      "evidence": [
+        "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+        "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md",
+        "harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/manual_review_validation.json",
+        "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/manual_playtest_acceptance_review_packet.json"
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "release_state",
+      "status": "blocked",
+      "summary": "release candidate is not ready and accepted content lockfile is empty/blocked",
+      "evidence": [
+        "harness/reports/2026-05-26_release_candidate_evidence_current_local_003/release_candidate_evidence.json",
+        "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json"
+      ],
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "limitations": [
+    "This audit checks repository evidence for the docs/01 demo target only.",
+    "It does not execute Rust, Bevy, Harness simulation, Replay, performance tests, or manual playtests.",
+    "Candidate content and historical smoke reports cannot prove a release-ready demo.",
+    "A demo_ready decision requires every gate to pass with current, non-candidate evidence."
+  ]
+}

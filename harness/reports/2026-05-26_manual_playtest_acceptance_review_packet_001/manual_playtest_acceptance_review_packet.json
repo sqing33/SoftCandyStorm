@@ -1,0 +1,125 @@
+{
+  "report_version": 1,
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "manual_playtest_acceptance_review_packet_needs_evidence",
+  "candidate_id": "current-base-demo-runtime",
+  "content_hash": "TODO:content-hash-after-freeze",
+  "evidence_count": 7,
+  "existing_evidence_count": 7,
+  "errors": [],
+  "blockers": [
+    "manual review source still contains TODO placeholders",
+    "manual review has not accepted the candidate",
+    "manual review has fewer than 9 completed playtest_pass runs",
+    "strict manual review validation is `manual_review_invalid`",
+    "release candidate manual_playtest gate is `waiting`"
+  ],
+  "evidence": [
+    {
+      "field": "manual_review_template",
+      "label": "Manual review template",
+      "value": "harness/playtest/runtime_manual_review_template.json",
+      "status": "exists",
+      "resolved_path": "harness/playtest/runtime_manual_review_template.json",
+      "expected": "9-run manual playtest template exists",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "manual_review_source",
+      "label": "Manual review source",
+      "value": "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+      "status": "exists",
+      "resolved_path": "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+      "expected": "human-filled 9-run review source must replace TODO values",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "manual_review_packet",
+      "label": "Manual review packet",
+      "value": "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md",
+      "expected": "human checklist packet exists for reviewer handoff",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "strict_validation_report",
+      "label": "Strict validation",
+      "value": "harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/manual_review_validation.json",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/manual_review_validation.json",
+      "expected": "validate_manual_review.py --strict-acceptance JSON report exists",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "release_candidate_evidence",
+      "label": "Release candidate evidence",
+      "value": "harness/release/current_local_rc_evidence.json",
+      "status": "exists",
+      "resolved_path": "harness/release/current_local_rc_evidence.json",
+      "expected": "manual_playtest release gate must pass only after real human acceptance",
+      "blocking_if_missing": true
+    },
+    {
+      "field": "content_acceptance_review_packet",
+      "label": "Content acceptance packet",
+      "value": "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/content_acceptance_review_packet.json",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/content_acceptance_review_packet.json",
+      "expected": "downstream content acceptance evidence packet status is visible",
+      "blocking_if_missing": false
+    },
+    {
+      "field": "accepted_content_lockfile_report",
+      "label": "Accepted content lockfile",
+      "value": "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json",
+      "status": "exists",
+      "resolved_path": "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json",
+      "expected": "downstream accepted content lockfile status is visible",
+      "blocking_if_missing": false
+    }
+  ],
+  "manual_review_status": {
+    "path": "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+    "candidate_id": "current-base-demo-runtime",
+    "content_hash": "TODO:content-hash-after-freeze",
+    "acceptance_decision": "needs_more_runs",
+    "reviewer": "TODO: human reviewer",
+    "reviewed_at": "TODO: YYYY-MM-DD",
+    "run_count": 9,
+    "completed_run_count": 0,
+    "missing_run_ids": [],
+    "todo_count": 104,
+    "status": "draft_todo"
+  },
+  "strict_validation_status": {
+    "path": "harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/manual_review_validation.json",
+    "decision": "manual_review_invalid",
+    "strict_acceptance": true,
+    "run_count": 9,
+    "error_count": 72,
+    "warning_count": 0,
+    "status": "invalid"
+  },
+  "release_candidate_manual_playtest_gate": {
+    "status": "waiting",
+    "summary": "人工试玩审查包已准备，但尚无真人完成 9 局评分与 notes；自动 capture 不能替代人工审查。",
+    "synthetic": false,
+    "evidence_count": 1
+  },
+  "downstream_status": {
+    "content_acceptance_review_packet": "content_acceptance_review_packet_needs_evidence",
+    "accepted_content_lockfile": "accepted_content_lockfile_blocked"
+  },
+  "required_next_steps": [
+    "Run the 9 human playtest sessions and replace every TODO rating, note, tag, and next action.",
+    "Run validate_manual_review.py --strict-acceptance and keep a manual_review_valid JSON/Markdown report.",
+    "Update the release candidate manual_playtest gate only after real human evidence exists.",
+    "Use the validated manual review as evidence for content acceptance and accepted content lockfile generation."
+  ],
+  "limitations": [
+    "This packet organizes manual playtest acceptance evidence only.",
+    "It does not run Runtime, inspect gameplay, fill human review fields, promote content, write lockfiles, or approve release.",
+    "Automated capture, Bot results, and fixture reviews cannot replace the real human review source."
+  ]
+}

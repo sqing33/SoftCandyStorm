@@ -1,0 +1,90 @@
+# Manual Playtest Review Validation
+
+- Source: `harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json`
+- Decision: `manual_review_invalid`
+- Run count: 9
+- Strict acceptance: True
+
+## Errors
+
+- new_001: `fun_rating` must be an integer from 1 to 5
+- new_001: `clarity_rating` must be an integer from 1 to 5
+- new_001: `difficulty_rating` must be an integer from 1 to 5
+- new_001: `projectile_readability` must be an integer from 1 to 5
+- new_001: `hit_feedback` must be an integer from 1 to 5
+- new_001: `xp_pickup_rhythm` must be an integer from 1 to 5
+- new_001: `boss_spawn_clarity` must be an integer from 1 to 5
+- new_001: `death_reason_clarity` must be an integer from 1 to 5
+- new_002: `fun_rating` must be an integer from 1 to 5
+- new_002: `clarity_rating` must be an integer from 1 to 5
+- new_002: `difficulty_rating` must be an integer from 1 to 5
+- new_002: `projectile_readability` must be an integer from 1 to 5
+- new_002: `hit_feedback` must be an integer from 1 to 5
+- new_002: `xp_pickup_rhythm` must be an integer from 1 to 5
+- new_002: `boss_spawn_clarity` must be an integer from 1 to 5
+- new_002: `death_reason_clarity` must be an integer from 1 to 5
+- new_003: `fun_rating` must be an integer from 1 to 5
+- new_003: `clarity_rating` must be an integer from 1 to 5
+- new_003: `difficulty_rating` must be an integer from 1 to 5
+- new_003: `projectile_readability` must be an integer from 1 to 5
+- new_003: `hit_feedback` must be an integer from 1 to 5
+- new_003: `xp_pickup_rhythm` must be an integer from 1 to 5
+- new_003: `boss_spawn_clarity` must be an integer from 1 to 5
+- new_003: `death_reason_clarity` must be an integer from 1 to 5
+- skilled_001: `fun_rating` must be an integer from 1 to 5
+- skilled_001: `clarity_rating` must be an integer from 1 to 5
+- skilled_001: `difficulty_rating` must be an integer from 1 to 5
+- skilled_001: `projectile_readability` must be an integer from 1 to 5
+- skilled_001: `hit_feedback` must be an integer from 1 to 5
+- skilled_001: `xp_pickup_rhythm` must be an integer from 1 to 5
+- skilled_001: `boss_spawn_clarity` must be an integer from 1 to 5
+- skilled_001: `death_reason_clarity` must be an integer from 1 to 5
+- skilled_002: `fun_rating` must be an integer from 1 to 5
+- skilled_002: `clarity_rating` must be an integer from 1 to 5
+- skilled_002: `difficulty_rating` must be an integer from 1 to 5
+- skilled_002: `projectile_readability` must be an integer from 1 to 5
+- skilled_002: `hit_feedback` must be an integer from 1 to 5
+- skilled_002: `xp_pickup_rhythm` must be an integer from 1 to 5
+- skilled_002: `boss_spawn_clarity` must be an integer from 1 to 5
+- skilled_002: `death_reason_clarity` must be an integer from 1 to 5
+- skilled_003: `fun_rating` must be an integer from 1 to 5
+- skilled_003: `clarity_rating` must be an integer from 1 to 5
+- skilled_003: `difficulty_rating` must be an integer from 1 to 5
+- skilled_003: `projectile_readability` must be an integer from 1 to 5
+- skilled_003: `hit_feedback` must be an integer from 1 to 5
+- skilled_003: `xp_pickup_rhythm` must be an integer from 1 to 5
+- skilled_003: `boss_spawn_clarity` must be an integer from 1 to 5
+- skilled_003: `death_reason_clarity` must be an integer from 1 to 5
+- build_001: `fun_rating` must be an integer from 1 to 5
+- build_001: `clarity_rating` must be an integer from 1 to 5
+- build_001: `difficulty_rating` must be an integer from 1 to 5
+- build_001: `projectile_readability` must be an integer from 1 to 5
+- build_001: `hit_feedback` must be an integer from 1 to 5
+- build_001: `xp_pickup_rhythm` must be an integer from 1 to 5
+- build_001: `boss_spawn_clarity` must be an integer from 1 to 5
+- build_001: `death_reason_clarity` must be an integer from 1 to 5
+- build_002: `fun_rating` must be an integer from 1 to 5
+- build_002: `clarity_rating` must be an integer from 1 to 5
+- build_002: `difficulty_rating` must be an integer from 1 to 5
+- build_002: `projectile_readability` must be an integer from 1 to 5
+- build_002: `hit_feedback` must be an integer from 1 to 5
+- build_002: `xp_pickup_rhythm` must be an integer from 1 to 5
+- build_002: `boss_spawn_clarity` must be an integer from 1 to 5
+- build_002: `death_reason_clarity` must be an integer from 1 to 5
+- build_003: `fun_rating` must be an integer from 1 to 5
+- build_003: `clarity_rating` must be an integer from 1 to 5
+- build_003: `difficulty_rating` must be an integer from 1 to 5
+- build_003: `projectile_readability` must be an integer from 1 to 5
+- build_003: `hit_feedback` must be an integer from 1 to 5
+- build_003: `xp_pickup_rhythm` must be an integer from 1 to 5
+- build_003: `boss_spawn_clarity` must be an integer from 1 to 5
+- build_003: `death_reason_clarity` must be an integer from 1 to 5
+
+## Warnings
+
+- None
+
+## Limitations
+
+- This validator checks evidence completeness only; it cannot judge whether the game is fun.
+- Automated runtime capture reports do not satisfy manual review fields unless a human fills the review.

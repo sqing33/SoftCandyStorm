@@ -47,11 +47,37 @@ rating fields, allowed tags, and gate labels into one Markdown file. It does
 not run Runtime, fill ratings, approve a candidate, or replace the strict
 acceptance validator.
 
+## Create An Acceptance Evidence Packet
+
+```bash
+python3 harness/playtest/create_manual_playtest_acceptance_review_packet.py \
+  --repo-root . \
+  --report harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/manual_playtest_acceptance_review_packet.json \
+  --markdown harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/summary.md
+```
+
+Before generating that packet for the current local draft, keep the strict
+validation report as evidence:
+
+```bash
+python3 harness/playtest/validate_manual_review.py \
+  harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json \
+  --strict-acceptance \
+  --report harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/manual_review_validation.json \
+  --markdown harness/reports/2026-05-26_runtime_manual_playtest_strict_validation_current_local_001/summary.md
+```
+
+The current local acceptance packet is intentionally
+`manual_playtest_acceptance_review_packet_needs_evidence`: the draft still has
+TODO ratings, strict validation is `manual_review_invalid`, and the release
+candidate `manual_playtest` gate remains `waiting`.
+
 ## Run Regression Tests
 
 ```bash
 python3 harness/playtest/test_create_manual_playtest_review_draft.py
 python3 harness/playtest/test_create_manual_playtest_review_packet.py
+python3 harness/playtest/test_create_manual_playtest_acceptance_review_packet.py
 python3 harness/playtest/test_validate_manual_review.py
 ```
 
