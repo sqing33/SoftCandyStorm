@@ -1,0 +1,68 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-27_rl_sb3_distill_time_phase_balance_teacher_001/ppo_time_phase_balance_distilled.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "distillation_source": {
+    "mode": "teacher_probs",
+    "teacher_model": "harness/reports/2026-05-27_rl_behavior_clone_time_phase_balance_curriculum_full_001/time_phase_balance_curriculum_full.pt",
+    "teacher_argmax_agreement": 0.8898,
+    "target_transform": {
+      "teacher_temperature": 1.5,
+      "uniform_target_mix": 0.05
+    },
+    "target_entropy_nats": 0.903933,
+    "target_argmax_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 2953,
+        "ratio": 0.1359
+      },
+      "2": {
+        "count": 2313,
+        "ratio": 0.1065
+      },
+      "3": {
+        "count": 3567,
+        "ratio": 0.1642
+      },
+      "4": {
+        "count": 2232,
+        "ratio": 0.1027
+      },
+      "5": {
+        "count": 3087,
+        "ratio": 0.1421
+      },
+      "6": {
+        "count": 2314,
+        "ratio": 0.1065
+      },
+      "7": {
+        "count": 2864,
+        "ratio": 0.1318
+      },
+      "8": {
+        "count": 2396,
+        "ratio": 0.1103
+      }
+    }
+  },
+  "observation_version": 2,
+  "observation_len": 145,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.0,
+    "clip_range": 0.2
+  },
+  "started_at": "2026-05-26T22:35:07.738675+00:00",
+  "completed_at": "2026-05-26T22:35:09.577353+00:00"
+}

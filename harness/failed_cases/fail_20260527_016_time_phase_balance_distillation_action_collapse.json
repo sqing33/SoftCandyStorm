@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_016",
+  "category": "rl",
+  "content_id": "ppo_distilled_from_time_phase_balance_teacher",
+  "seed": 61400,
+  "bot": "PpoDistilledTimePhaseBalanceTeacher",
+  "time_seconds": 10.0,
+  "symptom": "阶段平衡 GRU teacher 蒸馏到 SB3 PPO zip 后，10 秒 soda-creek deterministic Gym 评估仍选择 action 3 达 100%，normalized action entropy 为 0.0。",
+  "root_cause": "监督蒸馏的 validation policy entropy 不能保证在线 deterministic argmax 分布健康；SB3 MlpPolicy 在实际 observation 流上仍会把相近动作概率集中到单一 argmax。",
+  "fix": "下一步应在蒸馏后立即加入 PPO 闭环探索，或进一步提高 target entropy / stochastic evaluation 诊断；不能把 supervised distillation zip 单独推进为 movement policy 修复。",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/distill_behavior_clone_to_sb3.py --dataset harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001 --teacher-model harness/reports/2026-05-27_rl_behavior_clone_time_phase_balance_curriculum_full_001/time_phase_balance_curriculum_full.pt --teacher-temperature 1.5 --uniform-target-mix 0.05 --epochs 5 --batch-size 256 --model-out harness/reports/2026-05-27_rl_sb3_distill_time_phase_balance_teacher_001/ppo_time_phase_balance_distilled.zip --report harness/reports/2026-05-27_rl_sb3_distill_time_phase_balance_teacher_001/run_output.json；随后用 train_sb3.py --evaluate-model --model 该 zip --eval-episodes 1 --eval-seconds 10 --seed-start 61400 --map-id soda-creek 写入 evaluation_soda_creek_10s.json。"
+}
