@@ -333,6 +333,25 @@ The first stage 01 opening run trained for 5120 actual timesteps on `cracked-sta
 
 Continuing stage 01 for 20k more requested timesteps improved the 10-seed 60-second check but still did not pass: `soda-creek` reached 80% while `caramel-workshop` and `cracked-star-jar` stayed at 100%. The remaining `soda-creek` failures died at 46.1996s and 28.8332s with action `4` dominating the failed episodes, so the next repair should inspect opening trajectories and map pressure instead of only adding generic PPO timesteps.
 
+Use `--trace-dir` to write sampled policy episode traces during training evaluation, `--evaluate-model`, or `--compare-rule-bots`. Combine it with `--trace-failed-only` to keep only non-victory episodes, and tune `--trace-sample-stride` to control row density:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py \
+  --algorithm ppo \
+  --evaluate-model \
+  --model harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_retry_20k_001/stage01_opening_retry_20k.zip \
+  --eval-episodes 4 \
+  --eval-seconds 60 \
+  --seed-start 62406 \
+  --map-id soda-creek \
+  --trace-dir harness/reports/local_rl_trace/traces \
+  --trace-failed-only \
+  --trace-sample-stride 30 \
+  --report harness/reports/local_rl_trace/evaluation.json
+```
+
+The first stage 01 retry trace confirmed that the two failed `soda-creek` episodes were not random jitter: both sustained action `4` at high policy probability through the final health collapse. Trace files are sampled from Gym evaluation info and do not replace Replay or full GameCore snapshots; use them for action/reward/health diagnostics, then add richer snapshot fields if map pressure remains ambiguous.
+
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
 For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:

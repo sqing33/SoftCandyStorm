@@ -283,6 +283,10 @@ stage 01 opening 课程已按计划跑完 5120 actual timesteps，并完成 60 �
 
 从 stage 01 继续 20k timesteps 的 opening retry 也已完成，并用 10 seed 60 秒 high-pressure 复查。`soda-creek` 提升到 80% 胜率，但仍有 seed `62406` / `62409` 在 opening 阶段死亡，失败局 dominant action 转向 `4`；报告位于 `harness/reports/2026-05-27_rl_curriculum_time_bucket_stage01_retry_20k_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_019_curriculum_stage01_retry_soda_opening_gap.json`。结论：单纯延长 generic opening PPO 不足以解除 `soda-creek` 开局 blocker，stage 02 不应被解释为建立在已修复 opening 之上。
 
+`train_sb3.py` 现在支持 `--trace-dir`、`--trace-failed-only` 和 `--trace-sample-stride`，可在训练后评估、单模型评估或规则 Bot 对比中为 policy episode 输出采样轨迹。轨迹记录 step、tick、time、action、reward、health、level、kills、xp、damage、events、terminal、reward_breakdown 和 action score top actions；它来自 Gym evaluation info，不是完整 Replay，也不包含完整 GameCore snapshot。
+
+首个 retry trace 报告位于 `harness/reports/2026-05-27_rl_curriculum_stage01_retry_trace_001/summary.md`。该报告对 `soda-creek` seed `62406` 到 `62409` 复跑 60 秒 evaluation，并只写失败局 trace：seed `62406` / `62409` 均在死亡前持续选择 action `4`，最终 chosen action score 约 `0.87` / `0.85`，说明 failure 不是随机抖动，而是策略在部分开局稳定沿坏路径前进。下一步应比较失败与成功 seed 的地图压力，并考虑给 trace 增加玩家位置、边界距离和最近敌人压力等 GameCore snapshot 字段。
+
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
 
 `python/train/distill_behavior_clone_to_sb3.py` 已提供 PPO 蒸馏初始化入口：它从规则 Bot 轨迹读取 observation，用 behavior clone teacher 输出 soft action probability，再监督训练 SB3 PPO `MlpPolicy` 并保存标准 `.zip` 与 metadata。蒸馏入口现在支持 `--teacher-temperature` 与 `--uniform-target-mix`，用于在 teacher probability 过尖或动作偏置过重时显式提高 target entropy；这些旋钮只属于 repair 实验，不是 policy gate。首个 256 样本 smoke 已证明 distilled `.zip` 可以被 `train_sb3.py --evaluate-model` 加载，但 1 epoch 模型仍为动作 3 deterministic smoke，不是策略通过证据；后续应在更大数据上蒸馏后继续 PPO 环境训练，并跑 high-pressure 60/300 秒对比。

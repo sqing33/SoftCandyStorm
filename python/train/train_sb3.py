@@ -226,6 +226,9 @@ def train(
     eval_deterministic=True,
     eval_map_id=None,
     model_in=None,
+    trace_dir=None,
+    trace_failed_only=False,
+    trace_sample_stride=30,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -301,6 +304,9 @@ def train(
         seconds=eval_seconds or config["evaluation"]["seconds"],
         map_id=eval_map_id,
         deterministic=eval_deterministic,
+        trace_dir=trace_dir,
+        trace_failed_only=trace_failed_only,
+        trace_sample_stride=trace_sample_stride,
     )
     known_exploit_notes = known_exploits_from_evaluation(evaluation)
     gate_decision = training_gate_decision(known_exploit_notes)
@@ -429,6 +435,9 @@ def evaluate_saved_policy(
     map_id=None,
     deterministic=True,
     upgrade_choice_model=None,
+    trace_dir=None,
+    trace_failed_only=False,
+    trace_sample_stride=30,
 ):
     model_class = stable_baselines_model_classes()[algorithm]
     model = model_class.load(model_path or default_model_path(config, algorithm))
@@ -444,6 +453,9 @@ def evaluate_saved_policy(
         map_id=map_id,
         deterministic=deterministic,
         upgrade_policy=upgrade_policy,
+        trace_dir=trace_dir,
+        trace_failed_only=trace_failed_only,
+        trace_sample_stride=trace_sample_stride,
     )
 
 
@@ -458,6 +470,9 @@ def evaluate_policy_model(
     map_id=None,
     deterministic=True,
     upgrade_choice_model=None,
+    trace_dir=None,
+    trace_failed_only=False,
+    trace_sample_stride=30,
 ):
     if behavior_clone_model is not None:
         upgrade_policy = (
@@ -474,6 +489,9 @@ def evaluate_policy_model(
             map_id=map_id,
             deterministic=deterministic,
             upgrade_policy=upgrade_policy,
+            trace_dir=trace_dir,
+            trace_failed_only=trace_failed_only,
+            trace_sample_stride=trace_sample_stride,
         )
     return evaluate_saved_policy(
         config,
@@ -485,6 +503,9 @@ def evaluate_policy_model(
         map_id=map_id,
         deterministic=deterministic,
         upgrade_choice_model=upgrade_choice_model,
+        trace_dir=trace_dir,
+        trace_failed_only=trace_failed_only,
+        trace_sample_stride=trace_sample_stride,
     )
 
 
@@ -497,6 +518,9 @@ def evaluate_behavior_clone_policy(
     map_id=None,
     deterministic=True,
     upgrade_policy=None,
+    trace_dir=None,
+    trace_failed_only=False,
+    trace_sample_stride=30,
 ):
     model_path = Path(model_path)
     policy = load_behavior_clone_policy(model_path)
@@ -509,6 +533,9 @@ def evaluate_behavior_clone_policy(
         map_id=map_id,
         deterministic=deterministic,
         upgrade_policy=upgrade_policy,
+        trace_dir=trace_dir,
+        trace_failed_only=trace_failed_only,
+        trace_sample_stride=trace_sample_stride,
     )
     evaluation["policy_kind"] = "behavior_clone"
     evaluation["algorithm"] = "behavior_clone"
@@ -532,6 +559,9 @@ def evaluate_model(
     map_id=None,
     deterministic=True,
     upgrade_policy=None,
+    trace_dir=None,
+    trace_failed_only=False,
+    trace_sample_stride=30,
 ):
     seed_start = seed_start if seed_start is not None else config["evaluation"]["seed_start"]
     map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
@@ -564,53 +594,79 @@ def evaluate_model(
             action_score_tracker = new_action_score_tracker(info["action_count"])
             upgrade_policy_decisions = []
             reward_breakdown_totals = {}
+            trace_steps = []
             while not terminated and not truncated and steps < max_steps:
                 action, _state = model.predict(
                     observation, deterministic=deterministic
                 )
                 action_index = action_to_int(action)
+                action_scores = policy_action_scores(model, observation)
                 record_action_scores(
                     action_score_tracker,
-                    policy_action_scores(model, observation),
+                    action_scores,
                     action_index,
                 )
                 action_counts[str(action_index)] = action_counts.get(str(action_index), 0) + 1
                 observation, reward, terminated, truncated, info = env.step(action_index)
+                step_number = steps + 1
                 if "upgrade_policy_decision" in info:
                     upgrade_policy_decisions.append(info["upgrade_policy_decision"])
                 for key, value in info.get("reward_breakdown", {}).items():
                     reward_breakdown_totals[key] = reward_breakdown_totals.get(
                         key, 0.0
                     ) + float(value)
+                if should_record_trace_step(
+                    trace_dir,
+                    step_number,
+                    terminated,
+                    truncated,
+                    trace_sample_stride,
+                ):
+                    trace_steps.append(
+                        build_trace_step(
+                            step_number,
+                            action_index,
+                            reward,
+                            info,
+                            action_scores,
+                        )
+                    )
                 episode_reward += reward
                 steps += 1
 
             total_reward += episode_reward
             terminal = info.get("terminal") or {}
-            episode_reports.append(
-                {
-                    "seed": seed,
-                    "map_id": info["map_id"],
-                    "steps": steps,
-                    "reward": round(episode_reward, 4),
-                    "terminated": terminated,
-                    "truncated": truncated,
-                    "time_seconds": info["time_seconds"],
-                    "terminal_kind": terminal.get("kind"),
-                    "terminal_reason": terminal.get("reason"),
-                    "level": info["level"],
-                    "kills": info["kills"],
-                    "xp_collected": info["xp_collected"],
-                    "damage_taken": info["damage_taken"],
-                    "action_counts": action_counts,
-                    "action_score_diagnostic": summarize_action_score_tracker(
-                        action_score_tracker
-                    ),
-                    "upgrade_policy_decisions": upgrade_policy_decisions,
-                    "upgrade_policy_decision_count": len(upgrade_policy_decisions),
-                    "reward_breakdown": round_reward_breakdown(reward_breakdown_totals),
-                }
+            episode_report = {
+                "seed": seed,
+                "map_id": info["map_id"],
+                "steps": steps,
+                "reward": round(episode_reward, 4),
+                "terminated": terminated,
+                "truncated": truncated,
+                "time_seconds": info["time_seconds"],
+                "terminal_kind": terminal.get("kind"),
+                "terminal_reason": terminal.get("reason"),
+                "level": info["level"],
+                "kills": info["kills"],
+                "xp_collected": info["xp_collected"],
+                "damage_taken": info["damage_taken"],
+                "action_counts": action_counts,
+                "action_score_diagnostic": summarize_action_score_tracker(
+                    action_score_tracker
+                ),
+                "upgrade_policy_decisions": upgrade_policy_decisions,
+                "upgrade_policy_decision_count": len(upgrade_policy_decisions),
+                "reward_breakdown": round_reward_breakdown(reward_breakdown_totals),
+            }
+            trace_path = write_episode_trace(
+                trace_dir,
+                episode_report,
+                trace_steps,
+                failed_only=trace_failed_only,
             )
+            if trace_path is not None:
+                episode_report["trace_path"] = trace_path
+            episode_reports.append(episode_report)
     finally:
         if env is not None:
             env.close()
@@ -623,9 +679,88 @@ def evaluate_model(
         "map_id": map_id,
         "action_selection": "deterministic" if deterministic else "stochastic",
         "upgrade_policy": upgrade_policy_report(upgrade_policy),
+        "trace_dir": str(trace_dir) if trace_dir is not None else None,
+        "trace_failed_only": bool(trace_failed_only) if trace_dir is not None else None,
+        "trace_sample_stride": trace_sample_stride if trace_dir is not None else None,
         "episodes": episode_reports,
         "summary": summary,
     }
+
+
+def should_record_trace_step(trace_dir, step_number, terminated, truncated, sample_stride):
+    if trace_dir is None:
+        return False
+    stride = max(1, int(sample_stride or 1))
+    return step_number == 1 or step_number % stride == 0 or terminated or truncated
+
+
+def build_trace_step(step_number, action_index, reward, info, action_scores):
+    return {
+        "step": step_number,
+        "tick": info.get("tick"),
+        "time_seconds": round(float(info.get("time_seconds", 0.0)), 4),
+        "action": int(action_index),
+        "reward": round(float(reward), 4),
+        "health": round(float(info.get("health", 0.0)), 4),
+        "level": info.get("level"),
+        "kills": info.get("kills"),
+        "xp_collected": round(float(info.get("xp_collected", 0.0)), 4),
+        "damage_taken": round(float(info.get("damage_taken", 0.0)), 4),
+        "upgrade_options": list(info.get("upgrade_options", [])),
+        "events": list(info.get("events", [])),
+        "terminal": info.get("terminal"),
+        "reward_breakdown": round_reward_breakdown(info.get("reward_breakdown", {})),
+        "action_score": compact_action_score(action_scores, action_index),
+    }
+
+
+def compact_action_score(action_scores, chosen_action):
+    if not action_scores or action_scores.get("kind") == "unavailable":
+        return {
+            "kind": "unavailable",
+            "reason": (action_scores or {}).get("reason", "no action score payload"),
+        }
+    scores = action_scores.get("scores", [])
+    if not scores:
+        return {"kind": action_scores.get("kind"), "top_actions": []}
+    top_actions = [
+        {"action": str(index), "score": round(float(score), 4)}
+        for index, score in sorted(
+            enumerate(scores), key=lambda item: item[1], reverse=True
+        )[:3]
+    ]
+    chosen_score = None
+    if 0 <= chosen_action < len(scores):
+        chosen_score = round(float(scores[chosen_action]), 4)
+    return {
+        "kind": action_scores.get("kind"),
+        "chosen_action_score": chosen_score,
+        "top_actions": top_actions,
+    }
+
+
+def write_episode_trace(trace_dir, episode_report, trace_steps, *, failed_only=False):
+    if trace_dir is None:
+        return None
+    if failed_only and episode_report.get("terminal_kind") == "victory":
+        return None
+    target_dir = Path(trace_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    map_id = str(episode_report.get("map_id", "unknown")).replace("/", "_")
+    seed = episode_report.get("seed", "unknown")
+    target = target_dir / f"{map_id}_seed{seed}_trace.json"
+    payload = {
+        "record_type": "policy_episode_trace",
+        "episode": episode_report,
+        "sample_count": len(trace_steps),
+        "steps": trace_steps,
+        "limitations": [
+            "Trace rows are sampled from policy evaluation info and do not include full GameCore snapshots.",
+            "Use this for RL action/reward/health diagnostics, not as a Replay replacement.",
+        ],
+    }
+    target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return str(target)
 
 
 def action_to_int(action):
@@ -1027,6 +1162,9 @@ def compare_policy_to_rule_bots(
     rule_bots=None,
     deterministic=True,
     upgrade_choice_model=None,
+    trace_dir=None,
+    trace_failed_only=False,
+    trace_sample_stride=30,
 ):
     episodes = eval_episodes or config["evaluation"]["episodes"]
     seconds = eval_seconds or config["evaluation"]["seconds"]
@@ -1044,6 +1182,9 @@ def compare_policy_to_rule_bots(
         map_id=map_id,
         deterministic=deterministic,
         upgrade_choice_model=upgrade_choice_model,
+        trace_dir=trace_dir,
+        trace_failed_only=trace_failed_only,
+        trace_sample_stride=trace_sample_stride,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
     findings = comparison_findings(policy, rule_matrix["stdout"])
@@ -1093,6 +1234,9 @@ def compare_policy_to_rule_bots_across_maps(
     deterministic=True,
     map_preset=None,
     upgrade_choice_model=None,
+    trace_dir=None,
+    trace_failed_only=False,
+    trace_sample_stride=30,
 ):
     comparisons = [
         compare_policy_to_rule_bots(
@@ -1107,6 +1251,9 @@ def compare_policy_to_rule_bots_across_maps(
             rule_bots=rule_bots,
             deterministic=deterministic,
             upgrade_choice_model=upgrade_choice_model,
+            trace_dir=trace_dir,
+            trace_failed_only=trace_failed_only,
+            trace_sample_stride=trace_sample_stride,
         )
         for map_id in map_ids
     ]
@@ -1442,6 +1589,22 @@ def main():
         action="store_true",
         help="Sample policy actions during evaluation instead of using deterministic argmax.",
     )
+    parser.add_argument(
+        "--trace-dir",
+        default=None,
+        help="Write sampled policy episode traces during training evaluation, evaluation, or comparison.",
+    )
+    parser.add_argument(
+        "--trace-failed-only",
+        action="store_true",
+        help="When --trace-dir is set, only write traces for non-victory policy episodes.",
+    )
+    parser.add_argument(
+        "--trace-sample-stride",
+        type=int,
+        default=30,
+        help="Record one trace row every N policy steps, plus the first and terminal steps.",
+    )
     parser.add_argument("--evaluate-model", action="store_true")
     parser.add_argument("--compare-rule-bots", action="store_true")
     parser.add_argument(
@@ -1476,6 +1639,8 @@ def main():
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.upgrade_choice_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--upgrade-choice-model requires --evaluate-model or --compare-rule-bots")
+    if args.trace_sample_stride <= 0:
+        parser.error("--trace-sample-stride must be greater than 0")
 
     if args.copy_template:
         write_report(args.report, copy_template(args.copy_template))
@@ -1523,6 +1688,9 @@ def main():
                     if args.upgrade_choice_model
                     else None
                 ),
+                trace_dir=args.trace_dir,
+                trace_failed_only=args.trace_failed_only,
+                trace_sample_stride=args.trace_sample_stride,
             ),
         )
         return
@@ -1553,6 +1721,9 @@ def main():
                         if args.upgrade_choice_model
                         else None
                     ),
+                    trace_dir=args.trace_dir,
+                    trace_failed_only=args.trace_failed_only,
+                    trace_sample_stride=args.trace_sample_stride,
                 ),
             )
             return
@@ -1578,6 +1749,9 @@ def main():
                     if args.upgrade_choice_model
                     else None
                 ),
+                trace_dir=args.trace_dir,
+                trace_failed_only=args.trace_failed_only,
+                trace_sample_stride=args.trace_sample_stride,
             ),
         )
         return
@@ -1600,6 +1774,9 @@ def main():
             eval_deterministic=not args.eval_stochastic,
             eval_map_id=args.map_id,
             model_in=args.model_in,
+            trace_dir=args.trace_dir,
+            trace_failed_only=args.trace_failed_only,
+            trace_sample_stride=args.trace_sample_stride,
         ),
     )
 
