@@ -23,7 +23,8 @@
         "explicit_save_file",
         "export_save",
         "delete_save",
-        "story_codex_ui_candidate_manifest"
+        "story_codex_ui_candidate_manifest",
+        "asset_runtime_candidate_manifest"
       ]
     },
     {
@@ -191,6 +192,41 @@
         "requires_runtime_ui_review",
         "requires_final_human_acceptance"
       ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeAssetCandidateManifest",
+      "required_fields": [
+        "manifest_contract_id",
+        "stage",
+        "candidate_batch_id",
+        "manual_gate_decision",
+        "asset_count",
+        "assets",
+        "rules"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeAssetCandidateItem",
+      "required_fields": [
+        "id",
+        "asset_type",
+        "qa_status",
+        "allowed_candidate_uses"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeAssetCandidateRules",
+      "required_fields": [
+        "accepted_content",
+        "runtime_integrated",
+        "release_ready",
+        "requires_runtime_preview",
+        "requires_audio_loudness_review",
+        "requires_final_human_acceptance"
+      ]
     }
   ],
   "required_enums": [
@@ -236,6 +272,8 @@
     "delete_runtime_save",
     "load_runtime_story_codex_ui_candidate_manifest",
     "validate_runtime_story_codex_ui_candidate_manifest",
+    "load_runtime_asset_candidate_manifest",
+    "validate_runtime_asset_candidate_manifest",
     "render_meta_progress_panel",
     "render_meta_overview_panel",
     "render_meta_chapter_panel",
@@ -255,7 +293,8 @@
     "--save-file",
     "--export-save",
     "--delete-save",
-    "--story-codex-ui-candidate-manifest"
+    "--story-codex-ui-candidate-manifest",
+    "--asset-runtime-candidate-manifest"
   ],
   "required_key_bindings": [
     {
@@ -332,7 +371,15 @@
     "剧情/图鉴 UI 候选",
     "状态 ui_candidate 待验收",
     "不读取 generated candidate 正文",
-    "仍需 Runtime UI review 和最终人工接受"
+    "仍需 Runtime UI review 和最终人工接受",
+    "asset-runtime-candidate-manifest-v0",
+    "asset_runtime_candidate",
+    "manual_gate_decision must be asset_candidate",
+    "accepted_content=false, runtime_integrated=false, release_ready=false",
+    "素材 Runtime 候选",
+    "状态 asset_candidate 待预览",
+    "不替换正式 Runtime 素材",
+    "仍需 Runtime preview、音频响度审查和最终人工接受"
   ],
   "default_privacy_settings": {
     "telemetry_upload_enabled": false,

@@ -448,6 +448,15 @@ python3 harness/asset_review/validate_asset_runtime_candidate_manifest.py \
 
 该校验要求 manifest 绑定有效 `asset_candidate` 人工审查、源候选 metadata 报告、源候选 `metadata/manifest.json`、每个素材的 id/type/path/qa_status 与允许候选用途，并确认 `accepted_content=false`、`runtime_integrated=false`、`release_ready=false`。
 
+Runtime 可以用以下参数读取该 manifest 的安全元数据：
+
+```bash
+game_runtime --asset-runtime-candidate-manifest \
+  harness/asset_review/runtime_candidates/<batch>/runtime_candidate_manifest.json
+```
+
+该入口只在 `F1` 概览显示候选批次、素材数量、类型统计和 `asset_candidate` 待预览状态。它不会读取候选图片、音频或正文文件，不替换正式 Runtime 素材，也不会把候选标记为 `accepted_content`、`runtime_integrated` 或 `release_ready`；缺少 Runtime preview、音频响度审查或最终人工接受要求的 manifest 会被拒绝。
+
 审查结论允许：
 
 - `needs_more_review`：信息不足，继续人工检查。

@@ -184,6 +184,8 @@
             "harness/asset_review/validate_asset_runtime_candidate_manifest.py",
             "harness/asset_review/test_validate_asset_runtime_candidate_manifest.py",
             "harness/reports/2026-05-26_asset_runtime_candidate_manifest_template_001/summary.md",
+            "harness/runtime_contract/runtime_surface_contract_v0.json",
+            "harness/reports/2026-05-26_runtime_surface_contract_asset_runtime_candidate_001/summary.md",
             "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md",
             "harness/asset_review/mmx_level_up_feedback_plan.json",
             "harness/reports/2026-05-26_mmx_level_up_feedback_plan_001/summary.md",
@@ -196,8 +198,8 @@
             "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/summary.md"
           ],
           "gaps": [
-            "mmx 候选仍在 asset/generated_candidates；已有生成前作业计划门禁、metadata 校验、人工审查草稿、真人审查包、asset_candidate 后进入 Runtime 候选 staging 的工具和 manifest 门禁，但尚未由真人填写审查记录并通过。",
-            "Runtime 俯视角玩家与 Boss 出场音频批次已生成小尺寸预览、8 秒 sting 和语音 / sting 叠放预览；升级反馈批次已生成图标预览、中文 TTS 和 3.2 秒 jingle；但缺少真人填写后的最终 sprite、音效、BGM 接受记录和 Runtime 预览证据。"
+            "mmx 候选仍在 asset/generated_candidates；已有生成前作业计划门禁、metadata 校验、人工审查草稿、真人审查包、asset_candidate 后进入 Runtime 候选 staging 的工具、manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录并通过。",
+            "Runtime 俯视角玩家与 Boss 出场音频批次已生成小尺寸预览、8 秒 sting 和语音 / sting 叠放预览；升级反馈批次已生成图标预览、中文 TTS 和 3.2 秒 jingle；Runtime 现在只能显示 asset_candidate 待预览元数据，仍缺少真人填写后的最终 sprite、音效、BGM 接受记录和真实 Runtime 预览证据。"
           ]
         }
       ]
@@ -655,6 +657,8 @@
             "harness/asset_review/test_promote_asset_runtime_candidate.py",
             "harness/asset_review/validate_asset_runtime_candidate_manifest.py",
             "harness/reports/2026-05-26_asset_runtime_candidate_manifest_template_001/summary.md",
+            "harness/runtime_contract/runtime_surface_contract_v0.json",
+            "harness/reports/2026-05-26_runtime_surface_contract_asset_runtime_candidate_001/summary.md",
             "harness/asset_review/drafts/2026-05-26_mmx_map_boss_audio_pass_review_draft.json",
             "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md",
             "asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/review_2026-05-25.md",
@@ -670,7 +674,7 @@
           ],
           "gaps": [
             "多个图像候选仍偏 repair 或 needs_visual_review，未达到最终可接入 Runtime 的质量。",
-            "语音和音乐候选已有覆盖所有 id 的审查草稿；Runtime 俯视角 / 音频批次和升级反馈批次的草稿校验当前故意保持 invalid，仍需真人听感审查并填写可校验审查记录。"
+            "语音和音乐候选已有覆盖所有 id 的审查草稿；Runtime 俯视角 / 音频批次和升级反馈批次的草稿校验当前故意保持 invalid，Runtime 也只显示候选 manifest 元数据，仍需真人听感审查并填写可校验审查记录。"
           ]
         }
       ]
@@ -739,11 +743,13 @@
             "harness/reports/2026-05-26_runtime_surface_contract_v1_save_migration_001/summary.md",
             "harness/reports/2026-05-26_save_state_contract_v1_runtime_migration_001/summary.md",
             "harness/reports/2026-05-26_runtime_surface_contract_platform_paths_001/summary.md",
-            "harness/reports/2026-05-26_runtime_surface_contract_story_codex_ui_candidate_001/summary.md"
+            "harness/reports/2026-05-26_runtime_surface_contract_story_codex_ui_candidate_001/summary.md",
+            "harness/reports/2026-05-26_runtime_surface_contract_asset_runtime_candidate_001/summary.md"
           ],
           "gaps": [
-            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根或显式 --platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F3 可显示剧情 / 图鉴 UI 候选 manifest 的安全状态，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少恢复二进制后的 Rust 单测 / Runtime smoke、真实平台原生路径、真人平台路径审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
+            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根或显式 --platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F1 可显示素材 Runtime 候选 manifest 的待预览状态，F3 可显示剧情 / 图鉴 UI 候选 manifest 的安全状态，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少恢复二进制后的 Rust 单测 / Runtime smoke、真实平台原生路径、真人平台路径审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审、审校包、ui_candidate 晋级工具、UI 候选 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审校记录并通过；Runtime 不读取或展示候选正文，也不把候选标记为 Runtime 集成或正式接受。",
+            "素材候选已有人工审查草稿、审查包、asset_candidate 晋级工具、Runtime 候选 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录并通过；Runtime 不读取候选图片或音频，也不替换正式 Runtime 素材。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
           "blockers": [

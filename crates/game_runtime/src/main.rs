@@ -36,6 +36,9 @@ const RUNTIME_SAVE_TIMESTAMP: &str = "2026-05-26T00:00:00Z";
 const STORY_CODEX_UI_CANDIDATE_MANIFEST_CONTRACT_ID: &str =
     "story-codex-ui-candidate-manifest-v0";
 const STORY_CODEX_UI_CANDIDATE_STAGE: &str = "story_codex_ui_candidate";
+const ASSET_RUNTIME_CANDIDATE_MANIFEST_CONTRACT_ID: &str =
+    "asset-runtime-candidate-manifest-v0";
+const ASSET_RUNTIME_CANDIDATE_STAGE: &str = "asset_runtime_candidate";
 const CAMERA_Z: f32 = 999.0;
 const EFFECT_Z: f32 = 35.0;
 const PLAYER_Z: f32 = 20.0;
@@ -154,6 +157,7 @@ struct RuntimeCli {
     export_save: Option<PathBuf>,
     delete_save: bool,
     story_codex_ui_candidate_manifest: Option<PathBuf>,
+    asset_runtime_candidate_manifest: Option<PathBuf>,
 }
 
 impl Default for RuntimeCli {
@@ -191,6 +195,7 @@ impl Default for RuntimeCli {
             export_save: None,
             delete_save: false,
             story_codex_ui_candidate_manifest: None,
+            asset_runtime_candidate_manifest: None,
         }
     }
 }
@@ -232,6 +237,7 @@ struct RuntimeState {
     meta_panel_view: RuntimeMetaPanelView,
     meta_progress: MetaProgress,
     story_codex_ui_candidate: Option<RuntimeStoryCodexUiCandidateManifest>,
+    asset_runtime_candidate: Option<RuntimeAssetCandidateManifest>,
     last_meta_settlement: Option<MetaSettlementReport>,
     settled_run_number: Option<u32>,
 }
@@ -420,6 +426,37 @@ struct RuntimeStoryCodexUiCandidateRules {
     accepted_content: bool,
     runtime_integrated: bool,
     requires_runtime_ui_review: bool,
+    requires_final_human_acceptance: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct RuntimeAssetCandidateManifest {
+    manifest_contract_id: String,
+    stage: String,
+    candidate_batch_id: String,
+    manual_gate_decision: String,
+    asset_count: u32,
+    assets: Vec<RuntimeAssetCandidateItem>,
+    rules: RuntimeAssetCandidateRules,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct RuntimeAssetCandidateItem {
+    id: String,
+    #[serde(rename = "type")]
+    asset_type: String,
+    qa_status: String,
+    #[serde(default)]
+    allowed_candidate_uses: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct RuntimeAssetCandidateRules {
+    accepted_content: bool,
+    runtime_integrated: bool,
+    release_ready: bool,
+    requires_runtime_preview: bool,
+    requires_audio_loudness_review: bool,
     requires_final_human_acceptance: bool,
 }
 
@@ -696,6 +733,8 @@ fn setup_runtime(
         });
     let story_codex_ui_candidate = load_runtime_story_codex_ui_candidate_manifest(&cli)
         .unwrap_or_else(|error| panic!("failed to load story/codex UI candidate manifest: {error}"));
+    let asset_runtime_candidate = load_runtime_asset_candidate_manifest(&cli)
+        .unwrap_or_else(|error| panic!("failed to load asset Runtime candidate manifest: {error}"));
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
         panic!(
             "failed to load runtime content from `{}`: {error}",
@@ -805,6 +844,7 @@ fn setup_runtime(
         meta_panel_view: RuntimeMetaPanelView::Overview,
         meta_progress,
         story_codex_ui_candidate,
+        asset_runtime_candidate,
         last_meta_settlement: None,
         settled_run_number: None,
     });
@@ -1464,6 +1504,7 @@ fn update_hud(
             &state.privacy_settings,
             state.runtime_settings_file.as_deref(),
             state.story_codex_ui_candidate.as_ref(),
+            state.asset_runtime_candidate.as_ref(),
         );
     }
 }
@@ -1783,9 +1824,12 @@ fn render_meta_progress_panel(
     privacy_settings: &RuntimePrivacySettings,
     runtime_settings_file: Option<&Path>,
     story_codex_ui_candidate: Option<&RuntimeStoryCodexUiCandidateManifest>,
+    asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
 ) -> String {
     match view {
-        RuntimeMetaPanelView::Overview => render_meta_overview_panel(progress, settlement),
+        RuntimeMetaPanelView::Overview => {
+            render_meta_overview_panel(progress, settlement, asset_runtime_candidate)
+        }
         RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(progress, settlement),
         RuntimeMetaPanelView::Codex => {
             render_meta_codex_panel(progress, settlement, story_codex_ui_candidate)
@@ -1799,6 +1843,7 @@ fn render_meta_progress_panel(
 fn render_meta_overview_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
+    asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
 ) -> String {
     let discovered = meta_codex_discovered_count(progress);
     let completed_goals = meta_completed_goal_count(progress);
@@ -1830,6 +1875,14 @@ fn render_meta_overview_panel(
         ));
     } else {
         output.push_str("\n巡逻中：结算会在本局结束后更新");
+    }
+    if let Some(candidate) = asset_runtime_candidate {
+        output.push_str(&format!(
+            "\n\n素材 Runtime 候选: {}\n素材 {}  类型 {}  状态 asset_candidate 待预览\n仅显示候选状态，不替换正式 Runtime 素材；仍需 Runtime preview、音频响度审查和最终人工接受",
+            candidate.candidate_batch_id,
+            candidate.asset_count,
+            format_asset_candidate_type_counts(candidate),
+        ));
     }
 
     output
@@ -2062,6 +2115,21 @@ fn format_meta_unlocks(report: &MetaSettlementReport, limit: usize) -> String {
         .map(|unlock| format!("{}:{}", unlock.kind, unlock.id))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
+}
+
+fn format_asset_candidate_type_counts(candidate: &RuntimeAssetCandidateManifest) -> String {
+    let mut counts: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+    for asset in &candidate.assets {
+        *counts.entry(asset.asset_type.as_str()).or_insert(0) += 1;
+    }
+    if counts.is_empty() {
+        return "无".to_string();
+    }
+    counts
+        .into_iter()
+        .map(|(asset_type, count)| format!("{asset_type}:{count}"))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 impl RuntimeEventKind {
@@ -2329,6 +2397,11 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
                     cli.story_codex_ui_candidate_manifest = Some(PathBuf::from(value));
                 }
             }
+            "--asset-runtime-candidate-manifest" => {
+                if let Some(value) = args.next() {
+                    cli.asset_runtime_candidate_manifest = Some(PathBuf::from(value));
+                }
+            }
             _ => {}
         }
     }
@@ -2490,6 +2563,103 @@ fn validate_runtime_story_codex_ui_candidate_manifest(
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "story/codex UI candidate manifest must keep accepted_content=false, runtime_integrated=false, requires_runtime_ui_review=true, and requires_final_human_acceptance=true",
+        ));
+    }
+    Ok(())
+}
+
+fn load_runtime_asset_candidate_manifest(
+    cli: &RuntimeCli,
+) -> std::io::Result<Option<RuntimeAssetCandidateManifest>> {
+    let Some(path) = &cli.asset_runtime_candidate_manifest else {
+        return Ok(None);
+    };
+    let text = fs::read_to_string(path)?;
+    let manifest = serde_json::from_str::<RuntimeAssetCandidateManifest>(&text).map_err(
+        |error| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}")),
+    )?;
+    validate_runtime_asset_candidate_manifest(&manifest)?;
+    Ok(Some(manifest))
+}
+
+fn validate_runtime_asset_candidate_manifest(
+    manifest: &RuntimeAssetCandidateManifest,
+) -> std::io::Result<()> {
+    if manifest.manifest_contract_id != ASSET_RUNTIME_CANDIDATE_MANIFEST_CONTRACT_ID {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "asset Runtime candidate manifest must use asset-runtime-candidate-manifest-v0",
+        ));
+    }
+    if manifest.stage != ASSET_RUNTIME_CANDIDATE_STAGE {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "asset Runtime candidate manifest stage must be asset_runtime_candidate",
+        ));
+    }
+    if manifest.manual_gate_decision != "asset_candidate" {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "asset Runtime candidate manifest manual_gate_decision must be asset_candidate",
+        ));
+    }
+    if manifest.candidate_batch_id.trim().is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "asset Runtime candidate manifest candidate_batch_id must be non-empty",
+        ));
+    }
+    if manifest.asset_count == 0 || manifest.assets.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "asset Runtime candidate manifest asset_count and assets must be non-empty",
+        ));
+    }
+    if usize::try_from(manifest.asset_count).ok() != Some(manifest.assets.len()) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "asset Runtime candidate manifest asset_count must match assets length",
+        ));
+    }
+    for asset in &manifest.assets {
+        if asset.id.trim().is_empty()
+            || asset.asset_type.trim().is_empty()
+            || asset.qa_status.trim().is_empty()
+            || asset.allowed_candidate_uses.is_empty()
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "asset Runtime candidate manifest assets require id, type, qa_status, and allowed_candidate_uses",
+            ));
+        }
+        if asset
+            .allowed_candidate_uses
+            .iter()
+            .any(|use_label| {
+                let normalized = use_label.trim();
+                normalized.is_empty()
+                    || matches!(
+                        normalized,
+                        "accepted_content" | "runtime_integrated" | "release_ready"
+                    )
+            })
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "asset Runtime candidate manifest allowed_candidate_uses must stay in candidate-only stages",
+            ));
+        }
+    }
+    if manifest.rules.accepted_content
+        || manifest.rules.runtime_integrated
+        || manifest.rules.release_ready
+        || !manifest.rules.requires_runtime_preview
+        || !manifest.rules.requires_audio_loudness_review
+        || !manifest.rules.requires_final_human_acceptance
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "asset Runtime candidate manifest must keep accepted_content=false, runtime_integrated=false, release_ready=false, requires_runtime_preview=true, requires_audio_loudness_review=true, and requires_final_human_acceptance=true",
         ));
     }
     Ok(())
@@ -3167,12 +3337,14 @@ mod tests {
     use super::{
         collect_runtime_local_data_files, delete_runtime_local_data, demo_movement,
         demo_upgrade_choice, effects_for_events, event_kind_for_events, export_runtime_local_data,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
+        render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, runtime_asset_root,
         runtime_can_upload, runtime_privacy_notice, runtime_sprite_paths, sounds_for_events,
         toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
+        RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules,
         RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
         RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
         RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeSound,
@@ -3249,6 +3421,22 @@ mod tests {
     }
 
     #[test]
+    fn parses_asset_runtime_candidate_manifest_option() {
+        let cli = parse_runtime_cli([
+            "--asset-runtime-candidate-manifest".to_string(),
+            "harness/asset_review/runtime_candidates/example/runtime_candidate_manifest.json"
+                .to_string(),
+        ]);
+
+        assert_eq!(
+            cli.asset_runtime_candidate_manifest,
+            Some(PathBuf::from(
+                "harness/asset_review/runtime_candidates/example/runtime_candidate_manifest.json"
+            ))
+        );
+    }
+
+    #[test]
     fn loads_story_codex_ui_candidate_manifest_metadata_only() {
         let root = std::env::temp_dir().join(format!(
             "soft-candy-story-codex-runtime-manifest-test-{}",
@@ -3301,6 +3489,76 @@ mod tests {
     }
 
     #[test]
+    fn loads_asset_runtime_candidate_manifest_metadata_only() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-asset-runtime-manifest-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let manifest_path = root.join("runtime_candidate_manifest.json");
+        fs::write(
+            &manifest_path,
+            r#"{
+  "manifest_version": 1,
+  "manifest_contract_id": "asset-runtime-candidate-manifest-v0",
+  "stage": "asset_runtime_candidate",
+  "candidate_batch_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "promoted_at": "2026-05-26T00:00:00Z",
+  "source_candidate_batch": "asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan",
+  "manual_review_file": "harness/asset_review/runtime_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/manual_review.json",
+  "manual_gate_decision": "asset_candidate",
+  "candidate_metadata_report": "harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_metadata_001/summary.md",
+  "asset_count": 2,
+  "assets": [
+    {
+      "id": "player_jar_keeper_topdown_v005_001",
+      "type": "image",
+      "path": "images/player_jar_keeper_topdown_v005_001.png",
+      "qa_status": "needs_visual_review",
+      "allowed_candidate_uses": ["runtime_preview_candidate"]
+    },
+    {
+      "id": "voice_boss_arrival_cn_v002",
+      "type": "audio",
+      "path": "audio/voice_boss_arrival_cn_v002.wav",
+      "qa_status": "needs_audio_review",
+      "allowed_candidate_uses": ["runtime_preview_candidate"]
+    }
+  ],
+  "rules": {
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "release_ready": false,
+    "requires_runtime_preview": true,
+    "requires_audio_loudness_review": true,
+    "requires_final_human_acceptance": true
+  }
+}
+"#,
+        )
+        .unwrap();
+
+        let manifest = load_runtime_asset_candidate_manifest(&RuntimeCli {
+            asset_runtime_candidate_manifest: Some(manifest_path),
+            ..RuntimeCli::default()
+        })
+        .unwrap()
+        .unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(
+            manifest.candidate_batch_id,
+            "2026-05-26_mmx_runtime_topdown_audio_plan"
+        );
+        assert_eq!(manifest.asset_count, 2);
+        assert_eq!(manifest.assets.len(), 2);
+        assert!(!manifest.rules.accepted_content);
+        assert!(!manifest.rules.runtime_integrated);
+        assert!(!manifest.rules.release_ready);
+    }
+
+    #[test]
     fn rejects_runtime_integrated_story_codex_ui_candidate_manifest() {
         let manifest = RuntimeStoryCodexUiCandidateManifest {
             manifest_contract_id: "story-codex-ui-candidate-manifest-v0".to_string(),
@@ -3322,6 +3580,66 @@ mod tests {
 
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
         assert!(error.to_string().contains("runtime_integrated=false"));
+    }
+
+    #[test]
+    fn rejects_integrated_asset_runtime_candidate_manifest() {
+        let manifest = RuntimeAssetCandidateManifest {
+            manifest_contract_id: "asset-runtime-candidate-manifest-v0".to_string(),
+            stage: "asset_runtime_candidate".to_string(),
+            candidate_batch_id: "candidate".to_string(),
+            manual_gate_decision: "asset_candidate".to_string(),
+            asset_count: 1,
+            assets: vec![RuntimeAssetCandidateItem {
+                id: "player".to_string(),
+                asset_type: "image".to_string(),
+                qa_status: "needs_visual_review".to_string(),
+                allowed_candidate_uses: vec!["runtime_preview_candidate".to_string()],
+            }],
+            rules: RuntimeAssetCandidateRules {
+                accepted_content: false,
+                runtime_integrated: true,
+                release_ready: false,
+                requires_runtime_preview: true,
+                requires_audio_loudness_review: true,
+                requires_final_human_acceptance: true,
+            },
+        };
+
+        let error = super::validate_runtime_asset_candidate_manifest(&manifest).unwrap_err();
+
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+        assert!(error.to_string().contains("runtime_integrated=false"));
+    }
+
+    #[test]
+    fn rejects_asset_runtime_candidate_with_release_use() {
+        let manifest = RuntimeAssetCandidateManifest {
+            manifest_contract_id: "asset-runtime-candidate-manifest-v0".to_string(),
+            stage: "asset_runtime_candidate".to_string(),
+            candidate_batch_id: "candidate".to_string(),
+            manual_gate_decision: "asset_candidate".to_string(),
+            asset_count: 1,
+            assets: vec![RuntimeAssetCandidateItem {
+                id: "player".to_string(),
+                asset_type: "image".to_string(),
+                qa_status: "needs_visual_review".to_string(),
+                allowed_candidate_uses: vec!["release_ready".to_string()],
+            }],
+            rules: RuntimeAssetCandidateRules {
+                accepted_content: false,
+                runtime_integrated: false,
+                release_ready: false,
+                requires_runtime_preview: true,
+                requires_audio_loudness_review: true,
+                requires_final_human_acceptance: true,
+            },
+        };
+
+        let error = super::validate_runtime_asset_candidate_manifest(&manifest).unwrap_err();
+
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+        assert!(error.to_string().contains("candidate-only stages"));
     }
 
     #[test]
@@ -4232,6 +4550,7 @@ mod tests {
             &RuntimePrivacySettings::default(),
             None,
             None,
+            None,
         );
 
         assert!(panel.contains("糖罐守护站"));
@@ -4265,6 +4584,7 @@ mod tests {
             Some(&report),
             RuntimeMetaPanelView::Chapters,
             &RuntimePrivacySettings::default(),
+            None,
             None,
             None,
         );
@@ -4302,6 +4622,7 @@ mod tests {
             &RuntimePrivacySettings::default(),
             None,
             None,
+            None,
         );
 
         assert!(panel.contains("图鉴进度"));
@@ -4333,6 +4654,7 @@ mod tests {
             &RuntimePrivacySettings::default(),
             None,
             Some(&candidate),
+            None,
         );
 
         assert!(panel.contains("剧情/图鉴 UI 候选"));
@@ -4341,6 +4663,56 @@ mod tests {
         assert!(panel.contains("图鉴条目 26"));
         assert!(panel.contains("不读取 generated candidate 正文"));
         assert!(!panel.contains("糖罐星不是坏掉了"));
+    }
+
+    #[test]
+    fn meta_panel_renders_asset_runtime_candidate_status_without_asset_loading() {
+        let candidate = RuntimeAssetCandidateManifest {
+            manifest_contract_id: "asset-runtime-candidate-manifest-v0".to_string(),
+            stage: "asset_runtime_candidate".to_string(),
+            candidate_batch_id: "2026-05-26_mmx_runtime_topdown_audio_plan".to_string(),
+            manual_gate_decision: "asset_candidate".to_string(),
+            asset_count: 2,
+            assets: vec![
+                RuntimeAssetCandidateItem {
+                    id: "player_jar_keeper_topdown_v005_001".to_string(),
+                    asset_type: "image".to_string(),
+                    qa_status: "needs_visual_review".to_string(),
+                    allowed_candidate_uses: vec!["runtime_preview_candidate".to_string()],
+                },
+                RuntimeAssetCandidateItem {
+                    id: "voice_boss_arrival_cn_v002".to_string(),
+                    asset_type: "audio".to_string(),
+                    qa_status: "needs_audio_review".to_string(),
+                    allowed_candidate_uses: vec!["runtime_preview_candidate".to_string()],
+                },
+            ],
+            rules: RuntimeAssetCandidateRules {
+                accepted_content: false,
+                runtime_integrated: false,
+                release_ready: false,
+                requires_runtime_preview: true,
+                requires_audio_loudness_review: true,
+                requires_final_human_acceptance: true,
+            },
+        };
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Overview,
+            &RuntimePrivacySettings::default(),
+            None,
+            None,
+            Some(&candidate),
+        );
+
+        assert!(panel.contains("素材 Runtime 候选"));
+        assert!(panel.contains("2026-05-26_mmx_runtime_topdown_audio_plan"));
+        assert!(panel.contains("素材 2"));
+        assert!(panel.contains("audio:1"));
+        assert!(panel.contains("image:1"));
+        assert!(panel.contains("状态 asset_candidate 待预览"));
+        assert!(panel.contains("不替换正式 Runtime 素材"));
     }
 
     #[test]
@@ -4357,6 +4729,7 @@ mod tests {
             RuntimeMetaPanelView::Settings,
             &settings,
             Some(settings_path.as_path()),
+            None,
             None,
         );
 
