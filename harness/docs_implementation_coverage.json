@@ -61,7 +61,7 @@
       "doc_id": "02",
       "doc_path": "docs/02_核心玩法规格.md",
       "status": "partial",
-      "summary": "GameCore、Runtime 和内容包已覆盖移动、自动攻击、XP、升级、Boss、结算等原型链路；本地二进制启动已恢复，重启后 workspace test、600 秒 base_demo all Bot 矩阵、Replay 回归和 headless 性能预算均可运行，但完整可玩局仍缺少真人试玩验收，且 base_demo 长局 Bot gate 新增 repair 证据。",
+      "summary": "GameCore、Runtime 和内容包已覆盖移动、自动攻击、XP、升级、Boss、结算等原型链路；本地二进制启动已恢复，重启后 workspace test、600 秒 base_demo all Bot 矩阵、Replay 回归和 headless 性能预算均可运行；base_demo 长局 Bot gate 回归已通过规则 Bot 策略校准修复，但完整可玩局仍缺少真人试玩验收。",
       "coverage": [
         {
           "id": "core-loop-runtime-semantics",
@@ -82,10 +82,16 @@
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
-            "本机 Mach-O 启动已恢复，cargo test --workspace、60 秒 headless simulate、240 秒 Runtime demo capture、重启后的 600 秒 base_demo all Bot 矩阵、Replay 回归和 headless 性能预算均可运行；但 seed 53000-53019 的 20 seed 矩阵发现 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 仍高于目标胜率区间，记录为 repair failure case。",
+            "本机 Mach-O 启动已恢复，cargo test --workspace、60 秒 headless simulate、240 秒 Runtime demo capture、重启后的 600 秒 base_demo all Bot 矩阵、Replay 回归和 headless 性能预算均可运行；seed 53000-53019 曾发现 6 个中高技能 Bot 与 RouteBot 高于目标胜率区间，现已通过规则 Bot 策略校准修复：seed 52000-52019 和 seed 53000-53019 两个 20 seed 窗口均为 9 Bot 全部 pass，strict replay-batch 各 180/180 通过，headless 性能预算均 valid。",
             "仍需真实人工试玩确认玩法循环的可读性、节奏、受伤反馈和升级选择体验。"
           ],
           "blockers": []
@@ -327,7 +333,7 @@
       "doc_id": "07",
       "doc_path": "docs/07_Harness工程计划.md",
       "status": "partial",
-      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，Phase 4 full pack 的 20 seed Bot 平衡阻塞已通过策略校准复测解除，重启后 base_demo 600 秒 all Bot 矩阵又暴露长局 Bot gate repair，当前主要缺口转为该回归、release 级 Runtime 性能和人工证据。",
+      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，Phase 4 full pack 的 20 seed Bot 平衡阻塞和重启后 base_demo 600 秒长局 Bot gate 回归均已通过策略校准复测解除，当前主要缺口转为 release 级 Runtime 性能和人工证据。",
       "coverage": [
         {
           "id": "harness-gates-and-reports",
@@ -364,11 +370,17 @@
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
             "本地二进制启动已恢复，game_harness --help、cargo test --workspace 和 60 秒 simulate 已在当前会话通过；Phase 4 full pack 的 20 seed Bot 策略校准矩阵、180 条 Replay 回归和 headless 性能预算均已通过，自动 Bot gate 已从 blocked 回到 pass。",
-            "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 Terminal DevTools 重启后诊断仍为 local_binary_launch_ok；新跑 base_demo 9 Bot x 20 seed x 600 秒矩阵可执行，180 条 Replay 严格回归通过且 headless 性能预算 valid，但 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率高于目标，已作为 repair failure case 记录。",
+            "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 Terminal DevTools 重启后诊断仍为 local_binary_launch_ok；base_demo 9 Bot x 20 seed x 600 秒矩阵曾暴露 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率高于目标，已作为 repair failure case 记录并通过规则 Bot 策略校准修复：seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，Replay 各 180/180，headless 性能预算 valid。",
             "Progress 账本已完成历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": []
@@ -379,7 +391,7 @@
       "doc_id": "08",
       "doc_path": "docs/08_Bot测试计划.md",
       "status": "partial",
-      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过策略校准复测解除，重启后 base_demo 600 秒 all Bot 矩阵暴露新的长局目标区间回归，后续重点转为修复该 Bot gate、继续多地图复测和人工试玩证据。",
+      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过策略校准复测解除，重启后 base_demo 600 秒 all Bot 矩阵暴露的长局目标区间回归也已修复，后续重点转为继续多地图复测和人工试玩证据。",
       "coverage": [
         {
           "id": "rule-bot-baselines",
@@ -401,12 +413,18 @@
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
-            "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵；当前 20 seed 发布探针证明 5 seed 候选仿真不足以支撑 Release Candidate Bot gate。重启后 base_demo seed 53000-53019 的 20 seed / 600 秒 all Bot 复测进一步证明长局 Bot gate 仍会暴露目标区间回归。",
+            "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵；当前 20 seed 发布探针证明 5 seed 候选仿真不足以支撑 Release Candidate Bot gate。重启后 base_demo seed 53000-53019 的 20 seed / 600 秒 all Bot 复测曾进一步暴露长局 Bot gate 目标区间回归，现已补充 seed 52000-52019 与 seed 53000-53019 双窗口校准复测。",
             "Phase 4 full pack 已完成同等样本复测：GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部进入目标区间，Replay 180/180 和 headless 性能预算 valid。",
-            "base_demo 600 秒 20 seed all Bot 矩阵中 GreedyXpBot 75.0%、KiteBot 85.0%、TankBot / BossHunterBot 100.0%、ZoneControlBot 90.0%、RouteBot 45.0% 均高于目标；Replay 180/180 通过说明该问题可复现，后续应修复 Bot 策略或长局压力，不得放宽门禁。",
+            "base_demo 600 秒 20 seed all Bot 矩阵的原始失败为 GreedyXpBot 75.0%、KiteBot 85.0%、TankBot / BossHunterBot 100.0%、ZoneControlBot 90.0%、RouteBot 45.0% 均高于目标；修复后 seed52000 窗口分别为 Greedy 50.0%、Kite 70.0%、Tank 30.0%、BossHunter 65.0%、ZoneControl 25.0%、Route 15.0%，seed53000 窗口分别为 Greedy 55.0%、Kite 75.0%、Tank 25.0%、BossHunter 65.0%、ZoneControl 25.0%、Route 15.0%，两个窗口均未放宽门禁且 Replay / 性能预算通过。",
             "规则 Bot 不是人工乐趣证明，仍需真人审查。"
           ],
           "blockers": []
@@ -802,7 +820,7 @@
       "doc_id": "15",
       "doc_path": "docs/15_经济与数值平衡模型.md",
       "status": "partial",
-      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、20 seed Bot 策略校准复测、重启后 base_demo 600 秒 Bot gate 回归、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需真人试玩。",
+      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、20 seed Bot 策略校准复测、重启后 base_demo 600 秒 Bot gate 回归修复、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需真人试玩。",
       "coverage": [
         {
           "id": "balance-budget-and-regression",
@@ -843,10 +861,16 @@
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed52000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed52000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
+            "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
-            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0%，现已通过策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot 全部回到目标区间。重启后 base_demo 600 秒 20 seed all Bot 矩阵又暴露 6 个中高技能 Bot 与 RouteBot 偏高，Replay 180/180 和 headless 性能预算 valid，说明问题集中在长局 Bot/平衡目标而不是确定性或实体预算。",
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0%，现已通过策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot 全部回到目标区间。重启后 base_demo 600 秒 20 seed all Bot 矩阵又暴露 6 个中高技能 Bot 与 RouteBot 偏高，后续已通过规则 Bot 长局策略校准修复：seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，Replay 各 180/180 和 headless 性能预算均 valid；这说明问题集中在 Bot 长局策略与目标区间失配，而不是确定性或实体预算。",
             "平衡仍缺真人新手 / 熟练 / 流派视角试玩反馈；Bot 门禁通过也不能替代乐趣、可读性和疲劳度验收。"
           ],
           "blockers": [

@@ -1533,13 +1533,14 @@
       "id": "base_demo_after_terminal_devtools_restart_600s_matrix_regression",
       "summary": "用户开启 Terminal / VS Code / Codex Developer Tool 权限并重启后复测：local binary launch 仍为 ok，cargo test --workspace 112/112 通过，base_demo 9 Bot x 20 seed x 600 秒矩阵、180/180 strict Replay 和 headless 性能预算均可运行；矩阵确认 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率偏高，结论为 repair，已记录 failure case。",
       "report": "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md"
+    },
+    {
+      "id": "base_demo_bot_policy_calibration_600s_repair",
+      "summary": "完成 base_demo 600 秒长局 Bot gate 修复：在不放宽胜率目标、不改 base_demo 内容数值的前提下校准 6 个规则 Bot 的移动、拾取、避让和升级策略；seed52000-52019 与 seed53000-53019 两个 20 seed 窗口均为 9 Bot 全部 pass，strict replay-batch 各 180/180 通过，headless 性能预算均 valid。",
+      "report": "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md"
     }
   ],
   "next_recommended": [
-    {
-      "id": "base_demo_600s_bot_gate_repair",
-      "summary": "base_demo 600 秒 all Bot 20 seed 复测暴露 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率偏高；下一步修复长局 Bot / 平衡目标，并同时重跑 seed53000 与 seed52000 的 20 seed matrix、strict replay-batch 和 headless performance budget。"
-    },
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 启动 Bevy Runtime 进行人工可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"

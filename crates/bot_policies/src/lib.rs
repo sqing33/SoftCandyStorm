@@ -103,7 +103,7 @@ impl BotController {
             self.route_angle.cos() * radius_x,
             self.route_angle.sin() * radius_y,
         );
-        (target - snapshot.player.position).normalized_or_zero() * 0.957
+        (target - snapshot.player.position).normalized_or_zero() * 0.65
     }
 }
 
@@ -339,7 +339,7 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
         }
     }
 
-    0
+    fallback_upgrade_choice(kind, snapshot.upgrade_options.len())
 }
 
 fn defense_threshold(kind: BotKind) -> f32 {
@@ -369,46 +369,60 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
         BotKind::Greedy => &[
             "star-spoon",
             "candy-crystal-lens",
+            "pudding-turret",
+            "soda-bubble-pop",
+            "sour-tuner",
             "rainbow-candy-shot",
             "cream-clockwork",
             "bubble-shoes",
         ],
         BotKind::Kite => &[
             "bubble-shoes",
-            "rainbow-candy-shot",
+            "soda-bubble-pop",
+            "sour-plum-spray",
             "star-spoon",
             "cream-clockwork",
-            "big-candy-jar",
         ],
         BotKind::Tank => &[
             "big-candy-jar",
-            "rainbow-candy-shot",
-            "defense",
+            "nonstick-apron",
             "cream-clockwork",
             "star-spoon",
+            "rainbow-candy-shot",
             "bubble-shoes",
         ],
         BotKind::BossHunter => &[
-            "rainbow-candy-shot",
+            "star-sugar-ray",
+            "candy-crystal-lance",
             "cream-clockwork",
             "bubble-shoes",
-            "big-candy-jar",
-            "star-spoon",
         ],
         BotKind::ZoneControl => &[
-            "star-spoon",
-            "rainbow-candy-shot",
-            "cream-clockwork",
+            "caramel-sticky-ground",
+            "sour-plum-spray",
+            "sour-tuner",
+            "mint-cyclone",
             "bubble-shoes",
+            "star-spoon",
         ],
         BotKind::Route => &[
             "bubble-shoes",
-            "big-candy-jar",
             "star-spoon",
             "rainbow-candy-shot",
-            "cream-clockwork",
+            "sour-tuner",
+            "soda-bubble-pop",
+            "pudding-turret",
         ],
     }
+}
+
+fn fallback_upgrade_choice(kind: BotKind, option_count: usize) -> usize {
+    let preferred = match kind {
+        BotKind::Greedy | BotKind::Kite | BotKind::BossHunter => 1,
+        BotKind::Tank | BotKind::ZoneControl | BotKind::Route => 2,
+        BotKind::Idle | BotKind::Random | BotKind::Coward => 0,
+    };
+    preferred.min(option_count.saturating_sub(1))
 }
 
 fn find_option(snapshot: &RunSnapshot, needles: &[&str]) -> Option<usize> {
@@ -432,7 +446,7 @@ fn weapon_level(snapshot: &RunSnapshot, weapon_id: &str) -> u32 {
 }
 
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
-    greedy_movement_with_avoidance(snapshot, 36.0)
+    greedy_movement_with_avoidance(snapshot, 18.0)
 }
 
 fn greedy_movement_with_avoidance(snapshot: &RunSnapshot, avoidance_radius: f32) -> Vec2 {
@@ -443,7 +457,7 @@ fn greedy_movement_with_avoidance(snapshot: &RunSnapshot, avoidance_radius: f32)
         }
     }
 
-    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO)
+    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.55
 }
 
 fn coward_movement(snapshot: &RunSnapshot) -> Vec2 {
@@ -462,18 +476,20 @@ fn coward_movement(snapshot: &RunSnapshot) -> Vec2 {
 fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
     let avoidance_radius = if snapshot.map.map_id == "cracked-star-jar" {
         55.0
+    } else if snapshot.map.map_id == "frosting-grassland" {
+        24.0
     } else {
-        68.0
+        36.0
     };
     let avoidance = avoid_enemies(snapshot, avoidance_radius, 3);
     let pickup_direction = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
 
     if avoidance.length_squared() > 0.0 {
-        return (avoidance.normalized_or_zero() * 0.13 + pickup_direction).normalized_or_zero();
+        return (avoidance.normalized_or_zero() * 0.05 + pickup_direction).normalized_or_zero();
     }
 
     if pickup_direction.length_squared() > 0.0 {
-        pickup_direction
+        pickup_direction * 0.45
     } else {
         Vec2::new(1.0, 0.0)
     }
@@ -484,7 +500,7 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let retreat_threshold = if snapshot.map.map_id == "cracked-star-jar" {
         0.55
     } else {
-        0.16
+        0.14
     };
     if health_ratio < retreat_threshold {
         let avoidance = avoid_enemies(snapshot, 120.0, 10);
@@ -496,7 +512,7 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let pickup_weight = if snapshot.map.map_id == "cracked-star-jar" {
         0.45
     } else {
-        0.22
+        0.11
     };
     best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * pickup_weight
 }
@@ -506,32 +522,62 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         let to_boss = boss.position - snapshot.player.position;
         let boss_distance = to_boss.length();
         let boss_direction = to_boss.normalized_or_zero();
+        let chase_distance = if snapshot.map.map_id == "frosting-grassland" {
+            34.0
+        } else {
+            84.0
+        };
         let spacing = if boss_distance < 30.0 {
             boss_direction * -1.0
-        } else if boss_distance > 84.0 {
+        } else if boss_distance > chase_distance {
             boss_direction
         } else {
             Vec2::ZERO
         };
         let avoidance_radius = if snapshot.map.map_id == "cracked-star-jar" {
             95.0
+        } else if snapshot.map.map_id == "frosting-grassland" {
+            10.0
         } else {
-            43.0
+            24.0
+        };
+        let avoidance_weight = if snapshot.map.map_id == "cracked-star-jar" {
+            0.34
+        } else if snapshot.map.map_id == "frosting-grassland" {
+            0.0
+        } else {
+            0.15
         };
         let avoidance = avoid_enemies(snapshot, avoidance_radius, 6);
-        return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.34).normalized_or_zero();
+        return (spacing * 1.15 + avoidance.normalized_or_zero() * avoidance_weight)
+            .normalized_or_zero();
     }
 
-    greedy_movement_with_avoidance(snapshot, 45.0)
+    let health_ratio = if snapshot.player.max_health > 0.0 {
+        snapshot.player.health / snapshot.player.max_health
+    } else {
+        1.0
+    };
+    let pickup_weight = if snapshot.map.map_id == "frosting-grassland"
+        && snapshot.time_seconds > 240.0
+        && health_ratio > 0.70
+    {
+        0.0
+    } else {
+        0.12
+    };
+    let avoidance = avoid_enemies(snapshot, 34.0, 3).normalized_or_zero() * 0.25;
+    let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
+    (avoidance + pickup).normalized_or_zero() * pickup_weight
 }
 
 fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 52.0, 4);
+    let avoidance = avoid_enemies(snapshot, 38.0, 4);
     if avoidance.length_squared() > 0.0 {
-        return avoidance.normalized_or_zero() * 0.10;
+        return avoidance.normalized_or_zero() * 0.05;
     }
 
-    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.40
+    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.07
 }
 
 fn best_pickup_direction(snapshot: &RunSnapshot) -> Option<Vec2> {
