@@ -58,3 +58,23 @@ python3 tools/validate_release_package_manifest.py \
 The current local package manifest is expected to report
 `release_package_not_ready`. It records the packaging blocker only; it does not
 build, sign, launch, upload, or approve a package.
+
+## Accepted Content Lockfile
+
+The release package `content_lockfile` item should point to an accepted-content
+lockfile after real human playtest acceptance exists:
+
+```bash
+python3 tools/validate_accepted_content_lockfile.py \
+  harness/accepted_content/accepted_content.lock.json \
+  --repo-root . \
+  --allow-blocked \
+  --report /tmp/accepted_content_lockfile.json \
+  --markdown /tmp/accepted_content_lockfile.md
+```
+
+The current local lockfile is expected to report
+`accepted_content_lockfile_blocked` because no content has passed real human
+acceptance yet. This validator checks lockfile evidence shape and local paths
+only; it does not run Harness, recompute content hashes, copy Runtime content,
+or approve a release package.

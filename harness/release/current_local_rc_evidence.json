@@ -8,8 +8,11 @@
     {
       "id": "content_frozen",
       "status": "waiting",
-      "summary": "当前仍处于 Goal 持续实现阶段，内容未冻结。",
-      "evidence_paths": [],
+      "summary": "当前仍处于 Goal 持续实现阶段，内容未冻结；accepted content lockfile 当前为 blocked，记录暂无真人接受后的正式内容。",
+      "evidence_paths": [
+        "harness/accepted_content/accepted_content.lock.json",
+        "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md"
+      ],
       "synthetic": false
     },
     {
@@ -175,11 +178,13 @@
     {
       "id": "release_package",
       "status": "blocked",
-      "summary": "发布包清单已记录当前 blocked 状态；真实发布包、校验和和最终 smoke 仍需要可启动 Runtime/Harness。",
+      "summary": "发布包清单和 accepted content lockfile 已记录当前 blocked 状态；真实发布包、内容锁、校验和和最终 smoke 仍需要可启动 Runtime/Harness 与真人接受证据。",
       "evidence_paths": [
         "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json",
         "harness/release/current_local_package_manifest.json",
-        "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md"
+        "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md",
+        "harness/accepted_content/accepted_content.lock.json",
+        "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md"
       ],
       "synthetic": false
     }

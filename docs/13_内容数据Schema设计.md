@@ -44,6 +44,19 @@ harness/
 
 正式游戏只读取 `content/` 或 `accepted_content/` 中被版本锁定的内容。AI 新生成内容只能进入 `generated_candidates/`。
 
+当前仓库提供 accepted content lockfile 的纯 Python 校验器，用于在 Rust Harness 二进制无法启动时审计版本锁定证据形状：
+
+```bash
+python3 tools/validate_accepted_content_lockfile.py \
+  harness/accepted_content/accepted_content.lock.json \
+  --repo-root . \
+  --allow-blocked \
+  --report harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json \
+  --markdown harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md
+```
+
+当前本地 lockfile 结论为 `accepted_content_lockfile_blocked`，条目数为 0，并明确记录 `no accepted content has passed human review yet`。这只说明当前没有真人接受后的正式内容可以锁定；它不计算 GameCore 内容 hash、不推进候选、不复制 Runtime 内容，也不等同于发布包门禁通过。
+
 ## 通用字段
 
 所有内容对象都需要：
