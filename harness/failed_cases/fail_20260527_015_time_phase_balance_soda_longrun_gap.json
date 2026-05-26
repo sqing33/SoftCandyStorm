@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_015",
+  "category": "rl",
+  "content_id": "behavior_clone_time_phase_balance_curriculum_full",
+  "seed": 61200,
+  "bot": "TimePhaseBalanceDangerActionChangeGruContext8",
+  "time_seconds": 300.0,
+  "symptom": "time_phase_balance_danger_action_change GRU context8 候选在 60 秒 high-pressure 三图通过动作分布检查，但 300 秒 high-pressure 对比中 soda-creek 胜率为 0%，caramel-workshop 与 cracked-star-jar 胜率均只有 33.33%，不能推进为 RL 测试 Bot。",
+  "root_cause": "阶段平衡采样修复了旧 movement clone 的 deterministic action collapse，但训练目标仍只是在离线模仿 movement action，缺少长局路线规划、升级协同和 soda-creek 中后期恢复目标。",
+  "fix": "下一步应把 time_phase_balance curriculum 与 PPO 闭环或更明确的长局目标结合，重点复查 soda-creek 120 秒后失败轨迹；不要把 60 秒通过或健康动作熵视为长局 acceptance。",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model harness/reports/2026-05-27_rl_behavior_clone_time_phase_balance_curriculum_full_001/time_phase_balance_curriculum_full.pt --eval-episodes 5 --eval-seconds 60 --seed-start 61100 --rule-bots random,kite,tank --report harness/reports/2026-05-27_rl_behavior_clone_time_phase_balance_curriculum_full_001/comparison_60s.json；随后以 --eval-episodes 3 --eval-seconds 300 --seed-start 61200 写入 comparison_300s.json。"
+}
