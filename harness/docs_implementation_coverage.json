@@ -196,7 +196,7 @@
       "doc_id": "07",
       "doc_path": "docs/07_Harness工程计划.md",
       "status": "partial",
-      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用等纯 Python 门禁已补强；完整仿真门禁仍受二进制阻塞。",
+      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等纯 Python 门禁已补强；完整仿真门禁仍受二进制阻塞。",
       "coverage": [
         {
           "id": "harness-gates-and-reports",
@@ -207,14 +207,17 @@
             "tools/validate_failure_cases.py",
             "tools/validate_progress_reports.py",
             "tools/validate_docs_implementation_coverage.py",
+            "tools/validate_goal_evidence_consistency.py",
+            "tools/test_validate_goal_evidence_consistency.py",
             "tools/diagnose_local_binary_launch.py",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md",
-            "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
+            "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md",
+            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
           ],
           "gaps": [
             "恢复二进制后需重跑 game_harness simulate、matrix、replay-batch 和候选晋级命令。",
             "本地二进制启动已有可复现诊断门禁，但当前结论仍是 local_binary_launch_blocked。",
-            "Progress 账本已完成两批历史证据回填；后续新增进度项仍需持续维护 report 证据路径。"
+            "Progress 账本已完成两批历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": [
             "local_binary_launch_blocked"
@@ -348,11 +351,14 @@
             "tools/validate_save_path_policy.py",
             "tools/validate_release_package_manifest.py",
             "tools/test_validate_release_package_manifest.py",
+            "tools/validate_goal_evidence_consistency.py",
+            "tools/test_validate_goal_evidence_consistency.py",
             "harness/release/current_local_package_manifest.json",
-            "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md"
+            "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md",
+            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
           ],
           "gaps": [
-            "当前 release_candidate_evidence 与 release_package_manifest 报告均为 not-ready。",
+            "当前 release_candidate_evidence 与 release_package_manifest 报告均为 not-ready；Goal 证据一致性报告确认这些 not-ready / blocked 结论与 docs 覆盖、路线图和 progress 账本一致。",
             "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板和完整性校验器，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。"
           ],
           "blockers": [
@@ -382,11 +388,13 @@
             "tools/validate_phase4_roster_targets.py",
             "harness/reports/2026-05-26_phase4_roster_targets_candidate_full_pack_001/summary.md",
             "tools/validate_release_package_manifest.py",
-            "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md"
+            "tools/validate_goal_evidence_consistency.py",
+            "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md",
+            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
           ],
           "gaps": [
             "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete。",
-            "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending；当前 release package manifest 仍 blocked。",
+            "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending；当前 release package manifest 仍 blocked，Goal 证据一致性门禁确认该 not-ready 状态没有被其他账本误标为 ready。",
             "恢复二进制、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
           ]
         }
@@ -647,7 +655,7 @@
       "doc_id": "19",
       "doc_path": "docs/19_Goal模式开发约定.md",
       "status": "complete",
-      "summary": "Goal 模式规则、Git 提交节奏、进度记录和证据引用校验已进入文档和工具链。",
+      "summary": "Goal 模式规则、Git 提交节奏、进度记录、证据引用校验和跨总账一致性校验已进入文档和工具链。",
       "coverage": [
         {
           "id": "goal-mode-process",
@@ -657,7 +665,10 @@
             "docs/19_Goal模式开发约定.md",
             "AGENTS.md",
             "tools/validate_progress_reports.py",
-            "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md"
+            "tools/validate_goal_evidence_consistency.py",
+            "tools/test_validate_goal_evidence_consistency.py",
+            "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md",
+            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
           ],
           "gaps": []
         }

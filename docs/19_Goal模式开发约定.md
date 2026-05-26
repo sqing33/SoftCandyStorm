@@ -96,3 +96,13 @@ Goal 模式不改变 Git 规范：
 - 提交信息使用中文，格式为 `<type>(<scope>): <描述>`。
 
 如果 Goal 模式跨多个系统，应按文档、代码、内容、Harness、素材分别提交，避免把无关改动塞进一个提交。
+
+## 证据一致性要求
+
+Goal 模式长跑时，除了为具体功能运行对应测试，还要维护跨账本一致性。每当修改 `harness/progress.json`、`harness/docs_implementation_coverage.json`、`harness/roadmap_audit/roadmap_phase_audit.json`、`harness/release/current_local_rc_evidence.json` 或 `harness/release/current_local_package_manifest.json` 后，应运行：
+
+```bash
+python3 tools/validate_goal_evidence_consistency.py --repo-root .
+```
+
+如果需要留下可交接报告，应写入 `harness/reports/<report-id>/goal_evidence_consistency.json` 和对应 `summary.md`。该报告只证明账本之间没有互相矛盾；它不能替代编译、Harness、Replay、性能、人工试玩、素材审查、隐私审查、法律 / 合规审查或发布包 smoke。

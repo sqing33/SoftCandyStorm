@@ -330,6 +330,25 @@ python3 tools/validate_docs_implementation_coverage.py harness/docs_implementati
 
 只要任一文档仍是 `partial`、`blocked` 或 `pending`，报告就必须保持 `docs_implementation_incomplete`。只有所有 `docs/00` 到 `docs/19` 的覆盖项都具备现存证据，且不再有 gap 或 blocker，才能视为完整实现。
 
+## Goal 证据一致性校验
+
+Goal 模式长跑时，`harness/progress.json`、`harness/docs_implementation_coverage.json`、`harness/roadmap_audit/roadmap_phase_audit.json`、Release Candidate evidence 和 release package manifest 会同时存在。新增或修改其中任一总账后，应运行：
+
+```bash
+python3 tools/validate_goal_evidence_consistency.py --repo-root .
+```
+
+需要留下 Harness 证据时，生成 JSON 与 Markdown 报告：
+
+```bash
+python3 tools/validate_goal_evidence_consistency.py \
+  --repo-root . \
+  --report harness/reports/<report-id>/goal_evidence_consistency.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+该校验只检查总账之间是否诚实一致。例如 `local_binary_launch_blocked` 仍存在时，二进制相关 release gate 必须保持 `blocked` 并引用 failure case；人工试玩、素材审查、剧情审校和隐私 / 法务相关 gate 不能在缺少真人记录时被标为 `pass`；Release Package 不能在 RC 未 ready 时声明 ready。报告输出 `goal_evidence_consistent` 只说明账本没有互相矛盾，不代表发布通过。
+
 ## Agent 工作循环
 
 每次 Agent 开始：
