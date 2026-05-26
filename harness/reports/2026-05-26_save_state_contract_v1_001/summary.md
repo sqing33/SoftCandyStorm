@@ -1,13 +1,13 @@
 # Save State Contract Validation
 
-- Source: `harness/save_contract/save_state_v0_template.json`
-- Contract: `save-state-v0`
-- Schema version: `1`
+- Source: `harness/save_contract/save_state_v1_template.json`
+- Contract: `save-state-v1`
+- Schema version: `2`
 - Decision: `save_state_contract_valid`
 - Codex entries: 3
 - Chapters: 6
-- Migration history entries: 0
-- Base UI state: False
+- Migration history entries: 1
+- Base UI state: True
 
 ## Errors
 

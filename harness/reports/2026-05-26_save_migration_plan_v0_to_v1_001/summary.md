@@ -13,7 +13,6 @@
 ## Blockers
 
 - Runtime migration implementation is not present
-- v1 save-state contract is not defined
 - platform save path policy is not reviewed
 
 ## Errors
@@ -28,4 +27,4 @@
 
 - This validator checks migration plan evidence only; it does not migrate save files.
 - A planned migration is not a Runtime implementation and must not be treated as release-ready.
-- Future target save contracts need their own validator before Runtime can accept migrated saves.
+- Target save contract validation does not prove Runtime can accept migrated saves.

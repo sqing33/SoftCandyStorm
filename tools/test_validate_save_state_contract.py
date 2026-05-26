@@ -20,6 +20,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 VALIDATOR = SCRIPT_DIR / "validate_save_state_contract.py"
 TEMPLATE = REPO_ROOT / "harness" / "save_contract" / "save_state_v0_template.json"
+V1_TEMPLATE = REPO_ROOT / "harness" / "save_contract" / "save_state_v1_template.json"
 
 sys.path.insert(0, str(SCRIPT_DIR))
 
@@ -35,6 +36,10 @@ def load_template() -> dict:
     return json.loads(TEMPLATE.read_text(encoding="utf-8"))
 
 
+def load_v1_template() -> dict:
+    return json.loads(V1_TEMPLATE.read_text(encoding="utf-8"))
+
+
 class SaveStateContractValidatorTests(unittest.TestCase):
     def test_template_passes(self) -> None:
         report = build_report(TEMPLATE)
@@ -42,6 +47,15 @@ class SaveStateContractValidatorTests(unittest.TestCase):
         self.assertEqual(report["decision"], "save_state_contract_valid")
         self.assertEqual(report["errors"], [])
         self.assertEqual(report["chapter_count"], 6)
+
+    def test_v1_template_passes(self) -> None:
+        report = build_report(V1_TEMPLATE)
+
+        self.assertEqual(report["decision"], "save_state_contract_valid")
+        self.assertEqual(report["contract_id"], "save-state-v1")
+        self.assertEqual(report["schema_version"], 2)
+        self.assertEqual(report["migration_history_count"], 1)
+        self.assertTrue(report["base_ui_state_present"])
 
     def test_upload_defaults_fail_when_enabled(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -121,6 +135,42 @@ class SaveStateContractValidatorTests(unittest.TestCase):
                     for error in report["errors"]
                 )
             )
+
+    def test_v1_requires_migration_history(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = load_v1_template()
+            payload["migration_history"] = []
+            path = Path(temp_dir) / "save.json"
+            write_json(path, payload)
+
+            report = build_report(path)
+
+            self.assertEqual(report["decision"], "save_state_contract_invalid")
+            self.assertTrue(any("migration_history" in error for error in report["errors"]))
+
+    def test_v1_requires_base_ui_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = load_v1_template()
+            del payload["base_ui_state"]
+            path = Path(temp_dir) / "save.json"
+            write_json(path, payload)
+
+            report = build_report(path)
+
+            self.assertEqual(report["decision"], "save_state_contract_invalid")
+            self.assertTrue(any("base_ui_state" in error for error in report["errors"]))
+
+    def test_v0_rejects_v1_only_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = load_template()
+            payload["migration_history"] = load_v1_template()["migration_history"]
+            path = Path(temp_dir) / "save.json"
+            write_json(path, payload)
+
+            report = build_report(path)
+
+            self.assertEqual(report["decision"], "save_state_contract_invalid")
+            self.assertTrue(any("reserved for save-state-v1" in error for error in report["errors"]))
 
     def test_cli_writes_report_and_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

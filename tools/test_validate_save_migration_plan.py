@@ -105,6 +105,30 @@ class SaveMigrationPlanValidatorTests(unittest.TestCase):
             self.assertEqual(report["decision"], "save_migration_plan_invalid")
             self.assertTrue(any("source_schema_version must be 1" in error for error in report["errors"]))
 
+    def test_target_template_must_match_target_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = copy.deepcopy(load_plan())
+            payload["target_contract_id"] = "save-state-v2"
+            path = Path(temp_dir) / "plan.json"
+            write_json(path, payload)
+
+            report = build_report(path, REPO_ROOT)
+
+            self.assertEqual(report["decision"], "save_migration_plan_invalid")
+            self.assertTrue(any("target_template contract_id" in error for error in report["errors"]))
+
+    def test_target_template_must_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = copy.deepcopy(load_plan())
+            payload["target_template"] = "harness/save_contract/missing_save_state_v1_template.json"
+            path = Path(temp_dir) / "plan.json"
+            write_json(path, payload)
+
+            report = build_report(path, REPO_ROOT)
+
+            self.assertEqual(report["decision"], "save_migration_plan_invalid")
+            self.assertTrue(any("target_template does not exist" in error for error in report["errors"]))
+
     def test_cli_allow_planned_writes_report(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             report_path = Path(temp_dir) / "report.json"

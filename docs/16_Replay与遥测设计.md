@@ -303,10 +303,11 @@ python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
 
 ## 本地存档与数据控制
 
-局外存档属于本地优先数据，也必须遵守遥测隐私原则。v0 存档契约位于：
+局外存档属于本地优先数据，也必须遵守遥测隐私原则。存档契约位于：
 
 ```text
 harness/save_contract/save_state_v0_template.json
+harness/save_contract/save_state_v1_template.json
 harness/save_contract/README.md
 ```
 
@@ -325,9 +326,14 @@ python3 tools/validate_save_state_contract.py \
   harness/save_contract/save_state_v0_template.json \
   --report harness/reports/2026-05-26_save_state_contract_001/save_state_contract.json \
   --markdown harness/reports/2026-05-26_save_state_contract_001/summary.md
+
+python3 tools/validate_save_state_contract.py \
+  harness/save_contract/save_state_v1_template.json \
+  --report harness/reports/2026-05-26_save_state_contract_v1_001/save_state_contract.json \
+  --markdown harness/reports/2026-05-26_save_state_contract_v1_001/summary.md
 ```
 
-该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值，不代表 Runtime 已经实现真实按钮、设置页、平台隐私文本或上传链路。
+该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值；v1 还要求 `migration_history` 与 `base_ui_state`。这些报告不代表 Runtime 已经实现真实按钮、迁移代码、设置页、平台隐私文本或上传链路。
 
 未来存档升级必须继续遵守这些本地优先和 opt-in 规则。当前迁移计划可用以下命令校验：
 
@@ -340,4 +346,4 @@ python3 tools/validate_save_migration_plan.py \
   --allow-planned
 ```
 
-该计划要求迁移不得默认开启上传型遥测、raw replay 上传或崩溃报告上传，并要求局外进度、图鉴、章节和本地数据控制被保留。当前结论只是 `save_migration_plan_planned`，不代表 Runtime 已实现迁移。
+该计划要求迁移不得默认开启上传型遥测、raw replay 上传或崩溃报告上传，并要求局外进度、图鉴、章节和本地数据控制被保留。当前结论只是 `save_migration_plan_planned`，v1 目标模板已可校验，但 Runtime 迁移仍未实现。

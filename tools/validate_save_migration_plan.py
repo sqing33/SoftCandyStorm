@@ -161,6 +161,24 @@ def validate_source_template(repo_root: Path, payload: dict[str, Any], errors: l
         errors.append("source_template schema_version must match source_schema_version")
 
 
+def validate_target_template(repo_root: Path, payload: dict[str, Any], errors: list[str]) -> None:
+    template_path = validate_existing_repo_path(repo_root, "target_template", payload.get("target_template"), errors)
+    if template_path is None:
+        return
+    try:
+        template = load_json_object(template_path)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"target_template is invalid JSON: {error}")
+        return
+    if template.get("contract_id") != payload.get("target_contract_id"):
+        errors.append("target_template contract_id must match target_contract_id")
+    if template.get("schema_version") != payload.get("target_schema_version"):
+        errors.append("target_template schema_version must match target_schema_version")
+    for required in payload.get("required_new_sections", []):
+        if isinstance(required, str) and required not in template:
+            errors.append(f"target_template must include required new section `{required}`")
+
+
 def validate_preserved_sections(payload: dict[str, Any], errors: list[str]) -> None:
     sections = set(string_list(payload.get("required_preserved_sections")))
     if payload.get("required_preserved_sections") is not None and not isinstance(payload.get("required_preserved_sections"), list):
@@ -295,6 +313,7 @@ def build_report(plan_path: Path, repo_root: Path) -> dict[str, Any]:
     warnings: list[str] = []
     validate_metadata(payload, errors)
     validate_source_template(repo_root, payload, errors)
+    validate_target_template(repo_root, payload, errors)
     validate_preserved_sections(payload, errors)
     validate_new_sections(payload, errors)
     validate_privacy_invariants(payload, errors)
@@ -330,7 +349,7 @@ def build_report(plan_path: Path, repo_root: Path) -> dict[str, Any]:
         "limitations": [
             "This validator checks migration plan evidence only; it does not migrate save files.",
             "A planned migration is not a Runtime implementation and must not be treated as release-ready.",
-            "Future target save contracts need their own validator before Runtime can accept migrated saves.",
+            "Target save contract validation does not prove Runtime can accept migrated saves.",
         ],
     }
 

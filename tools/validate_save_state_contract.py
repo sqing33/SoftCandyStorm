@@ -60,6 +60,14 @@ REQUIRED_CHAPTERS = {
     "cracked-star-jar": ("cracked-star-jar", "cracked-star-jar-core"),
 }
 
+CONTRACT_SCHEMA_VERSIONS = {
+    "save-state-v0": 1,
+    "save-state-v1": 2,
+}
+
+BASE_UI_PANELS = {"overview", "chapters", "codex", "privacy"}
+MIGRATION_STATUSES = {"completed", "dry-run", "planned-template"}
+
 
 def load_json_object(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
@@ -134,10 +142,12 @@ def find_forbidden_keys(value: Any, prefix: str = "") -> list[str]:
 
 
 def validate_metadata(payload: dict[str, Any], errors: list[str]) -> None:
-    if payload.get("schema_version") != 1:
-        errors.append("schema_version must be 1")
-    if payload.get("contract_id") != "save-state-v0":
-        errors.append("contract_id must be `save-state-v0`")
+    contract_id = payload.get("contract_id")
+    schema_version = payload.get("schema_version")
+    if contract_id not in CONTRACT_SCHEMA_VERSIONS:
+        errors.append("contract_id must be one of `save-state-v0`, `save-state-v1`")
+    elif schema_version != CONTRACT_SCHEMA_VERSIONS[contract_id]:
+        errors.append(f"schema_version must be {CONTRACT_SCHEMA_VERSIONS[contract_id]} for {contract_id}")
     for field in ("save_id", "profile_id", "game_version", "ruleset_version"):
         require_id(payload.get(field), field, errors)
     for field in ("created_at", "updated_at"):
@@ -276,6 +286,65 @@ def validate_meta_progress(payload: dict[str, Any], errors: list[str]) -> tuple[
     return codex_count, chapter_count
 
 
+def validate_migration_history(payload: dict[str, Any], errors: list[str]) -> int:
+    history = payload.get("migration_history")
+    if not isinstance(history, list) or not history:
+        errors.append("migration_history must be a non-empty list for save-state-v1")
+        return 0
+    for index, item in enumerate(history):
+        label = f"migration_history[{index}]"
+        entry = require_object(item, label, errors)
+        require_id(entry.get("migration_id"), f"{label}.migration_id", errors)
+        require_id(entry.get("source_save_id"), f"{label}.source_save_id", errors)
+        if entry.get("source_contract_id") != "save-state-v0":
+            errors.append(f"{label}.source_contract_id must be `save-state-v0`")
+        if entry.get("source_schema_version") != 1:
+            errors.append(f"{label}.source_schema_version must be 1")
+        if entry.get("target_contract_id") != "save-state-v1":
+            errors.append(f"{label}.target_contract_id must be `save-state-v1`")
+        if entry.get("target_schema_version") != 2:
+            errors.append(f"{label}.target_schema_version must be 2")
+        value = entry.get("migrated_at")
+        if not is_nonempty_string(value) or not ISO_UTC_PATTERN.match(str(value)):
+            errors.append(f"{label}.migrated_at must use UTC format YYYY-MM-DDTHH:MM:SSZ")
+        if entry.get("status") not in MIGRATION_STATUSES:
+            errors.append(f"{label}.status must be one of {', '.join(sorted(MIGRATION_STATUSES))}")
+    return len(history)
+
+
+def validate_base_ui_state(payload: dict[str, Any], errors: list[str]) -> bool:
+    state = require_object(payload.get("base_ui_state"), "base_ui_state", errors)
+    selected_panel = state.get("selected_panel")
+    if selected_panel not in BASE_UI_PANELS:
+        errors.append(f"base_ui_state.selected_panel must be one of {', '.join(sorted(BASE_UI_PANELS))}")
+    for field in ("last_selected_character_id", "last_selected_map_id", "last_selected_chapter_id"):
+        require_id(state.get(field), f"base_ui_state.{field}", errors)
+
+    codex_view = require_object(state.get("codex_view"), "base_ui_state.codex_view", errors)
+    if codex_view.get("selected_category") not in CODEX_CATEGORIES:
+        errors.append("base_ui_state.codex_view.selected_category must be a known codex category")
+    require_bool(codex_view.get("discovered_only"), "base_ui_state.codex_view.discovered_only", errors)
+
+    privacy_view = require_object(state.get("privacy_view"), "base_ui_state.privacy_view", errors)
+    require_id(privacy_view.get("last_notice_version"), "base_ui_state.privacy_view.last_notice_version", errors)
+    require_bool(privacy_view.get("pending_privacy_review"), "base_ui_state.privacy_view.pending_privacy_review", errors)
+    return isinstance(payload.get("base_ui_state"), dict)
+
+
+def validate_version_specific_sections(payload: dict[str, Any], errors: list[str]) -> tuple[int, bool]:
+    contract_id = payload.get("contract_id")
+    if contract_id == "save-state-v0":
+        for field in ("migration_history", "base_ui_state"):
+            if field in payload:
+                errors.append(f"{field} is reserved for save-state-v1 and must not appear in save-state-v0")
+        return 0, False
+    if contract_id == "save-state-v1":
+        history_count = validate_migration_history(payload, errors)
+        has_base_ui_state = validate_base_ui_state(payload, errors)
+        return history_count, has_base_ui_state
+    return 0, False
+
+
 def build_report(save_path: Path) -> dict[str, Any]:
     payload = load_json_object(save_path)
     errors: list[str] = []
@@ -284,6 +353,7 @@ def build_report(save_path: Path) -> dict[str, Any]:
     validate_settings(payload, errors)
     validate_data_controls(payload, errors)
     codex_count, chapter_count = validate_meta_progress(payload, errors)
+    migration_history_count, has_base_ui_state = validate_version_specific_sections(payload, errors)
 
     forbidden_keys = find_forbidden_keys(payload)
     for key_path in forbidden_keys:
@@ -297,9 +367,12 @@ def build_report(save_path: Path) -> dict[str, Any]:
         "report_version": 1,
         "source": str(save_path),
         "contract_id": payload.get("contract_id"),
+        "schema_version": payload.get("schema_version"),
         "decision": "save_state_contract_valid" if not errors else "save_state_contract_invalid",
         "codex_entry_count": codex_count,
         "chapter_count": chapter_count,
+        "migration_history_count": migration_history_count,
+        "base_ui_state_present": has_base_ui_state,
         "errors": errors,
         "warnings": warnings,
         "limitations": [
@@ -316,9 +389,12 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         "",
         f"- Source: `{report['source']}`",
         f"- Contract: `{report['contract_id']}`",
+        f"- Schema version: `{report['schema_version']}`",
         f"- Decision: `{report['decision']}`",
         f"- Codex entries: {report['codex_entry_count']}",
         f"- Chapters: {report['chapter_count']}",
+        f"- Migration history entries: {report['migration_history_count']}",
+        f"- Base UI state: {report['base_ui_state_present']}",
         "",
         "## Errors",
         "",

@@ -1,6 +1,6 @@
 # 局外存档契约
 
-本目录记录局外成长、图鉴、章节进度和本地数据控制的 v0 存档契约。
+本目录记录局外成长、图鉴、章节进度和本地数据控制的存档契约。当前有 `save-state-v0` 和计划中的 `save-state-v1` 模板；v1 只定义契约，不代表 Runtime 已实现迁移。
 
 当前本机 Rust/Mach-O 二进制启动仍被阻塞，因此这里的校验只做 JSON 存档形状检查：
 
@@ -25,7 +25,7 @@ cargo run -p game_runtime -- --save-file harness/save/local/profile.json --delet
 
 ## 迁移计划
 
-当前 v0 存档形状已有首个未来 schema 升级迁移契约：
+当前 v0 存档形状已有首个未来 schema 升级迁移契约，并引用 `save_state_v1_template.json` 作为目标模板：
 
 ```bash
 python3 tools/validate_save_migration_plan.py \
@@ -36,4 +36,4 @@ python3 tools/validate_save_migration_plan.py \
   --allow-planned
 ```
 
-当前计划报告 `save_migration_plan_planned`。它要求迁移保留隐私默认值、本地数据控制、图鉴进度、章节进度、完成局数和最佳存活时间，并在未来 v1 中新增 `migration_history` 和基地 UI 状态字段。它只是契约和 blocker 记录；Runtime 迁移代码与 v1 存档校验器仍需后续实现。
+当前计划报告 `save_migration_plan_planned`。它要求迁移保留隐私默认值、本地数据控制、图鉴进度、章节进度、完成局数和最佳存活时间，并在 v1 中新增 `migration_history` 和基地 UI 状态字段。它只是契约和 blocker 记录；Runtime 迁移代码与平台存档路径审查仍需后续实现。

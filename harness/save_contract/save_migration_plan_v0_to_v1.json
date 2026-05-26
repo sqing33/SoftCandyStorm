@@ -8,6 +8,7 @@
   "status": "planned",
   "summary": "v0 到 v1 的本地存档迁移计划，用于在未来加入基地 UI、平台路径或更多局外字段时保留现有进度和隐私默认值。当前仅是可校验迁移契约，不代表 Runtime 已实现迁移。",
   "source_template": "harness/save_contract/save_state_v0_template.json",
+  "target_template": "harness/save_contract/save_state_v1_template.json",
   "required_preserved_sections": [
     "settings",
     "data_controls",
@@ -78,19 +79,18 @@
   },
   "validation_requirements": [
     "source save must pass tools/validate_save_state_contract.py before migration",
-    "target save must pass the future v1 save contract validator before Runtime accepts it",
+    "target save must pass tools/validate_save_state_contract.py against save-state-v1 before Runtime accepts it",
     "migration must preserve explicit upload opt-in flags and must never enable uploads by default",
     "migration must append migration_history without deleting original progress evidence",
     "migration must write atomically or keep the original v0 save unchanged"
   ],
   "blockers": [
     "Runtime migration implementation is not present",
-    "v1 save-state contract is not defined",
     "platform save path policy is not reviewed"
   ],
   "next_actions": [
-    "define save-state-v1 template when base UI state fields are finalized",
-    "implement Runtime migration only after v1 validator exists",
+    "implement Runtime migration against the save-state-v1 template",
+    "review platform save path policy before accepting migrated saves",
     "run migration fixtures for valid v0, missing section, privacy invariant violation, and unknown source version"
   ]
 }
