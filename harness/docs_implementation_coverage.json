@@ -59,24 +59,23 @@
       "doc_id": "02",
       "doc_path": "docs/02_核心玩法规格.md",
       "status": "partial",
-      "summary": "GameCore、Runtime 和内容包已覆盖移动、自动攻击、XP、升级、Boss、结算等原型链路，但当前本机二进制启动阻塞，无法重新验证完整可玩局。",
+      "summary": "GameCore、Runtime 和内容包已覆盖移动、自动攻击、XP、升级、Boss、结算等原型链路；本地二进制启动已恢复，Rust/Harness/Gym 冒烟通过，但完整可玩局仍缺少真人试玩验收。",
       "coverage": [
         {
           "id": "core-loop-runtime-semantics",
           "requirement": "实现移动、敌人追踪、武器自动释放、碰撞伤害、XP 拾取、升级选择、Boss 与结算。",
-          "status": "blocked",
+          "status": "partial",
           "evidence": [
             "crates/game_core/src/lib.rs",
             "crates/game_runtime/src/main.rs",
-            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+            "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
             "恢复本机 Mach-O 启动后需重跑 GameCore、Harness 和 Runtime 验证。",
             "仍需真实人工试玩确认玩法循环的可读性和节奏。"
           ],
-          "blockers": [
-            "local_binary_launch_blocked"
-          ]
+          "blockers": []
         }
       ]
     },
@@ -172,7 +171,9 @@
             "harness/content_review/validate_content_acceptance_manifest.py",
             "harness/content_review/test_validate_content_acceptance_manifest.py",
             "harness/content_review/content_acceptance_manifest_template.json",
-            "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md"
+            "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_candidates_smoke_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_candidate_simulation_smoke_001/summary.md"
           ],
           "gaps": [
             "Phase 4 full pack 仍在 generated_candidates，不是正式内容池；设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板、final acceptance 模板和 acceptance manifest 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。",
@@ -263,25 +264,24 @@
       "doc_id": "06",
       "doc_path": "docs/06_Bevy技术架构计划.md",
       "status": "partial",
-      "summary": "Rust workspace、GameCore/Runtime/Harness/Python 边界已建立；当前二进制启动问题阻塞最新编译和运行验证。",
+      "summary": "Rust workspace、GameCore/Runtime/Harness/Python 边界已建立；本地二进制启动已恢复，cargo fmt、clippy、test 与 Harness/Gym 冒烟均已刷新，release 级 Runtime/performance 验证仍未完成。",
       "coverage": [
         {
           "id": "bevy-workspace-boundaries",
           "requirement": "建立 Bevy/Rust workspace，保持 GameCore 无渲染依赖，Runtime 通过 action/snapshot/events 交互。",
-          "status": "blocked",
+          "status": "partial",
           "evidence": [
             "Cargo.toml",
             "crates/game_core/Cargo.toml",
             "crates/game_runtime/Cargo.toml",
-            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+            "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
             "恢复本机二进制启动后需重跑 cargo fmt、clippy、test 和 Runtime smoke。",
             "仍需更完整的 Runtime 视觉、音频和设置系统。"
           ],
-          "blockers": [
-            "local_binary_launch_blocked"
-          ]
+          "blockers": []
         }
       ]
     },
@@ -289,12 +289,12 @@
       "doc_id": "07",
       "doc_path": "docs/07_Harness工程计划.md",
       "status": "partial",
-      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等纯 Python 门禁已补强；完整仿真门禁仍受二进制阻塞。",
+      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，当前主要技术缺口转为 Bot 矩阵 repair 和 release 级长程验证。",
       "coverage": [
         {
           "id": "harness-gates-and-reports",
           "requirement": "Harness 应支持内容校验、批量模拟、报告、失败案例沉淀和持续进度审计。",
-          "status": "blocked",
+          "status": "partial",
           "evidence": [
             "crates/game_harness/src/main.rs",
             "tools/validate_failure_cases.py",
@@ -308,16 +308,15 @@
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md",
             "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md",
             "harness/reports/2026-05-26_progress_report_reference_validation_001/summary.md",
-            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md"
+            "harness/reports/2026-05-26_goal_evidence_consistency_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
             "恢复二进制后需按恢复包顺序重跑 game_harness --help、cargo fmt、clippy、test、simulate、matrix、replay-batch 和候选晋级命令。",
             "本地二进制启动已有可复现诊断门禁和恢复交接包，但当前结论仍是 local_binary_launch_blocked。",
             "Progress 账本已完成两批历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
-          "blockers": [
-            "local_binary_launch_blocked"
-          ]
+          "blockers": []
         }
       ]
     },
@@ -330,19 +329,18 @@
         {
           "id": "rule-bot-baselines",
           "requirement": "Idle、Random、Coward、GreedyXp、Kite、Tank、BossHunter、Route 等规则 Bot 应能批量验证内容。",
-          "status": "blocked",
+          "status": "partial",
           "evidence": [
             "crates/game_harness/src/main.rs",
             "harness/reports/2026-05-25_bot_matrix_nightly_001/summary.md",
-            "harness/reports/2026-05-25_bot_policy_calibration_011/summary.md"
+            "harness/reports/2026-05-25_bot_policy_calibration_011/summary.md",
+            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
             "新增内容和平衡改动后需要恢复二进制并重跑多地图、多 seed Bot 矩阵。",
             "规则 Bot 不是人工乐趣证明，仍需真人审查。"
           ],
-          "blockers": [
-            "local_binary_launch_blocked"
-          ]
+          "blockers": []
         }
       ]
     },
@@ -365,7 +363,9 @@
             "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md",
             "tools/validate_rl_policy_acceptance.py",
             "python/train/rl_policy_acceptance_template.json",
-            "harness/reports/2026-05-26_rl_policy_acceptance_template_001/summary.md"
+            "harness/reports/2026-05-26_rl_policy_acceptance_template_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_rl_dry_run_001/dqn_dry_run.json",
+            "harness/reports/2026-05-26_post_recovery_behavior_clone_dry_run_001/run_output.json"
           ],
           "gaps": [
             "context3 behavior clone 已训练但 Gym 评估被本机二进制启动阻塞；恢复后必须先取得 local_binary_launch_ok，再重跑 60/300 秒 high-pressure 对比。",
@@ -373,7 +373,6 @@
             "当前 RL policy acceptance 模板结论为 rl_policy_acceptance_not_ready，缺少恢复后的 60/300 秒 high-pressure 对比和规则 Bot 追平证据。"
           ],
           "blockers": [
-            "local_binary_launch_blocked",
             "rl_policy_multimap_generalization_gap"
           ]
         }
@@ -515,7 +514,9 @@
             "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/summary.md",
             "tools/audit_manual_evidence_gaps.py",
             "tools/test_audit_manual_evidence_gaps.py",
-            "harness/reports/2026-05-26_manual_evidence_gap_audit_001/summary.md"
+            "harness/reports/2026-05-26_manual_evidence_gap_audit_001/summary.md",
+            "harness/reports/2026-05-26_release_candidate_evidence_current_local_005/summary.md",
+            "harness/reports/2026-05-26_release_package_manifest_current_local_003/summary.md"
           ],
           "gaps": [
             "当前 release_candidate_evidence、accepted_content_lockfile 与 release_package_manifest 报告均为 not-ready / blocked；Goal 证据一致性报告确认这些 not-ready / blocked 结论与 docs 覆盖、路线图和 progress 账本一致。",
@@ -523,7 +524,6 @@
             "人工证据缺口审计当前结论为 manual_evidence_gaps_present：20 个真人证据条目全部仍是 gap，0 个缺失报告；该报告只用于集中排队，不代表任何人工门禁通过。"
           ],
           "blockers": [
-            "local_binary_launch_blocked",
             "manual_playtest_still_pending"
           ]
         }
@@ -610,7 +610,7 @@
         {
           "id": "gamecore-runtime-harness-api",
           "requirement": "GameCore 应提供固定 seed、step、snapshot、metrics、replay 和 Python Gym 接口。",
-          "status": "blocked",
+          "status": "partial",
           "evidence": [
             "crates/game_core/src/lib.rs",
             "crates/game_harness/src/main.rs",
@@ -619,18 +619,17 @@
             "tools/validate_gamecore_api_contract.py",
             "tools/test_validate_gamecore_api_contract.py",
             "harness/reports/2026-05-26_gamecore_api_contract_001/summary.md",
-            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json",
             "crates/game_core/src/meta.rs",
-            "harness/interface_contract/README.md"
+            "harness/interface_contract/README.md",
+            "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
           ],
           "gaps": [
             "恢复二进制后需重跑 cargo test、game_harness replay-batch 和 Gym smoke。",
             "source-shape 契约不能证明固定 seed 语义、Replay 兼容性、Runtime 集成或 Gym bridge 行为。",
             "RunMetrics per-source / Boss 指标与 PlayerSnapshot status_effects 已进入 v0 契约，但真实指标语义、Runtime 可读性和 Gym observation 映射仍需运行级验证。"
           ],
-          "blockers": [
-            "local_binary_launch_blocked"
-          ]
+          "blockers": []
         }
       ]
     },
@@ -665,7 +664,6 @@
             "平衡已有 9 局人工试玩审查包、strict acceptance invalid 报告和最终接受证据包覆盖新手、熟练和流派视角，但仍缺真人填写后的新手 / 熟练反馈。"
           ],
           "blockers": [
-            "local_binary_launch_blocked",
             "manual_playtest_still_pending"
           ]
         }
@@ -680,7 +678,7 @@
         {
           "id": "replay-and-telemetry",
           "requirement": "Replay 应可保存/回放/回归，遥测应记录关键局内事件并遵守隐私原则。",
-          "status": "blocked",
+          "status": "partial",
           "evidence": [
             "harness/reports/2026-05-25_replay_baseline_regression_001/summary.md",
             "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md",
@@ -738,15 +736,16 @@
             "harness/save_contract/create_manual_platform_path_review_packet.py",
             "harness/save_contract/test_create_manual_platform_path_review_packet.py",
             "harness/reports/2026-05-26_manual_platform_path_review_packet_001/summary.md",
-            "harness/reports/2026-05-26_runtime_surface_contract_platform_paths_001/summary.md"
+            "harness/reports/2026-05-26_runtime_surface_contract_platform_paths_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md",
+            "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md"
           ],
           "gaps": [
             "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
             "隐私策略、Runtime 设置页契约、上传传输契约、Runtime surface 源码形状契约、v0/v1 存档契约、平台路径策略、存档迁移计划、人工隐私审查包、人工平台路径审查包和人工法律 / 合规审查包已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，并在配置 --runtime-settings-file 时写回 JSON；Runtime 源码默认把存档、设置、遥测、Replay 和崩溃报告绑定到 platform_user_data/soft-candy-storm 逻辑平台数据根。但真人填写的人工隐私审查、人工平台路径审查、法律 / 合规审查、发布级导出 / 删除按钮、Runtime 网络上传实现、真实平台原生路径和运行级验证仍未完成。"
           ],
-          "blockers": [
-            "local_binary_launch_blocked"
-          ]
+          "blockers": []
         }
       ]
     },
@@ -938,7 +937,6 @@
             "人工证据缺口审计当前汇总 20 个 gap，其中 content、story、asset、playtest、privacy、platform、base_ui 和 release 全部仍缺真人通过证据；该审计只帮助排队，不替代任何人工记录。"
           ],
           "blockers": [
-            "local_binary_launch_blocked",
             "manual_playtest_still_pending"
           ]
         }

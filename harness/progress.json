@@ -1039,8 +1039,13 @@
     },
     {
       "id": "goal_blocker_priority_audit",
-      "summary": "增加 Goal 阻塞优先级审计器，汇总本机二进制启动阻塞、人工证据缺口、Release Candidate、发布包、docs 覆盖和 roadmap 状态；当前报告为 goal_blockers_present，P0 为 local_binary_launch_blocked 与 manual_evidence_gaps。",
+      "summary": "增加 Goal 阻塞优先级审计器，汇总本机二进制启动已恢复、人工证据缺口、Release Candidate、发布包、docs 覆盖和 roadmap 状态；当前报告为 goal_blockers_present，P0 为 local_binary_launch_blocked 与 manual_evidence_gaps。",
       "report": "harness/reports/2026-05-26_goal_blocker_priority_audit_001/summary.md"
+    },
+    {
+      "id": "local_binary_launch_recovery_verified",
+      "summary": "本地二进制启动恢复完成并已刷新 Rust/Harness/Gym 冒烟证据；Release Candidate 仍因 Bot 矩阵、长程验证、人工审查和发布包门禁保持 not-ready。",
+      "report": "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1405,9 +1410,9 @@
       "report": "crates/game_runtime/src/main.rs"
     },
     {
-      "id": "local_binary_launch_blocked",
-      "summary": "当前本机新生成 Mach-O binary 启动异常：新增诊断工具确认 /bin/echo 可执行、最小 cc hello 可编译但 5 秒超时，Developer Mode disabled，spctl rejected，策略日志捕获 AppleSystemPolicy 拒绝本地进程。恢复前不要继续依赖 Harness/Runtime/Gym 运行结果。",
-      "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_001/summary.md"
+      "id": "local_binary_launch_recovered",
+      "summary": "本机新生成 Mach-O binary 启动已恢复：retry_003 诊断返回 local_binary_launch_ok，game_harness 可启动，cargo fmt/clippy/test、Harness 矩阵、Replay、Gym smoke 和训练入口 dry-run 已重新执行；后续阻塞转为 Bot 矩阵 repair、RL 依赖缺口和真人证据缺口。",
+      "report": "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
     }
   ],
   "next_recommended": [

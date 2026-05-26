@@ -1,0 +1,73 @@
+{
+  "report_version": 1,
+  "generated_at": "2026-05-26T19:10:00+08:00",
+  "decision": "post_recovery_rust_and_harness_smoke_passed",
+  "local_binary_launch": {
+    "decision": "local_binary_launch_ok",
+    "evidence": "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md"
+  },
+  "commands": [
+    {
+      "command": "target/debug/game_harness --help",
+      "status": "pass",
+      "summary": "game_harness launched and printed CLI usage"
+    },
+    {
+      "command": "cargo fmt --check",
+      "status": "pass",
+      "summary": "workspace formatting check passed"
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets",
+      "status": "pass",
+      "summary": "workspace clippy check passed without warnings after Runtime compile fixes"
+    },
+    {
+      "command": "cargo test --workspace",
+      "status": "pass",
+      "summary": "103 Rust unit tests passed across bot_policies, game_core, game_harness, and game_runtime"
+    },
+    {
+      "command": "target/debug/game_harness validate-content --content-dir content/base_demo",
+      "status": "pass",
+      "summary": "base_demo content schema validation returned ok with 64 objects"
+    },
+    {
+      "command": "target/debug/game_harness simulate --content-dir content/base_demo --seed 12345 --seconds 180 --bot kite",
+      "status": "pass",
+      "summary": "kite headless simulation reached victory at 180.009 seconds"
+    },
+    {
+      "command": "target/debug/game_harness matrix --content-dir content/base_demo --seed-start 31000 --seeds 3 --seconds 180 --bots random,coward,tank,boss-hunter",
+      "status": "repair",
+      "summary": "matrix executed, but all four sampled bots were outside their target win-rate bands",
+      "evidence": "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md"
+    },
+    {
+      "command": "target/debug/game_harness replay-batch --content-dir content/base_demo --replay-dir harness/reports/2026-05-26_post_recovery_matrix_smoke_001/representative_replays",
+      "status": "pass",
+      "summary": "12 representative replays passed strict replay regression",
+      "evidence": "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md"
+    },
+    {
+      "command": "python3 python/gym_env/smoke_test.py",
+      "status": "pass",
+      "summary": "Gym bridge smoke passed with observation_len 145 and action_count 9"
+    },
+    {
+      "command": "python3 python/train/train_sb3.py --check-deps",
+      "status": "waiting",
+      "summary": "training entry point ran, but gymnasium, numpy, stable_baselines3, and torch are not installed"
+    },
+    {
+      "command": "python3 python/train/train_behavior_clone.py --check-deps",
+      "status": "waiting",
+      "summary": "behavior clone entry point ran, but numpy and torch are not installed"
+    }
+  ],
+  "limitations": [
+    "This is a post-recovery smoke report, not a release candidate pass.",
+    "The matrix result requires balance or bot target review before bot_matrix can become a release pass gate.",
+    "Release-grade performance, long multi-seed deadlock checks, and human review gates remain incomplete."
+  ]
+}

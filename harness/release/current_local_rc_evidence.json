@@ -3,7 +3,7 @@
   "candidate_id": "current-local-2026-05-26",
   "generated_at": "2026-05-26",
   "release_stage": "prototype-local",
-  "summary": "当前本地工作区的 Release Candidate 证据清单。由于本机新生成 Mach-O 二进制仍被系统策略阻塞，本清单用于记录 not-ready 状态，不得作为发布放行依据。",
+  "summary": "当前本地工作区的 Release Candidate 证据清单。本地新生成 Mach-O 二进制启动已恢复，Rust 与 Harness 冒烟链路可执行；本清单仍用于记录 not-ready 状态，因为 Bot 矩阵、长程多 seed、性能、人工审查和发布包门禁尚未全部通过。",
   "gates": [
     {
       "id": "content_frozen",
@@ -17,85 +17,87 @@
     },
     {
       "id": "compile",
-      "status": "blocked",
-      "summary": "无法证明当前 workspace 编译产物可启动；本机新 Mach-O 可执行文件停在 _dyld_start。",
+      "status": "pass",
+      "summary": "本地二进制启动诊断已恢复为 local_binary_launch_ok，game_harness 可启动，cargo clippy --workspace --all-targets 通过。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "unit_tests",
-      "status": "blocked",
-      "summary": "Rust 单元测试依赖本地新编译测试二进制启动，当前环境不能作为有效通过证据来源。",
+      "status": "pass",
+      "summary": "cargo test --workspace 已通过，覆盖 bot_policies、game_core、game_harness 和 game_runtime 共 103 个单元测试。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "headless_simulation",
-      "status": "blocked",
-      "summary": "game_harness simulate 当前不能可靠启动，因此不能刷新 headless 600 秒或 1000 局仿真证据。",
+      "status": "waiting",
+      "summary": "game_harness simulate 已恢复并完成 180 秒 kite 冒烟；release 级 600 秒或更大规模仿真证据尚未刷新。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "multi_seed_no_deadlock",
-      "status": "blocked",
-      "summary": "多 seed 死锁/卡死检查需要 game_harness 批量运行，当前被本地二进制启动问题阻塞。",
+      "status": "waiting",
+      "summary": "恢复后已执行 4 Bot x 3 seed 矩阵冒烟并生成 representative replay；release 级多 seed 无死锁门禁仍需更大样本。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "content_schema",
-      "status": "blocked",
-      "summary": "正式 GameCore/Harness 内容 schema 校验依赖 game_harness；当前只能使用纯 Python 预检，不能等价替代 release gate。",
+      "status": "pass",
+      "summary": "game_harness validate-content 已对 content/base_demo 返回 ok，候选池 validate-candidates 也完成 schema/static budget 分流。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json",
-        "harness/reports/2026-05-26_phase4_roster_full_pack_preflight_001/summary.md"
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
+        "harness/reports/2026-05-26_post_recovery_candidates_smoke_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "static_budget",
-      "status": "blocked",
-      "summary": "纯 Python 静态预算报告显示 base_demo 与 Phase 4 full pack 首层预算通过；正式 game_harness budget-content 仍因本机二进制启动问题无法刷新。",
+      "status": "pass",
+      "summary": "静态预算报告已存在，恢复后 validate-candidates 对 phase4 roster gap full pack 的 budget_report 返回 ok，但保留 sprinkle-spitter 威胁值偏差警告。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json",
         "harness/reports/2026-05-26_static_balance_budget_base_demo_001/summary.md",
-        "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md"
+        "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md",
+        "harness/reports/2026-05-26_post_recovery_candidates_smoke_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "bot_matrix",
-      "status": "blocked",
-      "summary": "Bot 矩阵需要 game_harness matrix；当前不能生成新的当前版本证据。",
+      "status": "fail",
+      "summary": "game_harness matrix 已恢复并生成当前版本证据，但 random、coward、tank、boss-hunter 均超出目标胜率区间，需要平衡或 Bot 目标修复。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
+        "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/failure_cases.json"
       ],
       "synthetic": false
     },
     {
       "id": "replay_regression",
-      "status": "blocked",
-      "summary": "Replay strict 回归需要 game_harness replay-batch；当前不能刷新当前版本 replay 证据。",
+      "status": "pass",
+      "summary": "replay-batch 已对恢复后矩阵生成的 12 个 representative replay 完成 strict 回归，12/12 通过。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "performance",
-      "status": "blocked",
-      "summary": "性能、实体上限和 Runtime FPS 证据依赖可运行二进制或人工运行，目前无法完成 release 级验证。",
+      "status": "waiting",
+      "summary": "恢复后矩阵报告包含实体上限 smoke 指标；Runtime FPS、长程性能和发布级实体预算仍未完成。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md"
       ],
       "synthetic": false
     },
@@ -175,19 +177,19 @@
     },
     {
       "id": "failure_case_review",
-      "status": "blocked",
-      "summary": "仍存在本地二进制启动阻塞 failure case，必须恢复并验证后才能进入 RC。",
+      "status": "waiting",
+      "summary": "本地二进制启动阻塞已通过 retry_003 诊断恢复；当前仍需复核新产生的 Bot 矩阵 repair failure cases 和人工审查缺口。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+        "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/failure_case_validation.md"
       ],
       "synthetic": false
     },
     {
       "id": "release_package",
-      "status": "blocked",
-      "summary": "发布包清单和 accepted content lockfile 已记录当前 blocked 状态；真实发布包、内容锁、校验和和最终 smoke 仍需要可启动 Runtime/Harness 与真人接受证据。",
+      "status": "waiting",
+      "summary": "发布包清单和 accepted content lockfile 已记录当前 not-ready 状态；真实发布包、内容锁、校验和和最终 smoke 仍需要 release candidate 先通过。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json",
         "harness/release/current_local_package_manifest.json",
         "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md",
         "harness/accepted_content/accepted_content.lock.json",

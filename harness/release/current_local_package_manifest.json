@@ -5,35 +5,36 @@
   "created_at": "2026-05-26",
   "release_stage": "prototype-local",
   "package_status": "blocked",
-  "summary": "当前本地工作区的发布包清单。由于 release candidate 仍未就绪且本机新生成 Mach-O 二进制被系统策略阻塞，当前不能生成有效发布包。",
+  "summary": "当前本地工作区的发布包清单。Release Candidate 仍未就绪，当前不能生成有效发布包；本地二进制启动已恢复，但 Bot 矩阵、人工审查、长程性能和最终打包 smoke 仍未通过。",
   "candidate_evidence": "harness/release/current_local_rc_evidence.json",
   "package_items": [],
   "checks": [
     {
       "id": "package_created",
-      "status": "blocked",
-      "summary": "发布包创建依赖可构建并可启动的 Runtime/Harness；当前本机二进制启动阻塞，不能产出有效包。",
+      "status": "waiting",
+      "summary": "Runtime/Harness 本地二进制已可启动，但 Release Candidate 仍未就绪，因此尚未创建正式发布包。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+        "harness/reports/2026-05-26_release_candidate_evidence_current_local_005/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "final_smoke",
-      "status": "blocked",
-      "summary": "最终 smoke 需要启动打包后的 Runtime；当前不能提供 release 级启动证据。",
+      "status": "waiting",
+      "summary": "恢复后 Rust/Harness/Gym 冒烟已通过，但最终 smoke 必须针对真实发布包运行，当前没有发布包。",
       "evidence_paths": [
-        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
+        "harness/reports/2026-05-26_release_candidate_evidence_current_local_005/summary.md"
       ],
       "synthetic": false
     }
   ],
   "blockers": [
-    "local_binary_launch_blocked",
     "release_candidate_not_ready"
   ],
   "next_actions": [
-    "恢复本机二进制启动能力后重新运行编译、测试、Harness、Replay 和 Runtime smoke。",
+    "先修复 Bot 矩阵胜率门禁，并完成长程 headless、多 seed、性能、人工审查和隐私/素材/剧情接受证据。",
     "完成真实 9 局人工试玩接受后，用 game_harness lock-accepted-content 生成非空 accepted content lockfile，并用 tools/validate_accepted_content_lockfile.py 复核。",
     "Release Candidate 全部门禁通过后生成 runtime bundle、release archive、checksum manifest、release notes、content lockfile 和 asset manifest。",
     "对最终发布包运行 final smoke 并将证据写回该清单。"
