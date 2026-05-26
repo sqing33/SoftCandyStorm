@@ -31,6 +31,19 @@ python3 harness/story_review/create_story_codex_review_draft.py \
 
 生成的草稿包含 `draft_notice` 和 `TODO` 占位，默认 `gate_decision` 为 `needs_more_review`。它只用于防止漏审，不能作为人工审校通过证据。
 
+审校包生成示例：
+
+```bash
+python3 harness/story_review/create_story_codex_review_packet.py \
+  harness/generated_candidates/2026-05-26_story_codex_seed_pack \
+  --repo-root . \
+  --candidate-validation-report harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md \
+  --review-draft harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json \
+  --out harness/reports/2026-05-26_story_codex_review_packet_001/summary.md
+```
+
+审校包会把候选章节、图鉴条目、候选校验报告、TODO 审校草稿和缺失审校项汇总成 Markdown，方便真人逐项审校。它不判断文案质量、不填写评分、不晋级 UI 候选，也不写入正式内容池。
+
 UI 候选晋级示例：
 
 ```bash

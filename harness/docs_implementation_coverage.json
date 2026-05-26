@@ -74,7 +74,7 @@
       "doc_id": "03",
       "doc_path": "docs/03_世界观与剧情大纲.md",
       "status": "partial",
-      "summary": "角色、地图、事件和内容描述已承载糖果王国设定，章节剧情和图鉴文本已有 generated candidate 候选包、纯 Python 校验报告、覆盖全条目的人工审校草稿、ui_candidate 晋级工具和 UI 候选 manifest 门禁；局内叙事 UI、真人审校和正式接受链路仍未完成。",
+      "summary": "角色、地图、事件和内容描述已承载糖果王国设定，章节剧情和图鉴文本已有 generated candidate 候选包、纯 Python 校验报告、覆盖全条目的人工审校草稿、审校包、ui_candidate 晋级工具和 UI 候选 manifest 门禁；局内叙事 UI、真人审校和正式接受链路仍未完成。",
       "coverage": [
         {
           "id": "worldbuilding-content-hooks",
@@ -96,10 +96,13 @@
             "harness/story_review/test_validate_story_codex_ui_candidate_manifest.py",
             "harness/story_review/story_codex_ui_candidate_manifest_template.json",
             "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/summary.md",
-            "harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json"
+            "harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json",
+            "harness/story_review/create_story_codex_review_packet.py",
+            "harness/story_review/test_create_story_codex_review_packet.py",
+            "harness/reports/2026-05-26_story_codex_review_packet_001/summary.md"
           ],
           "gaps": [
-            "章节剧情和图鉴文本仍在 generated_candidates，已有人工审校记录模板、自动草稿、ui_candidate 晋级工具和 UI 候选 manifest 门禁，但尚未由真人填写审校记录并通过。",
+            "章节剧情和图鉴文本仍在 generated_candidates，已有人工审校记录模板、自动草稿、审校包、ui_candidate 晋级工具和 UI 候选 manifest 门禁，但尚未由真人填写审校记录并通过。",
             "缺少章节剧情 UI、图鉴 UI 和局外叙事推进的 Runtime 接入。",
             "缺少真实玩家对剧情节奏、语气和信息量的反馈。"
           ]
@@ -615,7 +618,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、六章主线 MetaProgress 骨架、accepted lockfile 入口、Runtime meta panel 四页视图、Runtime surface 源码形状契约、v0/v1 存档契约、平台存档路径策略、人工平台路径审查模板、v0 到 v1 存档迁移计划、Runtime v0 存档读写、Runtime 隐私设置契约、F4 隐私设置页和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告、人工审校草稿、ui_candidate 晋级工具和 UI 候选 manifest 门禁；完整基地、可点击图鉴 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、六章主线 MetaProgress 骨架、accepted lockfile 入口、Runtime meta panel 四页视图、Runtime surface 源码形状契约、v0/v1 存档契约、平台存档路径策略、人工平台路径审查模板、v0 到 v1 存档迁移计划、Runtime v0 存档读写、Runtime 隐私设置契约、F4 隐私设置页和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告、人工审校草稿、审校包、ui_candidate 晋级工具和 UI 候选 manifest 门禁；完整基地、可点击图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -643,6 +646,9 @@
             "harness/story_review/test_validate_story_codex_ui_candidate_manifest.py",
             "harness/story_review/story_codex_ui_candidate_manifest_template.json",
             "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/summary.md",
+            "harness/story_review/create_story_codex_review_packet.py",
+            "harness/story_review/test_create_story_codex_review_packet.py",
+            "harness/reports/2026-05-26_story_codex_review_packet_001/summary.md",
             "harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json",
             "harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json",
             "harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py",
@@ -668,7 +674,7 @@
           ],
           "gaps": [
             "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板和 v0 到 v1 迁移计划契约，Runtime 可通过 --save-file 读取或创建 v0 存档、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少 Runtime v1 读写 / 迁移实现、Runtime 平台路径解析、真人平台路径审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
-            "剧情 / 图鉴候选已有自动草稿防漏审、ui_candidate 晋级工具和 UI 候选 manifest 门禁，但尚未由真人填写审校记录并通过，因此 Runtime 当前只展示 MetaProgress 图鉴计数，不接入候选文本。",
+            "剧情 / 图鉴候选已有自动草稿防漏审、审校包、ui_candidate 晋级工具和 UI 候选 manifest 门禁，但尚未由真人填写审校记录并通过，因此 Runtime 当前只展示 MetaProgress 图鉴计数，不接入候选文本。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
           "blockers": [
