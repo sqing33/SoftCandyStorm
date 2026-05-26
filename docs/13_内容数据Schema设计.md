@@ -497,6 +497,11 @@ P0 错误，必须拒绝：
 - 数值为 NaN 或 Infinity
 - 生命、冷却、速度、半径为负
 - 波次结束时间小于开始时间
+- 波次地图、敌人池或 Boss 事件引用不存在
+- 进化需求引用不存在、替换武器不一致，或需求等级超过武器 / 被动最大等级
+- 地图生成距离最小值大于最大值
+- Boss 阶段阈值不按血量递减
+- 事件触发窗口时间倒置或概率大于 1
 - 敌人池为空
 
 P1 风险，需要仿真：
@@ -551,4 +556,13 @@ python3 tools/validate_content_schema_contract.py content/base_demo harness/gene
 python3 tools/validate_content_schema_contract.py content/base_demo harness/generated_candidates/<candidate-pack> --schema-manifest content/schemas/manifest.json --report harness/reports/<report-id>/content_schema_contract.json --markdown harness/reports/<report-id>/summary.md
 ```
 
-该工具只覆盖 JSON Schema 契约子集、必填字段、枚举、id 规范和简单数值边界；它不替代 GameCore 内容加载、静态预算、Bot 仿真、Replay 回归或人工审查。
+该工具覆盖 JSON Schema 契约子集、必填字段、枚举、id 规范、简单数值边界、跨文件引用，以及基础时间 / 距离 / 阶段语义。当前语义检查包括：
+
+- 角色初始武器和被动必须引用存在的内容。
+- 进化需求武器、被动、替换武器必须互相一致，且需求等级不能超过对应内容最大等级。
+- 波次必须引用存在的地图、敌人和 Boss，波段时间必须递增且不超过总时长。
+- 地图生成距离必须保持 `min_distance <= max_distance`，且生成距离不能大于地图短边。
+- Boss 阶段血量阈值必须从 `1.0` 开始并递减。
+- 事件触发窗口必须起止有序，概率不能超过 `1.0`，带时长的效果必须为正时长。
+
+该工具仍不替代 GameCore 内容加载、静态预算、Bot 仿真、Replay 回归或人工审查。

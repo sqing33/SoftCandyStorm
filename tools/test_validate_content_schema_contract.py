@@ -115,6 +115,88 @@ class ContentSchemaContractValidatorTests(unittest.TestCase):
             self.assertEqual(report["decision"], "content_schema_contract_invalid")
             self.assertTrue(any("not in enum" in error for error in report["errors"]))
 
+    def test_missing_cross_file_reference_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            schema_manifest = make_schema_fixture(root)
+            content_dir = make_content_fixture(root)
+            target = content_dir / "characters" / "characters-fixture.json"
+            payload = json.loads(target.read_text(encoding="utf-8"))
+            payload["initial_loadout"] = {
+                "weapons": ["missing-weapon"],
+                "passives": ["passives-fixture"],
+            }
+            write_json(target, payload)
+
+            report = build_report(schema_manifest, [content_dir])
+
+            self.assertEqual(report["decision"], "content_schema_contract_invalid")
+            self.assertTrue(any("references missing weapons id `missing-weapon`" in error for error in report["errors"]))
+
+    def test_wave_timing_and_pool_semantics_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            schema_manifest = make_schema_fixture(root)
+            content_dir = make_content_fixture(root)
+            target = content_dir / "waves" / "waves-fixture.json"
+            payload = json.loads(target.read_text(encoding="utf-8"))
+            payload.update(
+                {
+                    "map_id": "maps-fixture",
+                    "duration_seconds": 60,
+                    "segments": [
+                        {
+                            "start_second": 30,
+                            "end_second": 10,
+                            "enemy_pool": [{"enemy_id": "missing-enemy", "weight": 1.0}],
+                        }
+                    ],
+                    "boss_events": [{"time_second": 90, "boss_id": "missing-boss"}],
+                }
+            )
+            write_json(target, payload)
+
+            report = build_report(schema_manifest, [content_dir])
+
+            self.assertEqual(report["decision"], "content_schema_contract_invalid")
+            self.assertTrue(any("start_second 30 must be before end_second 10" in error for error in report["errors"]))
+            self.assertTrue(any("references missing enemies id `missing-enemy`" in error for error in report["errors"]))
+            self.assertTrue(any("references missing bosses id `missing-boss`" in error for error in report["errors"]))
+            self.assertTrue(any("time_second 90 exceeds duration_seconds 60" in error for error in report["errors"]))
+
+    def test_evolution_level_semantics_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            schema_manifest = make_schema_fixture(root)
+            content_dir = make_content_fixture(root)
+            weapon_path = content_dir / "weapons" / "weapons-fixture.json"
+            weapon = json.loads(weapon_path.read_text(encoding="utf-8"))
+            weapon["scaling"] = {"max_level": 3}
+            write_json(weapon_path, weapon)
+            passive_path = content_dir / "passives" / "passives-fixture.json"
+            passive = json.loads(passive_path.read_text(encoding="utf-8"))
+            passive["max_level"] = 2
+            write_json(passive_path, passive)
+            evolution_path = content_dir / "evolutions" / "evolutions-fixture.json"
+            evolution = json.loads(evolution_path.read_text(encoding="utf-8"))
+            evolution.update(
+                {
+                    "requirements": {
+                        "weapon": {"id": "weapons-fixture", "min_level": 5},
+                        "passive": {"id": "passives-fixture", "min_level": 4},
+                    },
+                    "replaces_weapon": "other-weapon",
+                }
+            )
+            write_json(evolution_path, evolution)
+
+            report = build_report(schema_manifest, [content_dir])
+
+            self.assertEqual(report["decision"], "content_schema_contract_invalid")
+            self.assertTrue(any("must match requirements.weapon.id" in error for error in report["errors"]))
+            self.assertTrue(any("weapon `weapons-fixture` max_level 3" in error for error in report["errors"]))
+            self.assertTrue(any("passive `passives-fixture` max_level 2" in error for error in report["errors"]))
+
     def test_cli_writes_report_and_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

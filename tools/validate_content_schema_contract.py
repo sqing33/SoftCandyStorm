@@ -4,7 +4,8 @@
 This dependency-free validator supports the JSON Schema subset used by
 content/schemas/*.schema.json. It is not a replacement for the Rust GameCore
 loader or Harness simulation gates; it provides a portable first pass for
-schema shape, required fields, enums, id patterns, and simple numeric bounds.
+schema shape, required fields, enums, id patterns, simple numeric bounds, and
+cross-file semantic references that can be checked without launching Rust.
 """
 
 from __future__ import annotations
@@ -90,6 +91,9 @@ def validate_value(schema: dict[str, Any], value: Any, label: str) -> list[str]:
         minimum = schema.get("minimum")
         if isinstance(minimum, (int, float)) and value < minimum:
             errors.append(f"{label}: value {value} is below minimum {minimum}")
+        maximum = schema.get("maximum")
+        if isinstance(maximum, (int, float)) and value > maximum:
+            errors.append(f"{label}: value {value} is above maximum {maximum}")
         exclusive_minimum = schema.get("exclusiveMinimum")
         if isinstance(exclusive_minimum, (int, float)) and value <= exclusive_minimum:
             errors.append(f"{label}: value {value} must be greater than {exclusive_minimum}")
@@ -116,6 +120,277 @@ def validate_value(schema: dict[str, Any], value: Any, label: str) -> list[str]:
                     errors.extend(validate_value(field_schema, value[field], f"{label}.{field}"))
 
     return errors
+
+
+def is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def semantic_label(content_dir: Path, paths_by_category: dict[str, dict[str, str]], category: str, item_id: str) -> str:
+    relative_path = paths_by_category.get(category, {}).get(item_id, f"{category}/{item_id}.json")
+    return f"{content_dir}/{relative_path}"
+
+
+def require_reference(
+    errors: list[str],
+    label: str,
+    field: str,
+    referenced_id: Any,
+    target_category: str,
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+) -> dict[str, Any] | None:
+    if not is_nonempty_string(referenced_id):
+        return None
+    target = items_by_category.get(target_category, {}).get(str(referenced_id))
+    if target is None:
+        errors.append(f"{label}: `{field}` references missing {target_category} id `{referenced_id}`")
+    return target
+
+
+def validate_character_semantics(
+    content_dir: Path,
+    errors: list[str],
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+    paths_by_category: dict[str, dict[str, str]],
+) -> int:
+    checks = 0
+    for item_id, character in items_by_category.get("characters", {}).items():
+        label = semantic_label(content_dir, paths_by_category, "characters", item_id)
+        loadout = character.get("initial_loadout")
+        if not isinstance(loadout, dict):
+            continue
+        weapons = loadout.get("weapons")
+        if isinstance(weapons, list):
+            checks += len(weapons)
+            for index, weapon_id in enumerate(weapons):
+                require_reference(errors, label, f"initial_loadout.weapons[{index}]", weapon_id, "weapons", items_by_category)
+        passives = loadout.get("passives")
+        if isinstance(passives, list):
+            checks += len(passives)
+            for index, passive_id in enumerate(passives):
+                require_reference(errors, label, f"initial_loadout.passives[{index}]", passive_id, "passives", items_by_category)
+    return checks
+
+
+def validate_evolution_semantics(
+    content_dir: Path,
+    errors: list[str],
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+    paths_by_category: dict[str, dict[str, str]],
+) -> int:
+    checks = 0
+    for item_id, evolution in items_by_category.get("evolutions", {}).items():
+        label = semantic_label(content_dir, paths_by_category, "evolutions", item_id)
+        requirements = evolution.get("requirements")
+        if not isinstance(requirements, dict):
+            continue
+        weapon_req = requirements.get("weapon")
+        if isinstance(weapon_req, dict):
+            weapon_id = weapon_req.get("id")
+            weapon = require_reference(errors, label, "requirements.weapon.id", weapon_id, "weapons", items_by_category)
+            checks += 1
+            replaces_weapon = evolution.get("replaces_weapon")
+            if is_nonempty_string(weapon_id) and is_nonempty_string(replaces_weapon) and weapon_id != replaces_weapon:
+                errors.append(
+                    f"{label}: `replaces_weapon` `{replaces_weapon}` must match requirements.weapon.id `{weapon_id}`"
+                )
+            min_level = weapon_req.get("min_level")
+            if weapon is not None and isinstance(weapon.get("scaling"), dict) and isinstance(min_level, int):
+                max_level = weapon["scaling"].get("max_level")
+                if isinstance(max_level, int) and min_level > max_level:
+                    errors.append(
+                        f"{label}: requirements.weapon.min_level {min_level} exceeds weapon `{weapon_id}` max_level {max_level}"
+                    )
+        passive_req = requirements.get("passive")
+        if isinstance(passive_req, dict):
+            passive_id = passive_req.get("id")
+            passive = require_reference(errors, label, "requirements.passive.id", passive_id, "passives", items_by_category)
+            checks += 1
+            min_level = passive_req.get("min_level")
+            if passive is not None and isinstance(min_level, int):
+                max_level = passive.get("max_level")
+                if isinstance(max_level, int) and min_level > max_level:
+                    errors.append(
+                        f"{label}: requirements.passive.min_level {min_level} exceeds passive `{passive_id}` max_level {max_level}"
+                    )
+    return checks
+
+
+def validate_wave_semantics(
+    content_dir: Path,
+    errors: list[str],
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+    paths_by_category: dict[str, dict[str, str]],
+) -> int:
+    checks = 0
+    for item_id, wave in items_by_category.get("waves", {}).items():
+        label = semantic_label(content_dir, paths_by_category, "waves", item_id)
+        map_id = wave.get("map_id")
+        require_reference(errors, label, "map_id", map_id, "maps", items_by_category)
+        checks += 1
+        duration = wave.get("duration_seconds")
+        previous_end: float | None = None
+        segments = wave.get("segments")
+        if isinstance(segments, list):
+            for index, segment in enumerate(segments):
+                if not isinstance(segment, dict):
+                    continue
+                segment_label = f"{label}.segments[{index}]"
+                start = segment.get("start_second")
+                end = segment.get("end_second")
+                if is_number(start) and is_number(end):
+                    checks += 1
+                    if start >= end:
+                        errors.append(f"{segment_label}: start_second {start} must be before end_second {end}")
+                    if is_number(duration) and end > duration:
+                        errors.append(f"{segment_label}: end_second {end} exceeds duration_seconds {duration}")
+                    if previous_end is not None and start < previous_end:
+                        errors.append(f"{segment_label}: start_second {start} overlaps previous segment ending at {previous_end}")
+                    previous_end = end
+                enemy_pool = segment.get("enemy_pool")
+                if isinstance(enemy_pool, list):
+                    for pool_index, pool_item in enumerate(enemy_pool):
+                        if not isinstance(pool_item, dict):
+                            continue
+                        checks += 1
+                        require_reference(
+                            errors,
+                            label,
+                            f"segments[{index}].enemy_pool[{pool_index}].enemy_id",
+                            pool_item.get("enemy_id"),
+                            "enemies",
+                            items_by_category,
+                        )
+        boss_events = wave.get("boss_events")
+        if isinstance(boss_events, list):
+            for index, boss_event in enumerate(boss_events):
+                if not isinstance(boss_event, dict):
+                    continue
+                checks += 1
+                require_reference(
+                    errors,
+                    label,
+                    f"boss_events[{index}].boss_id",
+                    boss_event.get("boss_id"),
+                    "bosses",
+                    items_by_category,
+                )
+                time_second = boss_event.get("time_second")
+                if is_number(time_second) and is_number(duration) and time_second > duration:
+                    errors.append(f"{label}.boss_events[{index}]: time_second {time_second} exceeds duration_seconds {duration}")
+    return checks
+
+
+def validate_map_semantics(
+    content_dir: Path,
+    errors: list[str],
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+    paths_by_category: dict[str, dict[str, str]],
+) -> int:
+    checks = 0
+    for item_id, map_item in items_by_category.get("maps", {}).items():
+        label = semantic_label(content_dir, paths_by_category, "maps", item_id)
+        spawn_rules = map_item.get("spawn_rules")
+        if isinstance(spawn_rules, dict):
+            min_distance = spawn_rules.get("min_distance")
+            max_distance = spawn_rules.get("max_distance")
+            if is_number(min_distance) and is_number(max_distance):
+                checks += 1
+                if min_distance > max_distance:
+                    errors.append(f"{label}: spawn_rules.min_distance {min_distance} exceeds max_distance {max_distance}")
+        size = map_item.get("size")
+        if isinstance(size, dict) and is_number(size.get("width")) and is_number(size.get("height")):
+            checks += 1
+            if spawn_rules and is_number(spawn_rules.get("max_distance")):
+                longest_spawn = spawn_rules["max_distance"]
+                shortest_axis = min(size["width"], size["height"])
+                if longest_spawn >= shortest_axis:
+                    errors.append(
+                        f"{label}: spawn_rules.max_distance {longest_spawn} should be smaller than shortest map axis {shortest_axis}"
+                    )
+    return checks
+
+
+def validate_boss_semantics(
+    content_dir: Path,
+    errors: list[str],
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+    paths_by_category: dict[str, dict[str, str]],
+) -> int:
+    checks = 0
+    for item_id, boss in items_by_category.get("bosses", {}).items():
+        label = semantic_label(content_dir, paths_by_category, "bosses", item_id)
+        phases = boss.get("phases")
+        if not isinstance(phases, list):
+            continue
+        previous_threshold: float | None = None
+        for index, phase in enumerate(phases):
+            if not isinstance(phase, dict):
+                continue
+            threshold = phase.get("hp_threshold")
+            if is_number(threshold):
+                checks += 1
+                if threshold > 1:
+                    errors.append(f"{label}.phases[{index}]: hp_threshold {threshold} exceeds 1.0")
+                if previous_threshold is not None and threshold >= previous_threshold:
+                    errors.append(
+                        f"{label}.phases[{index}]: hp_threshold {threshold} must be lower than previous threshold {previous_threshold}"
+                    )
+                previous_threshold = threshold
+        if phases and isinstance(phases[0], dict) and phases[0].get("hp_threshold") != 1.0:
+            errors.append(f"{label}: first boss phase should start at hp_threshold 1.0")
+    return checks
+
+
+def validate_event_semantics(
+    content_dir: Path,
+    errors: list[str],
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+    paths_by_category: dict[str, dict[str, str]],
+) -> int:
+    checks = 0
+    for item_id, event in items_by_category.get("events", {}).items():
+        label = semantic_label(content_dir, paths_by_category, "events", item_id)
+        trigger = event.get("trigger")
+        if isinstance(trigger, dict):
+            start = trigger.get("start_second")
+            end = trigger.get("end_second")
+            if is_number(start) and is_number(end):
+                checks += 1
+                if start >= end:
+                    errors.append(f"{label}: trigger.start_second {start} must be before end_second {end}")
+            chance = trigger.get("chance")
+            if is_number(chance):
+                checks += 1
+                if chance > 1:
+                    errors.append(f"{label}: trigger.chance {chance} exceeds 1.0")
+        effects = event.get("effects")
+        if isinstance(effects, list):
+            for index, effect in enumerate(effects):
+                if not isinstance(effect, dict):
+                    continue
+                duration = effect.get("duration_seconds")
+                if duration is not None:
+                    checks += 1
+                    if not is_number(duration) or duration <= 0:
+                        errors.append(f"{label}.effects[{index}]: duration_seconds must be greater than 0")
+    return checks
+
+
+def validate_content_semantics(
+    content_dir: Path,
+    items_by_category: dict[str, dict[str, dict[str, Any]]],
+    paths_by_category: dict[str, dict[str, str]],
+) -> tuple[list[str], int]:
+    errors: list[str] = []
+    check_count = 0
+    check_count += validate_character_semantics(content_dir, errors, items_by_category, paths_by_category)
+    check_count += validate_evolution_semantics(content_dir, errors, items_by_category, paths_by_category)
+    check_count += validate_wave_semantics(content_dir, errors, items_by_category, paths_by_category)
+    check_count += validate_map_semantics(content_dir, errors, items_by_category, paths_by_category)
+    check_count += validate_boss_semantics(content_dir, errors, items_by_category, paths_by_category)
+    check_count += validate_event_semantics(content_dir, errors, items_by_category, paths_by_category)
+    return errors, check_count
 
 
 def validate_schema_shape(category: str, schema_path: Path, schema: dict[str, Any]) -> tuple[list[str], list[str]]:
@@ -178,6 +453,8 @@ def validate_content_dir(content_dir: Path, schemas: dict[str, dict[str, Any]]) 
     warnings: list[str] = []
     category_counts: dict[str, int] = {}
     seen_ids: dict[str, str] = {}
+    items_by_category: dict[str, dict[str, dict[str, Any]]] = {category: {} for category in CONTENT_CATEGORIES}
+    paths_by_category: dict[str, dict[str, str]] = {category: {} for category in CONTENT_CATEGORIES}
 
     for category in CONTENT_CATEGORIES:
         schema = schemas.get(category)
@@ -215,11 +492,17 @@ def validate_content_dir(content_dir: Path, schemas: dict[str, dict[str, Any]]) 
                     errors.append(f"{label}: duplicate id also found in {seen_ids[qualified_id]}")
                 else:
                     seen_ids[qualified_id] = str(relative_path)
+                    items_by_category[category][str(item_id)] = payload
+                    paths_by_category[category][str(item_id)] = str(relative_path)
+
+    semantic_errors, semantic_check_count = validate_content_semantics(content_dir, items_by_category, paths_by_category)
+    errors.extend(semantic_errors)
 
     return {
         "content_dir": str(content_dir),
         "decision": "content_schema_contract_valid" if not errors else "content_schema_contract_invalid",
         "category_counts": category_counts,
+        "semantic_check_count": semantic_check_count,
         "errors": errors,
         "warnings": warnings,
     }
@@ -241,12 +524,13 @@ def build_report(schema_manifest: Path, content_dirs: list[Path]) -> dict[str, A
         "schema_count": len(schemas),
         "expected_schema_count": len(CONTENT_CATEGORIES),
         "content_pack_count": len(content_reports),
+        "semantic_check_count": sum(content_report["semantic_check_count"] for content_report in content_reports),
         "errors": errors,
         "warnings": warnings,
         "content_packs": content_reports,
         "limitations": [
             "This validator supports the JSON Schema subset used in content/schemas only.",
-            "It checks structural contract, required fields, enums, id patterns, and simple numeric bounds.",
+            "It checks structural contract, required fields, enums, id patterns, simple numeric bounds, cross-file references, and basic timing/range semantics.",
             "It does not run GameCore loading, static budget gates, Bot simulation, Replay regression, or human review.",
         ],
     }
@@ -260,15 +544,18 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Decision: `{report['decision']}`",
         f"- Schemas: {report['schema_count']} / {report['expected_schema_count']}",
         f"- Content packs: {report['content_pack_count']}",
+        f"- Semantic checks: {report['semantic_check_count']}",
         "",
         "## Content Packs",
         "",
-        "| Content Dir | Decision | Items |",
-        "|---|---|---:|",
+        "| Content Dir | Decision | Items | Semantic Checks |",
+        "|---|---|---:|---:|",
     ]
     for content_report in report["content_packs"]:
         total_items = sum(content_report["category_counts"].values())
-        lines.append(f"| `{content_report['content_dir']}` | `{content_report['decision']}` | {total_items} |")
+        lines.append(
+            f"| `{content_report['content_dir']}` | `{content_report['decision']}` | {total_items} | {content_report['semantic_check_count']} |"
+        )
 
     lines.extend(["", "## Errors", ""])
     if report["errors"]:
