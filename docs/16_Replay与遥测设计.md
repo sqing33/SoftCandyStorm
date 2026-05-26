@@ -256,3 +256,31 @@ python3 harness/telemetry_privacy/validate_telemetry_privacy_policy.py \
   --report harness/reports/2026-05-26_telemetry_privacy_policy_001/telemetry_privacy_policy.json \
   --markdown harness/reports/2026-05-26_telemetry_privacy_policy_001/summary.md
 ```
+
+## 本地存档与数据控制
+
+局外存档属于本地优先数据，也必须遵守遥测隐私原则。v0 存档契约位于：
+
+```text
+harness/save_contract/save_state_v0_template.json
+harness/save_contract/README.md
+```
+
+该契约要求：
+
+- 上传型遥测、raw replay 上传和崩溃报告上传默认关闭。
+- 存档声明 `local_only_by_default` 和 `upload_requires_opt_in`。
+- 必须提供删除存档和导出存档的控制项。
+- 导出格式首版固定为 JSON。
+- 存档字段不得包含个人身份、IP、本地绝对路径、自由文本输入或 raw replay 输入。
+
+当前校验命令：
+
+```bash
+python3 tools/validate_save_state_contract.py \
+  harness/save_contract/save_state_v0_template.json \
+  --report harness/reports/2026-05-26_save_state_contract_001/save_state_contract.json \
+  --markdown harness/reports/2026-05-26_save_state_contract_001/summary.md
+```
+
+该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值，不代表 Runtime 已经实现真实按钮、设置页、平台隐私文本或上传链路。

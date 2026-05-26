@@ -407,7 +407,7 @@
       "doc_id": "16",
       "doc_path": "docs/16_Replay与遥测设计.md",
       "status": "partial",
-      "summary": "Replay strict 回归、Runtime capture、遥测样本和隐私策略校验模板已有实现；Runtime 设置开关、删除/导出流程、法律审查和真实遥测闭环尚未完成。",
+      "summary": "Replay strict 回归、Runtime capture、遥测样本、隐私策略校验模板和本地存档数据控制契约已有实现；Runtime 设置开关、真实删除/导出流程、法律审查和真实遥测闭环尚未完成。",
       "coverage": [
         {
           "id": "replay-and-telemetry",
@@ -418,11 +418,14 @@
             "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md",
             "harness/telemetry_privacy/validate_telemetry_privacy_policy.py",
             "harness/reports/2026-05-26_telemetry_privacy_policy_001/summary.md",
+            "harness/save_contract/save_state_v0_template.json",
+            "tools/validate_save_state_contract.py",
+            "harness/reports/2026-05-26_save_state_contract_001/summary.md",
             "crates/game_runtime/src/main.rs"
           ],
           "gaps": [
             "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
-            "隐私策略已有可校验模板，但 Runtime 设置开关、删除/导出流程、法律审查和实际上传禁用/同意逻辑尚未完成。"
+            "隐私策略和存档契约已有可校验模板，但 Runtime 设置开关、真实删除/导出按钮、法律审查和实际上传禁用/同意逻辑尚未完成。"
           ],
           "blockers": [
             "local_binary_launch_blocked"
@@ -457,7 +460,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、meta progression、accepted lockfile 入口和 Runtime meta panel 已有原型，章节剧情 / 图鉴候选内容已有 generated candidate 与校验报告；完整基地、存档、图鉴 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel 和 v0 存档契约已有原型，章节剧情 / 图鉴候选内容已有 generated candidate 与校验报告；完整基地、真实存取档、图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -467,12 +470,15 @@
             "crates/game_core/src/meta.rs",
             "harness/reports/2026-05-25_meta_progression_smoke_001/summary.md",
             "harness/reports/2026-05-25_runtime_meta_panel_smoke_001/summary.md",
+            "harness/save_contract/save_state_v0_template.json",
+            "tools/validate_save_state_contract.py",
+            "harness/reports/2026-05-26_save_state_contract_001/summary.md",
             "harness/generated_candidates/2026-05-26_story_codex_seed_pack/README.md",
             "harness/story_review/story_codex_manual_review_template.json",
             "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md"
           ],
           "gaps": [
-            "缺少完整存档、基地 UI、章节目标链、图鉴 UI 和真实 10 分钟完整局验证。",
+            "已有 v0 存档 JSON 契约，但缺少 Runtime 真实存取档、存档迁移、基地 UI、章节目标链、图鉴 UI 和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选尚未由真人填写审校记录并通过，也未进入任何 Runtime UI 候选接入。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
