@@ -1,0 +1,179 @@
+{
+  "batch_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "generated_at": "2026-05-26",
+  "generator": {
+    "tool": "mmx-cli",
+    "auth_method": "api-key",
+    "source": "local configured mmx credentials",
+    "region": "cn"
+  },
+  "plan": {
+    "source": "harness/asset_review/mmx_asset_generation_plan_template.json",
+    "validation_report": "harness/reports/2026-05-26_mmx_asset_generation_plan_template_001/summary.md",
+    "deviations": [
+      {
+        "planned": "speech voice Chinese_female_news_anchor",
+        "actual": "Chinese (Mandarin)_News_Anchor",
+        "reason": "mmx speech synthesize returned voice id not exist for the planned voice; `mmx speech voices` listed Chinese (Mandarin)_News_Anchor."
+      }
+    ]
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "候选 metadata 校验",
+      "人工美术审查",
+      "人工听感审查",
+      "响度统一",
+      "确认 voice fallback 是否可接受",
+      "正式接入前再次确认来源、prompt、版本和后处理说明"
+    ]
+  },
+  "commands": [
+    "mmx image generate --prompt 'Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark.' --aspect-ratio 1:1 --n 2 --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/images --out-prefix player_jar_keeper_topdown_v005 --output json --non-interactive --quiet",
+    "mmx speech synthesize --text '警报！裂星糖罐核心苏醒了！' --voice 'Chinese (Mandarin)_News_Anchor' --language zh --format mp3 --out asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/audio/voice_boss_arrival_cn_v002.mp3 --output json --non-interactive --quiet",
+    "mmx music generate --prompt 'Eight second instrumental boss arrival sting for a cute candy roguelite, playful but dramatic candy machine rumble, bright bells, fizzy synth bubbles, short clean ending, no vocals, no lyrics, suitable for game UI transition.' --instrumental --format mp3 --out asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/music/sting_boss_arrival_v002_source.mp3 --output json --non-interactive --quiet",
+    "python3 tools/asset_postprocess.py key-singles asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/images/player_jar_keeper_topdown_v005_001.jpg asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/images/player_jar_keeper_topdown_v005_002.jpg --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005 --background auto --threshold 42 --padding 8 --manifest asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/metadata/postprocess_topdown_v005.json",
+    "python3 tools/asset_postprocess.py clean-components asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005/player_jar_keeper_topdown_v005_001.png asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005/player_jar_keeper_topdown_v005_002.png --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005_clean --min-alpha 24 --keep-components 1 --padding 8 --manifest asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/metadata/component_cleanup_topdown_v005.json",
+    "python3 tools/asset_postprocess.py make-previews asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005_clean/player_jar_keeper_topdown_v005_001_clean.png asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/topdown_v005_clean/player_jar_keeper_topdown_v005_002_clean.png --out-dir asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/review_previews/topdown_v005 --canvas-size 128 --preview-sizes 128,64,32 --occupancy 0.86 --contact-cols 2 --manifest asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/metadata/preview_topdown_v005.json",
+    "ffmpeg -y -hide_banner -ss 0.40 -t 8.0 -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/music/sting_boss_arrival_v002_source.mp3 -af 'afade=t=in:st=0:d=0.05,afade=t=out:st=7.35:d=0.65,loudnorm=I=-16:TP=-1.5:LRA=11' -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3"
+  ],
+  "generation_prompts": {
+    "player_jar_keeper_topdown_v005": "Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark.",
+    "sting_boss_arrival_v002": "Eight second instrumental boss arrival sting for a cute candy roguelite, playful but dramatic candy machine rumble, bright bells, fizzy synth bubbles, short clean ending, no vocals, no lyrics, suitable for game UI transition."
+  },
+  "assets": [
+    {
+      "id": "player_jar_keeper_topdown_v005_001",
+      "type": "image",
+      "source_path": "images/player_jar_keeper_topdown_v005_001.jpg",
+      "processed_path": "processed/topdown_v005_clean/player_jar_keeper_topdown_v005_001_clean.png",
+      "runtime_32_path": "review_previews/topdown_v005/runtime_32/player_jar_keeper_topdown_v005_001_clean_runtime_32.png",
+      "preview_paths": [
+        "review_previews/topdown_v005/preview_128/player_jar_keeper_topdown_v005_001_clean_preview_128.png",
+        "review_previews/topdown_v005/preview_64/player_jar_keeper_topdown_v005_001_clean_preview_64.png",
+        "review_previews/topdown_v005/preview_32/player_jar_keeper_topdown_v005_001_clean_preview_32.png"
+      ],
+      "format": "jpg/png",
+      "dimensions": {
+        "source_width": 1024,
+        "source_height": 1024,
+        "processed_width": 595,
+        "processed_height": 617
+      },
+      "size": "118K source, processed PNG candidate generated",
+      "prompt": "Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark.",
+      "negative_prompt": "front view, side view, standing mascot, text, watermark, logo, realistic gore, horror, dark sci-fi, busy background, shadows crossing sprite boundaries",
+      "postprocess_manifest": "metadata/preview_topdown_v005.json",
+      "qa_status": "needs_visual_review",
+      "qa_notes": [
+        "已生成透明 PNG 和 128/64/32 小尺寸预览。",
+        "需要人工确认是否真正符合严格俯视角。",
+        "需要检查边缘透明、伪文字、水印和 32px 可读性。"
+      ]
+    },
+    {
+      "id": "player_jar_keeper_topdown_v005_002",
+      "type": "image",
+      "source_path": "images/player_jar_keeper_topdown_v005_002.jpg",
+      "processed_path": "processed/topdown_v005_clean/player_jar_keeper_topdown_v005_002_clean.png",
+      "runtime_32_path": "review_previews/topdown_v005/runtime_32/player_jar_keeper_topdown_v005_002_clean_runtime_32.png",
+      "preview_paths": [
+        "review_previews/topdown_v005/preview_128/player_jar_keeper_topdown_v005_002_clean_preview_128.png",
+        "review_previews/topdown_v005/preview_64/player_jar_keeper_topdown_v005_002_clean_preview_64.png",
+        "review_previews/topdown_v005/preview_32/player_jar_keeper_topdown_v005_002_clean_preview_32.png"
+      ],
+      "format": "jpg/png",
+      "dimensions": {
+        "source_width": 1024,
+        "source_height": 1024,
+        "processed_width": 490,
+        "processed_height": 517
+      },
+      "size": "111K source, processed PNG candidate generated",
+      "prompt": "Strict top-down 2D game sprite for a cute candy roguelite, trainee candy jar keeper, only top surfaces visible, no standing body, no front face, rounded cream white and soft pink candy shapes, clear silhouette, thick outline, readable at 32px, isolated on flat chroma key green background, no text, no watermark.",
+      "negative_prompt": "front view, side view, standing mascot, text, watermark, logo, realistic gore, horror, dark sci-fi, busy background, shadows crossing sprite boundaries",
+      "postprocess_manifest": "metadata/preview_topdown_v005.json",
+      "qa_status": "repair_review",
+      "qa_notes": [
+        "component cleanup 保留最大组件，移除了 1px 离散组件。",
+        "需要人工确认是否裁掉有效边缘元素。",
+        "需要人工确认 32px 下角色身份和糖罐主题是否清晰。"
+      ]
+    },
+    {
+      "id": "voice_boss_arrival_cn_v002",
+      "type": "speech",
+      "path": "audio/voice_boss_arrival_cn_v002.mp3",
+      "format": "mp3",
+      "duration_seconds": 3.239188,
+      "sample_rate_hz": 32000,
+      "channels": 1,
+      "bitrate": "133.7 kbps",
+      "size": "53K",
+      "text": "警报！裂星糖罐核心苏醒了！",
+      "voice": "Chinese (Mandarin)_News_Anchor",
+      "prompt": "Chinese prototype boss arrival voice prompt for a cute candy roguelite: 警报！裂星糖罐核心苏醒了！",
+      "qa_status": "needs_listening_review",
+      "qa_notes": [
+        "计划声线 Chinese_female_news_anchor 不存在，实际使用 Chinese (Mandarin)_News_Anchor。",
+        "需要人工确认中文发音、语气、响度和战斗音效上方可读性。",
+        "接入前需要字幕/无障碍替代和可关闭设置。"
+      ]
+    },
+    {
+      "id": "sting_boss_arrival_v002_source",
+      "type": "music",
+      "path": "music/sting_boss_arrival_v002_source.mp3",
+      "format": "mp3",
+      "duration_seconds": 72.887438,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "256.4 kbps",
+      "size": "2.2M",
+      "prompt": "Eight second instrumental boss arrival sting for a cute candy roguelite, playful but dramatic candy machine rumble, bright bells, fizzy synth bubbles, short clean ending, no vocals, no lyrics, suitable for game UI transition.",
+      "generation_options": {
+        "instrumental": true,
+        "format": "mp3"
+      },
+      "qa_status": "repair_trim",
+      "qa_notes": [
+        "生成结果约 72.9 秒，长于 8 秒 Boss 出场 sting 目标。",
+        "原始长版本仅可作为音乐剪辑来源候选，不可直接接入 Boss 出场事件。",
+        "已生成 8 秒剪辑候选 processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3。"
+      ]
+    },
+    {
+      "id": "sting_boss_arrival_v002_trim8s",
+      "type": "music",
+      "path": "processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3",
+      "source_path": "music/sting_boss_arrival_v002_source.mp3",
+      "format": "mp3",
+      "duration_seconds": 8.0,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "194.9 kbps",
+      "size": "190K",
+      "postprocess_manifest": "metadata/postprocess_audio_v002.json",
+      "qa_status": "needs_listening_review",
+      "qa_notes": [
+        "长度符合 6-10 秒 Boss 出场 sting 目标。",
+        "仍需人工听感审查起落点、可爱紧张感、结尾和与 Boss 语音叠放效果。",
+        "正式接入前需要响度统一和触发频率检查。"
+      ]
+    }
+  ],
+  "batch_qa": {
+    "gate_result": "needs_review",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "release_ready": false,
+    "notes": [
+      "本批次补齐了生成计划、原始输出、图像后处理、音频裁剪和小尺寸预览。",
+      "素材仍需要真人美术 / 听感审查，不可直接进入 Runtime 或 accepted_content。",
+      "voice fallback 是有意记录的计划偏差，不代表语音已验收。"
+    ]
+  }
+}

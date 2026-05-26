@@ -223,6 +223,43 @@ asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/
 
 结论：该批次全部仍在 `generated_candidates`，不得直接进入正式 Runtime 素材。
 
+### Runtime 俯视角玩家与 Boss 出场音频
+
+批次路径：
+
+```text
+asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/
+```
+
+该批次来自 `harness/asset_review/mmx_asset_generation_plan_template.json`，生成前计划报告为：
+
+```text
+harness/reports/2026-05-26_mmx_asset_generation_plan_template_001/summary.md
+```
+
+生成内容：
+
+- `player_jar_keeper_topdown_v005_001`、`player_jar_keeper_topdown_v005_002`：玩家糖罐守护者俯视角 sprite 候选，包含原图、透明 PNG 后处理和 128/64/32 小尺寸预览。
+- `voice_boss_arrival_cn_v002`：中文 Boss 出场提示语音候选，文本为“警报！裂星糖罐核心苏醒了！”。计划声线 `Chinese_female_news_anchor` 不存在，实际使用 `Chinese (Mandarin)_News_Anchor`。
+- `sting_boss_arrival_v002_source`：Boss 出场音乐源候选，约 72.9 秒，只能作为剪辑来源。
+- `sting_boss_arrival_v002_trim8s`：从音乐源剪出的 8 秒 Boss 出场 sting 候选，仍需人工听感、响度和语音叠放审查。
+
+已生成 strict metadata 报告：
+
+```text
+harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_metadata_001/summary.md
+```
+
+已生成覆盖全部 5 个素材 id 的人工审查草稿：
+
+```text
+harness/asset_review/drafts/2026-05-26_mmx_runtime_topdown_audio_plan_review_draft.json
+```
+
+草稿校验报告当前为 `asset_candidate_manual_review_invalid`，原因是 TODO 评分尚未由真人填写；这正是预期状态，不能作为人工通过证据。
+
+结论：该批次全部仍在 `generated_candidates`，不得直接进入正式 Runtime 素材。
+
 ## 生图后处理流程
 
 1. 生成图片。

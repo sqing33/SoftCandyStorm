@@ -1,0 +1,37 @@
+{
+  "batch_id": "2026-05-26_mmx_runtime_topdown_audio_plan",
+  "postprocessed_at": "2026-05-26",
+  "tool": "ffmpeg",
+  "source": "music/sting_boss_arrival_v002_source.mp3",
+  "outputs": [
+    {
+      "id": "sting_boss_arrival_v002_trim8s",
+      "path": "processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3",
+      "format": "mp3",
+      "duration_seconds": 8.0,
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bitrate": "194.9 kbps",
+      "size": "190K",
+      "source_offset_seconds": 0.4,
+      "trim_duration_seconds": 8.0,
+      "postprocess": [
+        "trim from 0.40s for 8.0s",
+        "0.05s fade in",
+        "0.65s fade out from 7.35s",
+        "loudnorm target I=-16 TP=-1.5 LRA=11",
+        "encode mp3 44.1kHz stereo 192kbps"
+      ],
+      "qa_status": "needs_listening_review",
+      "qa_notes": [
+        "长度符合 6-10 秒 Boss 出场 sting 目标。",
+        "该剪辑来自 72.9 秒 mmx music 源候选，仍需要人工听感审查起落点、可爱糖果风和与 Boss 语音叠放效果。",
+        "接入 Runtime 前需要统一项目响度规范，并确认触发频率不会造成听觉疲劳。"
+      ]
+    }
+  ],
+  "commands": [
+    "ffmpeg -y -hide_banner -ss 0.40 -t 8.0 -i asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/music/sting_boss_arrival_v002_source.mp3 -af 'afade=t=in:st=0:d=0.05,afade=t=out:st=7.35:d=0.65,loudnorm=I=-16:TP=-1.5:LRA=11' -ar 44100 -ac 2 -b:a 192k asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3",
+    "ffprobe -v error -show_entries stream=codec_name,sample_rate,channels -show_entries format=duration,bit_rate -of json asset/generated_candidates/2026-05-26_mmx_runtime_topdown_audio_plan/processed/audio_v002/sting_boss_arrival_v002_trim8s.mp3"
+  ]
+}
