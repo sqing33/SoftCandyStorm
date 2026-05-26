@@ -1438,16 +1438,17 @@
       "id": "phase4_full_pack_balance_repair_probe",
       "summary": "完成一轮 full pack 候选保守修复：削弱 honey-heart 与 cocoa-safety-badge，调整糖霜草地 480-600 秒敌人池，并重跑 validation_003 / simulation_003；Coward 回到目标区间，但 Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 仍因胜率偏高保持 repair，且暴露 GameCore 尚未实现 jump / orbit_player / ranged_spit / shielded 行为压力。",
       "report": "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md"
+    },
+    {
+      "id": "gamecore_enemy_behavior_pressure_support",
+      "summary": "GameCore 增加 jump 突进、orbit_player 绕身、ranged_spit 伤害 hazard、shielded 正面减伤的确定性行为与单测；workspace fmt、clippy、test 全部通过。用 full pack 候选复测后仍为 repair，说明下一步需继续修候选波次和敌人参数。",
+      "report": "harness/reports/2026-05-26_gamecore_enemy_behavior_pressure_audit_001/summary.md"
     }
   ],
   "next_recommended": [
     {
-      "id": "gamecore_enemy_behavior_pressure_support",
-      "summary": "先补 GameCore 对 jump、orbit_player、ranged_spit、shielded 敌人行为的可测实现，再回到 Phase 4 full pack 候选长局压力复测；不要继续只靠增刷怪数量掩盖行为缺口"
-    },
-    {
       "id": "phase4_full_pack_candidate_balance_repair",
-      "summary": "GameCore 行为压力可用后，根据 fail_20260526_026 小步修复 Phase 4 full pack 长局胜率，再重跑 5 seed / 600 秒 all Bot simulate-candidates"
+      "summary": "根据 fail_20260526_026 小步修复 Phase 4 full pack 终局波次、候选敌人参数和长局胜率，再重跑 5 seed / 600 秒 all Bot simulate-candidates"
     },
     {
       "id": "runtime_manual_playtest_capture",

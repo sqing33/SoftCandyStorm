@@ -43,10 +43,11 @@
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
-        "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md"
+        "harness/reports/2026-05-26_post_recovery_replay_regression_smoke_001/summary.md",
+        "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md"
       ],
       "gaps": [
-        "本机 Mach-O 启动已恢复，cargo test --workspace 和 60 秒 headless simulate 已在当前会话重新通过。",
+        "本机 Mach-O 启动已恢复，cargo test --workspace 和 60 秒 headless simulate 已在当前会话重新通过；GameCore 已补 jump、orbit_player、ranged_spit、shielded 敌人行为并通过 workspace fmt / clippy / test。",
         "仍需把恢复后的验证扩展为 release 级多 seed、长局矩阵、Replay 回归和 Gym 对比证据。"
       ],
       "blockers": [],
@@ -137,11 +138,12 @@
         "harness/reports/2026-05-26_base_demo_matrix_600s_seed12345_probe_001/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_validation_003/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md",
+        "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
         "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
       ],
       "gaps": [
-        "Phase 4 full pack 已通过当前会话候选校验并完成多轮 5 seed / 600 秒 all Bot 候选仿真；最新 simulation_003 仍为 repair：Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 胜率高于目标区间，Coward 已回到目标区间。",
-        "这轮修复显示仅调整候选波次和防御被动不足以解决长局偏易；GameCore 尚未把 jump、orbit_player、ranged_spit、shielded 敌人行为转化为真实压力，是继续修复 full pack 前的技术缺口。",
+        "Phase 4 full pack 已通过当前会话候选校验并完成多轮 5 seed / 600 秒 all Bot 候选仿真；GameCore 敌人行为补齐后的 enemy_behavior_simulation_001 仍为 repair：Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 胜率高于目标区间，Coward 保持目标区间。",
+        "这轮修复显示仅补齐敌人行为和调整防御被动不足以解决长局偏易；下一步缺口转为候选终局波次、敌人参数和基础糖霜草地 600 秒压力曲线。",
         "Phase 4 full pack 仍在候选池 / repair_queue，不是正式 accepted_content；不得进入人工试玩候选或 Runtime 正式内容。",
         "设计审查草稿和审查包仍待真人填写 / 使用后通过，final acceptance 模板和 acceptance manifest 模板当前也必须保持 invalid。"
       ],
@@ -150,7 +152,7 @@
         "phase4_full_pack_candidate_bot_gate_repair"
       ],
       "next_actions": [
-        "先补 GameCore 对 jump、orbit_player、ranged_spit、shielded 敌人行为的可测实现，再小步修复 full pack 候选的长局压力并重跑 5 seed / 600 秒 all Bot simulate-candidates。",
+        "小步修复 full pack 候选终局波次、敌人参数和长局压力，并重跑 5 seed / 600 秒 all Bot simulate-candidates。",
         "候选仿真通过且真人试玩通过后再考虑 accepted_content。"
       ]
     },
@@ -173,10 +175,11 @@
         "harness/reports/2026-05-26_post_recovery_candidate_simulation_smoke_001/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
         "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md",
+        "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
         "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
       ],
       "gaps": [
-        "AI 候选闭环已能自动把 full pack 从 validated_candidates 推入 repair_queue，并写出矩阵报告、repair.json、representative replays 和 failure case；最新候选修复后当前结论仍是 repair，不是 playtest。",
+        "AI 候选闭环已能自动把 full pack 从 validated_candidates 推入 repair_queue，并写出矩阵报告、repair.json、representative replays 和 failure case；敌人行为补齐后当前结论仍是 repair，不是 playtest。",
         "候选进入 accepted_content 的链路仍只能用模板和 smoke 证明结构，不能证明内容质量；缺少真实人工试玩接受记录。"
       ],
       "blockers": [
@@ -184,7 +187,7 @@
         "phase4_full_pack_candidate_bot_gate_repair"
       ],
       "next_actions": [
-        "根据 fail_20260526_026 先修 GameCore 敌人行为压力，再重跑 full pack 候选 simulate-candidates。",
+        "根据 fail_20260526_026 继续修 full pack 候选数值与波次压力，并重跑 simulate-candidates。",
         "收集人工审查记录并运行 strict acceptance 校验。"
       ]
     },

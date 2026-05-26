@@ -1005,13 +1005,26 @@ impl GameCore {
 
         for enemy in &mut self.enemies {
             let direction = (player_position - enemy.position).normalized_or_zero();
+            let mut spawned_hazards = Vec::new();
             enemy.velocity = match enemy.behavior {
-                EnemyBehavior::Dash => enemy.dash_velocity(direction, dt),
+                EnemyBehavior::Dash | EnemyBehavior::Jump => enemy.dash_velocity(direction, dt),
+                EnemyBehavior::OrbitPlayer => enemy.orbit_velocity(player_position, direction),
+                EnemyBehavior::RangedSpit => {
+                    let (velocity, hazards) =
+                        enemy.ranged_spit_velocity_and_hazards(player_position, direction, dt);
+                    spawned_hazards = hazards;
+                    velocity
+                }
                 _ => direction * enemy.move_speed,
             };
             enemy.position += enemy.velocity * dt;
             enemy.position.x = enemy.position.x.clamp(-half_width, half_width);
             enemy.position.y = enemy.position.y.clamp(-half_height, half_height);
+            for mut hazard in spawned_hazards {
+                hazard.position.x = hazard.position.x.clamp(-half_width, half_width);
+                hazard.position.y = hazard.position.y.clamp(-half_height, half_height);
+                new_hazards.push(hazard);
+            }
 
             if enemy.behavior == EnemyBehavior::LeaveHazard {
                 enemy.behavior_state.hazard_cooldown_remaining -= dt;
@@ -1268,6 +1281,7 @@ impl GameCore {
     }
 
     fn update_projectiles(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
+        let player_position = self.player.position;
         for projectile in &mut self.projectiles {
             projectile.position += projectile.velocity * dt;
             projectile.lifetime -= dt;
@@ -1283,15 +1297,17 @@ impl GameCore {
 
                 let hit_distance = projectile.radius + enemy.radius;
                 if projectile.position.distance(enemy.position) <= hit_distance {
-                    enemy.health -= projectile.damage;
-                    self.metrics.damage_dealt_by_weapon += projectile.damage;
+                    let damage = projectile.damage
+                        * enemy.projectile_damage_multiplier(projectile.position, player_position);
+                    enemy.health -= damage;
+                    self.metrics.damage_dealt_by_weapon += damage;
                     if enemy.is_boss {
-                        self.metrics.boss_damage += projectile.damage;
+                        self.metrics.boss_damage += damage;
                     }
                     projectile.pierce_remaining = projectile.pierce_remaining.saturating_sub(1);
                     events.push(GameEvent::EnemyHit {
                         entity_id: enemy.entity_id,
-                        damage: projectile.damage,
+                        damage,
                         weapon_id: projectile.weapon_id.clone(),
                     });
                     if projectile.pierce_remaining == 0 {
@@ -2518,8 +2534,9 @@ impl Enemy {
         is_boss: bool,
         behavior_definition: Option<&content::BehaviorDefinition>,
     ) -> Self {
-        let behavior_state =
+        let mut behavior_state =
             behavior_definition.map_or_else(EnemyBehaviorState::default, EnemyBehaviorState::from);
+        behavior_state.orbit_direction = if entity_id % 2 == 0 { 1.0 } else { -1.0 };
         Self {
             entity_id,
             enemy_id: id.to_string(),
@@ -2570,6 +2587,118 @@ impl Enemy {
 
         direction * self.move_speed
     }
+
+    fn orbit_velocity(&self, player_position: Vec2, chase_direction: Vec2) -> Vec2 {
+        let from_player = self.position - player_position;
+        let distance = from_player.length();
+        if distance <= f32::EPSILON {
+            return chase_direction * self.move_speed;
+        }
+
+        let radial = from_player / distance;
+        let tangent = Vec2::new(-radial.y, radial.x) * self.behavior_state.orbit_direction.signum();
+        let radius = self.behavior_state.orbit_radius.max(24.0);
+        if distance > radius * 1.8 {
+            return chase_direction * self.move_speed;
+        }
+
+        let distance_error = ((distance - radius) / radius).clamp(-1.0, 1.0);
+        let radial_velocity = radial
+            * (-distance_error * self.move_speed * self.behavior_state.orbit_approach_weight);
+        let tangent_velocity =
+            tangent * self.move_speed * self.behavior_state.orbit_speed_multiplier;
+        (radial_velocity + tangent_velocity)
+            .clamp_length_max(self.move_speed * self.behavior_state.orbit_speed_multiplier.max(1.0))
+    }
+
+    fn ranged_spit_velocity_and_hazards(
+        &mut self,
+        player_position: Vec2,
+        chase_direction: Vec2,
+        dt: f32,
+    ) -> (Vec2, Vec<Hazard>) {
+        let distance = self.position.distance(player_position);
+        if distance > self.behavior_state.ranged_range {
+            return (chase_direction * self.move_speed, Vec::new());
+        }
+
+        let velocity = if distance < self.behavior_state.ranged_range * 0.35 {
+            chase_direction * -self.move_speed * 0.45
+        } else {
+            Vec2::ZERO
+        };
+
+        if self.behavior_state.ranged_windup_remaining_seconds > 0.0 {
+            self.behavior_state.ranged_windup_remaining_seconds -= dt;
+            if self.behavior_state.ranged_windup_remaining_seconds <= 0.0 {
+                return (velocity, self.ranged_spit_hazards(player_position));
+            }
+            return (velocity, Vec::new());
+        }
+
+        self.behavior_state.ranged_cooldown_remaining_seconds -= dt;
+        if self.behavior_state.ranged_cooldown_remaining_seconds <= 0.0 {
+            self.behavior_state.ranged_cooldown_remaining_seconds =
+                self.behavior_state.ranged_cooldown_seconds;
+            if self.behavior_state.ranged_windup_seconds <= f32::EPSILON {
+                return (velocity, self.ranged_spit_hazards(player_position));
+            }
+            self.behavior_state.ranged_windup_remaining_seconds =
+                self.behavior_state.ranged_windup_seconds;
+        }
+
+        (velocity, Vec::new())
+    }
+
+    fn ranged_spit_hazards(&self, player_position: Vec2) -> Vec<Hazard> {
+        let count = self.behavior_state.ranged_projectile_count.clamp(1, 8);
+        let damage_per_second = if self.behavior_state.ranged_projectile_damage_per_second > 0.0 {
+            self.behavior_state.ranged_projectile_damage_per_second
+        } else {
+            (self.contact_damage_per_second * 1.5).max(2.0)
+        };
+
+        (0..count)
+            .map(|index| {
+                let offset = if count == 1 {
+                    Vec2::ZERO
+                } else {
+                    let angle = std::f32::consts::TAU * index as f32 / count as f32
+                        + self.entity_id as f32 * 0.37;
+                    Vec2::new(angle.cos(), angle.sin())
+                        * self.behavior_state.ranged_projectile_spread_radius
+                };
+                Hazard {
+                    position: player_position + offset,
+                    radius: self.behavior_state.ranged_projectile_radius,
+                    remaining_seconds: self.behavior_state.ranged_projectile_duration_seconds,
+                    slow_multiplier: 1.0,
+                    damage_per_second,
+                }
+            })
+            .collect()
+    }
+
+    fn projectile_damage_multiplier(
+        &self,
+        projectile_position: Vec2,
+        player_position: Vec2,
+    ) -> f32 {
+        if self.behavior != EnemyBehavior::Shielded {
+            return 1.0;
+        }
+
+        let front_direction = (player_position - self.position).normalized_or_zero();
+        let hit_direction = (projectile_position - self.position).normalized_or_zero();
+        if front_direction == Vec2::ZERO || hit_direction == Vec2::ZERO {
+            return self.behavior_state.shield_front_damage_multiplier;
+        }
+        if hit_direction.x * front_direction.x + hit_direction.y * front_direction.y >= 0.0 {
+            self.behavior_state.shield_front_damage_multiplier
+        } else {
+            self.behavior_state.shield_rear_damage_multiplier
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -2594,6 +2723,22 @@ struct EnemyBehaviorState {
     hazard_slow_multiplier: f32,
     contact_slow_multiplier: f32,
     contact_slow_duration_seconds: f32,
+    orbit_radius: f32,
+    orbit_speed_multiplier: f32,
+    orbit_approach_weight: f32,
+    orbit_direction: f32,
+    ranged_range: f32,
+    ranged_windup_seconds: f32,
+    ranged_windup_remaining_seconds: f32,
+    ranged_cooldown_seconds: f32,
+    ranged_cooldown_remaining_seconds: f32,
+    ranged_projectile_count: u32,
+    ranged_projectile_radius: f32,
+    ranged_projectile_duration_seconds: f32,
+    ranged_projectile_damage_per_second: f32,
+    ranged_projectile_spread_radius: f32,
+    shield_front_damage_multiplier: f32,
+    shield_rear_damage_multiplier: f32,
 }
 
 impl Default for EnemyBehaviorState {
@@ -2619,6 +2764,22 @@ impl Default for EnemyBehaviorState {
             hazard_slow_multiplier: 0.8,
             contact_slow_multiplier: 1.0,
             contact_slow_duration_seconds: 0.0,
+            orbit_radius: 160.0,
+            orbit_speed_multiplier: 1.0,
+            orbit_approach_weight: 0.5,
+            orbit_direction: 1.0,
+            ranged_range: 260.0,
+            ranged_windup_seconds: 0.55,
+            ranged_windup_remaining_seconds: 0.0,
+            ranged_cooldown_seconds: 2.8,
+            ranged_cooldown_remaining_seconds: 2.8,
+            ranged_projectile_count: 1,
+            ranged_projectile_radius: 22.0,
+            ranged_projectile_duration_seconds: 0.9,
+            ranged_projectile_damage_per_second: 0.0,
+            ranged_projectile_spread_radius: 42.0,
+            shield_front_damage_multiplier: 0.7,
+            shield_rear_damage_multiplier: 1.2,
         }
     }
 }
@@ -2655,11 +2816,19 @@ impl From<&content::BehaviorDefinition> for EnemyBehaviorState {
             ..Self::default()
         };
         state.dash_charge_seconds = behavior_parameter_f32(parameters, "charge_seconds", 0.6);
-        state.dash_duration_seconds = behavior_parameter_f32(parameters, "dash_seconds", 0.25);
+        state.dash_duration_seconds = behavior_parameter_f32(
+            parameters,
+            "dash_seconds",
+            behavior_parameter_f32(parameters, "jump_duration_seconds", 0.25),
+        );
         state.dash_cooldown_seconds = behavior_parameter_f32(parameters, "cooldown_seconds", 2.0);
         state.dash_cooldown_remaining_seconds = state.dash_cooldown_seconds;
-        state.dash_speed_multiplier =
-            behavior_parameter_f32(parameters, "dash_speed_multiplier", 2.0).max(1.0);
+        state.dash_speed_multiplier = behavior_parameter_f32(
+            parameters,
+            "dash_speed_multiplier",
+            behavior_parameter_f32(parameters, "jump_speed_multiplier", 2.0),
+        )
+        .max(1.0);
         state.split_child_enemy_id = parameters
             .get("child_enemy_id")
             .and_then(|value| value.as_str())
@@ -2687,6 +2856,31 @@ impl From<&content::BehaviorDefinition> for EnemyBehaviorState {
             "duration_seconds",
             0.0,
         );
+        state.orbit_radius = behavior_parameter_f32(parameters, "orbit_radius", 160.0).max(24.0);
+        state.orbit_speed_multiplier =
+            behavior_parameter_f32(parameters, "orbit_speed", 1.0).clamp(0.1, 3.0);
+        state.orbit_approach_weight =
+            behavior_parameter_f32(parameters, "approach_weight", 0.5).clamp(0.0, 2.0);
+        state.ranged_range = behavior_parameter_f32(parameters, "range", 260.0).max(32.0);
+        state.ranged_windup_seconds =
+            behavior_parameter_f32(parameters, "windup_seconds", 0.55).max(0.0);
+        state.ranged_cooldown_seconds =
+            behavior_parameter_f32(parameters, "cooldown_seconds", 2.8).max(0.1);
+        state.ranged_cooldown_remaining_seconds = state.ranged_cooldown_seconds;
+        state.ranged_projectile_count =
+            behavior_parameter_u32(parameters, "projectile_count", 1).clamp(1, 8);
+        state.ranged_projectile_radius =
+            behavior_parameter_f32(parameters, "projectile_radius", 22.0).max(4.0);
+        state.ranged_projectile_duration_seconds =
+            behavior_parameter_f32(parameters, "projectile_duration_seconds", 0.9).max(0.1);
+        state.ranged_projectile_damage_per_second =
+            behavior_parameter_f32(parameters, "damage_per_second", 0.0).max(0.0);
+        state.ranged_projectile_spread_radius =
+            behavior_parameter_f32(parameters, "projectile_spread_radius", 42.0).max(0.0);
+        state.shield_front_damage_multiplier =
+            behavior_parameter_f32(parameters, "front_damage_multiplier", 0.7).clamp(0.05, 2.0);
+        state.shield_rear_damage_multiplier =
+            behavior_parameter_f32(parameters, "rear_damage_multiplier", 1.2).clamp(0.05, 3.0);
         state
     }
 }
@@ -3158,6 +3352,125 @@ mod tests {
         }
 
         assert!(saw_dash);
+    }
+
+    #[test]
+    fn jump_enemy_uses_burst_movement() {
+        let content = ContentPack::base_demo();
+        let bouncy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(80.0, 0.0), &bouncy_definition);
+        enemy.behavior = EnemyBehavior::Jump;
+        enemy.behavior_state.dash_remaining_seconds = 0.2;
+        enemy.behavior_state.dash_direction = Vec2::new(-1.0, 0.0);
+        enemy.behavior_state.dash_speed_multiplier = 2.0;
+        core.enemies.push(enemy);
+
+        core.update_enemy_behavior(0.1, &mut Vec::new());
+
+        let enemy = &core.enemies[0];
+        assert!(enemy.velocity.length() > enemy.move_speed * 1.5);
+    }
+
+    #[test]
+    fn orbit_enemy_moves_tangentially_near_target_radius() {
+        let content = ContentPack::base_demo();
+        let bouncy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(160.0, 0.0), &bouncy_definition);
+        enemy.behavior = EnemyBehavior::OrbitPlayer;
+        enemy.behavior_state.orbit_radius = 160.0;
+        enemy.behavior_state.orbit_approach_weight = 0.0;
+        enemy.behavior_state.orbit_direction = 1.0;
+        core.enemies.push(enemy);
+
+        core.update_enemy_behavior(0.1, &mut Vec::new());
+
+        let enemy = &core.enemies[0];
+        assert!(enemy.velocity.y.abs() > enemy.velocity.x.abs());
+        assert!(enemy.velocity.length() > 0.0);
+    }
+
+    #[test]
+    fn ranged_spit_enemy_spawns_damage_hazard() {
+        let content = ContentPack::base_demo();
+        let bouncy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(120.0, 0.0), &bouncy_definition);
+        enemy.behavior = EnemyBehavior::RangedSpit;
+        enemy.behavior_state.ranged_range = 260.0;
+        enemy.behavior_state.ranged_cooldown_remaining_seconds = 0.0;
+        enemy.behavior_state.ranged_windup_seconds = 0.0;
+        enemy.behavior_state.ranged_projectile_damage_per_second = 5.0;
+        core.enemies.push(enemy);
+
+        core.update_enemy_behavior(0.1, &mut Vec::new());
+
+        assert!(core
+            .hazards
+            .iter()
+            .any(|hazard| hazard.damage_per_second >= 5.0));
+    }
+
+    #[test]
+    fn shielded_enemy_reduces_front_projectile_damage() {
+        let content = ContentPack::base_demo();
+        let bouncy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(60.0, 0.0), &bouncy_definition);
+        enemy.behavior = EnemyBehavior::Shielded;
+        enemy.behavior_state.shield_front_damage_multiplier = 0.5;
+        enemy.behavior_state.shield_rear_damage_multiplier = 1.5;
+        let starting_health = enemy.health;
+        core.enemies.push(enemy);
+        let projectile_id = core.allocate_entity_id();
+        core.projectiles.push(Projectile {
+            entity_id: projectile_id,
+            weapon_id: "test-candy".to_string(),
+            position: Vec2::new(48.0, 0.0),
+            velocity: Vec2::ZERO,
+            damage: 10.0,
+            radius: 12.0,
+            pierce_remaining: 1,
+            lifetime: 1.0,
+        });
+
+        core.update_projectiles(0.0, &mut Vec::new());
+
+        let damage_taken = starting_health - core.enemies[0].health;
+        assert!((damage_taken - 5.0).abs() < 0.01);
     }
 
     #[test]

@@ -181,12 +181,13 @@
             "harness/reports/2026-05-26_base_demo_matrix_600s_seed12345_probe_001/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_validation_003/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
             "harness/repair_queue/2026-05-26_phase4_roster_gap_full_pack/repair.json",
             "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "Phase 4 full pack 仍在候选池 / repair_queue，不是正式内容池；最新保守修复后 5 seed / 600 秒 all Bot 仿真结论仍为 repair，失败 Bot 覆盖 Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route，Coward 已回到目标区间。",
-            "候选 JSON 中 jump、orbit_player、ranged_spit、shielded 敌人行为已可通过 Schema，但 GameCore 当前未把这些行为转成足够的仿真压力，继续修 full pack 前需要补行为实现或明确降级设计。",
+            "Phase 4 full pack 仍在候选池 / repair_queue，不是正式内容池；GameCore 补齐 jump、orbit_player、ranged_spit、shielded 行为后的 5 seed / 600 秒 all Bot 仿真结论仍为 repair，失败 Bot 覆盖 Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route，Coward 仍在目标区间。",
+            "敌人行为压力已进入 GameCore 并有单测，但 full pack 长局仍偏易，继续修复应聚焦候选终局波次、敌人参数和基础糖霜草地 600 秒压力曲线。",
             "设计审查草稿和审查包仍待真人填写 / 使用后通过，simulation candidate 模板、final acceptance 模板和 acceptance manifest 模板当前也必须保持 invalid，最终接受证据包当前为 content_acceptance_review_packet_needs_evidence。"
           ],
           "blockers": [
@@ -435,11 +436,12 @@
             "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
             "harness/repair_queue/2026-05-26_phase4_roster_gap_full_pack/repair.json",
             "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "当前 full pack 已完成恢复后的正式 Harness 候选仿真和一轮保守修复复测，但 gate_status 仍为 repair，尚未进入 simulated_candidates 或 playtest_candidates。",
+            "当前 full pack 已完成恢复后的正式 Harness 候选仿真、一轮保守修复复测和敌人行为补齐后的复测，但 gate_status 仍为 repair，尚未进入 simulated_candidates 或 playtest_candidates。",
             "内容设计审查已有草稿、审查包、校验器、simulation candidate manifest 门禁、final acceptance 门禁、acceptance manifest 门禁和最终接受证据包；accepted content lockfile 已有 blocked 空锁和校验报告，但尚未存在真人 9 局试玩接受、acceptance gate、内容 hash 复核后的非空正式内容锁。"
           ],
           "blockers": [
@@ -542,11 +544,12 @@
             "harness/reports/2026-05-26_release_package_manifest_current_local_003/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
             "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
             "当前 release_candidate_evidence、accepted_content_lockfile 与 release_package_manifest 报告均为 not-ready / blocked；Goal 证据一致性报告确认这些 not-ready / blocked 结论与 docs 覆盖、路线图和 progress 账本一致。",
-            "当前 Phase 4 full pack 600 秒 all Bot 候选仿真在保守修复后仍为 repair，内容 Bot 门禁未过；因此不能进入人工试玩候选、accepted_content 或 Release Candidate。",
+            "当前 Phase 4 full pack 600 秒 all Bot 候选仿真在敌人行为补齐后仍为 repair，内容 Bot 门禁未过；因此不能进入人工试玩候选、accepted_content 或 Release Candidate。",
             "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板、审查包、完整性校验器和最终接受证据包；人工试玩已有真人审查包、strict acceptance invalid 报告和最终接受证据包，内容和素材最终接受已有证据状态包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、非空正式内容锁、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和 release 级运行证据。",
             "人工证据缺口审计当前结论为 manual_evidence_gaps_present：20 个真人证据条目全部仍是 gap，0 个缺失报告；该报告只用于集中排队，不代表任何人工门禁通过。"
           ],
@@ -625,11 +628,12 @@
             "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_validation_003/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
             "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "Rust 二进制恢复后，full pack 已能通过 Harness validate-candidates 并进入 simulate-candidates；保守修复后的 600 秒 all Bot 行为门禁当前仍为 repair。",
-            "Schema 契约已覆盖结构、必填字段、枚举、id、简单数值边界、跨文件引用和基础时间 / 距离 / 阶段语义；但 jump、orbit_player、ranged_spit、shielded 等枚举通过不代表 GameCore 已完整实现其行为压力，content final acceptance 与 acceptance manifest 门禁仍要求最终接受绑定 simulation candidate 和有效 lockfile；accepted_content lockfile 当前为 blocked 空锁，只证明暂无真人接受后的正式内容。"
+            "Rust 二进制恢复后，full pack 已能通过 Harness validate-candidates 并进入 simulate-candidates；保守修复和 GameCore 敌人行为补齐后的 600 秒 all Bot 行为门禁当前仍为 repair。",
+            "Schema 契约已覆盖结构、必填字段、枚举、id、简单数值边界、跨文件引用和基础时间 / 距离 / 阶段语义；jump、orbit_player、ranged_spit、shielded 已有最小 GameCore 行为压力和单测，但 content final acceptance 与 acceptance manifest 门禁仍要求最终接受绑定 simulation candidate 和有效 lockfile；accepted_content lockfile 当前为 blocked 空锁，只证明暂无真人接受后的正式内容。"
           ],
           "blockers": [
             "phase4_full_pack_candidate_bot_gate_repair"
@@ -641,7 +645,7 @@
       "doc_id": "14",
       "doc_path": "docs/14_GameCore接口规格.md",
       "status": "partial",
-      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，v0 公共接口 source-shape 契约已覆盖 PlayerSnapshot.status_effects、StatusEffectSnapshot、RunMetrics per-source 受击来源和 Boss 指标；当前仍无法运行二进制验证接口语义。",
+      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，v0 公共接口 source-shape 契约已覆盖 PlayerSnapshot.status_effects、StatusEffectSnapshot、RunMetrics per-source 受击来源和 Boss 指标；当前会话已通过 workspace fmt / clippy / test，并补齐 jump、orbit_player、ranged_spit、shielded 敌人行为压力。",
       "coverage": [
         {
           "id": "gamecore-runtime-harness-api",
@@ -658,10 +662,11 @@
             "crates/game_core/src/meta.rs",
             "harness/interface_contract/README.md",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
-            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
+            "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md"
           ],
           "gaps": [
-            "cargo test --workspace 已在当前会话通过；仍需刷新 game_harness replay-batch 和 Gym smoke。",
+            "cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace 已在当前会话通过；仍需刷新 release 级 game_harness replay-batch 和 Gym smoke。",
             "source-shape 契约不能证明固定 seed 语义、Replay 兼容性、Runtime 集成或 Gym bridge 行为。",
             "RunMetrics per-source / Boss 指标与 PlayerSnapshot status_effects 已进入 v0 契约，但真实指标语义、Runtime 可读性和 Gym observation 映射仍需运行级验证。"
           ],
@@ -698,10 +703,11 @@
             "harness/reports/2026-05-26_phase4_full_pack_candidate_simulation_600s_001/2026-05-26_phase4_roster_gap_full_pack/summary.md",
             "harness/reports/2026-05-26_base_demo_matrix_600s_seed12345_probe_001/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_003/summary.md",
+            "harness/reports/2026-05-26_phase4_full_pack_enemy_behavior_simulation_001/summary.md",
             "harness/failed_cases/fail_20260526_026_phase4_full_pack_candidate_bot_gate.json"
           ],
           "gaps": [
-            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；恢复后的 full pack 5 seed / 600 秒 all Bot 仿真在保守修复后仍显示候选偏易，Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 胜率高于目标，且 base_demo 同 seed 对照也提示长局基础压力偏易，必须修复行为压力与数值后复跑。",
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；恢复后的 full pack 5 seed / 600 秒 all Bot 仿真在保守修复和敌人行为补齐后仍显示候选偏易，Random、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 胜率高于目标，且 base_demo 同 seed 对照也提示长局基础压力偏易，必须继续修复候选波次、敌人参数与数值后复跑。",
             "平衡已有 9 局人工试玩审查包、strict acceptance invalid 报告和最终接受证据包覆盖新手、熟练和流派视角，但仍缺真人填写后的新手 / 熟练反馈。"
           ],
           "blockers": [
