@@ -235,7 +235,9 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
   --epochs 20
 ```
 
-The first `--context-frames 3` danger-weighted model trained successfully with `input_observation_len = 435` and 86.87% validation accuracy, but Gym comparison was not completed because the local Rust `game_harness` binary was rejected by macOS policy and stalled before `main`. Re-run the 60/300 second high-pressure comparisons after the Rust binary launch issue is fixed; do not treat the context checkpoint as a policy gate pass.
+The first `--context-frames 3` danger-weighted model trained successfully with `input_observation_len = 435` and 86.87% validation accuracy. After Developer Mode / Developer Tool permissions were restored, the local binary diagnostic returned `local_binary_launch_ok`, `game_harness --help` launched, `cargo test --workspace` passed, and Gym comparisons could run again.
+
+The current high-pressure recheck keeps the checkpoint in `repair`: the 60-second `seed-start 42000` comparison reached 100% win rate on all three maps with healthy action entropy, but the 300-second `seed-start 43000` comparison still recorded 0% win rate on `caramel-workshop`. An alternate `seed-start 45000` window moved the weakness to `soda-creek` and `cracked-star-jar`, so this is a policy generalization issue rather than a host launch issue.
 
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 

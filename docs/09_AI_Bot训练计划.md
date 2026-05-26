@@ -296,12 +296,12 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 序列上下文的第一步应先用小规模 smoke 证明链路可用，再训练 3-5 帧模型并复查 60/300 秒 high-pressure 对比。如果仍低于规则 Bot，后续再考虑 GRU/Transformer 或分阶段 policy。
 
-3 帧 danger-weighted behavior clone 已完成训练，输入长度为 435，validation accuracy 为 86.87%。用户恢复 Developer Mode / Developer Tool 权限后，`tools/diagnose_local_binary_launch.py` 在当前 Codex 会话返回 `local_binary_launch_ok`，`target/debug/game_harness --help` 可正常启动，RL 依赖也可通过 `uv run --with-requirements python/train/requirements.txt` 加载。
+3 帧 danger-weighted behavior clone 已完成训练，输入长度为 435，validation accuracy 为 86.87%。用户恢复 Developer Mode / Developer Tool 权限并重启后，`tools/diagnose_local_binary_launch.py` 在当前 Codex 会话返回 `local_binary_launch_ok`，`target/debug/game_harness --help` 可正常启动，`cargo test --workspace` 全绿，RL 依赖也可通过 `uv run --with-requirements python/train/requirements.txt` 加载。`spctl -a -vv target/debug/game_harness` 仍会对 ad-hoc binary 返回 `rejected`，但当前执行链路和 Gym 评估已不再卡在本机启动策略上。
 
 恢复后已补跑 context3 behavior clone 的 high-pressure 三图对比：
 
-- 60 秒 high-pressure 三图、5 seed：三图胜率均为 100%，normalized action entropy 为 0.8740 / 0.9206 / 0.9074，最大动作占比不超过 29.19%，短窗动作分布健康。
-- 300 秒 high-pressure 三图、3 seed：`soda-creek` 胜率 66.67%，`caramel-workshop` 胜率 0%，`cracked-star-jar` 胜率 33.33%；`caramel-workshop` 触发 `zero_policy_win_rate` repair，`cracked-star-jar` 仍低于规则 Bot 对照。
+- 60 秒 high-pressure 三图、5 seed、`seed-start 42000`：三图胜率均为 100%，normalized action entropy 为 0.8740 / 0.9206 / 0.9074，最大动作占比不超过 29.19%，短窗动作分布健康。
+- 300 秒 high-pressure 三图、3 seed、`seed-start 43000`：`soda-creek` 胜率 66.67%，`caramel-workshop` 胜率 0%，`cracked-star-jar` 胜率 33.33%；`caramel-workshop` 触发 `zero_policy_win_rate` repair。额外 `seed-start 45000` 窗口为 `watch`，显示 `soda-creek` 与 `cracked-star-jar` 仍可能低于规则 Bot 基线。
 
 结论：3 帧上下文修复了短窗动作塌缩，但没有解决 300 秒长局泛化，尤其是 `caramel-workshop` 中后期压力。该模型只能保持 `repair`，不能推进为 `rl_test_bot_candidate`。对应 failure case 为 `harness/failed_cases/fail_20260526_027_behavior_clone_context3_caramel_gap.json`。
 

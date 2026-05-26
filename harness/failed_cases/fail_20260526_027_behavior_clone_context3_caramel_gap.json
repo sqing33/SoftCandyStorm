@@ -5,8 +5,8 @@
   "seed": 43000,
   "bot": "BehaviorCloneKiteContext3DangerWeightedSmoke",
   "time_seconds": 300.0,
-  "symptom": "本机二进制启动恢复后，3 帧 danger-weighted behavior clone 在 60 秒 high-pressure 三图 5 seed 对比中全胜且动作熵健康，但 300 秒三图 3 seed 对比暴露长局失败：caramel-workshop 胜率 0%，cracked-star-jar 胜率 33.33%，multi-map gate 为 repair",
-  "root_cause": "3 帧上下文缓解了短窗动作塌缩，但 MLP movement clone 仍缺少更长时序记忆、Boss / hazard 阶段判断和低血量恢复策略；caramel-workshop 的中后期压力会把策略推入持续承伤，cracked-star-jar 仍无法稳定追平规则 Bot",
+  "symptom": "DevTools Terminal 权限恢复后，3 帧 danger-weighted behavior clone 在当前工作区 60 秒 high-pressure 三图 5 seed 对比中全胜且动作熵健康，但 300 秒 seed-start 43000 三图 3 seed 对比仍暴露长局失败：caramel-workshop 胜率 0%，multi-map gate 为 repair；额外 seed-start 45000 窗口为 watch，显示 soda-creek 与 cracked-star-jar 仍可能低于规则 Bot 基线",
+  "root_cause": "3 帧上下文缓解了短窗动作塌缩，但 MLP movement clone 仍缺少更长时序记忆、Boss / hazard 阶段判断、地图条件化和低血量恢复策略；caramel-workshop 的中后期压力会把策略推入持续承伤，其他 seed 窗口也显示高压地图泛化仍不稳定",
   "fix": "不要把该模型推进为 RL 测试 Bot；下一步改为更长序列模型、分阶段 policy 或 PPO 蒸馏初始化，并用 caramel-workshop 中后期失败 replay/轨迹补齐恢复路径，而不是只继续提高短局动作熵",
-  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_context3_danger_weighted_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 43000 --rule-bots random,kite,tank --report harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_multimap_300s_001/comparison.json"
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --behavior-clone-model python/train/models/behavior_clone_kite_high_pressure_context3_danger_weighted_smoke.pt --eval-episodes 3 --eval-seconds 300 --seed-start 43000 --rule-bots random,kite,tank --report harness/reports/2026-05-27_rl_behavior_clone_kite_context3_danger_weighted_multimap_300s_seed43000_001/comparison.json"
 }

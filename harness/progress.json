@@ -1451,8 +1451,8 @@
     },
     {
       "id": "rl_behavior_clone_context3_long_eval_repair",
-      "summary": "3 帧 danger-weighted BC 在本机二进制启动和 RL 依赖恢复后完成 high-pressure 对比：60 秒三图 5 seed 全胜且动作熵健康，但 300 秒三图 3 seed 中 caramel-workshop 胜率 0%、cracked-star-jar 低于规则 Bot，结论为 repair，模型不得推进为 RL 测试 Bot。",
-      "report": "harness/reports/2026-05-26_rl_behavior_clone_kite_context3_danger_weighted_multimap_300s_001/summary.md"
+      "summary": "3 帧 danger-weighted BC 在 DevTools Terminal 权限恢复后重新完成当前工作区 high-pressure 对比：60 秒 seed42000 三图全胜且动作熵健康，但 300 秒 seed43000 中 caramel-workshop 胜率仍为 0%，结论为 repair，模型不得推进为 RL 测试 Bot。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_kite_context3_danger_weighted_multimap_300s_seed43000_001/summary.md"
     },
     {
       "id": "runtime_privacy_local_data_controls",
@@ -1468,6 +1468,11 @@
       "id": "local_binary_launch_after_restart_verified",
       "summary": "用户按权限指引开启 Developer Mode / Terminal developer tool 后重启；after_restart 诊断返回 local_binary_launch_ok，target/debug/game_harness --help、cargo test --workspace 和 60 秒 KiteBot simulate 均在当前会话通过。",
       "report": "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md"
+    },
+    {
+      "id": "local_binary_launch_after_devtools_terminal_retry",
+      "summary": "用户为 Terminal / Visual Studio Code / Codex 开启 Developer Tool 相关权限并重启后再次复测：diagnose_local_binary_launch 返回 local_binary_launch_ok，game_harness --help 0.004 秒返回，cargo test --workspace 112 个单测通过，RL 依赖可加载；spctl 仍对 ad-hoc binary 返回 rejected，但已不构成本机会话启动阻塞。",
+      "report": "harness/reports/2026-05-27_local_binary_launch_diagnostic_after_devtools_terminal_001/summary.md"
     },
     {
       "id": "phase4_full_pack_balance_repair_simulated",
@@ -1496,13 +1501,13 @@
     },
     {
       "id": "release_failure_case_review_refreshed",
-      "summary": "刷新 Release Candidate failure_case_review gate：新增 map-conditioned BC watch 复盘后，全量 harness/failed_cases 33 条正式记录结构校验通过，0 error、0 warning；该通过只覆盖 failure case 记录完整性，不替代人工试玩、素材、剧情、隐私或法律审查。",
-      "report": "harness/reports/2026-05-27_failure_case_validation_003/summary.md"
+      "summary": "刷新 Release Candidate failure_case_review gate：本机二进制启动阻塞复测和 context3 BC repair 复盘已更新，全量 harness/failed_cases 34 条正式记录结构校验通过，0 error、0 warning；该通过只覆盖 failure case 记录完整性，不替代人工试玩、素材、剧情、隐私或法律审查。",
+      "report": "harness/reports/2026-05-27_failure_case_validation_006/summary.md"
     },
     {
       "id": "rl_policy_acceptance_context3_repair",
-      "summary": "刷新 context3 behavior clone 的 RL policy acceptance manifest：本机启动诊断已为 ok，60 秒短中局对比存在且健康，但 300 秒长局报告仍有 repair finding 和 fail_20260526_027 unresolved，结论保持 not-ready。",
-      "report": "harness/reports/2026-05-26_rl_policy_acceptance_template_002/summary.md"
+      "summary": "刷新 context3 behavior clone 的 RL policy acceptance manifest：本机启动诊断引用 DevTools Terminal 复测 ok，60 秒 seed42000 短中局对比健康，但 300 秒 seed43000 长局仍为 repair 且 fail_20260526_027 unresolved，结论保持 not-ready。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_context3_after_devtools_terminal_001/summary.md"
     },
     {
       "id": "rl_behavior_clone_context5_repair",
