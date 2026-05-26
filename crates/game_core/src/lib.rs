@@ -2335,6 +2335,19 @@ fn boss_ability_actions(
     player_position: Vec2,
 ) -> Vec<BossAbilityAction> {
     match ability_id {
+        "dash_charge" => vec![boss_hazard(
+            player_position,
+            1,
+            0.0,
+            104.0,
+            1.25,
+            0.58,
+            20.0,
+        )],
+        "sugar_splash" => vec![
+            boss_summon("sour-gummy", 2, boss_position),
+            boss_hazard(player_position, 3, 150.0, 84.0, 3.2, 0.62, 10.5),
+        ],
         "summon_bouncy_gummy" => vec![boss_summon("bouncy-gummy", 2, boss_position)],
         "summon_soda_bubble" => vec![boss_summon("soda-bubble", 4, boss_position)],
         "summon_caramel_slime" => vec![boss_summon("caramel-slime", 4, boss_position)],
@@ -3221,6 +3234,10 @@ mod tests {
                 } if boss_id == "runaway-sugar-mixer" && ability_id == "dash_charge"
             )
         }));
+        assert!(core
+            .hazards
+            .iter()
+            .any(|hazard| hazard.damage_per_second > 0.0));
     }
 
     #[test]
