@@ -74,7 +74,7 @@
       "doc_id": "03",
       "doc_path": "docs/03_世界观与剧情大纲.md",
       "status": "partial",
-      "summary": "角色、地图、事件和内容描述已承载糖果王国设定，章节剧情和图鉴文本已有 generated candidate 候选包与纯 Python 校验报告；局内叙事 UI、人工审校和正式接受链路仍未完成。",
+      "summary": "角色、地图、事件和内容描述已承载糖果王国设定，章节剧情和图鉴文本已有 generated candidate 候选包、纯 Python 校验报告和覆盖全条目的人工审校草稿；局内叙事 UI、真人审校和正式接受链路仍未完成。",
       "coverage": [
         {
           "id": "worldbuilding-content-hooks",
@@ -87,10 +87,13 @@
             "harness/generated_candidates/2026-05-26_story_codex_seed_pack/README.md",
             "tools/validate_story_codex_candidates.py",
             "harness/story_review/validate_story_codex_manual_review.py",
-            "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md"
+            "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md",
+            "harness/story_review/create_story_codex_review_draft.py",
+            "harness/story_review/test_create_story_codex_review_draft.py",
+            "harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json"
           ],
           "gaps": [
-            "章节剧情和图鉴文本仍在 generated_candidates，已有人工审校记录模板但尚未由真人填写并通过。",
+            "章节剧情和图鉴文本仍在 generated_candidates，已有人工审校记录模板和自动草稿，但尚未由真人填写并通过。",
             "缺少章节剧情 UI、图鉴 UI 和局外叙事推进的 Runtime 接入。",
             "缺少真实玩家对剧情节奏、语气和信息量的反馈。"
           ]
@@ -473,7 +476,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel 和 v0 存档契约已有原型，章节剧情 / 图鉴候选内容已有 generated candidate 与校验报告；完整基地、真实存取档、图鉴 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、meta progression、accepted lockfile 入口、Runtime meta panel 和 v0 存档契约已有原型，章节剧情 / 图鉴候选内容已有 generated candidate、校验报告和人工审校草稿；完整基地、真实存取档、图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -488,11 +491,14 @@
             "harness/reports/2026-05-26_save_state_contract_001/summary.md",
             "harness/generated_candidates/2026-05-26_story_codex_seed_pack/README.md",
             "harness/story_review/story_codex_manual_review_template.json",
-            "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md"
+            "harness/reports/2026-05-26_story_codex_candidate_validation_001/summary.md",
+            "harness/story_review/create_story_codex_review_draft.py",
+            "harness/story_review/test_create_story_codex_review_draft.py",
+            "harness/story_review/drafts/2026-05-26_story_codex_seed_pack_review_draft.json"
           ],
           "gaps": [
             "已有 v0 存档 JSON 契约，但缺少 Runtime 真实存取档、存档迁移、基地 UI、章节目标链、图鉴 UI 和真实 10 分钟完整局验证。",
-            "剧情 / 图鉴候选尚未由真人填写审校记录并通过，也未进入任何 Runtime UI 候选接入。",
+            "剧情 / 图鉴候选已有自动草稿防漏审，但尚未由真人填写审校记录并通过，也未进入任何 Runtime UI 候选接入。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
           "blockers": [
