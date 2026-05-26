@@ -17,7 +17,7 @@
 | `headless_simulation` | `blocked` | 1 | False |
 | `multi_seed_no_deadlock` | `blocked` | 1 | False |
 | `content_schema` | `blocked` | 2 | False |
-| `static_budget` | `blocked` | 1 | False |
+| `static_budget` | `blocked` | 3 | False |
 | `bot_matrix` | `blocked` | 1 | False |
 | `replay_regression` | `blocked` | 1 | False |
 | `performance` | `blocked` | 1 | False |

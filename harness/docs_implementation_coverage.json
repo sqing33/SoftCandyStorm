@@ -404,7 +404,7 @@
       "doc_id": "15",
       "doc_path": "docs/15_经济与数值平衡模型.md",
       "status": "partial",
-      "summary": "已有静态预算、Bot 矩阵、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡尚未完成。",
+      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、Bot 矩阵、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需恢复二进制和真人试玩。",
       "coverage": [
         {
           "id": "balance-budget-and-regression",
@@ -413,10 +413,14 @@
           "evidence": [
             "harness/reports/2026-05-26_six_map_boss_matrix_scoping_001/summary.md",
             "harness/reports/2026-05-26_caramel_workshop_balance_repair_001/summary.md",
-            "harness/failed_cases/fail_20260526_002_six_map_boss_balance_spread.json"
+            "harness/failed_cases/fail_20260526_002_six_map_boss_balance_spread.json",
+            "tools/validate_static_balance_budget.py",
+            "tools/test_validate_static_balance_budget.py",
+            "harness/reports/2026-05-26_static_balance_budget_base_demo_001/summary.md",
+            "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md"
           ],
           "gaps": [
-            "需要恢复二进制后重跑更大样本多地图矩阵。",
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack，但正式 game_harness budget-content、Bot 矩阵和 Replay 回归仍需恢复二进制后重跑。",
             "平衡仍缺真人新手/熟练视角反馈。"
           ],
           "blockers": [
