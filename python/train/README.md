@@ -347,6 +347,8 @@ Use `--teacher-temperature` and `--uniform-target-mix` only as explicit repair e
 
 The first full distillation + PPO warm-start used 21,726 phase-aligned samples and the action-change staged GRU teacher. Five distillation epochs reached 0.6916 validation argmax accuracy, then 2,048 PPO timesteps on high-pressure maps completed. The policy still failed: all three 60-second maps triggered action-distribution repair, and all three 300-second maps recorded 0% win rate with action 3 dominant ratio above 0.76. Treat this as a repair result for the current teacher/reward setup, not a reason to promote PPO.
 
+The first full target-entropy distillation used `--teacher-temperature 1.5 --uniform-target-mix 0.05`, raising target entropy to 1.186717. It improved the 60-second high-pressure comparison to 80% win rate on all three maps without triggering the compare script's action-bias repair, but the 300-second comparison still recorded 0% win rate on all three maps and shifted the long-run bias to action 6. Treat it as a short-window repair signal only.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash

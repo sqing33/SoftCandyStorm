@@ -1603,6 +1603,11 @@
       "id": "rl_sb3_bc_distillation_target_entropy_smoke",
       "summary": "PPO 蒸馏入口新增 teacher temperature 与 uniform target mix，用于显式提高 teacher probability target entropy；128 样本 smoke 可写出 SB3 zip 并由 train_sb3 加载评估，但 10 秒评估仍以 action 3 为主，结论保持 smoke-only。",
       "report": "harness/reports/2026-05-27_rl_sb3_bc_distillation_target_entropy_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_target_entropy_warmstart_repair",
+      "summary": "全量 target-entropy PPO 蒸馏把 target entropy 提高到 1.186717，并让 60 秒 high-pressure 三图达到 80% / 80% / 80%；但 300 秒三图仍全部 0%，长局动作偏置转移到 action 6，结论为 repair。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_ppo_target_entropy_warmstart_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1612,7 +1617,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU 和首个 PPO 蒸馏 warm-start 均为 repair；target-entropy 蒸馏旋钮已通过 smoke，下一步可跑全量 target-entropy distillation + PPO warm-start，或继续引入升级与阶段目标监督。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start 和 target-entropy warm-start 均为 repair；下一步不要只微调 target entropy，应引入升级 / 阶段目标监督，或允许 warm-start 后配置 PPO entropy / curriculum。"
     },
     {
       "id": "phase4_full_pack_manual_review",

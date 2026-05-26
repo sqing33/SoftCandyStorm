@@ -1,0 +1,68 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-27_rl_sb3_bc_distillation_target_entropy_full_001/ppo_bc_distilled_target_entropy.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "distillation_source": {
+    "mode": "teacher_probs",
+    "teacher_model": "harness/reports/2026-05-27_rl_behavior_clone_kite_staged_gru_context8_action_change_smoke_001/staged.pt",
+    "teacher_argmax_agreement": 0.8365,
+    "target_transform": {
+      "teacher_temperature": 1.5,
+      "uniform_target_mix": 0.05
+    },
+    "target_entropy_nats": 1.186717,
+    "target_argmax_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 3026,
+        "ratio": 0.1393
+      },
+      "2": {
+        "count": 2310,
+        "ratio": 0.1063
+      },
+      "3": {
+        "count": 3747,
+        "ratio": 0.1725
+      },
+      "4": {
+        "count": 2050,
+        "ratio": 0.0944
+      },
+      "5": {
+        "count": 2966,
+        "ratio": 0.1365
+      },
+      "6": {
+        "count": 2140,
+        "ratio": 0.0985
+      },
+      "7": {
+        "count": 3091,
+        "ratio": 0.1423
+      },
+      "8": {
+        "count": 2396,
+        "ratio": 0.1103
+      }
+    }
+  },
+  "observation_version": 2,
+  "observation_len": 145,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.0,
+    "clip_range": 0.2
+  },
+  "started_at": "2026-05-26T21:27:27.538856+00:00",
+  "completed_at": "2026-05-26T21:27:29.220014+00:00"
+}

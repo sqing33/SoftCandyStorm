@@ -269,6 +269,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 首个全量蒸馏 + PPO warm-start 候选使用 21726 条 phase-aligned 样本和 action-change staged GRU teacher，5 epoch 蒸馏后 validation argmax accuracy 为 0.6916；随后在 high-pressure 三图上 warm-start PPO 2048 timesteps。结果仍为 `repair`：60 秒三图均触发 action distribution repair，300 秒三图全部 0% 胜率且 action 3 dominant ratio 为 0.7728 / 0.7631 / 0.8494。结论：蒸馏入口可用，但短 PPO 训练会继承 / 放大当前 teacher 的动作偏置；下一步应改 teacher targets、增加 entropy / curriculum，或纳入升级与阶段目标监督。
 
+target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mix 0.05`，把全量 target entropy 提高到 1.186717，并在 60 秒 high-pressure 三图达到 80% / 80% / 80% 胜率且不再触发 compare 内部 action-bias repair。但 300 秒三图仍全部 0% 胜率，长局中 action 6 dominant ratio 在 caramel / cracked 达到 0.8237 / 0.8119。结论：target entropy 是短窗修复方向，但不能替代升级 / 阶段目标监督或 warm-start 后的 PPO entropy / curriculum。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。
