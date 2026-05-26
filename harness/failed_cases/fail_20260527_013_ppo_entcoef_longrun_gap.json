@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_013",
+  "category": "rl",
+  "content_id": "ppo_target_entropy_entcoef_warmstart",
+  "seed": 55000,
+  "bot": "PpoTargetEntropyEntcoefWarmstart",
+  "time_seconds": 300.0,
+  "symptom": "target-entropy PPO warm-start 加 ent_coef 0.02 后，60 秒 high-pressure 三图 normalized entropy 达到 0.5801 / 0.5823 / 0.5307，但 300 秒三图仍全部 0% 胜率。",
+  "root_cause": "提高 PPO entropy coefficient 能改善短窗动作多样性，但 movement-only 策略仍缺少升级选择、阶段目标和长局路线规划信号；300 秒压力下无法稳定转化为通关行为。",
+  "fix": "下一步应加入升级 / 阶段目标监督或 curriculum，而不是只继续提高 entropy coefficient；完整候选仍需 high-pressure 60/300 秒对比和 RL acceptance 验证。",
+  "validation": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --model-in harness/reports/2026-05-27_rl_sb3_bc_distillation_target_entropy_full_001/ppo_bc_distilled_target_entropy.zip --model-out harness/reports/2026-05-27_rl_ppo_target_entropy_entcoef_warmstart_001/ppo_target_entropy_entcoef_warmstart.zip --report-dir harness/reports/2026-05-27_rl_ppo_target_entropy_entcoef_warmstart_001 --timesteps 2048 --train-map-preset high-pressure --train-map-selection cycle --train-seconds 300 --eval-seconds 60 --map-id soda-creek --ent-coef 0.02；随后用 high-pressure 60 秒 seed-start 54000 与 300 秒 seed-start 55000 对比规则 Bot。"
+}

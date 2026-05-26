@@ -1,0 +1,40 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-27_rl_ppo_target_entropy_entcoef_warmstart_001/ppo_target_entropy_entcoef_warmstart.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "seed": 12345,
+  "content_dir": "content/base_demo",
+  "content_rules": "headless GameCore via game_harness gym-bridge",
+  "reward_config": "prototype reward in game_harness gym_reward",
+  "warm_start_model": "harness/reports/2026-05-27_rl_sb3_bc_distillation_target_entropy_full_001/ppo_bc_distilled_target_entropy.zip",
+  "warm_start_metadata_path": "harness/reports/2026-05-27_rl_sb3_bc_distillation_target_entropy_full_001/ppo_bc_distilled_target_entropy_metadata.json",
+  "observation_version": 2,
+  "observation_len": 145,
+  "training_seconds": 300.0,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.02,
+    "clip_range": 0.2
+  },
+  "algorithm_parameters_source": "warm_start_metadata_with_overrides",
+  "evaluation_policy": "deterministic",
+  "evaluation_map_id": "soda-creek",
+  "started_at": "2026-05-26T21:33:59.014236+00:00",
+  "completed_at": "2026-05-26T21:34:00.739065+00:00",
+  "evaluation_path": "harness/reports/2026-05-27_rl_ppo_target_entropy_entcoef_warmstart_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-27_rl_ppo_target_entropy_entcoef_warmstart_001/ppo_known_exploits.json",
+  "known_exploits": [],
+  "training_maps": [
+    "soda-creek",
+    "caramel-workshop",
+    "cracked-star-jar"
+  ],
+  "training_map_selection": "cycle",
+  "training_map_preset": "high-pressure"
+}

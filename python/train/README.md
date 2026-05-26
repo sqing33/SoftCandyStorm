@@ -351,6 +351,8 @@ The first full target-entropy distillation used `--teacher-temperature 1.5 --uni
 
 Warm-start runs can override PPO entropy coefficient with `--model-in ... --ent-coef <value>`. The training report records `algorithm_parameters_source` as `warm_start_metadata_with_overrides` when metadata is loaded and a CLI override is applied, so entropy/curriculum experiments remain auditable instead of silently inheriting the distilled zip defaults.
 
+The first `ent_coef = 0.02` target-entropy warm-start lifted the 60-second high-pressure normalized entropy to 0.5801 / 0.5823 / 0.5307, but short-window win rates remained 80% / 60% / 80% and all three 300-second maps still recorded 0% win rate. Entropy override is a useful movement-diversity repair knob, not a replacement for long-run goals or upgrade supervision.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash

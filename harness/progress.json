@@ -1613,6 +1613,11 @@
       "id": "rl_ppo_warmstart_entropy_override_smoke",
       "summary": "train_sb3 warm-start 路径现在允许 --model-in 与 --ent-coef 同用，并把报告来源记录为 warm_start_metadata_with_overrides；256 timestep smoke 证明 CLI 和 metadata 管线可用，但 deterministic 10 秒评估仍动作塌缩，不能作为策略质量证据。",
       "report": "harness/reports/2026-05-27_rl_ppo_warmstart_entropy_override_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_ppo_target_entropy_entcoef_repair",
+      "summary": "用 target-entropy distilled zip 加 ent_coef 0.02 完成 2048 timestep PPO warm-start；60 秒三图 entropy 均超过 0.5，但胜率仍未达到规则 Bot，300 秒三图全部 0%，结论为 repair。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_ppo_target_entropy_entcoef_warmstart_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1622,7 +1627,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start 和 target-entropy warm-start 均为 repair；warm-start entropy override 管线已可审计，下一步应跑完整 entropy/curriculum 候选，或引入升级 / 阶段目标监督。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 均为 repair；下一步应引入升级 / 阶段目标监督或更明确的 curriculum，而不是只继续调动作熵。"
     },
     {
       "id": "phase4_full_pack_manual_review",

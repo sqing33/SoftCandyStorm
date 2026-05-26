@@ -273,6 +273,8 @@ target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mi
 
 `train_sb3.py` 的 warm-start 路径现在允许 `--model-in ... --ent-coef <value>` 覆盖 PPO entropy coefficient，并在训练报告中把 `algorithm_parameters_source` 标记为 `warm_start_metadata_with_overrides`。该能力用于可审计地测试 PPO 探索修复；默认不改变旧模型行为，也不能绕过 high-pressure 对比和 RL acceptance。
 
+首个 `ent_coef = 0.02` 的 target-entropy warm-start 候选改善了 60 秒动作分布：high-pressure 三图 normalized entropy 为 0.5801 / 0.5823 / 0.5307，dominant action ratio 均低于 0.45；但短窗胜率仍只有 80% / 60% / 80%，300 秒三图仍全部 0%。结论：entropy coefficient 是短窗动作多样性修复方向，但不能解决 movement-only policy 的长局目标缺失。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。
