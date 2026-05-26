@@ -1,0 +1,214 @@
+{
+  "contract_version": 1,
+  "contract_id": "runtime-surface-v0",
+  "ruleset_version": "prototype-v0",
+  "status": "source_shape_contract",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "source_files": {
+    "runtime_main": "crates/game_runtime/src/main.rs"
+  },
+  "required_structs": [
+    {
+      "file": "runtime_main",
+      "name": "RuntimeCli",
+      "required_fields": [
+        "runtime_settings_file",
+        "local_data_dirs",
+        "explicit_local_data_dirs",
+        "export_local_data",
+        "delete_local_data",
+        "print_privacy_notice",
+        "save_file",
+        "export_save",
+        "delete_save"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimePrivacySettings",
+      "required_fields": [
+        "telemetry_upload_enabled",
+        "raw_replay_upload_enabled",
+        "crash_report_upload_enabled"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeSaveStateV0",
+      "required_fields": [
+        "schema_version",
+        "contract_id",
+        "save_id",
+        "profile_id",
+        "created_at",
+        "updated_at",
+        "game_version",
+        "ruleset_version",
+        "content_pack_ids",
+        "settings",
+        "data_controls",
+        "meta_progress"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeSaveDataControls",
+      "required_fields": [
+        "local_only_by_default",
+        "upload_requires_opt_in",
+        "delete_save_available",
+        "export_save_available",
+        "export_format",
+        "retention_days"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeLocalDataExport",
+      "required_fields": [
+        "kind",
+        "export_version",
+        "privacy_settings",
+        "local_data_dirs",
+        "files"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeLocalDataDeleteReport",
+      "required_fields": [
+        "kind",
+        "deleted_files",
+        "deleted_dirs",
+        "skipped_missing_roots",
+        "local_data_dirs"
+      ]
+    }
+  ],
+  "required_enums": [
+    {
+      "file": "runtime_main",
+      "name": "RuntimeMetaPanelView",
+      "required_variants": [
+        "Overview",
+        "Chapters",
+        "Codex",
+        "Settings"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeUploadKind",
+      "required_variants": [
+        "Telemetry",
+        "RawReplay",
+        "CrashReport"
+      ]
+    }
+  ],
+  "required_functions": [
+    "parse_runtime_cli",
+    "run_runtime_prelaunch_actions",
+    "load_runtime_privacy_settings",
+    "write_runtime_privacy_settings",
+    "persist_runtime_privacy_settings_file",
+    "runtime_privacy_notice",
+    "export_runtime_local_data",
+    "delete_runtime_local_data",
+    "load_runtime_meta_progress",
+    "write_runtime_save_state",
+    "export_runtime_save",
+    "delete_runtime_save",
+    "render_meta_progress_panel",
+    "render_meta_overview_panel",
+    "render_meta_chapter_panel",
+    "render_meta_codex_panel",
+    "render_meta_settings_panel",
+    "privacy_toggle_from_keyboard",
+    "toggle_runtime_privacy_setting",
+    "runtime_can_upload"
+  ],
+  "required_cli_flags": [
+    "--runtime-settings-file",
+    "--local-data-dir",
+    "--export-local-data",
+    "--delete-local-data",
+    "--print-privacy-notice",
+    "--save-file",
+    "--export-save",
+    "--delete-save"
+  ],
+  "required_key_bindings": [
+    {
+      "key": "KeyCode::F1",
+      "target": "RuntimeMetaPanelView::Overview"
+    },
+    {
+      "key": "KeyCode::F2",
+      "target": "RuntimeMetaPanelView::Chapters"
+    },
+    {
+      "key": "KeyCode::F3",
+      "target": "RuntimeMetaPanelView::Codex"
+    },
+    {
+      "key": "KeyCode::F4",
+      "target": "RuntimeMetaPanelView::Settings"
+    },
+    {
+      "key": "KeyCode::Digit7",
+      "target": "RuntimeUploadKind::Telemetry"
+    },
+    {
+      "key": "KeyCode::Digit8",
+      "target": "RuntimeUploadKind::RawReplay"
+    },
+    {
+      "key": "KeyCode::Digit9",
+      "target": "RuntimeUploadKind::CrashReport"
+    }
+  ],
+  "required_source_fragments": [
+    "F1 概览",
+    "F2 章节",
+    "F3 图鉴",
+    "F4 设置",
+    "隐私与本地数据",
+    "上传匿名遥测",
+    "上传原始 Replay",
+    "上传崩溃报告",
+    "本地导出/删除仍通过 CLI 执行",
+    "上传传输层: not_implemented",
+    "默认只保存在本机",
+    "明确开启",
+    "raw replay 需要单独同意",
+    "当前 Runtime 没有网络上传传输层",
+    "本地数据可以导出为 JSON",
+    "个人身份信息",
+    "IP 地址",
+    "文件路径",
+    "自由文本输入",
+    "delete requires at least one explicit --local-data-dir",
+    "delete save requires --save-file",
+    "save-state-v0",
+    "export_format: \"json\""
+  ],
+  "default_privacy_settings": {
+    "telemetry_upload_enabled": false,
+    "raw_replay_upload_enabled": false,
+    "crash_report_upload_enabled": false
+  },
+  "required_data_safety": {
+    "local_data_delete_requires_explicit_root": true,
+    "save_delete_requires_save_file": true,
+    "upload_transport_marked_not_implemented": true,
+    "local_data_export_format": "json",
+    "save_export_format": "json"
+  },
+  "known_gaps": [
+    "source_shape_only_no_rust_compile",
+    "no_bevy_runtime_smoke",
+    "no_platform_path_runtime_resolution",
+    "no_manual_playtest_or_privacy_review"
+  ]
+}

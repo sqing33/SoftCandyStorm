@@ -1,0 +1,132 @@
+{
+  "report_version": 1,
+  "source": "harness/runtime_contract/runtime_surface_contract_v0.json",
+  "repo_root": ".",
+  "contract_id": "runtime-surface-v0",
+  "ruleset_version": "prototype-v0",
+  "decision": "runtime_surface_contract_valid",
+  "source_file_count": 1,
+  "struct_count": 6,
+  "enum_count": 2,
+  "key_binding_count": 7,
+  "errors": [],
+  "warnings": [],
+  "structs": [
+    {
+      "name": "RuntimeCli",
+      "file": "runtime_main",
+      "required_field_count": 9,
+      "missing_field_count": 0
+    },
+    {
+      "name": "RuntimePrivacySettings",
+      "file": "runtime_main",
+      "required_field_count": 3,
+      "missing_field_count": 0
+    },
+    {
+      "name": "RuntimeSaveStateV0",
+      "file": "runtime_main",
+      "required_field_count": 12,
+      "missing_field_count": 0
+    },
+    {
+      "name": "RuntimeSaveDataControls",
+      "file": "runtime_main",
+      "required_field_count": 6,
+      "missing_field_count": 0
+    },
+    {
+      "name": "RuntimeLocalDataExport",
+      "file": "runtime_main",
+      "required_field_count": 5,
+      "missing_field_count": 0
+    },
+    {
+      "name": "RuntimeLocalDataDeleteReport",
+      "file": "runtime_main",
+      "required_field_count": 5,
+      "missing_field_count": 0
+    }
+  ],
+  "enums": [
+    {
+      "name": "RuntimeMetaPanelView",
+      "file": "runtime_main",
+      "required_variant_count": 4,
+      "missing_variant_count": 0
+    },
+    {
+      "name": "RuntimeUploadKind",
+      "file": "runtime_main",
+      "required_variant_count": 3,
+      "missing_variant_count": 0
+    }
+  ],
+  "checks": [
+    {
+      "kind": "functions",
+      "required_count": 20,
+      "missing_count": 0
+    },
+    {
+      "kind": "cli_flags",
+      "required_count": 8,
+      "missing_count": 0
+    },
+    {
+      "kind": "source_fragments",
+      "required_count": 23,
+      "missing_count": 0
+    }
+  ],
+  "key_bindings": [
+    {
+      "key": "KeyCode::F1",
+      "target": "RuntimeMetaPanelView::Overview",
+      "key_present": true,
+      "target_present": true
+    },
+    {
+      "key": "KeyCode::F2",
+      "target": "RuntimeMetaPanelView::Chapters",
+      "key_present": true,
+      "target_present": true
+    },
+    {
+      "key": "KeyCode::F3",
+      "target": "RuntimeMetaPanelView::Codex",
+      "key_present": true,
+      "target_present": true
+    },
+    {
+      "key": "KeyCode::F4",
+      "target": "RuntimeMetaPanelView::Settings",
+      "key_present": true,
+      "target_present": true
+    },
+    {
+      "key": "KeyCode::Digit7",
+      "target": "RuntimeUploadKind::Telemetry",
+      "key_present": true,
+      "target_present": true
+    },
+    {
+      "key": "KeyCode::Digit8",
+      "target": "RuntimeUploadKind::RawReplay",
+      "key_present": true,
+      "target_present": true
+    },
+    {
+      "key": "KeyCode::Digit9",
+      "target": "RuntimeUploadKind::CrashReport",
+      "key_present": true,
+      "target_present": true
+    }
+  ],
+  "limitations": [
+    "This validator checks Rust source shape only; it does not compile or execute Bevy Runtime.",
+    "It cannot prove keyboard behavior, rendered UI, platform path resolution, save migration, or upload transport behavior.",
+    "Recovering local binary launch remains required before Runtime smoke and manual playtest can prove docs/16 and docs/18 complete."
+  ]
+}

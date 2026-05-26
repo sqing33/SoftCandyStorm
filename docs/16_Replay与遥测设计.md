@@ -313,6 +313,18 @@ python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
 
 上传传输契约当前结论为 `upload_transport_contract_valid` 且 `implementation_status=planned`。它只证明未来上传链路的 payload、队列、同意、raw replay 和发布证据边界可校验；不证明 Runtime 已经实现网络上传、队列 flush、平台隐私合规或法律审查。
 
+Runtime 局外设置和本地数据入口还有独立源码形状契约：
+
+```bash
+python3 harness/runtime_contract/validate_runtime_surface_contract.py \
+  harness/runtime_contract/runtime_surface_contract_v0.json \
+  --repo-root . \
+  --report harness/reports/2026-05-26_runtime_surface_contract_001/runtime_surface_contract.json \
+  --markdown harness/reports/2026-05-26_runtime_surface_contract_001/summary.md
+```
+
+该契约会检查 `game_runtime` 源码中是否仍保留 `--runtime-settings-file`、`--export-local-data`、`--delete-local-data`、`--print-privacy-notice`、`--save-file`、`--export-save`、`--delete-save`，以及 F1/F2/F3/F4 局外面板、7/8/9 上传同意切换和 `not_implemented` 上传传输提示。当前结论为 `runtime_surface_contract_valid`，但它只证明源码形状，不证明键盘行为、渲染 UI、平台路径解析或上传传输行为。
+
 ## 本地存档与数据控制
 
 局外存档属于本地优先数据，也必须遵守遥测隐私原则。存档契约位于：
