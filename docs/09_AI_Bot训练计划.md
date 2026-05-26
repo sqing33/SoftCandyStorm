@@ -261,6 +261,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 危险状态重采样仍然只是训练策略，必须通过 60/300 秒 high-pressure 对比证明没有移动失败面。
 
+当 `sequence_diagnostics` 暴露 `high_action_persistence` 时，可以使用 `--sample-weighting action_change` 或 `--sample-weighting danger_action_change` 对同一 episode 内动作发生变化的样本加权。该旋钮用于诊断和缓解长段持续方向带来的确定性偏置；它不能替代动作分布门禁，也不能因为离线 entropy 更高就推进为 RL 测试 Bot。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。

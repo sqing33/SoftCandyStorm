@@ -1,0 +1,322 @@
+{
+  "status": "trained",
+  "gate_decision": "behavior_clone_smoke_only_not_policy_gate",
+  "model_path": "harness/reports/2026-05-27_rl_behavior_clone_action_change_weighting_smoke_001/opening_action_change_smoke.pt",
+  "started_at": "2026-05-26T20:59:07.057448+00:00",
+  "completed_at": "2026-05-26T20:59:07.113137+00:00",
+  "dependency_status": {
+    "numpy": true,
+    "torch": true
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl"
+    ],
+    "sample_count": 180,
+    "episode_count": 0,
+    "skipped_upgrade_samples": 0,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 8,
+        "ratio": 0.0444
+      },
+      "2": {
+        "count": 15,
+        "ratio": 0.0833
+      },
+      "3": {
+        "count": 47,
+        "ratio": 0.2611
+      },
+      "4": {
+        "count": 5,
+        "ratio": 0.0278
+      },
+      "5": {
+        "count": 42,
+        "ratio": 0.2333
+      },
+      "6": {
+        "count": 26,
+        "ratio": 0.1444
+      },
+      "7": {
+        "count": 1,
+        "ratio": 0.0056
+      },
+      "8": {
+        "count": 36,
+        "ratio": 0.2
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 0.0,
+      "time_seconds_max": 59.9994,
+      "health_ratio_min": 1.0,
+      "health_ratio_average": 1.0,
+      "map_distribution": {
+        "caramel-workshop": {
+          "count": 180,
+          "ratio": 1.0
+        }
+      }
+    },
+    "metadata": [
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+        "bot": "kite",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      }
+    ]
+  },
+  "sequence_diagnostics": {
+    "context_frames": 8,
+    "history_limit": 7,
+    "sample_count": 180,
+    "episode_key_count": 1,
+    "padding": {
+      "total_missing_frames": 28,
+      "average_missing_frames": 0.1556,
+      "fully_seeded_samples": 173,
+      "fully_seeded_ratio": 0.9611
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 2.2944,
+      "max": 2.6666
+    },
+    "action_transitions": {
+      "transition_count": 179,
+      "same_action_count": 148,
+      "same_action_ratio": 0.8268,
+      "changed_action_ratio": 0.1732
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 180,
+        "ratio": 1.0
+      },
+      "mid_late_start_to_180": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late_gte_180": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 0,
+      "ratio": 0.0
+    },
+    "per_map": {
+      "caramel-workshop": {
+        "sample_count": 180,
+        "sample_ratio": 1.0,
+        "time_seconds_min": 0.0,
+        "time_seconds_max": 59.9994,
+        "average_missing_frames": 0.1556,
+        "fully_seeded_ratio": 0.9611,
+        "average_sequence_span_seconds": 2.2944,
+        "late_low_health_ratio": 0.0,
+        "action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 8,
+            "ratio": 0.0444
+          },
+          "2": {
+            "count": 15,
+            "ratio": 0.0833
+          },
+          "3": {
+            "count": 47,
+            "ratio": 0.2611
+          },
+          "4": {
+            "count": 5,
+            "ratio": 0.0278
+          },
+          "5": {
+            "count": 42,
+            "ratio": 0.2333
+          },
+          "6": {
+            "count": 26,
+            "ratio": 0.1444
+          },
+          "7": {
+            "count": 1,
+            "ratio": 0.0056
+          },
+          "8": {
+            "count": 36,
+            "ratio": 0.2
+          }
+        }
+      }
+    },
+    "diagnosis_flags": [
+      {
+        "id": "high_action_persistence",
+        "severity": "watch",
+        "summary": "Consecutive samples often keep the same action; inspect sample stride and deterministic target bias."
+      },
+      {
+        "id": "low_late_low_health_coverage",
+        "severity": "watch",
+        "summary": "Few samples cover late low-health recovery states; this can hide long-run policy failures."
+      }
+    ]
+  },
+  "training": {
+    "seed": 12345,
+    "architecture": "gru",
+    "epochs": 1,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "hidden_size": 32,
+    "context_frames": 8,
+    "input_observation_len": 1168,
+    "sequence_input_len": 146,
+    "base_observation_len": 145,
+    "map_conditioning": {
+      "mode": "one_hot",
+      "map_ids": [
+        "caramel-workshop"
+      ],
+      "dimension": 1,
+      "base_input_observation_len": 145,
+      "input_observation_len": 146,
+      "sequence_len": 8,
+      "total_input_observation_len": 1168
+    },
+    "time_phase_conditioning": {
+      "mode": "none",
+      "labels": [],
+      "thresholds": [
+        0.2,
+        0.6
+      ],
+      "dimension": 0,
+      "base_input_observation_len": 146,
+      "input_observation_len": 146,
+      "phase_distribution": {
+        "opening": {
+          "count": 180,
+          "ratio": 1.0
+        },
+        "mid": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "sequence_len": 8,
+      "total_input_observation_len": 1168
+    },
+    "validation_split": 0.2,
+    "class_weighting": "none",
+    "class_weights": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "sample_weighting": "danger_action_change",
+    "sample_weights": {
+      "mode": "danger_action_change",
+      "min": 1.0,
+      "max": 3.0,
+      "mean": 1.375,
+      "danger_health_threshold": 0.7,
+      "danger_low_health_weight": 2.0,
+      "danger_late_start_seconds": 60.0,
+      "danger_late_horizon_seconds": 300.0,
+      "danger_late_weight": 1.0,
+      "action_change_weight": 2.0,
+      "action_change_sample_count": 27,
+      "action_change_sample_ratio": 0.1875
+    },
+    "entropy_regularization": 0.0,
+    "train_samples": 144,
+    "validation_samples": 36
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.180104,
+      "train_cross_entropy_loss": 2.180104,
+      "train_entropy_nats": 2.171597,
+      "train_accuracy": 0.1389,
+      "validation_loss": 2.07412,
+      "validation_entropy_nats": 2.17004,
+      "validation_accuracy": 0.3056
+    }
+  ],
+  "final": {
+    "epoch": 1,
+    "train_loss": 2.180104,
+    "train_cross_entropy_loss": 2.180104,
+    "train_entropy_nats": 2.171597,
+    "train_accuracy": 0.1389,
+    "validation_loss": 2.07412,
+    "validation_entropy_nats": 2.17004,
+    "validation_accuracy": 0.3056
+  },
+  "limitations": [
+    "Behavior cloning imitates rule Bot movement only; it is not a balance or fun gate.",
+    "The exported Phase 1 dataset skips upgrade-choice states, matching the current movement-only RL action space.",
+    "A cloned policy must still pass Gym evaluation and rule Bot comparison before it can become an RL test Bot candidate."
+  ],
+  "time_phase_filter": {
+    "mode": "opening",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 512,
+    "after_sample_count": 180,
+    "phase_distribution": {
+      "opening": {
+        "count": 180,
+        "ratio": 1.0
+      },
+      "mid": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    }
+  }
+}

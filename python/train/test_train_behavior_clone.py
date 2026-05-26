@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from python.train.train_behavior_clone import (
+    build_sample_weights,
     diagnose_sequence_dataset,
     filter_dataset_by_time_phase,
     load_behavior_clone_policy,
@@ -69,6 +70,7 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         danger_late_start_seconds=60.0,
         danger_late_horizon_seconds=300.0,
         danger_late_weight=1.0,
+        action_change_weight=2.0,
         entropy_regularization=0.0,
         class_weighting="none",
         batch_size=4,
@@ -142,6 +144,26 @@ def test_entropy_regularization_is_reported(tmp_path):
     assert report["final"]["train_entropy_nats"] > 0.0
     assert report["final"]["validation_entropy_nats"] > 0.0
     assert report["final"]["train_cross_entropy_loss"] >= report["final"]["train_loss"]
+
+
+def test_action_change_sample_weighting_boosts_transition_samples(tmp_path):
+    import numpy as np
+
+    args = args_for(tmp_path, architecture="mlp")
+    args.sample_weighting = "action_change"
+    args.action_change_weight = 3.0
+
+    weights, report = build_sample_weights(
+        tiny_dataset(),
+        list(range(len(tiny_dataset()["actions"]))),
+        args,
+        np,
+    )
+
+    assert report["mode"] == "action_change"
+    assert report["action_change_sample_count"] == 5
+    assert report["action_change_sample_ratio"] == 0.625
+    assert weights.tolist() == [1.0, 4.0, 1.0, 4.0, 1.0, 4.0, 4.0, 4.0]
 
 
 def test_time_phase_conditioning_stays_loadable_online(tmp_path):

@@ -1578,6 +1578,11 @@
       "id": "rl_behavior_clone_phase_aligned_staged_repair",
       "summary": "重新导出 300 秒 phase-aligned high-pressure 轨迹，使 opening 覆盖 0-60 秒并将 opening 样本提高到 5388；完整 staged GRU context8 复测仍在 60 秒 soda-creek 0% 且动作偏置，300 秒 soda-creek / caramel-workshop 均为 0%，结论为 repair。",
       "report": "harness/reports/2026-05-27_rl_policy_acceptance_staged_gru_context8_phase_aligned_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_action_change_weighting",
+      "summary": "为 behavior clone 增加 --sample-weighting action_change 和 danger_action_change，按同一 episode 内动作变化点加权以诊断 high_action_persistence；单测 8/8 通过，opening GRU context8 512 样本 smoke 成功记录 action_change_sample_ratio。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_action_change_weighting_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1587,7 +1592,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU 和 phase-aligned staged GRU 都已验证为 repair；不要继续只补 opening 或拆分 movement-only 子模型，下一步应引入升级 / 阶段目标监督、teacher soft targets 或 PPO 蒸馏初始化，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU 和 phase-aligned staged GRU 都已验证为 repair；已新增 action-change weighting 训练旋钮，下一步可先训练 danger_action_change 候选验证是否缓解 high_action_persistence；若仍失败，应引入升级 / 阶段目标监督、teacher soft targets 或 PPO 蒸馏初始化。"
     },
     {
       "id": "phase4_full_pack_manual_review",

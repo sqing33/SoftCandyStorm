@@ -482,7 +482,7 @@ def train_behavior_clone(dataset, args):
     train_indices = indices[validation_count:]
 
     train_weights, sample_weight_report = build_sample_weights(
-        dataset["sample_metadata"],
+        dataset,
         train_indices,
         args,
         np,
@@ -878,7 +878,19 @@ def filter_dataset_by_time_phase(dataset, phase, thresholds):
     }
 
 
-def build_sample_weights(sample_metadata, indices, args, np_module):
+def build_action_change_flags(sample_metadata, actions):
+    flags = []
+    previous_actions = {}
+    for sample, action in zip(sample_metadata, actions):
+        key = (sample.get("path"), sample.get("seed"))
+        previous = previous_actions.get(key)
+        changed = previous is not None and int(previous) != int(action)
+        flags.append(changed)
+        previous_actions[key] = int(action)
+    return flags
+
+
+def build_sample_weights(dataset, indices, args, np_module):
     if args.sample_weighting == "none":
         return None, {
             "mode": "none",
@@ -887,30 +899,40 @@ def build_sample_weights(sample_metadata, indices, args, np_module):
             "mean": 1.0,
         }
 
+    sample_metadata = dataset["sample_metadata"]
+    action_change_flags = build_action_change_flags(sample_metadata, dataset["actions"])
+    use_danger = args.sample_weighting in {"danger", "danger_action_change"}
+    use_action_change = args.sample_weighting in {"action_change", "danger_action_change"}
     weights = []
+    action_change_count = 0
     for index in indices:
         sample = sample_metadata[int(index)]
-        health_ratio = clamp(float(sample.get("health_ratio", 1.0)), 0.0, 1.0)
-        time_seconds = max(0.0, float(sample.get("time_seconds", 0.0)))
-        low_health_pressure = max(
-            0.0,
-            (args.danger_health_threshold - health_ratio)
-            / max(0.0001, args.danger_health_threshold),
-        )
-        late_pressure = clamp(
-            (time_seconds - args.danger_late_start_seconds)
-            / max(0.0001, args.danger_late_horizon_seconds - args.danger_late_start_seconds),
-            0.0,
-            1.0,
-        )
-        weights.append(
-            1.0
-            + args.danger_low_health_weight * low_health_pressure
-            + args.danger_late_weight * late_pressure
-        )
+        weight = 1.0
+        if use_danger:
+            health_ratio = clamp(float(sample.get("health_ratio", 1.0)), 0.0, 1.0)
+            time_seconds = max(0.0, float(sample.get("time_seconds", 0.0)))
+            low_health_pressure = max(
+                0.0,
+                (args.danger_health_threshold - health_ratio)
+                / max(0.0001, args.danger_health_threshold),
+            )
+            late_pressure = clamp(
+                (time_seconds - args.danger_late_start_seconds)
+                / max(0.0001, args.danger_late_horizon_seconds - args.danger_late_start_seconds),
+                0.0,
+                1.0,
+            )
+            weight += (
+                args.danger_low_health_weight * low_health_pressure
+                + args.danger_late_weight * late_pressure
+            )
+        if use_action_change and action_change_flags[int(index)]:
+            weight += args.action_change_weight
+            action_change_count += 1
+        weights.append(weight)
 
     values = np_module.asarray(weights, dtype=np_module.float32)
-    return values, {
+    report = {
         "mode": args.sample_weighting,
         "min": round(float(values.min()), 6),
         "max": round(float(values.max()), 6),
@@ -921,6 +943,18 @@ def build_sample_weights(sample_metadata, indices, args, np_module):
         "danger_late_horizon_seconds": args.danger_late_horizon_seconds,
         "danger_late_weight": args.danger_late_weight,
     }
+    if use_action_change:
+        report.update(
+            {
+                "action_change_weight": args.action_change_weight,
+                "action_change_sample_count": int(action_change_count),
+                "action_change_sample_ratio": round(
+                    action_change_count / max(1, len(indices)),
+                    4,
+                ),
+            }
+        )
+    return values, report
 
 
 def clamp(value, minimum, maximum):
@@ -1409,15 +1443,16 @@ def main():
     )
     parser.add_argument(
         "--sample-weighting",
-        choices=["none", "danger"],
+        choices=["none", "danger", "action_change", "danger_action_change"],
         default="none",
-        help="Use weighted sampling to revisit dangerous states more often.",
+        help="Use weighted sampling to revisit dangerous states or action transition samples more often.",
     )
     parser.add_argument("--danger-health-threshold", type=float, default=0.7)
     parser.add_argument("--danger-low-health-weight", type=float, default=2.0)
     parser.add_argument("--danger-late-start-seconds", type=float, default=60.0)
     parser.add_argument("--danger-late-horizon-seconds", type=float, default=300.0)
     parser.add_argument("--danger-late-weight", type=float, default=1.0)
+    parser.add_argument("--action-change-weight", type=float, default=2.0)
     parser.add_argument(
         "--entropy-regularization",
         type=float,
@@ -1461,6 +1496,8 @@ def main():
         parser.error("--danger-late-horizon-seconds must be greater than --danger-late-start-seconds")
     if args.entropy_regularization < 0.0:
         parser.error("--entropy-regularization must be greater than or equal to zero")
+    if args.action_change_weight < 0.0:
+        parser.error("--action-change-weight must be greater than or equal to zero")
     try:
         args.time_phase_thresholds = normalize_time_phase_thresholds(args.time_phase_thresholds)
     except ValueError as exc:

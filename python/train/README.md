@@ -327,6 +327,8 @@ The first useful repair came from expanding the trajectory coverage rather than 
 cargo run -q -p game_harness -- export-bot-trajectories --bot kite --seed-start 31000 --seeds 5 --map-id soda-creek --seconds 60 --tick-rate 30 --observation-version 2 --sample-stride 5 --out harness/reports/2026-05-26_rl_rule_bot_trajectory_expanded_001/kite_soda_creek.jsonl
 ```
 
+When `sequence_diagnostics` reports high action persistence, use `--sample-weighting action_change` or `--sample-weighting danger_action_change` to oversample action transition points inside each episode. This is a diagnostic/training knob only; it still needs the normal high-pressure comparison and acceptance manifest before a policy can move forward.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash
