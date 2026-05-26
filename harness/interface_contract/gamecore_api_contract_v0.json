@@ -1,0 +1,340 @@
+{
+  "contract_version": 1,
+  "contract_id": "gamecore-api-v0",
+  "ruleset_version": "prototype-v0",
+  "status": "prototype_contract",
+  "summary": "GameCore v0 public API shape used by Runtime, Harness, Replay, and Python Gym integration.",
+  "source_files": {
+    "game_core_lib": "crates/game_core/src/lib.rs",
+    "vec2_math": "crates/game_core/src/math.rs",
+    "content_api": "crates/game_core/src/content.rs",
+    "meta_api": "crates/game_core/src/meta.rs"
+  },
+  "compatibility_policy": {
+    "breaking_change_requires_contract_bump": true,
+    "breaking_change_requires_migration_note": true,
+    "breaking_change_requires_replay_compatibility_note": true,
+    "runtime_must_not_mutate_game_state_directly": true,
+    "harness_and_runtime_must_use_same_gamecore": true
+  },
+  "public_structs": [
+    {
+      "file": "game_core_lib",
+      "name": "RunConfig",
+      "required_fields": [
+        "seed",
+        "map_id",
+        "character_id",
+        "starting_loadout",
+        "difficulty",
+        "duration_seconds",
+        "ruleset_version",
+        "content_pack_ids",
+        "tick_rate"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "StartingLoadout",
+      "required_fields": [
+        "weapons",
+        "passives"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "FixedDt",
+      "required_methods": [
+        "from_seconds",
+        "from_tick_rate",
+        "seconds"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "PlayerAction",
+      "required_fields": [
+        "movement",
+        "upgrade_choice"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "StepResult",
+      "required_fields": [
+        "snapshot",
+        "events",
+        "reward_hint",
+        "terminal"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "RewardHint",
+      "required_fields": [
+        "survival_delta",
+        "kill_delta",
+        "xp_delta",
+        "damage_taken_delta",
+        "level_delta"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "RunSnapshot",
+      "required_fields": [
+        "time_seconds",
+        "remaining_seconds",
+        "player",
+        "visible_enemies",
+        "visible_pickups",
+        "visible_projectiles",
+        "active_hazards",
+        "boss",
+        "upgrade_options",
+        "build",
+        "map",
+        "metrics_partial"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "PlayerSnapshot",
+      "required_fields": [
+        "position",
+        "velocity",
+        "health",
+        "max_health",
+        "level",
+        "xp",
+        "xp_to_next_level",
+        "move_speed",
+        "pickup_radius",
+        "damage_multiplier",
+        "cooldown_multiplier"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "EnemySnapshot",
+      "required_fields": [
+        "entity_id",
+        "enemy_id",
+        "position",
+        "velocity",
+        "health",
+        "max_health",
+        "radius",
+        "threat",
+        "behavior",
+        "is_boss",
+        "is_elite"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "PickupSnapshot",
+      "required_fields": [
+        "entity_id",
+        "pickup_type",
+        "position",
+        "value",
+        "radius"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "ProjectileSnapshot",
+      "required_fields": [
+        "entity_id",
+        "weapon_id",
+        "position",
+        "velocity",
+        "radius"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "HazardSnapshot",
+      "required_fields": [
+        "position",
+        "radius",
+        "slow_multiplier",
+        "damage_per_second",
+        "remaining_seconds"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "BossSnapshot",
+      "required_fields": [
+        "entity_id",
+        "boss_id",
+        "health",
+        "max_health",
+        "position"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "UpgradeOptionSnapshot",
+      "required_fields": [
+        "id",
+        "name",
+        "tags",
+        "description"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "BuildSnapshot",
+      "required_fields": [
+        "weapons",
+        "passives",
+        "evolutions",
+        "tags",
+        "open_evolution_paths"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "RunMetrics",
+      "required_fields": [
+        "seed",
+        "tick_rate",
+        "duration_seconds",
+        "terminal",
+        "kills",
+        "level",
+        "xp_collected",
+        "xp_dropped",
+        "damage_dealt_by_weapon",
+        "damage_taken",
+        "max_enemy_count",
+        "max_projectile_count",
+        "upgrade_choices"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "TerminalState",
+      "required_fields": [
+        "kind",
+        "time_seconds",
+        "reason",
+        "final_level",
+        "kills"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "GameCore",
+      "required_methods": [
+        "reset",
+        "reset_with_content",
+        "step",
+        "snapshot",
+        "metrics",
+        "is_terminal",
+        "fixed_dt"
+      ]
+    },
+    {
+      "file": "vec2_math",
+      "name": "Vec2",
+      "required_fields": [
+        "x",
+        "y"
+      ],
+      "required_methods": [
+        "new",
+        "length_squared",
+        "length",
+        "distance",
+        "normalized_or_zero",
+        "clamp_length_max"
+      ]
+    }
+  ],
+  "public_enums": [
+    {
+      "file": "game_core_lib",
+      "name": "Difficulty",
+      "required_variants": [
+        "Normal"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "GameEvent",
+      "required_variants": [
+        "EnemySpawned",
+        "BossSpawned",
+        "BossPhaseChanged",
+        "BossAbilityUsed",
+        "WeaponFired",
+        "EnemyHit",
+        "EnemyKilled",
+        "XpDropped",
+        "XpCollected",
+        "LevelUp",
+        "UpgradeOffered",
+        "UpgradeChosen",
+        "PlayerDamaged",
+        "ContentEventTriggered",
+        "RunEnded"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "TerminalKind",
+      "required_variants": [
+        "Victory",
+        "Defeat",
+        "Timeout",
+        "Aborted",
+        "InvalidState"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "EnemyBehavior",
+      "required_variants": [
+        "Chase",
+        "Dash",
+        "Split",
+        "LeaveHazard",
+        "OrbitPlayer",
+        "Jump",
+        "RangedSpit",
+        "Shielded"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "PickupType",
+      "required_variants": [
+        "Xp"
+      ]
+    }
+  ],
+  "reexports": [
+    {
+      "file": "game_core_lib",
+      "symbols": [
+        "ContentError",
+        "ContentPack",
+        "ValidationReport",
+        "Vec2",
+        "MetaProgress",
+        "MetaRunSummary",
+        "MetaSettlementReport"
+      ]
+    }
+  ],
+  "known_gaps": [
+    "This source-shape contract does not prove runtime semantics, deterministic replay, Gym bridge behavior, or Bevy integration.",
+    "RunMetrics v0 exposes aggregate damage fields; richer per-source metrics from docs/14 remain future compatibility work.",
+    "PlayerSnapshot v0 does not yet expose status_effects as a stable field."
+  ]
+}

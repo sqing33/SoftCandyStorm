@@ -362,3 +362,37 @@ Gym 环境做三件事：
 3. 从 snapshot 转 observation，从 reward_hint/metrics 转 reward。
 
 首版可用 JSON line 协议，后续性能不足再考虑 PyO3。
+
+## 接口契约与版本化证据
+
+GameCore 对 Runtime、Harness、Replay 和 Python Gym 暴露的 v0 公共接口由以下文件记录：
+
+- `harness/interface_contract/gamecore_api_contract_v0.json`
+- `harness/interface_contract/README.md`
+
+该契约记录：
+
+- `contract_id` 和 `ruleset_version`
+- 必需 source files
+- `RunConfig`、`PlayerAction`、`StepResult`、`RunSnapshot`、`RunMetrics`、`GameCore`、`Vec2` 等公共结构和方法
+- `GameEvent`、`TerminalKind`、`EnemyBehavior` 等公共枚举变体
+- GameCore 对内容、局外进度和向量类型的公开 re-export
+- 兼容性策略：破坏性变更必须 bump 契约、写迁移说明、写 replay 兼容说明，Runtime 和 Harness 必须继续使用同一个 GameCore
+
+源码形状校验入口：
+
+```bash
+python3 tools/validate_gamecore_api_contract.py \
+  harness/interface_contract/gamecore_api_contract_v0.json \
+  --repo-root . \
+  --report harness/reports/2026-05-26_gamecore_api_contract_001/gamecore_api_contract.json \
+  --markdown harness/reports/2026-05-26_gamecore_api_contract_001/summary.md
+```
+
+当前报告结论为 `gamecore_api_contract_valid`。这只证明公开接口形状没有偏离 v0 契约，不能替代编译、固定 seed 语义、Replay 回归、Runtime 集成或 Gym smoke。
+
+当前 v0 已知缺口：
+
+- `RunMetrics` 仍以聚合字段为主，未完全覆盖文档中规划的 per-source metrics。
+- `PlayerSnapshot` 尚未把 `status_effects` 固化为稳定字段。
+- 本机二进制启动恢复前，无法用 `cargo test`、`game_harness replay-batch` 或 Gym bridge smoke 证明接口语义完整。
