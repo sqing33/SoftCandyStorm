@@ -12,6 +12,7 @@
       "file": "runtime_main",
       "name": "RuntimeCli",
       "required_fields": [
+        "platform_data_root",
         "runtime_settings_file",
         "local_data_dirs",
         "explicit_local_data_dirs",
@@ -19,8 +20,21 @@
         "delete_local_data",
         "print_privacy_notice",
         "save_file",
+        "explicit_save_file",
         "export_save",
         "delete_save"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimePlatformPaths",
+      "required_fields": [
+        "data_root",
+        "save_file",
+        "runtime_settings_file",
+        "local_telemetry_dir",
+        "local_replay_dir",
+        "crash_report_dir"
       ]
     },
     {
@@ -185,6 +199,7 @@
     "runtime_privacy_notice",
     "export_runtime_local_data",
     "delete_runtime_local_data",
+    "resolve_runtime_platform_paths",
     "load_runtime_meta_progress",
     "load_runtime_save_state",
     "read_runtime_save_state",
@@ -205,6 +220,7 @@
     "runtime_can_upload"
   ],
   "required_cli_flags": [
+    "--platform-data-root",
     "--runtime-settings-file",
     "--local-data-dir",
     "--export-local-data",
@@ -266,6 +282,14 @@
     "自由文本输入",
     "delete requires at least one explicit --local-data-dir",
     "delete save requires --save-file",
+    "platform_user_data/soft-candy-storm",
+    "saves",
+    "settings",
+    "telemetry",
+    "replay",
+    "crash-reports",
+    "runtime_privacy_settings.json",
+    "profile.json",
     "save-state-v0",
     "save-state-v1",
     "save-state-v0-to-v1",

@@ -17,10 +17,16 @@ use std::{
 
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
-const DEFAULT_LOCAL_TELEMETRY_DIR: &str = "harness/telemetry/local";
-const DEFAULT_LOCAL_REPLAY_DIR: &str = "harness/replay";
+const DEFAULT_PLATFORM_DATA_ROOT: &str = "platform_user_data/soft-candy-storm";
+const PLATFORM_SAVE_ROOT: &str = "saves";
+const PLATFORM_SETTINGS_ROOT: &str = "settings";
+const PLATFORM_TELEMETRY_ROOT: &str = "telemetry";
+const PLATFORM_REPLAY_ROOT: &str = "replay";
+const PLATFORM_CRASH_REPORT_ROOT: &str = "crash-reports";
 const DEFAULT_SAVE_ID: &str = "local-demo-profile";
 const DEFAULT_PROFILE_ID: &str = "local-player";
+const RUNTIME_SETTINGS_FILE_NAME: &str = "runtime_privacy_settings.json";
+const RUNTIME_SAVE_FILE_NAME: &str = "profile.json";
 const RUNTIME_SAVE_V0_CONTRACT_ID: &str = "save-state-v0";
 const RUNTIME_SAVE_V1_CONTRACT_ID: &str = "save-state-v1";
 const RUNTIME_SAVE_V0_SCHEMA_VERSION: u32 = 1;
@@ -133,6 +139,7 @@ struct RuntimeCli {
     auto_exit_after_report: bool,
     player_skill: String,
     capture_interval_seconds: f32,
+    platform_data_root: PathBuf,
     runtime_settings_file: Option<PathBuf>,
     local_data_dirs: Vec<PathBuf>,
     explicit_local_data_dirs: Vec<PathBuf>,
@@ -140,12 +147,15 @@ struct RuntimeCli {
     delete_local_data: bool,
     print_privacy_notice: bool,
     save_file: Option<PathBuf>,
+    explicit_save_file: bool,
     export_save: Option<PathBuf>,
     delete_save: bool,
 }
 
 impl Default for RuntimeCli {
     fn default() -> Self {
+        let platform_paths =
+            RuntimePlatformPaths::from_data_root(PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT));
         Self {
             content_dir: PathBuf::from(DEFAULT_CONTENT_DIR),
             accepted_lock_file: None,
@@ -161,20 +171,33 @@ impl Default for RuntimeCli {
             auto_exit_after_report: false,
             player_skill: "unrated".to_string(),
             capture_interval_seconds: 5.0,
-            runtime_settings_file: None,
+            platform_data_root: platform_paths.data_root.clone(),
+            runtime_settings_file: Some(platform_paths.runtime_settings_file.clone()),
             local_data_dirs: vec![
-                PathBuf::from(DEFAULT_LOCAL_TELEMETRY_DIR),
-                PathBuf::from(DEFAULT_LOCAL_REPLAY_DIR),
+                platform_paths.local_telemetry_dir.clone(),
+                platform_paths.local_replay_dir.clone(),
+                platform_paths.crash_report_dir.clone(),
             ],
             explicit_local_data_dirs: Vec::new(),
             export_local_data: None,
             delete_local_data: false,
             print_privacy_notice: false,
-            save_file: None,
+            save_file: Some(platform_paths.save_file.clone()),
+            explicit_save_file: false,
             export_save: None,
             delete_save: false,
         }
     }
+}
+
+#[derive(Debug, Clone)]
+struct RuntimePlatformPaths {
+    data_root: PathBuf,
+    save_file: PathBuf,
+    runtime_settings_file: PathBuf,
+    local_telemetry_dir: PathBuf,
+    local_replay_dir: PathBuf,
+    crash_report_dir: PathBuf,
 }
 
 #[derive(Resource)]
@@ -2099,6 +2122,33 @@ fn run_config_from_cli(cli: &RuntimeCli) -> RunConfig {
     }
 }
 
+fn resolve_runtime_platform_paths(data_root: impl Into<PathBuf>) -> RuntimePlatformPaths {
+    RuntimePlatformPaths::from_data_root(data_root.into())
+}
+
+impl RuntimePlatformPaths {
+    fn from_data_root(data_root: PathBuf) -> Self {
+        Self {
+            save_file: data_root.join(PLATFORM_SAVE_ROOT).join(RUNTIME_SAVE_FILE_NAME),
+            runtime_settings_file: data_root
+                .join(PLATFORM_SETTINGS_ROOT)
+                .join(RUNTIME_SETTINGS_FILE_NAME),
+            local_telemetry_dir: data_root.join(PLATFORM_TELEMETRY_ROOT),
+            local_replay_dir: data_root.join(PLATFORM_REPLAY_ROOT),
+            crash_report_dir: data_root.join(PLATFORM_CRASH_REPORT_ROOT),
+            data_root,
+        }
+    }
+
+    fn local_data_dirs(&self) -> Vec<PathBuf> {
+        vec![
+            self.local_telemetry_dir.clone(),
+            self.local_replay_dir.clone(),
+            self.crash_report_dir.clone(),
+        ]
+    }
+}
+
 fn difficulty_label(difficulty: Difficulty) -> &'static str {
     match difficulty {
         Difficulty::Normal => "normal",
@@ -2111,6 +2161,17 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "--platform-data-root" => {
+                if let Some(value) = args.next() {
+                    let platform_paths = resolve_runtime_platform_paths(value);
+                    cli.platform_data_root = platform_paths.data_root.clone();
+                    cli.runtime_settings_file = Some(platform_paths.runtime_settings_file);
+                    cli.save_file = Some(platform_paths.save_file);
+                    cli.explicit_save_file = false;
+                    cli.local_data_dirs = platform_paths.local_data_dirs();
+                    cli.explicit_local_data_dirs.clear();
+                }
+            }
             "--content-dir" => {
                 if let Some(value) = args.next() {
                     cli.content_dir = PathBuf::from(value);
@@ -2203,6 +2264,7 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--save-file" => {
                 if let Some(value) = args.next() {
                     cli.save_file = Some(PathBuf::from(value));
+                    cli.explicit_save_file = true;
                 }
             }
             "--export-save" => {
@@ -2517,6 +2579,12 @@ fn export_runtime_save(
 }
 
 fn delete_runtime_save(cli: &RuntimeCli) -> std::io::Result<()> {
+    if !cli.explicit_save_file {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "delete save requires --save-file",
+        ));
+    }
     let Some(path) = &cli.save_file else {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -2987,13 +3055,15 @@ mod tests {
         demo_upgrade_choice, effects_for_events, event_kind_for_events, export_runtime_local_data,
         load_runtime_privacy_settings, make_tone_wav, map_visual_style, parse_runtime_cli,
         persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
-        resolve_runtime_content_selection, run_config_from_cli, runtime_asset_root,
-        runtime_can_upload, runtime_privacy_notice, runtime_sprite_paths, sounds_for_events,
-        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
+        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
+        runtime_asset_root, runtime_can_upload, runtime_privacy_notice, runtime_sprite_paths,
+        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
+        write_runtime_save_state,
         RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
         RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSound,
-        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_LOCAL_REPLAY_DIR,
-        DEFAULT_LOCAL_TELEMETRY_DIR, DEFAULT_SAVE_ID,
+        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_SAVE_ID,
+        PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
+        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
@@ -3125,10 +3195,10 @@ mod tests {
         );
         assert!(cli
             .local_data_dirs
-            .contains(&PathBuf::from(DEFAULT_LOCAL_TELEMETRY_DIR)));
+            .contains(&PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT).join(PLATFORM_TELEMETRY_ROOT)));
         assert!(cli
             .local_data_dirs
-            .contains(&PathBuf::from(DEFAULT_LOCAL_REPLAY_DIR)));
+            .contains(&PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT).join(PLATFORM_REPLAY_ROOT)));
         assert!(cli
             .local_data_dirs
             .contains(&PathBuf::from("tmp/runtime-data")));
@@ -3145,6 +3215,97 @@ mod tests {
     }
 
     #[test]
+    fn runtime_platform_paths_follow_policy_roots() {
+        let paths = resolve_runtime_platform_paths("platform_user_data/soft-candy-storm");
+
+        assert_eq!(
+            paths.save_file,
+            PathBuf::from("platform_user_data/soft-candy-storm")
+                .join(PLATFORM_SAVE_ROOT)
+                .join("profile.json")
+        );
+        assert_eq!(
+            paths.runtime_settings_file,
+            PathBuf::from("platform_user_data/soft-candy-storm")
+                .join(PLATFORM_SETTINGS_ROOT)
+                .join("runtime_privacy_settings.json")
+        );
+        assert_eq!(
+            paths.local_telemetry_dir,
+            PathBuf::from("platform_user_data/soft-candy-storm").join(PLATFORM_TELEMETRY_ROOT)
+        );
+        assert_eq!(
+            paths.local_replay_dir,
+            PathBuf::from("platform_user_data/soft-candy-storm").join(PLATFORM_REPLAY_ROOT)
+        );
+        assert_eq!(
+            paths.crash_report_dir,
+            PathBuf::from("platform_user_data/soft-candy-storm")
+                .join(PLATFORM_CRASH_REPORT_ROOT)
+        );
+    }
+
+    #[test]
+    fn runtime_cli_defaults_use_platform_data_roots() {
+        let cli = RuntimeCli::default();
+
+        assert_eq!(cli.platform_data_root, PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT));
+        assert_eq!(
+            cli.save_file,
+            Some(
+                PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT)
+                    .join(PLATFORM_SAVE_ROOT)
+                    .join("profile.json")
+            )
+        );
+        assert_eq!(
+            cli.runtime_settings_file,
+            Some(
+                PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT)
+                    .join(PLATFORM_SETTINGS_ROOT)
+                    .join("runtime_privacy_settings.json")
+            )
+        );
+        assert!(cli
+            .local_data_dirs
+            .contains(&PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT).join(PLATFORM_TELEMETRY_ROOT)));
+        assert!(cli
+            .local_data_dirs
+            .contains(&PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT).join(PLATFORM_REPLAY_ROOT)));
+        assert!(cli
+            .local_data_dirs
+            .contains(&PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT).join(PLATFORM_CRASH_REPORT_ROOT)));
+    }
+
+    #[test]
+    fn runtime_platform_data_root_cli_rebinds_default_paths() {
+        let cli = parse_runtime_cli([
+            "--platform-data-root".to_string(),
+            "tmp/platform-data".to_string(),
+        ]);
+
+        assert_eq!(cli.platform_data_root, PathBuf::from("tmp/platform-data"));
+        assert_eq!(
+            cli.save_file,
+            Some(PathBuf::from("tmp/platform-data/saves/profile.json"))
+        );
+        assert_eq!(
+            cli.runtime_settings_file,
+            Some(PathBuf::from(
+                "tmp/platform-data/settings/runtime_privacy_settings.json"
+            ))
+        );
+        assert_eq!(
+            cli.local_data_dirs,
+            vec![
+                PathBuf::from("tmp/platform-data/telemetry"),
+                PathBuf::from("tmp/platform-data/replay"),
+                PathBuf::from("tmp/platform-data/crash-reports"),
+            ]
+        );
+    }
+
+    #[test]
     fn parses_runtime_save_options() {
         let cli = parse_runtime_cli([
             "--save-file".to_string(),
@@ -3158,6 +3319,7 @@ mod tests {
             cli.save_file,
             Some(PathBuf::from("harness/save/local/profile.json"))
         );
+        assert!(cli.explicit_save_file);
         assert_eq!(
             cli.export_save,
             Some(PathBuf::from("harness/save/local/export.json"))
@@ -3705,6 +3867,7 @@ mod tests {
 
         super::delete_runtime_save(&RuntimeCli {
             save_file: Some(save_file.clone()),
+            explicit_save_file: true,
             ..RuntimeCli::default()
         })
         .unwrap();
