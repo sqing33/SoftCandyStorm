@@ -16,6 +16,7 @@
 6. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
 7. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
 8. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
+9. Runtime 候选通过 Runtime preview、音频响度 / 听感审查和 final human acceptance 后，才可以写入 `asset_acceptance_manifest_template.json` 对应的最终接受 manifest，并运行 `validate_asset_acceptance_manifest.py`。
 
 mmx 生成计划示例：
 
@@ -74,3 +75,15 @@ python3 harness/asset_review/validate_asset_runtime_candidate_manifest.py \
 ```
 
 晋级前必须先有真人填写并通过校验的 `asset_candidate` 审查记录；自动草稿、`needs_more_review`、`repair` 或 `reject` 结论都不能晋级。该门禁和 Runtime 候选晋级都不会替代小尺寸实机预览、听感审查、响度处理、授权复核或 Runtime smoke。
+
+最终接受 manifest 校验示例：
+
+```bash
+python3 harness/asset_review/validate_asset_acceptance_manifest.py \
+  harness/asset_review/accepted/<batch>/acceptance_manifest.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/asset_acceptance_manifest.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+模板 `asset_acceptance_manifest_template.json` 保留 TODO、Runtime preview review、audio loudness review 和 final acceptance 占位路径，当前报告应为 `asset_acceptance_manifest_invalid`。它要求绑定有效 Runtime candidate manifest、Runtime preview review、音频响度 / 听感审查和最终人工接受记录；即使将来报告有效，也只说明素材内容可以进入 accepted asset 内容池，仍不代表 Runtime 已集成、发布包 ready 或可以跳过试玩 / 隐私 / 打包门禁。

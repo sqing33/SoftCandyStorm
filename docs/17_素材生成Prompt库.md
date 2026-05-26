@@ -457,6 +457,18 @@ game_runtime --asset-runtime-candidate-manifest \
 
 该入口只在 `F1` 概览显示候选批次、素材数量、类型统计和 `asset_candidate` 待预览状态。它不会读取候选图片、音频或正文文件，不替换正式 Runtime 素材，也不会把候选标记为 `accepted_content`、`runtime_integrated` 或 `release_ready`；缺少 Runtime preview、音频响度审查或最终人工接受要求的 manifest 会被拒绝。
 
+若 Runtime preview、音频响度 / 听感审查和最终人工接受全部完成，再运行：
+
+```bash
+python3 harness/asset_review/validate_asset_acceptance_manifest.py \
+  harness/asset_review/accepted/<batch>/acceptance_manifest.json \
+  --repo-root . \
+  --report /tmp/asset_acceptance_manifest.json \
+  --markdown /tmp/asset_acceptance_manifest.md
+```
+
+该 manifest 允许记录 `accepted_content=true`，但必须同时保持 `runtime_integrated=false`、`release_ready=false`、`generated_candidate_direct_acceptance_allowed=false`。它不会把素材复制进 Runtime，不证明发布包 ready，也不能替代小尺寸实机预览、听感复核、授权复核或最终 smoke。
+
 审查结论允许：
 
 - `needs_more_review`：信息不足，继续人工检查。

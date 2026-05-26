@@ -156,7 +156,7 @@
       "doc_id": "05",
       "doc_path": "docs/05_美术与音频素材计划.md",
       "status": "partial",
-      "summary": "已有程序化 top-down 占位素材、多批 mmx 图像/TTS/music 候选、mmx 生成前作业计划门禁、Runtime 俯视角与音频候选批次、升级反馈候选批次，以及素材人工审查模板、草稿生成器、校验器、Runtime 候选晋级工具和 Runtime 候选 manifest 门禁；正式美术音频仍未由真人审查并接入。",
+      "summary": "已有程序化 top-down 占位素材、多批 mmx 图像/TTS/music 候选、mmx 生成前作业计划门禁、Runtime 俯视角与音频候选批次、升级反馈候选批次，以及素材人工审查模板、草稿生成器、校验器、Runtime 候选晋级工具、Runtime 候选 manifest 门禁和最终接受 manifest 门禁；正式美术音频仍未由真人审查并接入。",
       "coverage": [
         {
           "id": "asset-candidate-pipeline",
@@ -188,6 +188,10 @@
             "harness/asset_review/validate_asset_runtime_candidate_manifest.py",
             "harness/asset_review/test_validate_asset_runtime_candidate_manifest.py",
             "harness/reports/2026-05-26_asset_runtime_candidate_manifest_template_001/summary.md",
+            "harness/asset_review/asset_acceptance_manifest_template.json",
+            "harness/asset_review/validate_asset_acceptance_manifest.py",
+            "harness/asset_review/test_validate_asset_acceptance_manifest.py",
+            "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/summary.md",
             "harness/runtime_contract/runtime_surface_contract_v0.json",
             "harness/reports/2026-05-26_runtime_surface_contract_asset_runtime_candidate_001/summary.md",
             "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md",
@@ -202,8 +206,8 @@
             "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/summary.md"
           ],
           "gaps": [
-            "mmx 候选仍在 asset/generated_candidates；已有生成前作业计划门禁、metadata 校验、人工审查草稿、真人审查包、asset_candidate 后进入 Runtime 候选 staging 的工具、manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录并通过。",
-            "Runtime 俯视角玩家与 Boss 出场音频批次已生成小尺寸预览、8 秒 sting 和语音 / sting 叠放预览；升级反馈批次已生成图标预览、中文 TTS 和 3.2 秒 jingle；Runtime 现在只能显示 asset_candidate 待预览元数据，仍缺少真人填写后的最终 sprite、音效、BGM 接受记录和真实 Runtime 预览证据。"
+            "mmx 候选仍在 asset/generated_candidates；已有生成前作业计划门禁、metadata 校验、人工审查草稿、真人审查包、asset_candidate 后进入 Runtime 候选 staging 的工具、Runtime 候选 manifest 门禁、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录、Runtime preview review、audio loudness review 或 final human acceptance 并通过。",
+            "Runtime 俯视角玩家与 Boss 出场音频批次已生成小尺寸预览、8 秒 sting 和语音 / sting 叠放预览；升级反馈批次已生成图标预览、中文 TTS 和 3.2 秒 jingle；Runtime 现在只能显示 asset_candidate 待预览元数据，仍缺少真人填写后的最终 sprite、音效、BGM 接受记录、真实 Runtime 预览证据和最终接受 manifest。"
           ]
         }
       ]
@@ -634,7 +638,7 @@
       "doc_id": "17",
       "doc_path": "docs/17_素材生成Prompt库.md",
       "status": "partial",
-      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理，新增 mmx 生成前作业计划门禁并按计划生成 Runtime 俯视角 / 音频候选和升级反馈候选，素材人工审查草稿生成、校验门禁、Runtime 候选晋级工具和 Runtime 候选 manifest 门禁也已补齐；候选质量仍多为 repair 或 needs_review，正式素材缺真人接受。",
+      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理，新增 mmx 生成前作业计划门禁并按计划生成 Runtime 俯视角 / 音频候选和升级反馈候选，素材人工审查草稿生成、校验门禁、Runtime 候选晋级工具、Runtime 候选 manifest 门禁和最终接受 manifest 门禁也已补齐；候选质量仍多为 repair 或 needs_review，正式素材缺真人接受。",
       "coverage": [
         {
           "id": "prompt-provenance",
@@ -661,6 +665,10 @@
             "harness/asset_review/test_promote_asset_runtime_candidate.py",
             "harness/asset_review/validate_asset_runtime_candidate_manifest.py",
             "harness/reports/2026-05-26_asset_runtime_candidate_manifest_template_001/summary.md",
+            "harness/asset_review/asset_acceptance_manifest_template.json",
+            "harness/asset_review/validate_asset_acceptance_manifest.py",
+            "harness/asset_review/test_validate_asset_acceptance_manifest.py",
+            "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/summary.md",
             "harness/runtime_contract/runtime_surface_contract_v0.json",
             "harness/reports/2026-05-26_runtime_surface_contract_asset_runtime_candidate_001/summary.md",
             "harness/asset_review/drafts/2026-05-26_mmx_map_boss_audio_pass_review_draft.json",
@@ -678,7 +686,7 @@
           ],
           "gaps": [
             "多个图像候选仍偏 repair 或 needs_visual_review，未达到最终可接入 Runtime 的质量。",
-            "语音和音乐候选已有覆盖所有 id 的审查草稿；Runtime 俯视角 / 音频批次和升级反馈批次的草稿校验当前故意保持 invalid，Runtime 也只显示候选 manifest 元数据，仍需真人听感审查并填写可校验审查记录。"
+            "语音和音乐候选已有覆盖所有 id 的审查草稿；Runtime 俯视角 / 音频批次和升级反馈批次的草稿校验当前故意保持 invalid，Runtime 也只显示候选 manifest 元数据；最终接受 manifest 门禁已存在，但仍需真人听感审查、Runtime preview review 和 final human acceptance。"
           ]
         }
       ]
@@ -687,7 +695,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、六章主线 MetaProgress 骨架、accepted lockfile 入口、Runtime meta panel 四页视图、Runtime surface 源码形状契约、v0/v1 存档契约、平台存档路径策略、人工平台路径审查模板 / 审查包、v0 到 v1 存档迁移计划、Runtime v1 存档读写 / v0 迁移源码路径、Runtime 逻辑平台数据根默认绑定、Runtime 隐私设置契约、F4 隐私设置页和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告、人工审校草稿、审校包、ui_candidate 晋级工具、UI 候选 manifest 门禁、最终接受 manifest 门禁和 Runtime 安全状态入口；完整基地、可点击图鉴正文 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、六章主线 MetaProgress 骨架、accepted lockfile 入口、Runtime meta panel 四页视图、Runtime surface 源码形状契约、v0/v1 存档契约、平台存档路径策略、人工平台路径审查模板 / 审查包、v0 到 v1 存档迁移计划、Runtime v1 存档读写 / v0 迁移源码路径、Runtime 逻辑平台数据根默认绑定、Runtime 隐私设置契约、F4 隐私设置页和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告、人工审校草稿、审校包、ui_candidate 晋级工具、UI 候选 manifest 门禁、最终接受 manifest 门禁和 Runtime 安全状态入口；素材候选已有 Runtime 候选 manifest 门禁、最终接受 manifest 门禁和 Runtime 安全状态入口；完整基地、可点击图鉴正文 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -752,12 +760,16 @@
             "harness/reports/2026-05-26_save_state_contract_v1_runtime_migration_001/summary.md",
             "harness/reports/2026-05-26_runtime_surface_contract_platform_paths_001/summary.md",
             "harness/reports/2026-05-26_runtime_surface_contract_story_codex_ui_candidate_001/summary.md",
-            "harness/reports/2026-05-26_runtime_surface_contract_asset_runtime_candidate_001/summary.md"
+            "harness/reports/2026-05-26_runtime_surface_contract_asset_runtime_candidate_001/summary.md",
+            "harness/asset_review/asset_acceptance_manifest_template.json",
+            "harness/asset_review/validate_asset_acceptance_manifest.py",
+            "harness/asset_review/test_validate_asset_acceptance_manifest.py",
+            "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/summary.md"
           ],
           "gaps": [
             "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根或显式 --platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F1 可显示素材 Runtime 候选 manifest 的待预览状态，F3 可显示剧情 / 图鉴 UI 候选 manifest 的安全状态，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少恢复二进制后的 Rust 单测 / Runtime smoke、真实平台原生路径、真人平台路径审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审、审校包、ui_candidate 晋级工具、UI 候选 manifest 门禁、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审校记录、Runtime UI review 或 final human acceptance 并通过；Runtime 不读取或展示候选正文，也不把候选标记为 Runtime 集成或正式接受。",
-            "素材候选已有人工审查草稿、审查包、asset_candidate 晋级工具、Runtime 候选 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录并通过；Runtime 不读取候选图片或音频，也不替换正式 Runtime 素材。",
+            "素材候选已有人工审查草稿、审查包、asset_candidate 晋级工具、Runtime 候选 manifest 门禁、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录、Runtime preview review、audio loudness review 或 final human acceptance 并通过；Runtime 不读取候选图片或音频，也不替换正式 Runtime 素材。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
           "blockers": [

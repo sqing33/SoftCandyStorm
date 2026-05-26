@@ -1,0 +1,31 @@
+# Asset Acceptance Manifest Validation
+
+- Source: `harness/asset_review/asset_acceptance_manifest_template.json`
+- Decision: `asset_acceptance_manifest_invalid`
+- Candidate batch: `TODO: asset candidate batch id`
+- Assets: 1 / 1
+- Runtime candidate manifest: `None`
+- Runtime preview review: `None`
+- Audio loudness review: `None`
+- Final acceptance: `None`
+
+## Errors
+
+- candidate_batch_id must not contain TODO or placeholder markers
+- accepted_at must not contain TODO or placeholder markers
+- source_runtime_candidate_manifest must not contain TODO or placeholder markers
+- runtime_preview_review_file must not contain TODO or placeholder markers
+- audio_loudness_review_file must not contain TODO or placeholder markers
+- final_human_acceptance_file must not contain TODO or placeholder markers
+- TODO: asset id from Runtime candidate manifest: id must not contain TODO or placeholder markers
+- TODO: asset id from Runtime candidate manifest: source_path must not contain TODO or placeholder markers
+
+## Warnings
+
+- None
+
+## Limitations
+
+- This validator checks final asset acceptance evidence only.
+- A valid acceptance manifest may mark assets accepted, but it does not prove Runtime integration.
+- A valid acceptance manifest is not release readiness and cannot bypass future packaging, privacy, playtest, or Runtime smoke gates.
