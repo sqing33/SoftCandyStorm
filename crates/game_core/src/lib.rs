@@ -410,7 +410,7 @@ pub struct GameCore {
     projectiles: Vec<Projectile>,
     pickups: Vec<Pickup>,
     spawn_timer: f32,
-    boss_spawned: bool,
+    spawned_boss_events: BTreeSet<usize>,
     boss_chests_available: u32,
     pending_upgrade_options: Vec<UpgradeOffer>,
     metrics: RunMetrics,
@@ -497,7 +497,7 @@ impl GameCore {
             projectiles: Vec::new(),
             pickups: Vec::new(),
             spawn_timer: 0.0,
-            boss_spawned: false,
+            spawned_boss_events: BTreeSet::new(),
             boss_chests_available: 0,
             pending_upgrade_options: Vec::new(),
             metrics: RunMetrics {
@@ -573,6 +573,7 @@ impl GameCore {
 
         self.update_content_events(dt_seconds, &mut events);
         self.update_player_slow_effects(dt_seconds);
+        self.update_player_regen(dt_seconds);
         self.update_hazards(dt_seconds, &mut events, &mut reward_hint);
         self.update_player_movement(action.movement, dt_seconds);
         self.update_wave_spawns(dt_seconds, &mut events);
@@ -621,8 +622,7 @@ impl GameCore {
                 .unwrap_or(Ordering::Equal)
         });
 
-        let boss = self
-            .enemies
+        let boss = visible_enemies
             .iter()
             .find(|enemy| enemy.is_boss)
             .map(|enemy| BossSnapshot {
@@ -718,6 +718,15 @@ impl GameCore {
         }
         self.player_slow_effects
             .retain(|effect| effect.remaining_seconds > 0.0);
+    }
+
+    fn update_player_regen(&mut self, dt: f32) {
+        if self.player.regen_per_second <= 0.0 || self.player.health <= 0.0 {
+            return;
+        }
+
+        self.player.health =
+            (self.player.health + self.player.regen_per_second * dt).min(self.player.max_health);
     }
 
     fn update_hazards(
@@ -939,10 +948,13 @@ impl GameCore {
         let boss_to_spawn = wave
             .boss_events
             .iter()
-            .find(|event| self.time_seconds >= event.time_second && !self.boss_spawned)
-            .map(|event| event.boss_id.clone());
+            .enumerate()
+            .find(|(index, event)| {
+                self.time_seconds >= event.time_second && !self.spawned_boss_events.contains(index)
+            })
+            .map(|(index, event)| (index, event.boss_id.clone()));
 
-        if let Some(boss_id) = boss_to_spawn {
+        if let Some((boss_event_index, boss_id)) = boss_to_spawn {
             if let Some(definition) = self.content.bosses.get(&boss_id).cloned() {
                 let position =
                     self.spawn_position_around_player(self.map.spawn_min, self.map.spawn_max);
@@ -953,7 +965,7 @@ impl GameCore {
                     boss_id: boss.enemy_id.clone(),
                 });
                 self.enemies.push(boss);
-                self.boss_spawned = true;
+                self.spawned_boss_events.insert(boss_event_index);
             }
         }
 
@@ -2069,6 +2081,12 @@ fn apply_passive_definition(
             ("xp_multiplier", "multiply") => {
                 player.xp_multiplier *= modifier.value_per_level;
             }
+            ("regen_per_second", "add") => {
+                player.regen_per_second += modifier.value_per_level;
+            }
+            ("regen_per_second", "multiply") => {
+                player.regen_per_second *= modifier.value_per_level;
+            }
             ("damage_reduction", "add") => {
                 player.damage_reduction += modifier.value_per_level;
             }
@@ -2105,6 +2123,7 @@ struct PlayerState {
     damage_multiplier: f32,
     cooldown_multiplier: f32,
     xp_multiplier: f32,
+    regen_per_second: f32,
     damage_reduction: f32,
     projectile_size_multiplier: f32,
     effect_duration_multiplier: f32,
@@ -2124,6 +2143,7 @@ impl PlayerState {
             damage_multiplier: definition.base_stats.damage_multiplier,
             cooldown_multiplier: definition.base_stats.cooldown_multiplier,
             xp_multiplier: definition.base_stats.xp_multiplier,
+            regen_per_second: definition.base_stats.regen_per_second,
             damage_reduction: 0.0,
             projectile_size_multiplier: 1.0,
             effect_duration_multiplier: 1.0,
@@ -3554,6 +3574,94 @@ mod tests {
     }
 
     #[test]
+    fn multiple_boss_events_spawn_once_each() {
+        let mut content = ContentPack::base_demo();
+        let wave = content
+            .waves
+            .get_mut("frosting-grassland-standard")
+            .expect("base demo should include frosting-grassland wave");
+        wave.boss_events = vec![
+            content::BossEventDefinition {
+                time_second: 0.05,
+                boss_id: "runaway-sugar-mixer".to_string(),
+            },
+            content::BossEventDefinition {
+                time_second: 0.10,
+                boss_id: "giant-gummy-bear-king".to_string(),
+            },
+        ];
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                duration_seconds: 1.0,
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("content should initialize");
+        let dt = FixedDt::from_seconds(0.05);
+        let mut boss_spawns = 0;
+
+        for _ in 0..10 {
+            let result = core.step(PlayerAction::default(), dt);
+            boss_spawns += result
+                .events
+                .iter()
+                .filter(|event| matches!(event, GameEvent::BossSpawned { .. }))
+                .count();
+        }
+
+        assert_eq!(boss_spawns, 2);
+        assert_eq!(core.enemies.iter().filter(|enemy| enemy.is_boss).count(), 2);
+
+        for _ in 0..5 {
+            let result = core.step(PlayerAction::default(), dt);
+            assert!(!result
+                .events
+                .iter()
+                .any(|event| matches!(event, GameEvent::BossSpawned { .. })));
+        }
+    }
+
+    #[test]
+    fn snapshot_reports_nearest_boss_when_multiple_alive() {
+        let content = ContentPack::base_demo();
+        let mixer_definition = content
+            .bosses
+            .get("runaway-sugar-mixer")
+            .expect("base demo should include runaway-sugar-mixer")
+            .clone();
+        let bear_definition = content
+            .bosses
+            .get("giant-gummy-bear-king")
+            .expect("base demo should include giant-gummy-bear-king")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        core.player.position = Vec2::ZERO;
+
+        let mixer_id = core.allocate_entity_id();
+        core.enemies.push(Enemy::from_boss_definition(
+            mixer_id,
+            Vec2::new(320.0, 0.0),
+            &mixer_definition,
+        ));
+        let bear_id = core.allocate_entity_id();
+        core.enemies.push(Enemy::from_boss_definition(
+            bear_id,
+            Vec2::new(80.0, 0.0),
+            &bear_definition,
+        ));
+
+        let snapshot = core.snapshot();
+
+        assert_eq!(
+            snapshot.boss.as_ref().map(|boss| boss.boss_id.as_str()),
+            Some("giant-gummy-bear-king")
+        );
+    }
+
+    #[test]
     fn hazard_slow_reduces_player_movement_speed() {
         let mut core = GameCore::reset(RunConfig::default());
         core.hazards.push(Hazard {
@@ -3591,6 +3699,17 @@ mod tests {
         assert!(events
             .iter()
             .any(|event| matches!(event, GameEvent::PlayerDamaged { .. })));
+    }
+
+    #[test]
+    fn player_regen_restores_health_without_exceeding_max() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.player.health = core.player.max_health - 1.0;
+        core.player.regen_per_second = 3.0;
+
+        core.update_player_regen(1.0);
+
+        assert_eq!(core.player.health, core.player.max_health);
     }
 
     #[test]
