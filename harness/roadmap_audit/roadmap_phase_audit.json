@@ -443,11 +443,17 @@
         "harness/reports/2026-05-27_rl_curriculum_stage01_retry_corner_reward_001/summary.md",
         "harness/reports/2026-05-27_rl_curriculum_stage01_retry_corner_reward_001/evaluation.json",
         "harness/reports/2026-05-27_rl_curriculum_stage01_retry_corner_reward_001/traces/soda-creek_seed62406_trace.json",
-        "harness/reports/2026-05-27_rl_curriculum_stage01_retry_corner_reward_001/traces/soda-creek_seed62409_trace.json"
+        "harness/reports/2026-05-27_rl_curriculum_stage01_retry_corner_reward_001/traces/soda-creek_seed62409_trace.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/summary.md",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/ppo_training_report.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/comparison_60s_10seed.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/failure_analysis.md",
+        "harness/failed_cases/fail_20260527_020_corner_reward_retrain_action8_collapse.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/stage01_corner_reward_retrain_20k.zip"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认 seed 62406 / 62409 在右下角 boundary.min_distance = 0、enemy_pressure_risk = 1、nearest_enemy.hitbox_distance = 0 时仍高置信 action 4，成功 seed 则转 action 7 释放敌压。corner_action_risk reward diagnostic 已能捕获该坏路径，但旧模型尚未基于新 reward 重训，opening blocker 继续存在。",
+        "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认 seed 62406 / 62409 的旧坏路径是右下角 action 4，corner_action_risk reward diagnostic 能捕获该路径。但首个 20k warm-start 重训转为 action 8 塌缩：soda-creek 60 秒 10 seed 只有 10% 胜率，caramel-workshop / cracked-star-jar 也出现 action 8 dominant，opening blocker 继续存在。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
@@ -458,7 +464,7 @@
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
         "延长或复查 time-bucket curriculum stage_01 opening，并用更多 seed 证明 soda-creek 开局稳定后，再继续 stage_02 mid。",
-        "基于 corner_action_risk reward 从 stage 01 retry checkpoint warm start 重训 opening repair，并复跑 60 秒 high-pressure 10 seed；只有 soda-creek 通过且动作分布健康后再继续 stage_02 mid。"
+        "降低或重构 action-specific corner reward，先用更小惩罚、entropy schedule 或 short deterministic smoke 排除 action 8 塌缩，再重跑 stage 01 opening 60 秒 high-pressure 10 seed；通过前不得进入 stage_02 mid。"
       ]
     },
     {

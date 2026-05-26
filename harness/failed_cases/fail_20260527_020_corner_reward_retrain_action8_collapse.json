@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_020",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage01_corner_reward_retrain_20k",
+  "seed": 62400,
+  "bot": "PpoCornerRewardRetrain20k",
+  "time_seconds": 30.7999,
+  "symptom": "基于 corner_action_risk reward 从 stage 01 retry checkpoint warm start 重训 20224 actual timesteps 后，soda-creek 训练评估 5 局胜率降为 0%，action 8 占比 92.90%；60 秒 high-pressure 10 seed 对比中 soda-creek 胜率只有 10%，caramel-workshop 为 80%，cracked-star-jar 为 70%，三图均出现 action 8 dominant。",
+  "root_cause": "针对 action 4 右下角坏路径的定向惩罚捕获了旧 failure，但在 20k warm-start 训练中把策略推向新的单方向逃逸偏置；policy 通过持续 action 8 避开 corner_action_risk，却没有学到稳定的开局敌压释放策略。",
+  "fix": "不要从该 checkpoint 继续 stage 02；下一步应降低或重构 action-specific shaping，优先做更小惩罚、entropy schedule、stochastic/short deterministic smoke 或状态目标化 curriculum，再进行完整 20k warm-start。",
+  "validation": "训练报告：harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/ppo_training_report.json；60 秒 high-pressure 10 seed 对比：harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/comparison_60s_10seed.json；失败分析：harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/failure_analysis.md。验证结果为 repair regression，不能作为 RL Bot 候选或 stage 02 前置通过证据。"
+}

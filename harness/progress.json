@@ -1703,6 +1703,11 @@
       "id": "rl_curriculum_stage01_retry_corner_reward_repair",
       "summary": "Gym reward_breakdown 新增 opening 专用 corner_action_risk，用于惩罚 soda-creek 右下角敌压下继续 action 4；同 seed 复跑旧模型确认失败 seed 最终帧触发 -0.006，结论仍为 repair，需要重训验证。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage01_retry_corner_reward_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage01_corner_reward_retrain_regression",
+      "summary": "基于 corner_action_risk 从 stage 01 retry checkpoint warm start 重训 20k 后发生 action 8 塌缩：训练评估 soda-creek 0%，60 秒 high-pressure 10 seed 中 soda-creek 仅 10%，三图均需 policy repair，已记录 fail_20260527_020。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1712,7 +1717,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage 01 retry snapshot compare 显示成功 seed 也会贴边，但会转 action 7 释放敌压；Gym reward_breakdown 已新增 corner_action_risk 捕获右下角敌压下持续 action 4 的坏路径。下一步应基于该 reward warm start 重训 stage 01 opening，并重新跑 60 秒 high-pressure 10 seed；未通过前不得继续解释为 RL Bot 候选。"
+      "summary": "corner_action_risk 能捕获旧 action 4 右下角坏路径，但首个 20k warm-start 重训转为 action 8 塌缩并记录 fail_20260527_020。下一步不要进入 stage 02，应降低或重构 action-specific shaping，先用更小惩罚 / entropy schedule / short deterministic smoke 复查后再做完整重训。"
     },
     {
       "id": "phase4_full_pack_manual_review",
