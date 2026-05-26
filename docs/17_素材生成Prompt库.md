@@ -296,6 +296,19 @@ python3 harness/asset_review/validate_asset_candidate_manual_review.py \
   --markdown /tmp/asset_manual_review.md
 ```
 
+如果真人审查结论为 `asset_candidate`，再运行：
+
+```bash
+python3 harness/asset_review/promote_asset_runtime_candidate.py \
+  harness/asset_review/<review-file>.json \
+  --repo-root . \
+  --out-dir harness/asset_review/runtime_candidates \
+  --report /tmp/asset_runtime_candidate.json \
+  --markdown /tmp/asset_runtime_candidate.md
+```
+
+晋级工具只复制候选批次、人工审查记录并写入 `runtime_candidate_manifest.json`。它不会写入正式素材目录，不会标记 `runtime_integrated`，也不会替代 Runtime 预览、听感 / 响度审查或最终人工接受。
+
 审查结论允许：
 
 - `needs_more_review`：信息不足，继续人工检查。
