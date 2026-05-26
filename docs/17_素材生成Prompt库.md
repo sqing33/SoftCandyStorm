@@ -393,6 +393,27 @@ python3 tools/validate_asset_candidates.py asset/generated_candidates/<batch> \
 
 该校验只检查来源与候选池纪律，不替代人工美术、听感或小尺寸可读性审查。
 
+## 候选音频技术探针
+
+含 TTS、music、SFX 的素材候选批次可以额外运行：
+
+```bash
+python3 harness/asset_review/audit_asset_audio_technical.py \
+  asset/generated_candidates/<batch-or-root> \
+  --report harness/reports/<report-id>/asset_audio_technical_probe.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+该探针使用 `ffprobe` 或 Python `wave` 读取本地音频文件，核对 manifest 中的 `duration_seconds`、`sample_rate_hz` 和 `channels`，并列出每个音频候选的实际时长、采样率和声道数。
+
+当前全量候选报告：
+
+```text
+harness/reports/2026-05-26_asset_audio_technical_probe_001/summary.md
+```
+
+报告结论为 `asset_audio_technical_probe_valid`，覆盖 `asset/generated_candidates` 下 9 个候选批次的 14 个音频文件。它只证明文件存在和技术 metadata 没有明显漂移，不能替代人工听感、响度、循环疲劳、Runtime preview、final human acceptance、accepted_content 或 release gate。
+
 ## 候选素材人工审查
 
 metadata 校验通过后，素材仍不能直接接入正式目录。人工审查记录应使用：

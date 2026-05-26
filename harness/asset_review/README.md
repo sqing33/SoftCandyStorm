@@ -10,15 +10,16 @@
 
 1. 新 `mmx` 批次生成前先运行 `validate_mmx_asset_generation_plan.py`，确认计划中的命令、输出路径和后续审查链路都只指向候选目录。
 2. 生成和后处理完成后运行 `tools/validate_asset_candidates.py`，确认候选批次 metadata、文件引用、prompt/source/postprocess provenance 和候选池标记有效。
-3. 可以复制 `asset_candidate_manual_review_template.json` 手工填写，也可以用 `create_asset_candidate_review_draft.py` 从候选 manifest 生成覆盖所有素材 id 的草稿。
-4. 可以运行 `create_asset_review_packet.py` 把候选 manifest、metadata 报告和人工审查草稿整理成 Markdown 审查包，方便真人逐项打开文件和填写评分。
-5. 真人审查人必须替换草稿中的 `TODO` 占位，填写审查人、时间、每个素材的评分、问题、允许用途和下一步。
-6. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
-7. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
-8. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
-9. Runtime 候选必须分别填写并通过 `asset_runtime_preview_review_template.json`、`asset_audio_loudness_review_template.json` 和 `asset_final_acceptance_template.json`，对应校验器分别为 `validate_asset_runtime_preview_review.py`、`validate_asset_audio_loudness_review.py` 和 `validate_asset_final_acceptance.py`。
-10. 可以运行 `create_asset_acceptance_review_packet.py` 汇总最终接受 manifest 需要的 Runtime candidate manifest、Runtime preview review、音频响度 / 听感审查和 final human acceptance 证据，帮助真人补齐缺口。
-11. Runtime 候选通过 Runtime preview、音频响度 / 听感审查和 final human acceptance 后，才可以写入 `asset_acceptance_manifest_template.json` 对应的最终接受 manifest，并运行 `validate_asset_acceptance_manifest.py`。
+3. 含音频的批次可以运行 `audit_asset_audio_technical.py`，核对本地音频文件、时长、采样率和声道是否与 manifest 一致；该探针不替代人工听感 / 响度审查。
+4. 可以复制 `asset_candidate_manual_review_template.json` 手工填写，也可以用 `create_asset_candidate_review_draft.py` 从候选 manifest 生成覆盖所有素材 id 的草稿。
+5. 可以运行 `create_asset_review_packet.py` 把候选 manifest、metadata 报告和人工审查草稿整理成 Markdown 审查包，方便真人逐项打开文件和填写评分。
+6. 真人审查人必须替换草稿中的 `TODO` 占位，填写审查人、时间、每个素材的评分、问题、允许用途和下一步。
+7. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
+8. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
+9. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
+10. Runtime 候选必须分别填写并通过 `asset_runtime_preview_review_template.json`、`asset_audio_loudness_review_template.json` 和 `asset_final_acceptance_template.json`，对应校验器分别为 `validate_asset_runtime_preview_review.py`、`validate_asset_audio_loudness_review.py` 和 `validate_asset_final_acceptance.py`。
+11. 可以运行 `create_asset_acceptance_review_packet.py` 汇总最终接受 manifest 需要的 Runtime candidate manifest、Runtime preview review、音频响度 / 听感审查和 final human acceptance 证据，帮助真人补齐缺口。
+12. Runtime 候选通过 Runtime preview、音频响度 / 听感审查和 final human acceptance 后，才可以写入 `asset_acceptance_manifest_template.json` 对应的最终接受 manifest，并运行 `validate_asset_acceptance_manifest.py`。
 
 mmx 生成计划示例：
 
@@ -31,6 +32,17 @@ python3 harness/asset_review/validate_mmx_asset_generation_plan.py \
 ```
 
 该计划校验不会调用 `mmx`，只证明作业准备遵守候选池、命令 provenance 和人工审查纪律。
+
+音频技术探针示例：
+
+```bash
+python3 harness/asset_review/audit_asset_audio_technical.py \
+  asset/generated_candidates/<batch-or-root> \
+  --report harness/reports/<report-id>/asset_audio_technical_probe.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+该探针会用 `ffprobe` 或 Python `wave` 读取本地音频文件，并比对 manifest 中的 `duration_seconds`、`sample_rate_hz` 和 `channels`。报告为 valid 只能说明技术 metadata 没有明显漂移，仍不能满足 `asset_audio_loudness_review`、Runtime preview、final human acceptance、accepted_content 或 release gate。
 
 生成审查草稿示例：
 
