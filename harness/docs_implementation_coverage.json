@@ -36,10 +36,13 @@
           "evidence": [
             "content/base_demo/maps/frosting-grassland.json",
             "assets/prototype_topdown/manifest.json",
-            "harness/playtest/runtime_manual_review_pack.md"
+            "harness/playtest/runtime_manual_review_pack.md",
+            "harness/playtest/create_manual_playtest_review_packet.py",
+            "harness/playtest/test_create_manual_playtest_review_packet.py",
+            "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md"
           ],
           "gaps": [
-            "缺少真人试玩结论证明愿景中的可读性、爽感和再来一局动机成立。",
+            "已有 9 局人工试玩模板、TODO 草稿和审查包帮助真人覆盖可读性、爽感和再来一局动机，但仍缺少真人填写后的试玩结论。",
             "mmx 素材候选尚未通过人工审查进入正式 Runtime 素材。"
           ]
         }
@@ -333,7 +336,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器和完整性 validator；当前本地候选明确为 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；当前本地候选明确为 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -349,6 +352,9 @@
             "harness/playtest/create_manual_playtest_review_draft.py",
             "harness/playtest/test_create_manual_playtest_review_draft.py",
             "harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json",
+            "harness/playtest/create_manual_playtest_review_packet.py",
+            "harness/playtest/test_create_manual_playtest_review_packet.py",
+            "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md",
             "harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json",
             "harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py",
             "harness/telemetry_privacy/test_validate_runtime_privacy_settings_contract.py",
@@ -382,7 +388,7 @@
           ],
           "gaps": [
             "当前 release_candidate_evidence 与 release_package_manifest 报告均为 not-ready；Goal 证据一致性报告确认这些 not-ready / blocked 结论与 docs 覆盖、路线图和 progress 账本一致。",
-            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板和完整性校验器，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。"
+            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板和完整性校验器，人工试玩已有 9 局草稿和审查包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。"
           ],
           "blockers": [
             "local_binary_launch_blocked",
@@ -500,11 +506,14 @@
             "tools/validate_static_balance_budget.py",
             "tools/test_validate_static_balance_budget.py",
             "harness/reports/2026-05-26_static_balance_budget_base_demo_001/summary.md",
-            "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md"
+            "harness/reports/2026-05-26_static_balance_budget_phase4_full_pack_001/summary.md",
+            "harness/playtest/create_manual_playtest_review_packet.py",
+            "harness/playtest/test_create_manual_playtest_review_packet.py",
+            "harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md"
           ],
           "gaps": [
             "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack，但正式 game_harness budget-content、Bot 矩阵和 Replay 回归仍需恢复二进制后重跑。",
-            "平衡仍缺真人新手/熟练视角反馈。"
+            "平衡已有 9 局人工试玩审查包覆盖新手、熟练和流派视角，但仍缺真人填写后的新手 / 熟练反馈。"
           ],
           "blockers": [
             "local_binary_launch_blocked",

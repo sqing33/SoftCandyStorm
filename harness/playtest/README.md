@@ -32,10 +32,26 @@ The generated draft covers the 9 required playtest runs and defaults to
 `validate_manual_review.py --strict-acceptance` rejects it until a human
 playtester fills concrete observations.
 
+## Create A Review Packet
+
+```bash
+python3 harness/playtest/create_manual_playtest_review_packet.py \
+  --template harness/playtest/runtime_manual_review_template.json \
+  --draft harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json \
+  --repo-root . \
+  --out harness/reports/2026-05-26_runtime_manual_playtest_review_packet_001/summary.md
+```
+
+The packet gathers the 9-run matrix, required observations, TODO draft status,
+rating fields, allowed tags, and gate labels into one Markdown file. It does
+not run Runtime, fill ratings, approve a candidate, or replace the strict
+acceptance validator.
+
 ## Run Regression Tests
 
 ```bash
 python3 harness/playtest/test_create_manual_playtest_review_draft.py
+python3 harness/playtest/test_create_manual_playtest_review_packet.py
 python3 harness/playtest/test_validate_manual_review.py
 ```
 
