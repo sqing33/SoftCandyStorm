@@ -33,11 +33,9 @@ const RUNTIME_SAVE_V0_SCHEMA_VERSION: u32 = 1;
 const RUNTIME_SAVE_V1_SCHEMA_VERSION: u32 = 2;
 const RUNTIME_SAVE_MIGRATION_ID: &str = "save-state-v0-to-v1";
 const RUNTIME_SAVE_TIMESTAMP: &str = "2026-05-26T00:00:00Z";
-const STORY_CODEX_UI_CANDIDATE_MANIFEST_CONTRACT_ID: &str =
-    "story-codex-ui-candidate-manifest-v0";
+const STORY_CODEX_UI_CANDIDATE_MANIFEST_CONTRACT_ID: &str = "story-codex-ui-candidate-manifest-v0";
 const STORY_CODEX_UI_CANDIDATE_STAGE: &str = "story_codex_ui_candidate";
-const ASSET_RUNTIME_CANDIDATE_MANIFEST_CONTRACT_ID: &str =
-    "asset-runtime-candidate-manifest-v0";
+const ASSET_RUNTIME_CANDIDATE_MANIFEST_CONTRACT_ID: &str = "asset-runtime-candidate-manifest-v0";
 const ASSET_RUNTIME_CANDIDATE_STAGE: &str = "asset_runtime_candidate";
 const CAMERA_Z: f32 = 999.0;
 const EFFECT_Z: f32 = 35.0;
@@ -732,7 +730,9 @@ fn setup_runtime(
             )
         });
     let story_codex_ui_candidate = load_runtime_story_codex_ui_candidate_manifest(&cli)
-        .unwrap_or_else(|error| panic!("failed to load story/codex UI candidate manifest: {error}"));
+        .unwrap_or_else(|error| {
+            panic!("failed to load story/codex UI candidate manifest: {error}")
+        });
     let asset_runtime_candidate = load_runtime_asset_candidate_manifest(&cli)
         .unwrap_or_else(|error| panic!("failed to load asset Runtime candidate manifest: {error}"));
     let content = ContentPack::load_from_dir(&cli.content_dir).unwrap_or_else(|error| {
@@ -2246,7 +2246,9 @@ fn resolve_runtime_platform_paths(data_root: impl Into<PathBuf>) -> RuntimePlatf
 impl RuntimePlatformPaths {
     fn from_data_root(data_root: PathBuf) -> Self {
         Self {
-            save_file: data_root.join(PLATFORM_SAVE_ROOT).join(RUNTIME_SAVE_FILE_NAME),
+            save_file: data_root
+                .join(PLATFORM_SAVE_ROOT)
+                .join(RUNTIME_SAVE_FILE_NAME),
             runtime_settings_file: data_root
                 .join(PLATFORM_SETTINGS_ROOT)
                 .join(RUNTIME_SETTINGS_FILE_NAME),
@@ -2515,9 +2517,10 @@ fn load_runtime_story_codex_ui_candidate_manifest(
         return Ok(None);
     };
     let text = fs::read_to_string(path)?;
-    let manifest = serde_json::from_str::<RuntimeStoryCodexUiCandidateManifest>(&text).map_err(
-        |error| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}")),
-    )?;
+    let manifest =
+        serde_json::from_str::<RuntimeStoryCodexUiCandidateManifest>(&text).map_err(|error| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
+        })?;
     validate_runtime_story_codex_ui_candidate_manifest(&manifest)?;
     Ok(Some(manifest))
 }
@@ -2575,9 +2578,10 @@ fn load_runtime_asset_candidate_manifest(
         return Ok(None);
     };
     let text = fs::read_to_string(path)?;
-    let manifest = serde_json::from_str::<RuntimeAssetCandidateManifest>(&text).map_err(
-        |error| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}")),
-    )?;
+    let manifest =
+        serde_json::from_str::<RuntimeAssetCandidateManifest>(&text).map_err(|error| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
+        })?;
     validate_runtime_asset_candidate_manifest(&manifest)?;
     Ok(Some(manifest))
 }
@@ -2632,18 +2636,14 @@ fn validate_runtime_asset_candidate_manifest(
                 "asset Runtime candidate manifest assets require id, type, qa_status, and allowed_candidate_uses",
             ));
         }
-        if asset
-            .allowed_candidate_uses
-            .iter()
-            .any(|use_label| {
-                let normalized = use_label.trim();
-                normalized.is_empty()
-                    || matches!(
-                        normalized,
-                        "accepted_content" | "runtime_integrated" | "release_ready"
-                    )
-            })
-        {
+        if asset.allowed_candidate_uses.iter().any(|use_label| {
+            let normalized = use_label.trim();
+            normalized.is_empty()
+                || matches!(
+                    normalized,
+                    "accepted_content" | "runtime_integrated" | "release_ready"
+                )
+        }) {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 "asset Runtime candidate manifest allowed_candidate_uses must stay in candidate-only stages",
@@ -3346,9 +3346,9 @@ mod tests {
         toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
         RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules,
         RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
-        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeSound,
-        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_SAVE_ID,
+        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSound,
+        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind,
+        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_SAVE_ID,
         PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
         PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
     };
@@ -3575,8 +3575,8 @@ mod tests {
             },
         };
 
-        let error = super::validate_runtime_story_codex_ui_candidate_manifest(&manifest)
-            .unwrap_err();
+        let error =
+            super::validate_runtime_story_codex_ui_candidate_manifest(&manifest).unwrap_err();
 
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
         assert!(error.to_string().contains("runtime_integrated=false"));
@@ -3764,8 +3764,7 @@ mod tests {
         );
         assert_eq!(
             paths.crash_report_dir,
-            PathBuf::from("platform_user_data/soft-candy-storm")
-                .join(PLATFORM_CRASH_REPORT_ROOT)
+            PathBuf::from("platform_user_data/soft-candy-storm").join(PLATFORM_CRASH_REPORT_ROOT)
         );
     }
 
@@ -3773,7 +3772,10 @@ mod tests {
     fn runtime_cli_defaults_use_platform_data_roots() {
         let cli = RuntimeCli::default();
 
-        assert_eq!(cli.platform_data_root, PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT));
+        assert_eq!(
+            cli.platform_data_root,
+            PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT)
+        );
         assert_eq!(
             cli.save_file,
             Some(
@@ -4231,11 +4233,11 @@ mod tests {
             migrated_json["migration_history"][0]["source_save_id"],
             "legacy-profile"
         );
+        assert_eq!(migrated_json["migration_history"][0]["status"], "completed");
         assert_eq!(
-            migrated_json["migration_history"][0]["status"],
-            "completed"
+            migrated_json["base_ui_state"]["codex_view"]["discovered_only"],
+            true
         );
-        assert_eq!(migrated_json["base_ui_state"]["codex_view"]["discovered_only"], true);
     }
 
     #[test]
