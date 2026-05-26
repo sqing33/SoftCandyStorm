@@ -127,6 +127,7 @@ mod tests {
                 pickup_radius: 72.0,
                 damage_multiplier: 1.0,
                 cooldown_multiplier: 1.0,
+                status_effects: Vec::new(),
             },
             visible_enemies: Vec::new(),
             visible_pickups: Vec::new(),
