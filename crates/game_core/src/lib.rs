@@ -16,7 +16,10 @@ use content::{
     WeaponDefinition,
 };
 use rng::RunRng;
-use std::{cmp::Ordering, collections::BTreeSet};
+use std::{
+    cmp::Ordering,
+    collections::{BTreeMap, BTreeSet},
+};
 
 const DEFAULT_TICK_RATE: u32 = 30;
 const PLAYER_RADIUS: f32 = 18.0;
@@ -203,6 +206,15 @@ pub struct PlayerSnapshot {
     pub pickup_radius: f32,
     pub damage_multiplier: f32,
     pub cooldown_multiplier: f32,
+    pub status_effects: Vec<StatusEffectSnapshot>,
+}
+
+#[derive(Debug, Clone)]
+pub struct StatusEffectSnapshot {
+    pub effect_id: String,
+    pub kind: String,
+    pub multiplier: f32,
+    pub remaining_seconds: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -306,6 +318,9 @@ pub struct RunMetrics {
     pub xp_dropped: f32,
     pub damage_dealt_by_weapon: f32,
     pub damage_taken: f32,
+    pub damage_taken_by_source: BTreeMap<String, f32>,
+    pub boss_damage: f32,
+    pub boss_kill_times: Vec<f32>,
     pub max_enemy_count: usize,
     pub max_projectile_count: usize,
     pub upgrade_choices: Vec<String>,
@@ -496,6 +511,9 @@ impl GameCore {
                 xp_dropped: 0.0,
                 damage_dealt_by_weapon: 0.0,
                 damage_taken: 0.0,
+                damage_taken_by_source: BTreeMap::new(),
+                boss_damage: 0.0,
+                boss_kill_times: Vec::new(),
                 max_enemy_count: 0,
                 max_projectile_count: 0,
                 upgrade_choices: Vec::new(),
@@ -630,6 +648,16 @@ impl GameCore {
                 pickup_radius: self.player.pickup_radius,
                 damage_multiplier: self.player.damage_multiplier,
                 cooldown_multiplier: self.player.cooldown_multiplier,
+                status_effects: self
+                    .player_slow_effects
+                    .iter()
+                    .map(|effect| StatusEffectSnapshot {
+                        effect_id: "movement_slow".to_string(),
+                        kind: "slow".to_string(),
+                        multiplier: effect.multiplier,
+                        remaining_seconds: effect.remaining_seconds.max(0.0),
+                    })
+                    .collect(),
             },
             visible_enemies: visible_enemies
                 .into_iter()
@@ -717,6 +745,7 @@ impl GameCore {
         self.apply_player_damage(
             hazard_damage_per_second.min(HAZARD_DAMAGE_CAP_PER_SECOND),
             dt,
+            "hazard",
             events,
             reward_hint,
         );
@@ -1256,6 +1285,9 @@ impl GameCore {
                 if projectile.position.distance(enemy.position) <= hit_distance {
                     enemy.health -= projectile.damage;
                     self.metrics.damage_dealt_by_weapon += projectile.damage;
+                    if enemy.is_boss {
+                        self.metrics.boss_damage += projectile.damage;
+                    }
                     projectile.pierce_remaining = projectile.pierce_remaining.saturating_sub(1);
                     events.push(GameEvent::EnemyHit {
                         entity_id: enemy.entity_id,
@@ -1286,6 +1318,7 @@ impl GameCore {
             self.metrics.kills += 1;
             if enemy.is_boss {
                 self.boss_chests_available = self.boss_chests_available.saturating_add(1);
+                self.metrics.boss_kill_times.push(self.time_seconds);
             }
             events.push(GameEvent::EnemyKilled {
                 entity_id: enemy.entity_id,
@@ -1392,13 +1425,14 @@ impl GameCore {
             return;
         }
 
-        self.apply_player_damage(total_contact_dps, dt, events, reward_hint);
+        self.apply_player_damage(total_contact_dps, dt, "contact", events, reward_hint);
     }
 
     fn apply_player_damage(
         &mut self,
         damage_per_second: f32,
         dt: f32,
+        source: &str,
         events: &mut Vec<GameEvent>,
         reward_hint: &mut RewardHint,
     ) {
@@ -1414,6 +1448,11 @@ impl GameCore {
 
         self.player.health = (self.player.health - damage).max(0.0);
         self.metrics.damage_taken += damage;
+        *self
+            .metrics
+            .damage_taken_by_source
+            .entry(source.to_string())
+            .or_insert(0.0) += damage;
         reward_hint.damage_taken_delta += damage;
         events.push(GameEvent::PlayerDamaged { amount: damage });
     }

@@ -393,6 +393,6 @@ python3 tools/validate_gamecore_api_contract.py \
 
 当前 v0 已知缺口：
 
-- `RunMetrics` 仍以聚合字段为主，未完全覆盖文档中规划的 per-source metrics。
-- `PlayerSnapshot` 尚未把 `status_effects` 固化为稳定字段。
+- `RunMetrics` 已把 `damage_taken_by_source`、`boss_damage` 和 `boss_kill_times` 固化进 v0 source-shape 契约，但指标语义仍需要恢复二进制后用 Harness / Replay 验证。
+- `PlayerSnapshot` 已把 `status_effects` 固化为稳定字段，并以 `StatusEffectSnapshot` 暴露当前移动减速等效果；Runtime 可读性和 Gym observation 语义仍需要后续验证。
 - 本机二进制启动恢复前，无法用 `cargo test`、`game_harness replay-batch` 或 Gym bridge smoke 证明接口语义完整。

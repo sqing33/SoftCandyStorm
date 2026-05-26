@@ -371,7 +371,7 @@
       "doc_id": "14",
       "doc_path": "docs/14_GameCore接口规格.md",
       "status": "partial",
-      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，且新增 v0 公共接口 source-shape 契约校验证据；当前仍无法运行二进制验证接口语义。",
+      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，v0 公共接口 source-shape 契约已覆盖 PlayerSnapshot.status_effects、StatusEffectSnapshot、RunMetrics per-source 受击来源和 Boss 指标；当前仍无法运行二进制验证接口语义。",
       "coverage": [
         {
           "id": "gamecore-runtime-harness-api",
@@ -385,12 +385,14 @@
             "tools/validate_gamecore_api_contract.py",
             "tools/test_validate_gamecore_api_contract.py",
             "harness/reports/2026-05-26_gamecore_api_contract_001/summary.md",
-            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+            "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json",
+            "crates/game_core/src/meta.rs",
+            "harness/interface_contract/README.md"
           ],
           "gaps": [
             "恢复二进制后需重跑 cargo test、game_harness replay-batch 和 Gym smoke。",
             "source-shape 契约不能证明固定 seed 语义、Replay 兼容性、Runtime 集成或 Gym bridge 行为。",
-            "RunMetrics per-source metrics 与 PlayerSnapshot status_effects 仍是 v0 已知兼容性缺口。"
+            "RunMetrics per-source / Boss 指标与 PlayerSnapshot status_effects 已进入 v0 契约，但真实指标语义、Runtime 可读性和 Gym observation 映射仍需运行级验证。"
           ],
           "blockers": [
             "local_binary_launch_blocked"

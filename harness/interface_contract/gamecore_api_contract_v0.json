@@ -111,7 +111,18 @@
         "move_speed",
         "pickup_radius",
         "damage_multiplier",
-        "cooldown_multiplier"
+        "cooldown_multiplier",
+        "status_effects"
+      ]
+    },
+    {
+      "file": "game_core_lib",
+      "name": "StatusEffectSnapshot",
+      "required_fields": [
+        "effect_id",
+        "kind",
+        "multiplier",
+        "remaining_seconds"
       ]
     },
     {
@@ -210,6 +221,9 @@
         "xp_dropped",
         "damage_dealt_by_weapon",
         "damage_taken",
+        "damage_taken_by_source",
+        "boss_damage",
+        "boss_kill_times",
         "max_enemy_count",
         "max_projectile_count",
         "upgrade_choices"
@@ -334,7 +348,7 @@
   ],
   "known_gaps": [
     "This source-shape contract does not prove runtime semantics, deterministic replay, Gym bridge behavior, or Bevy integration.",
-    "RunMetrics v0 exposes aggregate damage fields; richer per-source metrics from docs/14 remain future compatibility work.",
-    "PlayerSnapshot v0 does not yet expose status_effects as a stable field."
+    "RunMetrics per-source and boss fields are now part of the v0 source-shape contract, but release use still requires binary-backed replay and Harness validation.",
+    "PlayerSnapshot status_effects is now part of the v0 source-shape contract, but UI readability and observation semantics still require Runtime and Gym validation."
   ]
 }

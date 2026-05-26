@@ -5,7 +5,7 @@
 - Ruleset: `prototype-v0`
 - Decision: `gamecore_api_contract_valid`
 - Source files: 4
-- Structs: 19
+- Structs: 20
 - Enums: 5
 
 ## Errors

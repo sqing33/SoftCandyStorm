@@ -2,15 +2,15 @@
 
 - Source: `harness/progress.json`
 - Decision: `progress_reports_valid`
-- Items: 227
-- Report references: 224 / 224
+- Items: 228
+- Report references: 225 / 225
 - Items without report: 0
 
 ## Sections
 
 | Section | Items |
 |---|---:|
-| `completed` | 152 |
+| `completed` | 153 |
 | `current_findings` | 72 |
 | `next_recommended` | 3 |
 
