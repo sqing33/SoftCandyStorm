@@ -216,6 +216,8 @@ python3 tools/validate_failure_cases.py harness/failed_cases
 
 持续实现超过 45 到 60 分钟时，必须主动检查是否已经形成可提交边界；如果已经完成一个功能、报告、素材批次或文档结论，应先提交再继续下一块。用户要求“继续一直做”不等于允许累积无提交的大块改动。
 
+开始下一项功能前，必须先提交已经完成且通过相应检查的当前功能；如果暂不提交，必须在进度说明中写明原因和剩余阻塞点。
+
 应该提交的典型时机：
 
 - 完成一个独立子系统或 crate，例如 `game_core`、`bot_policies`、`game_harness`、`game_runtime`。
