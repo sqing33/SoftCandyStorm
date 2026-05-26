@@ -343,6 +343,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/dis
 
 The first smoke proved the distilled `.zip` can be loaded by `train_sb3.py --evaluate-model`, but it is only an initialization/plumbing gate until followed by PPO training and high-pressure comparison.
 
+The first full distillation + PPO warm-start used 21,726 phase-aligned samples and the action-change staged GRU teacher. Five distillation epochs reached 0.6916 validation argmax accuracy, then 2,048 PPO timesteps on high-pressure maps completed. The policy still failed: all three 60-second maps triggered action-distribution repair, and all three 300-second maps recorded 0% win rate with action 3 dominant ratio above 0.76. Treat this as a repair result for the current teacher/reward setup, not a reason to promote PPO.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash

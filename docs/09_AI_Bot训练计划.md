@@ -267,6 +267,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 `python/train/distill_behavior_clone_to_sb3.py` 已提供 PPO 蒸馏初始化入口：它从规则 Bot 轨迹读取 observation，用 behavior clone teacher 输出 soft action probability，再监督训练 SB3 PPO `MlpPolicy` 并保存标准 `.zip` 与 metadata。首个 256 样本 smoke 已证明 distilled `.zip` 可以被 `train_sb3.py --evaluate-model` 加载，但 1 epoch 模型仍为动作 3 deterministic smoke，不是策略通过证据；后续应在更大数据上蒸馏后继续 PPO 环境训练，并跑 high-pressure 60/300 秒对比。
 
+首个全量蒸馏 + PPO warm-start 候选使用 21726 条 phase-aligned 样本和 action-change staged GRU teacher，5 epoch 蒸馏后 validation argmax accuracy 为 0.6916；随后在 high-pressure 三图上 warm-start PPO 2048 timesteps。结果仍为 `repair`：60 秒三图均触发 action distribution repair，300 秒三图全部 0% 胜率且 action 3 dominant ratio 为 0.7728 / 0.7631 / 0.8494。结论：蒸馏入口可用，但短 PPO 训练会继承 / 放大当前 teacher 的动作偏置；下一步应改 teacher targets、增加 entropy / curriculum，或纳入升级与阶段目标监督。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。

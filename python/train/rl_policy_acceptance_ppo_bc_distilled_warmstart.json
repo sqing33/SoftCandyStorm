@@ -1,0 +1,33 @@
+{
+  "report_version": 1,
+  "generated_at": "2026-05-27",
+  "policy_id": "ppo_bc_distilled_warmstart",
+  "policy_type": "ppo",
+  "policy_phase": "rl_phase_1_movement_survival",
+  "summary": "BC teacher-probability distillation successfully initialized an SB3 PPO model and warm-start training completed, but the policy retained severe action 3 bias and recorded 0% win rate on all three 300-second high-pressure maps, so it remains repair.",
+  "model_path": "harness/reports/2026-05-27_rl_ppo_bc_distilled_warmstart_001/ppo_bc_distilled_warmstart.zip",
+  "model_metadata_path": "harness/reports/2026-05-27_rl_ppo_bc_distilled_warmstart_001/ppo_bc_distilled_warmstart_metadata.json",
+  "training_report_path": "harness/reports/2026-05-27_rl_ppo_bc_distilled_warmstart_001/run_output.json",
+  "short_eval_report_path": "harness/reports/2026-05-27_rl_ppo_bc_distilled_warmstart_multimap_60s_001/comparison.json",
+  "long_eval_report_path": "harness/reports/2026-05-27_rl_ppo_bc_distilled_warmstart_multimap_300s_001/comparison.json",
+  "rule_bot_comparison_report_path": "harness/reports/2026-05-27_rl_ppo_bc_distilled_warmstart_multimap_300s_001/comparison.json",
+  "local_binary_diagnostic_report_path": "harness/reports/2026-05-27_local_binary_launch_diagnostic_after_terminal_devtools_restart_001/local_binary_launch_diagnostic.json",
+  "failure_case_paths": [
+    "harness/failed_cases/fail_20260527_011_ppo_bc_distilled_action_bias.json"
+  ],
+  "unresolved_failure_case_paths": [
+    "harness/failed_cases/fail_20260527_011_ppo_bc_distilled_action_bias.json"
+  ],
+  "acceptance_criteria": {
+    "required_map_preset": "high-pressure",
+    "min_map_count": 3,
+    "min_short_seconds": 60,
+    "min_long_seconds": 300,
+    "min_normalized_action_entropy": 0.5,
+    "max_dominant_action_ratio": 0.7,
+    "min_short_policy_win_rate": 1.0,
+    "min_long_policy_win_rate": 1.0,
+    "must_match_best_rule_bot": true
+  },
+  "gate_decision": "repair"
+}
