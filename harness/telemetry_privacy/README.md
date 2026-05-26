@@ -86,6 +86,17 @@ python3 harness/telemetry_privacy/validate_manual_legal_review.py \
 
 `manual_legal_review_template.json` 默认包含 `TODO` 和 `needs_more_review`，不能作为通过证据。该校验只检查记录完整性和绑定证据，不提供法律建议、平台批准或发布通过结论。
 
+最终接受证据包会串联隐私策略、Runtime 设置契约、上传传输契约、平台路径策略、三个人工审查和 Release Candidate `telemetry_privacy` gate：
+
+```bash
+python3 harness/telemetry_privacy/create_telemetry_privacy_acceptance_review_packet.py \
+  --repo-root . \
+  --report harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/telemetry_privacy_acceptance_review_packet.json \
+  --markdown harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/summary.md
+```
+
+当前本地证据包结论为 `telemetry_privacy_acceptance_review_packet_needs_evidence`：人工隐私、平台路径和法律 / 合规审查仍是 TODO 模板，上传传输仍是 `planned`，Release Candidate `telemetry_privacy` gate 仍是 `waiting`。该包只用于汇总发布前还缺什么，不提供法律建议、平台批准、上传批准或发布通过结论。
+
 当前 Runtime 已实现 CLI 级本地数据控制，并提供 `F4` Bevy 设置页用于显式切换上传型同意项：
 
 ```bash

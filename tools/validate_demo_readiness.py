@@ -455,7 +455,7 @@ def build_report(repo_root: Path, formal_content_dir: Path, candidate_content_di
         ),
         release_gate(
             repo_root,
-            repo_root / "harness/reports/2026-05-26_release_candidate_evidence_current_local_003/release_candidate_evidence.json",
+            repo_root / "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/release_candidate_evidence.json",
             repo_root / "harness/reports/2026-05-26_accepted_content_lockfile_current_local_001/accepted_content_lockfile.json",
         ),
     ]
