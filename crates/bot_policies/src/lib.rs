@@ -246,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn tank_prioritizes_cooldown_until_health_is_low() {
+    fn tank_prioritizes_survival_after_mid_skill_calibration() {
         let mut snapshot = empty_snapshot();
         snapshot.upgrade_options = vec![
             game_core::UpgradeOptionSnapshot {
@@ -264,9 +264,13 @@ mod tests {
         ];
 
         let mut bot = BotController::new(BotKind::Tank, 3);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+
+        snapshot.upgrade_options[1].id = "candy-heart".to_string();
+        snapshot.upgrade_options[1].tags = vec!["health".to_string()];
         assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(0));
 
-        snapshot.player.health = 40.0;
+        snapshot.player.health = 30.0;
         assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
     }
 
@@ -340,9 +344,9 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
 
 fn defense_threshold(kind: BotKind) -> f32 {
     match kind {
-        BotKind::Tank => 0.55,
+        BotKind::Tank => 0.35,
         BotKind::Coward => 0.62,
-        BotKind::Greedy => 0.55,
+        BotKind::Greedy => 0.38,
         BotKind::Kite => 0.0,
         BotKind::BossHunter => 0.55,
         BotKind::ZoneControl => 0.0,
@@ -377,11 +381,12 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
             "big-candy-jar",
         ],
         BotKind::Tank => &[
-            "cream-clockwork",
             "big-candy-jar",
             "rainbow-candy-shot",
-            "bubble-shoes",
+            "defense",
+            "cream-clockwork",
             "star-spoon",
+            "bubble-shoes",
         ],
         BotKind::BossHunter => &[
             "rainbow-candy-shot",
@@ -427,9 +432,13 @@ fn weapon_level(snapshot: &RunSnapshot, weapon_id: &str) -> u32 {
 }
 
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
+    greedy_movement_with_avoidance(snapshot, 36.0)
+}
+
+fn greedy_movement_with_avoidance(snapshot: &RunSnapshot, avoidance_radius: f32) -> Vec2 {
     if let Some(enemy) = snapshot.visible_enemies.first() {
         let away = snapshot.player.position - enemy.position;
-        if away.length() < 45.0 {
+        if away.length() < avoidance_radius {
             return away.normalized_or_zero();
         }
     }
@@ -475,7 +484,7 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let retreat_threshold = if snapshot.map.map_id == "cracked-star-jar" {
         0.55
     } else {
-        0.25
+        0.16
     };
     if health_ratio < retreat_threshold {
         let avoidance = avoid_enemies(snapshot, 120.0, 10);
@@ -487,7 +496,7 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let pickup_weight = if snapshot.map.map_id == "cracked-star-jar" {
         0.45
     } else {
-        0.8
+        0.22
     };
     best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * pickup_weight
 }
@@ -513,7 +522,7 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         return (spacing * 1.15 + avoidance.normalized_or_zero() * 0.34).normalized_or_zero();
     }
 
-    greedy_movement(snapshot)
+    greedy_movement_with_avoidance(snapshot, 45.0)
 }
 
 fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {

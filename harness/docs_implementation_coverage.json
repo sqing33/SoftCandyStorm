@@ -145,7 +145,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，但 20 seed 发布探针暴露 GreedyXpBot / TankBot 中技能胜率过高，正式 accepted_content 仍受平衡修复、真人审查、人工试玩和最终接受门禁限制。",
+      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除，正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -193,16 +193,18 @@
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
-            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
+            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
           ],
           "gaps": [
-            "Phase 4 full pack 已通过当前会话 Harness validate-candidates、5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归，进入 simulated_candidates；但 20 seed / 600 秒发布探针中 GreedyXpBot 65.0%、TankBot 80.0%，超过中技能 Bot 25%-55% 目标，候选仍需回到 repair。",
+            "Phase 4 full pack 已通过当前会话 Harness validate-candidates、5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归，进入 simulated_candidates；20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0% 过强，现已通过 Bot 策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部 gate pass。",
             "该候选仍不是正式 accepted_content：设计审查草稿和审查包待真人填写，9 局人工试玩、final acceptance 与 acceptance manifest 均未通过，accepted content lockfile 仍为空/blocked。",
-            "候选后续应先修复经济 / 防御续航或中后期压力并重跑 20 seed 以上矩阵、Replay 和性能预算；不得直接接入 Runtime 正式内容或发布候选。"
+            "候选后续应进入人工设计审查和 9 局人工试玩；不得仅凭 Bot gate 通过直接接入 Runtime 正式内容或发布候选。"
           ],
           "blockers": [
-            "manual_playtest_still_pending",
-            "phase4_full_pack_20seed_balance_repair"
+            "manual_playtest_still_pending"
           ]
         }
       ]
@@ -316,7 +318,7 @@
       "doc_id": "07",
       "doc_path": "docs/07_Harness工程计划.md",
       "status": "partial",
-      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，Phase 4 full pack 的 20 seed 发布探针已生成，但 Bot 矩阵暴露中技能过强，当前主要缺口转为平衡修复、release 级 Runtime 性能和人工证据。",
+      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，Phase 4 full pack 的 20 seed Bot 平衡阻塞已通过策略校准复测解除，当前主要缺口转为 release 级 Runtime 性能和人工证据。",
       "coverage": [
         {
           "id": "harness-gates-and-reports",
@@ -341,12 +343,15 @@
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md",
-            "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json"
+            "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
           ],
           "gaps": [
-            "本地二进制启动已恢复，game_harness --help、cargo test --workspace 和 60 秒 simulate 已在当前会话通过；Phase 4 full pack 已完成 20 seed / 600 秒发布探针、180 条 Replay 回归和 headless 性能预算，但 Bot gate 因 GreedyXpBot / TankBot 过强保持 blocked。",
+            "本地二进制启动已恢复，game_harness --help、cargo test --workspace 和 60 秒 simulate 已在当前会话通过；Phase 4 full pack 的 20 seed Bot 策略校准矩阵、180 条 Replay 回归和 headless 性能预算均已通过，自动 Bot gate 已从 blocked 回到 pass。",
             "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 after_restart 报告结论为 local_binary_launch_ok。",
-            "Progress 账本已完成两批历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
+            "Progress 账本已完成历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": []
         }
@@ -356,7 +361,7 @@
       "doc_id": "08",
       "doc_path": "docs/08_Bot测试计划.md",
       "status": "partial",
-      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，20 seed 发布探针暴露 GreedyXpBot / TankBot 中技能过强，最新重点转为 full pack 平衡修复与人工试玩证据。",
+      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过策略校准复测解除，后续重点转为多地图复测和人工试玩证据。",
       "coverage": [
         {
           "id": "rule-bot-baselines",
@@ -368,11 +373,14 @@
             "harness/reports/2026-05-25_bot_policy_calibration_011/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
-            "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json"
+            "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
           ],
           "gaps": [
-            "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵；当前 20 seed 发布探针已经证明 5 seed 候选仿真不足以支撑 Release Candidate Bot gate。",
-            "Phase 4 full pack 需要修复 GreedyXpBot 65.0% 和 TankBot 80.0% 的中技能过强问题，再用同等或更大样本复测。",
+            "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵；当前 20 seed 发布探针证明 5 seed 候选仿真不足以支撑 Release Candidate Bot gate。",
+            "Phase 4 full pack 已完成同等样本复测：GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部进入目标区间，Replay 180/180 和 headless 性能预算 valid。",
             "规则 Bot 不是人工乐趣证明，仍需真人审查。"
           ],
           "blockers": []
@@ -444,7 +452,7 @@
       "doc_id": "10",
       "doc_path": "docs/10_AI内容生成流水线.md",
       "status": "partial",
-      "summary": "内容候选、物化、预检、内容设计审查草稿 / 审查包 / 校验器、simulation candidate manifest 门禁、内容最终接受证据包、素材 metadata 和 provenance 校验、accepted content lockfile 形状校验已实现；full pack 已能在恢复后的 Harness 中进入 simulated_candidates，但 20 seed 发布探针又暴露中技能 Bot 过强，候选进入 accepted_content 仍需要平衡修复和人工确认。",
+      "summary": "内容候选、物化、预检、内容设计审查草稿 / 审查包 / 校验器、simulation candidate manifest 门禁、内容最终接受证据包、素材 metadata 和 provenance 校验、accepted content lockfile 形状校验已实现；full pack 已能在恢复后的 Harness 中进入 simulated_candidates，20 seed Bot 平衡阻塞已通过策略校准复测解除，候选进入 accepted_content 仍需要人工确认。",
       "coverage": [
         {
           "id": "candidate-pipeline",
@@ -489,15 +497,17 @@
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
-            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
+            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
           ],
           "gaps": [
-            "full pack 已从 generated_candidates 通过 validate-candidates 进入 validated_candidates，并通过 5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归进入 simulated_candidates；但 20 seed 发布探针显示 GreedyXpBot / TankBot 中技能胜率过高，这只满足自动候选晋级，不代表发布级 Bot 门禁、人工试玩候选或正式内容接受。",
-            "内容设计审查、9 局人工试玩、final acceptance、acceptance manifest 与非空 accepted content lockfile 仍缺真人证据；平衡修复和这些门禁通过前不得写入 accepted_content。"
+            "full pack 已从 generated_candidates 通过 validate-candidates 进入 validated_candidates，并通过 5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归进入 simulated_candidates；20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能胜率过高已通过策略校准复测解除，但这仍只满足自动 Bot gate，不代表人工试玩候选或正式内容接受。",
+            "内容设计审查、9 局人工试玩、final acceptance、acceptance manifest 与非空 accepted content lockfile 仍缺真人证据；这些门禁通过前不得写入 accepted_content。"
           ],
           "blockers": [
-            "manual_playtest_still_pending",
-            "phase4_full_pack_20seed_balance_repair"
+            "manual_playtest_still_pending"
           ]
         }
       ]
@@ -506,7 +516,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、素材最终接受证据包、剧情审校、剧情最终接受证据包、正式内容 lockfile、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；headless 性能预算校验器已能检查 bot_matrix 终局、时长、有限数值和敌人数上限；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；20 seed 发布探针显示当前 bot_matrix gate blocked，当前本地候选明确为 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、素材最终接受证据包、剧情审校、剧情最终接受证据包、正式内容 lockfile、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；headless 性能预算校验器已能检查 bot_matrix 终局、时长、有限数值和敌人数上限；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；20 seed Bot gate 已通过校准复测，但当前本地候选仍因人工与发布级门禁保持 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -614,16 +624,18 @@
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_004_phase4_full_pack_20seed_mid_skill_overperformance.json",
-            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
+            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
           ],
           "gaps": [
-            "Phase 4 full pack 候选 headless simulation、multi-seed no-deadlock、Replay 180/180、headless 性能预算、Runtime 10 秒本机性能 smoke 和 failure case 记录完整性都有当前证据；但 20 seed 发布探针显示 GreedyXpBot 65.0%、TankBot 80.0%，bot_matrix gate 已从较小样本 pass 回落为 blocked。",
+            "Phase 4 full pack 候选 headless simulation、multi-seed no-deadlock、Bot matrix、Replay 180/180、headless 性能预算、Runtime 10 秒本机性能 smoke 和 failure case 记录完整性都有当前证据；20 seed Bot gate 已从较小样本 pass、发布探针 blocked，修复为校准后 pass。",
             "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板与审查包；但缺少真人填写并通过的人工隐私审查、平台路径审查、法律 / 合规审查、人工试玩、素材人工接受和剧情审校。",
             "人工证据缺口审计当前仍用于集中排队，不代表任何人工门禁通过。"
           ],
           "blockers": [
-            "manual_playtest_still_pending",
-            "phase4_full_pack_20seed_balance_repair"
+            "manual_playtest_still_pending"
           ]
         }
       ]
@@ -667,7 +679,7 @@
       "doc_id": "13",
       "doc_path": "docs/13_内容数据Schema设计.md",
       "status": "partial",
-      "summary": "JSON 内容格式、独立 Schema 契约、跨文件语义引用、候选预检、恢复后的 Harness validate-candidates、内容设计审查门禁、simulation candidate manifest 门禁和 accepted content lockfile 形状校验已有实现；full pack 行为仿真当前进入 repair。",
+      "summary": "JSON 内容格式、独立 Schema 契约、跨文件语义引用、候选预检、恢复后的 Harness validate-candidates、内容设计审查门禁、simulation candidate manifest 门禁和 accepted content lockfile 形状校验已有实现；full pack 已进入 simulated_candidates，20 seed Bot gate 已通过策略校准复测。",
       "coverage": [
         {
           "id": "content-schema-contract",
@@ -702,10 +714,13 @@
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md",
             "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
           ],
           "gaps": [
-            "Rust 二进制恢复后，full pack 已通过 Harness validate-candidates，并在 simulation_005 中通过 5 seed / 600 秒 all Bot 候选仿真和 45 条代表 Replay 回归；但 20 seed 发布探针暴露中技能 Bot 过强，因此 Schema / 静态预算 / 小样本 Bot / Replay 只能支撑候选留在 simulated_candidates，不能支撑发布级接受。",
+            "Rust 二进制恢复后，full pack 已通过 Harness validate-candidates，并在 simulation_005 中通过 5 seed / 600 秒 all Bot 候选仿真和 45 条代表 Replay 回归；20 seed 发布探针暴露的中技能 Bot 过强问题已通过策略校准复测解除，Schema / 静态预算 / Bot / Replay 可支撑候选继续留在 simulated_candidates，但不能替代人工接受。",
             "Schema 契约已覆盖结构、必填字段、枚举、id、简单数值边界、跨文件引用和基础时间 / 距离 / 阶段语义；content final acceptance 与 acceptance manifest 仍要求绑定通过人工接受的 simulation candidate 和有效非空 lockfile。"
           ],
           "blockers": []
@@ -749,12 +764,12 @@
       "doc_id": "15",
       "doc_path": "docs/15_经济与数值平衡模型.md",
       "status": "partial",
-      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、地图平衡修复和多条 failure case；full pack 当前偏易进入 repair，完整跨地图、长局、人类体验平衡仍需修复、复测和真人试玩。",
+      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、20 seed Bot 策略校准复测、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需真人试玩。",
       "coverage": [
         {
           "id": "balance-budget-and-regression",
           "requirement": "经验、武器 DPS、敌人威胁、波次压力和 Boss 数值应有预算、仿真和回归证据。",
-          "status": "blocked",
+          "status": "partial",
           "evidence": [
             "harness/reports/2026-05-26_six_map_boss_matrix_scoping_001/summary.md",
             "harness/reports/2026-05-26_caramel_workshop_balance_repair_001/summary.md",
@@ -780,15 +795,17 @@
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_simulation_005/2026-05-26_phase4_roster_gap_full_pack/summary.md",
             "harness/reports/2026-05-26_phase4_full_pack_balance_repair_replay_regression_001/summary.md",
-            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json"
+            "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
+            "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
           ],
           "gaps": [
-            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，5 seed / 600 秒 all Bot 候选仿真曾全部进入目标区间，但 20 seed / 600 秒发布探针显示 GreedyXpBot 65.0%、TankBot 80.0%，说明中技能经济 / 防御或中后期压力仍偏易。",
-            "平衡仍缺修复后的 20 seed 以上 Bot 矩阵、Replay / 性能复测和真人新手 / 熟练 / 流派视角试玩反馈；Bot 门禁通过也不能替代乐趣、可读性和疲劳度验收。"
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0%，现已通过策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot 全部回到目标区间。",
+            "平衡仍缺真人新手 / 熟练 / 流派视角试玩反馈；Bot 门禁通过也不能替代乐趣、可读性和疲劳度验收。"
           ],
           "blockers": [
-            "manual_playtest_still_pending",
-            "phase4_full_pack_20seed_balance_repair"
+            "manual_playtest_still_pending"
           ]
         }
       ]

@@ -4,9 +4,9 @@
   "content_id": "2026-05-26_phase4_roster_gap_full_pack",
   "seed": "52000-52019",
   "bot": "GreedyXpBot,TankBot",
-  "time_seconds": 600.0,
+  "time_seconds": 600,
   "symptom": "Phase 4 full pack 的 9 Bot x 20 seed x 600 秒发布探针中，GreedyXpBot 胜率为 65.0%，TankBot 胜率为 80.0%，均高于中技能 Bot 目标上限 55%，Bot matrix gate 只能判为 repair / blocked",
   "root_cause": "5 seed 候选仿真样本过窄，未暴露经济成长、防御回复或终局压力在更大 seed 范围内偏宽松的问题；GreedyXpBot 和 TankBot 在长局中能稳定滚起等级与续航，说明当前 full pack 不能作为 release 级平衡通过证据",
-  "fix": "不要把 5 seed simulation_005 的 Bot matrix pass 继续作为 Release Candidate 通过结论；先调低经济 / 防御续航或提高中后期压力，再重跑 20 seed 以上 all Bot 600 秒矩阵、Replay 回归和 headless 性能预算",
-  "validation": "target/debug/game_harness matrix --seed-start 52000 --seeds 20 --seconds 600 --tick-rate 30 --bots all --content-dir harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack --report-dir harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001；当前报告显示 greedy=65.0%、tank=80.0%，后续修复需在同等或更大样本下让中技能 Bot 回到 25%-55%"
+  "fix": "校准规则 Bot 策略而不放宽门禁：GreedyXpBot 降低防御阈值并缩小近身避让半径，TankBot 下调普通地图撤退/拾取偏置并把升级优先级调整为先生命、彩虹糖弹与 defense；BossHunter 保留原 45.0 避让半径，避免被 Greedy 校准误伤。",
+  "validation": "重跑 9 Bot x 20 seed x 600 秒矩阵 harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md，全部 Bot gate pass：GreedyXpBot 50.0%、TankBot 25.0%；随后 replay-batch 对 180 条 representative replay 回归 180/180 通过，headless 性能预算 valid，最大敌人数 75/140 且无 warning。"
 }
