@@ -1623,6 +1623,11 @@
       "id": "rl_upgrade_choice_export_smoke",
       "summary": "规则 Bot 轨迹导出现在可选写入 upgrade_sample 监督记录；movement loader 默认跳过并统计这些记录，upgrade choice loader 可单独读取。首个 soda-creek KiteBot 2 seed smoke 产生 241 条 movement sample 和 4 条 upgrade sample，只证明数据入口可用，不代表升级策略或 RL 长局修复。",
       "report": "harness/reports/2026-05-27_rl_upgrade_choice_export_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_upgrade_choice_training_smoke",
+      "summary": "新增 train_upgrade_choice.py 监督升级选择 ranker：每个 upgrade prompt 展开为候选升级选项行，使用 observation + upgrade id one-hot 学习规则 Bot 的选择。首个 4 choice / 12 row smoke 写出 checkpoint 和报告，结论为 upgrade_choice_training_smoke_not_policy_gate，尚未接入 Gym upgrade action mode。",
+      "report": "harness/reports/2026-05-27_rl_upgrade_choice_training_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1632,7 +1637,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 均为 repair；升级选择监督数据入口已补上，下一步应训练升级选择模型、接入 Gym upgrade action mode 或设计阶段目标 curriculum。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 均为 repair；升级选择导出与监督 ranker smoke 已补上，下一步应接入 Gym upgrade action mode 或设计阶段目标 curriculum。"
     },
     {
       "id": "phase4_full_pack_manual_review",

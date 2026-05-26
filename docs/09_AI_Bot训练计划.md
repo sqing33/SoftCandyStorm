@@ -279,6 +279,8 @@ target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mi
 
 升级选择监督入口已经补上最小数据链路：`export-bot-trajectories --include-upgrade-samples true` 会在不破坏 movement dataset 的前提下输出 `upgrade_sample`，`train_behavior_clone.py` 的 movement loader 默认跳过并统计这些记录，`load_upgrade_choice_dataset` / `summarize_upgrade_choice_dataset` 可单独读取升级选择样本。当前 smoke 报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_export_smoke_001/summary.md`；下一步应基于该记录训练升级选择模型、把升级 action mode 纳入 Gym，或设计阶段目标监督，而不是继续只调 movement entropy。
 
+`python/train/train_upgrade_choice.py` 已提供首个监督升级选择 ranker smoke：它把每次升级 prompt 展开为一行一个候选升级，输入为 observation + upgrade id one-hot，目标为规则 Bot 选择的 upgrade。首个 4 choice / 12 row smoke 能写出 checkpoint 和报告，gate 为 `upgrade_choice_training_smoke_not_policy_gate`；它只证明模型管线，不代表升级策略质量，也尚未接入 Gym upgrade action mode。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。

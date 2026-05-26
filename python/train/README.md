@@ -372,6 +372,20 @@ The first `ent_coef = 0.02` target-entropy warm-start lifted the 60-second high-
 
 The first upgrade-choice export smoke produced 241 movement samples and 4 upgrade samples from 2 KiteBot seeds on `soda-creek`. Treat this as a supervised data-entry proof only; it does not prove upgrade policy quality, Gym action-mode support, or high-pressure long-run repair.
 
+Use `train_upgrade_choice.py` for the first supervised upgrade-choice ranker smoke:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_upgrade_choice.py \
+  --dataset harness/reports/2026-05-27_rl_upgrade_choice_export_smoke_001 \
+  --epochs 20 \
+  --batch-size 8 \
+  --hidden-size 16 \
+  --model-out harness/reports/local_upgrade_choice/upgrade_choice_smoke.pt \
+  --report harness/reports/local_upgrade_choice/run_output.json
+```
+
+The ranker expands each upgrade prompt into one option row per offered upgrade, appends an upgrade-id one-hot feature to the observation, and learns which option the rule Bot chose. The first 4-choice smoke writes a checkpoint and `upgrade_choice_training_smoke_not_policy_gate`; it is not connected to Gym upgrade action mode yet.
+
 Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
 
 ```bash
