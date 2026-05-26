@@ -274,6 +274,18 @@ metadata 校验通过后，素材仍不能直接接入正式目录。人工审�
 harness/asset_review/asset_candidate_manual_review_template.json
 ```
 
+也可以从 manifest 生成覆盖所有素材 id 的审查草稿：
+
+```bash
+python3 harness/asset_review/create_asset_candidate_review_draft.py \
+  asset/generated_candidates/<batch> \
+  --repo-root . \
+  --metadata-report harness/reports/<asset-validation-report>/summary.md \
+  --out harness/asset_review/drafts/<batch>_review_draft.json
+```
+
+草稿只用于防止漏审，不能替代真人听感、美术、小尺寸和授权审查。草稿里的 `TODO` 必须由真人替换后，才能进入人工审查校验。
+
 并通过：
 
 ```bash
