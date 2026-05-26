@@ -1,0 +1,40 @@
+{
+  "manifest_version": 1,
+  "package_id": "current-local-package-2026-05-26",
+  "candidate_id": "current-local-2026-05-26",
+  "created_at": "2026-05-26",
+  "release_stage": "prototype-local",
+  "package_status": "blocked",
+  "summary": "当前本地工作区的发布包清单。由于 release candidate 仍未就绪且本机新生成 Mach-O 二进制被系统策略阻塞，当前不能生成有效发布包。",
+  "candidate_evidence": "harness/release/current_local_rc_evidence.json",
+  "package_items": [],
+  "checks": [
+    {
+      "id": "package_created",
+      "status": "blocked",
+      "summary": "发布包创建依赖可构建并可启动的 Runtime/Harness；当前本机二进制启动阻塞，不能产出有效包。",
+      "evidence_paths": [
+        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+      ],
+      "synthetic": false
+    },
+    {
+      "id": "final_smoke",
+      "status": "blocked",
+      "summary": "最终 smoke 需要启动打包后的 Runtime；当前不能提供 release 级启动证据。",
+      "evidence_paths": [
+        "harness/failed_cases/fail_20260526_024_local_binary_launch_blocked.json"
+      ],
+      "synthetic": false
+    }
+  ],
+  "blockers": [
+    "local_binary_launch_blocked",
+    "release_candidate_not_ready"
+  ],
+  "next_actions": [
+    "恢复本机二进制启动能力后重新运行编译、测试、Harness、Replay 和 Runtime smoke。",
+    "Release Candidate 全部门禁通过后生成 runtime bundle、release archive、checksum manifest、release notes、content lockfile 和 asset manifest。",
+    "对最终发布包运行 final smoke 并将证据写回该清单。"
+  ]
+}

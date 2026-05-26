@@ -292,7 +292,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私、Runtime 隐私设置契约、人工隐私审查和发布包门禁；人工试玩已有 9 局草稿生成器和完整性 validator；当前本地候选明确为 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私、Runtime 隐私设置契约、人工隐私审查和发布包门禁；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器和完整性 validator；当前本地候选明确为 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -314,10 +314,14 @@
             "harness/telemetry_privacy/manual_privacy_review_template.json",
             "harness/telemetry_privacy/validate_manual_privacy_review.py",
             "harness/telemetry_privacy/test_validate_manual_privacy_review.py",
-            "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md"
+            "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md",
+            "tools/validate_release_package_manifest.py",
+            "tools/test_validate_release_package_manifest.py",
+            "harness/release/current_local_package_manifest.json",
+            "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md"
           ],
           "gaps": [
-            "当前 release_candidate_evidence 报告为 not-ready。",
+            "当前 release_candidate_evidence 与 release_package_manifest 报告均为 not-ready。",
             "Runtime 隐私设置已有可校验契约，人工隐私审查已有模板和完整性校验器，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package、上传链路、发布级导出 / 删除按钮和恢复后的运行级证据。"
           ],
           "blockers": [
@@ -331,7 +335,7 @@
       "doc_id": "12",
       "doc_path": "docs/12_阶段路线图.md",
       "status": "partial",
-      "summary": "Phase 0-10 已有独立路线图阶段审计清单和报告；Phase 0 完成，Phase 1-8 多数受二进制、人工试玩、素材审查或 RL 泛化阻塞，Phase 9-10 仍未达到公开 Demo、上线和运营要求。",
+      "summary": "Phase 0-10 已有独立路线图阶段审计清单和报告；Phase 0 完成，Phase 1-8 多数受二进制、人工试玩、素材审查、发布包或 RL 泛化阻塞，Phase 9-10 仍未达到公开 Demo、上线和运营要求。",
       "coverage": [
         {
           "id": "roadmap-phase-audit",
@@ -345,11 +349,13 @@
             "harness/reports/2026-05-26_roadmap_phase_audit_001/summary.md",
             "harness/progress.json",
             "tools/validate_phase4_roster_targets.py",
-            "harness/reports/2026-05-26_phase4_roster_targets_candidate_full_pack_001/summary.md"
+            "harness/reports/2026-05-26_phase4_roster_targets_candidate_full_pack_001/summary.md",
+            "tools/validate_release_package_manifest.py",
+            "harness/reports/2026-05-26_release_package_manifest_current_local_001/summary.md"
           ],
           "gaps": [
             "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete。",
-            "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending。",
+            "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending；当前 release package manifest 仍 blocked。",
             "恢复二进制、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
           ]
         }

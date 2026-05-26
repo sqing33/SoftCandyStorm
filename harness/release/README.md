@@ -41,3 +41,20 @@ Use `--allow-not-ready` when recording a known not-ready report in
 - `release_package`
 
 Every passing gate must point to real, non-synthetic evidence paths.
+
+## Release Package Manifest
+
+The `release_package` gate should point to a package manifest after a concrete
+archive exists:
+
+```bash
+python3 tools/validate_release_package_manifest.py \
+  harness/release/current_local_package_manifest.json \
+  --repo-root . \
+  --report /tmp/release_package_manifest.json \
+  --markdown /tmp/release_package_manifest.md
+```
+
+The current local package manifest is expected to report
+`release_package_not_ready`. It records the packaging blocker only; it does not
+build, sign, launch, upload, or approve a package.

@@ -26,8 +26,8 @@
 | 5 | AI 内容生成闭环 | `partial` | 4 | 2 | 2 |
 | 6 | AI Bot 训练 | `blocked` | 4 | 3 | 2 |
 | 7 | 美术与音频垂直切片 | `partial` | 4 | 2 | 2 |
-| 8 | 公开 Demo | `blocked` | 4 | 2 | 2 |
-| 9 | 上线前扩展 | `pending` | 2 | 2 | 3 |
+| 8 | 公开 Demo | `blocked` | 5 | 2 | 2 |
+| 9 | 上线前扩展 | `pending` | 3 | 2 | 3 |
 | 10 | 上线后运营 | `pending` | 3 | 2 | 2 |
 
 ## Errors

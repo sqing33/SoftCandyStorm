@@ -27,7 +27,7 @@
 | `story_codex_review` | `waiting` | 2 | False |
 | `telemetry_privacy` | `waiting` | 5 | False |
 | `failure_case_review` | `blocked` | 1 | False |
-| `release_package` | `blocked` | 1 | False |
+| `release_package` | `blocked` | 3 | False |
 
 ## Blockers
 
