@@ -926,6 +926,11 @@
       "id": "local_binary_launch_recovery_packet_generator",
       "summary": "增加本机新编译 Mach-O 启动阻塞恢复交接包生成器，汇总现有诊断、failure case、被阻塞 docs、恢复动作和恢复后重跑清单；该包不修复宿主策略，也不证明 Rust/Bevy/Harness/Gym 运行通过。",
       "report": "harness/reports/2026-05-26_local_binary_launch_recovery_packet_001/summary.md"
+    },
+    {
+      "id": "runtime_save_v1_migration_source_path",
+      "summary": "Runtime 存档源码路径改为写入 save-state-v1，并兼容读取旧 save-state-v0 后迁移为带 migration_history 和 base_ui_state 的 v1；Runtime surface source-shape 契约已覆盖 v1 结构和迁移函数，但本机二进制启动恢复前不能声称 Rust 单测或 Runtime smoke 通过。",
+      "report": "harness/reports/2026-05-26_runtime_surface_contract_v1_save_migration_001/summary.md"
     }
   ],
   "current_findings": [

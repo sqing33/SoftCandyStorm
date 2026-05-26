@@ -21,6 +21,11 @@ const DEFAULT_LOCAL_TELEMETRY_DIR: &str = "harness/telemetry/local";
 const DEFAULT_LOCAL_REPLAY_DIR: &str = "harness/replay";
 const DEFAULT_SAVE_ID: &str = "local-demo-profile";
 const DEFAULT_PROFILE_ID: &str = "local-player";
+const RUNTIME_SAVE_V0_CONTRACT_ID: &str = "save-state-v0";
+const RUNTIME_SAVE_V1_CONTRACT_ID: &str = "save-state-v1";
+const RUNTIME_SAVE_V0_SCHEMA_VERSION: u32 = 1;
+const RUNTIME_SAVE_V1_SCHEMA_VERSION: u32 = 2;
+const RUNTIME_SAVE_MIGRATION_ID: &str = "save-state-v0-to-v1";
 const RUNTIME_SAVE_TIMESTAMP: &str = "2026-05-26T00:00:00Z";
 const CAMERA_Z: f32 = 999.0;
 const EFFECT_Z: f32 = 35.0;
@@ -303,6 +308,64 @@ struct RuntimeSaveStateV0 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+struct RuntimeSaveStateV1 {
+    schema_version: u32,
+    contract_id: String,
+    save_id: String,
+    profile_id: String,
+    created_at: String,
+    updated_at: String,
+    game_version: String,
+    ruleset_version: String,
+    content_pack_ids: Vec<String>,
+    settings: RuntimePrivacySettings,
+    data_controls: RuntimeSaveDataControls,
+    meta_progress: MetaProgress,
+    migration_history: Vec<RuntimeSaveMigrationEntry>,
+    base_ui_state: RuntimeBaseUiState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RuntimeSaveMigrationEntry {
+    migration_id: String,
+    source_save_id: String,
+    source_contract_id: String,
+    source_schema_version: u32,
+    target_contract_id: String,
+    target_schema_version: u32,
+    migrated_at: String,
+    status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RuntimeBaseUiState {
+    selected_panel: String,
+    last_selected_character_id: String,
+    last_selected_map_id: String,
+    last_selected_chapter_id: String,
+    codex_view: RuntimeBaseCodexViewState,
+    privacy_view: RuntimeBasePrivacyViewState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RuntimeBaseCodexViewState {
+    selected_category: String,
+    discovered_only: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RuntimeBasePrivacyViewState {
+    last_notice_version: String,
+    pending_privacy_review: bool,
+}
+
+#[derive(Debug, Clone)]
+struct RuntimeSaveReadResult {
+    state: RuntimeSaveStateV1,
+    migrated_from_v0: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct RuntimeSaveDataControls {
     local_only_by_default: bool,
     upload_requires_opt_in: bool,
@@ -321,6 +384,25 @@ impl Default for RuntimeSaveDataControls {
             export_save_available: true,
             export_format: "json".to_string(),
             retention_days: 90,
+        }
+    }
+}
+
+impl Default for RuntimeBaseUiState {
+    fn default() -> Self {
+        Self {
+            selected_panel: "overview".to_string(),
+            last_selected_character_id: "jar-keeper".to_string(),
+            last_selected_map_id: DEFAULT_MAP_ID.to_string(),
+            last_selected_chapter_id: DEFAULT_MAP_ID.to_string(),
+            codex_view: RuntimeBaseCodexViewState {
+                selected_category: "characters".to_string(),
+                discovered_only: true,
+            },
+            privacy_view: RuntimeBasePrivacyViewState {
+                last_notice_version: "privacy-notice-v0".to_string(),
+                pending_privacy_review: true,
+            },
         }
     }
 }
@@ -2234,38 +2316,131 @@ fn load_runtime_meta_progress(
     cli: &RuntimeCli,
     privacy_settings: &RuntimePrivacySettings,
 ) -> std::io::Result<MetaProgress> {
+    Ok(load_runtime_save_state(cli, privacy_settings)?.meta_progress)
+}
+
+fn load_runtime_save_state(
+    cli: &RuntimeCli,
+    privacy_settings: &RuntimePrivacySettings,
+) -> std::io::Result<RuntimeSaveStateV1> {
     let Some(path) = &cli.save_file else {
-        return Ok(MetaProgress::demo_start());
+        return Ok(build_runtime_save_state(
+            cli,
+            privacy_settings,
+            &MetaProgress::demo_start(),
+        ));
     };
     if !path.exists() {
         write_runtime_save_state(path, cli, privacy_settings, &MetaProgress::demo_start())?;
     }
-    let save = read_runtime_save_state(path)?;
-    Ok(save.meta_progress)
+    let result = read_runtime_save_state(path)?;
+    if result.migrated_from_v0 {
+        write_runtime_save_state_from_v1(path, &result.state)?;
+    }
+    Ok(result.state)
 }
 
-fn read_runtime_save_state(path: &Path) -> std::io::Result<RuntimeSaveStateV0> {
+fn read_runtime_save_state(path: &Path) -> std::io::Result<RuntimeSaveReadResult> {
     let text = fs::read_to_string(path)?;
-    let save = serde_json::from_str::<RuntimeSaveStateV0>(&text).map_err(|error| {
+    let header = serde_json::from_str::<serde_json::Value>(&text).map_err(|error| {
         std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
     })?;
-    if save.schema_version != 1 || save.contract_id != "save-state-v0" {
+    let schema_version = header
+        .get("schema_version")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok());
+    let contract_id = header
+        .get("contract_id")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+
+    match (contract_id, schema_version) {
+        (RUNTIME_SAVE_V1_CONTRACT_ID, Some(RUNTIME_SAVE_V1_SCHEMA_VERSION)) => {
+            let state = serde_json::from_str::<RuntimeSaveStateV1>(&text).map_err(|error| {
+                std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
+            })?;
+            validate_runtime_save_state_v1(&state)?;
+            Ok(RuntimeSaveReadResult {
+                state,
+                migrated_from_v0: false,
+            })
+        }
+        (RUNTIME_SAVE_V0_CONTRACT_ID, Some(RUNTIME_SAVE_V0_SCHEMA_VERSION)) => {
+            let state = serde_json::from_str::<RuntimeSaveStateV0>(&text).map_err(|error| {
+                std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{error}"))
+            })?;
+            Ok(RuntimeSaveReadResult {
+                state: migrate_runtime_save_v0_to_v1(state),
+                migrated_from_v0: true,
+            })
+        }
+        _ => Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "runtime save must use save-state-v0 schema_version 1 or save-state-v1 schema_version 2",
+        )),
+    }
+}
+
+fn migrate_runtime_save_v0_to_v1(source: RuntimeSaveStateV0) -> RuntimeSaveStateV1 {
+    RuntimeSaveStateV1 {
+        schema_version: RUNTIME_SAVE_V1_SCHEMA_VERSION,
+        contract_id: RUNTIME_SAVE_V1_CONTRACT_ID.to_string(),
+        save_id: source.save_id.clone(),
+        profile_id: source.profile_id,
+        created_at: source.created_at,
+        updated_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+        game_version: source.game_version,
+        ruleset_version: source.ruleset_version,
+        content_pack_ids: source.content_pack_ids,
+        settings: source.settings,
+        data_controls: source.data_controls,
+        meta_progress: source.meta_progress,
+        migration_history: vec![RuntimeSaveMigrationEntry {
+            migration_id: RUNTIME_SAVE_MIGRATION_ID.to_string(),
+            source_save_id: source.save_id,
+            source_contract_id: RUNTIME_SAVE_V0_CONTRACT_ID.to_string(),
+            source_schema_version: RUNTIME_SAVE_V0_SCHEMA_VERSION,
+            target_contract_id: RUNTIME_SAVE_V1_CONTRACT_ID.to_string(),
+            target_schema_version: RUNTIME_SAVE_V1_SCHEMA_VERSION,
+            migrated_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+            status: "completed".to_string(),
+        }],
+        base_ui_state: RuntimeBaseUiState::default(),
+    }
+}
+
+fn validate_runtime_save_state_v1(save: &RuntimeSaveStateV1) -> std::io::Result<()> {
+    if save.schema_version != RUNTIME_SAVE_V1_SCHEMA_VERSION
+        || save.contract_id != RUNTIME_SAVE_V1_CONTRACT_ID
+    {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            "runtime save must use save-state-v0 schema_version 1",
+            "runtime save must use save-state-v1 schema_version 2",
         ));
     }
-    Ok(save)
+    if !save.data_controls.local_only_by_default || !save.data_controls.upload_requires_opt_in {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "runtime save must preserve local-only and upload opt-in controls",
+        ));
+    }
+    if save.migration_history.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "runtime save-state-v1 requires migration_history",
+        ));
+    }
+    Ok(())
 }
 
 fn build_runtime_save_state(
     cli: &RuntimeCli,
     privacy_settings: &RuntimePrivacySettings,
     progress: &MetaProgress,
-) -> RuntimeSaveStateV0 {
-    RuntimeSaveStateV0 {
-        schema_version: 1,
-        contract_id: "save-state-v0".to_string(),
+) -> RuntimeSaveStateV1 {
+    RuntimeSaveStateV1 {
+        schema_version: RUNTIME_SAVE_V1_SCHEMA_VERSION,
+        contract_id: RUNTIME_SAVE_V1_CONTRACT_ID.to_string(),
         save_id: DEFAULT_SAVE_ID.to_string(),
         profile_id: DEFAULT_PROFILE_ID.to_string(),
         created_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
@@ -2276,7 +2451,27 @@ fn build_runtime_save_state(
         settings: privacy_settings.clone(),
         data_controls: RuntimeSaveDataControls::default(),
         meta_progress: progress.clone(),
+        migration_history: vec![RuntimeSaveMigrationEntry {
+            migration_id: RUNTIME_SAVE_MIGRATION_ID.to_string(),
+            source_save_id: DEFAULT_SAVE_ID.to_string(),
+            source_contract_id: RUNTIME_SAVE_V0_CONTRACT_ID.to_string(),
+            source_schema_version: RUNTIME_SAVE_V0_SCHEMA_VERSION,
+            target_contract_id: RUNTIME_SAVE_V1_CONTRACT_ID.to_string(),
+            target_schema_version: RUNTIME_SAVE_V1_SCHEMA_VERSION,
+            migrated_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+            status: "completed".to_string(),
+        }],
+        base_ui_state: RuntimeBaseUiState::default(),
     }
+}
+
+fn write_runtime_save_state_from_v1(path: &Path, save: &RuntimeSaveStateV1) -> std::io::Result<()> {
+    validate_runtime_save_state_v1(save)?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let json = serde_json::to_string_pretty(save)?;
+    fs::write(path, format!("{json}\n"))
 }
 
 fn write_runtime_save_state(
@@ -2285,12 +2480,20 @@ fn write_runtime_save_state(
     privacy_settings: &RuntimePrivacySettings,
     progress: &MetaProgress,
 ) -> std::io::Result<()> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
+    let mut save = build_runtime_save_state(cli, privacy_settings, progress);
+    if path.exists() {
+        let existing = read_runtime_save_state(path)?;
+        save.save_id = existing.state.save_id;
+        save.profile_id = existing.state.profile_id;
+        save.created_at = existing.state.created_at;
+        save.game_version = existing.state.game_version;
+        save.ruleset_version = existing.state.ruleset_version;
+        save.content_pack_ids = existing.state.content_pack_ids;
+        save.data_controls = existing.state.data_controls;
+        save.migration_history = existing.state.migration_history;
+        save.base_ui_state = existing.state.base_ui_state;
     }
-    let save = build_runtime_save_state(cli, privacy_settings, progress);
-    let json = serde_json::to_string_pretty(&save)?;
-    fs::write(path, format!("{json}\n"))
+    write_runtime_save_state_from_v1(path, &save)
 }
 
 fn persist_runtime_save_if_configured(state: &RuntimeState) -> std::io::Result<()> {
@@ -2309,8 +2512,8 @@ fn export_runtime_save(
     privacy_settings: &RuntimePrivacySettings,
     output_path: &Path,
 ) -> std::io::Result<()> {
-    let progress = load_runtime_meta_progress(cli, privacy_settings)?;
-    write_runtime_save_state(output_path, cli, privacy_settings, &progress)
+    let save = load_runtime_save_state(cli, privacy_settings)?;
+    write_runtime_save_state_from_v1(output_path, &save)
 }
 
 fn delete_runtime_save(cli: &RuntimeCli) -> std::io::Result<()> {
@@ -3250,10 +3453,16 @@ mod tests {
 
         let _ = fs::remove_dir_all(&root);
         assert!(progress.unlocks.characters.contains("jar-keeper"));
-        assert_eq!(save_json["contract_id"], "save-state-v0");
+        assert_eq!(save_json["contract_id"], "save-state-v1");
+        assert_eq!(save_json["schema_version"], 2);
         assert_eq!(save_json["save_id"], DEFAULT_SAVE_ID);
         assert_eq!(save_json["settings"]["telemetry_upload_enabled"], false);
         assert_eq!(save_json["data_controls"]["export_format"], "json");
+        assert_eq!(
+            save_json["migration_history"][0]["migration_id"],
+            "save-state-v0-to-v1"
+        );
+        assert_eq!(save_json["base_ui_state"]["selected_panel"], "overview");
     }
 
     #[test]
@@ -3288,6 +3497,157 @@ mod tests {
     }
 
     #[test]
+    fn runtime_save_migrates_v0_to_v1_and_keeps_progress() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-migrate-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        let mut progress = MetaProgress::demo_start();
+        progress.completed_runs = 7;
+        let v0 = RuntimeSaveStateV0 {
+            schema_version: RUNTIME_SAVE_V0_SCHEMA_VERSION,
+            contract_id: RUNTIME_SAVE_V0_CONTRACT_ID.to_string(),
+            save_id: "legacy-profile".to_string(),
+            profile_id: DEFAULT_PROFILE_ID.to_string(),
+            created_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+            updated_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+            game_version: "prototype-v0".to_string(),
+            ruleset_version: "prototype-v0".to_string(),
+            content_pack_ids: vec!["base-demo".to_string()],
+            settings: RuntimePrivacySettings::default(),
+            data_controls: RuntimeSaveDataControls::default(),
+            meta_progress: progress,
+        };
+        fs::create_dir_all(save_file.parent().unwrap()).unwrap();
+        fs::write(
+            &save_file,
+            format!("{}\n", serde_json::to_string_pretty(&v0).unwrap()),
+        )
+        .unwrap();
+
+        let loaded = super::load_runtime_meta_progress(
+            &RuntimeCli {
+                save_file: Some(save_file.clone()),
+                ..RuntimeCli::default()
+            },
+            &RuntimePrivacySettings::default(),
+        )
+        .unwrap();
+        let migrated_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&save_file).unwrap()).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(loaded.completed_runs, 7);
+        assert_eq!(migrated_json["contract_id"], "save-state-v1");
+        assert_eq!(
+            migrated_json["migration_history"][0]["source_save_id"],
+            "legacy-profile"
+        );
+        assert_eq!(
+            migrated_json["migration_history"][0]["status"],
+            "completed"
+        );
+        assert_eq!(migrated_json["base_ui_state"]["codex_view"]["discovered_only"], true);
+    }
+
+    #[test]
+    fn runtime_save_reads_v1_without_new_migration_entry() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-v1-read-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        let mut progress = MetaProgress::demo_start();
+        progress.resources.star_shards = 5;
+        write_runtime_save_state(
+            &save_file,
+            &RuntimeCli::default(),
+            &RuntimePrivacySettings::default(),
+            &progress,
+        )
+        .unwrap();
+        let before_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&save_file).unwrap()).unwrap();
+
+        let loaded = super::load_runtime_meta_progress(
+            &RuntimeCli {
+                save_file: Some(save_file.clone()),
+                ..RuntimeCli::default()
+            },
+            &RuntimePrivacySettings::default(),
+        )
+        .unwrap();
+        let after_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&save_file).unwrap()).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(loaded.resources.star_shards, 5);
+        assert_eq!(
+            before_json["migration_history"].as_array().unwrap().len(),
+            after_json["migration_history"].as_array().unwrap().len()
+        );
+    }
+
+    #[test]
+    fn runtime_save_write_preserves_migrated_history() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-history-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        let mut progress = MetaProgress::demo_start();
+        progress.completed_runs = 2;
+        let v0 = RuntimeSaveStateV0 {
+            schema_version: RUNTIME_SAVE_V0_SCHEMA_VERSION,
+            contract_id: RUNTIME_SAVE_V0_CONTRACT_ID.to_string(),
+            save_id: "legacy-profile".to_string(),
+            profile_id: DEFAULT_PROFILE_ID.to_string(),
+            created_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+            updated_at: RUNTIME_SAVE_TIMESTAMP.to_string(),
+            game_version: "prototype-v0".to_string(),
+            ruleset_version: "prototype-v0".to_string(),
+            content_pack_ids: vec!["base-demo".to_string()],
+            settings: RuntimePrivacySettings::default(),
+            data_controls: RuntimeSaveDataControls::default(),
+            meta_progress: progress,
+        };
+        fs::create_dir_all(save_file.parent().unwrap()).unwrap();
+        fs::write(
+            &save_file,
+            format!("{}\n", serde_json::to_string_pretty(&v0).unwrap()),
+        )
+        .unwrap();
+        let cli = RuntimeCli {
+            save_file: Some(save_file.clone()),
+            ..RuntimeCli::default()
+        };
+        super::load_runtime_meta_progress(&cli, &RuntimePrivacySettings::default()).unwrap();
+        let mut updated_progress = MetaProgress::demo_start();
+        updated_progress.completed_runs = 9;
+        write_runtime_save_state(
+            &save_file,
+            &RuntimeCli::default(),
+            &RuntimePrivacySettings::default(),
+            &updated_progress,
+        )
+        .unwrap();
+        let rewritten_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&save_file).unwrap()).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(rewritten_json["meta_progress"]["completed_runs"], 9);
+        assert_eq!(rewritten_json["save_id"], "legacy-profile");
+        assert_eq!(
+            rewritten_json["migration_history"][0]["source_save_id"],
+            "legacy-profile"
+        );
+    }
+
+    #[test]
     fn export_runtime_save_writes_json_copy() {
         let root = std::env::temp_dir().join(format!(
             "soft-candy-runtime-save-export-test-{}",
@@ -3319,6 +3679,7 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(&export_file).unwrap()).unwrap();
 
         let _ = fs::remove_dir_all(&root);
+        assert_eq!(export_json["contract_id"], "save-state-v1");
         assert_eq!(export_json["meta_progress"]["completed_runs"], 3);
     }
 

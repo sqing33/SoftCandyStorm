@@ -52,6 +52,76 @@
     },
     {
       "file": "runtime_main",
+      "name": "RuntimeSaveStateV1",
+      "required_fields": [
+        "schema_version",
+        "contract_id",
+        "save_id",
+        "profile_id",
+        "created_at",
+        "updated_at",
+        "game_version",
+        "ruleset_version",
+        "content_pack_ids",
+        "settings",
+        "data_controls",
+        "meta_progress",
+        "migration_history",
+        "base_ui_state"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeSaveMigrationEntry",
+      "required_fields": [
+        "migration_id",
+        "source_save_id",
+        "source_contract_id",
+        "source_schema_version",
+        "target_contract_id",
+        "target_schema_version",
+        "migrated_at",
+        "status"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeBaseUiState",
+      "required_fields": [
+        "selected_panel",
+        "last_selected_character_id",
+        "last_selected_map_id",
+        "last_selected_chapter_id",
+        "codex_view",
+        "privacy_view"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeBaseCodexViewState",
+      "required_fields": [
+        "selected_category",
+        "discovered_only"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeBasePrivacyViewState",
+      "required_fields": [
+        "last_notice_version",
+        "pending_privacy_review"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeSaveReadResult",
+      "required_fields": [
+        "state",
+        "migrated_from_v0"
+      ]
+    },
+    {
+      "file": "runtime_main",
       "name": "RuntimeSaveDataControls",
       "required_fields": [
         "local_only_by_default",
@@ -116,6 +186,12 @@
     "export_runtime_local_data",
     "delete_runtime_local_data",
     "load_runtime_meta_progress",
+    "load_runtime_save_state",
+    "read_runtime_save_state",
+    "migrate_runtime_save_v0_to_v1",
+    "validate_runtime_save_state_v1",
+    "build_runtime_save_state",
+    "write_runtime_save_state_from_v1",
     "write_runtime_save_state",
     "export_runtime_save",
     "delete_runtime_save",
@@ -191,6 +267,12 @@
     "delete requires at least one explicit --local-data-dir",
     "delete save requires --save-file",
     "save-state-v0",
+    "save-state-v1",
+    "save-state-v0-to-v1",
+    "migration_history",
+    "base_ui_state",
+    "migrated_from_v0",
+    "runtime save must use save-state-v0 schema_version 1 or save-state-v1 schema_version 2",
     "export_format: \"json\""
   ],
   "default_privacy_settings": {

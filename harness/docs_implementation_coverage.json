@@ -674,7 +674,7 @@
       "doc_id": "18",
       "doc_path": "docs/18_完整游戏流程与局外成长.md",
       "status": "partial",
-      "summary": "局外结算、六章主线 MetaProgress 骨架、accepted lockfile 入口、Runtime meta panel 四页视图、Runtime surface 源码形状契约、v0/v1 存档契约、平台存档路径策略、人工平台路径审查模板 / 审查包、v0 到 v1 存档迁移计划、Runtime v0 存档读写、Runtime 隐私设置契约、F4 隐私设置页和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告、人工审校草稿、审校包、ui_candidate 晋级工具和 UI 候选 manifest 门禁；完整基地、可点击图鉴 UI 和发布级闭环仍未完成。",
+      "summary": "局外结算、六章主线 MetaProgress 骨架、accepted lockfile 入口、Runtime meta panel 四页视图、Runtime surface 源码形状契约、v0/v1 存档契约、平台存档路径策略、人工平台路径审查模板 / 审查包、v0 到 v1 存档迁移计划、Runtime v1 存档读写 / v0 迁移源码路径、Runtime 隐私设置契约、F4 隐私设置页和 CLI 级本地数据控制已有原型 / 校验；章节剧情 / 图鉴候选内容已有 generated candidate、校验报告、人工审校草稿、审校包、ui_candidate 晋级工具和 UI 候选 manifest 门禁；完整基地、可点击图鉴 UI 和发布级闭环仍未完成。",
       "coverage": [
         {
           "id": "full-flow-and-meta",
@@ -729,10 +729,13 @@
             "harness/reports/2026-05-26_manual_platform_path_review_template_001/summary.md",
             "harness/save_contract/create_manual_platform_path_review_packet.py",
             "harness/save_contract/test_create_manual_platform_path_review_packet.py",
-            "harness/reports/2026-05-26_manual_platform_path_review_packet_001/summary.md"
+            "harness/reports/2026-05-26_manual_platform_path_review_packet_001/summary.md",
+            "harness/runtime_contract/runtime_surface_contract_v0.json",
+            "harness/reports/2026-05-26_runtime_surface_contract_v1_save_migration_001/summary.md",
+            "harness/reports/2026-05-26_save_state_contract_v1_runtime_migration_001/summary.md"
           ],
           "gaps": [
-            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包和 v0 到 v1 迁移计划契约，Runtime 可通过 --save-file 读取或创建 v0 存档、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少 Runtime v1 读写 / 迁移实现、Runtime 平台路径解析、真人平台路径审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
+            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过 --save-file 读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；但缺少恢复二进制后的 Rust 单测 / Runtime smoke、Runtime 平台路径解析、真人平台路径审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审、审校包、ui_candidate 晋级工具和 UI 候选 manifest 门禁，但尚未由真人填写审校记录并通过，因此 Runtime 当前只展示 MetaProgress 图鉴计数，不接入候选文本。",
             "Runtime meta panel 需要恢复二进制后重新验证。"
           ],
