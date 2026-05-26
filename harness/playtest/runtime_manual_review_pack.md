@@ -116,6 +116,18 @@ cargo run -p game_runtime -- --content-dir content/base_demo --seed 12345 --seco
 
 ## 自动完整性检查
 
+可以先从 9 局矩阵生成 TODO 草稿：
+
+```bash
+python3 harness/playtest/create_manual_playtest_review_draft.py \
+  --template harness/playtest/runtime_manual_review_template.json \
+  --candidate-id current-base-demo-runtime \
+  --content-hash TODO:content-hash-after-freeze \
+  --out harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json
+```
+
+该草稿只用于防漏项，默认 `needs_more_runs`，真人填写评分和观察前必须保持校验失败。
+
 人工填写完成后，可以用纯 Python 校验器检查字段是否齐全：
 
 ```bash

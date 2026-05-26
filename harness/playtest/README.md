@@ -17,15 +17,31 @@ python3 harness/playtest/validate_manual_review.py \
 The bundled templates are intentionally incomplete and should fail validation
 until a human fills every required rating, notes, tags, and next action field.
 
+## Create A Draft
+
+```bash
+python3 harness/playtest/create_manual_playtest_review_draft.py \
+  --template harness/playtest/runtime_manual_review_template.json \
+  --candidate-id current-base-demo-runtime \
+  --content-hash TODO:content-hash-after-freeze \
+  --out harness/playtest/drafts/2026-05-26_runtime_manual_playtest_review_draft.json
+```
+
+The generated draft covers the 9 required playtest runs and defaults to
+`needs_more_runs`. It contains `TODO` ratings by design, so
+`validate_manual_review.py --strict-acceptance` rejects it until a human
+playtester fills concrete observations.
+
 ## Run Regression Tests
 
 ```bash
+python3 harness/playtest/test_create_manual_playtest_review_draft.py
 python3 harness/playtest/test_validate_manual_review.py
 ```
 
 The tests use bundled positive and negative fixtures. They verify strict
-acceptance validation, CLI exit codes, and JSON/Markdown report output without
-requiring Rust, Bevy, GameCore, or local binary launch.
+acceptance validation, draft generation, CLI exit codes, and JSON/Markdown
+report output without requiring Rust, Bevy, GameCore, or local binary launch.
 
 ## Gate Rules
 
