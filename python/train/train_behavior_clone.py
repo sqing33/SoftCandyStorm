@@ -199,6 +199,12 @@ def train_behavior_clone(dataset, args):
     torch.manual_seed(args.seed)
 
     observations, context_report = build_context_observations(dataset, args.context_frames, np)
+    observations, map_conditioning_report = apply_map_conditioning(
+        observations,
+        dataset,
+        args.map_conditioning,
+        np,
+    )
     actions = np.asarray(dataset["actions"], dtype=np.int64)
     indices = np.arange(len(actions))
     np.random.default_rng(args.seed).shuffle(indices)
@@ -240,7 +246,7 @@ def train_behavior_clone(dataset, args):
     validation_y = torch.from_numpy(actions[validation_indices])
 
     model = nn.Sequential(
-        nn.Linear(context_report["input_observation_len"], args.hidden_size),
+        nn.Linear(map_conditioning_report["input_observation_len"], args.hidden_size),
         nn.ReLU(),
         nn.Linear(args.hidden_size, args.hidden_size),
         nn.ReLU(),
@@ -295,6 +301,7 @@ def train_behavior_clone(dataset, args):
             "observation_len": context_report["input_observation_len"],
             "base_observation_len": dataset["observation_len"],
             "context_frames": args.context_frames,
+            "map_conditioning": map_conditioning_report,
             "action_count": dataset["action_count"],
             "hidden_size": args.hidden_size,
             "class_weighting": args.class_weighting,
@@ -322,8 +329,9 @@ def train_behavior_clone(dataset, args):
             "learning_rate": args.learning_rate,
             "hidden_size": args.hidden_size,
             "context_frames": args.context_frames,
-            "input_observation_len": context_report["input_observation_len"],
+            "input_observation_len": map_conditioning_report["input_observation_len"],
             "base_observation_len": dataset["observation_len"],
+            "map_conditioning": map_conditioning_report,
             "validation_split": args.validation_split,
             "class_weighting": args.class_weighting,
             "class_weights": class_weight_report,
@@ -387,6 +395,38 @@ def build_context_observations(dataset, context_frames, np_module):
     }
 
 
+def apply_map_conditioning(observations, dataset, mode, np_module):
+    base_len = int(observations.shape[1])
+    if mode == "none":
+        return observations, {
+            "mode": "none",
+            "map_ids": [],
+            "dimension": 0,
+            "base_input_observation_len": base_len,
+            "input_observation_len": base_len,
+        }
+
+    map_ids = sorted(
+        {
+            str(sample.get("map_id") or "unknown")
+            for sample in dataset["sample_metadata"]
+        }
+    )
+    map_index = {map_id: index for index, map_id in enumerate(map_ids)}
+    one_hot = np_module.zeros((len(dataset["sample_metadata"]), len(map_ids)), dtype=np_module.float32)
+    for row, sample in enumerate(dataset["sample_metadata"]):
+        map_id = str(sample.get("map_id") or "unknown")
+        one_hot[row, map_index[map_id]] = 1.0
+    conditioned = np_module.concatenate([observations, one_hot], axis=1).astype(np_module.float32)
+    return conditioned, {
+        "mode": "one_hot",
+        "map_ids": map_ids,
+        "dimension": len(map_ids),
+        "base_input_observation_len": base_len,
+        "input_observation_len": int(conditioned.shape[1]),
+    }
+
+
 def build_sample_weights(sample_metadata, indices, args, np_module):
     if args.sample_weighting == "none":
         return None, {
@@ -444,11 +484,25 @@ class BehaviorClonePolicy:
 
         self.checkpoint_path = str(checkpoint_path)
         self.checkpoint = torch.load(checkpoint_path, map_location="cpu")
-        self.input_observation_len = int(self.checkpoint["observation_len"])
+        self.context_observation_len = int(self.checkpoint["observation_len"])
         self.base_observation_len = int(
-            self.checkpoint.get("base_observation_len", self.input_observation_len)
+            self.checkpoint.get("base_observation_len", self.context_observation_len)
         )
         self.context_frames = int(self.checkpoint.get("context_frames", 1))
+        self.map_conditioning = self.checkpoint.get(
+            "map_conditioning",
+            {
+                "mode": "none",
+                "map_ids": [],
+                "dimension": 0,
+                "base_input_observation_len": self.context_observation_len,
+                "input_observation_len": self.context_observation_len,
+            },
+        )
+        self.input_observation_len = int(
+            self.map_conditioning.get("input_observation_len", self.context_observation_len)
+        )
+        self.current_map_id = None
         self.action_count = int(self.checkpoint["action_count"])
         self.hidden_size = int(self.checkpoint["hidden_size"])
         self.history = []
@@ -466,6 +520,11 @@ class BehaviorClonePolicy:
 
     def reset(self):
         self.history = []
+        self._last_observation = None
+        self._last_scores = None
+
+    def set_map_id(self, map_id):
+        self.current_map_id = str(map_id) if map_id is not None else None
         self._last_observation = None
         self._last_scores = None
 
@@ -502,7 +561,7 @@ class BehaviorClonePolicy:
         import torch
 
         values = self._base_observation_values(observation)
-        features = self._context_features(values, np, update_history=update_history)
+        features = self._features(values, np, update_history=update_history)
         with torch.no_grad():
             logits = self.model(torch.from_numpy(features.reshape(1, -1)))
             probabilities = torch.softmax(logits, dim=1)
@@ -521,6 +580,19 @@ class BehaviorClonePolicy:
             )
         return values
 
+    def _features(self, values, np_module, update_history):
+        context_features = self._context_features(values, np_module, update_history)
+        map_features = self._map_features(np_module)
+        if map_features.shape[0] > 0:
+            features = np_module.concatenate([context_features, map_features]).astype(np_module.float32)
+        else:
+            features = context_features
+        if features.shape[0] != self.input_observation_len:
+            raise ValueError(
+                f"expected behavior clone feature length {self.input_observation_len}, got {features.shape[0]}"
+            )
+        return features
+
     def _context_features(self, values, np_module, update_history):
         if self.context_frames <= 1:
             return values
@@ -534,10 +606,22 @@ class BehaviorClonePolicy:
             self.history.append(values.copy())
             self.history = self.history[-history_limit:]
         features = np_module.concatenate(frames).astype(np_module.float32)
-        if features.shape[0] != self.input_observation_len:
+        return features
+
+    def _map_features(self, np_module):
+        mode = self.map_conditioning.get("mode", "none")
+        if mode == "none":
+            return np_module.zeros(0, dtype=np_module.float32)
+        map_ids = list(self.map_conditioning.get("map_ids", []))
+        features = np_module.zeros(len(map_ids), dtype=np_module.float32)
+        if self.current_map_id is None:
+            raise ValueError("behavior clone checkpoint requires map_id conditioning but current map_id is unset")
+        try:
+            features[map_ids.index(str(self.current_map_id))] = 1.0
+        except ValueError as exc:
             raise ValueError(
-                f"expected context observation length {self.input_observation_len}, got {features.shape[0]}"
-            )
+                f"map_id `{self.current_map_id}` is not in behavior clone map conditioning vocabulary"
+            ) from exc
         return features
 
 
@@ -588,6 +672,12 @@ def main():
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--hidden-size", type=int, default=128)
     parser.add_argument("--context-frames", type=int, default=1)
+    parser.add_argument(
+        "--map-conditioning",
+        choices=["none", "one_hot"],
+        default="none",
+        help="Append map-id features to behavior clone observations.",
+    )
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--validation-split", type=float, default=0.2)
     parser.add_argument(

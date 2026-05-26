@@ -499,6 +499,9 @@ def evaluate_model(
             reset_policy = getattr(model, "reset", None)
             if callable(reset_policy):
                 reset_policy()
+            set_policy_map = getattr(model, "set_map_id", None)
+            if callable(set_policy_map):
+                set_policy_map(info.get("map_id", map_id))
             terminated = False
             truncated = False
             steps = 0

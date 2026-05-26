@@ -320,6 +320,13 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 结论：目标图恢复轨迹能修补 `caramel-workshop`，但同构 MLP 会把失败面移动到其他高压图。该模型仍是 `repair`，不能推进为 RL 测试 Bot；后续必须引入地图条件化、分阶段 policy 或真正的序列模型，而不是继续追加单图恢复样本。对应 failure case 为 `harness/failed_cases/fail_20260527_002_behavior_clone_caramel_recovery_regression.json`。
 
+地图 one-hot 条件化已经接入 behavior clone 训练和 Gym 评估：训练入口支持 `--map-conditioning one_hot`，checkpoint 记录 map vocabulary，在线评估会在每个 episode reset 后把当前 `map_id` 注入 policy；旧 checkpoint 默认 `map_conditioning=none` 并已通过兼容 smoke。使用同一批 expanded、lategame、cracked lategame 和 caramel recovery 轨迹训练 5 帧 danger-weighted map-conditioned MLP 后，离线 validation accuracy 为 85.51%，输入长度从 725 扩展到 728。
+
+- 60 秒 high-pressure 三图、5 seed：三图胜率均为 100%，normalized action entropy 为 0.8893 / 0.8893 / 0.8824，最大动作占比不超过 24.34%。
+- 300 秒 high-pressure 三图、3 seed、同 seed 窗口：不再出现 0% 胜率，`soda-creek` 为 66.67%，`caramel-workshop` 为 33.33%，`cracked-star-jar` 为 33.33%；但 `caramel-workshop` 与 `cracked-star-jar` 仍低于最强规则 Bot 基线，multi-map gate 为 `watch`。
+
+结论：地图条件化是正向修复方向，能消除 caramel-recovery 模型的 0% 跨图回归，但同构 MLP 仍没有达到 `rl_test_bot_candidate` 门槛。下一步应转向分阶段 policy、GRU / Transformer 或 PPO 蒸馏初始化，并继续使用三图 300 秒同 seed high-pressure 对比防止回归。对应 failure case 为 `harness/failed_cases/fail_20260527_003_behavior_clone_map_conditioned_watch.json`。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
@@ -339,7 +346,7 @@ python3 tools/validate_rl_policy_acceptance.py \
 - rule Bot comparison、action entropy、dominant action、failure case 和 unresolved blocker 都被同一份报告引用。
 - `gate_decision` 只能是 `blocked_by_local_binary_launch`、`watch`、`repair`、`reject` 或 `rl_test_bot_candidate`，不能写成 release、playtest、balance 或 fun 通过。
 
-当前 `behavior_clone_kite_context3_danger_weighted_smoke`、`behavior_clone_kite_context5_danger_weighted_smoke` 和 `behavior_clone_kite_context5_caramel_recovery_smoke` manifest 都只能是 `repair`：它们已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 0% 胜率、跨图回归或未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
+当前 `behavior_clone_kite_context3_danger_weighted_smoke`、`behavior_clone_kite_context5_danger_weighted_smoke` 和 `behavior_clone_kite_context5_caramel_recovery_smoke` manifest 都只能是 `repair`，`behavior_clone_kite_context5_map_conditioned_smoke` 只能是 `watch`：它们已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 0% 胜率、跨图回归、低于规则 Bot 基线或未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
 
 ## 奖励函数
 

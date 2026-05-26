@@ -1476,8 +1476,8 @@
     },
     {
       "id": "release_failure_case_review_refreshed",
-      "summary": "刷新 Release Candidate failure_case_review gate：新增 context5 BC 长局失败复盘后，全量 harness/failed_cases 31 条正式记录结构校验通过，0 error、0 warning；该通过只覆盖 failure case 记录完整性，不替代人工试玩、素材、剧情、隐私或法律审查。",
-      "report": "harness/reports/2026-05-27_failure_case_validation_001/summary.md"
+      "summary": "刷新 Release Candidate failure_case_review gate：新增 map-conditioned BC watch 复盘后，全量 harness/failed_cases 33 条正式记录结构校验通过，0 error、0 warning；该通过只覆盖 failure case 记录完整性，不替代人工试玩、素材、剧情、隐私或法律审查。",
+      "report": "harness/reports/2026-05-27_failure_case_validation_003/summary.md"
     },
     {
       "id": "rl_policy_acceptance_context3_repair",
@@ -1493,6 +1493,11 @@
       "id": "rl_behavior_clone_caramel_recovery_regression",
       "summary": "导出 caramel-workshop 180-300 秒 KiteBot 恢复轨迹并训练 context5 caramel-recovery BC；同 seed 300 秒对比中 caramel-workshop 从 0% 提升到 66.67%，但 cracked-star-jar 回归到 0%、soda-creek 降到 33.33%，说明单图恢复数据会移动失败面。",
       "report": "harness/reports/2026-05-27_rl_policy_acceptance_context5_caramel_recovery_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_map_conditioned_watch",
+      "summary": "新增 behavior clone 地图 one-hot 条件化并保持旧 checkpoint 兼容；context5 map-conditioned BC 在 60 秒 high-pressure 三图 5 seed 全胜，300 秒同 seed 三图不再出现 0% 胜率，但 caramel-workshop 与 cracked-star-jar 仍低于规则 Bot 基线，结论为 watch，不能推进为 RL 测试 Bot。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_context5_map_conditioned_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1502,7 +1507,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "不要继续单图补强，也不要继续堆同构 MLP context_frames；caramel recovery 数据会把失败面移动到 cracked-star-jar，下一步做地图条件化、GRU/Transformer、分阶段 policy 或 PPO 蒸馏初始化，再验证三图同 seed 300 秒 high-pressure 对比"
+      "summary": "地图条件化已消除 0% 胜率回归但仍只是 watch；不要继续单图补强或堆同构 MLP context_frames，下一步转 GRU/Transformer、分阶段 policy 或 PPO 蒸馏初始化，再验证三图同 seed 300 秒 high-pressure 对比"
     },
     {
       "id": "phase4_full_pack_manual_review",
