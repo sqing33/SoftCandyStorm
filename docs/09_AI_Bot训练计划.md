@@ -342,6 +342,8 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 行为克隆入口还支持 `--entropy-regularization <weight>` 作为动作分布约束实验。训练目标会在 cross entropy 上减去平均 policy entropy，用小权重惩罚过度自信的动作分布；报告同时保留 `train_loss`、`train_cross_entropy_loss`、`train_entropy_nats` 和 `validation_entropy_nats`，避免把正则化后的目标误读为普通模仿损失改善。该旋钮只能作为动作塌缩诊断和修复尝试，不能替代 60 / 300 秒 high-pressure 对比或 RL policy acceptance。
 
+首个完整 `entropy_regularization = 0.02` 的 `gru context8 + map-conditioning one_hot + danger sampling` 候选使用同一批 expanded、lategame、cracked lategame 和 caramel recovery 轨迹训练，离线 validation accuracy 为 87.84%，validation entropy 为 0.437509。60 秒 high-pressure 三图结果为 `soda-creek` 80%、`caramel-workshop` 100%、`cracked-star-jar` 80%；300 秒三图结果为 `soda-creek` 0%、`caramel-workshop` 33.33%、`cracked-star-jar` 0%，multi-map gate 仍为 `repair`。结论：entropy regularization 能改善动作分布可读性，但没有解决 movement-only imitation 的长局策略缺口；下一步应转向分阶段 policy、PPO 蒸馏初始化或把升级 / 阶段目标纳入训练，而不是继续扩大同一 GRU 轮数。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
@@ -361,7 +363,7 @@ python3 tools/validate_rl_policy_acceptance.py \
 - rule Bot comparison、action entropy、dominant action、failure case 和 unresolved blocker 都被同一份报告引用。
 - `gate_decision` 只能是 `blocked_by_local_binary_launch`、`watch`、`repair`、`reject` 或 `rl_test_bot_candidate`，不能写成 release、playtest、balance 或 fun 通过。
 
-当前 `behavior_clone_kite_context3_danger_weighted_smoke`、`behavior_clone_kite_context5_danger_weighted_smoke`、`behavior_clone_kite_context5_caramel_recovery_smoke` 和 `behavior_clone_kite_gru_context8_map_conditioned_smoke` manifest 都只能是 `repair`，`behavior_clone_kite_context5_map_conditioned_smoke` 只能是 `watch`：它们已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 0% 胜率、跨图回归、低于规则 Bot 基线或未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
+当前 `behavior_clone_kite_context3_danger_weighted_smoke`、`behavior_clone_kite_context5_danger_weighted_smoke`、`behavior_clone_kite_context5_caramel_recovery_smoke`、`behavior_clone_kite_gru_context8_map_conditioned_smoke` 和 `behavior_clone_kite_gru_context8_entropy002` manifest 都只能是 `repair`，`behavior_clone_kite_context5_map_conditioned_smoke` 只能是 `watch`：它们已引用本机启动恢复诊断、60 秒短中局对比和 300 秒长局规则 Bot 对比，但长局报告仍包含 0% 胜率、跨图回归、低于规则 Bot 基线或未解决 failure case。即使未来某个模型通过该门禁，它也只代表“可以作为 RL 测试 Bot 候选”，不代表游戏好玩、内容平衡、人工试玩或发布通过。
 
 ## 奖励函数
 

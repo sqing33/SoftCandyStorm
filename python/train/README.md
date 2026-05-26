@@ -283,6 +283,8 @@ python3 python/train/train_behavior_clone.py \
 
 This is only an action-distribution diagnostic knob. A checkpoint trained with entropy regularization still needs the normal 60/300 second high-pressure comparison and RL policy acceptance review.
 
+The first full `--entropy-regularization 0.02` GRU context8 run trained on the same expanded, lategame, cracked lategame, and caramel recovery trajectories. Offline validation accuracy stayed at `87.84%`, and 60-second high-pressure comparison improved `caramel-workshop` to 100%, but the 300-second comparison still recorded 0% win rate on `soda-creek` and `cracked-star-jar` with a `repair` gate. Treat entropy regularization as useful diagnostics for action spread, not as the long-window policy repair.
+
 The first useful repair came from expanding the trajectory coverage rather than only changing loss weights:
 
 ```bash

@@ -1548,6 +1548,11 @@
       "id": "rl_behavior_clone_entropy_regularization",
       "summary": "为 behavior clone 训练增加 --entropy-regularization 动作分布约束旋钮，训练报告同时输出正则化目标、plain cross entropy 与 entropy；512 样本 GRU context8 smoke 成功写出模型与报告，结论保持 behavior_clone_smoke_only_not_policy_gate。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_entropy_regularization_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_gru_entropy_regularized_repair",
+      "summary": "完整训练 entropy_regularization=0.02 的 GRU context8 map-conditioned BC 并完成 high-pressure 60/300 秒三图对比；60 秒为 80% / 100% / 80%，300 秒 soda-creek 与 cracked-star-jar 仍为 0%，结论为 repair，不能推进为 RL 测试 Bot。",
+      "report": "harness/reports/2026-05-27_rl_policy_acceptance_gru_context8_entropy002_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1557,7 +1562,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "序列模型诊断和 entropy regularization 动作约束入口已完成；下一步应运行更完整的正则化 GRU / 分阶段 policy / PPO 蒸馏初始化实验，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
+      "summary": "完整正则化 GRU 已验证为 repair；下一步应停止继续扩大同一 GRU 轮数，转向分阶段 policy、PPO 蒸馏初始化或把升级 / 阶段目标纳入训练，并继续用 high-pressure 三图 60/300 秒同 seed 对比防止回归。"
     },
     {
       "id": "phase4_full_pack_manual_review",
