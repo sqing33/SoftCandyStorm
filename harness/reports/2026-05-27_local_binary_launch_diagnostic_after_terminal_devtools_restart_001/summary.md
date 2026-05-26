@@ -16,17 +16,13 @@
 
 - Developer Mode: `Developer mode is currently enabled.`
 - `spctl --status`: `assessments enabled`
-- Hello run elapsed: `0.004` seconds
+- Hello run elapsed: `0.003` seconds
 - Hello run stdout: `softcandy-local-binary-ok`
 - Hello run stderr: ``
 
 ## Policy Log Signals
 
 - `Filtering the log data using "process == "syspolicyd" OR process == "amfid" OR composedMessage CONTAINS[c] "Security policy" OR composedMessage CONTAINS[c] "CMS blob" OR composedMessage CONTAINS[c] "provenance" OR composedMessage CONTAINS[c] "Gatekeeper" OR composedMessage CONTAINS[c] "softcandy""`
-- `2026-05-27 02:15:55.649 Df kernel[0:72a4d7] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 30235, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)`
-- `2026-05-27 02:15:55.649 Df kernel[0:72a4d8] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 30236, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)`
-- `2026-05-27 02:15:55.650 Df kernel[0:72a4d9] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 30237, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)`
-- `2026-05-27 02:15:55.650 Df kernel[0:72a4da] (AppleSystemPolicy) ASP: Unable to apply provenance sandbox: 268451845, 30238, /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)`
 
 ## Next Actions
 
