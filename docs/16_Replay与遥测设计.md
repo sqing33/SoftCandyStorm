@@ -377,6 +377,11 @@ python3 tools/validate_save_path_policy.py \
   --report harness/reports/2026-05-26_save_path_policy_v0_001/save_path_policy.json \
   --markdown harness/reports/2026-05-26_save_path_policy_v0_001/summary.md
 
+python3 harness/save_contract/create_manual_platform_path_review_packet.py \
+  --review-template harness/save_contract/manual_platform_path_review_template.json \
+  --repo-root . \
+  --out harness/reports/2026-05-26_manual_platform_path_review_packet_001/summary.md
+
 python3 tools/validate_manual_platform_path_review.py \
   harness/save_contract/manual_platform_path_review_template.json \
   --repo-root . \
@@ -384,7 +389,7 @@ python3 tools/validate_manual_platform_path_review.py \
   --markdown harness/reports/2026-05-26_manual_platform_path_review_template_001/summary.md
 ```
 
-该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值；v1 还要求 `migration_history` 与 `base_ui_state`，平台路径策略还要求存档、设置、遥测、Replay 和崩溃报告使用逻辑平台目录并禁止宿主绝对路径。人工平台路径审查模板当前结论为 `manual_platform_path_review_invalid`，真人填写并通过前不能作为发布证据。当前报告不代表 Runtime 已经实现真实按钮、迁移代码、平台路径解析、设置页、平台隐私文本或上传链路。
+该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值；v1 还要求 `migration_history` 与 `base_ui_state`，平台路径策略还要求存档、设置、遥测、Replay 和崩溃报告使用逻辑平台目录并禁止宿主绝对路径。人工平台路径审查包只汇总策略、存档契约、逻辑存储根、禁止片段和 TODO 检查项；模板当前结论仍为 `manual_platform_path_review_invalid`，真人填写并通过前不能作为发布证据。当前报告不代表 Runtime 已经实现真实按钮、迁移代码、平台路径解析、设置页、平台隐私文本或上传链路。
 
 未来存档升级必须继续遵守这些本地优先和 opt-in 规则。当前迁移计划可用以下命令校验：
 

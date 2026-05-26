@@ -37,6 +37,17 @@ python3 tools/validate_save_path_policy.py \
 
 该策略要求存档、Runtime 设置、本地遥测、Replay 和崩溃报告使用逻辑平台目录，不在存档中保存宿主绝对路径或个人身份路径，并要求删除 / 导出只作用于配置的本地数据根。当前结论为 `save_path_policy_valid`，但它只证明策略可校验；Runtime 仍未实现平台原生路径解析，人工平台路径审查和云存档策略也未完成。
 
+人工平台路径审查包可用以下命令生成：
+
+```bash
+python3 harness/save_contract/create_manual_platform_path_review_packet.py \
+  --review-template harness/save_contract/manual_platform_path_review_template.json \
+  --repo-root . \
+  --out harness/reports/2026-05-26_manual_platform_path_review_packet_001/summary.md
+```
+
+该审查包汇总平台路径策略、v0/v1 存档契约、逻辑存储根、禁止路径片段、发布要求、已知 blocker 和 7 个 TODO 检查项。它不填写人工审查结论，不提供平台批准，也不证明 Runtime 已实现平台路径解析或云存档支持。
+
 人工平台路径审查模板位于：
 
 ```bash
