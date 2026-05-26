@@ -70,17 +70,18 @@
         "harness/playtest/runtime_manual_review_pack.md",
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
-        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
+        "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md"
       ],
       "gaps": [
-        "本机二进制启动已恢复，但仍缺当前会话下新的 Runtime demo capture 和完整人工试玩记录。",
-        "缺少真实人工完整试玩记录和可读性评分。"
+        "当前会话 Runtime demo capture 已通过：demo-input 以 8x simulation speed 跑满 240 秒，记录 121 个 telemetry sample，覆盖 Boss 出场 / 阶段 / 技能、受伤、XP、升级选择、终局报告和自动退出。",
+        "仍缺真实人工完整试玩记录和可读性评分；自动 demo capture 不能替代 9 局人工试玩矩阵。"
       ],
       "blockers": [
         "manual_playtest_still_pending"
       ],
       "next_actions": [
-        "运行当前会话 Runtime demo capture，并准备 9 局人工试玩审查。"
+        "准备 9 局人工试玩审查，并让真人填写 runtime_manual_review_pack。"
       ]
     },
     {
@@ -223,11 +224,13 @@
         "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md",
         "asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/metadata/postprocess_audio_v001.json",
         "harness/asset_review/asset_candidate_manual_review_template.json",
-        "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md"
+        "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
+        "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md"
       ],
       "gaps": [
-        "多批 mmx 素材仍为 repair，尚未由真人审查通过并接入正式 Runtime。",
-        "本机二进制已恢复，但仍缺当前会话 Runtime 录制证据、真人素材审查和发布级宣传片段。"
+        "当前会话 Runtime demo capture 已证明原型 Runtime 可以跑出可记录画面 / 事件链路，但没有录制发布级 30-60 秒宣传片段。",
+        "多批 mmx 素材仍为候选或 repair，尚未由真人审查通过并接入正式 Runtime。",
+        "仍缺真人素材审查、Runtime preview review、音频响度审查和最终素材接受记录。"
       ],
       "blockers": [
         "manual_asset_review_still_pending"
@@ -255,19 +258,20 @@
         "harness/telemetry_privacy/telemetry_privacy_policy_template.json",
         "harness/playtest/runtime_manual_review_pack.md",
         "harness/reports/2026-05-26_demo_readiness_current_local_001/summary.md",
-        "harness/reports/2026-05-26_release_candidate_evidence_current_local_005/summary.md"
+        "harness/reports/2026-05-26_release_candidate_evidence_current_local_005/summary.md",
+        "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md"
       ],
       "gaps": [
         "Demo readiness 报告明确 demo_not_ready。",
         "正式 content/base_demo 普通敌人数量仍低于 Demo 目标；Phase 4 full pack 候选仍在 generated_candidates，未通过正式 Harness 仿真、人工试玩和 accepted content lockfile。",
-        "缺少稳定运行证明、外部玩家反馈、真实人工试玩、Runtime 设置、本地存档 UI、图鉴 UI 和隐私说明。"
+        "已有当前会话 240 秒 Runtime demo capture 作为内部 smoke，但仍缺公开 Demo 所需的稳定运行矩阵、外部玩家反馈、真实人工试玩、Runtime 设置、本地存档 UI、图鉴 UI 和隐私说明。"
       ],
       "blockers": [
         "manual_playtest_still_pending",
         "release_candidate_not_ready"
       ],
       "next_actions": [
-        "先完成内部 Runtime smoke 和人工试玩包。",
+        "先完成 9 局人工试玩包和内部 release gate 修复。",
         "将 release_candidate_evidence 中 waiting/fail gate 逐项修到 pass。"
       ]
     },
