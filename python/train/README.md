@@ -403,7 +403,21 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
 
 Evaluation reports record `upgrade_policy`, per-episode `upgrade_policy_decisions`, and summary `upgrade_policy_decision_count`. The first 60-second `soda-creek` smoke reached one upgrade prompt and recorded one ranker decision, but it remains `gym_upgrade_action_mode_smoke_not_policy_gate`; run normal 60/300-second high-pressure comparisons before treating any movement + upgrade-policy pair as useful.
 
-Repeat the export for `caramel-workshop` and `cracked-star-jar`, then train:
+For a slightly broader plumbing check, export upgrade samples from multiple maps and point the trainer at the report directory:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_upgrade_choice.py \
+  --dataset harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001 \
+  --epochs 20 \
+  --batch-size 16 \
+  --hidden-size 32 \
+  --model-out harness/reports/local_upgrade_choice_multimap/upgrade_choice_multimap_smoke.pt \
+  --report harness/reports/local_upgrade_choice_multimap/run_output.json
+```
+
+The first high-pressure multimap smoke used 64 upgrade prompts from `soda-creek`, `caramel-workshop`, and `cracked-star-jar`, then recorded Gym upgrade decisions on all three maps. It is still a smoke-only result, because the movement policy and ranker pair have not passed multi-seed 60/300-second acceptance.
+
+For movement behavior-clone experiments, train from exported movement trajectories:
 
 ```bash
 uv run --with-requirements python/train/requirements.txt python python/train/train_behavior_clone.py \

@@ -1633,6 +1633,11 @@
       "id": "rl_upgrade_choice_gym_action_mode_smoke",
       "summary": "Gym bridge step 请求支持 upgrade_choice，SoftCandyStormEnv 可用 upgrade_policy 在 pending prompt 时选择升级，train_sb3.py 可通过 --upgrade-choice-model 在 evaluation / comparison 中加载 ranker；60 秒 soda-creek smoke 记录 1 次 upgrade_policy_decision，结论为 gym_upgrade_action_mode_smoke_not_policy_gate。",
       "report": "harness/reports/2026-05-27_rl_upgrade_choice_gym_action_mode_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_upgrade_choice_multimap_ranker_smoke",
+      "summary": "用 high-pressure 三图各 5 seed / 120 秒导出 64 条 upgrade_sample，训练 27 词表监督升级选择 ranker，并在 soda-creek、caramel-workshop、cracked-star-jar 的 Gym evaluation 中记录升级决策；结论为 smoke-only，不是 RL policy gate。",
+      "report": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1642,7 +1647,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 均为 repair；升级选择导出、监督 ranker 和 Gym action mode smoke 已补上，下一步应扩大多地图升级样本或设计阶段目标 curriculum。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 均为 repair；升级选择多地图 ranker smoke 已补上，下一步应做多 seed 60/300 秒 movement+upgrade 联合对比或设计阶段目标 curriculum。"
     },
     {
       "id": "phase4_full_pack_manual_review",

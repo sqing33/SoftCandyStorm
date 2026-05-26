@@ -343,7 +343,7 @@ def train_upgrade_choice_model(dataset, args):
             "trained_at": datetime.now(timezone.utc).isoformat(),
             "limitations": [
                 "This model scores upgrade options from supervised rule Bot samples only.",
-                "It is not connected to Gym upgrade action mode and is not an RL test Bot gate.",
+                "It can be loaded by Gym evaluation through --upgrade-choice-model, but it is not an RL test Bot gate.",
             ],
         },
         target,
@@ -370,7 +370,7 @@ def train_upgrade_choice_model(dataset, args):
         "history": history,
         "limitations": [
             "Upgrade-choice training smoke proves only supervised model plumbing.",
-            "The checkpoint must not be promoted until it is connected to Gym upgrade action mode and compared through RL policy acceptance.",
+            "The checkpoint must not be promoted until it is compared through Gym evaluation and RL policy acceptance.",
             "Tiny smoke datasets cannot prove upgrade strategy quality or long-run high-pressure repair.",
         ],
     }

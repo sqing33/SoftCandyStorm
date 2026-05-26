@@ -283,6 +283,8 @@ target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mi
 
 Gym bridge 现在支持在 `step` 请求中传入 `upgrade_choice`。`SoftCandyStormEnv` 可接收 `upgrade_policy`，在 pending upgrade prompt 时用上一帧 observation 和 `upgrade_options` 调用 ranker，并把选择写进 bridge payload。`train_sb3.py --upgrade-choice-model` 会加载 ranker 并在 evaluation / comparison 报告中记录 `upgrade_policy`、`upgrade_policy_decisions` 和 `upgrade_policy_decision_count`。首个 60 秒 `soda-creek` smoke 实际穿过 1 次升级 prompt，报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_gym_action_mode_smoke_001/summary.md`；gate 为 `gym_upgrade_action_mode_smoke_not_policy_gate`，仍不能作为 RL policy acceptance 或长局修复证据。
 
+多地图升级选择 ranker smoke 已使用 high-pressure 三图各 5 seed / 120 秒导出 64 条 upgrade sample，训练出 27 个升级词表项的 checkpoint，并在 `soda-creek`、`caramel-workshop`、`cracked-star-jar` 的 Gym evaluation smoke 中实际记录升级决策。报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/summary.md`；gate 为 `upgrade_choice_multimap_ranker_smoke_not_policy_gate`。该结果仍只证明多地图数据、训练和 action mode 组合链路，不代表升级策略质量或长局修复。
+
 更有效的第一步是扩大轨迹覆盖。当前 expanded smoke 使用 high-pressure 三图、5 seed、60 秒、`sample_stride = 5`，共 5312 条 movement sample。训练出的 unweighted behavior clone 在 10 秒 high-pressure 三图对比中通过短窗动作门禁：
 
 - `soda-creek`：normalized action entropy 0.6126，最大动作占比 32.0%。
