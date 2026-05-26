@@ -308,6 +308,7 @@ python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
 ```text
 harness/save_contract/save_state_v0_template.json
 harness/save_contract/save_state_v1_template.json
+harness/save_contract/platform_save_path_policy_v0.json
 harness/save_contract/README.md
 ```
 
@@ -331,9 +332,14 @@ python3 tools/validate_save_state_contract.py \
   harness/save_contract/save_state_v1_template.json \
   --report harness/reports/2026-05-26_save_state_contract_v1_001/save_state_contract.json \
   --markdown harness/reports/2026-05-26_save_state_contract_v1_001/summary.md
+
+python3 tools/validate_save_path_policy.py \
+  harness/save_contract/platform_save_path_policy_v0.json \
+  --report harness/reports/2026-05-26_save_path_policy_v0_001/save_path_policy.json \
+  --markdown harness/reports/2026-05-26_save_path_policy_v0_001/summary.md
 ```
 
-该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值；v1 还要求 `migration_history` 与 `base_ui_state`。这些报告不代表 Runtime 已经实现真实按钮、迁移代码、设置页、平台隐私文本或上传链路。
+该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值；v1 还要求 `migration_history` 与 `base_ui_state`，平台路径策略还要求存档、设置、遥测、Replay 和崩溃报告使用逻辑平台目录并禁止宿主绝对路径。当前报告不代表 Runtime 已经实现真实按钮、迁移代码、平台路径解析、设置页、平台隐私文本或上传链路。
 
 未来存档升级必须继续遵守这些本地优先和 opt-in 规则。当前迁移计划可用以下命令校验：
 

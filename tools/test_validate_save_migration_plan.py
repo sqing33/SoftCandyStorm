@@ -129,6 +129,18 @@ class SaveMigrationPlanValidatorTests(unittest.TestCase):
             self.assertEqual(report["decision"], "save_migration_plan_invalid")
             self.assertTrue(any("target_template does not exist" in error for error in report["errors"]))
 
+    def test_path_policy_must_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payload = copy.deepcopy(load_plan())
+            payload["path_policy"] = "harness/save_contract/missing_platform_save_path_policy.json"
+            path = Path(temp_dir) / "plan.json"
+            write_json(path, payload)
+
+            report = build_report(path, REPO_ROOT)
+
+            self.assertEqual(report["decision"], "save_migration_plan_invalid")
+            self.assertTrue(any("path_policy does not exist" in error for error in report["errors"]))
+
     def test_cli_allow_planned_writes_report(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             report_path = Path(temp_dir) / "report.json"

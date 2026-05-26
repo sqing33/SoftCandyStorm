@@ -1,0 +1,114 @@
+{
+  "policy_version": 1,
+  "policy_id": "platform-save-path-v0",
+  "scope": "local-save-and-runtime-data",
+  "status": "contract-only",
+  "summary": "平台存档路径策略 v0：定义本地存档、Runtime 设置、遥测、Replay 和崩溃报告的逻辑目录边界，要求存档内容不得保存绝对路径或个人身份路径。当前只是可校验策略契约，不代表 Runtime 已实现平台路径解析或完成平台审查。",
+  "save_contract_ids": [
+    "save-state-v0",
+    "save-state-v1"
+  ],
+  "storage_roots": [
+    {
+      "id": "save_files",
+      "purpose": "player_save_state",
+      "logical_path": "platform_user_data/soft-candy-storm/saves",
+      "contains": [
+        "save-state-v0",
+        "save-state-v1"
+      ],
+      "delete_supported": true,
+      "export_supported": true,
+      "migration_participates": true,
+      "cloud_sync_allowed": false
+    },
+    {
+      "id": "runtime_settings",
+      "purpose": "runtime_privacy_settings",
+      "logical_path": "platform_user_data/soft-candy-storm/settings",
+      "contains": [
+        "runtime-privacy-settings-v0"
+      ],
+      "delete_supported": true,
+      "export_supported": true,
+      "migration_participates": false,
+      "cloud_sync_allowed": false
+    },
+    {
+      "id": "local_telemetry",
+      "purpose": "local_telemetry_cache",
+      "logical_path": "platform_user_data/soft-candy-storm/telemetry",
+      "contains": [
+        "telemetry-json"
+      ],
+      "delete_supported": true,
+      "export_supported": true,
+      "migration_participates": false,
+      "cloud_sync_allowed": false
+    },
+    {
+      "id": "local_replay",
+      "purpose": "local_replay_cache",
+      "logical_path": "platform_user_data/soft-candy-storm/replay",
+      "contains": [
+        "replay-json"
+      ],
+      "delete_supported": true,
+      "export_supported": true,
+      "migration_participates": false,
+      "cloud_sync_allowed": false
+    },
+    {
+      "id": "crash_reports",
+      "purpose": "local_crash_report_cache",
+      "logical_path": "platform_user_data/soft-candy-storm/crash-reports",
+      "contains": [
+        "crash-report-json"
+      ],
+      "delete_supported": true,
+      "export_supported": true,
+      "migration_participates": false,
+      "cloud_sync_allowed": false
+    }
+  ],
+  "path_rules": {
+    "local_only_by_default": true,
+    "no_absolute_paths_in_save": true,
+    "no_personal_identity_in_paths": true,
+    "player_visible_delete_export": true,
+    "delete_requires_explicit_user_action": true,
+    "delete_scope_must_be_configured_roots": true,
+    "export_format_json": true,
+    "migration_must_keep_original_until_success": true,
+    "cloud_sync_requires_manual_review": true,
+    "platform_paths_must_be_reviewed_before_release": true
+  },
+  "prohibited_path_fragments": [
+    "/Users/",
+    "C:\\",
+    "~/",
+    "email",
+    "ip_address",
+    "player_name",
+    "real_name",
+    "absolute_path",
+    "free_text_input"
+  ],
+  "release_requirements": [
+    "manual_privacy_review",
+    "platform_path_review",
+    "delete_export_controls",
+    "save_migration_fixtures",
+    "release_candidate_evidence_gate"
+  ],
+  "blockers": [
+    "Runtime does not resolve platform-native save paths",
+    "Platform save path review is not complete",
+    "Cloud save policy is not defined"
+  ],
+  "next_actions": [
+    "bind Runtime --save-file defaults to platform_user_data only after local binary launch is restored",
+    "add migration fixtures that keep original save files until v1 write succeeds",
+    "complete manual platform path review before any release candidate can pass"
+  ]
+}

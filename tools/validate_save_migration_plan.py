@@ -179,6 +179,24 @@ def validate_target_template(repo_root: Path, payload: dict[str, Any], errors: l
             errors.append(f"target_template must include required new section `{required}`")
 
 
+def validate_path_policy(repo_root: Path, payload: dict[str, Any], errors: list[str]) -> None:
+    policy_path = validate_existing_repo_path(repo_root, "path_policy", payload.get("path_policy"), errors)
+    if policy_path is None:
+        return
+    try:
+        policy = load_json_object(policy_path)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"path_policy is invalid JSON: {error}")
+        return
+    if policy.get("policy_id") != "platform-save-path-v0":
+        errors.append("path_policy policy_id must be platform-save-path-v0")
+    contracts = set(string_list(policy.get("save_contract_ids")))
+    expected = {payload.get("source_contract_id"), payload.get("target_contract_id")}
+    missing = sorted(str(item) for item in expected if item not in contracts)
+    if missing:
+        errors.append(f"path_policy save_contract_ids missing: {', '.join(missing)}")
+
+
 def validate_preserved_sections(payload: dict[str, Any], errors: list[str]) -> None:
     sections = set(string_list(payload.get("required_preserved_sections")))
     if payload.get("required_preserved_sections") is not None and not isinstance(payload.get("required_preserved_sections"), list):
@@ -314,6 +332,7 @@ def build_report(plan_path: Path, repo_root: Path) -> dict[str, Any]:
     validate_metadata(payload, errors)
     validate_source_template(repo_root, payload, errors)
     validate_target_template(repo_root, payload, errors)
+    validate_path_policy(repo_root, payload, errors)
     validate_preserved_sections(payload, errors)
     validate_new_sections(payload, errors)
     validate_privacy_invariants(payload, errors)

@@ -13,7 +13,8 @@
 ## Blockers
 
 - Runtime migration implementation is not present
-- platform save path policy is not reviewed
+- Runtime platform save path implementation is not present
+- manual platform save path review is not complete
 
 ## Errors
 

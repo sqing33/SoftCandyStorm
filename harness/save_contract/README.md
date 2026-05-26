@@ -2,7 +2,7 @@
 
 本目录记录局外成长、图鉴、章节进度和本地数据控制的存档契约。当前有 `save-state-v0` 和计划中的 `save-state-v1` 模板；v1 只定义契约，不代表 Runtime 已实现迁移。
 
-当前本机 Rust/Mach-O 二进制启动仍被阻塞，因此这里的校验只做 JSON 存档形状检查：
+当前本机 Rust/Mach-O 二进制启动仍被阻塞，因此这里的校验只做 JSON 存档形状和平台路径策略检查：
 
 - 局外资源、解锁、图鉴和章节字段是否完整。
 - 六章主线骨架是否可被存档保存，其中首章默认解锁，后续章节默认锁定。
@@ -10,6 +10,7 @@
 - 本地数据是否默认不上传。
 - 删除存档和导出存档控制项是否存在。
 - 存档中是否出现明显禁止的个人身份或本地路径字段。
+- 存档、设置、遥测、Replay 和崩溃报告的逻辑平台目录是否有可审计边界。
 
 Runtime 现在已有 CLI 级 v0 存档读写能力：
 
@@ -22,6 +23,19 @@ cargo run -p game_runtime -- --save-file harness/save/local/profile.json --delet
 `--save-file` 会读取或创建 `save-state-v0`，局后结算时写回 `MetaProgress`；`--export-save` 导出同形状 JSON；`--delete-save` 必须显式指定 save 文件，只删除该文件。
 
 它不能替代迁移版本、基地 UI 删除/导出按钮、平台隐私审查或人工试玩流程。
+
+## 平台路径策略
+
+平台路径策略位于：
+
+```bash
+python3 tools/validate_save_path_policy.py \
+  harness/save_contract/platform_save_path_policy_v0.json \
+  --report harness/reports/2026-05-26_save_path_policy_v0_001/save_path_policy.json \
+  --markdown harness/reports/2026-05-26_save_path_policy_v0_001/summary.md
+```
+
+该策略要求存档、Runtime 设置、本地遥测、Replay 和崩溃报告使用逻辑平台目录，不在存档中保存宿主绝对路径或个人身份路径，并要求删除 / 导出只作用于配置的本地数据根。当前结论为 `save_path_policy_valid`，但它只证明策略可校验；Runtime 仍未实现平台原生路径解析，人工平台路径审查和云存档策略也未完成。
 
 ## 迁移计划
 
@@ -36,4 +50,4 @@ python3 tools/validate_save_migration_plan.py \
   --allow-planned
 ```
 
-当前计划报告 `save_migration_plan_planned`。它要求迁移保留隐私默认值、本地数据控制、图鉴进度、章节进度、完成局数和最佳存活时间，并在 v1 中新增 `migration_history` 和基地 UI 状态字段。它只是契约和 blocker 记录；Runtime 迁移代码与平台存档路径审查仍需后续实现。
+当前计划报告 `save_migration_plan_planned`。它要求迁移保留隐私默认值、本地数据控制、图鉴进度、章节进度、完成局数和最佳存活时间，并在 v1 中新增 `migration_history` 和基地 UI 状态字段。它只是契约和 blocker 记录；Runtime 迁移代码、平台路径实现和人工平台路径审查仍需后续实现。

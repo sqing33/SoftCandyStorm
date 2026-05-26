@@ -9,6 +9,7 @@
   "summary": "v0 到 v1 的本地存档迁移计划，用于在未来加入基地 UI、平台路径或更多局外字段时保留现有进度和隐私默认值。当前仅是可校验迁移契约，不代表 Runtime 已实现迁移。",
   "source_template": "harness/save_contract/save_state_v0_template.json",
   "target_template": "harness/save_contract/save_state_v1_template.json",
+  "path_policy": "harness/save_contract/platform_save_path_policy_v0.json",
   "required_preserved_sections": [
     "settings",
     "data_controls",
@@ -86,11 +87,13 @@
   ],
   "blockers": [
     "Runtime migration implementation is not present",
-    "platform save path policy is not reviewed"
+    "Runtime platform save path implementation is not present",
+    "manual platform save path review is not complete"
   ],
   "next_actions": [
     "implement Runtime migration against the save-state-v1 template",
-    "review platform save path policy before accepting migrated saves",
+    "implement Runtime path resolution against platform-save-path-v0 after local binary launch is restored",
+    "complete manual platform save path review before accepting migrated saves",
     "run migration fixtures for valid v0, missing section, privacy invariant violation, and unknown source version"
   ]
 }
