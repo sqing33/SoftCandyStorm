@@ -1,0 +1,73 @@
+{
+  "policy_version": 1,
+  "policy_id": "local-first-telemetry-privacy-v001",
+  "scope": "development-local",
+  "summary": "开发阶段只保存本地 replay 和 telemetry；未来上传型遥测默认关闭，必须匿名并取得明确同意。",
+  "upload": {
+    "enabled": false,
+    "default_enabled": false,
+    "requires_explicit_consent": true,
+    "endpoint": null
+  },
+  "identity": {
+    "anonymous_session_ids": true,
+    "collects_personal_identity": false,
+    "collects_ip_address": false,
+    "collects_file_paths": false,
+    "collects_free_text": false
+  },
+  "raw_replay_upload": {
+    "enabled": false,
+    "default_enabled": false,
+    "requires_explicit_consent": true,
+    "allowed_only_for_debug_cases": true
+  },
+  "allowed_event_fields": [
+    "timestamp",
+    "run_id",
+    "session_id",
+    "game_version",
+    "content_hash",
+    "map_id",
+    "character_id",
+    "difficulty",
+    "elapsed_seconds",
+    "event_type",
+    "event_counts",
+    "final_metrics"
+  ],
+  "prohibited_fields": [
+    "personal_identity",
+    "email",
+    "ip_address",
+    "file_path",
+    "free_text_input",
+    "raw_replay_action_stream"
+  ],
+  "purposes": [
+    "balance",
+    "crash_analysis",
+    "gameplay_improvement"
+  ],
+  "storage": {
+    "local_paths": [
+      "harness/reports/",
+      "harness/telemetry/local/"
+    ],
+    "retention_days": 30,
+    "delete_local_data_supported": true,
+    "export_local_data_supported": true
+  },
+  "player_controls": {
+    "disable_upload": true,
+    "delete_local_data": true,
+    "export_local_data": true,
+    "separate_raw_replay_consent": true
+  },
+  "release_requirements": [
+    "manual_privacy_review",
+    "release_candidate_evidence_gate",
+    "runtime_settings_toggle",
+    "privacy_notice_text"
+  ]
+}

@@ -399,7 +399,7 @@
       "doc_id": "16",
       "doc_path": "docs/16_Replay与遥测设计.md",
       "status": "partial",
-      "summary": "Replay strict 回归、Runtime capture 和遥测样本已有实现；上线隐私和真实遥测闭环尚未完成。",
+      "summary": "Replay strict 回归、Runtime capture、遥测样本和隐私策略校验模板已有实现；Runtime 设置开关、删除/导出流程、法律审查和真实遥测闭环尚未完成。",
       "coverage": [
         {
           "id": "replay-and-telemetry",
@@ -408,11 +408,13 @@
           "evidence": [
             "harness/reports/2026-05-25_replay_baseline_regression_001/summary.md",
             "harness/reports/2026-05-25_runtime_boss_capture_001/summary.md",
+            "harness/telemetry_privacy/validate_telemetry_privacy_policy.py",
+            "harness/reports/2026-05-26_telemetry_privacy_policy_001/summary.md",
             "crates/game_runtime/src/main.rs"
           ],
           "gaps": [
             "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
-            "正式上线遥测隐私、关闭选项和数据策略尚未实现。"
+            "隐私策略已有可校验模板，但 Runtime 设置开关、删除/导出流程、法律审查和实际上传禁用/同意逻辑尚未完成。"
           ],
           "blockers": [
             "local_binary_launch_blocked"

@@ -232,3 +232,27 @@ P1：
 - 不上传 replay 原始输入，除非玩家同意。
 - 不上传个人身份信息。
 
+当前隐私策略模板与校验器位于：
+
+```text
+harness/telemetry_privacy/telemetry_privacy_policy_template.json
+harness/telemetry_privacy/validate_telemetry_privacy_policy.py
+```
+
+该策略门禁要求：
+
+- 上传型遥测默认关闭。
+- 上传和 raw replay 上传都必须有明确同意。
+- 使用匿名 session id，不采集个人身份、IP、文件路径或自由文本。
+- `allowed_event_fields` 不能包含禁止字段或 replay 原始输入。
+- 本地数据需要有保留天数、删除和导出控制项。
+- 发布前仍需要人工隐私审查、Runtime 设置开关、隐私说明文本和 Release Candidate 证据。
+
+当前校验命令：
+
+```bash
+python3 harness/telemetry_privacy/validate_telemetry_privacy_policy.py \
+  harness/telemetry_privacy/telemetry_privacy_policy_template.json \
+  --report harness/reports/2026-05-26_telemetry_privacy_policy_001/telemetry_privacy_policy.json \
+  --markdown harness/reports/2026-05-26_telemetry_privacy_policy_001/summary.md
+```
