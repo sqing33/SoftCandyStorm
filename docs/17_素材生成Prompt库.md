@@ -325,7 +325,7 @@ harness/reports/2026-05-26_mmx_level_up_feedback_review_packet_001/summary.md
 5. 裁切 spritesheet。
 6. 生成 manifest。
 7. 放入 `asset/generated_candidates`。
-8. 人工选择后进入正式素材目录。
+8. 通过人工审查、Runtime preview、听感 / 响度和最终接受门禁后，才能进入 accepted asset 内容池。
 
 ## mmx 生成前计划门禁
 
@@ -456,6 +456,30 @@ game_runtime --asset-runtime-candidate-manifest \
 ```
 
 该入口只在 `F1` 概览显示候选批次、素材数量、类型统计和 `asset_candidate` 待预览状态。它不会读取候选图片、音频或正文文件，不替换正式 Runtime 素材，也不会把候选标记为 `accepted_content`、`runtime_integrated` 或 `release_ready`；缺少 Runtime preview、音频响度审查或最终人工接受要求的 manifest 会被拒绝。
+
+Runtime 候选后的三类人工证据必须独立落盘并分别校验：
+
+```bash
+python3 harness/asset_review/validate_asset_runtime_preview_review.py \
+  harness/asset_review/runtime_preview_reviews/<review>.json \
+  --repo-root . \
+  --report /tmp/asset_runtime_preview_review.json \
+  --markdown /tmp/asset_runtime_preview_review.md
+
+python3 harness/asset_review/validate_asset_audio_loudness_review.py \
+  harness/asset_review/audio_loudness_reviews/<review>.json \
+  --repo-root . \
+  --report /tmp/asset_audio_loudness_review.json \
+  --markdown /tmp/asset_audio_loudness_review.md
+
+python3 harness/asset_review/validate_asset_final_acceptance.py \
+  harness/asset_review/final_acceptance/<review>.json \
+  --repo-root . \
+  --report /tmp/asset_final_acceptance.json \
+  --markdown /tmp/asset_final_acceptance.md
+```
+
+对应模板为 `asset_runtime_preview_review_template.json`、`asset_audio_loudness_review_template.json` 和 `asset_final_acceptance_template.json`。模板保留 TODO 时必须输出 invalid；通过也只代表人工接受证据完整，不代表 Runtime 已加载素材或发布包 ready。
 
 若 Runtime preview、音频响度 / 听感审查和最终人工接受全部完成，再运行：
 

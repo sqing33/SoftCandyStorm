@@ -16,8 +16,9 @@
 6. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
 7. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
 8. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
-9. 可以运行 `create_asset_acceptance_review_packet.py` 汇总最终接受 manifest 需要的 Runtime candidate manifest、Runtime preview review、音频响度 / 听感审查和 final human acceptance 证据，帮助真人补齐缺口。
-10. Runtime 候选通过 Runtime preview、音频响度 / 听感审查和 final human acceptance 后，才可以写入 `asset_acceptance_manifest_template.json` 对应的最终接受 manifest，并运行 `validate_asset_acceptance_manifest.py`。
+9. Runtime 候选必须分别填写并通过 `asset_runtime_preview_review_template.json`、`asset_audio_loudness_review_template.json` 和 `asset_final_acceptance_template.json`，对应校验器分别为 `validate_asset_runtime_preview_review.py`、`validate_asset_audio_loudness_review.py` 和 `validate_asset_final_acceptance.py`。
+10. 可以运行 `create_asset_acceptance_review_packet.py` 汇总最终接受 manifest 需要的 Runtime candidate manifest、Runtime preview review、音频响度 / 听感审查和 final human acceptance 证据，帮助真人补齐缺口。
+11. Runtime 候选通过 Runtime preview、音频响度 / 听感审查和 final human acceptance 后，才可以写入 `asset_acceptance_manifest_template.json` 对应的最终接受 manifest，并运行 `validate_asset_acceptance_manifest.py`。
 
 mmx 生成计划示例：
 
@@ -76,6 +77,38 @@ python3 harness/asset_review/validate_asset_runtime_candidate_manifest.py \
 ```
 
 晋级前必须先有真人填写并通过校验的 `asset_candidate` 审查记录；自动草稿、`needs_more_review`、`repair` 或 `reject` 结论都不能晋级。该门禁和 Runtime 候选晋级都不会替代小尺寸实机预览、听感审查、响度处理、授权复核或 Runtime smoke。
+
+Runtime preview review 校验示例：
+
+```bash
+python3 harness/asset_review/validate_asset_runtime_preview_review.py \
+  harness/asset_review/runtime_preview_reviews/<review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/asset_runtime_preview_review.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+音频响度 / 听感审查校验示例：
+
+```bash
+python3 harness/asset_review/validate_asset_audio_loudness_review.py \
+  harness/asset_review/audio_loudness_reviews/<review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/asset_audio_loudness_review.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+最终人工接受记录校验示例：
+
+```bash
+python3 harness/asset_review/validate_asset_final_acceptance.py \
+  harness/asset_review/final_acceptance/<review>.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/asset_final_acceptance.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+三个模板当前都保留 TODO 和占位路径，报告必须分别保持 `asset_runtime_preview_review_invalid`、`asset_audio_loudness_review_invalid` 和 `asset_final_acceptance_invalid`，直到真人填写并绑定有效 Runtime 候选证据。即使三者通过，也仍只说明最终接受证据完整，不代表 Runtime 已集成或发布包 ready。
 
 最终接受审查包示例：
 

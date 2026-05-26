@@ -185,7 +185,7 @@
       "doc_id": "05",
       "doc_path": "docs/05_美术与音频素材计划.md",
       "status": "partial",
-      "summary": "已有程序化 top-down 占位素材、多批 mmx 图像/TTS/music 候选、mmx 生成前作业计划门禁、Runtime 俯视角与音频候选批次、升级反馈候选批次，以及素材人工审查模板、草稿生成器、校验器、Runtime 候选晋级工具、Runtime 候选 manifest 门禁、最终接受审查包和最终接受 manifest 门禁；正式美术音频仍未由真人审查并接入。",
+      "summary": "已有程序化 top-down 占位素材、多批 mmx 图像/TTS/music 候选、mmx 生成前作业计划门禁、Runtime 俯视角与音频候选批次、升级反馈候选批次，以及素材人工审查模板、草稿生成器、校验器、Runtime 候选晋级工具、Runtime 候选 manifest 门禁、Runtime preview / 音频响度 / final acceptance 独立记录门禁、最终接受审查包和最终接受 manifest 门禁；正式美术音频仍未由真人审查并接入。",
       "coverage": [
         {
           "id": "asset-candidate-pipeline",
@@ -217,6 +217,18 @@
             "harness/asset_review/validate_asset_runtime_candidate_manifest.py",
             "harness/asset_review/test_validate_asset_runtime_candidate_manifest.py",
             "harness/reports/2026-05-26_asset_runtime_candidate_manifest_template_001/summary.md",
+            "harness/asset_review/asset_runtime_preview_review_template.json",
+            "harness/asset_review/validate_asset_runtime_preview_review.py",
+            "harness/asset_review/test_validate_asset_runtime_preview_review.py",
+            "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/summary.md",
+            "harness/asset_review/asset_audio_loudness_review_template.json",
+            "harness/asset_review/validate_asset_audio_loudness_review.py",
+            "harness/asset_review/test_validate_asset_audio_loudness_review.py",
+            "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/summary.md",
+            "harness/asset_review/asset_final_acceptance_template.json",
+            "harness/asset_review/validate_asset_final_acceptance.py",
+            "harness/asset_review/test_validate_asset_final_acceptance.py",
+            "harness/reports/2026-05-26_asset_final_acceptance_template_001/summary.md",
             "harness/asset_review/asset_acceptance_manifest_template.json",
             "harness/asset_review/create_asset_acceptance_review_packet.py",
             "harness/asset_review/test_create_asset_acceptance_review_packet.py",
@@ -238,7 +250,7 @@
             "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/summary.md"
           ],
           "gaps": [
-            "mmx 候选仍在 asset/generated_candidates；已有生成前作业计划门禁、metadata 校验、人工审查草稿、真人审查包、asset_candidate 后进入 Runtime 候选 staging 的工具、Runtime 候选 manifest 门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录、Runtime preview review、audio loudness review 或 final human acceptance 并通过。",
+            "mmx 候选仍在 asset/generated_candidates；已有生成前作业计划门禁、metadata 校验、人工审查草稿、真人审查包、asset_candidate 后进入 Runtime 候选 staging 的工具、Runtime 候选 manifest 门禁、Runtime preview / audio loudness / final human acceptance 独立记录门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录、Runtime preview review、audio loudness review 或 final human acceptance 并通过。",
             "Runtime 俯视角玩家与 Boss 出场音频批次已生成小尺寸预览、8 秒 sting 和语音 / sting 叠放预览；升级反馈批次已生成图标预览、中文 TTS 和 3.2 秒 jingle；Runtime 现在只能显示 asset_candidate 待预览元数据，仍缺少真人填写后的最终 sprite、音效、BGM 接受记录、真实 Runtime 预览证据和最终接受 manifest。"
           ]
         }
@@ -731,7 +743,7 @@
       "doc_id": "17",
       "doc_path": "docs/17_素材生成Prompt库.md",
       "status": "partial",
-      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理，新增 mmx 生成前作业计划门禁并按计划生成 Runtime 俯视角 / 音频候选和升级反馈候选，素材人工审查草稿生成、校验门禁、Runtime 候选晋级工具、Runtime 候选 manifest 门禁、最终接受审查包和最终接受 manifest 门禁也已补齐；候选质量仍多为 repair 或 needs_review，正式素材缺真人接受。",
+      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理，新增 mmx 生成前作业计划门禁并按计划生成 Runtime 俯视角 / 音频候选和升级反馈候选，素材人工审查草稿生成、校验门禁、Runtime 候选晋级工具、Runtime 候选 manifest 门禁、Runtime preview / 音频响度 / final acceptance 独立记录门禁、最终接受审查包和最终接受 manifest 门禁也已补齐；候选质量仍多为 repair 或 needs_review，正式素材缺真人接受。",
       "coverage": [
         {
           "id": "prompt-provenance",
@@ -758,6 +770,18 @@
             "harness/asset_review/test_promote_asset_runtime_candidate.py",
             "harness/asset_review/validate_asset_runtime_candidate_manifest.py",
             "harness/reports/2026-05-26_asset_runtime_candidate_manifest_template_001/summary.md",
+            "harness/asset_review/asset_runtime_preview_review_template.json",
+            "harness/asset_review/validate_asset_runtime_preview_review.py",
+            "harness/asset_review/test_validate_asset_runtime_preview_review.py",
+            "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/summary.md",
+            "harness/asset_review/asset_audio_loudness_review_template.json",
+            "harness/asset_review/validate_asset_audio_loudness_review.py",
+            "harness/asset_review/test_validate_asset_audio_loudness_review.py",
+            "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/summary.md",
+            "harness/asset_review/asset_final_acceptance_template.json",
+            "harness/asset_review/validate_asset_final_acceptance.py",
+            "harness/asset_review/test_validate_asset_final_acceptance.py",
+            "harness/reports/2026-05-26_asset_final_acceptance_template_001/summary.md",
             "harness/asset_review/asset_acceptance_manifest_template.json",
             "harness/asset_review/create_asset_acceptance_review_packet.py",
             "harness/asset_review/test_create_asset_acceptance_review_packet.py",
@@ -782,7 +806,7 @@
           ],
           "gaps": [
             "多个图像候选仍偏 repair 或 needs_visual_review，未达到最终可接入 Runtime 的质量。",
-            "语音和音乐候选已有覆盖所有 id 的审查草稿；Runtime 俯视角 / 音频批次和升级反馈批次的草稿校验当前故意保持 invalid，Runtime 也只显示候选 manifest 元数据；最终接受审查包和最终接受 manifest 门禁已存在，但仍需真人听感审查、Runtime preview review 和 final human acceptance。"
+            "语音和音乐候选已有覆盖所有 id 的审查草稿；Runtime 俯视角 / 音频批次和升级反馈批次的草稿校验当前故意保持 invalid，Runtime 也只显示候选 manifest 元数据；Runtime preview / audio loudness / final acceptance 独立记录门禁、最终接受审查包和最终接受 manifest 门禁已存在，但仍需真人听感审查、Runtime preview review 和 final human acceptance。"
           ]
         }
       ]

@@ -193,6 +193,8 @@ def valid_final_acceptance(repo_root: Path) -> Path:
             "review_type": "asset_final_acceptance",
             "candidate_batch_id": "fixture_asset_batch",
             "source_runtime_candidate_manifest": "harness/asset_review/runtime_candidates/fixture_asset_batch/runtime_candidate_manifest.json",
+            "runtime_preview_review_file": "harness/asset_review/runtime_preview_reviews/fixture-preview.json",
+            "audio_loudness_review_file": "harness/asset_review/audio_loudness_reviews/fixture-loudness.json",
             "reviewer": "final-human-reviewer",
             "reviewed_at": "2026-05-26",
             "decision": "accepted_content",
@@ -271,8 +273,11 @@ class AssetAcceptanceManifestValidatorTests(unittest.TestCase):
 
             self.assertEqual(report["decision"], "asset_acceptance_manifest_valid")
             self.assertEqual(report["runtime_candidate_manifest_decision"], "asset_runtime_candidate_manifest_valid")
+            self.assertEqual(report["runtime_preview_review_report_decision"], "asset_runtime_preview_review_valid")
             self.assertEqual(report["runtime_preview_review_decision"], "runtime_preview_pass")
+            self.assertEqual(report["audio_loudness_review_report_decision"], "asset_audio_loudness_review_valid")
             self.assertEqual(report["audio_loudness_review_decision"], "audio_loudness_pass")
+            self.assertEqual(report["final_acceptance_report_decision"], "asset_final_acceptance_valid")
             self.assertEqual(report["final_acceptance_decision"], "accepted_content")
             self.assertEqual(report["validated_asset_count"], 2)
 

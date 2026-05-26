@@ -18,6 +18,9 @@ from validate_asset_runtime_candidate_manifest import (
     build_report as build_runtime_candidate_manifest_report,
     load_json_object,
 )
+from validate_asset_runtime_preview_review import build_report as build_runtime_preview_report
+from validate_asset_audio_loudness_review import build_report as build_audio_loudness_report
+from validate_asset_final_acceptance import build_report as build_final_acceptance_report
 
 
 EXPECTED_CONTRACT_ID = "asset-acceptance-manifest-v0"
@@ -33,35 +36,11 @@ REQUIRED_RULES = {
     "requires_final_human_acceptance": True,
     "generated_candidate_direct_acceptance_allowed": False,
 }
-RUNTIME_PREVIEW_REQUIRED_FLAGS = {
-    "all_assets_visible_or_audible": True,
-    "small_size_readable": True,
-    "no_placeholder_leak": True,
-    "no_runtime_integration_claim": True,
-}
-AUDIO_LOUDNESS_REQUIRED_FLAGS = {
-    "dialogue_clear_if_present": True,
-    "loudness_review_passed": True,
-    "no_clipping": True,
-    "loop_or_duration_fit": True,
-}
-FINAL_ACCEPTANCE_REQUIRED_FLAGS = {
-    "accepts_asset_batch": True,
-    "accepted_content_only_after_reviews": True,
-    "release_ready": False,
-    "runtime_integrated": False,
-}
 FORBIDDEN_ACCEPTED_USES = {"runtime_integrated", "release_ready"}
 
 
 def is_nonempty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
-
-
-def string_list(value: Any) -> list[str]:
-    if not isinstance(value, list):
-        return []
-    return [item for item in value if isinstance(item, str) and item.strip()]
 
 
 def has_placeholder(value: Any) -> bool:
@@ -172,62 +151,86 @@ def validate_runtime_candidate_manifest(
     return report, assets
 
 
-def validate_required_flags(
-    payload: dict[str, Any],
-    field: str,
-    expected_flags: dict[str, bool],
-    label: str,
-    errors: list[str],
-) -> None:
-    flags = payload.get(field)
-    if not isinstance(flags, dict):
-        errors.append(f"{label}.{field} must be an object")
-        return
-    for flag, expected in expected_flags.items():
-        if flags.get(flag) is not expected:
-            errors.append(f"{label}.{field}.{flag} must be {json.dumps(expected)}")
-
-
-def validate_review_file(
+def validate_runtime_preview_review_file(
     path: Path | None,
+    repo_root: Path,
     manifest_payload: dict[str, Any],
-    expected_review_type: str,
-    expected_decision: str,
-    required_flags: dict[str, bool],
-    label: str,
     errors: list[str],
-) -> dict[str, Any] | None:
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     if path is None:
-        return None
+        return None, None
     try:
+        report = build_runtime_preview_report(path, repo_root)
         payload = load_json_object(path)
     except (OSError, ValueError, json.JSONDecodeError) as error:
-        errors.append(f"{label} is invalid JSON: {error}")
-        return None
+        errors.append(f"runtime_preview_review_file is invalid JSON: {error}")
+        return None, None
 
-    if not isinstance(payload.get("review_version"), int) or payload["review_version"] <= 0:
-        errors.append(f"{label}.review_version must be a positive integer")
-    if payload.get("review_type") != expected_review_type:
-        errors.append(f"{label}.review_type must be `{expected_review_type}`")
+    if report["decision"] != "asset_runtime_preview_review_valid":
+        errors.append("runtime_preview_review_file must validate")
+    if report.get("gate_decision") != "runtime_preview_pass":
+        errors.append("runtime_preview_review_file.decision must be `runtime_preview_pass`")
     if payload.get("candidate_batch_id") != manifest_payload.get("candidate_batch_id"):
-        errors.append(f"{label}.candidate_batch_id must match acceptance manifest")
+        errors.append("runtime_preview_review_file.candidate_batch_id must match acceptance manifest")
     if payload.get("source_runtime_candidate_manifest") != manifest_payload.get("source_runtime_candidate_manifest"):
-        errors.append(f"{label}.source_runtime_candidate_manifest must match acceptance manifest")
-    if payload.get("decision") != expected_decision:
-        errors.append(f"{label}.decision must be `{expected_decision}`")
-    for field in ("reviewer", "reviewed_at", "summary"):
-        if not is_nonempty_string(payload.get(field)):
-            errors.append(f"{label}.{field} must be non-empty")
-        elif has_placeholder(payload.get(field)):
-            errors.append(f"{label}.{field} must not contain TODO or placeholder markers")
-    concrete_observations = string_list(payload.get("concrete_observations"))
-    if len(concrete_observations) < 2:
-        errors.append(f"{label}.concrete_observations must contain at least two concrete items")
-    unresolved_issues = string_list(payload.get("unresolved_issues"))
-    if unresolved_issues:
-        errors.append(f"{label}.unresolved_issues must be empty for {expected_decision}")
-    validate_required_flags(payload, "checks", required_flags, label, errors)
-    return payload
+        errors.append("runtime_preview_review_file.source_runtime_candidate_manifest must match acceptance manifest")
+    return report, payload
+
+
+def validate_audio_loudness_review_file(
+    path: Path | None,
+    repo_root: Path,
+    manifest_payload: dict[str, Any],
+    errors: list[str],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if path is None:
+        return None, None
+    try:
+        report = build_audio_loudness_report(path, repo_root)
+        payload = load_json_object(path)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"audio_loudness_review_file is invalid JSON: {error}")
+        return None, None
+
+    if report["decision"] != "asset_audio_loudness_review_valid":
+        errors.append("audio_loudness_review_file must validate")
+    if report.get("gate_decision") != "audio_loudness_pass":
+        errors.append("audio_loudness_review_file.decision must be `audio_loudness_pass`")
+    if payload.get("candidate_batch_id") != manifest_payload.get("candidate_batch_id"):
+        errors.append("audio_loudness_review_file.candidate_batch_id must match acceptance manifest")
+    if payload.get("source_runtime_candidate_manifest") != manifest_payload.get("source_runtime_candidate_manifest"):
+        errors.append("audio_loudness_review_file.source_runtime_candidate_manifest must match acceptance manifest")
+    return report, payload
+
+
+def validate_final_acceptance_file(
+    path: Path | None,
+    repo_root: Path,
+    manifest_payload: dict[str, Any],
+    errors: list[str],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if path is None:
+        return None, None
+    try:
+        report = build_final_acceptance_report(path, repo_root)
+        payload = load_json_object(path)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        errors.append(f"final_human_acceptance_file is invalid JSON: {error}")
+        return None, None
+
+    if report["decision"] != "asset_final_acceptance_valid":
+        errors.append("final_human_acceptance_file must validate")
+    if report.get("gate_decision") != "accepted_content":
+        errors.append("final_human_acceptance_file.decision must be `accepted_content`")
+    if payload.get("candidate_batch_id") != manifest_payload.get("candidate_batch_id"):
+        errors.append("final_human_acceptance_file.candidate_batch_id must match acceptance manifest")
+    if payload.get("source_runtime_candidate_manifest") != manifest_payload.get("source_runtime_candidate_manifest"):
+        errors.append("final_human_acceptance_file.source_runtime_candidate_manifest must match acceptance manifest")
+    if payload.get("runtime_preview_review_file") != manifest_payload.get("runtime_preview_review_file"):
+        errors.append("final_human_acceptance_file.runtime_preview_review_file must match acceptance manifest")
+    if payload.get("audio_loudness_review_file") != manifest_payload.get("audio_loudness_review_file"):
+        errors.append("final_human_acceptance_file.audio_loudness_review_file must match acceptance manifest")
+    return report, payload
 
 
 def validate_accepted_assets(
@@ -316,31 +319,22 @@ def build_report(manifest_path: Path, repo_root: Path) -> dict[str, Any]:
         payload,
         errors,
     )
-    runtime_preview_review = validate_review_file(
+    runtime_preview_report, runtime_preview_review = validate_runtime_preview_review_file(
         runtime_preview_review_path,
+        repo_root,
         payload,
-        "asset_runtime_preview_review",
-        "runtime_preview_pass",
-        RUNTIME_PREVIEW_REQUIRED_FLAGS,
-        "runtime_preview_review_file",
         errors,
     )
-    audio_loudness_review = validate_review_file(
+    audio_loudness_report, audio_loudness_review = validate_audio_loudness_review_file(
         audio_loudness_review_path,
+        repo_root,
         payload,
-        "asset_audio_loudness_review",
-        "audio_loudness_pass",
-        AUDIO_LOUDNESS_REQUIRED_FLAGS,
-        "audio_loudness_review_file",
         errors,
     )
-    final_acceptance = validate_review_file(
+    final_acceptance_report, final_acceptance = validate_final_acceptance_file(
         final_acceptance_path,
+        repo_root,
         payload,
-        "asset_final_acceptance",
-        "accepted_content",
-        FINAL_ACCEPTANCE_REQUIRED_FLAGS,
-        "final_human_acceptance_file",
         errors,
     )
     accepted_asset_reports = validate_accepted_assets(payload, source_assets, errors)
@@ -356,13 +350,22 @@ def build_report(manifest_path: Path, repo_root: Path) -> dict[str, Any]:
         "runtime_candidate_manifest_decision": runtime_manifest_report["decision"]
         if runtime_manifest_report is not None
         else None,
-        "runtime_preview_review_decision": runtime_preview_review.get("decision")
-        if runtime_preview_review is not None
+        "runtime_preview_review_report_decision": runtime_preview_report["decision"]
+        if runtime_preview_report is not None
         else None,
-        "audio_loudness_review_decision": audio_loudness_review.get("decision")
-        if audio_loudness_review is not None
+        "runtime_preview_review_decision": runtime_preview_report["gate_decision"]
+        if runtime_preview_report is not None
         else None,
-        "final_acceptance_decision": final_acceptance.get("decision") if final_acceptance is not None else None,
+        "audio_loudness_review_report_decision": audio_loudness_report["decision"]
+        if audio_loudness_report is not None
+        else None,
+        "audio_loudness_review_decision": audio_loudness_report["gate_decision"]
+        if audio_loudness_report is not None
+        else None,
+        "final_acceptance_report_decision": final_acceptance_report["decision"]
+        if final_acceptance_report is not None
+        else None,
+        "final_acceptance_decision": final_acceptance_report["gate_decision"] if final_acceptance_report is not None else None,
         "errors": errors,
         "warnings": warnings,
         "accepted_assets": accepted_asset_reports,
