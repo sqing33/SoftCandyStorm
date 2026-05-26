@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260526_025",
+  "category": "balance",
+  "content_id": "frosting-grassland",
+  "seed": 41000,
+  "bot": "all-bot-matrix",
+  "time_seconds": 600.0,
+  "symptom": "重启恢复后 5 seed / 600 秒 all Bot 探针显示糖霜草地长局胜率分布失衡：Random、Coward、Greedy、Tank、BossHunter、ZoneControl 胜率高于目标，Route 胜率低于目标。",
+  "root_cause": "基础内容的长局成长曲线、Boss 压力、RouteBot 固定路线生存策略和高技能 / 防御流 Bot 的后期滚雪球尚未统一校准；单纯提高刷怪数量会增加 XP 反而强化强 Bot，单纯提高 Boss / 敌人硬度又会把 Coward 和 Route 压到 0 胜。",
+  "fix": "后续需要拆分修复：先分别校准 RouteBot 生存策略、强 Bot 升级 / 走位强度和糖霜草地后期压力，再用同 seed 5 局探针与更大 seed 矩阵确认。",
+  "validation": "以 harness/reports/2026-05-26_post_restart_bot_matrix_600s_probe_001 为基线，重跑 game_harness matrix --seed-start 41000 --seeds 5 --seconds 600 --bots all；收敛后扩展到 20 seed 并执行 strict replay-batch。"
+}
