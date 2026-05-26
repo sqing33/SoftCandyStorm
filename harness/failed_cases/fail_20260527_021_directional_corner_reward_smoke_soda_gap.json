@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_021",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage01_directional_corner_reward_smoke",
+  "seed": 62400,
+  "bot": "PpoDirectionalCornerRewardSmoke",
+  "time_seconds": 24.5666,
+  "symptom": "将 corner_action_risk 改为方向化角落惩罚并降到 -0.003 后，2048 timestep smoke 避免了 action 8 塌缩，但 60 秒 high-pressure 10 seed 对比中 soda-creek 只有 70% 胜率，低于 stage 01 retry 20k 的 80%；seed 62400、62407、62408 仍在 opening 阶段死亡。",
+  "root_cause": "方向化角落惩罚缓解了单一 action 8 逃逸偏置，但仍是 per-step action-specific shaping；policy 转向 action 2 / 7 主导，未形成稳定的敌压释放与边界恢复策略。",
+  "fix": "不要基于该 smoke 直接跑完整 20k；下一步应进一步软化惩罚，改为 risk-delta 或状态目标化奖励，或先做 stochastic / deterministic 短评估对比后再训练。",
+  "validation": "训练 smoke：harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/ppo_training_report.json；60 秒 high-pressure 10 seed 对比：harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/comparison_60s_10seed.json；失败分析：harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/failure_analysis.md。结论为 smoke-only repair evidence，不是 stage 01 通过。"
+}

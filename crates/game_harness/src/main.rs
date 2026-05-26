@@ -36,7 +36,7 @@ const GYM_REWARD_HAZARD_RISK_PENALTY: f32 = -0.0025;
 const GYM_REWARD_BOSS_PRESSURE_PENALTY: f32 = -0.0015;
 const GYM_REWARD_SAFETY_DELTA_WEIGHT: f32 = 0.02;
 const GYM_REWARD_SAFETY_DELTA_CLAMP: f32 = 0.25;
-const GYM_REWARD_OPENING_CORNER_ACTION_PENALTY: f32 = -0.006;
+const GYM_REWARD_OPENING_CORNER_ACTION_PENALTY: f32 = -0.003;
 const GYM_REWARD_OPENING_CORNER_SECONDS: f32 = 60.0;
 const GYM_REWARD_CORNER_DISTANCE_RATIO: f32 = 0.12;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
@@ -2986,14 +2986,27 @@ fn gym_opening_corner_action_reward(
     snapshot: &game_core::RunSnapshot,
     action_index: Option<usize>,
 ) -> f32 {
-    if action_index != Some(4) || snapshot.time_seconds > GYM_REWARD_OPENING_CORNER_SECONDS {
+    if snapshot.time_seconds > GYM_REWARD_OPENING_CORNER_SECONDS {
+        return 0.0;
+    }
+    let Some(action_index) = action_index else {
+        return 0.0;
+    };
+    let movement = gym_discrete_movement(action_index);
+    if movement.length() <= 0.05 {
         return 0.0;
     }
 
     let half_width = (snapshot.map.width * 0.5).max(1.0);
     let half_height = (snapshot.map.height * 0.5).max(1.0);
+    let left_distance = (snapshot.player.position.x + half_width).max(0.0);
     let right_distance = (half_width - snapshot.player.position.x).max(0.0);
     let bottom_distance = (snapshot.player.position.y + half_height).max(0.0);
+    let top_distance = (half_height - snapshot.player.position.y).max(0.0);
+    let left_risk = proximity_risk(
+        left_distance,
+        snapshot.map.width.max(1.0) * GYM_REWARD_CORNER_DISTANCE_RATIO,
+    );
     let right_risk = proximity_risk(
         right_distance,
         snapshot.map.width.max(1.0) * GYM_REWARD_CORNER_DISTANCE_RATIO,
@@ -3002,7 +3015,25 @@ fn gym_opening_corner_action_reward(
         bottom_distance,
         snapshot.map.height.max(1.0) * GYM_REWARD_CORNER_DISTANCE_RATIO,
     );
-    let corner_risk = right_risk.min(bottom_risk);
+    let top_risk = proximity_risk(
+        top_distance,
+        snapshot.map.height.max(1.0) * GYM_REWARD_CORNER_DISTANCE_RATIO,
+    );
+    let horizontal_risk = if movement.x > 0.05 {
+        right_risk
+    } else if movement.x < -0.05 {
+        left_risk
+    } else {
+        0.0
+    };
+    let vertical_risk = if movement.y > 0.05 {
+        top_risk
+    } else if movement.y < -0.05 {
+        bottom_risk
+    } else {
+        0.0
+    };
+    let corner_risk = horizontal_risk.min(vertical_risk);
     GYM_REWARD_OPENING_CORNER_ACTION_PENALTY * corner_risk * enemy_pressure_risk(snapshot)
 }
 
@@ -6821,6 +6852,41 @@ mod tests {
             Some(&snapshot),
         );
 
+        let mut top_left_snapshot = snapshot.clone();
+        top_left_snapshot.player.position = Vec2::new(-half_width, half_height);
+        top_left_snapshot.visible_enemies.clear();
+        top_left_snapshot.visible_enemies.push(EnemySnapshot {
+            entity_id: 203,
+            enemy_id: "test-enemy".to_string(),
+            position: top_left_snapshot.player.position + Vec2::new(18.0, -24.0),
+            velocity: Vec2::ZERO,
+            health: 20.0,
+            max_health: 20.0,
+            radius: 18.0,
+            threat: 80.0,
+            behavior: EnemyBehavior::Chase,
+            is_boss: false,
+            is_elite: false,
+        });
+        let top_left_risky_breakdown = gym_reward_breakdown(
+            &RewardHint::default(),
+            &[],
+            None,
+            0.0,
+            Some(8),
+            0.0,
+            Some(&top_left_snapshot),
+        );
+        let top_left_escape_breakdown = gym_reward_breakdown(
+            &RewardHint::default(),
+            &[],
+            None,
+            0.0,
+            Some(4),
+            0.0,
+            Some(&top_left_snapshot),
+        );
+
         snapshot.time_seconds = 61.0;
         let late_breakdown = gym_reward_breakdown(
             &RewardHint::default(),
@@ -6834,6 +6900,8 @@ mod tests {
 
         assert!(risky_breakdown.corner_action_risk < 0.0);
         assert_eq!(escape_breakdown.corner_action_risk, 0.0);
+        assert!(top_left_risky_breakdown.corner_action_risk < 0.0);
+        assert_eq!(top_left_escape_breakdown.corner_action_risk, 0.0);
         assert_eq!(late_breakdown.corner_action_risk, 0.0);
         assert!(
             (risky_breakdown.total

@@ -1708,6 +1708,11 @@
       "id": "rl_curriculum_stage01_corner_reward_retrain_regression",
       "summary": "基于 corner_action_risk 从 stage 01 retry checkpoint warm start 重训 20k 后发生 action 8 塌缩：训练评估 soda-creek 0%，60 秒 high-pressure 10 seed 中 soda-creek 仅 10%，三图均需 policy repair，已记录 fail_20260527_020。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_retrain_20k_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage01_directional_corner_reward_smoke",
+      "summary": "将 corner_action_risk 改为方向化角落惩罚并降到 -0.003 后，2048 timestep smoke 避免 action 8 塌缩，但 60 秒 high-pressure 10 seed 中 soda-creek 仍只有 70% 胜率，记录 fail_20260527_021，结论为 smoke-only repair evidence。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage01_corner_reward_directional_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1717,7 +1722,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "corner_action_risk 能捕获旧 action 4 右下角坏路径，但首个 20k warm-start 重训转为 action 8 塌缩并记录 fail_20260527_020。下一步不要进入 stage 02，应降低或重构 action-specific shaping，先用更小惩罚 / entropy schedule / short deterministic smoke 复查后再做完整重训。"
+      "summary": "directional corner_action_risk smoke 避免了 action 8 塌缩，但 soda-creek 60 秒 10 seed 仍只有 70%。下一步应把 per-step action-specific shaping 改成 risk-delta 或状态目标化奖励，先做 short deterministic/stochastic 对比，再考虑完整 stage 01 重训；通过前不得进入 stage 02。"
     },
     {
       "id": "phase4_full_pack_manual_review",
