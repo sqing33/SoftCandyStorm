@@ -44,16 +44,61 @@ def target_entropy(probabilities, np_module):
     return float(-(clipped * np_module.log(clipped)).sum())
 
 
-def collect_distillation_targets(dataset, teacher_model, target_mode, np_module):
+def soften_probabilities(probabilities, temperature, np_module):
+    if temperature == 1.0:
+        return probabilities
+    clipped = np_module.clip(probabilities, 1e-8, 1.0)
+    logits = np_module.log(clipped) / temperature
+    logits = logits - float(logits.max())
+    softened = np_module.exp(logits)
+    return softened / float(softened.sum())
+
+
+def mix_with_uniform(probabilities, uniform_mix, np_module):
+    if uniform_mix == 0.0:
+        return probabilities
+    action_count = int(len(probabilities))
+    uniform = np_module.full(action_count, 1.0 / action_count, dtype=np_module.float32)
+    mixed = probabilities * (1.0 - uniform_mix) + uniform * uniform_mix
+    return mixed / float(mixed.sum())
+
+
+def transform_target_probabilities(probabilities, temperature, uniform_mix, np_module):
+    transformed = soften_probabilities(probabilities, temperature, np_module)
+    return mix_with_uniform(transformed, uniform_mix, np_module)
+
+
+def target_transform_report(temperature, uniform_mix):
+    return {
+        "teacher_temperature": temperature,
+        "uniform_target_mix": uniform_mix,
+    }
+
+
+def collect_distillation_targets(
+    dataset,
+    teacher_model,
+    target_mode,
+    teacher_temperature,
+    uniform_target_mix,
+    np_module,
+):
     action_count = int(dataset["action_count"])
     if target_mode == "dataset_actions":
         targets = [
-            one_hot(action, action_count, np_module) for action in dataset["actions"]
+            transform_target_probabilities(
+                one_hot(action, action_count, np_module),
+                1.0,
+                uniform_target_mix,
+                np_module,
+            )
+            for action in dataset["actions"]
         ]
         return np_module.asarray(targets, dtype=np_module.float32), {
             "mode": target_mode,
             "teacher_model": None,
             "teacher_argmax_agreement": None,
+            "target_transform": target_transform_report(1.0, uniform_target_mix),
             "target_entropy_nats": round(
                 sum(target_entropy(target, np_module) for target in targets)
                 / max(1, len(targets)),
@@ -93,6 +138,12 @@ def collect_distillation_targets(dataset, teacher_model, target_mode, np_module)
             action_count,
             np_module,
         )
+        probabilities = transform_target_probabilities(
+            probabilities,
+            teacher_temperature,
+            uniform_target_mix,
+            np_module,
+        )
         targets.append(probabilities)
         teacher_argmax = int(predicted_action)
         teacher_argmax_actions.append(teacher_argmax)
@@ -105,6 +156,10 @@ def collect_distillation_targets(dataset, teacher_model, target_mode, np_module)
         "teacher_argmax_agreement": round(
             agreement_count / max(1, len(dataset["actions"])),
             4,
+        ),
+        "target_transform": target_transform_report(
+            teacher_temperature,
+            uniform_target_mix,
         ),
         "target_entropy_nats": round(
             sum(target_entropy(target, np_module) for target in targets)
@@ -177,6 +232,8 @@ def distill(config, args):
         dataset,
         Path(args.teacher_model) if args.teacher_model else None,
         args.target_mode,
+        args.teacher_temperature,
+        args.uniform_target_mix,
         np,
     )
     observations = np.asarray(dataset["observations"], dtype=np.float32)
@@ -290,6 +347,8 @@ def distill(config, args):
             "epochs": args.epochs,
             "batch_size": args.batch_size,
             "learning_rate": args.learning_rate,
+            "teacher_temperature": args.teacher_temperature,
+            "uniform_target_mix": args.uniform_target_mix,
             "seed": args.seed,
             "train_samples": int(len(train_indices)),
             "validation_samples": int(len(validation_indices)),
@@ -327,6 +386,18 @@ def main():
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--learning-rate", type=float, default=0.0003)
+    parser.add_argument(
+        "--teacher-temperature",
+        type=float,
+        default=1.0,
+        help="Soften teacher probability targets before supervised PPO distillation.",
+    )
+    parser.add_argument(
+        "--uniform-target-mix",
+        type=float,
+        default=0.0,
+        help="Mix target probabilities with a uniform distribution to raise entropy.",
+    )
     parser.add_argument("--validation-split", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument("--env-seconds", type=float, default=None)
@@ -344,6 +415,10 @@ def main():
         parser.error("--batch-size must be greater than zero")
     if args.learning_rate <= 0.0:
         parser.error("--learning-rate must be greater than zero")
+    if args.teacher_temperature <= 0.0:
+        parser.error("--teacher-temperature must be greater than zero")
+    if not (0.0 <= args.uniform_target_mix <= 1.0):
+        parser.error("--uniform-target-mix must be between 0 and 1")
     if not (0.0 < args.validation_split < 1.0):
         parser.error("--validation-split must be between 0 and 1")
     if args.env_seconds is not None and args.env_seconds <= 0.0:

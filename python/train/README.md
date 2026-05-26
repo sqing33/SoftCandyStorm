@@ -337,11 +337,13 @@ The first full `danger_action_change` staged GRU context8 candidate improved the
 uv run --with-requirements python/train/requirements.txt python python/train/distill_behavior_clone_to_sb3.py \
   --dataset harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001 \
   --teacher-model harness/reports/2026-05-27_rl_behavior_clone_kite_staged_gru_context8_action_change_smoke_001/staged.pt \
+  --teacher-temperature 1.5 \
+  --uniform-target-mix 0.05 \
   --model-out harness/reports/local_distillation/ppo_bc_distilled.zip \
   --report harness/reports/local_distillation/run_output.json
 ```
 
-The first smoke proved the distilled `.zip` can be loaded by `train_sb3.py --evaluate-model`, but it is only an initialization/plumbing gate until followed by PPO training and high-pressure comparison.
+Use `--teacher-temperature` and `--uniform-target-mix` only as explicit repair experiments when the teacher probabilities are too sharp or action-biased. They raise target entropy before supervised PPO initialization, but the resulting `.zip` is still only an initialization/plumbing gate until followed by PPO training and high-pressure comparison.
 
 The first full distillation + PPO warm-start used 21,726 phase-aligned samples and the action-change staged GRU teacher. Five distillation epochs reached 0.6916 validation argmax accuracy, then 2,048 PPO timesteps on high-pressure maps completed. The policy still failed: all three 60-second maps triggered action-distribution repair, and all three 300-second maps recorded 0% win rate with action 3 dominant ratio above 0.76. Treat this as a repair result for the current teacher/reward setup, not a reason to promote PPO.
 
