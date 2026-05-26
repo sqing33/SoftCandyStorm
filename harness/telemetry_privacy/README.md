@@ -47,6 +47,15 @@ python3 harness/telemetry_privacy/validate_upload_transport_contract.py \
 人工隐私审查校验示例：
 
 ```bash
+python3 harness/telemetry_privacy/create_manual_privacy_review_packet.py \
+  --review-template harness/telemetry_privacy/manual_privacy_review_template.json \
+  --repo-root . \
+  --out harness/reports/2026-05-26_manual_privacy_review_packet_001/summary.md
+```
+
+人工隐私审查包会把隐私策略、Runtime 隐私设置契约、存档契约、校验报告引用、上传默认关闭状态、禁止字段、设置页控件、隐私说明和 8 个 TODO 检查项汇总成 Markdown，方便真人审查。它不填写审查结论、不提供法律建议、不证明上传链路或 Release Candidate 通过。
+
+```bash
 python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
   harness/telemetry_privacy/reviews/<review>.json \
   --repo-root . \

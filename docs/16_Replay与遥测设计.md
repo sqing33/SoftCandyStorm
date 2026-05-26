@@ -260,9 +260,11 @@ harness/telemetry_privacy/validate_runtime_privacy_settings_contract.py
 harness/telemetry_privacy/upload_transport_contract_v0.json
 harness/telemetry_privacy/validate_upload_transport_contract.py
 harness/telemetry_privacy/manual_privacy_review_template.json
+harness/telemetry_privacy/create_manual_privacy_review_packet.py
 harness/telemetry_privacy/validate_manual_privacy_review.py
 harness/telemetry_privacy/manual_legal_review_template.json
 harness/telemetry_privacy/validate_manual_legal_review.py
+harness/reports/2026-05-26_manual_privacy_review_packet_001/summary.md
 ```
 
 该策略门禁要求：
@@ -282,7 +284,7 @@ Runtime 当前实现状态：
 - `--print-privacy-notice` 可输出本地优先、默认关闭、明确同意、删除 / 导出、禁止个人身份信息和 90 天保留主题。
 - `--export-local-data <path>` 可导出本地遥测 / replay JSON 文件内容，并附带当前隐私设置。
 - `--delete-local-data` 可删除显式传入的本地遥测 / replay 目录内容；为了避免误删开发证据，未传 `--local-data-dir` 时会拒绝执行。
-- Runtime 已有 `F4` 隐私设置页，可显式切换三个上传同意项并在配置了 `--runtime-settings-file` 时写回 JSON；人工隐私审查已有模板和完整性校验器，但尚未由真人填写通过。仍未完成平台存档位置、法律审查、上传传输、发布级导出 / 删除按钮验证，因此 Release Candidate 仍不得标为通过。
+- Runtime 已有 `F4` 隐私设置页，可显式切换三个上传同意项并在配置了 `--runtime-settings-file` 时写回 JSON；人工隐私审查已有模板、审查包和完整性校验器，但尚未由真人填写通过。仍未完成平台存档位置、法律审查、上传传输、发布级导出 / 删除按钮验证，因此 Release Candidate 仍不得标为通过。
 
 当前校验命令：
 
@@ -305,6 +307,11 @@ python3 harness/telemetry_privacy/validate_upload_transport_contract.py \
   --runtime-contract harness/telemetry_privacy/runtime_privacy_settings_contract_v0.json \
   --report harness/reports/2026-05-26_upload_transport_contract_001/upload_transport_contract.json \
   --markdown harness/reports/2026-05-26_upload_transport_contract_001/summary.md
+
+python3 harness/telemetry_privacy/create_manual_privacy_review_packet.py \
+  --review-template harness/telemetry_privacy/manual_privacy_review_template.json \
+  --repo-root . \
+  --out harness/reports/2026-05-26_manual_privacy_review_packet_001/summary.md
 
 python3 harness/telemetry_privacy/validate_manual_privacy_review.py \
   harness/telemetry_privacy/reviews/<review>.json \

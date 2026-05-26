@@ -336,7 +336,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；当前本地候选明确为 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、剧情审校、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；人工隐私审查已有真人审查包；当前本地候选明确为 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -364,6 +364,9 @@
             "harness/reports/2026-05-26_upload_transport_contract_001/summary.md",
             "harness/telemetry_privacy/manual_privacy_review_template.json",
             "harness/telemetry_privacy/validate_manual_privacy_review.py",
+            "harness/telemetry_privacy/create_manual_privacy_review_packet.py",
+            "harness/telemetry_privacy/test_create_manual_privacy_review_packet.py",
+            "harness/reports/2026-05-26_manual_privacy_review_packet_001/summary.md",
             "harness/telemetry_privacy/test_validate_manual_privacy_review.py",
             "harness/telemetry_privacy/manual_legal_review_template.json",
             "harness/telemetry_privacy/validate_manual_legal_review.py",
@@ -388,7 +391,7 @@
           ],
           "gaps": [
             "当前 release_candidate_evidence 与 release_package_manifest 报告均为 not-ready；Goal 证据一致性报告确认这些 not-ready / blocked 结论与 docs 覆盖、路线图和 progress 账本一致。",
-            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板和完整性校验器，人工试玩已有 9 局草稿和审查包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。"
+            "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板和完整性校验器，人工隐私审查与人工试玩已有真人审查包，CLI 级隐私说明、本地 JSON 导出、显式目录删除和 F4 设置页持久化已实现；但缺少真人填写并通过的人工隐私审查、真人平台路径审查、真人法律 / 合规审查、真人人工试玩、素材人工接受、剧情审校通过、性能门禁、完整 Release package、Runtime 网络上传实现、Runtime 平台路径解析、发布级导出 / 删除按钮和恢复后的运行级证据。"
           ],
           "blockers": [
             "local_binary_launch_blocked",
@@ -526,7 +529,7 @@
       "doc_id": "16",
       "doc_path": "docs/16_Replay与遥测设计.md",
       "status": "partial",
-      "summary": "Replay strict 回归、Runtime capture、遥测样本、隐私策略校验模板、本地存档 v0/v1 数据控制契约、平台存档路径策略、人工平台路径审查模板、存档迁移计划契约、Runtime 隐私设置契约、上传传输契约、Runtime surface 源码形状契约、人工隐私审查模板、人工法律 / 合规审查模板、CLI 级本地导出 / 显式删除能力和 F4 隐私设置页已有实现；真人法律审查、Runtime 网络上传和真实遥测闭环尚未完成。",
+      "summary": "Replay strict 回归、Runtime capture、遥测样本、隐私策略校验模板、本地存档 v0/v1 数据控制契约、平台存档路径策略、人工平台路径审查模板、存档迁移计划契约、Runtime 隐私设置契约、上传传输契约、Runtime surface 源码形状契约、人工隐私审查模板 / 审查包、人工法律 / 合规审查模板、CLI 级本地导出 / 显式删除能力和 F4 隐私设置页已有实现；真人法律审查、Runtime 网络上传和真实遥测闭环尚未完成。",
       "coverage": [
         {
           "id": "replay-and-telemetry",
@@ -557,6 +560,9 @@
             "harness/reports/2026-05-26_runtime_surface_contract_001/summary.md",
             "harness/telemetry_privacy/manual_privacy_review_template.json",
             "harness/telemetry_privacy/validate_manual_privacy_review.py",
+            "harness/telemetry_privacy/create_manual_privacy_review_packet.py",
+            "harness/telemetry_privacy/test_create_manual_privacy_review_packet.py",
+            "harness/reports/2026-05-26_manual_privacy_review_packet_001/summary.md",
             "harness/telemetry_privacy/test_validate_manual_privacy_review.py",
             "harness/telemetry_privacy/manual_legal_review_template.json",
             "harness/telemetry_privacy/validate_manual_legal_review.py",
@@ -579,7 +585,7 @@
           ],
           "gaps": [
             "需要恢复二进制后重跑 replay-batch 与 Runtime capture。",
-            "隐私策略、Runtime 设置页契约、上传传输契约、Runtime surface 源码形状契约、v0/v1 存档契约、平台路径策略、存档迁移计划、人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，并在配置 --runtime-settings-file 时写回 JSON。真人填写的人工隐私审查、人工平台路径审查、法律 / 合规审查、发布级导出 / 删除按钮、Runtime 网络上传实现、Runtime 平台路径解析和 Runtime 存档迁移实现仍未完成。"
+            "隐私策略、Runtime 设置页契约、上传传输契约、Runtime surface 源码形状契约、v0/v1 存档契约、平台路径策略、存档迁移计划、人工隐私审查包、人工平台路径审查和人工法律 / 合规审查已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，并在配置 --runtime-settings-file 时写回 JSON。真人填写的人工隐私审查、人工平台路径审查、法律 / 合规审查、发布级导出 / 删除按钮、Runtime 网络上传实现、Runtime 平台路径解析和 Runtime 存档迁移实现仍未完成。"
           ],
           "blockers": [
             "local_binary_launch_blocked"
