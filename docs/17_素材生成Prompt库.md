@@ -460,6 +460,16 @@ game_runtime --asset-runtime-candidate-manifest \
 若 Runtime preview、音频响度 / 听感审查和最终人工接受全部完成，再运行：
 
 ```bash
+python3 harness/asset_review/create_asset_acceptance_review_packet.py \
+  harness/asset_review/accepted/<batch>/acceptance_manifest.json \
+  --repo-root . \
+  --report /tmp/asset_acceptance_review_packet.json \
+  --markdown /tmp/asset_acceptance_review_packet.md
+```
+
+该审查包会列出 `source_runtime_candidate_manifest`、`runtime_preview_review_file`、`audio_loudness_review_file` 和 `final_human_acceptance_file` 的存在状态、预期 review type / decision 和必填检查项。它只帮助真人补齐证据，不会让 manifest 通过。
+
+```bash
 python3 harness/asset_review/validate_asset_acceptance_manifest.py \
   harness/asset_review/accepted/<batch>/acceptance_manifest.json \
   --repo-root . \

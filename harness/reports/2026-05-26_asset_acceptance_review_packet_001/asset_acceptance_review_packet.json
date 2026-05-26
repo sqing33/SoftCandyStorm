@@ -1,0 +1,92 @@
+{
+  "report_version": 1,
+  "source": "harness/asset_review/asset_acceptance_manifest_template.json",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "asset_acceptance_review_packet_needs_evidence",
+  "candidate_batch_id": "TODO: asset candidate batch id",
+  "asset_count": 1,
+  "listed_asset_count": 1,
+  "evidence_count": 4,
+  "existing_evidence_count": 0,
+  "placeholder_evidence_count": 4,
+  "missing_evidence_count": 0,
+  "outside_repo_evidence_count": 0,
+  "placeholder_asset_count": 1,
+  "evidence": [
+    {
+      "field": "source_runtime_candidate_manifest",
+      "label": "Runtime candidate manifest",
+      "value": "harness/asset_review/runtime_candidates/<batch>/runtime_candidate_manifest.json",
+      "status": "placeholder",
+      "resolved_path": null,
+      "expected_review_type": null,
+      "expected_decision": "asset_runtime_candidate_manifest_valid",
+      "required_checks": []
+    },
+    {
+      "field": "runtime_preview_review_file",
+      "label": "Runtime preview review",
+      "value": "harness/asset_review/runtime_preview_reviews/<human-runtime-preview-review>.json",
+      "status": "placeholder",
+      "resolved_path": null,
+      "expected_review_type": "asset_runtime_preview_review",
+      "expected_decision": "runtime_preview_pass",
+      "required_checks": [
+        "all_assets_visible_or_audible",
+        "small_size_readable",
+        "no_placeholder_leak",
+        "no_runtime_integration_claim"
+      ]
+    },
+    {
+      "field": "audio_loudness_review_file",
+      "label": "Audio loudness/listening review",
+      "value": "harness/asset_review/audio_loudness_reviews/<human-audio-loudness-review>.json",
+      "status": "placeholder",
+      "resolved_path": null,
+      "expected_review_type": "asset_audio_loudness_review",
+      "expected_decision": "audio_loudness_pass",
+      "required_checks": [
+        "dialogue_clear_if_present",
+        "loudness_review_passed",
+        "no_clipping",
+        "loop_or_duration_fit"
+      ]
+    },
+    {
+      "field": "final_human_acceptance_file",
+      "label": "Final human acceptance",
+      "value": "harness/asset_review/final_acceptance/<human-final-acceptance>.json",
+      "status": "placeholder",
+      "resolved_path": null,
+      "expected_review_type": "asset_final_acceptance",
+      "expected_decision": "accepted_content",
+      "required_checks": [
+        "accepts_asset_batch",
+        "accepted_content_only_after_reviews",
+        "release_ready",
+        "runtime_integrated"
+      ]
+    }
+  ],
+  "accepted_assets": [
+    {
+      "id": "TODO: asset id from Runtime candidate manifest",
+      "type": "image",
+      "accepted_use": "runtime_asset",
+      "source_path": "images/TODO.png",
+      "status": "placeholder"
+    }
+  ],
+  "required_next_steps": [
+    "Fill or replace Runtime preview review evidence with concrete human observations.",
+    "Fill or replace audio loudness/listening review evidence with concrete listening and clipping/loudness observations.",
+    "Fill or replace final human acceptance evidence after prior reviews pass.",
+    "Run harness/asset_review/validate_asset_acceptance_manifest.py after every TODO is removed."
+  ],
+  "limitations": [
+    "This packet organizes final asset acceptance evidence only.",
+    "It does not validate the acceptance manifest as passing.",
+    "It does not copy assets into Runtime, mark Runtime integration, or approve release readiness."
+  ]
+}
