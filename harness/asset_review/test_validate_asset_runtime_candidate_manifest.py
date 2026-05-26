@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
-"""Regression tests for asset Runtime candidate promotion.
+"""Regression tests for asset Runtime candidate manifest validation.
 
 Run with:
-    python3 harness/asset_review/test_promote_asset_runtime_candidate.py
+    python3 harness/asset_review/test_validate_asset_runtime_candidate_manifest.py
 """
 
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from promote_asset_runtime_candidate import promote_asset_runtime_candidate
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parents[1]
+TEMPLATE = SCRIPT_DIR / "asset_runtime_candidate_manifest_template.json"
+
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from promote_asset_runtime_candidate import promote_asset_runtime_candidate  # noqa: E402
+from validate_asset_runtime_candidate_manifest import build_report, load_json_object  # noqa: E402
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -109,69 +118,80 @@ def valid_asset_review(repo_root: Path) -> Path:
     return review_path
 
 
-class AssetRuntimeCandidatePromotionTests(unittest.TestCase):
-    def test_promotes_valid_asset_candidate_without_integrating_runtime(self) -> None:
+class AssetRuntimeCandidateManifestValidatorTests(unittest.TestCase):
+    def test_promoted_manifest_validates(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = Path(temp_dir)
             create_candidate_batch(repo_root)
             review = valid_asset_review(repo_root)
             out_dir = repo_root / "harness/asset_review/runtime_candidates"
-
-            report = promote_asset_runtime_candidate(review, repo_root, out_dir)
-            manifest = json.loads(
-                (out_dir / "fixture_asset_batch/runtime_candidate_manifest.json").read_text(
-                    encoding="utf-8"
-                )
-            )
-
-            self.assertEqual(report["decision"], "asset_runtime_candidate_promoted")
-            self.assertEqual(report["asset_count"], 2)
-            self.assertEqual(
-                manifest["manifest_contract_id"],
-                "asset-runtime-candidate-manifest-v0",
-            )
-            self.assertEqual(manifest["manual_gate_decision"], "asset_candidate")
-            self.assertFalse(manifest["rules"]["accepted_content"])
-            self.assertFalse(manifest["rules"]["runtime_integrated"])
-            self.assertFalse(manifest["rules"]["release_ready"])
-            self.assertEqual(
-                manifest["assets"][0]["allowed_candidate_uses"],
-                ["runtime_preview_candidate"],
-            )
-            self.assertTrue((out_dir / "fixture_asset_batch/manual_review.json").exists())
-
-    def test_rejects_non_asset_candidate_review(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_root = Path(temp_dir)
-            create_candidate_batch(repo_root)
-            review = valid_asset_review(repo_root)
-            payload = json.loads(review.read_text(encoding="utf-8"))
-            payload["gate_decision"] = "repair"
-            payload["asset_reviews"][0]["decision"] = "revise"
-            payload["asset_reviews"][0]["style_fit"] = 3
-            payload["asset_reviews"][0]["required_changes"] = ["清理透明边缘后重新审查。"]
-            payload["global_risks"] = ["玩家图标边缘仍需修复。"]
-            payload["next_actions"] = ["修复后重新审查。"]
-            write_json(review, payload)
-
-            with self.assertRaisesRegex(ValueError, "gate_decision"):
-                promote_asset_runtime_candidate(
-                    review,
-                    repo_root,
-                    repo_root / "harness/asset_review/runtime_candidates",
-                )
-
-    def test_refuses_to_overwrite_existing_runtime_candidate(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_root = Path(temp_dir)
-            create_candidate_batch(repo_root)
-            review = valid_asset_review(repo_root)
-            out_dir = repo_root / "harness/asset_review/runtime_candidates"
-
             promote_asset_runtime_candidate(review, repo_root, out_dir)
 
-            with self.assertRaises(FileExistsError):
-                promote_asset_runtime_candidate(review, repo_root, out_dir)
+            manifest = out_dir / "fixture_asset_batch/runtime_candidate_manifest.json"
+            report = build_report(manifest, repo_root)
+
+            self.assertEqual(report["decision"], "asset_runtime_candidate_manifest_valid")
+            self.assertEqual(report["manual_gate_decision"], "asset_candidate")
+            self.assertEqual(report["asset_count"], 2)
+            self.assertEqual(report["validated_asset_count"], 2)
+
+    def test_template_is_invalid_until_human_review_exists(self) -> None:
+        report = build_report(TEMPLATE, REPO_ROOT)
+
+        self.assertEqual(report["decision"], "asset_runtime_candidate_manifest_invalid")
+        self.assertTrue(any("placeholder" in error for error in report["errors"]))
+        self.assertTrue(any("manual_review_file" in error for error in report["errors"]))
+
+    def test_rejects_manifest_that_claims_release_ready(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            create_candidate_batch(repo_root)
+            review = valid_asset_review(repo_root)
+            out_dir = repo_root / "harness/asset_review/runtime_candidates"
+            promote_asset_runtime_candidate(review, repo_root, out_dir)
+            manifest = out_dir / "fixture_asset_batch/runtime_candidate_manifest.json"
+            payload = load_json_object(manifest)
+            payload["rules"]["release_ready"] = True
+            write_json(manifest, payload)
+
+            report = build_report(manifest, repo_root)
+
+            self.assertEqual(report["decision"], "asset_runtime_candidate_manifest_invalid")
+            self.assertTrue(any("rules.release_ready" in error for error in report["errors"]))
+
+    def test_asset_count_must_match_source_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            create_candidate_batch(repo_root)
+            review = valid_asset_review(repo_root)
+            out_dir = repo_root / "harness/asset_review/runtime_candidates"
+            promote_asset_runtime_candidate(review, repo_root, out_dir)
+            manifest = out_dir / "fixture_asset_batch/runtime_candidate_manifest.json"
+            payload = load_json_object(manifest)
+            payload["asset_count"] = 99
+            write_json(manifest, payload)
+
+            report = build_report(manifest, repo_root)
+
+            self.assertEqual(report["decision"], "asset_runtime_candidate_manifest_invalid")
+            self.assertTrue(any("asset_count" in error for error in report["errors"]))
+
+    def test_asset_metadata_must_match_source_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            create_candidate_batch(repo_root)
+            review = valid_asset_review(repo_root)
+            out_dir = repo_root / "harness/asset_review/runtime_candidates"
+            promote_asset_runtime_candidate(review, repo_root, out_dir)
+            manifest = out_dir / "fixture_asset_batch/runtime_candidate_manifest.json"
+            payload = load_json_object(manifest)
+            payload["assets"][0]["qa_status"] = "accepted"
+            write_json(manifest, payload)
+
+            report = build_report(manifest, repo_root)
+
+            self.assertEqual(report["decision"], "asset_runtime_candidate_manifest_invalid")
+            self.assertTrue(any("qa_status" in error for error in report["errors"]))
 
 
 if __name__ == "__main__":

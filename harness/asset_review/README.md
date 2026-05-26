@@ -13,6 +13,7 @@
 3. 真人审查人必须替换草稿中的 `TODO` 占位，填写审查人、时间、每个素材的评分、问题、允许用途和下一步。
 4. 运行 `validate_asset_candidate_manual_review.py` 校验审查记录完整性。
 5. 只有人工审查通过且 `gate_decision=asset_candidate` 后，才可以运行 `promote_asset_runtime_candidate.py` 复制到 `harness/asset_review/runtime_candidates/`，作为后续 Runtime/UI 接入候选继续处理；这仍不等于进入正式素材或 `accepted_content`。
+6. 对生成的 `runtime_candidate_manifest.json` 继续运行 `validate_asset_runtime_candidate_manifest.py`，确认它仍绑定有效人工审查、候选 metadata 报告、源候选 manifest、文件路径和候选池规则。
 
 生成审查草稿示例：
 
@@ -32,6 +33,16 @@ python3 harness/asset_review/promote_asset_runtime_candidate.py \
   --repo-root . \
   --out-dir harness/asset_review/runtime_candidates \
   --report harness/reports/<report-id>/asset_runtime_candidate.json \
+  --markdown harness/reports/<report-id>/summary.md
+```
+
+Runtime 候选 manifest 校验示例：
+
+```bash
+python3 harness/asset_review/validate_asset_runtime_candidate_manifest.py \
+  harness/asset_review/runtime_candidates/<batch>/runtime_candidate_manifest.json \
+  --repo-root . \
+  --report harness/reports/<report-id>/asset_runtime_candidate_manifest.json \
   --markdown harness/reports/<report-id>/summary.md
 ```
 

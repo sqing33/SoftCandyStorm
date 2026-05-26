@@ -309,6 +309,18 @@ python3 harness/asset_review/promote_asset_runtime_candidate.py \
 
 晋级工具只复制候选批次、人工审查记录并写入 `runtime_candidate_manifest.json`。它不会写入正式素材目录，不会标记 `runtime_integrated`，也不会替代 Runtime 预览、听感 / 响度审查或最终人工接受。
 
+生成 Runtime 候选后还必须运行：
+
+```bash
+python3 harness/asset_review/validate_asset_runtime_candidate_manifest.py \
+  harness/asset_review/runtime_candidates/<batch>/runtime_candidate_manifest.json \
+  --repo-root . \
+  --report /tmp/asset_runtime_candidate_manifest.json \
+  --markdown /tmp/asset_runtime_candidate_manifest.md
+```
+
+该校验要求 manifest 绑定有效 `asset_candidate` 人工审查、源候选 metadata 报告、源候选 `metadata/manifest.json`、每个素材的 id/type/path/qa_status 与允许候选用途，并确认 `accepted_content=false`、`runtime_integrated=false`、`release_ready=false`。
+
 审查结论允许：
 
 - `needs_more_review`：信息不足，继续人工检查。

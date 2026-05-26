@@ -19,6 +19,7 @@ from validate_asset_candidate_manual_review import build_report, load_json_objec
 
 
 DEFAULT_PROMOTED_AT = "2026-05-26T00:00:00Z"
+ASSET_RUNTIME_CANDIDATE_MANIFEST_CONTRACT_ID = "asset-runtime-candidate-manifest-v0"
 
 
 def is_nonempty_string(value: Any) -> bool:
@@ -114,11 +115,13 @@ def promote_asset_runtime_candidate(
 
     runtime_manifest = {
         "manifest_version": 1,
+        "manifest_contract_id": ASSET_RUNTIME_CANDIDATE_MANIFEST_CONTRACT_ID,
         "stage": "asset_runtime_candidate",
         "candidate_batch_id": candidate_batch_id,
         "promoted_at": promoted_at,
         "source_candidate_batch": relative_repo_path(repo_root, source_candidate),
         "manual_review_file": relative_repo_path(repo_root, review_copy),
+        "manual_gate_decision": "asset_candidate",
         "candidate_metadata_report": review.get("candidate_metadata_report"),
         "asset_count": len(assets),
         "assets": assets,
