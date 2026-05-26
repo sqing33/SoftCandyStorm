@@ -266,6 +266,33 @@ python3 tools/validate_asset_candidates.py asset/generated_candidates/<batch> \
 
 该校验只检查来源与候选池纪律，不替代人工美术、听感或小尺寸可读性审查。
 
+## 候选素材人工审查
+
+metadata 校验通过后，素材仍不能直接接入正式目录。人工审查记录应使用：
+
+```text
+harness/asset_review/asset_candidate_manual_review_template.json
+```
+
+并通过：
+
+```bash
+python3 harness/asset_review/validate_asset_candidate_manual_review.py \
+  harness/asset_review/<review-file>.json \
+  --repo-root . \
+  --report /tmp/asset_manual_review.json \
+  --markdown /tmp/asset_manual_review.md
+```
+
+审查结论允许：
+
+- `needs_more_review`：信息不足，继续人工检查。
+- `repair`：有潜力，但需要抠图、裁切、重剪、响度或重生成。
+- `asset_candidate`：可作为后续 Runtime/UI 接入候选，但仍不是正式素材。
+- `reject`：拒绝推进，并保留原因。
+
+禁止把人工审查记录写成 `accepted_content`、`runtime_integrated` 或 `release_ready`。正式接入还需要 Runtime 预览、听感 / 小尺寸验证、来源记录和发布前人工确认。
+
 ## 素材命名规范
 
 ```text

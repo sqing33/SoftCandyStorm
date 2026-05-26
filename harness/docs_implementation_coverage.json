@@ -123,7 +123,7 @@
       "doc_id": "05",
       "doc_path": "docs/05_美术与音频素材计划.md",
       "status": "partial",
-      "summary": "已有程序化 top-down 占位素材和多批 mmx 图像、TTS、music 候选；正式美术音频仍未通过人工审查接入。",
+      "summary": "已有程序化 top-down 占位素材、多批 mmx 图像/TTS/music 候选，以及素材人工审查记录模板和校验器；正式美术音频仍未由真人审查并接入。",
       "coverage": [
         {
           "id": "asset-candidate-pipeline",
@@ -132,11 +132,12 @@
           "evidence": [
             "assets/prototype_topdown/manifest.json",
             "asset/generated_candidates/2026-05-26_mmx_map_boss_audio_pass/metadata/postprocess_audio_v001.json",
+            "harness/asset_review/validate_asset_candidate_manual_review.py",
             "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md"
           ],
           "gaps": [
             "mmx 候选仍在 asset/generated_candidates，未进入正式 Runtime 素材。",
-            "缺少最终 sprite、音效、BGM 的人工审查和授权接受记录。"
+            "已有人工审查记录模板，但缺少真人填写后的最终 sprite、音效、BGM 接受记录。"
           ]
         }
       ]
@@ -423,7 +424,7 @@
       "doc_id": "17",
       "doc_path": "docs/17_素材生成Prompt库.md",
       "status": "partial",
-      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理；候选质量仍多为 repair，正式素材缺人工接受。",
+      "summary": "mmx 素材候选批次已记录 prompt、命令、来源和后处理，素材人工审查门禁也已补齐；候选质量仍多为 repair，正式素材缺真人接受。",
       "coverage": [
         {
           "id": "prompt-provenance",
@@ -431,12 +432,13 @@
           "status": "partial",
           "evidence": [
             "tools/validate_asset_candidates.py",
+            "harness/asset_review/asset_candidate_manual_review_template.json",
             "harness/reports/2026-05-26_asset_candidate_strict_provenance_001/summary.md",
             "asset/generated_candidates/2026-05-25_mmx_topdown_retry/metadata/review_2026-05-25.md"
           ],
           "gaps": [
             "多个图像候选仍偏 repair，未达到最终可接入 Runtime 的质量。",
-            "语音和音乐候选仍需人工听感审查。"
+            "语音和音乐候选仍需真人听感审查并填写可校验审查记录。"
           ]
         }
       ]

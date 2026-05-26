@@ -572,6 +572,11 @@
       "id": "story_codex_manual_review_gate",
       "summary": "增加剧情 / 图鉴人工审校门禁模板和纯 Python 校验器，要求审校记录覆盖候选包中的所有章节与图鉴 id，并检查语气、世界观一致性、UI fit、剧透/解锁节奏评分、修订项、全局风险和 gate 决策；该门禁只允许进入 future UI candidate，不会推进到 accepted_content。",
       "report": "harness/story_review/validate_story_codex_manual_review.py"
+    },
+    {
+      "id": "asset_candidate_manual_review_gate",
+      "summary": "增加素材候选人工审查模板和纯 Python 校验器，读取 asset/generated_candidates 批次 manifest，要求人工记录覆盖所有素材 id，并检查风格一致、玩法可读、小尺寸 / 音频质量、provenance、技术清理度、允许候选用途和 gate 决策；该门禁不会把素材推进到 Runtime 或 accepted_content。",
+      "report": "harness/asset_review/validate_asset_candidate_manual_review.py"
     }
   ],
   "current_findings": [
