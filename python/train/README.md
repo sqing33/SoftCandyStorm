@@ -315,6 +315,10 @@ python3 python/train/train_behavior_clone.py \
 
 The first dry-run on the current high-pressure trajectory set found `opening` / `mid` / `late` ratios of `4.92%` / `42.51%` / `52.56%`. This only proves feature plumbing and dataset visibility; it is not policy repair until a checkpoint passes the same high-pressure comparison and acceptance gate.
 
+Use `--sample-weighting time_phase_balance` when those progress buckets are badly imbalanced. It can be combined with the existing repair signals through `time_phase_balance_danger`, `time_phase_balance_action_change`, or `time_phase_balance_danger_action_change`; training reports include per-phase multipliers so the curriculum stays auditable.
+
+The first `time_phase_balance_danger_action_change` smoke used the phase-aligned high-pressure dataset and trained a 1 epoch GRU context8 checkpoint. It recorded phase multipliers of `1.355244` / `0.728488` / `1.124329` for opening / mid / late, then loaded through a 5-second `soda-creek` Gym evaluation. Treat this as curriculum plumbing only; it is not a long-run policy repair.
+
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
 For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:

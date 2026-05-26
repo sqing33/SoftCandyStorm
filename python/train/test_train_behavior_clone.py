@@ -171,6 +171,32 @@ def test_action_change_sample_weighting_boosts_transition_samples(tmp_path):
     assert weights.tolist() == [1.0, 4.0, 1.0, 4.0, 1.0, 4.0, 4.0, 4.0]
 
 
+def test_time_phase_balance_weighting_boosts_underrepresented_phase(tmp_path):
+    import numpy as np
+
+    args = args_for(tmp_path, architecture="mlp")
+    args.sample_weighting = "time_phase_balance"
+    args.time_phase_thresholds = [0.2, 0.6]
+
+    weights, report = build_sample_weights(
+        tiny_dataset(),
+        list(range(len(tiny_dataset()["actions"]))),
+        args,
+        np,
+    )
+
+    assert report["mode"] == "time_phase_balance"
+    assert report["time_phase_balance"]["phase_distribution"]["opening"]["count"] == 3
+    assert report["time_phase_balance"]["phase_distribution"]["mid"]["count"] == 5
+    assert report["time_phase_balance"]["phase_distribution"]["late"]["count"] == 0
+    assert report["time_phase_balance"]["phase_multipliers"]["opening"] == pytest.approx(1.333333)
+    assert report["time_phase_balance"]["phase_multipliers"]["mid"] == pytest.approx(0.8)
+    assert weights.tolist() == pytest.approx(
+        [1.333333, 0.8, 0.8, 0.8, 1.333333, 1.333333, 0.8, 0.8],
+        rel=1e-5,
+    )
+
+
 def test_time_phase_conditioning_stays_loadable_online(tmp_path):
     args = args_for(
         tmp_path,

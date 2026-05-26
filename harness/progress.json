@@ -1643,6 +1643,11 @@
       "id": "rl_upgrade_ranker_joint_action_bias_repair",
       "summary": "将多地图升级 ranker 与旧 movement behavior clone 组合后完成 high-pressure 60 秒和 300 秒三图对比；ranker 被调用，但 movement policy action 3 占比 100%，300 秒三图胜率均为 0%，已记录 fail_20260527_014。",
       "report": "harness/reports/2026-05-27_rl_upgrade_choice_joint_high_pressure_compare_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_time_phase_balance_curriculum_smoke",
+      "summary": "为 behavior clone 增加 time_phase_balance 系列采样权重，可按 opening/mid/late 训练样本占比反向加权，并与 danger/action_change 组合；1 epoch GRU context8 smoke 记录阶段倍率并通过 5 秒 Gym 加载评估，结论仍为 smoke-only。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_time_phase_balance_curriculum_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1652,7 +1657,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；下一步应优先修 movement policy 或设计阶段目标 curriculum。"
+      "summary": "完整正则化 GRU、time-phase GRU、staged GRU、phase-aligned staged GRU、danger_action_change staged GRU、首个 PPO 蒸馏 warm-start、target-entropy warm-start、ent_coef warm-start 和 movement+upgrade ranker 联合对比均为 repair；time_phase_balance curriculum 入口已补 smoke，下一步应训练并对比更完整的 movement curriculum 候选。"
     },
     {
       "id": "phase4_full_pack_manual_review",

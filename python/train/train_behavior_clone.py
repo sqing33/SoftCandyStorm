@@ -9,6 +9,12 @@ from pathlib import Path
 REQUIRED_MODULES = ["numpy", "torch"]
 TIME_PHASE_LABELS = ["opening", "mid", "late"]
 DEFAULT_TIME_PHASE_THRESHOLDS = [0.2, 0.6]
+TIME_PHASE_BALANCE_WEIGHTING_MODES = {
+    "time_phase_balance",
+    "time_phase_balance_danger",
+    "time_phase_balance_action_change",
+    "time_phase_balance_danger_action_change",
+}
 
 
 def build_behavior_clone_model(architecture, input_observation_len, hidden_size, action_count, nn_module):
@@ -1003,8 +1009,27 @@ def build_sample_weights(dataset, indices, args, np_module):
 
     sample_metadata = dataset["sample_metadata"]
     action_change_flags = build_action_change_flags(sample_metadata, dataset["actions"])
-    use_danger = args.sample_weighting in {"danger", "danger_action_change"}
-    use_action_change = args.sample_weighting in {"action_change", "danger_action_change"}
+    use_danger = args.sample_weighting in {
+        "danger",
+        "danger_action_change",
+        "time_phase_balance_danger",
+        "time_phase_balance_danger_action_change",
+    }
+    use_action_change = args.sample_weighting in {
+        "action_change",
+        "danger_action_change",
+        "time_phase_balance_action_change",
+        "time_phase_balance_danger_action_change",
+    }
+    use_time_phase_balance = args.sample_weighting in TIME_PHASE_BALANCE_WEIGHTING_MODES
+    phase_multipliers = {}
+    phase_balance_report = None
+    if use_time_phase_balance:
+        phase_multipliers, phase_balance_report = build_time_phase_balance_weights(
+            dataset,
+            indices,
+            args.time_phase_thresholds,
+        )
     weights = []
     action_change_count = 0
     for index in indices:
@@ -1031,6 +1056,13 @@ def build_sample_weights(dataset, indices, args, np_module):
         if use_action_change and action_change_flags[int(index)]:
             weight += args.action_change_weight
             action_change_count += 1
+        if use_time_phase_balance:
+            observation = dataset["observations"][int(index)]
+            phase = time_phase_label(
+                float(observation[0]) if observation else 0.0,
+                args.time_phase_thresholds,
+            )
+            weight *= phase_multipliers.get(phase, 1.0)
         weights.append(weight)
 
     values = np_module.asarray(weights, dtype=np_module.float32)
@@ -1056,7 +1088,35 @@ def build_sample_weights(dataset, indices, args, np_module):
                 ),
             }
         )
+    if phase_balance_report is not None:
+        report["time_phase_balance"] = phase_balance_report
     return values, report
+
+
+def build_time_phase_balance_weights(dataset, indices, thresholds):
+    thresholds = normalize_time_phase_thresholds(thresholds)
+    counts = {label: 0 for label in TIME_PHASE_LABELS}
+    for index in indices:
+        observation = dataset["observations"][int(index)]
+        label = time_phase_label(float(observation[0]) if observation else 0.0, thresholds)
+        counts[label] += 1
+    total = len(indices)
+    present_labels = [label for label, count in counts.items() if count > 0]
+    phase_count = max(1, len(present_labels))
+    multipliers = {
+        label: (total / (phase_count * count)) if count > 0 else 0.0
+        for label, count in counts.items()
+    }
+    return multipliers, {
+        "labels": TIME_PHASE_LABELS,
+        "thresholds": thresholds,
+        "train_sample_count": int(total),
+        "phase_distribution": ratio_counts(counts, total),
+        "phase_multipliers": {
+            label: round(float(value), 6) for label, value in multipliers.items()
+        },
+        "present_phase_count": len(present_labels),
+    }
 
 
 def clamp(value, minimum, maximum):
@@ -1545,7 +1605,16 @@ def main():
     )
     parser.add_argument(
         "--sample-weighting",
-        choices=["none", "danger", "action_change", "danger_action_change"],
+        choices=[
+            "none",
+            "danger",
+            "action_change",
+            "danger_action_change",
+            "time_phase_balance",
+            "time_phase_balance_danger",
+            "time_phase_balance_action_change",
+            "time_phase_balance_danger_action_change",
+        ],
         default="none",
         help="Use weighted sampling to revisit dangerous states or action transition samples more often.",
     )
