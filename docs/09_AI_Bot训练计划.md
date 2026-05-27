@@ -603,6 +603,8 @@ handoff recovery samples 的首个 mid-only 小权重消融没有带来在线收
 
 带 observation 的 60-90 秒复跑已形成更窄的接手修复样本池。复跑 `stage01 opening wrapper + handoff_mid_w0_5 fallback` 的 180 秒 high-pressure 三图 5 seed 后，三图仍各为 `0.6`，但 trace 可被监督训练链路消费。`tools/export_route_recovery_samples.py` 新增 `--min-health-ratio`，并从 `60-90s`、负 `route_recovery`、`boundary.edge_risk >= 0.75`、原动作继续顶边的 trace 行中导出 `713` 条样本；`min_health_ratio=0.25` 没有丢样本，导出样本的 `health_ratio` 为 `0.5002-0.6650`。`tools/validate_edge_recovery_samples.py` 判定 `edge_recovery_samples_valid`，`train_behavior_clone.py --dry-run` 判定 `dataset_validated_not_training_gate`。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_obs_samples_001/summary.md`。结论：这批样本只能作为 fallback / mid-window repair training input；下一步应做 fallback-only 或 mid-only 小权重消融，并继续保留 60/180/300 秒 deterministic high-pressure 三图门禁。
 
+60-90 秒 handoff 样本的 mid-only 小权重消融仍没有通过。该消融只混入新导出的 `713` 条 handoff route-recovery 样本和三图 phase-aligned KiteBot 轨迹，不混入旧 `60-180s` handoff 样本或通用 route-recovery 样本；训练 `mid` 子模型后重新打包 staged fallback，并在 stage01 opening wrapper 下复测。60 秒保持 `1.0/1.0/0.8`，180 秒为 `0.6/1.0/0.4`，300 秒为 `0.2/0.2/0.0`，记录 `fail_20260527_058`。结果说明窄 handoff 样本带来局部收益，但 `cracked-star-jar` mid-window 回落更明显，且 300 秒仍是 repair。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_midonly_ablation_001/summary.md`。下一步不应继续只追加同类 `60-90s` edge 样本；应比较 fallback-only 约束、`cracked-star-jar` 专项 handoff 样本，或转向 late-window low-health / hazard / Boss pressure recovery。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

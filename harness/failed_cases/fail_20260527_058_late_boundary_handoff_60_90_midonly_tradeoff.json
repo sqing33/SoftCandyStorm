@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_058",
+  "category": "rl_policy",
+  "content_id": "late_boundary_handoff_60_90_midonly_ablation",
+  "seed": 62400,
+  "bot": "Stage01OpeningWrapperHandoff60To90MidFallback",
+  "time_seconds": 300.0,
+  "symptom": "使用 713 条 60-90 秒 handoff route-recovery 样本训练 mid-only 小权重消融后，stage01 opening wrapper 下 60 秒三图保持 1.0/1.0/0.8，但 180 秒变为 0.6/1.0/0.4，300 秒仅为 0.2/0.2/0.0，仍不能通过 multimap policy gate。",
+  "root_cause": "更窄的 60-90 秒样本没有形成稳定的跨图 fallback 能力。它改善了 caramel-workshop 的 180 秒结果，并让 soda-creek/caramel-workshop 在 300 秒各出现 0.2 胜率，但 cracked-star-jar 在 180 秒和 300 秒回落；300 秒失败分析记录 13 个死亡局，其中 soda-creek 3/4 个失败在 60-180 秒，caramel-workshop 3/4 个失败在 180-300 秒，cracked-star-jar 4/5 个失败在 60-180 秒。",
+  "fix": "不推进该 staged checkpoint 到 stage 03、RL acceptance、playtest 或 release。下一步不应继续只追加同类 60-90 秒 edge 样本；需要比较 fallback-only 约束、cracked-star-jar 专项 handoff 样本和 late-window low-health/hazard/Boss pressure recovery，并保留 60/180/300 秒 deterministic high-pressure 三图门禁。",
+  "validation": "训练、打包、60/180/300 秒 wrapper 对比和失败分析记录在 harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_midonly_ablation_001/handoff_60_90_mid_w0_5；300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair，failure_analysis_300s.json 记录 13 个死亡局且 opening bucket 为 0。"
+}
