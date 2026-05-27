@@ -128,6 +128,27 @@ class RouteRecoverySampleExportTests(unittest.TestCase):
         self.assertEqual(report["sample_count"], 1)
         self.assertEqual(rows[0]["time_seconds"], 25.0)
 
+    def test_phase_duration_conditioning_rewrites_progress(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            trace = root / "late_trace.json"
+            samples = root / "samples.jsonl"
+            write_trace(trace, time_seconds=25.0)
+
+            report = build_report(
+                [root],
+                samples_out=samples,
+                edge_distance=32.0,
+                route_recovery_threshold=0.0,
+                min_boundary_edge_risk=0.75,
+                phase_duration_seconds=300.0,
+            )
+            rows = [json.loads(line) for line in samples.read_text().splitlines()]
+
+        self.assertEqual(report["decision"], "route_recovery_samples_exported")
+        self.assertEqual(report["phase_duration_seconds"], 300.0)
+        self.assertAlmostEqual(rows[0]["observation"][0], 25.0 / 300.0)
+
 
 if __name__ == "__main__":
     unittest.main()

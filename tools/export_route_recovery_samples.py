@@ -119,6 +119,20 @@ def observation_values(step: dict[str, Any]) -> list[float] | None:
     return values
 
 
+def apply_phase_duration_conditioning(
+    observation: list[float],
+    *,
+    time_seconds: float,
+    phase_duration_seconds: float | None,
+) -> list[float]:
+    if phase_duration_seconds is None:
+        return observation
+    conditioned = list(observation)
+    if conditioned:
+        conditioned[0] = max(0.0, min(1.0, float(time_seconds) / phase_duration_seconds))
+    return conditioned
+
+
 def score_entries(action_score: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(action_score, dict):
         return []
@@ -326,6 +340,7 @@ def build_report(
     min_boundary_edge_risk: float,
     min_seconds: float | None = None,
     max_seconds: float | None = None,
+    phase_duration_seconds: float | None = None,
     max_samples: int | None = None,
 ) -> dict[str, Any]:
     paths = trace_paths(inputs)
@@ -373,6 +388,11 @@ def build_report(
             if observation is None:
                 missing_observation_count += 1
                 continue
+            observation = apply_phase_duration_conditioning(
+                observation,
+                time_seconds=time_seconds,
+                phase_duration_seconds=phase_duration_seconds,
+            )
 
             original_action = int(step.get("action", 0))
             if not action_pushes_into_edge(original_action, diagnostics, edge_distance):
@@ -432,6 +452,7 @@ def build_report(
         "min_boundary_edge_risk": min_boundary_edge_risk,
         "min_seconds": min_seconds,
         "max_seconds": max_seconds,
+        "phase_duration_seconds": phase_duration_seconds,
         "map_distribution": count_map(sample.get("map_id") for sample in samples),
         "original_action_distribution": count_map(sample.get("original_action") for sample in samples),
         "target_action_distribution": count_map(sample.get("target_action") for sample in samples),
@@ -486,6 +507,12 @@ def main() -> int:
     parser.add_argument("--min-boundary-edge-risk", type=float, default=0.75)
     parser.add_argument("--min-seconds", type=float, default=None)
     parser.add_argument("--max-seconds", type=float, default=None)
+    parser.add_argument(
+        "--phase-duration-seconds",
+        type=float,
+        default=None,
+        help="Rewrite observation progress using time_seconds / this horizon before writing samples.",
+    )
     parser.add_argument("--max-samples", type=int, default=None)
     args = parser.parse_args()
     if args.min_seconds is not None and args.min_seconds < 0.0:
@@ -498,6 +525,8 @@ def main() -> int:
         and args.max_seconds <= args.min_seconds
     ):
         parser.error("--max-seconds must be greater than --min-seconds")
+    if args.phase_duration_seconds is not None and args.phase_duration_seconds <= 0.0:
+        parser.error("--phase-duration-seconds must be greater than zero")
 
     report = build_report(
         args.traces,
@@ -507,6 +536,7 @@ def main() -> int:
         min_boundary_edge_risk=args.min_boundary_edge_risk,
         min_seconds=args.min_seconds,
         max_seconds=args.max_seconds,
+        phase_duration_seconds=args.phase_duration_seconds,
         max_samples=args.max_samples,
     )
     if args.report is not None:
