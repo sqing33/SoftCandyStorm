@@ -1648,6 +1648,7 @@ class BehaviorClonePolicy:
         self.history = []
         self._last_observation = None
         self._last_scores = None
+        self._time_phase_progress_override = None
         model_input_len = (
             self.sequence_input_len
             if self.architecture == "gru"
@@ -1667,11 +1668,24 @@ class BehaviorClonePolicy:
         self.history = []
         self._last_observation = None
         self._last_scores = None
+        self._time_phase_progress_override = None
 
     def set_map_id(self, map_id):
         self.current_map_id = str(map_id) if map_id is not None else None
         self._last_observation = None
         self._last_scores = None
+
+    def set_step_context(self, info):
+        duration = info.get("phase_duration_seconds") if isinstance(info, dict) else None
+        time_seconds = info.get("time_seconds") if isinstance(info, dict) else None
+        if duration is None or time_seconds is None:
+            self._time_phase_progress_override = None
+            return
+        duration = float(duration)
+        if duration <= 0.0:
+            self._time_phase_progress_override = None
+            return
+        self._time_phase_progress_override = clamp(float(time_seconds) / duration, 0.0, 1.0)
 
     def predict(self, observation, deterministic=True):
         import torch
@@ -1706,7 +1720,8 @@ class BehaviorClonePolicy:
         import torch
 
         values = self._base_observation_values(observation)
-        features = self._features(values, np, update_history=update_history)
+        conditioning_values = self._conditioning_values(values)
+        features = self._features(conditioning_values, np, update_history=update_history)
         with torch.no_grad():
             if self.architecture == "gru":
                 logits = self.model(torch.from_numpy(features.reshape(1, features.shape[0], features.shape[1])))
@@ -1727,6 +1742,13 @@ class BehaviorClonePolicy:
                 f"expected observation length {self.base_observation_len}, got {values.shape[0]}"
             )
         return values
+
+    def _conditioning_values(self, values):
+        if self._time_phase_progress_override is None:
+            return values
+        adjusted = values.copy()
+        adjusted[0] = self._time_phase_progress_override
+        return adjusted
 
     def _features(self, values, np_module, update_history):
         if self.architecture == "gru":
@@ -1811,7 +1833,12 @@ class BehaviorClonePolicy:
         thresholds = normalize_time_phase_thresholds(
             self.time_phase_conditioning.get("thresholds", DEFAULT_TIME_PHASE_THRESHOLDS)
         )
-        return time_phase_one_hot([float(values[0])], thresholds, np_module)[0]
+        progress = (
+            self._time_phase_progress_override
+            if self._time_phase_progress_override is not None
+            else float(values[0])
+        )
+        return time_phase_one_hot([progress], thresholds, np_module)[0]
 
     def _time_phase_sequence_features(self, sequence, np_module):
         mode = self.time_phase_conditioning.get("mode", "none")
@@ -1820,6 +1847,12 @@ class BehaviorClonePolicy:
         thresholds = normalize_time_phase_thresholds(
             self.time_phase_conditioning.get("thresholds", DEFAULT_TIME_PHASE_THRESHOLDS)
         )
+        if self._time_phase_progress_override is not None:
+            progress_values = np_module.repeat(
+                np_module.asarray([self._time_phase_progress_override], dtype=np_module.float32),
+                sequence.shape[0],
+            )
+            return time_phase_one_hot(progress_values, thresholds, np_module)
         return time_phase_one_hot(sequence[:, 0], thresholds, np_module)
 
 
@@ -1878,10 +1911,13 @@ class StagedBehaviorClonePolicy:
     def set_step_context(self, info):
         self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
         self._has_step_context = True
+        child_info = dict(info)
+        if self.phase_duration_seconds is not None:
+            child_info.setdefault("phase_duration_seconds", self.phase_duration_seconds)
         for policy in self.subpolicies.values():
             set_step_context = getattr(policy, "set_step_context", None)
             if callable(set_step_context):
-                set_step_context(info)
+                set_step_context(child_info)
 
     def predict(self, observation, deterministic=True):
         return self._policy_for_observation(observation).predict(observation, deterministic=deterministic)

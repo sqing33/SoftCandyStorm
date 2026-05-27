@@ -436,6 +436,22 @@ def test_staged_behavior_clone_can_dispatch_by_absolute_time(tmp_path):
     assert policy._policy_for_observation(observation) is policy.subpolicies["late"]
 
 
+def test_behavior_clone_time_phase_conditioning_uses_absolute_step_context(tmp_path):
+    import numpy as np
+
+    args = args_for(tmp_path, architecture="mlp", context_frames=1)
+    args.time_phase_conditioning = "one_hot"
+    report = train_behavior_clone(tiny_dataset(), args)
+    policy = load_behavior_clone_policy(report["model_path"])
+    values = np.asarray([0.95, 0.0, 0.2], dtype=np.float32)
+
+    assert policy._time_phase_features(values, np).tolist() == [0.0, 0.0, 1.0]
+
+    policy.set_step_context({"time_seconds": 30.0, "phase_duration_seconds": 300.0})
+    assert policy._time_phase_features(values, np).tolist() == [1.0, 0.0, 0.0]
+    assert policy._conditioning_values(values)[0] == pytest.approx(0.1)
+
+
 def test_upgrade_samples_are_loaded_separately_from_movement_dataset(tmp_path):
     dataset_path = tmp_path / "trajectory.jsonl"
     records = [
