@@ -1818,6 +1818,11 @@
       "id": "rl_edge_recovery_behavior_clone_auxiliary_weight",
       "summary": "train_behavior_clone.py 新增 --edge-recovery-sample-weight，可在原规则 Bot 轨迹与 edge_recovery_supervision_sample 混合训练时显式上采样 repair 样本，并在 sample_weights 报告中记录加权样本数；该能力只形成 handoff recovery 辅助约束，不是 policy gate。",
       "report": "python/train/train_behavior_clone.py"
+    },
+    {
+      "id": "rl_edge_recovery_aux_staged_gru_context8_opening_regression",
+      "summary": "首个 edge_recovery_sample_weight=4.0 的 staged GRU context8 混合候选完成三段训练和 60 秒 high-pressure 10 seed gate；soda-creek 胜率只有 40%，action 3 占 87.27%，已记录 fail_20260527_028，因 opening gate 失败未运行 180 秒 handoff 对比。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_edge_recovery_aux_staged_gru_context8_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1827,7 +1832,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；edge_recovery_samples 已接入 behavior clone 数据入口并支持辅助加权。下一步将其与原有轨迹数据混合训练，再跑 60 秒 opening 10 seed 与 180 秒三图 deterministic 对比。"
+      "summary": "edge recovery 辅助加权的首个 staged GRU context8 候选没有保住 soda-creek 60 秒 opening gate，action 3 collapse 回归；下一步先修 opening collapse 或恢复更强 opening retention，通过 60 秒 10 seed 后才允许重新跑 180 秒 handoff 对比。"
     },
     {
       "id": "phase4_full_pack_manual_review",

@@ -454,6 +454,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 `train_behavior_clone.py` 已能把 `edge_recovery_supervision_sample` 作为 movement repair target 读取，并在 dataset summary 中单独记录 `edge_recovery_sample_records` 与 `sample_source_distribution`。首个 smoke 使用上述 `2215` 条样本完成 dry-run 和 1 epoch MLP 训练，报告位于 `harness/reports/2026-05-27_rl_edge_recovery_behavior_clone_dataset_smoke_001/summary.md`；结论仍是 `behavior_clone_smoke_only_not_policy_gate`，只证明数据能进入监督训练链路，不代表策略可用。训练入口还提供 `--edge-recovery-sample-weight`，用于把这些 repair 样本与原始规则 Bot 轨迹混合时显式加权成 handoff recovery 辅助约束；该权重只影响 supervised sampling，不能绕过 deterministic high-pressure gate。
 
+首个 `edge_recovery_sample_weight = 4.0` 的 staged GRU context8 混合候选使用 phase-aligned 三图 KiteBot 轨迹与 `2215` 条 edge recovery 样本训练三段子策略，但没有通过 60 秒 opening hard gate：`soda-creek` 10 seed 胜率只有 `40%`，action `3` 占 `87.27%`，action entropy 为 `0.7851` bits。报告位于 `harness/reports/2026-05-27_rl_behavior_clone_edge_recovery_aux_staged_gru_context8_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_028_edge_recovery_aux_opening_regression.json`。因此未运行 180 秒 handoff 对比，也不能进入 stage 03；下一轮必须先修 opening action `3` collapse。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
