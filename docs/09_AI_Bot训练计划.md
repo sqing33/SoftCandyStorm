@@ -404,6 +404,8 @@ late-only risk recovery 消融报告位于 `harness/reports/2026-05-27_rl_action
 
 `late-route-recovery` closed-loop reward profile smoke 位于 `harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001/summary.md`。该 profile 从 120 秒后放大路线恢复、低血量、危险区、Boss 压力和轻量重复动作惩罚；2048 timestep continuation 保住了 60 秒三图无 repair，并把 180 秒 `caramel-workshop` 拉到 `0.6667`，但 180 秒 `cracked-star-jar` 为 `0.0`，300 秒三图仍全部 `0.0`，记录 `fail_20260527_051`。300 秒 trace 中 `841/1100` 条采样行为负 route recovery，主要是 boundary_edge 下继续 action `4`，说明下一步应针对 mid/late 贴边 action `4` 做 action-specific repair 或更明确的 boundary escape curriculum，而不是只继续加权。
 
+mid/late action `4` 样本包位于 `harness/reports/2026-05-27_rl_late_route_action4_samples_001/summary.md`。本轮用 `late-route-recovery` checkpoint 重新跑三图 300 秒 failed-only evaluation traces，并启用 observation 输出；从 `60-300s` action `4` 贴边负 route-recovery 热点导出 `254` 条 `edge_recovery_supervision_sample`，覆盖三图，目标动作以 action `8` / `3` 为主。`tools/validate_edge_recovery_samples.py` 判定有效，behavior clone dry-run 判定 `dataset_validated_not_training_gate`。该样本包只适合小权重 mid/late 消融，不能当作策略通过证据。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
