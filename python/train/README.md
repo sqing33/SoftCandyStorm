@@ -139,6 +139,14 @@ The failed-only late trace shows the next repair should be broader than wall rec
 
 Use `--late-recovery-filter` with evaluation or rule-Bot comparison to emit deterministic late-window repair decisions after `--late-recovery-min-seconds` (default 180s). The filter can redirect wallward edge actions, hazard-facing movement, boss/enemy pressure movement, and idle actions under late pressure. When paired with `--edge-recovery-samples-out`, these decisions are written as `risk_recovery_supervision_sample` rows. Behavior clone experiments can load those rows as movement repair targets, upweight them with `--risk-recovery-sample-weight`, and keep them in a late window with `--risk-recovery-min-seconds` / `--risk-recovery-max-seconds`. This is training material only; it remains policy-adapter evidence and does not satisfy stage 03 or RL acceptance.
 
+Before mixing late-risk samples into behavior clone training, validate them:
+
+```bash
+python3 tools/validate_risk_recovery_samples.py harness/reports/local_late_recovery/*.jsonl --report harness/reports/local_late_recovery/risk_recovery_samples_validation.json
+```
+
+The validator checks sample role, target source, observation shape, late-window timing, adapter risk reasons, target residual risk, and acceptance-evidence wording. A valid report only means the rows are usable as repair training input; it does not upgrade adapter probes into policy gates.
+
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
 ## Policy Acceptance Gate
