@@ -1788,6 +1788,11 @@
       "id": "rl_acceptance_rejects_stochastic_watch_evidence",
       "summary": "正式 RL policy acceptance validator 现在显式拒绝 action_selection=stochastic 或包含 action_random_seed 的 comparison report，防止 seeded stochastic watch 证据被误用为 rl_test_bot_candidate。",
       "report": "tools/validate_rl_policy_acceptance.py"
+    },
+    {
+      "id": "rl_edge_recovery_filter_diagnostic",
+      "summary": "train_sb3.py 新增 --edge-recovery-filter deterministic 诊断 wrapper，可在贴边状态把继续顶墙动作替换为最高分非顶墙动作；报告写入 policy_adapter，正式 acceptance validator 会拒绝此类手写 adapter 证据。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "next_recommended": [

@@ -180,6 +180,22 @@ class RlPolicyAcceptanceValidatorTests(unittest.TestCase):
             self.assertEqual(report["decision"], "rl_policy_acceptance_not_ready")
             self.assertTrue(any("watch evidence only" in error for error in report["errors"]))
 
+    def test_policy_adapter_reports_cannot_pass_acceptance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = make_ready_manifest(root)
+            for name in ("short", "long"):
+                report_path = root / "reports" / f"{name}.json"
+                payload = json.loads(report_path.read_text(encoding="utf-8"))
+                payload["action_selection"] = "deterministic"
+                payload["policy_adapter"] = {"mode": "edge_recovery_filter"}
+                write_json(report_path, payload)
+
+            report = build_report(manifest, root)
+
+            self.assertEqual(report["decision"], "rl_policy_acceptance_not_ready")
+            self.assertTrue(any("policy adapter" in error for error in report["errors"]))
+
     def test_unresolved_failure_case_prevents_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

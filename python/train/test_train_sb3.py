@@ -5,7 +5,9 @@ from types import SimpleNamespace
 import pytest
 
 from python.train.train_sb3 import (
+    EdgeRecoveryFilterPolicy,
     StagedOpeningPolicy,
+    action_pushes_into_edge,
     algorithm_parameters_source_label,
     algorithm_overrides_from_args,
     apply_loaded_model_overrides,
@@ -103,6 +105,63 @@ def test_seed_stochastic_action_sampling_replays_python_random_sequence():
     assert first == second
     assert report["seed"] == 1234
     assert "python_random" in report["seeded_sources"]
+
+
+def test_action_pushes_into_edge_detects_wallward_movement():
+    diagnostics = {
+        "boundary": {
+            "left_distance": 0.0,
+            "right_distance": 400.0,
+            "bottom_distance": 50.0,
+            "top_distance": 400.0,
+        }
+    }
+
+    assert action_pushes_into_edge(7, diagnostics, 32.0)
+    assert action_pushes_into_edge(8, diagnostics, 32.0)
+    assert not action_pushes_into_edge(3, diagnostics, 32.0)
+    assert not action_pushes_into_edge(0, diagnostics, 32.0)
+
+
+def test_edge_recovery_filter_chooses_best_non_wallward_action():
+    policy = EdgeRecoveryFilterPolicy(DummyPolicy(7), edge_distance=32.0)
+    policy.set_step_context(
+        {
+            "diagnostics": {
+                "boundary": {
+                    "left_distance": 0.0,
+                    "right_distance": 400.0,
+                    "bottom_distance": 400.0,
+                    "top_distance": 400.0,
+                }
+            }
+        }
+    )
+
+    action, _state = policy.predict(None, deterministic=True)
+
+    assert action == 0
+    assert policy.policy_adapter_report()["mode"] == "edge_recovery_filter"
+
+
+def test_edge_recovery_filter_does_not_override_stochastic_actions():
+    policy = EdgeRecoveryFilterPolicy(DummyPolicy(7), edge_distance=32.0)
+    policy.set_step_context(
+        {
+            "diagnostics": {
+                "boundary": {
+                    "left_distance": 0.0,
+                    "right_distance": 400.0,
+                    "bottom_distance": 400.0,
+                    "top_distance": 400.0,
+                }
+            }
+        }
+    )
+
+    action, _state = policy.predict(None, deterministic=False)
+
+    assert action == 7
 
 
 def test_algorithm_parameter_source_records_warm_start_overrides():

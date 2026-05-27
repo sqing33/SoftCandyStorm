@@ -340,6 +340,14 @@ def validate_comparison_report(
         )
     elif action_selection is None:
         warnings.append(f"{label}: action_selection is missing; deterministic evidence is assumed for legacy reports")
+    policy_adapter = report.get("policy_adapter")
+    if isinstance(policy_adapter, dict) and policy_adapter.get("mode"):
+        add_candidate_issue(
+            f"{label}: policy adapter `{policy_adapter.get('mode')}` is diagnostic evidence only",
+            candidate_mode=candidate_mode,
+            errors=errors,
+            blockers=blockers,
+        )
     findings = report.get("findings")
     if isinstance(findings, list) and findings:
         add_candidate_issue(

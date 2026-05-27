@@ -41,6 +41,18 @@ BASE_DEMO_MAP_PRESETS = {
     ],
 }
 
+GYM_ACTION_MOVEMENTS = {
+    0: (0.0, 0.0),
+    1: (0.0, 1.0),
+    2: (math.sqrt(0.5), math.sqrt(0.5)),
+    3: (1.0, 0.0),
+    4: (math.sqrt(0.5), -math.sqrt(0.5)),
+    5: (0.0, -1.0),
+    6: (-math.sqrt(0.5), -math.sqrt(0.5)),
+    7: (-1.0, 0.0),
+    8: (-math.sqrt(0.5), math.sqrt(0.5)),
+}
+
 
 def load_config(path):
     with Path(path).open("r", encoding="utf-8") as handle:
@@ -230,6 +242,113 @@ class StagedOpeningPolicy:
         }
 
 
+class EdgeRecoveryFilterPolicy:
+    policy_kind = "edge_recovery_filter"
+
+    def __init__(self, policy, edge_distance=32.0):
+        if edge_distance < 0.0:
+            raise ValueError("edge_distance must be non-negative")
+        self.policy = policy
+        self.edge_distance = edge_distance
+        self._step_context = {}
+
+    def reset(self):
+        reset = getattr(self.policy, "reset", None)
+        if callable(reset):
+            reset()
+
+    def set_map_id(self, map_id):
+        set_map_id = getattr(self.policy, "set_map_id", None)
+        if callable(set_map_id):
+            set_map_id(map_id)
+
+    def set_step_context(self, info):
+        self._step_context = info or {}
+        set_step_context = getattr(self.policy, "set_step_context", None)
+        if callable(set_step_context):
+            set_step_context(info)
+
+    def set_random_seed(self, seed):
+        set_random_seed = getattr(self.policy, "set_random_seed", None)
+        if callable(set_random_seed):
+            set_random_seed(seed)
+
+    def predict(self, observation, deterministic=True):
+        action, state = self.policy.predict(observation, deterministic=deterministic)
+        action_index = action_to_int(action)
+        if deterministic and self.action_pushes_into_edge(action_index):
+            action_scores = policy_action_scores(self.policy, observation)
+            action_index = self.recovery_action(action_index, action_scores)
+            return action_index, state
+        return action, state
+
+    def action_scores(self, observation):
+        return policy_action_scores(self.policy, observation)
+
+    def action_pushes_into_edge(self, action_index):
+        return action_pushes_into_edge(
+            action_index,
+            self._step_context.get("diagnostics", {}),
+            self.edge_distance,
+        )
+
+    def recovery_action(self, blocked_action, action_scores):
+        scores = action_scores.get("scores", []) if isinstance(action_scores, dict) else []
+        ranked_actions = sorted(
+            range(min(len(scores), len(GYM_ACTION_MOVEMENTS))),
+            key=lambda index: float(scores[index]),
+            reverse=True,
+        )
+        for action_index in ranked_actions:
+            if not self.action_pushes_into_edge(action_index):
+                return action_index
+        return blocked_action
+
+    def opening_policy_report(self):
+        return opening_policy_report(self.policy)
+
+    def policy_adapter_report(self):
+        return {
+            "mode": "edge_recovery_filter",
+            "edge_distance": self.edge_distance,
+            "wrapped_policy_kind": getattr(self.policy, "policy_kind", "sb3"),
+            "limitations": [
+                "This deterministic wrapper is diagnostic repair evidence only.",
+                "It is not a trained policy and cannot be used as RL policy acceptance evidence.",
+            ],
+        }
+
+
+def action_pushes_into_edge(action_index, diagnostics, edge_distance):
+    movement = GYM_ACTION_MOVEMENTS.get(int(action_index), (0.0, 0.0))
+    boundary = (diagnostics or {}).get("boundary") or {}
+    left = as_float(boundary.get("left_distance"))
+    right = as_float(boundary.get("right_distance"))
+    bottom = as_float(boundary.get("bottom_distance"))
+    top = as_float(boundary.get("top_distance"))
+    dx, dy = movement
+    return (
+        (left is not None and left <= edge_distance and dx < 0.0)
+        or (right is not None and right <= edge_distance and dx > 0.0)
+        or (bottom is not None and bottom <= edge_distance and dy < 0.0)
+        or (top is not None and top <= edge_distance and dy > 0.0)
+    )
+
+
+def as_float(value):
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None
+
+
+def wrap_edge_recovery_filter(policy, enabled=False, edge_distance=32.0):
+    if not enabled:
+        return policy
+    return EdgeRecoveryFilterPolicy(policy, edge_distance=edge_distance)
+
+
 def parse_map_list(value):
     if value is None:
         return None
@@ -408,6 +527,8 @@ def train(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -478,8 +599,13 @@ def train(
     finally:
         env.close()
 
-    evaluation = evaluate_model(
+    evaluation_model = wrap_edge_recovery_filter(
         model,
+        enabled=edge_recovery_filter,
+        edge_distance=edge_recovery_distance,
+    )
+    evaluation = evaluate_model(
+        evaluation_model,
         config,
         episodes=eval_episodes or config["evaluation"]["episodes"],
         seconds=eval_seconds or config["evaluation"]["seconds"],
@@ -629,6 +755,8 @@ def evaluate_saved_policy(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
 ):
     model_class = stable_baselines_model_classes()[algorithm]
     fallback_model_path = model_path or default_model_path(config, algorithm)
@@ -642,6 +770,11 @@ def evaluate_saved_policy(
             opening_model_path,
             fallback_model_path,
         )
+    model = wrap_edge_recovery_filter(
+        model,
+        enabled=edge_recovery_filter,
+        edge_distance=edge_recovery_distance,
+    )
     upgrade_policy = (
         load_upgrade_choice_policy(upgrade_choice_model) if upgrade_choice_model else None
     )
@@ -678,6 +811,8 @@ def evaluate_policy_model(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
 ):
     if behavior_clone_model is not None:
         upgrade_policy = (
@@ -698,6 +833,8 @@ def evaluate_policy_model(
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
             trace_sample_stride=trace_sample_stride,
+            edge_recovery_filter=edge_recovery_filter,
+            edge_recovery_distance=edge_recovery_distance,
         )
     return evaluate_saved_policy(
         config,
@@ -715,6 +852,8 @@ def evaluate_policy_model(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        edge_recovery_filter=edge_recovery_filter,
+        edge_recovery_distance=edge_recovery_distance,
     )
 
 
@@ -731,9 +870,16 @@ def evaluate_behavior_clone_policy(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
 ):
     model_path = Path(model_path)
     policy = load_behavior_clone_policy(model_path)
+    policy = wrap_edge_recovery_filter(
+        policy,
+        enabled=edge_recovery_filter,
+        edge_distance=edge_recovery_distance,
+    )
     evaluation = evaluate_model(
         policy,
         config,
@@ -774,6 +920,8 @@ def evaluate_model(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
 ):
     eval_random_seed = validate_eval_random_seed(eval_random_seed, deterministic)
     action_random_seed_report = seed_stochastic_action_sampling(
@@ -899,6 +1047,7 @@ def evaluate_model(
         "map_id": map_id,
         "policy_kind": getattr(model, "policy_kind", "sb3"),
         "opening_policy": opening_policy_report(model),
+        "policy_adapter": policy_adapter_report(model),
         "action_selection": "deterministic" if deterministic else "stochastic",
         "action_random_seed": eval_random_seed,
         "action_random_seed_report": action_random_seed_report,
@@ -1228,6 +1377,13 @@ def opening_policy_report(model):
     }
 
 
+def policy_adapter_report(model):
+    report = getattr(model, "policy_adapter_report", None)
+    if callable(report):
+        return report()
+    return None
+
+
 def round_reward_breakdown(values):
     return {key: round(value, 4) for key, value in sorted(values.items())}
 
@@ -1430,6 +1586,8 @@ def compare_policy_to_rule_bots(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        edge_recovery_filter=edge_recovery_filter,
+        edge_recovery_distance=edge_recovery_distance,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
     findings = comparison_findings(policy, rule_matrix["stdout"])
@@ -1446,6 +1604,7 @@ def compare_policy_to_rule_bots(
         ),
         "policy_kind": policy.get("policy_kind", "sb3"),
         "opening_policy": policy.get("opening_policy"),
+        "policy_adapter": policy.get("policy_adapter"),
         "upgrade_policy": policy.get("upgrade_policy"),
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "map_id": map_id,
@@ -1487,6 +1646,8 @@ def compare_policy_to_rule_bots_across_maps(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
 ):
     comparisons = [
         compare_policy_to_rule_bots(
@@ -1507,6 +1668,8 @@ def compare_policy_to_rule_bots_across_maps(
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
             trace_sample_stride=trace_sample_stride,
+            edge_recovery_filter=edge_recovery_filter,
+            edge_recovery_distance=edge_recovery_distance,
         )
         for map_id in map_ids
     ]
@@ -1524,6 +1687,7 @@ def compare_policy_to_rule_bots_across_maps(
         ),
         "policy_kind": comparisons[0].get("policy_kind") if comparisons else None,
         "opening_policy": comparisons[0].get("opening_policy") if comparisons else None,
+        "policy_adapter": comparisons[0].get("policy_adapter") if comparisons else None,
         "upgrade_policy": comparisons[0].get("upgrade_policy") if comparisons else None,
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "action_selection": comparisons[0]["action_selection"] if comparisons else None,
@@ -1892,6 +2056,17 @@ def main():
         help="Seed stochastic action sampling during evaluation/comparison; requires --eval-stochastic.",
     )
     parser.add_argument(
+        "--edge-recovery-filter",
+        action="store_true",
+        help="Use a deterministic edge-recovery action filter during evaluation/comparison only.",
+    )
+    parser.add_argument(
+        "--edge-recovery-distance",
+        type=float,
+        default=32.0,
+        help="Boundary distance threshold for --edge-recovery-filter.",
+    )
+    parser.add_argument(
         "--trace-dir",
         default=None,
         help="Write sampled policy episode traces during training evaluation, evaluation, or comparison.",
@@ -1942,6 +2117,8 @@ def main():
             args.eval_random_seed,
             deterministic=not args.eval_stochastic,
         )
+        if args.edge_recovery_distance < 0.0:
+            raise ValueError("--edge-recovery-distance must be non-negative")
     except ValueError as exc:
         parser.error(str(exc))
     if args.compare_map_preset is not None and not args.compare_rule_bots:
@@ -1958,6 +2135,8 @@ def main():
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.upgrade_choice_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--upgrade-choice-model requires --evaluate-model or --compare-rule-bots")
+    if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--edge-recovery-filter requires --evaluate-model or --compare-rule-bots")
     if args.trace_sample_stride <= 0:
         parser.error("--trace-sample-stride must be greater than 0")
 
@@ -2019,6 +2198,8 @@ def main():
                 trace_dir=args.trace_dir,
                 trace_failed_only=args.trace_failed_only,
                 trace_sample_stride=args.trace_sample_stride,
+                edge_recovery_filter=args.edge_recovery_filter,
+                edge_recovery_distance=args.edge_recovery_distance,
             ),
         )
         return
@@ -2059,6 +2240,8 @@ def main():
                     trace_dir=args.trace_dir,
                     trace_failed_only=args.trace_failed_only,
                     trace_sample_stride=args.trace_sample_stride,
+                    edge_recovery_filter=args.edge_recovery_filter,
+                    edge_recovery_distance=args.edge_recovery_distance,
                 ),
             )
             return
@@ -2094,6 +2277,8 @@ def main():
                 trace_dir=args.trace_dir,
                 trace_failed_only=args.trace_failed_only,
                 trace_sample_stride=args.trace_sample_stride,
+                edge_recovery_filter=args.edge_recovery_filter,
+                edge_recovery_distance=args.edge_recovery_distance,
             ),
         )
         return
@@ -2122,6 +2307,8 @@ def main():
             trace_dir=args.trace_dir,
             trace_failed_only=args.trace_failed_only,
             trace_sample_stride=args.trace_sample_stride,
+            edge_recovery_filter=args.edge_recovery_filter,
+            edge_recovery_distance=args.edge_recovery_distance,
         ),
     )
 

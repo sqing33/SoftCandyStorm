@@ -117,6 +117,8 @@ Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` wit
 
 Use `--opening-model <zip> --opening-seconds <seconds>` with `--evaluate-model` or `--compare-rule-bots` to test a staged SB3 policy that uses a known opening checkpoint before falling back to `--model`. This is evaluation-only evidence for split-policy repair; it does not train a new checkpoint or count as policy acceptance by itself.
 
+Use `--edge-recovery-filter` with `--evaluate-model` or `--compare-rule-bots` to run a deterministic diagnostic wrapper that replaces a wall-pushing action with the highest-scoring action that does not keep pushing into a nearby map edge. Reports include `policy_adapter.mode = edge_recovery_filter`. This is only handoff repair evidence; the RL acceptance validator rejects policy-adapter reports.
+
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
 ## Policy Acceptance Gate
