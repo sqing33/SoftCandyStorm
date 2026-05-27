@@ -4,6 +4,8 @@ from types import SimpleNamespace
 import pytest
 
 from python.train.train_behavior_clone import (
+    action_distribution_regularization_loss,
+    build_action_distribution_regularization_targets,
     build_recovery_soft_targets,
     build_sample_weights,
     diagnose_behavior_clone_policy_on_dataset,
@@ -86,6 +88,8 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         recovery_soft_target_primary_mass=0.65,
         recovery_soft_target_top_k=3,
         entropy_regularization=0.0,
+        action_distribution_regularization=0.0,
+        action_distribution_target="uniform_present",
         class_weighting="none",
         batch_size=4,
         epochs=1,
@@ -187,6 +191,70 @@ def test_entropy_regularization_is_reported(tmp_path):
     assert report["final"]["train_entropy_nats"] > 0.0
     assert report["final"]["validation_entropy_nats"] > 0.0
     assert report["final"]["train_cross_entropy_loss"] >= report["final"]["train_loss"]
+
+
+def test_action_distribution_regularization_builds_per_map_targets(tmp_path):
+    import numpy as np
+
+    dataset = tiny_dataset()
+    dataset["actions"] = [0, 1, 1, 2, 2, 2, 2, 2]
+    args = args_for(tmp_path, architecture="mlp")
+    args.action_distribution_regularization = 0.4
+    args.action_distribution_target = "per_map_uniform_present"
+
+    target, sample_map_indices, report = build_action_distribution_regularization_targets(
+        dataset,
+        list(range(len(dataset["actions"]))),
+        args,
+        np,
+    )
+
+    assert report["enabled"] is True
+    assert report["scope"] == "per_map"
+    assert report["coefficient"] == 0.4
+    assert report["map_ids"] == ["caramel-workshop", "soda-creek"]
+    assert sample_map_indices.tolist() == [1, 1, 1, 1, 0, 0, 0, 0]
+    assert target[0].tolist() == pytest.approx([0.0, 0.0, 1.0])
+    assert target[1].tolist() == pytest.approx([1 / 3, 1 / 3, 1 / 3])
+
+
+def test_action_distribution_regularization_loss_penalizes_batch_collapse():
+    import torch
+
+    logits = torch.tensor(
+        [
+            [4.0, 0.0, 0.0],
+            [4.0, 0.0, 0.0],
+            [0.0, 0.0, 4.0],
+            [0.0, 0.0, 4.0],
+        ]
+    )
+    target = torch.tensor(
+        [
+            [0.5, 0.5, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    map_indices = torch.tensor([0, 0, 1, 1])
+
+    loss = action_distribution_regularization_loss(logits, target, torch, map_indices)
+
+    assert loss.item() > 0.1
+
+
+def test_action_distribution_regularization_is_reported(tmp_path):
+    args = args_for(tmp_path, architecture="mlp", context_frames=2)
+    args.action_distribution_regularization = 0.25
+    args.action_distribution_target = "per_map_uniform_present"
+
+    report = train_behavior_clone(tiny_dataset(), args)
+
+    regularization = report["training"]["action_distribution_regularization"]
+    assert regularization["enabled"] is True
+    assert regularization["scope"] == "per_map"
+    assert regularization["coefficient"] == 0.25
+    assert report["final"]["train_action_distribution_loss"] >= 0.0
+    assert report["final"]["validation_action_distribution_loss"] >= 0.0
 
 
 def test_recovery_soft_target_training_is_reported(tmp_path):

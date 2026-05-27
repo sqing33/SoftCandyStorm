@@ -11,6 +11,17 @@ REQUIRED_MODULES = ["numpy", "torch"]
 TIME_PHASE_LABELS = ["opening", "mid", "late"]
 DEFAULT_TIME_PHASE_THRESHOLDS = [0.2, 0.6]
 DEFAULT_MOVEMENT_ACTION_COUNT = 9
+ACTION_DISTRIBUTION_TARGET_MODES = {
+    "uniform_present",
+    "uniform_all",
+    "empirical",
+    "per_map_uniform_present",
+    "per_map_empirical",
+}
+PER_MAP_ACTION_DISTRIBUTION_TARGET_MODES = {
+    "per_map_uniform_present",
+    "per_map_empirical",
+}
 TIME_PHASE_BALANCE_WEIGHTING_MODES = {
     "time_phase_balance",
     "time_phase_balance_danger",
@@ -662,11 +673,28 @@ def train_behavior_clone(dataset, args):
         args,
         np,
     )
+    (
+        action_distribution_target,
+        sample_map_indices,
+        action_distribution_report,
+    ) = build_action_distribution_regularization_targets(
+        dataset,
+        train_indices,
+        args,
+        np,
+    )
+    action_distribution_target_tensor = (
+        torch.from_numpy(action_distribution_target)
+        if action_distribution_target is not None
+        else None
+    )
     soft_targets, soft_target_report = build_recovery_soft_targets(dataset, args, np)
+    train_map_indices = torch.from_numpy(sample_map_indices[train_indices])
     if soft_targets is None:
         train_dataset = TensorDataset(
             torch.from_numpy(observations[train_indices]),
             torch.from_numpy(actions[train_indices]),
+            train_map_indices,
         )
         validation_soft_targets = None
     else:
@@ -674,6 +702,7 @@ def train_behavior_clone(dataset, args):
             torch.from_numpy(observations[train_indices]),
             torch.from_numpy(actions[train_indices]),
             torch.from_numpy(soft_targets[train_indices]),
+            train_map_indices,
         )
         validation_soft_targets = torch.from_numpy(soft_targets[validation_indices])
     sampler = None
@@ -696,6 +725,7 @@ def train_behavior_clone(dataset, args):
     )
     validation_x = torch.from_numpy(observations[validation_indices])
     validation_y = torch.from_numpy(actions[validation_indices])
+    validation_map_indices = torch.from_numpy(sample_map_indices[validation_indices])
 
     model = build_behavior_clone_model(
         args.architecture,
@@ -721,14 +751,15 @@ def train_behavior_clone(dataset, args):
         total_loss = 0.0
         total_cross_entropy_loss = 0.0
         total_entropy = 0.0
+        total_action_distribution_loss = 0.0
         total_correct = 0
         total_seen = 0
         for batch in train_loader:
             if soft_targets is None:
-                batch_x, batch_y = batch
+                batch_x, batch_y, batch_map_indices = batch
                 batch_soft_y = None
             else:
-                batch_x, batch_y, batch_soft_y = batch
+                batch_x, batch_y, batch_soft_y, batch_map_indices = batch
             logits = model(batch_x)
             if batch_soft_y is None:
                 cross_entropy_loss = loss_fn(logits, batch_y)
@@ -740,7 +771,17 @@ def train_behavior_clone(dataset, args):
                     torch,
                 )
             entropy = logit_entropy_nats(logits, torch)
-            loss = cross_entropy_loss - args.entropy_regularization * entropy
+            action_distribution_loss = action_distribution_regularization_loss(
+                logits,
+                action_distribution_target_tensor,
+                torch,
+                batch_map_indices,
+            )
+            loss = (
+                cross_entropy_loss
+                - args.entropy_regularization * entropy
+                + args.action_distribution_regularization * action_distribution_loss
+            )
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -748,6 +789,7 @@ def train_behavior_clone(dataset, args):
             total_loss += float(loss.item()) * len(batch_y)
             total_cross_entropy_loss += float(cross_entropy_loss.item()) * len(batch_y)
             total_entropy += float(entropy.item()) * len(batch_y)
+            total_action_distribution_loss += float(action_distribution_loss.item()) * len(batch_y)
             total_correct += int((logits.argmax(dim=1) == batch_y).sum().item())
             total_seen += len(batch_y)
 
@@ -758,6 +800,8 @@ def train_behavior_clone(dataset, args):
             loss_fn,
             soft_targets=validation_soft_targets,
             class_weights=class_weight_values,
+            action_distribution_target=action_distribution_target_tensor,
+            map_indices=validation_map_indices,
         )
         history.append(
             {
@@ -768,9 +812,16 @@ def train_behavior_clone(dataset, args):
                     6,
                 ),
                 "train_entropy_nats": round(total_entropy / max(1, total_seen), 6),
+                "train_action_distribution_loss": round(
+                    total_action_distribution_loss / max(1, total_seen),
+                    6,
+                ),
                 "train_accuracy": round(total_correct / max(1, total_seen), 4),
                 "validation_loss": validation_metrics["loss"],
                 "validation_entropy_nats": validation_metrics["entropy_nats"],
+                "validation_action_distribution_loss": validation_metrics[
+                    "action_distribution_loss"
+                ],
                 "validation_accuracy": validation_metrics["accuracy"],
             }
         )
@@ -798,6 +849,7 @@ def train_behavior_clone(dataset, args):
             "sample_weights": sample_weight_report,
             "recovery_soft_targets": soft_target_report,
             "entropy_regularization": args.entropy_regularization,
+            "action_distribution_regularization": action_distribution_report,
             "state_dict": model.state_dict(),
             "dataset_paths": dataset["paths"],
         },
@@ -838,6 +890,7 @@ def train_behavior_clone(dataset, args):
             "sample_weights": sample_weight_report,
             "recovery_soft_targets": soft_target_report,
             "entropy_regularization": args.entropy_regularization,
+            "action_distribution_regularization": action_distribution_report,
             "train_samples": int(len(train_indices)),
             "validation_samples": int(len(validation_indices)),
         },
@@ -970,6 +1023,159 @@ def recovery_top_k_distribution(sample, target_action, action_count, primary_mas
     if total <= 0.0:
         return None
     return distribution / total
+
+
+def build_action_distribution_regularization_targets(dataset, train_indices, args, np_module):
+    coefficient = float(getattr(args, "action_distribution_regularization", 0.0))
+    target_mode = getattr(args, "action_distribution_target", "uniform_present")
+    sample_map_indices, map_ids = build_sample_map_indices(dataset, np_module)
+    base_report = {
+        "enabled": coefficient > 0.0,
+        "coefficient": round(coefficient, 6),
+        "target_mode": target_mode,
+        "map_ids": map_ids,
+    }
+    if target_mode not in ACTION_DISTRIBUTION_TARGET_MODES:
+        raise ValueError(f"unsupported action distribution target mode: {target_mode}")
+    if coefficient <= 0.0:
+        base_report["scope"] = "none"
+        return None, sample_map_indices, base_report
+
+    actions = np_module.asarray(dataset["actions"], dtype=np_module.int64)
+    action_count = int(dataset["action_count"])
+    if target_mode in PER_MAP_ACTION_DISTRIBUTION_TARGET_MODES:
+        per_map_targets = []
+        per_map_reports = {}
+        per_map_counts = {}
+        local_mode = target_mode.removeprefix("per_map_")
+        for map_index, map_id in enumerate(map_ids):
+            map_train_indices = [
+                int(index)
+                for index in train_indices
+                if int(sample_map_indices[int(index)]) == map_index
+            ]
+            counts = np_module.bincount(actions[map_train_indices], minlength=action_count)
+            target = action_distribution_target_from_counts(
+                counts,
+                action_count,
+                local_mode,
+                np_module,
+            )
+            per_map_targets.append(target)
+            per_map_reports[map_id] = action_distribution_report_from_array(target)
+            per_map_counts[map_id] = {
+                str(action): int(count) for action, count in enumerate(counts.tolist())
+            }
+        target_array = np_module.asarray(per_map_targets, dtype=np_module.float32)
+        base_report.update(
+            {
+                "scope": "per_map",
+                "target_distribution_by_map": per_map_reports,
+                "train_action_counts_by_map": per_map_counts,
+            }
+        )
+        return target_array, sample_map_indices, base_report
+
+    counts = np_module.bincount(actions[train_indices], minlength=action_count)
+    target_array = action_distribution_target_from_counts(
+        counts,
+        action_count,
+        target_mode,
+        np_module,
+    )
+    base_report.update(
+        {
+            "scope": "global",
+            "target_distribution": action_distribution_report_from_array(target_array),
+            "train_action_counts": {
+                str(action): int(count) for action, count in enumerate(counts.tolist())
+            },
+        }
+    )
+    return target_array.astype(np_module.float32), sample_map_indices, base_report
+
+
+def build_sample_map_indices(dataset, np_module):
+    map_ids = sorted(
+        {
+            str(sample.get("map_id") or "unknown")
+            for sample in dataset["sample_metadata"]
+        }
+    )
+    if not map_ids:
+        map_ids = ["unknown"]
+    map_index = {map_id: index for index, map_id in enumerate(map_ids)}
+    sample_map_indices = np_module.asarray(
+        [
+            map_index[str(sample.get("map_id") or "unknown")]
+            for sample in dataset["sample_metadata"]
+        ],
+        dtype=np_module.int64,
+    )
+    return sample_map_indices, map_ids
+
+
+def action_distribution_target_from_counts(counts, action_count, mode, np_module):
+    counts = np_module.asarray(counts, dtype=np_module.float32)
+    target = np_module.zeros(action_count, dtype=np_module.float32)
+    if mode == "empirical":
+        total = float(counts.sum())
+        if total > 0.0:
+            return (counts / total).astype(np_module.float32)
+        target.fill(1.0 / max(1, action_count))
+        return target
+    if mode == "uniform_all":
+        target.fill(1.0 / max(1, action_count))
+        return target
+    if mode != "uniform_present":
+        raise ValueError(f"unsupported action distribution target mode: {mode}")
+    present = counts > 0.0
+    present_count = int(present.sum())
+    if present_count <= 0:
+        target.fill(1.0 / max(1, action_count))
+        return target
+    target[present] = 1.0 / present_count
+    return target
+
+
+def action_distribution_report_from_array(values):
+    return {
+        str(index): round(float(value), 6)
+        for index, value in enumerate(values.tolist())
+    }
+
+
+def action_distribution_regularization_loss(
+    logits,
+    target_distribution,
+    torch_module,
+    map_indices=None,
+):
+    if target_distribution is None:
+        return logits.sum() * 0.0
+    probabilities = torch_module.softmax(logits, dim=1)
+    target_distribution = target_distribution.to(logits.device)
+    if len(target_distribution.shape) == 1:
+        predicted_distribution = probabilities.mean(dim=0)
+        return ((predicted_distribution - target_distribution) ** 2).sum()
+    if map_indices is None:
+        return logits.sum() * 0.0
+    map_indices = map_indices.to(logits.device)
+    losses = []
+    for map_index in torch_module.unique(map_indices):
+        int_map_index = int(map_index.item())
+        if not (0 <= int_map_index < target_distribution.shape[0]):
+            continue
+        mask = map_indices == map_index
+        if not bool(mask.any()):
+            continue
+        predicted_distribution = probabilities[mask].mean(dim=0)
+        losses.append(
+            ((predicted_distribution - target_distribution[int_map_index]) ** 2).sum()
+        )
+    if not losses:
+        return logits.sum() * 0.0
+    return torch_module.stack(losses).mean()
 
 
 def soft_cross_entropy_loss(logits, targets, class_weights, torch_module):
@@ -2205,7 +2411,17 @@ def save_staged_behavior_clone_policy(
     }
 
 
-def evaluate_classifier(model, x, y, loss_fn, *, soft_targets=None, class_weights=None):
+def evaluate_classifier(
+    model,
+    x,
+    y,
+    loss_fn,
+    *,
+    soft_targets=None,
+    class_weights=None,
+    action_distribution_target=None,
+    map_indices=None,
+):
     import torch
 
     model.eval()
@@ -2216,10 +2432,17 @@ def evaluate_classifier(model, x, y, loss_fn, *, soft_targets=None, class_weight
         else:
             loss = soft_cross_entropy_loss(logits, soft_targets, class_weights, torch)
         entropy = logit_entropy_nats(logits, torch)
+        action_distribution_loss = action_distribution_regularization_loss(
+            logits,
+            action_distribution_target,
+            torch,
+            map_indices,
+        )
         accuracy = (logits.argmax(dim=1) == y).float().mean()
     return {
         "loss": round(float(loss.item()), 6),
         "entropy_nats": round(float(entropy.item()), 6),
+        "action_distribution_loss": round(float(action_distribution_loss.item()), 6),
         "accuracy": round(float(accuracy.item()), 4),
     }
 
@@ -2377,6 +2600,18 @@ def main():
         default=0.0,
         help="Subtract mean policy entropy from the training objective to reduce overconfident action collapse.",
     )
+    parser.add_argument(
+        "--action-distribution-regularization",
+        type=float,
+        default=0.0,
+        help="Penalize mismatch between batch mean predicted action probabilities and an explicit target distribution.",
+    )
+    parser.add_argument(
+        "--action-distribution-target",
+        choices=sorted(ACTION_DISTRIBUTION_TARGET_MODES),
+        default="uniform_present",
+        help="Target distribution used by --action-distribution-regularization.",
+    )
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument(
         "--model-out",
@@ -2414,6 +2649,8 @@ def main():
         parser.error("--danger-late-horizon-seconds must be greater than --danger-late-start-seconds")
     if args.entropy_regularization < 0.0:
         parser.error("--entropy-regularization must be greater than or equal to zero")
+    if args.action_distribution_regularization < 0.0:
+        parser.error("--action-distribution-regularization must be greater than or equal to zero")
     if args.action_change_weight < 0.0:
         parser.error("--action-change-weight must be greater than or equal to zero")
     if args.edge_recovery_sample_weight <= 0.0:
@@ -2470,6 +2707,12 @@ def main():
             import numpy as np
 
             _, soft_target_report = build_recovery_soft_targets(dataset, args, np)
+            _, _, action_distribution_report = build_action_distribution_regularization_targets(
+                dataset,
+                list(range(len(dataset["actions"]))),
+                args,
+                np,
+            )
             write_report(
                 args.report,
                 {
@@ -2499,6 +2742,7 @@ def main():
                     "edge_recovery_time_window_filter": edge_recovery_time_window_report,
                     "risk_recovery_time_window_filter": risk_recovery_time_window_report,
                     "recovery_soft_targets": soft_target_report,
+                    "action_distribution_regularization": action_distribution_report,
                     "dependencies": dependency_status(),
                 },
             )
