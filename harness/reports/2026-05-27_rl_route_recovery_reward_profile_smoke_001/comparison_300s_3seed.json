@@ -1,0 +1,3102 @@
+{
+  "report_version": 1,
+  "status": "compared",
+  "phase": "rl_phase_1_movement_survival",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/ppo_route_recovery_reward_profile_smoke.zip",
+  "policy_kind": "sb3",
+  "opening_policy": {
+    "mode": "single_policy",
+    "opening_model_path": null,
+    "fallback_model_path": null,
+    "opening_seconds": null
+  },
+  "policy_adapter": null,
+  "edge_recovery_samples": [],
+  "upgrade_policy": {
+    "mode": "upgrade_choice_ranker",
+    "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+    "limitations": [
+      "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+      "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+    ]
+  },
+  "upgrade_choice_model": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+  "action_selection": "deterministic",
+  "action_random_seed": null,
+  "reward_profile": "long-run-retention",
+  "map_preset": "high-pressure",
+  "map_ids": [
+    "soda-creek",
+    "caramel-workshop",
+    "cracked-star-jar"
+  ],
+  "seed_start": 62300,
+  "seeds": 3,
+  "seconds": 300.0,
+  "tick_rate": 30,
+  "maps": [
+    {
+      "report_version": 1,
+      "status": "compared",
+      "phase": "rl_phase_1_movement_survival",
+      "algorithm": "ppo",
+      "model_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/ppo_route_recovery_reward_profile_smoke.zip",
+      "policy_kind": "sb3",
+      "opening_policy": {
+        "mode": "single_policy",
+        "opening_model_path": null,
+        "fallback_model_path": null,
+        "opening_seconds": null
+      },
+      "policy_adapter": null,
+      "edge_recovery_samples": null,
+      "upgrade_policy": {
+        "mode": "upgrade_choice_ranker",
+        "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+        "limitations": [
+          "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+          "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+        ]
+      },
+      "upgrade_choice_model": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+      "map_id": "soda-creek",
+      "action_selection": "deterministic",
+      "action_random_seed": null,
+      "reward_profile": "long-run-retention",
+      "seed_start": 62300,
+      "seeds": 3,
+      "seconds": 300.0,
+      "tick_rate": 30,
+      "policy": {
+        "report_version": 1,
+        "status": "evaluated",
+        "phase": "rl_phase_1_movement_survival",
+        "map_id": "soda-creek",
+        "reward_profile": "long-run-retention",
+        "policy_kind": "sb3",
+        "opening_policy": {
+          "mode": "single_policy",
+          "opening_model_path": null,
+          "fallback_model_path": null,
+          "opening_seconds": null
+        },
+        "policy_adapter": null,
+        "action_selection": "deterministic",
+        "action_random_seed": null,
+        "action_random_seed_report": {
+          "seed": null,
+          "seeded_sources": []
+        },
+        "upgrade_policy": {
+          "mode": "upgrade_choice_ranker",
+          "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+          "limitations": [
+            "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+            "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+          ]
+        },
+        "trace_dir": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s",
+        "trace_failed_only": true,
+        "trace_sample_stride": 30,
+        "edge_recovery_samples": null,
+        "episodes": [
+          {
+            "seed": 62300,
+            "map_id": "soda-creek",
+            "steps": 6467,
+            "reward": 1.5211,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 215.58376,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 7,
+            "kills": 529,
+            "xp_collected": 483.3996,
+            "damage_taken": 120.18674,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 144,
+              "3": 2385,
+              "4": 2874,
+              "5": 0,
+              "6": 0,
+              "7": 1064,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 6467,
+              "mean_scores": {
+                "0": 0.0084,
+                "1": 0.0387,
+                "2": 0.103,
+                "3": 0.2403,
+                "4": 0.3207,
+                "5": 0.1011,
+                "6": 0.0106,
+                "7": 0.1446,
+                "8": 0.0326
+              },
+              "mean_top_actions": [
+                {
+                  "action": "4",
+                  "score": 0.3207
+                },
+                {
+                  "action": "3",
+                  "score": 0.2403
+                },
+                {
+                  "action": "7",
+                  "score": 0.1446
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 144,
+                  "ratio": 0.0223
+                },
+                "3": {
+                  "count": 2385,
+                  "ratio": 0.3688
+                },
+                "4": {
+                  "count": 2874,
+                  "ratio": 0.4444
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 1064,
+                  "ratio": 0.1645
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "4",
+                "count": 2874,
+                "ratio": 0.4444
+              },
+              "mean_chosen_action_score": 0.5508,
+              "chosen_action_score_sample_count": 6467
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "star-sugar-ray",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.85922
+                  },
+                  {
+                    "upgrade_id": "star-sugar-ray",
+                    "score": 0.386927
+                  },
+                  {
+                    "upgrade_id": "candy-crystal-lens",
+                    "score": -0.621135
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "star-sugar-ray",
+                  "candy-crystal-lens"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "soda-bubble-pop",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.719189
+                  },
+                  {
+                    "upgrade_id": "soda-bubble-pop",
+                    "score": 0.352117
+                  },
+                  {
+                    "upgrade_id": "sour-tuner",
+                    "score": -0.344349
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "soda-bubble-pop",
+                  "sour-tuner"
+                ]
+              },
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "cream-clockwork",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "soda-bubble-pop-level-2",
+                    "score": 0.304013
+                  },
+                  {
+                    "upgrade_id": "caramel-sticky-ground",
+                    "score": 0.127606
+                  },
+                  {
+                    "upgrade_id": "cream-clockwork",
+                    "score": 0.448974
+                  }
+                ],
+                "upgrade_options": [
+                  "soda-bubble-pop-level-2",
+                  "caramel-sticky-ground",
+                  "cream-clockwork"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "candy-crystal-lance",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.856546
+                  },
+                  {
+                    "upgrade_id": "candy-crystal-lance",
+                    "score": 0.252241
+                  },
+                  {
+                    "upgrade_id": "candy-crystal-lens",
+                    "score": -0.622399
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "candy-crystal-lance",
+                  "candy-crystal-lens"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "popping-candy-mine",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "candy-crystal-lance-level-2",
+                    "score": -0.107906
+                  },
+                  {
+                    "upgrade_id": "popping-candy-mine",
+                    "score": 0.257873
+                  },
+                  {
+                    "upgrade_id": "nonstick-apron",
+                    "score": -0.6064
+                  }
+                ],
+                "upgrade_options": [
+                  "candy-crystal-lance-level-2",
+                  "popping-candy-mine",
+                  "nonstick-apron"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "lollipop-boomerang",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "candy-crystal-lance-level-2",
+                    "score": -0.155846
+                  },
+                  {
+                    "upgrade_id": "lollipop-boomerang",
+                    "score": 0.104166
+                  },
+                  {
+                    "upgrade_id": "candy-crystal-lens",
+                    "score": -0.552468
+                  }
+                ],
+                "upgrade_options": [
+                  "candy-crystal-lance-level-2",
+                  "lollipop-boomerang",
+                  "candy-crystal-lens"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 6,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -22.7157,
+              "boss_pressure": -0.1846,
+              "boundary_risk": -6.3577,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": 0.0001,
+              "damage_taken": -9.6149,
+              "enemy_pressure": -0.4916,
+              "hazard_risk": -0.3237,
+              "kill": 42.32,
+              "level": 4.8,
+              "low_health": -0.86,
+              "opening_edge_risk_delta": 0.0001,
+              "route_recovery": -23.8756,
+              "safety_delta": -0.0507,
+              "survival": 4.0394,
+              "terminal": -4.5,
+              "total": 1.5211,
+              "xp": 19.336
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/soda-creek_seed62300_trace.json"
+          },
+          {
+            "seed": 62301,
+            "map_id": "soda-creek",
+            "steps": 871,
+            "reward": -13.764,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 29.033234,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 1,
+            "kills": 24,
+            "xp_collected": 21.8,
+            "damage_taken": 120.45325,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 75,
+              "3": 152,
+              "4": 644,
+              "5": 0,
+              "6": 0,
+              "7": 0,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 871,
+              "mean_scores": {
+                "0": 0.003,
+                "1": 0.018,
+                "2": 0.0934,
+                "3": 0.2075,
+                "4": 0.5225,
+                "5": 0.146,
+                "6": 0.004,
+                "7": 0.0012,
+                "8": 0.0045
+              },
+              "mean_top_actions": [
+                {
+                  "action": "4",
+                  "score": 0.5225
+                },
+                {
+                  "action": "3",
+                  "score": 0.2075
+                },
+                {
+                  "action": "5",
+                  "score": 0.146
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 75,
+                  "ratio": 0.0861
+                },
+                "3": {
+                  "count": 152,
+                  "ratio": 0.1745
+                },
+                "4": {
+                  "count": 644,
+                  "ratio": 0.7394
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "4",
+                "count": 644,
+                "ratio": 0.7394
+              },
+              "mean_chosen_action_score": 0.5783,
+              "chosen_action_score_sample_count": 871
+            },
+            "upgrade_policy_decisions": [],
+            "upgrade_policy_decision_count": 0,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -2.764,
+              "boss_pressure": 0.0,
+              "boundary_risk": -0.2637,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": -0.0115,
+              "damage_taken": -9.6363,
+              "enemy_pressure": -0.1511,
+              "hazard_risk": 0.0,
+              "kill": 1.92,
+              "level": 0.0,
+              "low_health": -0.019,
+              "opening_edge_risk_delta": -0.0077,
+              "route_recovery": -0.9791,
+              "safety_delta": -0.014,
+              "survival": 0.2903,
+              "terminal": -3.0,
+              "total": -13.764,
+              "xp": 0.872
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/soda-creek_seed62301_trace.json"
+          },
+          {
+            "seed": 62302,
+            "map_id": "soda-creek",
+            "steps": 1275,
+            "reward": -13.654,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 42.499695,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 2,
+            "kills": 36,
+            "xp_collected": 37.6,
+            "damage_taken": 120.13983,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 75,
+              "3": 90,
+              "4": 680,
+              "5": 0,
+              "6": 0,
+              "7": 430,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 1275,
+              "mean_scores": {
+                "0": 0.0042,
+                "1": 0.0098,
+                "2": 0.0449,
+                "3": 0.0874,
+                "4": 0.4255,
+                "5": 0.0927,
+                "6": 0.0095,
+                "7": 0.3073,
+                "8": 0.0188
+              },
+              "mean_top_actions": [
+                {
+                  "action": "4",
+                  "score": 0.4255
+                },
+                {
+                  "action": "7",
+                  "score": 0.3073
+                },
+                {
+                  "action": "5",
+                  "score": 0.0927
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 75,
+                  "ratio": 0.0588
+                },
+                "3": {
+                  "count": 90,
+                  "ratio": 0.0706
+                },
+                "4": {
+                  "count": 680,
+                  "ratio": 0.5333
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 430,
+                  "ratio": 0.3373
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "4",
+                "count": 680,
+                "ratio": 0.5333
+              },
+              "mean_chosen_action_score": 0.7573,
+              "chosen_action_score_sample_count": 1275
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "soda-bubble-pop",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.812131
+                  },
+                  {
+                    "upgrade_id": "soda-bubble-pop",
+                    "score": 0.338931
+                  },
+                  {
+                    "upgrade_id": "candy-crystal-lens",
+                    "score": -0.574045
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "soda-bubble-pop",
+                  "candy-crystal-lens"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 1,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -4.32,
+              "boss_pressure": 0.0,
+              "boundary_risk": -0.7253,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": -0.0028,
+              "damage_taken": -9.6112,
+              "enemy_pressure": -0.2457,
+              "hazard_risk": 0.0,
+              "kill": 2.88,
+              "level": 0.8,
+              "low_health": -0.4509,
+              "opening_edge_risk_delta": -0.0019,
+              "route_recovery": -0.8953,
+              "safety_delta": -0.0098,
+              "survival": 0.425,
+              "terminal": -3.0,
+              "total": -13.654,
+              "xp": 1.504
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/soda-creek_seed62302_trace.json"
+          }
+        ],
+        "summary": {
+          "episodes": 3,
+          "win_rate": 0.0,
+          "average_survival_seconds": 95.7056,
+          "average_level": 3.3333,
+          "average_kills": 196.3333,
+          "average_reward": -8.6323,
+          "damage_taken_average": 120.2599,
+          "action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "2": {
+              "count": 294,
+              "ratio": 0.0341
+            },
+            "3": {
+              "count": 2627,
+              "ratio": 0.305
+            },
+            "4": {
+              "count": 4198,
+              "ratio": 0.4874
+            },
+            "5": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "6": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "7": {
+              "count": 1494,
+              "ratio": 0.1735
+            },
+            "8": {
+              "count": 0,
+              "ratio": 0.0
+            }
+          },
+          "action_entropy_bits": 1.6325,
+          "normalized_action_entropy": 0.515,
+          "action_score_diagnostic": {
+            "kind": "probability",
+            "sample_count": 8613,
+            "mean_scores": {
+              "0": 0.0072,
+              "1": 0.0323,
+              "2": 0.0934,
+              "3": 0.2143,
+              "4": 0.3566,
+              "5": 0.1044,
+              "6": 0.0098,
+              "7": 0.1542,
+              "8": 0.0277
+            },
+            "mean_top_actions": [
+              {
+                "action": "4",
+                "score": 0.3566
+              },
+              {
+                "action": "3",
+                "score": 0.2143
+              },
+              {
+                "action": "7",
+                "score": 0.1542
+              }
+            ],
+            "top_action_distribution": {
+              "0": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "1": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "2": {
+                "count": 294,
+                "ratio": 0.0341
+              },
+              "3": {
+                "count": 2627,
+                "ratio": 0.305
+              },
+              "4": {
+                "count": 4198,
+                "ratio": 0.4874
+              },
+              "5": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "6": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "7": {
+                "count": 1494,
+                "ratio": 0.1735
+              },
+              "8": {
+                "count": 0,
+                "ratio": 0.0
+              }
+            },
+            "dominant_top_action": {
+              "action": "4",
+              "count": 4198,
+              "ratio": 0.4874
+            },
+            "mean_chosen_action_score": 0.5841,
+            "chosen_action_score_sample_count": 8613
+          },
+          "upgrade_policy_decision_count": 7,
+          "reward_breakdown_average": {
+            "action_repeat": -9.9332,
+            "boss_pressure": -0.0615,
+            "boundary_risk": -2.4489,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0047,
+            "damage_taken": -9.6208,
+            "enemy_pressure": -0.2961,
+            "hazard_risk": -0.1079,
+            "kill": 15.7067,
+            "level": 1.8667,
+            "low_health": -0.4433,
+            "opening_edge_risk_delta": -0.0032,
+            "route_recovery": -8.5833,
+            "safety_delta": -0.0248,
+            "survival": 1.5849,
+            "terminal": -3.5,
+            "total": -8.6323,
+            "xp": 7.2373
+          }
+        }
+      },
+      "rule_bots": {
+        "kind": "bot_matrix",
+        "bots": [
+          {
+            "bot": "random",
+            "map_id": "soda-creek",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 0,
+            "win_rate": 0.0,
+            "gate_status": "pass",
+            "gate_target": {
+              "label": "random robustness",
+              "min_win_rate": 0.0,
+              "max_win_rate": 0.15
+            },
+            "average_duration_seconds": 55.866,
+            "average_level": 2.667,
+            "average_kills": 60.333,
+            "max_enemy_count": 19,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 33.6,
+                "level": 2,
+                "kills": 34,
+                "damage_taken": 120.1,
+                "max_enemy_count": 9
+              },
+              {
+                "seed": 62301,
+                "terminal": "defeat",
+                "duration_seconds": 30.5,
+                "level": 2,
+                "kills": 31,
+                "damage_taken": 120.52,
+                "max_enemy_count": 11
+              },
+              {
+                "seed": 62302,
+                "terminal": "defeat",
+                "duration_seconds": 103.499,
+                "level": 4,
+                "kills": 116,
+                "damage_taken": 120.31,
+                "max_enemy_count": 19
+              }
+            ]
+          },
+          {
+            "bot": "kite",
+            "map_id": "soda-creek",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 3,
+            "win_rate": 1.0,
+            "gate_status": "repair",
+            "gate_target": {
+              "label": "high-skill rule bot",
+              "min_win_rate": 0.45,
+              "max_win_rate": 0.75
+            },
+            "average_duration_seconds": 300.015,
+            "average_level": 12.667,
+            "average_kills": 796.0,
+            "max_enemy_count": 22,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "victory",
+                "duration_seconds": 300.015,
+                "level": 14,
+                "kills": 823,
+                "damage_taken": 92.293,
+                "max_enemy_count": 22
+              },
+              {
+                "seed": 62301,
+                "terminal": "victory",
+                "duration_seconds": 300.015,
+                "level": 12,
+                "kills": 772,
+                "damage_taken": 54.4,
+                "max_enemy_count": 10
+              },
+              {
+                "seed": 62302,
+                "terminal": "victory",
+                "duration_seconds": 300.015,
+                "level": 12,
+                "kills": 793,
+                "damage_taken": 54.4,
+                "max_enemy_count": 9
+              }
+            ]
+          },
+          {
+            "bot": "tank",
+            "map_id": "soda-creek",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 0,
+            "win_rate": 0.0,
+            "gate_status": "repair",
+            "gate_target": {
+              "label": "mid-skill rule bot",
+              "min_win_rate": 0.25,
+              "max_win_rate": 0.55
+            },
+            "average_duration_seconds": 149.705,
+            "average_level": 4.667,
+            "average_kills": 261.333,
+            "max_enemy_count": 43,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 101.265,
+                "level": 3,
+                "kills": 101,
+                "damage_taken": 120.004,
+                "max_enemy_count": 30
+              },
+              {
+                "seed": 62301,
+                "terminal": "defeat",
+                "duration_seconds": 122.765,
+                "level": 4,
+                "kills": 155,
+                "damage_taken": 136.107,
+                "max_enemy_count": 43
+              },
+              {
+                "seed": 62302,
+                "terminal": "defeat",
+                "duration_seconds": 225.086,
+                "level": 7,
+                "kills": 528,
+                "damage_taken": 120.257,
+                "max_enemy_count": 24
+              }
+            ]
+          }
+        ]
+      },
+      "rule_bot_command": [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "game_harness",
+        "--",
+        "matrix",
+        "--seed-start",
+        "62300",
+        "--seeds",
+        "3",
+        "--seconds",
+        "300.0",
+        "--tick-rate",
+        "30",
+        "--map-id",
+        "soda-creek",
+        "--bots",
+        "random,kite,tank",
+        "--content-dir",
+        "content/base_demo"
+      ],
+      "rule_bot_stderr": "",
+      "findings": [
+        {
+          "id": "small_sample",
+          "severity": "info",
+          "summary": "Comparison uses fewer than 10 seeds and should only be treated as a smoke check."
+        },
+        {
+          "id": "low_kill_output_vs_rule_bots",
+          "severity": "watch",
+          "summary": "Policy average kills are less than half of the strongest compared rule Bot in the same smoke window."
+        }
+      ],
+      "limitations": [
+        "This comparison uses the same seed/map/duration, but a smoke-scale policy is not a balance or fun gate.",
+        "Rule Bot baselines remain the primary deterministic content gate until RL policies are trained and calibrated at larger scale."
+      ],
+      "gate_decision": "comparison_recorded_not_balance_gate"
+    },
+    {
+      "report_version": 1,
+      "status": "compared",
+      "phase": "rl_phase_1_movement_survival",
+      "algorithm": "ppo",
+      "model_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/ppo_route_recovery_reward_profile_smoke.zip",
+      "policy_kind": "sb3",
+      "opening_policy": {
+        "mode": "single_policy",
+        "opening_model_path": null,
+        "fallback_model_path": null,
+        "opening_seconds": null
+      },
+      "policy_adapter": null,
+      "edge_recovery_samples": null,
+      "upgrade_policy": {
+        "mode": "upgrade_choice_ranker",
+        "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+        "limitations": [
+          "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+          "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+        ]
+      },
+      "upgrade_choice_model": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+      "map_id": "caramel-workshop",
+      "action_selection": "deterministic",
+      "action_random_seed": null,
+      "reward_profile": "long-run-retention",
+      "seed_start": 62300,
+      "seeds": 3,
+      "seconds": 300.0,
+      "tick_rate": 30,
+      "policy": {
+        "report_version": 1,
+        "status": "evaluated",
+        "phase": "rl_phase_1_movement_survival",
+        "map_id": "caramel-workshop",
+        "reward_profile": "long-run-retention",
+        "policy_kind": "sb3",
+        "opening_policy": {
+          "mode": "single_policy",
+          "opening_model_path": null,
+          "fallback_model_path": null,
+          "opening_seconds": null
+        },
+        "policy_adapter": null,
+        "action_selection": "deterministic",
+        "action_random_seed": null,
+        "action_random_seed_report": {
+          "seed": null,
+          "seeded_sources": []
+        },
+        "upgrade_policy": {
+          "mode": "upgrade_choice_ranker",
+          "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+          "limitations": [
+            "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+            "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+          ]
+        },
+        "trace_dir": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s",
+        "trace_failed_only": true,
+        "trace_sample_stride": 30,
+        "edge_recovery_samples": null,
+        "episodes": [
+          {
+            "seed": 62300,
+            "map_id": "caramel-workshop",
+            "steps": 2867,
+            "reward": -20.1461,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 95.56555,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 3,
+            "kills": 81,
+            "xp_collected": 110.0,
+            "damage_taken": 120.133224,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 64,
+              "3": 1402,
+              "4": 1401,
+              "5": 0,
+              "6": 0,
+              "7": 0,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 2867,
+              "mean_scores": {
+                "0": 0.0066,
+                "1": 0.045,
+                "2": 0.1252,
+                "3": 0.2983,
+                "4": 0.3703,
+                "5": 0.1154,
+                "6": 0.0073,
+                "7": 0.0125,
+                "8": 0.0195
+              },
+              "mean_top_actions": [
+                {
+                  "action": "4",
+                  "score": 0.3703
+                },
+                {
+                  "action": "3",
+                  "score": 0.2983
+                },
+                {
+                  "action": "2",
+                  "score": 0.1252
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 64,
+                  "ratio": 0.0223
+                },
+                "3": {
+                  "count": 1402,
+                  "ratio": 0.489
+                },
+                "4": {
+                  "count": 1401,
+                  "ratio": 0.4887
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "3",
+                "count": 1402,
+                "ratio": 0.489
+              },
+              "mean_chosen_action_score": 0.4854,
+              "chosen_action_score_sample_count": 2867
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "popping-candy-mine",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.796645
+                  },
+                  {
+                    "upgrade_id": "popping-candy-mine",
+                    "score": 0.217675
+                  },
+                  {
+                    "upgrade_id": "big-candy-jar",
+                    "score": -0.548874
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "popping-candy-mine",
+                  "big-candy-jar"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "marshmallow-shield",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "popping-candy-mine-level-2",
+                    "score": -1000000.0
+                  },
+                  {
+                    "upgrade_id": "marshmallow-shield",
+                    "score": 0.164387
+                  },
+                  {
+                    "upgrade_id": "nonstick-apron",
+                    "score": -0.729609
+                  }
+                ],
+                "upgrade_options": [
+                  "popping-candy-mine-level-2",
+                  "marshmallow-shield",
+                  "nonstick-apron"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 2,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -7.9077,
+              "boss_pressure": 0.0,
+              "boundary_risk": -2.5174,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": -0.0111,
+              "damage_taken": -9.6107,
+              "enemy_pressure": -0.2621,
+              "hazard_risk": -1.817,
+              "kill": 6.48,
+              "level": 1.6,
+              "low_health": -1.7794,
+              "opening_edge_risk_delta": -0.0074,
+              "route_recovery": -5.9205,
+              "safety_delta": -0.0177,
+              "survival": 1.1139,
+              "terminal": -3.8891,
+              "total": -20.1461,
+              "xp": 4.4
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/caramel-workshop_seed62300_trace.json"
+          },
+          {
+            "seed": 62301,
+            "map_id": "caramel-workshop",
+            "steps": 2636,
+            "reward": -21.7091,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 87.86567,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 3,
+            "kills": 53,
+            "xp_collected": 100.0,
+            "damage_taken": 120.133354,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 75,
+              "3": 99,
+              "4": 1518,
+              "5": 0,
+              "6": 0,
+              "7": 944,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 2636,
+              "mean_scores": {
+                "0": 0.005,
+                "1": 0.0081,
+                "2": 0.0303,
+                "3": 0.0676,
+                "4": 0.4474,
+                "5": 0.0884,
+                "6": 0.0108,
+                "7": 0.3174,
+                "8": 0.0248
+              },
+              "mean_top_actions": [
+                {
+                  "action": "4",
+                  "score": 0.4474
+                },
+                {
+                  "action": "7",
+                  "score": 0.3174
+                },
+                {
+                  "action": "5",
+                  "score": 0.0884
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 75,
+                  "ratio": 0.0285
+                },
+                "3": {
+                  "count": 99,
+                  "ratio": 0.0376
+                },
+                "4": {
+                  "count": 1518,
+                  "ratio": 0.5759
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 944,
+                  "ratio": 0.3581
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "4",
+                "count": 1518,
+                "ratio": 0.5759
+              },
+              "mean_chosen_action_score": 0.7804,
+              "chosen_action_score_sample_count": 2636
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "cream-clockwork",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.749842
+                  },
+                  {
+                    "upgrade_id": "soda-fountain",
+                    "score": -0.398463
+                  },
+                  {
+                    "upgrade_id": "cream-clockwork",
+                    "score": 0.560178
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "soda-fountain",
+                  "cream-clockwork"
+                ]
+              },
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "bubble-shoes",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.780564
+                  },
+                  {
+                    "upgrade_id": "pudding-turret",
+                    "score": 0.544697
+                  },
+                  {
+                    "upgrade_id": "bubble-shoes",
+                    "score": 0.732092
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "pudding-turret",
+                  "bubble-shoes"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 2,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -10.7304,
+              "boss_pressure": 0.0,
+              "boundary_risk": -1.8181,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": -0.0002,
+              "damage_taken": -9.6107,
+              "enemy_pressure": -0.4674,
+              "hazard_risk": -1.4776,
+              "kill": 4.24,
+              "level": 1.6,
+              "low_health": -1.0497,
+              "opening_edge_risk_delta": -0.0001,
+              "route_recovery": -3.6625,
+              "safety_delta": -0.0115,
+              "survival": 0.9758,
+              "terminal": -3.6966,
+              "total": -21.7091,
+              "xp": 4.0
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/caramel-workshop_seed62301_trace.json"
+          },
+          {
+            "seed": 62302,
+            "map_id": "caramel-workshop",
+            "steps": 2062,
+            "reward": -16.7247,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 68.73263,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 2,
+            "kills": 45,
+            "xp_collected": 62.0,
+            "damage_taken": 120.033585,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 98,
+              "3": 80,
+              "4": 908,
+              "5": 0,
+              "6": 0,
+              "7": 976,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 2062,
+              "mean_scores": {
+                "0": 0.0056,
+                "1": 0.0089,
+                "2": 0.0358,
+                "3": 0.0762,
+                "4": 0.3292,
+                "5": 0.0768,
+                "6": 0.0126,
+                "7": 0.4277,
+                "8": 0.0271
+              },
+              "mean_top_actions": [
+                {
+                  "action": "7",
+                  "score": 0.4277
+                },
+                {
+                  "action": "4",
+                  "score": 0.3292
+                },
+                {
+                  "action": "5",
+                  "score": 0.0768
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 98,
+                  "ratio": 0.0475
+                },
+                "3": {
+                  "count": 80,
+                  "ratio": 0.0388
+                },
+                "4": {
+                  "count": 908,
+                  "ratio": 0.4403
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 976,
+                  "ratio": 0.4733
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "7",
+                "count": 976,
+                "ratio": 0.4733
+              },
+              "mean_chosen_action_score": 0.7735,
+              "chosen_action_score_sample_count": 2062
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "bubble-shoes",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.748248
+                  },
+                  {
+                    "upgrade_id": "star-sugar-ray",
+                    "score": 0.491935
+                  },
+                  {
+                    "upgrade_id": "bubble-shoes",
+                    "score": 0.790569
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "star-sugar-ray",
+                  "bubble-shoes"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 1,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -7.3188,
+              "boss_pressure": 0.0,
+              "boundary_risk": -0.9867,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": 0.0,
+              "damage_taken": -9.6027,
+              "enemy_pressure": -0.3182,
+              "hazard_risk": -0.3952,
+              "kill": 3.6,
+              "level": 0.8,
+              "low_health": -0.3782,
+              "opening_edge_risk_delta": 0.0,
+              "route_recovery": -2.0681,
+              "safety_delta": -0.0153,
+              "survival": 0.6969,
+              "terminal": -3.2183,
+              "total": -16.7247,
+              "xp": 2.48
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/caramel-workshop_seed62302_trace.json"
+          }
+        ],
+        "summary": {
+          "episodes": 3,
+          "win_rate": 0.0,
+          "average_survival_seconds": 84.0546,
+          "average_level": 2.6667,
+          "average_kills": 59.6667,
+          "average_reward": -19.5266,
+          "damage_taken_average": 120.1001,
+          "action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "2": {
+              "count": 237,
+              "ratio": 0.0313
+            },
+            "3": {
+              "count": 1581,
+              "ratio": 0.209
+            },
+            "4": {
+              "count": 3827,
+              "ratio": 0.5059
+            },
+            "5": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "6": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "7": {
+              "count": 1920,
+              "ratio": 0.2538
+            },
+            "8": {
+              "count": 0,
+              "ratio": 0.0
+            }
+          },
+          "action_entropy_bits": 1.6279,
+          "normalized_action_entropy": 0.5135,
+          "action_score_diagnostic": {
+            "kind": "probability",
+            "sample_count": 7565,
+            "mean_scores": {
+              "0": 0.0058,
+              "1": 0.0223,
+              "2": 0.0678,
+              "3": 0.1574,
+              "4": 0.386,
+              "5": 0.0955,
+              "6": 0.01,
+              "7": 0.2319,
+              "8": 0.0234
+            },
+            "mean_top_actions": [
+              {
+                "action": "4",
+                "score": 0.386
+              },
+              {
+                "action": "7",
+                "score": 0.2319
+              },
+              {
+                "action": "3",
+                "score": 0.1574
+              }
+            ],
+            "top_action_distribution": {
+              "0": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "1": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "2": {
+                "count": 237,
+                "ratio": 0.0313
+              },
+              "3": {
+                "count": 1581,
+                "ratio": 0.209
+              },
+              "4": {
+                "count": 3827,
+                "ratio": 0.5059
+              },
+              "5": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "6": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "7": {
+                "count": 1920,
+                "ratio": 0.2538
+              },
+              "8": {
+                "count": 0,
+                "ratio": 0.0
+              }
+            },
+            "dominant_top_action": {
+              "action": "4",
+              "count": 3827,
+              "ratio": 0.5059
+            },
+            "mean_chosen_action_score": 0.6667,
+            "chosen_action_score_sample_count": 7565
+          },
+          "upgrade_policy_decision_count": 5,
+          "reward_breakdown_average": {
+            "action_repeat": -8.6523,
+            "boss_pressure": 0.0,
+            "boundary_risk": -1.7741,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0038,
+            "damage_taken": -9.608,
+            "enemy_pressure": -0.3492,
+            "hazard_risk": -1.2299,
+            "kill": 4.7733,
+            "level": 1.3333,
+            "low_health": -1.0691,
+            "opening_edge_risk_delta": -0.0025,
+            "route_recovery": -3.8837,
+            "safety_delta": -0.0148,
+            "survival": 0.9289,
+            "terminal": -3.6013,
+            "total": -19.5266,
+            "xp": 3.6267
+          }
+        }
+      },
+      "rule_bots": {
+        "kind": "bot_matrix",
+        "bots": [
+          {
+            "bot": "random",
+            "map_id": "caramel-workshop",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 1,
+            "win_rate": 0.333,
+            "gate_status": "repair",
+            "gate_target": {
+              "label": "random robustness",
+              "min_win_rate": 0.0,
+              "max_win_rate": 0.15
+            },
+            "average_duration_seconds": 194.2,
+            "average_level": 6.333,
+            "average_kills": 308.667,
+            "max_enemy_count": 21,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 222.352,
+                "level": 7,
+                "kills": 342,
+                "damage_taken": 120.407,
+                "max_enemy_count": 17
+              },
+              {
+                "seed": 62301,
+                "terminal": "defeat",
+                "duration_seconds": 60.233,
+                "level": 3,
+                "kills": 41,
+                "damage_taken": 120.084,
+                "max_enemy_count": 9
+              },
+              {
+                "seed": 62302,
+                "terminal": "victory",
+                "duration_seconds": 300.015,
+                "level": 9,
+                "kills": 543,
+                "damage_taken": 102.733,
+                "max_enemy_count": 21
+              }
+            ]
+          },
+          {
+            "bot": "kite",
+            "map_id": "caramel-workshop",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 0,
+            "win_rate": 0.0,
+            "gate_status": "repair",
+            "gate_target": {
+              "label": "high-skill rule bot",
+              "min_win_rate": 0.45,
+              "max_win_rate": 0.75
+            },
+            "average_duration_seconds": 215.628,
+            "average_level": 8.333,
+            "average_kills": 333.667,
+            "max_enemy_count": 13,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 216.017,
+                "level": 9,
+                "kills": 340,
+                "damage_taken": 120.133,
+                "max_enemy_count": 13
+              },
+              {
+                "seed": 62301,
+                "terminal": "defeat",
+                "duration_seconds": 213.45,
+                "level": 8,
+                "kills": 333,
+                "damage_taken": 120.05,
+                "max_enemy_count": 8
+              },
+              {
+                "seed": 62302,
+                "terminal": "defeat",
+                "duration_seconds": 217.417,
+                "level": 8,
+                "kills": 328,
+                "damage_taken": 121.133,
+                "max_enemy_count": 13
+              }
+            ]
+          },
+          {
+            "bot": "tank",
+            "map_id": "caramel-workshop",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 1,
+            "win_rate": 0.333,
+            "gate_status": "pass",
+            "gate_target": {
+              "label": "mid-skill rule bot",
+              "min_win_rate": 0.25,
+              "max_win_rate": 0.55
+            },
+            "average_duration_seconds": 217.377,
+            "average_level": 6.667,
+            "average_kills": 334.667,
+            "max_enemy_count": 33,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 214.884,
+                "level": 7,
+                "kills": 332,
+                "damage_taken": 136.012,
+                "max_enemy_count": 24
+              },
+              {
+                "seed": 62301,
+                "terminal": "victory",
+                "duration_seconds": 300.015,
+                "level": 9,
+                "kills": 531,
+                "damage_taken": 95.667,
+                "max_enemy_count": 17
+              },
+              {
+                "seed": 62302,
+                "terminal": "defeat",
+                "duration_seconds": 137.234,
+                "level": 4,
+                "kills": 141,
+                "damage_taken": 136.173,
+                "max_enemy_count": 33
+              }
+            ]
+          }
+        ]
+      },
+      "rule_bot_command": [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "game_harness",
+        "--",
+        "matrix",
+        "--seed-start",
+        "62300",
+        "--seeds",
+        "3",
+        "--seconds",
+        "300.0",
+        "--tick-rate",
+        "30",
+        "--map-id",
+        "caramel-workshop",
+        "--bots",
+        "random,kite,tank",
+        "--content-dir",
+        "content/base_demo"
+      ],
+      "rule_bot_stderr": "",
+      "findings": [
+        {
+          "id": "small_sample",
+          "severity": "info",
+          "summary": "Comparison uses fewer than 10 seeds and should only be treated as a smoke check."
+        },
+        {
+          "id": "low_kill_output_vs_rule_bots",
+          "severity": "watch",
+          "summary": "Policy average kills are less than half of the strongest compared rule Bot in the same smoke window."
+        }
+      ],
+      "limitations": [
+        "This comparison uses the same seed/map/duration, but a smoke-scale policy is not a balance or fun gate.",
+        "Rule Bot baselines remain the primary deterministic content gate until RL policies are trained and calibrated at larger scale."
+      ],
+      "gate_decision": "comparison_recorded_not_balance_gate"
+    },
+    {
+      "report_version": 1,
+      "status": "compared",
+      "phase": "rl_phase_1_movement_survival",
+      "algorithm": "ppo",
+      "model_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/ppo_route_recovery_reward_profile_smoke.zip",
+      "policy_kind": "sb3",
+      "opening_policy": {
+        "mode": "single_policy",
+        "opening_model_path": null,
+        "fallback_model_path": null,
+        "opening_seconds": null
+      },
+      "policy_adapter": null,
+      "edge_recovery_samples": null,
+      "upgrade_policy": {
+        "mode": "upgrade_choice_ranker",
+        "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+        "limitations": [
+          "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+          "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+        ]
+      },
+      "upgrade_choice_model": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+      "map_id": "cracked-star-jar",
+      "action_selection": "deterministic",
+      "action_random_seed": null,
+      "reward_profile": "long-run-retention",
+      "seed_start": 62300,
+      "seeds": 3,
+      "seconds": 300.0,
+      "tick_rate": 30,
+      "policy": {
+        "report_version": 1,
+        "status": "evaluated",
+        "phase": "rl_phase_1_movement_survival",
+        "map_id": "cracked-star-jar",
+        "reward_profile": "long-run-retention",
+        "policy_kind": "sb3",
+        "opening_policy": {
+          "mode": "single_policy",
+          "opening_model_path": null,
+          "fallback_model_path": null,
+          "opening_seconds": null
+        },
+        "policy_adapter": null,
+        "action_selection": "deterministic",
+        "action_random_seed": null,
+        "action_random_seed_report": {
+          "seed": null,
+          "seeded_sources": []
+        },
+        "upgrade_policy": {
+          "mode": "upgrade_choice_ranker",
+          "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+          "limitations": [
+            "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+            "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+          ]
+        },
+        "trace_dir": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s",
+        "trace_failed_only": true,
+        "trace_sample_stride": 30,
+        "edge_recovery_samples": null,
+        "episodes": [
+          {
+            "seed": 62300,
+            "map_id": "cracked-star-jar",
+            "steps": 5561,
+            "reward": -17.9782,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 185.3773,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 7,
+            "kills": 366,
+            "xp_collected": 529.9999,
+            "damage_taken": 120.19687,
+            "action_counts": {
+              "0": 0,
+              "1": 22,
+              "2": 113,
+              "3": 366,
+              "4": 2872,
+              "5": 0,
+              "6": 0,
+              "7": 2188,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 5561,
+              "mean_scores": {
+                "0": 0.0065,
+                "1": 0.0121,
+                "2": 0.0271,
+                "3": 0.0703,
+                "4": 0.4136,
+                "5": 0.0815,
+                "6": 0.0125,
+                "7": 0.3442,
+                "8": 0.0322
+              },
+              "mean_top_actions": [
+                {
+                  "action": "4",
+                  "score": 0.4136
+                },
+                {
+                  "action": "7",
+                  "score": 0.3442
+                },
+                {
+                  "action": "5",
+                  "score": 0.0815
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 22,
+                  "ratio": 0.004
+                },
+                "2": {
+                  "count": 113,
+                  "ratio": 0.0203
+                },
+                "3": {
+                  "count": 366,
+                  "ratio": 0.0658
+                },
+                "4": {
+                  "count": 2872,
+                  "ratio": 0.5165
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 2188,
+                  "ratio": 0.3935
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "4",
+                "count": 2872,
+                "ratio": 0.5165
+              },
+              "mean_chosen_action_score": 0.7736,
+              "chosen_action_score_sample_count": 5561
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "mint-cyclone",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.763987
+                  },
+                  {
+                    "upgrade_id": "mint-cyclone",
+                    "score": 0.596081
+                  },
+                  {
+                    "upgrade_id": "nonstick-apron",
+                    "score": -0.613941
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "mint-cyclone",
+                  "nonstick-apron"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "pudding-turret",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "mint-cyclone-level-2",
+                    "score": -0.458588
+                  },
+                  {
+                    "upgrade_id": "pudding-turret",
+                    "score": 0.52534
+                  },
+                  {
+                    "upgrade_id": "sour-tuner",
+                    "score": -0.326554
+                  }
+                ],
+                "upgrade_options": [
+                  "mint-cyclone-level-2",
+                  "pudding-turret",
+                  "sour-tuner"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "marshmallow-shield",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "mint-cyclone-level-2",
+                    "score": -0.502235
+                  },
+                  {
+                    "upgrade_id": "marshmallow-shield",
+                    "score": 0.27201
+                  },
+                  {
+                    "upgrade_id": "big-candy-jar",
+                    "score": -0.529713
+                  }
+                ],
+                "upgrade_options": [
+                  "mint-cyclone-level-2",
+                  "marshmallow-shield",
+                  "big-candy-jar"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "star-sugar-ray",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "pudding-turret-level-2",
+                    "score": -0.37155
+                  },
+                  {
+                    "upgrade_id": "star-sugar-ray",
+                    "score": 0.468294
+                  },
+                  {
+                    "upgrade_id": "big-candy-jar",
+                    "score": -0.519791
+                  }
+                ],
+                "upgrade_options": [
+                  "pudding-turret-level-2",
+                  "star-sugar-ray",
+                  "big-candy-jar"
+                ]
+              },
+              {
+                "choice_index": 0,
+                "choice_upgrade_id": "marshmallow-shield-level-2",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "marshmallow-shield-level-2",
+                    "score": -0.082902
+                  },
+                  {
+                    "upgrade_id": "soda-fountain",
+                    "score": -0.303728
+                  },
+                  {
+                    "upgrade_id": "nonstick-apron",
+                    "score": -0.505061
+                  }
+                ],
+                "upgrade_options": [
+                  "marshmallow-shield-level-2",
+                  "soda-fountain",
+                  "nonstick-apron"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "soda-bubble-pop",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "star-sugar-ray-level-2",
+                    "score": -1000000.0
+                  },
+                  {
+                    "upgrade_id": "soda-bubble-pop",
+                    "score": 0.497978
+                  },
+                  {
+                    "upgrade_id": "sour-tuner",
+                    "score": -0.244531
+                  }
+                ],
+                "upgrade_options": [
+                  "star-sugar-ray-level-2",
+                  "soda-bubble-pop",
+                  "sour-tuner"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 6,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -35.3587,
+              "boss_pressure": 0.0,
+              "boundary_risk": -6.908,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": -0.0,
+              "damage_taken": -9.6157,
+              "enemy_pressure": -0.6381,
+              "hazard_risk": 0.0,
+              "kill": 29.28,
+              "level": 4.8,
+              "low_health": -3.5871,
+              "opening_edge_risk_delta": -0.0,
+              "route_recovery": -15.9026,
+              "safety_delta": -0.0323,
+              "survival": 3.2844,
+              "terminal": -4.5,
+              "total": -17.9782,
+              "xp": 21.2
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/cracked-star-jar_seed62300_trace.json"
+          },
+          {
+            "seed": 62301,
+            "map_id": "cracked-star-jar",
+            "steps": 3118,
+            "reward": -16.2787,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 103.93209,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 4,
+            "kills": 132,
+            "xp_collected": 187.79996,
+            "damage_taken": 120.040405,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 75,
+              "3": 2,
+              "4": 1032,
+              "5": 0,
+              "6": 0,
+              "7": 2009,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 3118,
+              "mean_scores": {
+                "0": 0.01,
+                "1": 0.0115,
+                "2": 0.0179,
+                "3": 0.0311,
+                "4": 0.254,
+                "5": 0.0501,
+                "6": 0.0188,
+                "7": 0.5498,
+                "8": 0.0567
+              },
+              "mean_top_actions": [
+                {
+                  "action": "7",
+                  "score": 0.5498
+                },
+                {
+                  "action": "4",
+                  "score": 0.254
+                },
+                {
+                  "action": "8",
+                  "score": 0.0567
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 75,
+                  "ratio": 0.0241
+                },
+                "3": {
+                  "count": 2,
+                  "ratio": 0.0006
+                },
+                "4": {
+                  "count": 1032,
+                  "ratio": 0.331
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 2009,
+                  "ratio": 0.6443
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "7",
+                "count": 2009,
+                "ratio": 0.6443
+              },
+              "mean_chosen_action_score": 0.814,
+              "chosen_action_score_sample_count": 3118
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "cream-clockwork",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.773472
+                  },
+                  {
+                    "upgrade_id": "caramel-sticky-ground",
+                    "score": 0.215181
+                  },
+                  {
+                    "upgrade_id": "cream-clockwork",
+                    "score": 0.536548
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "caramel-sticky-ground",
+                  "cream-clockwork"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "pudding-turret",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.624573
+                  },
+                  {
+                    "upgrade_id": "pudding-turret",
+                    "score": 0.673693
+                  },
+                  {
+                    "upgrade_id": "big-candy-jar",
+                    "score": -0.377207
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "pudding-turret",
+                  "big-candy-jar"
+                ]
+              },
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "star-spoon",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.80039
+                  },
+                  {
+                    "upgrade_id": "caramel-sticky-ground",
+                    "score": 0.164352
+                  },
+                  {
+                    "upgrade_id": "star-spoon",
+                    "score": 0.497613
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "caramel-sticky-ground",
+                  "star-spoon"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 3,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -14.7147,
+              "boss_pressure": 0.0,
+              "boundary_risk": -2.5895,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": 0.0004,
+              "damage_taken": -9.6032,
+              "enemy_pressure": -0.4463,
+              "hazard_risk": 0.0,
+              "kill": 10.56,
+              "level": 2.4,
+              "low_health": -1.5671,
+              "opening_edge_risk_delta": -0.0032,
+              "route_recovery": -4.9863,
+              "safety_delta": -0.0233,
+              "survival": 1.2808,
+              "terminal": -4.0983,
+              "total": -16.2787,
+              "xp": 7.512
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/cracked-star-jar_seed62301_trace.json"
+          },
+          {
+            "seed": 62302,
+            "map_id": "cracked-star-jar",
+            "steps": 3748,
+            "reward": -13.8184,
+            "terminated": true,
+            "truncated": false,
+            "time_seconds": 124.93177,
+            "terminal_kind": "defeat",
+            "terminal_reason": "player_health_depleted",
+            "level": 5,
+            "kills": 165,
+            "xp_collected": 281.7999,
+            "damage_taken": 120.19705,
+            "action_counts": {
+              "0": 0,
+              "1": 0,
+              "2": 113,
+              "3": 360,
+              "4": 1811,
+              "5": 0,
+              "6": 0,
+              "7": 1464,
+              "8": 0
+            },
+            "action_score_diagnostic": {
+              "kind": "probability",
+              "sample_count": 3748,
+              "mean_scores": {
+                "0": 0.0055,
+                "1": 0.0109,
+                "2": 0.0381,
+                "3": 0.093,
+                "4": 0.3769,
+                "5": 0.0887,
+                "6": 0.0118,
+                "7": 0.3483,
+                "8": 0.0268
+              },
+              "mean_top_actions": [
+                {
+                  "action": "4",
+                  "score": 0.3769
+                },
+                {
+                  "action": "7",
+                  "score": 0.3483
+                },
+                {
+                  "action": "3",
+                  "score": 0.093
+                }
+              ],
+              "top_action_distribution": {
+                "0": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "1": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "2": {
+                  "count": 113,
+                  "ratio": 0.0301
+                },
+                "3": {
+                  "count": 360,
+                  "ratio": 0.0961
+                },
+                "4": {
+                  "count": 1811,
+                  "ratio": 0.4832
+                },
+                "5": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "6": {
+                  "count": 0,
+                  "ratio": 0.0
+                },
+                "7": {
+                  "count": 1464,
+                  "ratio": 0.3906
+                },
+                "8": {
+                  "count": 0,
+                  "ratio": 0.0
+                }
+              },
+              "dominant_top_action": {
+                "action": "4",
+                "count": 1811,
+                "ratio": 0.4832
+              },
+              "mean_chosen_action_score": 0.7474,
+              "chosen_action_score_sample_count": 3748
+            },
+            "upgrade_policy_decisions": [
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "cream-clockwork",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.738801
+                  },
+                  {
+                    "upgrade_id": "soda-bubble-pop",
+                    "score": 0.412015
+                  },
+                  {
+                    "upgrade_id": "cream-clockwork",
+                    "score": 0.562501
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "soda-bubble-pop",
+                  "cream-clockwork"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "soda-bubble-pop",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.820858
+                  },
+                  {
+                    "upgrade_id": "soda-bubble-pop",
+                    "score": 0.321132
+                  },
+                  {
+                    "upgrade_id": "nonstick-apron",
+                    "score": -0.650377
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "soda-bubble-pop",
+                  "nonstick-apron"
+                ]
+              },
+              {
+                "choice_index": 2,
+                "choice_upgrade_id": "star-spoon",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.874822
+                  },
+                  {
+                    "upgrade_id": "soda-fountain",
+                    "score": -0.522479
+                  },
+                  {
+                    "upgrade_id": "star-spoon",
+                    "score": 0.450989
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "soda-fountain",
+                  "star-spoon"
+                ]
+              },
+              {
+                "choice_index": 1,
+                "choice_upgrade_id": "pudding-turret",
+                "policy_kind": "upgrade_choice_ranker",
+                "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+                "scores": [
+                  {
+                    "upgrade_id": "rainbow-candy-shot-level-2",
+                    "score": -0.716857
+                  },
+                  {
+                    "upgrade_id": "pudding-turret",
+                    "score": 0.615611
+                  },
+                  {
+                    "upgrade_id": "nonstick-apron",
+                    "score": -0.546292
+                  }
+                ],
+                "upgrade_options": [
+                  "rainbow-candy-shot-level-2",
+                  "pudding-turret",
+                  "nonstick-apron"
+                ]
+              }
+            ],
+            "upgrade_policy_decision_count": 4,
+            "edge_recovery_sample_count": 0,
+            "reward_breakdown": {
+              "action_repeat": -18.3192,
+              "boss_pressure": 0.0,
+              "boundary_risk": -2.937,
+              "corner_action_risk": 0.0,
+              "corner_risk_delta": 0.0,
+              "damage_taken": -9.6157,
+              "enemy_pressure": -0.7486,
+              "hazard_risk": 0.0,
+              "kill": 13.2,
+              "level": 3.2,
+              "low_health": -0.9721,
+              "opening_edge_risk_delta": -0.0001,
+              "route_recovery": -6.1369,
+              "safety_delta": -0.0344,
+              "survival": 1.7736,
+              "terminal": -4.5,
+              "total": -13.8184,
+              "xp": 11.272
+            },
+            "trace_path": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/traces_300s/cracked-star-jar_seed62302_trace.json"
+          }
+        ],
+        "summary": {
+          "episodes": 3,
+          "win_rate": 0.0,
+          "average_survival_seconds": 138.0804,
+          "average_level": 5.3333,
+          "average_kills": 221.0,
+          "average_reward": -16.0251,
+          "damage_taken_average": 120.1448,
+          "action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 22,
+              "ratio": 0.0018
+            },
+            "2": {
+              "count": 301,
+              "ratio": 0.0242
+            },
+            "3": {
+              "count": 728,
+              "ratio": 0.0586
+            },
+            "4": {
+              "count": 5715,
+              "ratio": 0.4599
+            },
+            "5": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "6": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "7": {
+              "count": 5661,
+              "ratio": 0.4555
+            },
+            "8": {
+              "count": 0,
+              "ratio": 0.0
+            }
+          },
+          "action_entropy_bits": 1.4183,
+          "normalized_action_entropy": 0.4474,
+          "action_score_diagnostic": {
+            "kind": "probability",
+            "sample_count": 12427,
+            "mean_scores": {
+              "0": 0.0071,
+              "1": 0.0116,
+              "2": 0.0281,
+              "3": 0.0673,
+              "4": 0.3625,
+              "5": 0.0758,
+              "6": 0.0139,
+              "7": 0.397,
+              "8": 0.0367
+            },
+            "mean_top_actions": [
+              {
+                "action": "7",
+                "score": 0.397
+              },
+              {
+                "action": "4",
+                "score": 0.3625
+              },
+              {
+                "action": "5",
+                "score": 0.0758
+              }
+            ],
+            "top_action_distribution": {
+              "0": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "1": {
+                "count": 22,
+                "ratio": 0.0018
+              },
+              "2": {
+                "count": 301,
+                "ratio": 0.0242
+              },
+              "3": {
+                "count": 728,
+                "ratio": 0.0586
+              },
+              "4": {
+                "count": 5715,
+                "ratio": 0.4599
+              },
+              "5": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "6": {
+                "count": 0,
+                "ratio": 0.0
+              },
+              "7": {
+                "count": 5661,
+                "ratio": 0.4555
+              },
+              "8": {
+                "count": 0,
+                "ratio": 0.0
+              }
+            },
+            "dominant_top_action": {
+              "action": "4",
+              "count": 5715,
+              "ratio": 0.4599
+            },
+            "mean_chosen_action_score": 0.7758,
+            "chosen_action_score_sample_count": 12427
+          },
+          "upgrade_policy_decision_count": 13,
+          "reward_breakdown_average": {
+            "action_repeat": -22.7975,
+            "boss_pressure": 0.0,
+            "boundary_risk": -4.1448,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0001,
+            "damage_taken": -9.6115,
+            "enemy_pressure": -0.611,
+            "hazard_risk": 0.0,
+            "kill": 17.68,
+            "level": 3.4667,
+            "low_health": -2.0421,
+            "opening_edge_risk_delta": -0.0011,
+            "route_recovery": -9.0086,
+            "safety_delta": -0.03,
+            "survival": 2.1129,
+            "terminal": -4.3661,
+            "total": -16.0251,
+            "xp": 13.328
+          }
+        }
+      },
+      "rule_bots": {
+        "kind": "bot_matrix",
+        "bots": [
+          {
+            "bot": "random",
+            "map_id": "cracked-star-jar",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 0,
+            "win_rate": 0.0,
+            "gate_status": "pass",
+            "gate_target": {
+              "label": "random robustness",
+              "min_win_rate": 0.0,
+              "max_win_rate": 0.15
+            },
+            "average_duration_seconds": 125.784,
+            "average_level": 3.333,
+            "average_kills": 220.0,
+            "max_enemy_count": 27,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 231.42,
+                "level": 5,
+                "kills": 502,
+                "damage_taken": 120.923,
+                "max_enemy_count": 27
+              },
+              {
+                "seed": 62301,
+                "terminal": "defeat",
+                "duration_seconds": 35.233,
+                "level": 2,
+                "kills": 36,
+                "damage_taken": 120.677,
+                "max_enemy_count": 11
+              },
+              {
+                "seed": 62302,
+                "terminal": "defeat",
+                "duration_seconds": 110.699,
+                "level": 3,
+                "kills": 122,
+                "damage_taken": 136.157,
+                "max_enemy_count": 25
+              }
+            ]
+          },
+          {
+            "bot": "kite",
+            "map_id": "cracked-star-jar",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 1,
+            "win_rate": 0.333,
+            "gate_status": "repair",
+            "gate_target": {
+              "label": "high-skill rule bot",
+              "min_win_rate": 0.45,
+              "max_win_rate": 0.75
+            },
+            "average_duration_seconds": 249.573,
+            "average_level": 10.333,
+            "average_kills": 553.333,
+            "max_enemy_count": 24,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 227.12,
+                "level": 9,
+                "kills": 506,
+                "damage_taken": 121.233,
+                "max_enemy_count": 21
+              },
+              {
+                "seed": 62301,
+                "terminal": "defeat",
+                "duration_seconds": 221.585,
+                "level": 9,
+                "kills": 492,
+                "damage_taken": 120.35,
+                "max_enemy_count": 24
+              },
+              {
+                "seed": 62302,
+                "terminal": "victory",
+                "duration_seconds": 300.015,
+                "level": 13,
+                "kills": 662,
+                "damage_taken": 96.077,
+                "max_enemy_count": 20
+              }
+            ]
+          },
+          {
+            "bot": "tank",
+            "map_id": "cracked-star-jar",
+            "seed_start": 62300,
+            "seeds": 3,
+            "seconds": 300.0,
+            "tick_rate": 30,
+            "victories": 0,
+            "win_rate": 0.0,
+            "gate_status": "repair",
+            "gate_target": {
+              "label": "mid-skill rule bot",
+              "min_win_rate": 0.25,
+              "max_win_rate": 0.55
+            },
+            "average_duration_seconds": 252.466,
+            "average_level": 11.0,
+            "average_kills": 575.667,
+            "max_enemy_count": 35,
+            "runs": [
+              {
+                "seed": 62300,
+                "terminal": "defeat",
+                "duration_seconds": 279.653,
+                "level": 12,
+                "kills": 672,
+                "damage_taken": 169.083,
+                "max_enemy_count": 35
+              },
+              {
+                "seed": 62301,
+                "terminal": "defeat",
+                "duration_seconds": 236.121,
+                "level": 11,
+                "kills": 544,
+                "damage_taken": 168.199,
+                "max_enemy_count": 30
+              },
+              {
+                "seed": 62302,
+                "terminal": "defeat",
+                "duration_seconds": 241.623,
+                "level": 10,
+                "kills": 511,
+                "damage_taken": 136.428,
+                "max_enemy_count": 33
+              }
+            ]
+          }
+        ]
+      },
+      "rule_bot_command": [
+        "cargo",
+        "run",
+        "-q",
+        "-p",
+        "game_harness",
+        "--",
+        "matrix",
+        "--seed-start",
+        "62300",
+        "--seeds",
+        "3",
+        "--seconds",
+        "300.0",
+        "--tick-rate",
+        "30",
+        "--map-id",
+        "cracked-star-jar",
+        "--bots",
+        "random,kite,tank",
+        "--content-dir",
+        "content/base_demo"
+      ],
+      "rule_bot_stderr": "",
+      "findings": [
+        {
+          "id": "small_sample",
+          "severity": "info",
+          "summary": "Comparison uses fewer than 10 seeds and should only be treated as a smoke check."
+        },
+        {
+          "id": "low_kill_output_vs_rule_bots",
+          "severity": "watch",
+          "summary": "Policy average kills are less than half of the strongest compared rule Bot in the same smoke window."
+        }
+      ],
+      "limitations": [
+        "This comparison uses the same seed/map/duration, but a smoke-scale policy is not a balance or fun gate.",
+        "Rule Bot baselines remain the primary deterministic content gate until RL policies are trained and calibrated at larger scale."
+      ],
+      "gate_decision": "comparison_recorded_not_balance_gate"
+    }
+  ],
+  "summary": {
+    "maps": [
+      {
+        "map_id": "soda-creek",
+        "policy_win_rate": 0.0,
+        "policy_average_survival_seconds": 95.7056,
+        "policy_damage_taken_average": 120.2599,
+        "policy_average_kills": 196.3333,
+        "policy_dominant_action": {
+          "action": "4",
+          "count": 4198,
+          "ratio": 0.4874
+        },
+        "policy_normalized_action_entropy": 0.515,
+        "rule_bot_win_rates": {
+          "random": 0.0,
+          "kite": 1.0,
+          "tank": 0.0
+        },
+        "best_rule_bot_win_rate": 1.0,
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      },
+      {
+        "map_id": "caramel-workshop",
+        "policy_win_rate": 0.0,
+        "policy_average_survival_seconds": 84.0546,
+        "policy_damage_taken_average": 120.1001,
+        "policy_average_kills": 59.6667,
+        "policy_dominant_action": {
+          "action": "4",
+          "count": 3827,
+          "ratio": 0.5059
+        },
+        "policy_normalized_action_entropy": 0.5135,
+        "rule_bot_win_rates": {
+          "random": 0.333,
+          "kite": 0.0,
+          "tank": 0.333
+        },
+        "best_rule_bot_win_rate": 0.333,
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      },
+      {
+        "map_id": "cracked-star-jar",
+        "policy_win_rate": 0.0,
+        "policy_average_survival_seconds": 138.0804,
+        "policy_damage_taken_average": 120.1448,
+        "policy_average_kills": 221.0,
+        "policy_dominant_action": {
+          "action": "4",
+          "count": 5715,
+          "ratio": 0.4599
+        },
+        "policy_normalized_action_entropy": 0.4474,
+        "rule_bot_win_rates": {
+          "random": 0.0,
+          "kite": 0.333,
+          "tank": 0.0
+        },
+        "best_rule_bot_win_rate": 0.333,
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      }
+    ],
+    "map_count": 3,
+    "minimum_policy_win_rate": 0.0,
+    "average_policy_win_rate": 0.0,
+    "average_policy_survival_seconds": 105.9469,
+    "repair_maps": [
+      "soda-creek",
+      "caramel-workshop",
+      "cracked-star-jar"
+    ]
+  },
+  "findings": [
+    {
+      "id": "zero_policy_win_rate",
+      "severity": "repair",
+      "map_id": "soda-creek",
+      "summary": "Policy recorded 0% win rate on this map and should not be promoted as a multi-map RL test Bot."
+    },
+    {
+      "id": "zero_policy_win_rate",
+      "severity": "repair",
+      "map_id": "caramel-workshop",
+      "summary": "Policy recorded 0% win rate on this map and should not be promoted as a multi-map RL test Bot."
+    },
+    {
+      "id": "zero_policy_win_rate",
+      "severity": "repair",
+      "map_id": "cracked-star-jar",
+      "summary": "Policy recorded 0% win rate on this map and should not be promoted as a multi-map RL test Bot."
+    }
+  ],
+  "limitations": [
+    "This multi-map comparison records policy behavior against rule Bot baselines; it is not a balance or fun gate.",
+    "A policy can pass action distribution checks and still fail high-pressure maps, so human review and rule Bot gates remain required."
+  ],
+  "gate_decision": "multimap_comparison_recorded_needs_policy_repair"
+}

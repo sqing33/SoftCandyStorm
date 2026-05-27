@@ -1948,6 +1948,11 @@
       "id": "rl_upgrade_choice_training_integration_smoke",
       "summary": "train_sb3.py 现在允许 --upgrade-choice-model 进入真实 PPO/DQN training path；首个 smoke 从 late-survival checkpoint warm start 训练 256 timesteps，并在 120 秒 soda-creek evaluation 中记录 3 次升级 ranker 决策。该结果只证明训练集成链路，不是升级策略质量或 RL acceptance。",
       "report": "harness/reports/2026-05-27_rl_upgrade_choice_training_integration_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_reward_profile_regression",
+      "summary": "新增 route_recovery action-aware reward 后，从 late-survival extended checkpoint 使用 long-run-retention profile 与升级选择 ranker 继续 2048 timesteps；60 秒为 33.33%/100%/100%，180 秒为 33.33%/0%/33.33%，300 秒三图全 0%，记录 fail_20260527_038。该 reward 能记录不安全移动，但短 continuation 没学到稳定路线恢复。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1957,7 +1962,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路和 upgrade-choice training 集成已验证但仍阻塞：late-survival 1024 timestep 300 秒三图全 0%，5120 timestep 只把 cracked-star-jar 提到 33.33% 且引入中窗回归；long-run-retention 2048 timestep 又回到 300 秒三图全 0%，并带来 60 秒短窗回归。下一步不应继续只堆 timesteps 或只扩大升级样本，应结合 opening retention、显式路线 / recovery objective、动作多样性、low-health recovery、hazard + boss pressure 和 upgrade-choice 交互；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：late-survival 1024 timestep 300 秒三图全 0%，5120 timestep 只把 cracked-star-jar 提到 33.33% 且引入中窗回归；long-run-retention 2048 timestep 又回到 300 秒三图全 0%；route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%，并让 180 秒 caramel-workshop 回落到 0%。下一步不应继续只堆 timesteps、只扩大升级样本或直接放大 route_recovery，应结合 failed-only trace、监督恢复样本、分阶段 policy、动作多样性、low-health recovery、hazard + boss pressure 和 upgrade-choice 交互；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

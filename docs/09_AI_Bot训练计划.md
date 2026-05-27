@@ -328,6 +328,8 @@ stage 02 opening-edge-delta trace compare 已对 5 个失败 seed 复跑 failed-
 
 Gym reward breakdown 已新增 `route_recovery`，用于在移动动作帧根据当前边界、敌人、危险区和 Boss 压力估算恢复方向：朝远离风险的方向移动给小额正奖励，继续朝贴边/危险源方向移动给小额负奖励，升级选择帧保持 0。它比早期 `corner_action_risk` 更通用，也比纯状态 delta 更直接地给动作选择反馈；但它仍只是 closed-loop 训练塑形信号，必须通过 high-pressure 60 / 180 / 300 秒多图对比验证，不能单独作为 RL policy acceptance。
 
+首个 `route_recovery` closed-loop smoke 已完成：从 `late-survival` extended checkpoint warm start，使用 `long-run-retention` profile、升级选择 ranker、high-pressure 三图和 2048 timesteps 训练后，60 秒三图为 33.33% / 100% / 100%，180 秒为 33.33% / 0% / 33.33%，300 秒三图全部 0%。`route_recovery` 在所有窗口都保持负值，说明 reward 能捕捉不安全移动，但短 continuation 没学到稳定恢复路线；报告位于 `harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_038_route_recovery_reward_profile_regression.json`。下一步不应直接放大该权重或只堆 timesteps，应先对最负的 failed-only trace 做路线恢复样本或分阶段策略诊断。
+
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
 
 `python/train/distill_behavior_clone_to_sb3.py` 已提供 PPO 蒸馏初始化入口：它从规则 Bot 轨迹读取 observation，用 behavior clone teacher 输出 soft action probability，再监督训练 SB3 PPO `MlpPolicy` 并保存标准 `.zip` 与 metadata。蒸馏入口现在支持 `--teacher-temperature` 与 `--uniform-target-mix`，用于在 teacher probability 过尖或动作偏置过重时显式提高 target entropy；这些旋钮只属于 repair 实验，不是 policy gate。首个 256 样本 smoke 已证明 distilled `.zip` 可以被 `train_sb3.py --evaluate-model` 加载，但 1 epoch 模型仍为动作 3 deterministic smoke，不是策略通过证据；后续应在更大数据上蒸馏后继续 PPO 环境训练，并跑 high-pressure 60/300 秒对比。

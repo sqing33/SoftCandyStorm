@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_038",
+  "category": "rl",
+  "content_id": "rl_route_recovery_reward_profile_smoke",
+  "seed": "62300-62302",
+  "bot": "PpoRouteRecoveryRewardProfileSmoke",
+  "time_seconds": 105.9469,
+  "symptom": "新增 route_recovery action-aware reward 后，从 late-survival extended checkpoint 使用 long-run-retention profile、升级选择 ranker 和 2048 timesteps 继续训练；60 秒 high-pressure 三图为 33.33% / 100% / 100%，180 秒为 33.33% / 0% / 33.33%，300 秒三图全部 0%。",
+  "root_cause": "route_recovery 在所有 high-pressure 对比中保持明显负值，说明它能捕捉 policy 持续朝边界、敌压、危险区或 Boss 压力方向移动；但当前 checkpoint 和短 continuation 没有把负反馈转化为稳定恢复路线，300 秒报告仍以 action 4 为主，且失败覆盖 opening、mid 和 late 窗口。升级选择 ranker 只处理升级 prompt，不能弥补移动策略缺少可执行路线目标的问题。",
+  "fix": "不得进入 stage 03、RL policy acceptance 或 rl_test_bot_candidate。下一步不要直接放大 route_recovery 权重或只增加 timesteps，应先检查 failed-only traces 中 route_recovery 最负的片段，再尝试降低权重、把恢复动作转成监督样本、分阶段 opening/mid/late policy，或从最后一个健康 opening gate checkpoint 重新组织 curriculum。",
+  "validation": "训练、deterministic high-pressure 60 秒 / 180 秒 / 300 秒对比、failed-only traces 与失败分析记录在 harness/reports/2026-05-27_rl_route_recovery_reward_profile_smoke_001/summary.md、ppo_training_report.json、comparison_60s_3seed.json、comparison_180s_3seed.json、comparison_300s_3seed.json、failure_analysis_300s.md 和 traces_300s/。"
+}

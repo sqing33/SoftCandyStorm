@@ -1,0 +1,600 @@
+{
+  "report_version": 1,
+  "status": "evaluated",
+  "phase": "rl_phase_1_movement_survival",
+  "map_id": "soda-creek",
+  "reward_profile": "long-run-retention",
+  "policy_kind": "sb3",
+  "opening_policy": {
+    "mode": "single_policy",
+    "opening_model_path": null,
+    "fallback_model_path": null,
+    "opening_seconds": null
+  },
+  "policy_adapter": null,
+  "action_selection": "deterministic",
+  "action_random_seed": null,
+  "action_random_seed_report": {
+    "seed": null,
+    "seeded_sources": []
+  },
+  "upgrade_policy": {
+    "mode": "upgrade_choice_ranker",
+    "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+    "limitations": [
+      "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+      "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+    ]
+  },
+  "trace_dir": null,
+  "trace_failed_only": null,
+  "trace_sample_stride": null,
+  "edge_recovery_samples": null,
+  "episodes": [
+    {
+      "seed": 30000,
+      "map_id": "soda-creek",
+      "steps": 1794,
+      "reward": -12.8989,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 59.79943,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "level": 2,
+      "kills": 58,
+      "xp_collected": 62.80001,
+      "damage_taken": 120.19968,
+      "action_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 113,
+        "3": 16,
+        "4": 641,
+        "5": 0,
+        "6": 0,
+        "7": 1024,
+        "8": 0
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 1794,
+        "mean_scores": {
+          "0": 0.0064,
+          "1": 0.0103,
+          "2": 0.0369,
+          "3": 0.0519,
+          "4": 0.2724,
+          "5": 0.0586,
+          "6": 0.0147,
+          "7": 0.5146,
+          "8": 0.0341
+        },
+        "mean_top_actions": [
+          {
+            "action": "7",
+            "score": 0.5146
+          },
+          {
+            "action": "4",
+            "score": 0.2724
+          },
+          {
+            "action": "5",
+            "score": 0.0586
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "2": {
+            "count": 113,
+            "ratio": 0.063
+          },
+          "3": {
+            "count": 16,
+            "ratio": 0.0089
+          },
+          "4": {
+            "count": 641,
+            "ratio": 0.3573
+          },
+          "5": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 1024,
+            "ratio": 0.5708
+          },
+          "8": {
+            "count": 0,
+            "ratio": 0.0
+          }
+        },
+        "dominant_top_action": {
+          "action": "7",
+          "count": 1024,
+          "ratio": 0.5708
+        },
+        "mean_chosen_action_score": 0.8117,
+        "chosen_action_score_sample_count": 1794
+      },
+      "upgrade_policy_decisions": [
+        {
+          "choice_index": 2,
+          "choice_upgrade_id": "star-spoon",
+          "policy_kind": "upgrade_choice_ranker",
+          "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+          "scores": [
+            {
+              "upgrade_id": "rainbow-candy-shot-level-2",
+              "score": -0.675399
+            },
+            {
+              "upgrade_id": "star-sugar-ray",
+              "score": 0.570748
+            },
+            {
+              "upgrade_id": "star-spoon",
+              "score": 0.654177
+            }
+          ],
+          "upgrade_options": [
+            "rainbow-candy-shot-level-2",
+            "star-sugar-ray",
+            "star-spoon"
+          ]
+        }
+      ],
+      "upgrade_policy_decision_count": 1,
+      "edge_recovery_sample_count": 0,
+      "reward_breakdown": {
+        "action_repeat": -6.408,
+        "boss_pressure": 0.0,
+        "boundary_risk": -0.6165,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.0098,
+        "damage_taken": -9.616,
+        "enemy_pressure": -0.2686,
+        "hazard_risk": 0.0,
+        "kill": 4.64,
+        "level": 0.8,
+        "low_health": -0.0462,
+        "opening_edge_risk_delta": -0.0065,
+        "route_recovery": -1.4643,
+        "safety_delta": -0.013,
+        "survival": 0.598,
+        "terminal": -3.0,
+        "total": -12.8989,
+        "xp": 2.512
+      }
+    },
+    {
+      "seed": 30001,
+      "map_id": "soda-creek",
+      "steps": 1103,
+      "reward": -14.8707,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 36.76645,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "level": 1,
+      "kills": 31,
+      "xp_collected": 18.699999,
+      "damage_taken": 120.736595,
+      "action_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 169,
+        "3": 61,
+        "4": 873,
+        "5": 0,
+        "6": 0,
+        "7": 0,
+        "8": 0
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 1103,
+        "mean_scores": {
+          "0": 0.0023,
+          "1": 0.0145,
+          "2": 0.0894,
+          "3": 0.1247,
+          "4": 0.6384,
+          "5": 0.1234,
+          "6": 0.0028,
+          "7": 0.0008,
+          "8": 0.0037
+        },
+        "mean_top_actions": [
+          {
+            "action": "4",
+            "score": 0.6384
+          },
+          {
+            "action": "3",
+            "score": 0.1247
+          },
+          {
+            "action": "5",
+            "score": 0.1234
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "2": {
+            "count": 169,
+            "ratio": 0.1532
+          },
+          "3": {
+            "count": 61,
+            "ratio": 0.0553
+          },
+          "4": {
+            "count": 873,
+            "ratio": 0.7915
+          },
+          "5": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "8": {
+            "count": 0,
+            "ratio": 0.0
+          }
+        },
+        "dominant_top_action": {
+          "action": "4",
+          "count": 873,
+          "ratio": 0.7915
+        },
+        "mean_chosen_action_score": 0.6983,
+        "chosen_action_score_sample_count": 1103
+      },
+      "upgrade_policy_decisions": [],
+      "upgrade_policy_decision_count": 0,
+      "edge_recovery_sample_count": 0,
+      "reward_breakdown": {
+        "action_repeat": -3.928,
+        "boss_pressure": 0.0,
+        "boundary_risk": -0.3365,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.0118,
+        "damage_taken": -9.6589,
+        "enemy_pressure": -0.1646,
+        "hazard_risk": 0.0,
+        "kill": 2.48,
+        "level": 0.0,
+        "low_health": -0.0204,
+        "opening_edge_risk_delta": -0.0078,
+        "route_recovery": -1.3244,
+        "safety_delta": -0.014,
+        "survival": 0.3677,
+        "terminal": -3.0,
+        "total": -14.8707,
+        "xp": 0.748
+      }
+    },
+    {
+      "seed": 30002,
+      "map_id": "soda-creek",
+      "steps": 1518,
+      "reward": -12.9842,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 50.59957,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "level": 2,
+      "kills": 48,
+      "xp_collected": 49.0,
+      "damage_taken": 120.0701,
+      "action_counts": {
+        "0": 0,
+        "1": 0,
+        "2": 110,
+        "3": 43,
+        "4": 654,
+        "5": 0,
+        "6": 0,
+        "7": 711,
+        "8": 0
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 1518,
+        "mean_scores": {
+          "0": 0.0054,
+          "1": 0.0107,
+          "2": 0.0449,
+          "3": 0.0899,
+          "4": 0.3074,
+          "5": 0.0776,
+          "6": 0.012,
+          "7": 0.4266,
+          "8": 0.0255
+        },
+        "mean_top_actions": [
+          {
+            "action": "7",
+            "score": 0.4266
+          },
+          {
+            "action": "4",
+            "score": 0.3074
+          },
+          {
+            "action": "3",
+            "score": 0.0899
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "2": {
+            "count": 110,
+            "ratio": 0.0725
+          },
+          "3": {
+            "count": 43,
+            "ratio": 0.0283
+          },
+          "4": {
+            "count": 654,
+            "ratio": 0.4308
+          },
+          "5": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 711,
+            "ratio": 0.4684
+          },
+          "8": {
+            "count": 0,
+            "ratio": 0.0
+          }
+        },
+        "dominant_top_action": {
+          "action": "7",
+          "count": 711,
+          "ratio": 0.4684
+        },
+        "mean_chosen_action_score": 0.7583,
+        "chosen_action_score_sample_count": 1518
+      },
+      "upgrade_policy_decisions": [
+        {
+          "choice_index": 2,
+          "choice_upgrade_id": "cream-clockwork",
+          "policy_kind": "upgrade_choice_ranker",
+          "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+          "scores": [
+            {
+              "upgrade_id": "rainbow-candy-shot-level-2",
+              "score": -0.811502
+            },
+            {
+              "upgrade_id": "marshmallow-shield",
+              "score": 0.234934
+            },
+            {
+              "upgrade_id": "cream-clockwork",
+              "score": 0.495461
+            }
+          ],
+          "upgrade_options": [
+            "rainbow-candy-shot-level-2",
+            "marshmallow-shield",
+            "cream-clockwork"
+          ]
+        }
+      ],
+      "upgrade_policy_decision_count": 1,
+      "edge_recovery_sample_count": 0,
+      "reward_breakdown": {
+        "action_repeat": -5.464,
+        "boss_pressure": 0.0,
+        "boundary_risk": -0.5316,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.0059,
+        "damage_taken": -9.6056,
+        "enemy_pressure": -0.2584,
+        "hazard_risk": 0.0,
+        "kill": 3.84,
+        "level": 0.8,
+        "low_health": -0.0651,
+        "opening_edge_risk_delta": -0.0039,
+        "route_recovery": -1.1443,
+        "safety_delta": -0.0113,
+        "survival": 0.506,
+        "terminal": -3.0,
+        "total": -12.9842,
+        "xp": 1.96
+      }
+    }
+  ],
+  "summary": {
+    "episodes": 3,
+    "win_rate": 0.0,
+    "average_survival_seconds": 49.0551,
+    "average_level": 1.6667,
+    "average_kills": 45.6667,
+    "average_reward": -13.5846,
+    "damage_taken_average": 120.3355,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 392,
+        "ratio": 0.0888
+      },
+      "3": {
+        "count": 120,
+        "ratio": 0.0272
+      },
+      "4": {
+        "count": 2168,
+        "ratio": 0.4911
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 1735,
+        "ratio": 0.393
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "action_entropy_bits": 1.485,
+    "normalized_action_entropy": 0.4685,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 4415,
+      "mean_scores": {
+        "0": 0.005,
+        "1": 0.0115,
+        "2": 0.0528,
+        "3": 0.0832,
+        "4": 0.3759,
+        "5": 0.0813,
+        "6": 0.0108,
+        "7": 0.356,
+        "8": 0.0235
+      },
+      "mean_top_actions": [
+        {
+          "action": "4",
+          "score": 0.3759
+        },
+        {
+          "action": "7",
+          "score": 0.356
+        },
+        {
+          "action": "3",
+          "score": 0.0832
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 392,
+          "ratio": 0.0888
+        },
+        "3": {
+          "count": 120,
+          "ratio": 0.0272
+        },
+        "4": {
+          "count": 2168,
+          "ratio": 0.4911
+        },
+        "5": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "6": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "7": {
+          "count": 1735,
+          "ratio": 0.393
+        },
+        "8": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "dominant_top_action": {
+        "action": "4",
+        "count": 2168,
+        "ratio": 0.4911
+      },
+      "mean_chosen_action_score": 0.765,
+      "chosen_action_score_sample_count": 4415
+    },
+    "upgrade_policy_decision_count": 2,
+    "reward_breakdown_average": {
+      "action_repeat": -5.2667,
+      "boss_pressure": 0.0,
+      "boundary_risk": -0.4949,
+      "corner_action_risk": 0.0,
+      "corner_risk_delta": -0.0092,
+      "damage_taken": -9.6268,
+      "enemy_pressure": -0.2305,
+      "hazard_risk": 0.0,
+      "kill": 3.6533,
+      "level": 0.5333,
+      "low_health": -0.0439,
+      "opening_edge_risk_delta": -0.0061,
+      "route_recovery": -1.311,
+      "safety_delta": -0.0128,
+      "survival": 0.4906,
+      "terminal": -3.0,
+      "total": -13.5846,
+      "xp": 1.74
+    }
+  }
+}
