@@ -593,6 +593,8 @@ stage 02 的 staged opening wrapper 进一步验证了“分离开局策略”�
 
 使用 stage01 `corner_risk_delta` SB3 opening wrapper 负责前 60 秒、再切到上述 closed-loop fallback 的 evaluation-only probe 证明：opening wrapper 能清除 opening death，但不能修复 fallback。60 秒提升到 `1.0/1.0/0.8`，180 秒为 `0.4/0.8/0.6`，300 秒仍只有 `0.0/0.0/0.2`；300 秒失败分析中 14 个死亡局全部发生在 60 秒之后，`soda-creek` 主要死在 handoff/mid，`caramel-workshop` 主要死在 late。报告位于 `harness/reports/2026-05-27_rl_late_boundary_opening_wrapper_probe_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_055_late_boundary_opening_wrapper_fallback_gap.json`。下一步应基于该 wrapper 组合导出 `60-180s` handoff recovery 样本，或训练专门接手 opening wrapper 后状态分布的 fallback。
 
+基于上述 wrapper 失败面，已从 `60-180s`、负 `route_recovery`、贴边高风险 sampled trace 行导出 `2438` 条 handoff recovery samples，并通过 `tools/validate_edge_recovery_samples.py`。样本 100% 落在 mid phase，原动作以 action `7` 和 action `4` 为主，目标动作分布为 action `3/0/8/2/...`；其中 target action `0` 占 `26.99%`，说明后续训练必须保留 soft target 和动作分布正则，避免把 fallback 修成静止策略。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_samples_001/summary.md`。这批样本只是 fallback / mid-window repair input，不是 RL policy gate。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
