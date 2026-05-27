@@ -442,6 +442,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 进一步把 `action_random_seed = 62201` 扩展到 high-pressure 三图小矩阵后，60 秒 10 seed opening gate probe 和 180 秒 3 seed handoff probe 均为三图 100% 胜率，normalized action entropy 分别维持在约 `0.81-0.84` 区间。报告位于 `harness/reports/2026-05-27_rl_curriculum_stage02_seeded_stochastic_multimap_001/summary.md`。该结果说明 seeded stochastic 是可继续探索的 handoff repair 方向，但仍不是现有 deterministic gate 通过，也不是 stage 03 许可；若要把 stochastic 纳入门禁，必须先定义明确的多 seed、多图、可复现阈值。
 
+`tools/validate_seeded_stochastic_gate.py` 已把上述 seeded stochastic 检查固化为 watch-only validator：要求同一 `action_random_seed`、stochastic action selection、high-pressure 三图、60 秒 10 seed、180 秒 3 seed、胜率 100%、动作熵不低于阈值且无 repair finding。当前报告返回 `seeded_stochastic_watch_ready`，但 validator 的限制说明明确写明它不能输出 RL acceptance，也不能解除 deterministic handoff blocker。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

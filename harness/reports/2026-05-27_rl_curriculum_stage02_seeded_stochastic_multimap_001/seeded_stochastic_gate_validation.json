@@ -1,0 +1,117 @@
+{
+  "report_version": 1,
+  "decision": "seeded_stochastic_watch_ready",
+  "short_report_path": "harness/reports/2026-05-27_rl_curriculum_stage02_seeded_stochastic_multimap_001/comparison_60s_10seed_seeded_stochastic.json",
+  "long_report_path": "harness/reports/2026-05-27_rl_curriculum_stage02_seeded_stochastic_multimap_001/comparison_180s_3seed_seeded_stochastic.json",
+  "criteria": {
+    "required_map_preset": "high-pressure",
+    "min_map_count": 3,
+    "min_short_seconds": 60.0,
+    "min_long_seconds": 180.0,
+    "min_short_seeds": 10,
+    "min_long_seeds": 3,
+    "min_policy_win_rate": 1.0,
+    "min_normalized_action_entropy": 0.75,
+    "max_dominant_action_ratio": 0.7
+  },
+  "action_random_seed": 62201,
+  "short_report": {
+    "action_selection": "stochastic",
+    "action_random_seed": 62201,
+    "map_preset": "high-pressure",
+    "seed_start": 62400,
+    "seeds": 10,
+    "seconds": 60.0,
+    "gate_decision": "multimap_comparison_recorded_not_balance_gate",
+    "minimum_policy_win_rate": 1.0,
+    "average_policy_win_rate": 1.0,
+    "maps": [
+      {
+        "map_id": "soda-creek",
+        "policy_win_rate": 1.0,
+        "policy_normalized_action_entropy": 0.8332,
+        "policy_dominant_action": {
+          "action": "7",
+          "count": 5350,
+          "ratio": 0.2971
+        },
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      },
+      {
+        "map_id": "caramel-workshop",
+        "policy_win_rate": 1.0,
+        "policy_normalized_action_entropy": 0.8187,
+        "policy_dominant_action": {
+          "action": "7",
+          "count": 5799,
+          "ratio": 0.322
+        },
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      },
+      {
+        "map_id": "cracked-star-jar",
+        "policy_win_rate": 1.0,
+        "policy_normalized_action_entropy": 0.8413,
+        "policy_dominant_action": {
+          "action": "7",
+          "count": 5186,
+          "ratio": 0.288
+        },
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      }
+    ]
+  },
+  "long_report": {
+    "action_selection": "stochastic",
+    "action_random_seed": 62201,
+    "map_preset": "high-pressure",
+    "seed_start": 62200,
+    "seeds": 3,
+    "seconds": 180.0,
+    "gate_decision": "multimap_comparison_recorded_not_balance_gate",
+    "minimum_policy_win_rate": 1.0,
+    "average_policy_win_rate": 1.0,
+    "maps": [
+      {
+        "map_id": "soda-creek",
+        "policy_win_rate": 1.0,
+        "policy_normalized_action_entropy": 0.8359,
+        "policy_dominant_action": {
+          "action": "4",
+          "count": 4762,
+          "ratio": 0.294
+        },
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      },
+      {
+        "map_id": "caramel-workshop",
+        "policy_win_rate": 1.0,
+        "policy_normalized_action_entropy": 0.8377,
+        "policy_dominant_action": {
+          "action": "4",
+          "count": 4610,
+          "ratio": 0.2846
+        },
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      },
+      {
+        "map_id": "cracked-star-jar",
+        "policy_win_rate": 1.0,
+        "policy_normalized_action_entropy": 0.8065,
+        "policy_dominant_action": {
+          "action": "4",
+          "count": 5166,
+          "ratio": 0.3189
+        },
+        "inner_gate_decision": "comparison_recorded_not_balance_gate"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [],
+  "limitations": [
+    "This validator produces watch evidence only; it is not RL policy acceptance.",
+    "Seeded stochastic success does not clear deterministic high-pressure gates.",
+    "Stage progression still requires the project-defined deterministic or explicitly approved stochastic gate."
+  ]
+}
