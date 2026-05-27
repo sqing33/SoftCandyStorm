@@ -444,6 +444,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 `tools/validate_seeded_stochastic_gate.py` 已把上述 seeded stochastic 检查固化为 watch-only validator：要求同一 `action_random_seed`、stochastic action selection、high-pressure 三图、60 秒 10 seed、180 秒 3 seed、胜率 100%、动作熵不低于阈值且无 repair finding。当前报告返回 `seeded_stochastic_watch_ready`，但 validator 的限制说明明确写明它不能输出 RL acceptance，也不能解除 deterministic handoff blocker。
 
+正式 `tools/validate_rl_policy_acceptance.py` 同步增加了防线：如果 evaluation / comparison 报告标记为 `action_selection = stochastic` 或包含 `action_random_seed`，则会被判定为 watch evidence only，不能用于 `rl_test_bot_candidate`。这样 seeded stochastic 方向可以继续做诊断和修复，但不会绕过 deterministic acceptance 边界。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

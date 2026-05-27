@@ -1783,6 +1783,11 @@
       "id": "rl_seeded_stochastic_watch_validator",
       "summary": "新增 tools/validate_seeded_stochastic_gate.py，把 seeded stochastic 检查固化为 watch-only validator；当前 stage02 seeded stochastic 多图报告返回 seeded_stochastic_watch_ready，但工具明确不能输出 RL acceptance 或解除 deterministic handoff blocker。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_seeded_stochastic_multimap_001/seeded_stochastic_gate_validation.md"
+    },
+    {
+      "id": "rl_acceptance_rejects_stochastic_watch_evidence",
+      "summary": "正式 RL policy acceptance validator 现在显式拒绝 action_selection=stochastic 或包含 action_random_seed 的 comparison report，防止 seeded stochastic watch 证据被误用为 rl_test_bot_candidate。",
+      "report": "tools/validate_rl_policy_acceptance.py"
     }
   ],
   "next_recommended": [

@@ -250,6 +250,7 @@ def validate_comparison_report(
         "present": report is not None,
         "status": None,
         "gate_decision": None,
+        "action_selection": None,
         "seconds": None,
         "map_count": 0,
         "minimum_policy_win_rate": None,
@@ -265,6 +266,7 @@ def validate_comparison_report(
 
     status = report.get("status")
     gate_decision = report.get("gate_decision")
+    action_selection = report.get("action_selection")
     seconds = as_number(report.get("seconds"))
     map_count = report_map_count(report)
     min_win_rate = report_minimum_win_rate(report)
@@ -272,6 +274,7 @@ def validate_comparison_report(
         {
             "status": status,
             "gate_decision": gate_decision,
+            "action_selection": action_selection,
             "seconds": seconds,
             "map_count": map_count,
             "minimum_policy_win_rate": min_win_rate,
@@ -321,6 +324,22 @@ def validate_comparison_report(
             errors=errors,
             blockers=blockers,
         )
+    if action_selection == "stochastic" or report.get("action_random_seed") is not None:
+        add_candidate_issue(
+            f"{label}: stochastic action selection is watch evidence only, not RL acceptance",
+            candidate_mode=candidate_mode,
+            errors=errors,
+            blockers=blockers,
+        )
+    elif action_selection not in {None, "deterministic"}:
+        add_candidate_issue(
+            f"{label}: unsupported action_selection `{action_selection}`",
+            candidate_mode=candidate_mode,
+            errors=errors,
+            blockers=blockers,
+        )
+    elif action_selection is None:
+        warnings.append(f"{label}: action_selection is missing; deterministic evidence is assumed for legacy reports")
     findings = report.get("findings")
     if isinstance(findings, list) and findings:
         add_candidate_issue(
