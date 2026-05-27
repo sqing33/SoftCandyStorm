@@ -5,6 +5,7 @@ import pytest
 
 from python.train.train_sb3 import (
     algorithm_parameters_source_label,
+    algorithm_overrides_from_args,
     apply_loaded_model_overrides,
     build_trace_step,
     compact_action_score,
@@ -16,11 +17,32 @@ from python.train.train_sb3 import (
 
 def test_merge_algorithm_parameters_preserves_base_and_applies_overrides():
     merged = merge_algorithm_parameters(
-        {"learning_rate": 0.0003, "ent_coef": 0.0},
-        {"ent_coef": 0.02},
+        {"learning_rate": 0.0003, "gamma": 0.99, "ent_coef": 0.0},
+        {"learning_rate": 0.0001, "ent_coef": 0.02},
     )
 
-    assert merged == {"learning_rate": 0.0003, "ent_coef": 0.02}
+    assert merged == {"learning_rate": 0.0001, "gamma": 0.99, "ent_coef": 0.02}
+
+
+def test_algorithm_overrides_accepts_learning_rate():
+    args = SimpleNamespace(
+        algorithm="ppo",
+        learning_rate=0.0001,
+        ent_coef=None,
+    )
+
+    assert algorithm_overrides_from_args(args) == {"learning_rate": 0.0001}
+
+
+def test_algorithm_overrides_rejects_non_positive_learning_rate():
+    args = SimpleNamespace(
+        algorithm="ppo",
+        learning_rate=0.0,
+        ent_coef=None,
+    )
+
+    with pytest.raises(ValueError, match="--learning-rate"):
+        algorithm_overrides_from_args(args)
 
 
 def test_algorithm_parameter_source_records_warm_start_overrides():
@@ -39,6 +61,23 @@ def test_apply_loaded_model_overrides_updates_supported_parameters():
     apply_loaded_model_overrides(model, {"ent_coef": 0.03})
 
     assert model.ent_coef == 0.03
+
+
+def test_apply_loaded_model_overrides_refreshes_learning_rate_schedule():
+    class LoadedModel:
+        def __init__(self):
+            self.learning_rate = 0.0003
+            self.lr_schedule = None
+
+        def _setup_lr_schedule(self):
+            self.lr_schedule = f"schedule:{self.learning_rate}"
+
+    model = LoadedModel()
+
+    apply_loaded_model_overrides(model, {"learning_rate": 0.0001})
+
+    assert model.learning_rate == 0.0001
+    assert model.lr_schedule == "schedule:0.0001"
 
 
 def test_apply_loaded_model_overrides_rejects_unknown_parameters():

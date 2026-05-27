@@ -73,13 +73,13 @@ In training mode, pass `--map-id <id>` to choose the post-training evaluation ma
 python3 python/train/train_sb3.py --algorithm ppo --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60 --map-id soda-creek
 ```
 
-Use `--model-in <path>` to continue training from a saved SB3 model and write the continued policy to `--model-out <path>`. Warm-start runs load adjacent `*_metadata.json` when available so reports can preserve the source model parameters. Algorithm override flags such as `--ent-coef` are intentionally blocked with `--model-in` until the runner can safely update loaded SB3 schedules.
+Use `--model-in <path>` to continue training from a saved SB3 model and write the continued policy to `--model-out <path>`. Warm-start runs load adjacent `*_metadata.json` when available so reports can preserve the source model parameters. Algorithm override flags such as `--ent-coef` and `--learning-rate` are recorded in metadata and reports when used with `--model-in`; learning-rate overrides refresh the loaded SB3 schedule before training continues.
 
 ```bash
 python3 python/train/train_sb3.py --algorithm ppo --model-in python/train/models/ppo_phase1_observation_v2_high_pressure_train300_random_ent002_50000_eval60.zip --timesteps 20000 --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --model-out python/train/models/ppo_phase1_warm_start_example.zip
 ```
 
-For PPO exploration experiments, use `--ent-coef <value>` to override the entropy coefficient without editing the shared config. Training metadata and reports record the final SB3 algorithm parameters.
+For PPO exploration experiments, use `--ent-coef <value>` to override the entropy coefficient without editing the shared config. Use `--learning-rate <value>` when a repair run needs a smaller or larger optimizer step while preserving the shared config. Training metadata and reports record the final SB3 algorithm parameters.
 
 ```bash
 python3 python/train/train_sb3.py --algorithm ppo --ent-coef 0.02 --train-maps frosting-grassland,soda-creek,caramel-workshop --train-map-selection random
@@ -419,7 +419,7 @@ The first full distillation + PPO warm-start used 21,726 phase-aligned samples a
 
 The first full target-entropy distillation used `--teacher-temperature 1.5 --uniform-target-mix 0.05`, raising target entropy to 1.186717. It improved the 60-second high-pressure comparison to 80% win rate on all three maps without triggering the compare script's action-bias repair, but the 300-second comparison still recorded 0% win rate on all three maps and shifted the long-run bias to action 6. Treat it as a short-window repair signal only.
 
-Warm-start runs can override PPO entropy coefficient with `--model-in ... --ent-coef <value>`. The training report records `algorithm_parameters_source` as `warm_start_metadata_with_overrides` when metadata is loaded and a CLI override is applied, so entropy/curriculum experiments remain auditable instead of silently inheriting the distilled zip defaults.
+Warm-start runs can override PPO entropy coefficient with `--model-in ... --ent-coef <value>` and learning rate with `--model-in ... --learning-rate <value>`. The training report records `algorithm_parameters_source` as `warm_start_metadata_with_overrides` when metadata is loaded and a CLI override is applied, so entropy/curriculum experiments remain auditable instead of silently inheriting the distilled zip defaults. Learning-rate overrides also refresh the loaded SB3 schedule before continuation training.
 
 The first `ent_coef = 0.02` target-entropy warm-start lifted the 60-second high-pressure normalized entropy to 0.5801 / 0.5823 / 0.5307, but short-window win rates remained 80% / 60% / 80% and all three 300-second maps still recorded 0% win rate. Entropy override is a useful movement-diversity repair knob, not a replacement for long-run goals or upgrade supervision.
 

@@ -76,6 +76,10 @@ def algorithm_config(config, algorithm):
 
 def algorithm_overrides_from_args(args):
     overrides = {}
+    if args.learning_rate is not None:
+        if args.learning_rate <= 0.0:
+            raise ValueError("--learning-rate must be greater than 0")
+        overrides["learning_rate"] = args.learning_rate
     if args.ent_coef is not None:
         if args.algorithm != "ppo":
             raise ValueError("--ent-coef is only supported for --algorithm ppo")
@@ -103,6 +107,10 @@ def apply_loaded_model_overrides(model, overrides):
         if not hasattr(model, key):
             raise ValueError(f"loaded model does not expose algorithm parameter `{key}`")
         setattr(model, key, value)
+        if key == "learning_rate":
+            setup_lr_schedule = getattr(model, "_setup_lr_schedule", None)
+            if callable(setup_lr_schedule):
+                setup_lr_schedule()
 
 
 def parse_map_list(value):
@@ -1581,6 +1589,12 @@ def main():
         type=float,
         default=None,
         help="Override PPO entropy coefficient for exploration experiments.",
+    )
+    parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=None,
+        help="Override algorithm learning rate for auditable repair experiments.",
     )
     parser.add_argument(
         "--train-map-selection",

@@ -311,7 +311,7 @@ stage 02 mixed retention 尝试把训练地图改为 `soda-creek` + `caramel-wor
 
 target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mix 0.05`，把全量 target entropy 提高到 1.186717，并在 60 秒 high-pressure 三图达到 80% / 80% / 80% 胜率且不再触发 compare 内部 action-bias repair。但 300 秒三图仍全部 0% 胜率，长局中 action 6 dominant ratio 在 caramel / cracked 达到 0.8237 / 0.8119。结论：target entropy 是短窗修复方向，但不能替代升级 / 阶段目标监督或 warm-start 后的 PPO entropy / curriculum。
 
-`train_sb3.py` 的 warm-start 路径现在允许 `--model-in ... --ent-coef <value>` 覆盖 PPO entropy coefficient，并在训练报告中把 `algorithm_parameters_source` 标记为 `warm_start_metadata_with_overrides`。该能力用于可审计地测试 PPO 探索修复；默认不改变旧模型行为，也不能绕过 high-pressure 对比和 RL acceptance。
+`train_sb3.py` 的 warm-start 路径现在允许 `--model-in ... --ent-coef <value>` 覆盖 PPO entropy coefficient，也允许 `--model-in ... --learning-rate <value>` 覆盖学习率；加载模型后会刷新 SB3 learning-rate schedule，并在训练报告中把 `algorithm_parameters_source` 标记为 `warm_start_metadata_with_overrides`。该能力用于可审计地测试 PPO 探索和小步修复；默认不改变旧模型行为，也不能绕过 high-pressure 对比和 RL acceptance。
 
 首个 `ent_coef = 0.02` 的 target-entropy warm-start 候选改善了 60 秒动作分布：high-pressure 三图 normalized entropy 为 0.5801 / 0.5823 / 0.5307，dominant action ratio 均低于 0.45；但短窗胜率仍只有 80% / 60% / 80%，300 秒三图仍全部 0%。结论：entropy coefficient 是短窗动作多样性修复方向，但不能解决 movement-only policy 的长局目标缺失。
 
