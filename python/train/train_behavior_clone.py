@@ -1,6 +1,7 @@
 import argparse
 import importlib.util
 import json
+import math
 import random
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1015,6 +1016,279 @@ def time_phase_label(progress, thresholds):
     if progress < thresholds[1]:
         return TIME_PHASE_LABELS[1]
     return TIME_PHASE_LABELS[2]
+
+
+def new_policy_prediction_bucket(action_count):
+    return {
+        "sample_count": 0,
+        "correct_count": 0,
+        "target_action_counts": {str(action): 0 for action in range(action_count)},
+        "predicted_action_counts": {str(action): 0 for action in range(action_count)},
+        "score_totals": {str(action): 0.0 for action in range(action_count)},
+        "target_action_score_total": 0.0,
+        "predicted_action_score_total": 0.0,
+        "policy_entropy_nats_total": 0.0,
+    }
+
+
+def record_policy_prediction(bucket, target_action, predicted_action, scores, action_count):
+    target_key = str(int(target_action))
+    predicted_key = str(int(predicted_action))
+    bucket["sample_count"] += 1
+    if int(target_action) == int(predicted_action):
+        bucket["correct_count"] += 1
+    bucket["target_action_counts"][target_key] = bucket["target_action_counts"].get(target_key, 0) + 1
+    bucket["predicted_action_counts"][predicted_key] = (
+        bucket["predicted_action_counts"].get(predicted_key, 0) + 1
+    )
+    for action in range(action_count):
+        score = float(scores[action]) if action < len(scores) else 0.0
+        bucket["score_totals"][str(action)] = bucket["score_totals"].get(str(action), 0.0) + score
+    if 0 <= int(target_action) < len(scores):
+        bucket["target_action_score_total"] += float(scores[int(target_action)])
+    if 0 <= int(predicted_action) < len(scores):
+        bucket["predicted_action_score_total"] += float(scores[int(predicted_action)])
+    for score in scores:
+        value = max(0.0, float(score))
+        if value > 0.0:
+            bucket["policy_entropy_nats_total"] -= value * math.log(value)
+
+
+def distribution_entropy_bits(counts):
+    total = sum(int(value) for value in counts.values())
+    entropy = 0.0
+    for count in counts.values():
+        if count <= 0:
+            continue
+        ratio = count / max(1, total)
+        entropy -= ratio * math.log2(ratio)
+    return entropy
+
+
+def dominant_action_from_counts(counts):
+    if not counts:
+        return None
+    action, count = max(counts.items(), key=lambda item: int(item[1]))
+    total = sum(int(value) for value in counts.values())
+    return {
+        "action": str(action),
+        "count": int(count),
+        "ratio": round(int(count) / max(1, total), 4),
+    }
+
+
+def finalize_policy_prediction_bucket(bucket, action_count):
+    sample_count = int(bucket["sample_count"])
+    predicted_entropy = distribution_entropy_bits(bucket["predicted_action_counts"])
+    max_entropy_bits = math.log2(max(2, action_count))
+    max_entropy_nats = math.log(max(2, action_count))
+    return {
+        "sample_count": sample_count,
+        "accuracy": round(bucket["correct_count"] / max(1, sample_count), 4),
+        "target_action_distribution": ratio_counts(bucket["target_action_counts"], sample_count),
+        "predicted_action_distribution": ratio_counts(bucket["predicted_action_counts"], sample_count),
+        "dominant_predicted_action": dominant_action_from_counts(bucket["predicted_action_counts"]),
+        "predicted_action_entropy_bits": round(predicted_entropy, 4),
+        "normalized_predicted_action_entropy": round(predicted_entropy / max_entropy_bits, 4),
+        "mean_policy_scores": {
+            str(action): round(bucket["score_totals"].get(str(action), 0.0) / max(1, sample_count), 6)
+            for action in range(action_count)
+        },
+        "mean_target_action_score": round(
+            bucket["target_action_score_total"] / max(1, sample_count),
+            6,
+        ),
+        "mean_predicted_action_score": round(
+            bucket["predicted_action_score_total"] / max(1, sample_count),
+            6,
+        ),
+        "mean_policy_entropy_nats": round(
+            bucket["policy_entropy_nats_total"] / max(1, sample_count),
+            6,
+        ),
+        "normalized_mean_policy_entropy": round(
+            (bucket["policy_entropy_nats_total"] / max(1, sample_count)) / max_entropy_nats,
+            4,
+        ),
+    }
+
+
+def policy_diagnostic_phase(policy, observation, sample):
+    phase_thresholds = getattr(policy, "phase_thresholds", DEFAULT_TIME_PHASE_THRESHOLDS)
+    phase_duration_seconds = getattr(policy, "phase_duration_seconds", None)
+    if phase_duration_seconds is not None:
+        progress = float(sample.get("time_seconds", 0.0)) / max(0.0001, float(phase_duration_seconds))
+    else:
+        progress = float(observation[0]) if observation else 0.0
+    return time_phase_label(progress, phase_thresholds)
+
+
+def diagnose_behavior_clone_policy_on_dataset(
+    policy,
+    dataset,
+    *,
+    model_path=None,
+    dominant_action_threshold=0.85,
+    low_entropy_threshold=0.1,
+):
+    action_count = int(getattr(policy, "action_count", dataset["action_count"]))
+    overall = new_policy_prediction_bucket(action_count)
+    by_phase = {}
+    by_map = {}
+    by_sample_source = {}
+    last_episode_key = None
+
+    for observation, target_action, sample in zip(
+        dataset["observations"],
+        dataset["actions"],
+        dataset["sample_metadata"],
+    ):
+        episode_key = (sample.get("path"), sample.get("seed"))
+        if episode_key != last_episode_key:
+            reset = getattr(policy, "reset", None)
+            if callable(reset):
+                reset()
+            last_episode_key = episode_key
+        map_id = sample.get("map_id")
+        set_map_id = getattr(policy, "set_map_id", None)
+        if callable(set_map_id):
+            set_map_id(map_id)
+        set_step_context = getattr(policy, "set_step_context", None)
+        if callable(set_step_context):
+            set_step_context(
+                {
+                    "time_seconds": float(sample.get("time_seconds", 0.0)),
+                    "map_id": map_id,
+                }
+            )
+        predicted_action, _ = policy.predict(observation, deterministic=True)
+        scores_payload = policy.action_scores(observation)
+        scores = scores_payload.get("scores", []) if isinstance(scores_payload, dict) else []
+
+        record_policy_prediction(overall, target_action, predicted_action, scores, action_count)
+        phase = policy_diagnostic_phase(policy, observation, sample)
+        record_policy_prediction(
+            by_phase.setdefault(phase, new_policy_prediction_bucket(action_count)),
+            target_action,
+            predicted_action,
+            scores,
+            action_count,
+        )
+        record_policy_prediction(
+            by_map.setdefault(str(map_id or "unknown"), new_policy_prediction_bucket(action_count)),
+            target_action,
+            predicted_action,
+            scores,
+            action_count,
+        )
+        sample_source = sample.get("sample_source") or "trajectory"
+        record_policy_prediction(
+            by_sample_source.setdefault(sample_source, new_policy_prediction_bucket(action_count)),
+            target_action,
+            predicted_action,
+            scores,
+            action_count,
+        )
+
+    overall_report = finalize_policy_prediction_bucket(overall, action_count)
+    phase_report = {
+        phase: finalize_policy_prediction_bucket(bucket, action_count)
+        for phase, bucket in sorted(by_phase.items())
+    }
+    map_report = {
+        map_id: finalize_policy_prediction_bucket(bucket, action_count)
+        for map_id, bucket in sorted(by_map.items())
+    }
+    source_report = {
+        source: finalize_policy_prediction_bucket(bucket, action_count)
+        for source, bucket in sorted(by_sample_source.items())
+    }
+    findings = policy_prediction_findings(
+        overall_report,
+        phase_report,
+        dominant_action_threshold=dominant_action_threshold,
+        low_entropy_threshold=low_entropy_threshold,
+    )
+    return {
+        "report_version": 1,
+        "status": "diagnosed",
+        "gate_decision": (
+            "offline_policy_diagnostic_recorded_needs_action_bias_repair"
+            if findings
+            else "offline_policy_diagnostic_recorded_watch_only"
+        ),
+        "model_path": str(model_path) if model_path is not None else getattr(policy, "checkpoint_path", None),
+        "dataset": summarize_dataset(dataset),
+        "overall": overall_report,
+        "by_phase": phase_report,
+        "by_map": map_report,
+        "by_sample_source": source_report,
+        "findings": findings,
+        "limitations": [
+            "Offline behavior clone diagnostics compare model predictions against a dataset only.",
+            "They are not high-pressure Gym comparisons, Replay regression, balance evidence, or RL acceptance.",
+        ],
+    }
+
+
+def policy_prediction_findings(
+    overall_report,
+    phase_report,
+    *,
+    dominant_action_threshold,
+    low_entropy_threshold,
+):
+    findings = []
+
+    def inspect(label, report):
+        if report.get("sample_count", 0) <= 0:
+            return
+        dominant = report.get("dominant_predicted_action") or {}
+        dominant_ratio = float(dominant.get("ratio", 0.0) or 0.0)
+        entropy = float(report.get("normalized_predicted_action_entropy", 0.0) or 0.0)
+        if dominant_ratio >= dominant_action_threshold:
+            findings.append(
+                {
+                    "id": "offline_dominant_action_bias",
+                    "scope": label,
+                    "severity": "repair",
+                    "summary": (
+                        f"{label} predicts action {dominant.get('action')} for "
+                        f"{dominant_ratio:.2%} of offline samples."
+                    ),
+                }
+            )
+        if entropy <= low_entropy_threshold:
+            findings.append(
+                {
+                    "id": "offline_low_predicted_action_entropy",
+                    "scope": label,
+                    "severity": "repair",
+                    "summary": f"{label} normalized predicted action entropy is {entropy:.4f}.",
+                }
+            )
+
+    inspect("overall", overall_report)
+    for phase, report in phase_report.items():
+        inspect(f"phase:{phase}", report)
+    return findings
+
+
+def diagnose_behavior_clone_policy_path(
+    model_path,
+    dataset,
+    *,
+    dominant_action_threshold=0.85,
+    low_entropy_threshold=0.1,
+):
+    policy = load_behavior_clone_policy(model_path)
+    return diagnose_behavior_clone_policy_on_dataset(
+        policy,
+        dataset,
+        model_path=model_path,
+        dominant_action_threshold=dominant_action_threshold,
+        low_entropy_threshold=low_entropy_threshold,
+    )
 
 
 def filter_dataset_by_time_phase(dataset, phase, thresholds):

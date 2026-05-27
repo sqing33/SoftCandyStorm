@@ -1978,6 +1978,11 @@
       "id": "rl_route_recovery_aux_entropy_retry_action_collapse",
       "summary": "将 route_recovery auxiliary staged clone 从 1 epoch 提到 5 epoch，并把 entropy_regularization 提到 0.08 后，离线 validation accuracy 提升到 opening 0.6030、mid 0.6431、late 0.5816；但 5 秒 soda-creek load smoke 仍出现 deterministic action 3 占 100%，已记录 fail_20260527_040，不能作为策略候选。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_entropy_retry_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_offline_policy_diagnostic",
+      "summary": "新增 diagnose_behavior_clone_policy.py 离线诊断工具，可按 episode 顺序重放 behavior clone dataset 并统计 target/predicted action、mean policy scores 以及 phase/map/source 分布；首份 entropy retry 诊断显示完整 22415 条样本上 dominant predicted action 仅 15.06%、normalized predicted action entropy 0.9434，说明 5 秒在线塌缩不是全局离线 checkpoint 塌缩。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_entropy_retry_001/offline_policy_diagnostic.md"
     }
   ],
   "next_recommended": [
@@ -1987,7 +1992,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新已从带 observation 的 300 秒 failed-only trace 导出 689 条贴边恢复 repair_training_input，并完成样本训练 smoke、staged 混合 smoke 和 entropy retry；entropy retry 虽把三段子模型提到 5 epoch 且 entropy_regularization=0.08，但仍从 action 7 塌缩转为 action 3 塌缩。下一步应检查 target/action 分布、teacher soft targets、uniform target mix 或 policy constraint 训练，而不是继续只堆 timesteps、epoch 或直接放大 route_recovery；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 虽把三段子模型提到 5 epoch 且 entropy_regularization=0.08，但 5 秒在线 smoke 仍从 action 7 塌缩转为 action 3 塌缩；离线完整数据诊断又显示 dominant predicted action 仅 15.06%、normalized entropy 0.9434，说明问题更可能在 Gym 初始短窗状态、history padding、map/start context 或 online dispatch。下一步应做在线短窗 trace 与离线最近邻/初始状态对比，而不是继续只堆 timesteps、epoch 或直接放大 route_recovery；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

@@ -32,6 +32,18 @@ The evaluation report records:
 - `dominant_action_bias`: action `3` accounts for `100%` of policy steps
 - `low_action_entropy`
 
+## Offline Policy Diagnostic
+
+`offline_policy_diagnostic.json` compares the staged checkpoint against the full mixed offline dataset used for this retry. It records `gate_decision = offline_policy_diagnostic_recorded_watch_only`, overall accuracy `0.6180`, dominant predicted action `7` at only `15.06%`, and normalized predicted action entropy `0.9434`.
+
+| Phase | Samples | Accuracy | Dominant Action | Dominant Ratio | Predicted Entropy |
+|---|---:|---:|---:|---:|---:|
+| `opening` | 5693 | 0.5754 | `4` | 0.1902 | 0.9159 |
+| `mid` | 10253 | 0.6542 | `7` | 0.1858 | 0.9376 |
+| `late` | 6469 | 0.5981 | `6` | 0.1469 | 0.9400 |
+
+The offline diagnostic does not show global checkpoint-level action collapse. The online 5 second collapse is therefore more likely tied to the Gym load-smoke state distribution, initial short-window history, map/start context, or online dispatch path than to the whole offline target distribution.
+
 ## Decision
 
 This retry remains a smoke-only repair artifact. It proves that the higher entropy/class-weighted training path and staged packaging can run, but it does not produce a usable policy candidate. The failure shifted from action `7` collapse in the previous smoke to action `3` collapse here, so the next repair should inspect target distributions, teacher soft targets, or policy constraints rather than only increasing epochs or entropy regularization again.

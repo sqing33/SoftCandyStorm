@@ -5,6 +5,7 @@ import pytest
 
 from python.train.train_behavior_clone import (
     build_sample_weights,
+    diagnose_behavior_clone_policy_on_dataset,
     diagnose_sequence_dataset,
     filter_edge_recovery_samples_by_time_window,
     filter_risk_recovery_samples_by_time_window,
@@ -122,6 +123,35 @@ def test_mlp_behavior_clone_checkpoint_stays_loadable(tmp_path):
 
     assert report["training"]["architecture"] == "mlp"
     assert 0 <= action < 3
+
+
+def test_offline_policy_diagnostic_flags_dominant_action_bias():
+    class ConstantPolicy:
+        action_count = 3
+
+        def reset(self):
+            pass
+
+        def set_map_id(self, map_id):
+            pass
+
+        def action_scores(self, observation):
+            return {"kind": "probability", "scores": [0.05, 0.9, 0.05]}
+
+        def predict(self, observation, deterministic=True):
+            return 1, None
+
+    report = diagnose_behavior_clone_policy_on_dataset(
+        ConstantPolicy(),
+        tiny_dataset(),
+        model_path="memory.pt",
+        dominant_action_threshold=0.75,
+    )
+
+    assert report["gate_decision"] == "offline_policy_diagnostic_recorded_needs_action_bias_repair"
+    assert report["overall"]["dominant_predicted_action"]["action"] == "1"
+    assert report["overall"]["dominant_predicted_action"]["ratio"] == 1.0
+    assert any(finding["id"] == "offline_dominant_action_bias" for finding in report["findings"])
 
 
 def test_sequence_diagnostics_report_context_padding_and_transitions():
