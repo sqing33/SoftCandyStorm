@@ -599,6 +599,8 @@ handoff recovery samples 的首个 mid-only 小权重消融没有带来在线收
 
 把同一个 handoff mid-only staged fallback 接到 stage01 `corner_risk_delta` opening wrapper 后，opening death 被清除，但 fallback 仍未通过。该 evaluation-only probe 前 60 秒使用 `stage01_corner_risk_delta_smoke.zip`，60 秒后切到 `handoff_mid_w0_5/staged.pt`，并使用 upgrade ranker 填升级选择。60 秒 high-pressure 三图为 `1.0/1.0/0.8`，180 秒为 `0.6/0.6/0.6`，300 秒三图全部为 `0.0`。300 秒失败分析记录 `15` 个死亡局且 opening bucket 为 `0`：`soda-creek` 和 `caramel-workshop` 各有 `1` 个 mid 死亡、`4` 个 late 死亡，`cracked-star-jar` 有 `3` 个 mid 死亡、`2` 个 late 死亡。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_probe_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_057_late_boundary_handoff_opening_wrapper_probe_gap.json`。结论：opening wrapper 能保护短窗，但 handoff mid-only fallback 没有稳定接住中后窗；下一步应输出 60 秒交接点 trace，对比位置、生命、边界风险和 fallback 初始动作分布，再决定是否训练真正的 fallback policy 约束。
 
+60 秒交接点 trace 进一步说明，短窗胜率不能直接解释为健康交接。对 `stage01 opening wrapper + handoff_mid_w0_5 fallback` 复跑 180 秒 high-pressure 三图 5 seed 并输出 sampled trace 后，15/15 个 episode 在交接前最后一帧都处于 `edge_risk >= 0.9`。三图在 180 秒仍各为 `0.6` 胜率；`soda-creek` / `caramel-workshop` / `cracked-star-jar` 的平均交接生命分别为 `93.0918` / `98.5834` / `87.0172`，但 `cracked-star-jar` seed `62404` 交接时生命只有 `3.7330`。首个 fallback action 主要是 action `8`、`3` 和 `2`，60-75 秒窗口继续呈现单方向段：`soda-creek` action `3:113, 8:96`，`caramel-workshop` action `8:133, 3:62`，`cracked-star-jar` action `3:104, 2:90`。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_trace_001/summary.md`。结论：fallback 需要明确学习“从贴边交接状态回到可持续路线”，后续监督样本应优先提取 `60-90s` non-edge recovery，并过滤极低血量残局。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
