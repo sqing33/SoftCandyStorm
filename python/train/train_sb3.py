@@ -2836,7 +2836,12 @@ def main():
     parser.add_argument("--report-dir", default=None)
     parser.add_argument(
         "--reward-profile",
-        choices=["standard", "late-survival", "long-run-retention"],
+        choices=[
+            "standard",
+            "late-survival",
+            "long-run-retention",
+            "late-route-recovery",
+        ],
         default="standard",
         help="Select the Rust gym-bridge reward profile used by dry-run, training, and policy reward reports.",
     )

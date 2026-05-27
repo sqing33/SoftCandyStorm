@@ -69,6 +69,19 @@ const GYM_REWARD_LONG_RUN_RETENTION_ACTION_REPEAT_SCALE: f32 = 1.5;
 const GYM_REWARD_LONG_RUN_RETENTION_ROUTE_RECOVERY_SCALE: f32 = 2.5;
 const GYM_REWARD_LONG_RUN_RETENTION_VICTORY_BONUS: f32 = 1.5;
 const GYM_REWARD_LONG_RUN_RETENTION_DEFEAT_PENALTY: f32 = -1.5;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_START_SECONDS: f32 = 120.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_RAMP_SECONDS: f32 = 60.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_SURVIVAL_SCALE: f32 = 2.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_SAFETY_SCALE: f32 = 5.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_LOW_HEALTH_SCALE: f32 = 5.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_BOUNDARY_SCALE: f32 = 3.5;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_ENEMY_SCALE: f32 = 2.5;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_HAZARD_SCALE: f32 = 4.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_BOSS_SCALE: f32 = 4.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_ACTION_REPEAT_SCALE: f32 = 0.75;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_ROUTE_RECOVERY_SCALE: f32 = 5.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_VICTORY_BONUS: f32 = 2.0;
+const GYM_REWARD_LATE_ROUTE_RECOVERY_DEFEAT_PENALTY: f32 = -2.0;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
     "new_001",
@@ -365,6 +378,7 @@ enum GymRewardProfile {
     Standard,
     LateSurvival,
     LongRunRetention,
+    LateRouteRecovery,
 }
 
 impl GymRewardProfile {
@@ -373,6 +387,7 @@ impl GymRewardProfile {
             "standard" => Some(Self::Standard),
             "late-survival" => Some(Self::LateSurvival),
             "long-run-retention" => Some(Self::LongRunRetention),
+            "late-route-recovery" => Some(Self::LateRouteRecovery),
             _ => None,
         }
     }
@@ -382,6 +397,7 @@ impl GymRewardProfile {
             Self::Standard => "standard",
             Self::LateSurvival => "late-survival",
             Self::LongRunRetention => "long-run-retention",
+            Self::LateRouteRecovery => "late-route-recovery",
         }
     }
 }
@@ -3015,6 +3031,7 @@ fn gym_reward_breakdown(
                 time_seconds,
                 GYM_REWARD_LATE_SURVIVAL_SURVIVAL_SCALE,
                 GYM_REWARD_LONG_RUN_RETENTION_SURVIVAL_SCALE,
+                GYM_REWARD_LATE_ROUTE_RECOVERY_SURVIVAL_SCALE,
             ));
     let kill = kill_delta * GYM_REWARD_KILL_WEIGHT;
     let xp = hint.xp_delta * GYM_REWARD_XP_WEIGHT;
@@ -3028,6 +3045,7 @@ fn gym_reward_breakdown(
         snapshot.map_or(0.0, gym_low_health_reward),
         GYM_REWARD_LATE_SURVIVAL_LOW_HEALTH_SCALE,
         GYM_REWARD_LONG_RUN_RETENTION_LOW_HEALTH_SCALE,
+        GYM_REWARD_LATE_ROUTE_RECOVERY_LOW_HEALTH_SCALE,
     );
     let boundary_risk = gym_reward_profile_scaled_component(
         profile,
@@ -3035,6 +3053,7 @@ fn gym_reward_breakdown(
         snapshot.map_or(0.0, gym_boundary_risk_reward),
         GYM_REWARD_LATE_SURVIVAL_BOUNDARY_SCALE,
         GYM_REWARD_LONG_RUN_RETENTION_BOUNDARY_SCALE,
+        GYM_REWARD_LATE_ROUTE_RECOVERY_BOUNDARY_SCALE,
     );
     let enemy_pressure = gym_reward_profile_scaled_component(
         profile,
@@ -3042,6 +3061,7 @@ fn gym_reward_breakdown(
         snapshot.map_or(0.0, gym_enemy_pressure_reward),
         GYM_REWARD_LATE_SURVIVAL_ENEMY_SCALE,
         GYM_REWARD_LONG_RUN_RETENTION_ENEMY_SCALE,
+        GYM_REWARD_LATE_ROUTE_RECOVERY_ENEMY_SCALE,
     );
     let hazard_risk = gym_reward_profile_scaled_component(
         profile,
@@ -3049,6 +3069,7 @@ fn gym_reward_breakdown(
         snapshot.map_or(0.0, gym_hazard_risk_reward),
         GYM_REWARD_LATE_SURVIVAL_HAZARD_SCALE,
         GYM_REWARD_LONG_RUN_RETENTION_HAZARD_SCALE,
+        GYM_REWARD_LATE_ROUTE_RECOVERY_HAZARD_SCALE,
     );
     let boss_pressure = gym_reward_profile_scaled_component(
         profile,
@@ -3056,6 +3077,7 @@ fn gym_reward_breakdown(
         snapshot.map_or(0.0, gym_boss_pressure_reward),
         GYM_REWARD_LATE_SURVIVAL_BOSS_SCALE,
         GYM_REWARD_LONG_RUN_RETENTION_BOSS_SCALE,
+        GYM_REWARD_LATE_ROUTE_RECOVERY_BOSS_SCALE,
     );
     let safety_delta = gym_reward_profile_scaled_component(
         profile,
@@ -3063,6 +3085,7 @@ fn gym_reward_breakdown(
         shaping.safety_delta,
         GYM_REWARD_LATE_SURVIVAL_SAFETY_SCALE,
         GYM_REWARD_LONG_RUN_RETENTION_SAFETY_SCALE,
+        GYM_REWARD_LATE_ROUTE_RECOVERY_SAFETY_SCALE,
     );
     let corner_action_risk = 0.0;
     let route_recovery = gym_reward_profile_scaled_component(
@@ -3071,6 +3094,7 @@ fn gym_reward_breakdown(
         shaping.route_recovery,
         GYM_REWARD_LATE_SURVIVAL_ROUTE_RECOVERY_SCALE,
         GYM_REWARD_LONG_RUN_RETENTION_ROUTE_RECOVERY_SCALE,
+        GYM_REWARD_LATE_ROUTE_RECOVERY_ROUTE_RECOVERY_SCALE,
     );
 
     let terminal = if let Some(terminal) = terminal {
@@ -3131,6 +3155,7 @@ fn gym_reward_profile_scaled_component(
     component: f32,
     late_survival_scale: f32,
     long_run_retention_scale: f32,
+    late_route_recovery_scale: f32,
 ) -> f32 {
     component
         * (1.0
@@ -3139,6 +3164,7 @@ fn gym_reward_profile_scaled_component(
                 time_seconds,
                 late_survival_scale,
                 long_run_retention_scale,
+                late_route_recovery_scale,
             ))
 }
 
@@ -3147,11 +3173,13 @@ fn gym_profile_scale(
     time_seconds: Option<f32>,
     late_survival_scale: f32,
     long_run_retention_scale: f32,
+    late_route_recovery_scale: f32,
 ) -> f32 {
     let profile_scale = match profile {
         GymRewardProfile::Standard => 0.0,
         GymRewardProfile::LateSurvival => late_survival_scale,
         GymRewardProfile::LongRunRetention => long_run_retention_scale,
+        GymRewardProfile::LateRouteRecovery => late_route_recovery_scale,
     };
     gym_reward_profile_phase_scale(profile, time_seconds) * profile_scale
 }
@@ -3164,6 +3192,7 @@ fn gym_reward_profile_action_repeat(
     let repeat_scale = match profile {
         GymRewardProfile::Standard | GymRewardProfile::LateSurvival => 0.0,
         GymRewardProfile::LongRunRetention => GYM_REWARD_LONG_RUN_RETENTION_ACTION_REPEAT_SCALE,
+        GymRewardProfile::LateRouteRecovery => GYM_REWARD_LATE_ROUTE_RECOVERY_ACTION_REPEAT_SCALE,
     };
     action_repeat * (1.0 + gym_reward_profile_phase_scale(profile, time_seconds) * repeat_scale)
 }
@@ -3178,6 +3207,10 @@ fn gym_reward_profile_phase_scale(profile: GymRewardProfile, time_seconds: Optio
         GymRewardProfile::LongRunRetention => (
             GYM_REWARD_LONG_RUN_RETENTION_START_SECONDS,
             GYM_REWARD_LONG_RUN_RETENTION_RAMP_SECONDS,
+        ),
+        GymRewardProfile::LateRouteRecovery => (
+            GYM_REWARD_LATE_ROUTE_RECOVERY_START_SECONDS,
+            GYM_REWARD_LATE_ROUTE_RECOVERY_RAMP_SECONDS,
         ),
     };
     if ramp_seconds <= 0.0 {
@@ -3210,6 +3243,12 @@ fn gym_reward_profile_terminal_adjustment(
         }
         (GymRewardProfile::LongRunRetention, TerminalKind::Defeat) => {
             GYM_REWARD_LONG_RUN_RETENTION_DEFEAT_PENALTY * scale
+        }
+        (GymRewardProfile::LateRouteRecovery, TerminalKind::Victory) => {
+            GYM_REWARD_LATE_ROUTE_RECOVERY_VICTORY_BONUS * scale
+        }
+        (GymRewardProfile::LateRouteRecovery, TerminalKind::Defeat) => {
+            GYM_REWARD_LATE_ROUTE_RECOVERY_DEFEAT_PENALTY * scale
         }
         _ => 0.0,
     }
@@ -6964,7 +7003,7 @@ fn print_help() {
         "  cargo run -p game_harness -- lock-accepted-content [--accepted-dir harness/accepted_content] [--lock-file harness/accepted_content/accepted_content.lock.json] [--runtime-content-root harness/accepted_content] [--report-dir harness/reports/local_accepted_content_lock]"
     );
     eprintln!(
-        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--reward-profile standard|late-survival|long-run-retention] [--content-dir content/base_demo]",
+        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--reward-profile standard|late-survival|long-run-retention|late-route-recovery] [--content-dir content/base_demo]",
         DEFAULT_MAP_ID
     );
     eprintln!(
@@ -7354,6 +7393,10 @@ mod tests {
             Some(GymRewardProfile::LongRunRetention)
         );
         assert_eq!(
+            GymRewardProfile::parse("late-route-recovery"),
+            Some(GymRewardProfile::LateRouteRecovery)
+        );
+        assert_eq!(
             GymRewardProfile::parse("standard"),
             Some(GymRewardProfile::Standard)
         );
@@ -7362,6 +7405,10 @@ mod tests {
         assert_eq!(
             GymRewardProfile::LongRunRetention.as_str(),
             "long-run-retention"
+        );
+        assert_eq!(
+            GymRewardProfile::LateRouteRecovery.as_str(),
+            "late-route-recovery"
         );
     }
 
@@ -7455,6 +7502,53 @@ mod tests {
         assert!(retention.route_recovery > standard.route_recovery);
         assert!(retention.terminal > standard.terminal);
         assert!(retention.total > standard.total);
+    }
+
+    #[test]
+    fn gym_late_route_recovery_profile_amplifies_route_pressure_after_midgame() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        snapshot.time_seconds = 180.0;
+        let hint = RewardHint {
+            survival_delta: 1.0,
+            ..RewardHint::default()
+        };
+        let shaping = GymRewardShaping {
+            action_repeat: -0.01,
+            safety_delta: 0.1,
+            route_recovery: 0.02,
+            ..GymRewardShaping::default()
+        };
+        let terminal = TerminalState {
+            kind: TerminalKind::Victory,
+            time_seconds: 180.0,
+            reason: "duration_reached".to_string(),
+            final_level: 1,
+            kills: 0,
+        };
+
+        let standard = gym_reward_breakdown(
+            GymRewardProfile::Standard,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+        let recovery = gym_reward_breakdown(
+            GymRewardProfile::LateRouteRecovery,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+
+        assert!(recovery.survival > standard.survival);
+        assert!(recovery.action_repeat < standard.action_repeat);
+        assert!(recovery.safety_delta > standard.safety_delta);
+        assert!(recovery.route_recovery > standard.route_recovery);
+        assert!(recovery.terminal > standard.terminal);
+        assert!(recovery.total > standard.total);
     }
 
     #[test]
