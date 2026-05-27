@@ -36,6 +36,11 @@ FORBIDDEN_ROLE_TOKENS = {
     "rl_test_bot_candidate",
 }
 
+ALLOWED_TARGET_SOURCES = {
+    "edge_recovery_filter",
+    "route_recovery_trace_hotspot",
+}
+
 
 def as_number(value: Any) -> float | None:
     if isinstance(value, bool):
@@ -92,8 +97,14 @@ def validate_sample(sample: dict[str, Any], errors: list[str], warnings: list[st
     lowered_role = role.lower()
     if any(token in lowered_role for token in FORBIDDEN_ROLE_TOKENS):
         add_error(errors, sample, f"sample_role is too strong: {role}")
-    if sample.get("target_source") != "edge_recovery_filter":
-        add_error(errors, sample, "target_source must be edge_recovery_filter")
+    target_source = sample.get("target_source")
+    if target_source not in ALLOWED_TARGET_SOURCES:
+        add_error(
+            errors,
+            sample,
+            "target_source must be one of "
+            + ", ".join(sorted(ALLOWED_TARGET_SOURCES)),
+        )
 
     observation = sample.get("observation")
     observation_len = sample.get("observation_len")
@@ -121,8 +132,15 @@ def validate_sample(sample: dict[str, Any], errors: list[str], warnings: list[st
     if edge_distance is None or edge_distance < 0.0:
         add_error(errors, sample, "adapter_decision.edge_distance must be non-negative")
         return
-    if decision.get("mode") != "edge_recovery_filter":
-        add_error(errors, sample, "adapter_decision.mode must be edge_recovery_filter")
+    if decision.get("mode") not in ALLOWED_TARGET_SOURCES:
+        add_error(
+            errors,
+            sample,
+            "adapter_decision.mode must be one of "
+            + ", ".join(sorted(ALLOWED_TARGET_SOURCES)),
+        )
+    if target_source in ALLOWED_TARGET_SOURCES and decision.get("mode") != target_source:
+        add_error(errors, sample, "adapter_decision.mode must match target_source")
     if decision.get("original_action") != original_action:
         add_error(errors, sample, "adapter_decision original_action mismatch")
     if decision.get("target_action") != target_action:

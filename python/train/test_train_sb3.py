@@ -582,6 +582,32 @@ def test_build_trace_step_compacts_policy_scores():
     assert step["diagnostics"]["nearest_enemy"]["enemy_id"] == "soda-bubble"
 
 
+def test_build_trace_step_can_include_observation_for_repair_sampling():
+    step = build_trace_step(
+        1,
+        3,
+        0.25,
+        {
+            "tick": 1,
+            "time_seconds": 0.0333,
+            "health": 120.0,
+            "level": 1,
+            "kills": 0,
+            "xp_collected": 0.0,
+            "damage_taken": 0.0,
+            "reward_breakdown": {"route_recovery": -0.002},
+        },
+        {"kind": "probability", "scores": [0.1, 0.2, 0.3, 0.4]},
+        observation=[0.1, 0.2, 0.3],
+        observation_version=2,
+        include_observation=True,
+    )
+
+    assert step["observation_version"] == 2
+    assert step["observation_len"] == 3
+    assert step["observation"] == [0.1, 0.2, 0.3]
+
+
 def test_write_episode_trace_respects_failed_only(tmp_path):
     victory = {"seed": 1, "map_id": "soda-creek", "terminal_kind": "victory"}
     failure = {

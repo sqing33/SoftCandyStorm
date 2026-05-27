@@ -977,6 +977,7 @@ def train(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    trace_include_observation=False,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
@@ -1088,6 +1089,7 @@ def train(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        trace_include_observation=trace_include_observation,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
     known_exploit_notes = known_exploits_from_evaluation(evaluation)
@@ -1236,6 +1238,7 @@ def evaluate_saved_policy(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    trace_include_observation=False,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
@@ -1288,6 +1291,7 @@ def evaluate_saved_policy(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        trace_include_observation=trace_include_observation,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
 
@@ -1310,6 +1314,7 @@ def evaluate_policy_model(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    trace_include_observation=False,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
@@ -1344,6 +1349,7 @@ def evaluate_policy_model(
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
             trace_sample_stride=trace_sample_stride,
+            trace_include_observation=trace_include_observation,
             edge_recovery_filter=edge_recovery_filter,
             edge_recovery_distance=edge_recovery_distance,
             edge_recovery_samples_out=edge_recovery_samples_out,
@@ -1372,6 +1378,7 @@ def evaluate_policy_model(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        trace_include_observation=trace_include_observation,
         edge_recovery_filter=edge_recovery_filter,
         edge_recovery_distance=edge_recovery_distance,
         edge_recovery_samples_out=edge_recovery_samples_out,
@@ -1402,6 +1409,7 @@ def evaluate_behavior_clone_policy(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    trace_include_observation=False,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
@@ -1446,6 +1454,7 @@ def evaluate_behavior_clone_policy(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        trace_include_observation=trace_include_observation,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
     evaluation["policy_kind"] = (
@@ -1498,6 +1507,7 @@ def evaluate_model(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    trace_include_observation=False,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
@@ -1600,6 +1610,12 @@ def evaluate_model(
                             reward,
                             info,
                             action_scores,
+                            observation=pre_step_observation,
+                            observation_version=config["environment"].get(
+                                "observation_version",
+                                2,
+                            ),
+                            include_observation=trace_include_observation,
                         )
                     )
                 episode_reward += reward
@@ -1668,6 +1684,9 @@ def evaluate_model(
         "trace_dir": str(trace_dir) if trace_dir is not None else None,
         "trace_failed_only": bool(trace_failed_only) if trace_dir is not None else None,
         "trace_sample_stride": trace_sample_stride if trace_dir is not None else None,
+        "trace_include_observation": (
+            bool(trace_include_observation) if trace_dir is not None else None
+        ),
         "edge_recovery_samples": edge_recovery_samples_report,
         "episodes": episode_reports,
         "summary": summary,
@@ -1681,7 +1700,17 @@ def should_record_trace_step(trace_dir, step_number, terminated, truncated, samp
     return step_number == 1 or step_number % stride == 0 or terminated or truncated
 
 
-def build_trace_step(step_number, action_index, reward, info, action_scores):
+def build_trace_step(
+    step_number,
+    action_index,
+    reward,
+    info,
+    action_scores,
+    *,
+    observation=None,
+    observation_version=None,
+    include_observation=False,
+):
     step = {
         "step": step_number,
         "tick": info.get("tick"),
@@ -1701,6 +1730,11 @@ def build_trace_step(step_number, action_index, reward, info, action_scores):
     }
     if info.get("diagnostics") is not None:
         step["diagnostics"] = info["diagnostics"]
+    if include_observation:
+        observation_values = observation_to_list(observation)
+        step["observation_version"] = observation_version
+        step["observation_len"] = len(observation_values)
+        step["observation"] = observation_values
     return step
 
 
@@ -2308,6 +2342,7 @@ def compare_policy_to_rule_bots(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    trace_include_observation=False,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
@@ -2342,6 +2377,7 @@ def compare_policy_to_rule_bots(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        trace_include_observation=trace_include_observation,
         edge_recovery_filter=edge_recovery_filter,
         edge_recovery_distance=edge_recovery_distance,
         edge_recovery_samples_out=edge_recovery_samples_out,
@@ -2413,6 +2449,7 @@ def compare_policy_to_rule_bots_across_maps(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    trace_include_observation=False,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
@@ -2444,6 +2481,7 @@ def compare_policy_to_rule_bots_across_maps(
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
             trace_sample_stride=trace_sample_stride,
+            trace_include_observation=trace_include_observation,
             edge_recovery_filter=edge_recovery_filter,
             edge_recovery_distance=edge_recovery_distance,
             edge_recovery_samples_out=derived_edge_recovery_samples_path(
@@ -2901,6 +2939,11 @@ def main():
         default=30,
         help="Record one trace row every N policy steps, plus the first and terminal steps.",
     )
+    parser.add_argument(
+        "--trace-include-observation",
+        action="store_true",
+        help="Include policy observation vectors in sampled traces for repair-sample extraction.",
+    )
     parser.add_argument("--evaluate-model", action="store_true")
     parser.add_argument("--compare-rule-bots", action="store_true")
     parser.add_argument(
@@ -3041,6 +3084,7 @@ def main():
                 trace_dir=args.trace_dir,
                 trace_failed_only=args.trace_failed_only,
                 trace_sample_stride=args.trace_sample_stride,
+                trace_include_observation=args.trace_include_observation,
                 edge_recovery_filter=args.edge_recovery_filter,
                 edge_recovery_distance=args.edge_recovery_distance,
                 edge_recovery_samples_out=args.edge_recovery_samples_out,
@@ -3092,6 +3136,7 @@ def main():
                     trace_dir=args.trace_dir,
                     trace_failed_only=args.trace_failed_only,
                     trace_sample_stride=args.trace_sample_stride,
+                    trace_include_observation=args.trace_include_observation,
                     edge_recovery_filter=args.edge_recovery_filter,
                     edge_recovery_distance=args.edge_recovery_distance,
                     edge_recovery_samples_out=args.edge_recovery_samples_out,
@@ -3138,6 +3183,7 @@ def main():
                 trace_dir=args.trace_dir,
                 trace_failed_only=args.trace_failed_only,
                 trace_sample_stride=args.trace_sample_stride,
+                trace_include_observation=args.trace_include_observation,
                 edge_recovery_filter=args.edge_recovery_filter,
                 edge_recovery_distance=args.edge_recovery_distance,
                 edge_recovery_samples_out=args.edge_recovery_samples_out,
@@ -3177,6 +3223,7 @@ def main():
             trace_dir=args.trace_dir,
             trace_failed_only=args.trace_failed_only,
             trace_sample_stride=args.trace_sample_stride,
+            trace_include_observation=args.trace_include_observation,
             edge_recovery_filter=args.edge_recovery_filter,
             edge_recovery_distance=args.edge_recovery_distance,
             edge_recovery_samples_out=args.edge_recovery_samples_out,
