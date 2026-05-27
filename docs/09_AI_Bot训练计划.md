@@ -402,6 +402,8 @@ phase-split retrain 报告位于 `harness/reports/2026-05-27_rl_action_distribut
 
 late-only risk recovery 消融报告位于 `harness/reports/2026-05-27_rl_action_distribution_opening_action3_lateonly_ablation_001/summary.md`。`late_risk_current_w4` 保留当前 opening 和原 mid，只替换 late 子模型，60 秒与 180 秒 regression 均保住；但 300 秒 `soda-creek` / `caramel-workshop` 仍为 `0.0`，`cracked-star-jar` 只到 `0.2`，记录 `fail_20260527_050`。结论：离线 late risk samples 可以小幅提高 entropy 和单图胜率，但仍不能替代 closed-loop late survival / curriculum、升级后目标选择或长期路线规划。
 
+`late-route-recovery` closed-loop reward profile smoke 位于 `harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001/summary.md`。该 profile 从 120 秒后放大路线恢复、低血量、危险区、Boss 压力和轻量重复动作惩罚；2048 timestep continuation 保住了 60 秒三图无 repair，并把 180 秒 `caramel-workshop` 拉到 `0.6667`，但 180 秒 `cracked-star-jar` 为 `0.0`，300 秒三图仍全部 `0.0`，记录 `fail_20260527_051`。300 秒 trace 中 `841/1100` 条采样行为负 route recovery，主要是 boundary_edge 下继续 action `4`，说明下一步应针对 mid/late 贴边 action `4` 做 action-specific repair 或更明确的 boundary escape curriculum，而不是只继续加权。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。

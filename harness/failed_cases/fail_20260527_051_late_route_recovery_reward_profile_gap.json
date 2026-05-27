@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_051",
+  "category": "rl_policy",
+  "content_id": "late_route_recovery_reward_profile_smoke",
+  "seed": 62300,
+  "bot": "PpoLateRouteRecoveryRewardProfile",
+  "time_seconds": 300.0,
+  "symptom": "新增 late-route-recovery reward profile 并从 late-survival extended checkpoint 继续 2048 timestep closed-loop PPO 后，60 秒 high-pressure 三图无 repair；但 180 秒 cracked-star-jar 为 0.0 win_rate，300 秒 soda-creek、caramel-workshop、cracked-star-jar 仍全部为 0.0 win_rate。",
+  "root_cause": "该 profile 能提高中后期路线恢复信号，但仍未学到稳定的贴边撤离策略。300 秒 failed-only trace 中 841/1100 条采样行为负 route_recovery，主要集中在 boundary_edge 压力下继续选择 action 4；caramel-workshop 和 soda-creek 的 late bucket 最坏热点都表现为贴边时继续朝不安全方向移动。",
+  "fix": "不推进该 checkpoint 到 stage 03、RL acceptance、playtest 或 release。下一步应针对 mid/late 贴边 action 4 导出 action-specific recovery samples，或在 closed-loop curriculum 中加入更明确的 boundary escape / route objective，同时保留 60 秒 hard gate 和 180 秒 regression。",
+  "validation": "训练、60/180/300 秒 high-pressure 三图对比、300 秒失败分析与 route recovery hotspot 分析记录在 harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001；60 秒 gate 为 multimap_comparison_recorded_not_balance_gate，180 秒与 300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair。"
+}
