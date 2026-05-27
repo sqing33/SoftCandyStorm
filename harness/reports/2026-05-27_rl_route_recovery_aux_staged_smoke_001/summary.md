@@ -19,7 +19,7 @@ All three submodels use GRU context8, map one-hot, time-phase one-hot, inverse-f
 
 ## Load Smoke
 
-The staged checkpoint packages with absolute-time dispatch over a 300 second horizon and loads through the Gym evaluation path. A 5 second `soda-creek` smoke completed, but the deterministic policy selected action `7` on `151/151` frames, so the model is explicitly not a policy candidate.
+The staged checkpoint packages with absolute-time dispatch over a 300 second horizon and loads through the Gym evaluation path. A 5 second `soda-creek` smoke completed, but the deterministic policy selected action `7` on `151/151` frames. The evaluation report now records `gate_decision = evaluation_recorded_needs_action_bias_repair` with `dominant_action_bias` and `low_action_entropy`, so the model is explicitly not a policy candidate.
 
 ## Limitations
 
