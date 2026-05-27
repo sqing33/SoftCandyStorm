@@ -586,6 +586,10 @@
         "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_no_phase_staged_gru_context8_001/comparison_180s_3seed.json",
         "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_no_phase_staged_gru_context8_001/comparison_300s_3seed.json",
         "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_no_phase_staged_gru_context8_001/failure_analysis_300s.md",
+        "python/train/create_staged_behavior_clone_policy.py",
+        "python/train/train_behavior_clone.py",
+        "python/train/test_train_behavior_clone.py",
+        "docs/09_AI_Bot训练计划.md",
         "harness/failed_cases/fail_20260527_032_clean_teacher_late_survival_regression.json"
       ],
       "gaps": [
@@ -606,7 +610,8 @@
         "规则 Bot late survival 探针已经把下一步从手写 adapter imitation 转向真实 180-300 秒长局轨迹：soda-creek / cracked-star-jar 有 KiteBot 干净胜利候选，caramel-workshop 只有 TankBot seed 62301 干净非随机胜利候选；该探针不解除 rl_policy_multimap_generalization_gap，也不允许 stage 03 或 RL acceptance。",
         "真实规则 Bot 180-300 秒 late-window 轨迹已导出 12007 条并通过 behavior clone dry-run，样本全部来自 trajectory 且三图分布接近均衡；clean teacher-only 子集也已完成 dry-run、训练和 deterministic 60/180/300 秒多图对比，但 60 秒与 180 秒短窗回归且 300 秒三图全 0%，因此 clean late replacement 不能推进。",
         "clean teacher-only late replacement 暴露 horizon / retention 问题：staged policy 在短窗中也会进入 late 子策略，而 clean late 数据只覆盖 180-300 秒教师轨迹，导致 soda-creek 与 cracked-star-jar 出现 opening/mid 死亡；Phase 6 仍被 rl_policy_multimap_generalization_gap 阻塞。",
-        "no-phase 消融去掉 time-phase-conditioning 后 validation_accuracy 升到 0.7331，但 deterministic 60 秒仍为 80%/100%/60%，300 秒三图仍全 0%；这证明短窗回归不是 phase one-hot 单点问题，而是 clean teacher-only late replacement 缺少 horizon safety / retention。"
+        "no-phase 消融去掉 time-phase-conditioning 后 validation_accuracy 升到 0.7331，但 deterministic 60 秒仍为 80%/100%/60%，300 秒三图仍全 0%；这证明短窗回归不是 phase one-hot 单点问题，而是 clean teacher-only late replacement 缺少 horizon safety / retention。",
+        "staged behavior clone 已支持 --phase-duration-seconds，可用固定 300 秒 horizon 和 Gym time_seconds 做绝对阶段分发；旧 staged checkpoint 仍保持 normalized observation 分发。该能力尚需用 clean teacher 候选重新打包和复跑 60/180/300 秒多图对比。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -616,7 +621,7 @@
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "停止只堆 hand-written adapter imitation；下一轮优先导出真实 180-300 秒长局 survival trajectory，或加入 route objective、low-health recovery、hazard / boss joint objective。",
         "每轮 late repair 后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图 handoff 对比，最后跑 300 秒三图 long-run 对比；全部通过前不得进入 stage_03 或 RL 测试 Bot。",
-        "不要继续直接推进 clean teacher-only 或 no-phase clean teacher-only late replacement；下一轮先修 staged dispatch 的短窗 horizon / retention 问题，或让 late replacement 同时保留 opening/mid 行为。",
+        "用 --phase-duration-seconds 300 重新打包 clean teacher late 候选，先确认 60 秒 opening gate 是否恢复，再跑 180 秒 handoff 和 300 秒 long-run 对比。",
         "补足 caramel-workshop clean teacher 覆盖后，再比较 clean+contrast、route objective、low-health recovery、hazard / boss joint objective 或 closed-loop late survival 训练；每套都必须拆开记录训练报告与 deterministic 60/180/300 秒多图对比。"
       ]
     },

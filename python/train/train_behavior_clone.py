@@ -1556,6 +1556,14 @@ class StagedBehaviorClonePolicy:
         self.phase_thresholds = normalize_time_phase_thresholds(
             checkpoint.get("phase_thresholds", DEFAULT_TIME_PHASE_THRESHOLDS)
         )
+        phase_duration_seconds = checkpoint.get("phase_duration_seconds")
+        self.phase_duration_seconds = (
+            None if phase_duration_seconds is None else float(phase_duration_seconds)
+        )
+        if self.phase_duration_seconds is not None and self.phase_duration_seconds <= 0.0:
+            raise ValueError("staged behavior clone phase_duration_seconds must be greater than 0")
+        self._time_seconds = 0.0
+        self._has_step_context = False
         self.phase_labels = list(checkpoint.get("phase_labels", TIME_PHASE_LABELS))
         subpolicies = checkpoint.get("subpolicies", [])
         if self.phase_labels != TIME_PHASE_LABELS:
@@ -1584,12 +1592,22 @@ class StagedBehaviorClonePolicy:
                 raise ValueError(f"staged behavior clone `{phase}` observation length mismatch")
 
     def reset(self):
+        self._time_seconds = 0.0
+        self._has_step_context = False
         for policy in self.subpolicies.values():
             policy.reset()
 
     def set_map_id(self, map_id):
         for policy in self.subpolicies.values():
             policy.set_map_id(map_id)
+
+    def set_step_context(self, info):
+        self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+        self._has_step_context = True
+        for policy in self.subpolicies.values():
+            set_step_context = getattr(policy, "set_step_context", None)
+            if callable(set_step_context):
+                set_step_context(info)
 
     def predict(self, observation, deterministic=True):
         return self._policy_for_observation(observation).predict(observation, deterministic=deterministic)
@@ -1605,8 +1623,13 @@ class StagedBehaviorClonePolicy:
             raise ValueError(
                 f"expected observation length {self.base_observation_len}, got {values.shape[0]}"
             )
-        phase = time_phase_label(float(values[0]), self.phase_thresholds)
+        phase = time_phase_label(self._phase_value(values), self.phase_thresholds)
         return self.subpolicies[phase]
+
+    def _phase_value(self, values):
+        if self.phase_duration_seconds is not None and self._has_step_context:
+            return max(0.0, self._time_seconds / self.phase_duration_seconds)
+        return float(values[0])
 
 
 def load_behavior_clone_policy(path):
@@ -1640,11 +1663,20 @@ def relativize_staged_model_path(bundle_path, model_path):
         return str(path)
 
 
-def save_staged_behavior_clone_policy(model_out, phase_model_paths, thresholds):
+def save_staged_behavior_clone_policy(
+    model_out,
+    phase_model_paths,
+    thresholds,
+    phase_duration_seconds=None,
+):
     require_dependencies()
     import torch
 
     thresholds = normalize_time_phase_thresholds(thresholds)
+    if phase_duration_seconds is not None:
+        phase_duration_seconds = float(phase_duration_seconds)
+        if phase_duration_seconds <= 0.0:
+            raise ValueError("phase_duration_seconds must be greater than 0")
     model_out = Path(model_out)
     missing = [phase for phase in TIME_PHASE_LABELS if phase not in phase_model_paths]
     if missing:
@@ -1678,6 +1710,7 @@ def save_staged_behavior_clone_policy(model_out, phase_model_paths, thresholds):
         "kind": "behavior_clone_staged",
         "phase_labels": TIME_PHASE_LABELS,
         "phase_thresholds": thresholds,
+        "phase_duration_seconds": phase_duration_seconds,
         "action_count": first.action_count,
         "base_observation_len": first.base_observation_len,
         "subpolicies": [
@@ -1694,6 +1727,12 @@ def save_staged_behavior_clone_policy(model_out, phase_model_paths, thresholds):
         "gate_decision": "staged_behavior_clone_packaged_not_policy_gate",
         "model_path": str(model_out),
         "phase_thresholds": thresholds,
+        "phase_duration_seconds": phase_duration_seconds,
+        "phase_dispatch": (
+            "absolute_time_seconds"
+            if phase_duration_seconds is not None
+            else "observation_normalized_time"
+        ),
         "phase_labels": TIME_PHASE_LABELS,
         "subpolicies": checkpoint["subpolicies"],
         "validation": {

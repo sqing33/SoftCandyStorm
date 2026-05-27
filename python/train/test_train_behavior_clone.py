@@ -374,6 +374,38 @@ def test_staged_behavior_clone_dispatches_between_phase_models(tmp_path):
         assert len(scores["scores"]) == 3
 
 
+def test_staged_behavior_clone_can_dispatch_by_absolute_time(tmp_path):
+    phase_paths = {}
+    thresholds = [0.15, 0.25]
+    for phase in ("opening", "mid", "late"):
+        dataset, _ = filter_dataset_by_time_phase(tiny_dataset(), phase, thresholds)
+        args = args_for(tmp_path / phase, architecture="mlp", context_frames=1)
+        args.time_phase_filter = phase
+        report = train_behavior_clone(dataset, args)
+        phase_paths[phase] = report["model_path"]
+
+    staged_path = tmp_path / "staged_absolute.pt"
+    package_report = save_staged_behavior_clone_policy(
+        staged_path,
+        phase_paths,
+        thresholds,
+        phase_duration_seconds=300.0,
+    )
+    policy = load_behavior_clone_policy(package_report["model_path"])
+    observation = [0.95, 0.0, 0.2]
+
+    assert package_report["phase_dispatch"] == "absolute_time_seconds"
+    assert package_report["phase_duration_seconds"] == 300.0
+    assert policy._policy_for_observation(observation) is policy.subpolicies["late"]
+
+    policy.set_step_context({"time_seconds": 44.9})
+    assert policy._policy_for_observation(observation) is policy.subpolicies["opening"]
+    policy.set_step_context({"time_seconds": 45.0})
+    assert policy._policy_for_observation(observation) is policy.subpolicies["mid"]
+    policy.set_step_context({"time_seconds": 75.0})
+    assert policy._policy_for_observation(observation) is policy.subpolicies["late"]
+
+
 def test_upgrade_samples_are_loaded_separately_from_movement_dataset(tmp_path):
     dataset_path = tmp_path / "trajectory.jsonl"
     records = [

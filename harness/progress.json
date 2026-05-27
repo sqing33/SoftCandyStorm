@@ -1898,6 +1898,11 @@
       "id": "rl_clean_teacher_no_phase_late_survival_ablation",
       "summary": "去掉 clean teacher late 子模型的 time-phase-conditioning 后完成 no-phase 消融：validation_accuracy 升至 0.7331，但 60 秒 high-pressure 仍只有 80%/100%/60%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%；短窗回归不是 phase one-hot 单点问题。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_no_phase_staged_gru_context8_001/summary.md"
+    },
+    {
+      "id": "rl_staged_behavior_clone_absolute_phase_dispatch",
+      "summary": "create_staged_behavior_clone_policy.py 新增 --phase-duration-seconds，StagedBehaviorClonePolicy 可在评估时用 Gym step context 的 time_seconds 按固定 300 秒 horizon 分段，避免 60 秒短窗过早切入 late 子模型；旧 staged checkpoint 仍保持 observation normalized time 分段。",
+      "report": "python/train/train_behavior_clone.py"
     }
   ],
   "next_recommended": [
@@ -1907,7 +1912,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "clean teacher-only late replacement 和 no-phase 消融都已验证失败：60 秒和 180 秒短窗回归，300 秒三图仍全 0%。下一步不要直接推进 clean teacher-only；应先修 horizon-safe staged dispatch 或加入 opening/mid retention，再补足 caramel-workshop clean teacher 覆盖，并复跑 deterministic 60/180/300 秒 high-pressure 多图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "clean teacher-only late replacement 和 no-phase 消融都已验证失败；staged behavior clone 已支持 --phase-duration-seconds 做 horizon-safe 分段。下一步应重新打包 clean teacher 候选并显式记录 absolute-time dispatch，再复跑 deterministic 60/180/300 秒 high-pressure 多图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

@@ -29,6 +29,12 @@ def main():
     parser.add_argument("--mid-model", required=True)
     parser.add_argument("--late-model", required=True)
     parser.add_argument("--time-phase-thresholds", type=float, nargs=2, default=DEFAULT_TIME_PHASE_THRESHOLDS)
+    parser.add_argument(
+        "--phase-duration-seconds",
+        type=float,
+        default=None,
+        help="Optional absolute episode horizon used to dispatch staged phases from time_seconds during evaluation.",
+    )
     parser.add_argument("--model-out", required=True)
     parser.add_argument("--report", default=None)
     args = parser.parse_args()
@@ -41,6 +47,7 @@ def main():
             "late": args.late_model,
         },
         args.time_phase_thresholds,
+        phase_duration_seconds=args.phase_duration_seconds,
     )
     write_report(args.report, report)
 

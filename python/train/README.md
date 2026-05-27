@@ -394,7 +394,7 @@ The seed 62405 trace comparison shows the remaining regression more precisely. T
 
 The first full time-phase-conditioned GRU context8 checkpoint kept healthy action entropy and improved the 60-second window to 100% / 80% / 100%, but the 300-second window still recorded 0% win rate on `soda-creek` and `caramel-workshop` and only 33.33% on `cracked-star-jar`. Treat this as another `repair` result: progress buckets are useful evidence, but they are not a replacement for phase-specific objectives, upgrade supervision, or PPO distillation.
 
-For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. The staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:
+For a true staged-policy experiment, train separate opening/mid/late behavior clones with `--time-phase-filter`, then package them with `create_staged_behavior_clone_policy.py`. By default, the staged checkpoint dispatches to the matching subpolicy at evaluation time based on the current observation's normalized time progress:
 
 ```bash
 python3 python/train/train_behavior_clone.py \
@@ -408,6 +408,8 @@ python3 python/train/create_staged_behavior_clone_policy.py \
   --late-model harness/reports/local_staged/late.pt \
   --model-out harness/reports/local_staged/staged.pt
 ```
+
+When a staged checkpoint is trained against a fixed long-run horizon, pass `--phase-duration-seconds 300` during packaging. Evaluation then dispatches phases from the absolute `time_seconds` supplied by the Gym loop, so a 60-second opening probe keeps using the opening subpolicy until 60s instead of treating 36s as `late` just because the short evaluation horizon has reached 60% progress. Old staged checkpoints without this field keep the normalized-time behavior for reproducibility.
 
 The first packaging smoke proved the staged checkpoint can be loaded through the existing Gym comparison path, but the 1 epoch subpolicies still showed action-bias repair findings. Treat staged packaging as plumbing until a fully trained staged policy passes the normal acceptance gate.
 
