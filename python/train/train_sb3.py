@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import json
 import math
+import random
 import shutil
 import subprocess
 import sys
@@ -113,6 +114,56 @@ def apply_loaded_model_overrides(model, overrides):
                 setup_lr_schedule()
 
 
+def validate_eval_random_seed(eval_random_seed, deterministic):
+    if eval_random_seed is None:
+        return None
+    if eval_random_seed < 0:
+        raise ValueError("--eval-random-seed must be non-negative")
+    if deterministic:
+        raise ValueError("--eval-random-seed requires --eval-stochastic")
+    return eval_random_seed
+
+
+def seed_stochastic_action_sampling(eval_random_seed, model=None):
+    if eval_random_seed is None:
+        return {
+            "seed": None,
+            "seeded_sources": [],
+        }
+
+    random.seed(eval_random_seed)
+    seeded_sources = ["python_random"]
+
+    try:
+        import numpy as np
+
+        np.random.seed(eval_random_seed)
+        seeded_sources.append("numpy")
+    except ImportError:
+        pass
+
+    try:
+        import torch
+
+        torch.manual_seed(eval_random_seed)
+        seeded_sources.append("torch")
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(eval_random_seed)
+            seeded_sources.append("torch_cuda")
+    except ImportError:
+        pass
+
+    set_random_seed = getattr(model, "set_random_seed", None)
+    if callable(set_random_seed):
+        set_random_seed(eval_random_seed)
+        seeded_sources.append("policy_model")
+
+    return {
+        "seed": eval_random_seed,
+        "seeded_sources": seeded_sources,
+    }
+
+
 class StagedOpeningPolicy:
     policy_kind = "staged_sb3_opening"
 
@@ -156,6 +207,12 @@ class StagedOpeningPolicy:
 
     def predict(self, observation, deterministic=True):
         return self.active_model().predict(observation, deterministic=deterministic)
+
+    def set_random_seed(self, seed):
+        for model in (self.opening_model, self.fallback_model):
+            set_random_seed = getattr(model, "set_random_seed", None)
+            if callable(set_random_seed):
+                set_random_seed(seed)
 
     def action_scores(self, observation):
         return policy_action_scores(self.active_model(), observation)
@@ -345,6 +402,7 @@ def train(
     train_seed_selection="cycle",
     algorithm_overrides=None,
     eval_deterministic=True,
+    eval_random_seed=None,
     eval_map_id=None,
     model_in=None,
     trace_dir=None,
@@ -427,6 +485,7 @@ def train(
         seconds=eval_seconds or config["evaluation"]["seconds"],
         map_id=eval_map_id,
         deterministic=eval_deterministic,
+        eval_random_seed=eval_random_seed,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
@@ -462,6 +521,7 @@ def train(
         "algorithm_parameters": algorithm_parameters,
         "algorithm_parameters_source": algorithm_parameters_source,
         "evaluation_policy": evaluation["action_selection"],
+        "evaluation_action_random_seed": evaluation["action_random_seed"],
         "evaluation_map_id": evaluation["map_id"],
         "started_at": started_at,
         "completed_at": completed_at,
@@ -510,6 +570,7 @@ def train(
                 str(warm_start_metadata_path) if warm_start_metadata_path else None
             ),
             "evaluation_policy": evaluation["action_selection"],
+            "evaluation_action_random_seed": evaluation["action_random_seed"],
             "evaluation_map_id": evaluation["map_id"],
         },
         "evaluation": evaluation["summary"],
@@ -563,6 +624,7 @@ def evaluate_saved_policy(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    eval_random_seed=None,
     upgrade_choice_model=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -591,6 +653,7 @@ def evaluate_saved_policy(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        eval_random_seed=eval_random_seed,
         upgrade_policy=upgrade_policy,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -610,6 +673,7 @@ def evaluate_policy_model(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    eval_random_seed=None,
     upgrade_choice_model=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -629,6 +693,7 @@ def evaluate_policy_model(
             seed_start=seed_start,
             map_id=map_id,
             deterministic=deterministic,
+            eval_random_seed=eval_random_seed,
             upgrade_policy=upgrade_policy,
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
@@ -645,6 +710,7 @@ def evaluate_policy_model(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        eval_random_seed=eval_random_seed,
         upgrade_choice_model=upgrade_choice_model,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -660,6 +726,7 @@ def evaluate_behavior_clone_policy(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    eval_random_seed=None,
     upgrade_policy=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -675,6 +742,7 @@ def evaluate_behavior_clone_policy(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        eval_random_seed=eval_random_seed,
         upgrade_policy=upgrade_policy,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -701,11 +769,17 @@ def evaluate_model(
     seed_start=None,
     map_id=None,
     deterministic=True,
+    eval_random_seed=None,
     upgrade_policy=None,
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
 ):
+    eval_random_seed = validate_eval_random_seed(eval_random_seed, deterministic)
+    action_random_seed_report = seed_stochastic_action_sampling(
+        eval_random_seed,
+        model=model,
+    )
     seed_start = seed_start if seed_start is not None else config["evaluation"]["seed_start"]
     map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
     max_steps = int(seconds * config["environment"]["tick_rate"]) + 10
@@ -826,6 +900,8 @@ def evaluate_model(
         "policy_kind": getattr(model, "policy_kind", "sb3"),
         "opening_policy": opening_policy_report(model),
         "action_selection": "deterministic" if deterministic else "stochastic",
+        "action_random_seed": eval_random_seed,
+        "action_random_seed_report": action_random_seed_report,
         "upgrade_policy": upgrade_policy_report(upgrade_policy),
         "trace_dir": str(trace_dir) if trace_dir is not None else None,
         "trace_failed_only": bool(trace_failed_only) if trace_dir is not None else None,
@@ -1326,6 +1402,7 @@ def compare_policy_to_rule_bots(
     map_id=None,
     rule_bots=None,
     deterministic=True,
+    eval_random_seed=None,
     upgrade_choice_model=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -1348,6 +1425,7 @@ def compare_policy_to_rule_bots(
         seed_start=seed_start,
         map_id=map_id,
         deterministic=deterministic,
+        eval_random_seed=eval_random_seed,
         upgrade_choice_model=upgrade_choice_model,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -1372,6 +1450,7 @@ def compare_policy_to_rule_bots(
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "map_id": map_id,
         "action_selection": policy["action_selection"],
+        "action_random_seed": policy.get("action_random_seed"),
         "seed_start": seed_start,
         "seeds": episodes,
         "seconds": seconds,
@@ -1402,6 +1481,7 @@ def compare_policy_to_rule_bots_across_maps(
     seed_start=None,
     rule_bots=None,
     deterministic=True,
+    eval_random_seed=None,
     map_preset=None,
     upgrade_choice_model=None,
     trace_dir=None,
@@ -1422,6 +1502,7 @@ def compare_policy_to_rule_bots_across_maps(
             map_id=map_id,
             rule_bots=rule_bots,
             deterministic=deterministic,
+            eval_random_seed=eval_random_seed,
             upgrade_choice_model=upgrade_choice_model,
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
@@ -1446,6 +1527,9 @@ def compare_policy_to_rule_bots_across_maps(
         "upgrade_policy": comparisons[0].get("upgrade_policy") if comparisons else None,
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "action_selection": comparisons[0]["action_selection"] if comparisons else None,
+        "action_random_seed": (
+            comparisons[0].get("action_random_seed") if comparisons else eval_random_seed
+        ),
         "map_preset": map_preset,
         "map_ids": map_ids,
         "seed_start": comparisons[0]["seed_start"] if comparisons else seed_start,
@@ -1802,6 +1886,12 @@ def main():
         help="Sample policy actions during evaluation instead of using deterministic argmax.",
     )
     parser.add_argument(
+        "--eval-random-seed",
+        type=int,
+        default=None,
+        help="Seed stochastic action sampling during evaluation/comparison; requires --eval-stochastic.",
+    )
+    parser.add_argument(
         "--trace-dir",
         default=None,
         help="Write sampled policy episode traces during training evaluation, evaluation, or comparison.",
@@ -1847,6 +1937,10 @@ def main():
             args.train_seeds,
             args.train_seed_start,
             args.train_seed_count,
+        )
+        eval_random_seed = validate_eval_random_seed(
+            args.eval_random_seed,
+            deterministic=not args.eval_stochastic,
         )
     except ValueError as exc:
         parser.error(str(exc))
@@ -1916,6 +2010,7 @@ def main():
                 seed_start=args.seed_start,
                 map_id=args.map_id,
                 deterministic=not args.eval_stochastic,
+                eval_random_seed=eval_random_seed,
                 upgrade_choice_model=(
                     Path(args.upgrade_choice_model)
                     if args.upgrade_choice_model
@@ -1954,6 +2049,7 @@ def main():
                     seed_start=args.seed_start,
                     rule_bots=rule_bots,
                     deterministic=not args.eval_stochastic,
+                    eval_random_seed=eval_random_seed,
                     map_preset=args.compare_map_preset,
                     upgrade_choice_model=(
                         Path(args.upgrade_choice_model)
@@ -1989,6 +2085,7 @@ def main():
                 map_id=args.map_id,
                 rule_bots=rule_bots,
                 deterministic=not args.eval_stochastic,
+                eval_random_seed=eval_random_seed,
                 upgrade_choice_model=(
                     Path(args.upgrade_choice_model)
                     if args.upgrade_choice_model
@@ -2019,6 +2116,7 @@ def main():
             train_seed_selection=args.train_seed_selection,
             algorithm_overrides=algorithm_overrides,
             eval_deterministic=not args.eval_stochastic,
+            eval_random_seed=eval_random_seed,
             eval_map_id=args.map_id,
             model_in=args.model_in,
             trace_dir=args.trace_dir,

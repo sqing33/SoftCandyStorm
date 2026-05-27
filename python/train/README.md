@@ -113,7 +113,7 @@ Policy evaluation reports include `action_entropy_bits`, `normalized_action_entr
 
 Evaluation reports also include `action_score_diagnostic`. For probability policies such as PPO, it records the mean action probabilities, top mean-probability actions, and how often each action was the policy's highest-probability action. For value policies such as DQN, it records the same aggregate view over q-values. Use this field when deterministic argmax keeps choosing one action even though sampled evaluation appears healthy.
 
-Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` with training, `--evaluate-model`, or `--compare-rule-bots` when diagnosing whether a policy still has useful action probability mass even though deterministic argmax collapses.
+Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` with training, `--evaluate-model`, or `--compare-rule-bots` when diagnosing whether a policy still has useful action probability mass even though deterministic argmax collapses. Add `--eval-random-seed <N>` with `--eval-stochastic` to make sampled action selection reproducible; reports record `action_random_seed` and the seeded random sources. Seeded stochastic evaluation is diagnostic evidence only and does not replace deterministic high-pressure gates or RL policy acceptance.
 
 Use `--opening-model <zip> --opening-seconds <seconds>` with `--evaluate-model` or `--compare-rule-bots` to test a staged SB3 policy that uses a known opening checkpoint before falling back to `--model`. This is evaluation-only evidence for split-policy repair; it does not train a new checkpoint or count as policy acceptance by itself.
 

@@ -436,6 +436,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 同一 staged policy、同一 `soda-creek` seed `62201` 的 stochastic 探针连续两次活到 180 秒；带 trace 的一局在 60 秒交接时位于 `(-862.2731, -900)`，生命 113.2499，`60-75s` 采样动作覆盖 `0/3/4/6/7/8`，到 90 秒已回到 `x = -222.8753` 且低血量风险为 0。这个结果不能替代 deterministic gate，也不能作为 RL acceptance；但它说明恢复动作已经存在于 policy distribution 中，失败主要来自 deterministic argmax 在交接点压成高置信顶墙路径。后续可审计方向是 seeded stochastic 规则、温度/熵约束、动作平滑或显式 handoff recovery 行为约束。
 
+`train_sb3.py` 的 evaluation / comparison / training 后评估路径现已支持 `--eval-stochastic --eval-random-seed <N>`，会在随机动作采样前 seed Python、NumPy、Torch 和支持 `set_random_seed` 的 policy model，并在报告中写入 `action_random_seed` 与 `action_random_seed_report`。该能力只用于复现 stochastic 探针和诊断 policy distribution 中是否存在恢复动作；不能绕过 deterministic high-pressure gate、180/300 秒多图对比、failure case 审查或 RL policy acceptance manifest。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

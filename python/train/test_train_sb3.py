@@ -1,4 +1,5 @@
 import json
+import random
 from types import SimpleNamespace
 
 import pytest
@@ -12,7 +13,9 @@ from python.train.train_sb3 import (
     compact_action_score,
     merge_algorithm_parameters,
     resolve_train_seed_values,
+    seed_stochastic_action_sampling,
     should_record_trace_step,
+    validate_eval_random_seed,
     write_episode_trace,
 )
 
@@ -80,6 +83,26 @@ def test_resolve_train_seed_values_accepts_explicit_list():
 def test_resolve_train_seed_values_rejects_mixed_sources():
     with pytest.raises(ValueError, match="--train-seeds"):
         resolve_train_seed_values("62400", 62400, 2)
+
+
+def test_validate_eval_random_seed_requires_stochastic_evaluation():
+    assert validate_eval_random_seed(17, deterministic=False) == 17
+    assert validate_eval_random_seed(None, deterministic=True) is None
+    with pytest.raises(ValueError, match="--eval-random-seed"):
+        validate_eval_random_seed(17, deterministic=True)
+    with pytest.raises(ValueError, match="non-negative"):
+        validate_eval_random_seed(-1, deterministic=False)
+
+
+def test_seed_stochastic_action_sampling_replays_python_random_sequence():
+    report = seed_stochastic_action_sampling(1234)
+    first = random.random()
+    seed_stochastic_action_sampling(1234)
+    second = random.random()
+
+    assert first == second
+    assert report["seed"] == 1234
+    assert "python_random" in report["seeded_sources"]
 
 
 def test_algorithm_parameter_source_records_warm_start_overrides():
