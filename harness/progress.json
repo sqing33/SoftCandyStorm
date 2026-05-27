@@ -2073,6 +2073,11 @@
       "id": "rl_action_distribution_regularization_opening_ablation",
       "summary": "行为克隆动作分布正则与 per-map uniform-present opening 消融完成：per_map_uniform_0_2 消除了 60 秒三图 compare 内部 action-bias repair，但 180 秒 soda-creek 胜率仍为 0.0，记录 fail_20260527_046，不能推进 stage 03 或 RL acceptance。",
       "report": "harness/reports/2026-05-27_rl_action_distribution_regularization_opening_ablation_001/summary.md"
+    },
+    {
+      "id": "rl_action_distribution_regularization_soda_midwindow_samples",
+      "summary": "从 per_map_uniform_0_2 的 soda-creek 180 秒失败 trace 导出 50-80 秒 route recovery repair samples：51 条样本全部来自 seed 62404，validator 通过；dry-run 显示 50-60 秒进入 opening，60-80 秒的 24 条样本进入 mid，下一轮训练应按 phase 拆开处理。",
+      "report": "harness/reports/2026-05-27_rl_action_distribution_regularization_soda_midwindow_samples_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2082,7 +2087,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。下一步应基于 soda-creek 180 秒失败 trace 做状态条件化路线恢复样本、升级后目标监督或 closed-loop PPO/curriculum；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。已从 soda-creek 50-80 秒失败 trace 导出 51 条状态条件化 repair samples，下一步应按 phase 重训 opening/mid 并跑 60/180 秒三图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
