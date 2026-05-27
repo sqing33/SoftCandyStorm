@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_043",
+  "category": "rl_training",
+  "content_id": "route_recovery_aux_online_route_risk_opening_ablation",
+  "seed": 62400,
+  "bot": "RouteRecoveryAuxOnlineRouteRiskOpeningCloneSmoke",
+  "time_seconds": 60.0,
+  "symptom": "低权重 phase-aligned 在线 route-risk samples 混入 opening 训练后，60 秒 high-pressure 三图对比仍未修复 soda-creek：win_rate 保持 0.4，average_survival_seconds 降到 40.8197。上一轮 action 6 偏置被压低，但 deterministic policy 转为 action 3 dominant，soda-creek action 3 ratio 为 0.5911，caramel-workshop 为 0.5227，cracked-star-jar 为 0.4837。",
+  "root_cause": "在线 route-risk samples 覆盖了失败状态并修正了 opening phase 对齐，但仍是单标签监督目标。默认权重虽然避免了 action 2 过补偿和 action 6 继续主导，却把 opening policy 拉向另一个高频安全动作 action 3；这说明当前监督信号缺少 soft/top-k 目标或在线状态约束，无法保持动作多样性。",
+  "fix": "不推进该 staged checkpoint。后续不要单纯增加 route-risk samples 或提高 edge_recovery_sample_weight；改为尝试 soft/top-k target、per-state action constraint，或在 teacher objective 中惩罚 wallward route recovery 的同时保留多动作分布。",
+  "validation": "训练、打包和 deterministic 60 秒 high-pressure 三图对比记录在 harness/reports/2026-05-27_rl_route_recovery_aux_online_route_risk_opening_ablation_001。报告 gate_decision 为 ablation_recorded_not_policy_gate；比较结果 gate_decision 为 multimap_comparison_recorded_not_balance_gate，minimum_policy_win_rate 为 0.4，average_policy_win_rate 为 0.6667。"
+}
