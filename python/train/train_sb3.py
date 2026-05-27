@@ -1664,6 +1664,7 @@ def evaluate_model(
             env.close()
 
     summary = summarize_evaluation(episode_reports, total_reward)
+    quality_findings = policy_quality_findings(summary)
     edge_recovery_samples_report = write_edge_recovery_samples(
         edge_recovery_samples_out,
         edge_recovery_samples,
@@ -1690,6 +1691,8 @@ def evaluate_model(
         "edge_recovery_samples": edge_recovery_samples_report,
         "episodes": episode_reports,
         "summary": summary,
+        "findings": quality_findings,
+        "gate_decision": evaluation_gate_decision(quality_findings),
     }
 
 
@@ -2718,6 +2721,14 @@ def policy_quality_findings(summary):
             }
         )
     return findings
+
+
+def evaluation_gate_decision(findings):
+    if any(finding["severity"] == "repair" for finding in findings):
+        return "evaluation_recorded_needs_action_bias_repair"
+    if any(finding["severity"] == "watch" for finding in findings):
+        return "evaluation_recorded_watch"
+    return "evaluation_recorded_not_policy_gate"
 
 
 def terminal_reward_ratio(summary):

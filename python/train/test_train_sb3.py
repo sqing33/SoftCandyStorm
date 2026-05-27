@@ -19,8 +19,10 @@ from python.train.train_sb3 import (
     compact_action_score,
     consume_policy_adapter_decision,
     derived_edge_recovery_samples_path,
+    evaluation_gate_decision,
     merge_algorithm_parameters,
     load_behavior_clone_policy_with_optional_opening,
+    policy_quality_findings,
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
     should_record_trace_step,
@@ -718,6 +720,25 @@ def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch)
     assert captured["late_recovery_low_health_threshold"] == 0.4
     assert captured["late_recovery_toward_dot_threshold"] == 0.25
     assert report["policy_adapter"]["mode"] == "late_recovery_filter"
+
+
+def test_evaluation_gate_flags_deterministic_action_collapse():
+    findings = policy_quality_findings(
+        {
+            "action_distribution": {
+                "7": {"count": 151, "ratio": 1.0},
+                "4": {"count": 0, "ratio": 0.0},
+            },
+            "normalized_action_entropy": 0.0,
+            "reward_breakdown_average": {"total": 0.1, "terminal": 0.0},
+        }
+    )
+
+    assert {finding["id"] for finding in findings} >= {
+        "dominant_action_bias",
+        "low_action_entropy",
+    }
+    assert evaluation_gate_decision(findings) == "evaluation_recorded_needs_action_bias_repair"
 
 
 def test_behavior_clone_fallback_can_be_wrapped_with_sb3_opening(monkeypatch):

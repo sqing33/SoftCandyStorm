@@ -342,6 +342,8 @@ Gym reward breakdown 已新增 `route_recovery`，用于在移动动作帧根据
 
 首个 `route_recovery` auxiliary staged smoke 已完成，报告位于 `harness/reports/2026-05-27_rl_route_recovery_aux_staged_smoke_001/summary.md`。该 smoke 将 phase-aligned KiteBot 高压轨迹与 route_recovery repair 样本混合：opening 排除 repair 样本，mid 保留 `342` 条 `60-180s` 样本，late 经 phase filter 后保留 `40` 条 `180s+` 样本，并完成 GRU context8 三段训练与 staged checkpoint 打包。但 5 秒 `soda-creek` 加载 smoke 中 deterministic policy 151/151 帧选择 action `7`，已记录 `fail_20260527_039_route_recovery_aux_staged_smoke_action_collapse.json`；该 checkpoint 只能作为混合数据和打包链路证据，不能推进为策略候选。
 
+`train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
+
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
 
 `python/train/distill_behavior_clone_to_sb3.py` 已提供 PPO 蒸馏初始化入口：它从规则 Bot 轨迹读取 observation，用 behavior clone teacher 输出 soft action probability，再监督训练 SB3 PPO `MlpPolicy` 并保存标准 `.zip` 与 metadata。蒸馏入口现在支持 `--teacher-temperature` 与 `--uniform-target-mix`，用于在 teacher probability 过尖或动作偏置过重时显式提高 target entropy；这些旋钮只属于 repair 实验，不是 policy gate。首个 256 样本 smoke 已证明 distilled `.zip` 可以被 `train_sb3.py --evaluate-model` 加载，但 1 epoch 模型仍为动作 3 deterministic smoke，不是策略通过证据；后续应在更大数据上蒸馏后继续 PPO 环境训练，并跑 high-pressure 60/300 秒对比。
