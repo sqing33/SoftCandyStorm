@@ -1106,6 +1106,11 @@
       "id": "rl_curriculum_stage02_staged_opening_policy_regression",
       "summary": "stage 02 staged opening wrapper 在评估时前 60 秒使用 stage 01 corner_risk_delta checkpoint、之后切回 stage 02 opening_edge_delta fallback；60 秒 high-pressure 三图 10 seed 全部 100%，但 180 秒三图 3 seed 中 soda-creek seed 62201 于 115.5319 秒死亡，记录 fail_20260527_027，仍不能进入 stage 03。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_staged_opening_trace",
+      "summary": "对 staged opening wrapper 的 soda-creek seed 62201 生成 failed-only trace：60 秒 handoff 时玩家已在左下边界且生命 92.4698，fallback 在 60-75 秒采样窗口全部选择 action 7 持续顶左墙，最终 115.5319 秒仍在左边界被 bouncy-gummy 接触击杀；下一步应修 handoff recovery。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_trace_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1767,7 +1772,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "staged opening wrapper 已证明分离 opening policy 能保住 60 秒 high-pressure 三图 10 seed gate，但 180 秒对比中 soda-creek seed 62201 仍在 115.5319 秒中局死亡。下一步优先 trace 60 秒 handoff 到 115 秒死亡窗口，尝试 mid-window replay / 行为约束或分离 mid policy；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery：60 秒时玩家已左下角钉死，fallback 持续 action 7 顶左墙并在 115.5319 秒死亡。下一步优先让 policy 在 edge_risk=1 且压力回升前离开边界，可尝试 handoff replay / 行为约束或分离 mid policy；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",

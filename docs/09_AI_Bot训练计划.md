@@ -432,6 +432,8 @@ Gym bridge 现在支持在 `step` 请求中传入 `upgrade_choice`。`SoftCandyS
 
 stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略”这个方向：评估时前 60 秒使用 stage 01 `corner_risk_delta` checkpoint，60 秒后切回 stage 02 `opening_edge_delta` checkpoint。60 秒 high-pressure 三图 10 seed 全部为 100% 胜率，说明 stage 01 opening 行为可以被保留；但 180 秒三图 3 seed 中 `soda-creek` seed `62201` 在 115.5319 秒死亡，`soda-creek` 胜率只有 66.67%。该结果只证明 staged evaluation 有诊断价值，不是新训练 checkpoint，也不是 RL policy acceptance；stage 02 仍需修复 60 秒 handoff 后的中局压力恢复，不能进入 stage 03。
 
+对 staged opening 的 `soda-creek` seed `62201` 进行 failed-only trace 后，失败面从“开局是否活过 60 秒”收窄为“60 秒交接后能否从边界钉死状态恢复”。交接时玩家已在 `(-1200, -900)` 左下边界，`edge_risk = 1.0`，但 `enemy_pressure_risk = 0` 且生命仍有 92.4698；fallback policy 随后在 `60-75s` 采样窗口里全部选择 action `7`，相当于持续向左顶墙，生命降到 59.7596 并重新被敌人贴上。最终 115.5319 秒死亡时仍在左边界，action `7` 置信度为 0.8487。下一轮 stage 02 应优先训练/约束 handoff recovery，而不是继续只调 opening reward。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

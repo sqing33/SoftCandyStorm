@@ -510,7 +510,11 @@
         "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/comparison_60s_10seed.json",
         "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/comparison_180s_3seed.json",
         "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/failure_analysis_180s.md",
-        "harness/failed_cases/fail_20260527_027_stage02_staged_opening_mid_regression.json"
+        "harness/failed_cases/fail_20260527_027_stage02_staged_opening_mid_regression.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_trace_001/summary.md",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_trace_001/evaluation.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_trace_001/trace_analysis.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_trace_001/traces/soda-creek_seed62201_trace.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -518,7 +522,8 @@
         "当前 RL Bot 不能作为正式压力测试基线。",
         "stage 02 opening_edge_risk_delta continuation 没有保住 opening：soda-creek 60 秒 10 seed 回落到 50%，5 个 opening death 全部在 60 秒内，说明当前 targeted regularization 仍不足以推进 stage 03。",
         "stage 02 opening_edge_delta trace compare 显示当前 reward 不能学到及时撤离：多数失败 seed action 7 出现过晚或缺失，seed 62405 即使切 action 7 也已被贴身压力追上。",
-        "stage 02 staged opening wrapper 能把 60 秒 high-pressure 三图 10 seed opening gate 恢复到 100%，但 180 秒三图对比中 soda-creek seed 62201 于 115.5319 秒中局死亡；这说明分离 opening policy 有诊断价值，但 stage 02 仍卡在 handoff 后恢复。"
+        "stage 02 staged opening wrapper 能把 60 秒 high-pressure 三图 10 seed opening gate 恢复到 100%，但 180 秒三图对比中 soda-creek seed 62201 于 115.5319 秒中局死亡；这说明分离 opening policy 有诊断价值，但 stage 02 仍卡在 handoff 后恢复。",
+        "staged opening failed-only trace 显示 60 秒交接时玩家已左下角钉死，fallback 随后持续 action 7 顶左墙并在敌压回升后死亡；下一轮修复应围绕 edge-pinned handoff recovery。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -527,7 +532,7 @@
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
-        "继续重做 stage_02：staged opening wrapper 已保住 60 秒 opening gate，但 180 秒 soda-creek 中局仍失败；下一轮优先 trace seed 62201 的 60 秒 handoff 到 115 秒死亡窗口，并尝试 mid-window replay / 行为约束或分离 mid policy。",
+        "继续重做 stage_02：staged opening trace 已定位为 edge-pinned handoff recovery 失败；下一轮优先让 policy 在 60 秒交接后离开左下边界，可尝试 handoff replay / 行为约束或分离 mid policy。",
         "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图对比；通过前不得进入 stage_03 或 RL 测试 Bot。"
       ]
     },
