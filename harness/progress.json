@@ -1973,6 +1973,11 @@
       "id": "rl_route_recovery_aux_staged_smoke",
       "summary": "将 phase-aligned KiteBot 轨迹与 route_recovery repair 样本混合完成 GRU context8 三段 staged smoke：opening 排除 repair 样本，mid 保留 342 条，late 保留 40 条；打包和 5 秒加载路径跑通，但 deterministic action 7 占 100%，评估 gate_decision 为 evaluation_recorded_needs_action_bias_repair，已记录 fail_20260527_039，不能作为策略候选。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_staged_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_entropy_retry_action_collapse",
+      "summary": "将 route_recovery auxiliary staged clone 从 1 epoch 提到 5 epoch，并把 entropy_regularization 提到 0.08 后，离线 validation accuracy 提升到 opening 0.6030、mid 0.6431、late 0.5816；但 5 秒 soda-creek load smoke 仍出现 deterministic action 3 占 100%，已记录 fail_20260527_040，不能作为策略候选。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_entropy_retry_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1982,7 +1987,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新已从带 observation 的 300 秒 failed-only trace 导出 689 条贴边恢复 repair_training_input，并完成样本训练 smoke 与 staged 混合 smoke；staged smoke 出现 action 7 确定性塌缩，下一步需要更强 action-diversity/entropy 或 policy constraint 训练，而不是继续只堆 timesteps、只扩大升级样本或直接放大 route_recovery；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新已从带 observation 的 300 秒 failed-only trace 导出 689 条贴边恢复 repair_training_input，并完成样本训练 smoke、staged 混合 smoke 和 entropy retry；entropy retry 虽把三段子模型提到 5 epoch 且 entropy_regularization=0.08，但仍从 action 7 塌缩转为 action 3 塌缩。下一步应检查 target/action 分布、teacher soft targets、uniform target mix 或 policy constraint 训练，而不是继续只堆 timesteps、epoch 或直接放大 route_recovery；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
