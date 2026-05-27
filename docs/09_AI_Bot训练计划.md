@@ -298,6 +298,8 @@ stage 01 opening 课程已按计划跑完 5120 actual timesteps，并完成 60 �
 
 `train_sb3.py` 现在支持 `--trace-dir`、`--trace-failed-only` 和 `--trace-sample-stride`，可在训练后评估、单模型评估或规则 Bot 对比中为 policy episode 输出采样轨迹。轨迹记录 step、tick、time、action、reward、health、level、kills、xp、damage、events、terminal、reward_breakdown 和 action score top actions；它来自 Gym evaluation info，不是完整 Replay，也不包含完整 GameCore snapshot。
 
+`tools/analyze_route_recovery_traces.py` 可读取这些 sampled trace，提取最负的 `route_recovery` 热点，并按地图、时间窗、压力标签和动作统计；它用于定位路线恢复训练失败面，不能替代 Replay 或 high-pressure gate。
+
 首个 retry trace 报告位于 `harness/reports/2026-05-27_rl_curriculum_stage01_retry_trace_001/summary.md`。该报告对 `soda-creek` seed `62406` 到 `62409` 复跑 60 秒 evaluation，并只写失败局 trace：seed `62406` / `62409` 均在死亡前持续选择 action `4`，最终 chosen action score 约 `0.87` / `0.85`，说明 failure 不是随机抖动，而是策略在部分开局稳定沿坏路径前进。下一步应比较失败与成功 seed 的地图压力，并考虑给 trace 增加玩家位置、边界距离和最近敌人压力等 GameCore snapshot 字段。
 
 Gym bridge 的 trace diagnostics 已补充玩家位置 / 速度、地图尺寸、边界距离、最近敌人、附近敌人计数和 low-health / boundary / enemy / hazard / boss / safety 风险分数。带 diagnostics 的复跑报告位于 `harness/reports/2026-05-27_rl_curriculum_stage01_retry_snapshot_trace_001/summary.md`：两个失败 seed 都走到 `soda-creek` 右下角，终点 `boundary.min_distance = 0`、`boundary.edge_risk = 1`、`enemy_pressure_risk = 1`、`nearest_enemy.hitbox_distance = 0`，同时仍高置信选择 action `4`。结论更具体：stage 01 retry 的 opening blocker 是 bottom-right 贴边被围，而不是单纯动作熵不足。
