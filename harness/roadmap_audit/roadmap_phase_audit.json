@@ -499,13 +499,20 @@
         "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_001/comparison_60s_10seed.json",
         "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_001/failure_analysis_60s.md",
         "harness/failed_cases/fail_20260527_026_stage02_opening_edge_delta_opening_regression.json",
-        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_001/stage02_opening_edge_delta.zip"
+        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_001/stage02_opening_edge_delta.zip",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/summary.md",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/trace_compare_summary.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/evaluation_stage02_edge.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/evaluation_stage01_corner.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/traces_stage02_edge/soda-creek_seed62405_trace.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/traces_stage01_corner/soda-creek_seed62405_trace.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
         "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认旧坏路径是右下角 action 4，首个 action-specific 20k 重训又转为 action 8 塌缩。corner_risk_delta smoke 已让 stage 01 opening 60 秒 deterministic / stochastic 10 seed 三图 100% 胜率，但 stage 02 单图训练、mixed retention 和 low-lr short continuation 都会让 soda-creek opening 或 mid-window 回归失败；seed replay 将 soda-creek opening 提升到 90%，但 seed 62405 trace compare 显示 stage 02 丢掉了右下角切 action 7 离角落的触发。",
         "当前 RL Bot 不能作为正式压力测试基线。",
-        "stage 02 opening_edge_risk_delta continuation 没有保住 opening：soda-creek 60 秒 10 seed 回落到 50%，5 个 opening death 全部在 60 秒内，说明当前 targeted regularization 仍不足以推进 stage 03。"
+        "stage 02 opening_edge_risk_delta continuation 没有保住 opening：soda-creek 60 秒 10 seed 回落到 50%，5 个 opening death 全部在 60 秒内，说明当前 targeted regularization 仍不足以推进 stage 03。",
+        "stage 02 opening_edge_delta trace compare 显示当前 reward 不能学到及时撤离：多数失败 seed action 7 出现过晚或缺失，seed 62405 即使切 action 7 也已被贴身压力追上。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -514,7 +521,7 @@
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
-        "继续重做 stage_02：opening_edge_risk_delta 已让 soda-creek opening gate 回落到 50%，下一轮先对 62400、62401、62403、62405、62409 做 failed-only snapshot trace，并比较 stage 01 成功路径，再考虑成功轨迹 replay / 行为约束、分离 opening policy 或更窄的右边界压力 regularization。",
+        "继续重做 stage_02：edge delta trace compare 已确认成功差异是及时且持续的撤离段降低 enemy_pressure_risk；下一轮优先尝试成功轨迹 replay / 行为约束或分离 opening policy，再用 60 秒 10 seed gate 验证。",
         "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图对比；通过前不得进入 stage_03 或 RL 测试 Bot。"
       ]
     },

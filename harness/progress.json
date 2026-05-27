@@ -1096,6 +1096,11 @@
       "id": "rl_curriculum_stage02_opening_edge_delta_regression",
       "summary": "stage 02 opening-edge-delta continuation 新增 opening_edge_risk_delta 状态奖励并沿用 seed replay / low-lr short 配置，但 60 秒 high-pressure 10 seed 中 soda-creek 回落到 50%，5 个 opening death 已记录 fail_20260527_026，仍不能进入 stage 03。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_opening_edge_delta_trace_compare",
+      "summary": "对 stage 02 opening-edge-delta 的 5 个 soda-creek 失败 seed 生成 failed-only snapshot trace，并与 stage 01 corner_risk_delta 同 seed 成功轨迹对比；结论是成功行为依赖更早且持续的撤离段降低 enemy_pressure_risk，而不是单独降低边界风险 scalar。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1757,7 +1762,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "opening_edge_risk_delta 已验证不能单独保住 stage 02：soda-creek 60 秒 10 seed 回落到 50%。下一步应对 62400、62401、62403、62405、62409 做 failed-only snapshot trace，对比 stage 01 成功路径，再考虑成功轨迹 replay / 行为约束、分离 opening policy 或更窄的右边界压力 regularization；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "stage02 edge delta trace compare 显示：62401/62409 从未切 action 7，62400/62403 终局才切，62405 虽切 action 7 但压力已贴身。下一步优先做成功轨迹 replay / 行为约束或分离 opening policy；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",
