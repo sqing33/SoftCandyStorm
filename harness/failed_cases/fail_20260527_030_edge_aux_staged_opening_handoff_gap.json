@@ -6,7 +6,7 @@
   "bot": "Stage01OpeningPlusEdgeAuxBehaviorClone",
   "time_seconds": 157.338,
   "symptom": "使用 stage01 corner_risk_delta SB3 checkpoint 负责前 60 秒、60 秒后切到 edge-aux entropy/class staged behavior clone 后，60 秒 high-pressure 三图 10 seed 全部 100% 胜率，但 180 秒 high-pressure 三图 3 seed 中 soda-creek 与 cracked-star-jar 均只有 66.67% 胜率；两个失败都发生在 seed 62201 的 mid_60_to_180 窗口。",
-  "root_cause": "staged opening wrapper 已证明可以保住 opening gate，但 behavior clone fallback 仍缺少足够稳定的 handoff/mid-window recovery 策略；失败不再表现为 opening action collapse，而是 60 秒后中局恢复能力不足，尤其在 soda-creek 和 cracked-star-jar 的 seed 62201 压力面下仍会被耗尽生命。",
-  "fix": "不要进入 stage 03 或 RL policy acceptance；下一轮应对 seed 62201 的 soda-creek / cracked-star-jar 失败局输出 failed-only trace，并训练或约束专门的 handoff/mid fallback，而不是继续修改 opening 子策略。",
-  "validation": "组合入口、60 秒 opening gate、180 秒 handoff probe 和失败分析记录在 harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_probe_001/summary.md、comparison_60s_10seed.json、comparison_180s_3seed.json 和 failure_analysis_180s.md。"
+  "root_cause": "staged opening wrapper 已证明可以保住 opening gate，但 behavior clone fallback 仍缺少足够稳定的 handoff/mid-window recovery 策略；failed-only trace 进一步显示两个失败局大部分采样帧都处于 edge_risk >= 0.9，终局仍高置信选择会继续顶住阻塞边界的动作，说明失败核心是 deterministic argmax 在边界钉死状态下缺少离边恢复。",
+  "fix": "不要进入 stage 03 或 RL policy acceptance；下一轮应基于 soda-creek / cracked-star-jar seed 62201 trace 训练或约束专门的 handoff/mid fallback，要求 policy 在 60 秒后从 edge-pinned 状态回到开阔区域，再重新跑 deterministic 60 秒 opening gate 与 180 秒多图 handoff probe。",
+  "validation": "组合入口、60 秒 opening gate、180 秒 handoff probe 和失败分析记录在 harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_probe_001/summary.md、comparison_60s_10seed.json、comparison_180s_3seed.json 和 failure_analysis_180s.md；failed-only trace 证据记录在 harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_trace_001/summary.md 和 trace_analysis.json。"
 }

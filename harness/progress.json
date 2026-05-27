@@ -1116,6 +1116,11 @@
       "id": "rl_curriculum_stage02_stochastic_handoff_probe",
       "summary": "同一 staged opening policy 与 soda-creek seed 62201 在 stochastic action selection 下两次活到 180 秒；带 trace 的探针显示 60-75 秒动作不再被 deterministic action 7 锁死，90 秒时已回到 x=-222.8753 且低血量风险为 0。该结果只说明 policy distribution 存在恢复动作，不是 RL acceptance。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_stochastic_probe_001/summary.md"
+    },
+    {
+      "id": "rl_edge_aux_staged_opening_handoff_trace",
+      "summary": "对 SB3 opening + edge-aux behavior clone fallback 的 soda-creek / cracked-star-jar seed 62201 失败局输出 failed-only trace；两个失败均在 mid_60_to_180 死亡，采样帧中 edge_risk >= 0.9 占比超过 90%，终局仍高置信选择顶住阻塞边界的 action 5 / action 7，确认下一步应修 handoff/mid edge recovery，而不是 opening retention。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_trace_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1847,7 +1852,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage01 opening + behavior clone fallback 组合入口已证明能保住 60 秒 opening gate，但 180 秒 soda-creek / cracked-star-jar seed 62201 仍失败；下一步应输出这两个失败局的 failed-only snapshot trace，并专门训练或约束 handoff/mid fallback。"
+      "summary": "stage01 opening + behavior clone fallback 组合入口已证明能保住 60 秒 opening gate；failed-only trace 确认 soda-creek / cracked-star-jar seed 62201 的失败核心是 deterministic fallback 在 edge-pinned 状态下持续顶住阻塞边界。下一步应训练或约束 handoff/mid fallback 离边恢复，再复跑 deterministic 60 秒 opening gate 与 180 秒多图 handoff probe。"
     },
     {
       "id": "phase4_full_pack_manual_review",

@@ -541,7 +541,9 @@
         "harness/failed_cases/fail_20260527_029_edge_aux_entropy_class_opening_gap.json",
         "harness/reports/2026-05-27_rl_edge_recovery_handoff_only_dataset_smoke_001/summary.md",
         "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_probe_001/summary.md",
-        "harness/failed_cases/fail_20260527_030_edge_aux_staged_opening_handoff_gap.json"
+        "harness/failed_cases/fail_20260527_030_edge_aux_staged_opening_handoff_gap.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_trace_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_trace_001/trace_analysis.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -552,7 +554,8 @@
         "stage 02 staged opening wrapper 能把 60 秒 high-pressure 三图 10 seed opening gate 恢复到 100%，但 180 秒三图对比中 soda-creek seed 62201 于 115.5319 秒中局死亡；这说明分离 opening policy 有诊断价值，但 stage 02 仍卡在 handoff 后恢复。",
         "staged opening failed-only trace 显示 60 秒交接时玩家已左下角钉死，fallback 随后持续 action 7 顶左墙并在敌压回升后死亡；下一轮修复应围绕 edge-pinned handoff recovery。",
         "stochastic handoff probe 显示同一 seed 62201 在随机采样下可活到 180 秒，说明恢复动作存在于 policy distribution 中，但单 seed stochastic 结果不能作为 stage 02 或 RL acceptance 通过证据。",
-        "edge recovery 监督样本已把手写 adapter 的 2215 次替换动作固化为 repair_training_input，并接入 behavior clone 数据入口完成 dry-run / 1 epoch smoke；训练入口也已支持 --edge-recovery-sample-weight 和 handoff-only 时间窗过滤，用于混合原轨迹时只在 60 秒后 handoff/mid 窗口引入 repair 样本，首个 dataset smoke 证明 opening 子集 edge repair 样本为 0、mid 子集保留 799 条 repair 样本。train_sb3.py 也已允许 stage01 SB3 opening 包裹 behavior clone fallback，首个 probe 保住 60 秒三图 10 seed opening gate，但 180 秒 soda-creek 与 cracked-star-jar seed 62201 仍在 mid_60_to_180 失败；因此 blocker 已收窄到 handoff/mid recovery，仍不是可用 policy，也不能解除 deterministic handoff blocker。"
+        "edge recovery 监督样本已把手写 adapter 的 2215 次替换动作固化为 repair_training_input，并接入 behavior clone 数据入口完成 dry-run / 1 epoch smoke；训练入口也已支持 --edge-recovery-sample-weight 和 handoff-only 时间窗过滤，用于混合原轨迹时只在 60 秒后 handoff/mid 窗口引入 repair 样本，首个 dataset smoke 证明 opening 子集 edge repair 样本为 0、mid 子集保留 799 条 repair 样本。train_sb3.py 也已允许 stage01 SB3 opening 包裹 behavior clone fallback，首个 probe 保住 60 秒三图 10 seed opening gate，但 180 秒 soda-creek 与 cracked-star-jar seed 62201 仍在 mid_60_to_180 失败；因此 blocker 已收窄到 handoff/mid recovery，仍不是可用 policy，也不能解除 deterministic handoff blocker。",
+        "edge-aux staged opening handoff trace 已确认 soda-creek / cracked-star-jar seed 62201 的失败是 deterministic fallback 长时间 edge-pinned 并高置信顶住阻塞边界；stage 03 仍阻塞，下一轮必须训练或约束 handoff/mid edge recovery。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -561,7 +564,7 @@
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
-        "继续重做 stage_02：stage01 opening + behavior clone fallback 组合入口已证明可保住 60 秒 opening gate；下一轮应对 soda-creek / cracked-star-jar seed 62201 输出 failed-only snapshot trace，并专门训练或约束 handoff/mid fallback。",
+        "继续重做 stage_02：soda-creek / cracked-star-jar seed 62201 failed-only trace 已确认 edge-pinned deterministic fallback 问题；下一步训练或约束 handoff/mid fallback 离边恢复，再复跑 deterministic 60 秒 opening gate 与 180 秒三图 handoff probe。",
         "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图对比；通过前不得进入 stage_03 或 RL 测试 Bot。"
       ]
     },

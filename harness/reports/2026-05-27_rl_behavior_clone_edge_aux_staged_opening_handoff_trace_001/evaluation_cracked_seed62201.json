@@ -1,0 +1,306 @@
+{
+  "report_version": 1,
+  "status": "evaluated",
+  "phase": "rl_phase_1_movement_survival",
+  "map_id": "cracked-star-jar",
+  "policy_kind": "staged_sb3_opening_behavior_clone",
+  "opening_policy": {
+    "mode": "staged_sb3_opening",
+    "opening_model_path": "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/stage01_corner_risk_delta_smoke.zip",
+    "fallback_model_path": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_entropy_class_staged_gru_context8_001/staged.pt",
+    "opening_seconds": 60.0,
+    "limitations": [
+      "The opening model is used only during evaluation/comparison before opening_seconds.",
+      "This wrapper does not train a new policy and is not policy acceptance evidence by itself."
+    ]
+  },
+  "policy_adapter": null,
+  "action_selection": "deterministic",
+  "action_random_seed": null,
+  "action_random_seed_report": {
+    "seed": null,
+    "seeded_sources": []
+  },
+  "upgrade_policy": {
+    "mode": "bridge_default_first_option",
+    "model_path": null
+  },
+  "trace_dir": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_trace_001/traces_cracked",
+  "trace_failed_only": true,
+  "trace_sample_stride": 15,
+  "edge_recovery_samples": null,
+  "episodes": [
+    {
+      "seed": 62201,
+      "map_id": "cracked-star-jar",
+      "steps": 4720,
+      "reward": 8.806,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 157.33798,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "level": 6,
+      "kills": 266,
+      "xp_collected": 385.59988,
+      "damage_taken": 120.26378,
+      "action_counts": {
+        "0": 4,
+        "1": 0,
+        "2": 344,
+        "3": 1179,
+        "4": 912,
+        "5": 0,
+        "6": 0,
+        "7": 2281,
+        "8": 0
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 4720,
+        "mean_scores": {
+          "0": 0.0112,
+          "1": 0.0056,
+          "2": 0.0452,
+          "3": 0.2731,
+          "4": 0.173,
+          "5": 0.0177,
+          "6": 0.0218,
+          "7": 0.4114,
+          "8": 0.041
+        },
+        "mean_top_actions": [
+          {
+            "action": "7",
+            "score": 0.4114
+          },
+          {
+            "action": "3",
+            "score": 0.2731
+          },
+          {
+            "action": "4",
+            "score": 0.173
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 4,
+            "ratio": 0.0008
+          },
+          "1": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "2": {
+            "count": 344,
+            "ratio": 0.0729
+          },
+          "3": {
+            "count": 1179,
+            "ratio": 0.2498
+          },
+          "4": {
+            "count": 912,
+            "ratio": 0.1932
+          },
+          "5": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 2281,
+            "ratio": 0.4833
+          },
+          "8": {
+            "count": 0,
+            "ratio": 0.0
+          }
+        },
+        "dominant_top_action": {
+          "action": "7",
+          "count": 2281,
+          "ratio": 0.4833
+        },
+        "mean_chosen_action_score": 0.8562,
+        "chosen_action_score_sample_count": 4720
+      },
+      "upgrade_policy_decisions": [],
+      "upgrade_policy_decision_count": 0,
+      "edge_recovery_sample_count": 0,
+      "reward_breakdown": {
+        "action_repeat": -17.988,
+        "boss_pressure": 0.0,
+        "boundary_risk": -2.0654,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": 0.0001,
+        "damage_taken": -9.6211,
+        "enemy_pressure": -0.2612,
+        "hazard_risk": 0.0,
+        "kill": 21.28,
+        "level": 4.0,
+        "low_health": -0.5245,
+        "opening_edge_risk_delta": -0.0001,
+        "safety_delta": -0.0112,
+        "survival": 1.5733,
+        "terminal": -3.0,
+        "total": 8.806,
+        "xp": 15.424
+      },
+      "trace_path": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_trace_001/traces_cracked/cracked-star-jar_seed62201_trace.json"
+    }
+  ],
+  "summary": {
+    "episodes": 1,
+    "win_rate": 0.0,
+    "average_survival_seconds": 157.338,
+    "average_level": 6.0,
+    "average_kills": 266.0,
+    "average_reward": 8.806,
+    "damage_taken_average": 120.2638,
+    "action_distribution": {
+      "0": {
+        "count": 4,
+        "ratio": 0.0008
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 344,
+        "ratio": 0.0729
+      },
+      "3": {
+        "count": 1179,
+        "ratio": 0.2498
+      },
+      "4": {
+        "count": 912,
+        "ratio": 0.1932
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 2281,
+        "ratio": 0.4833
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "action_entropy_bits": 1.7488,
+    "normalized_action_entropy": 0.5517,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 4720,
+      "mean_scores": {
+        "0": 0.0112,
+        "1": 0.0056,
+        "2": 0.0452,
+        "3": 0.2731,
+        "4": 0.173,
+        "5": 0.0177,
+        "6": 0.0218,
+        "7": 0.4114,
+        "8": 0.041
+      },
+      "mean_top_actions": [
+        {
+          "action": "7",
+          "score": 0.4114
+        },
+        {
+          "action": "3",
+          "score": 0.2731
+        },
+        {
+          "action": "4",
+          "score": 0.173
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 4,
+          "ratio": 0.0008
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 344,
+          "ratio": 0.0729
+        },
+        "3": {
+          "count": 1179,
+          "ratio": 0.2498
+        },
+        "4": {
+          "count": 912,
+          "ratio": 0.1932
+        },
+        "5": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "6": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "7": {
+          "count": 2281,
+          "ratio": 0.4833
+        },
+        "8": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "dominant_top_action": {
+        "action": "7",
+        "count": 2281,
+        "ratio": 0.4833
+      },
+      "mean_chosen_action_score": 0.8562,
+      "chosen_action_score_sample_count": 4720
+    },
+    "upgrade_policy_decision_count": 0,
+    "reward_breakdown_average": {
+      "action_repeat": -17.988,
+      "boss_pressure": 0.0,
+      "boundary_risk": -2.0654,
+      "corner_action_risk": 0.0,
+      "corner_risk_delta": 0.0001,
+      "damage_taken": -9.6211,
+      "enemy_pressure": -0.2612,
+      "hazard_risk": 0.0,
+      "kill": 21.28,
+      "level": 4.0,
+      "low_health": -0.5245,
+      "opening_edge_risk_delta": -0.0001,
+      "safety_delta": -0.0112,
+      "survival": 1.5733,
+      "terminal": -3.0,
+      "total": 8.806,
+      "xp": 15.424
+    }
+  },
+  "algorithm": "behavior_clone",
+  "model_path": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_entropy_class_staged_gru_context8_001/staged.pt",
+  "limitations": [
+    "Behavior clone evaluation reuses the Gym bridge and action diagnostics, but it is still not a balance or fun gate.",
+    "The clone still predicts movement actions only; an optional upgrade-choice ranker can fill upgrade prompts during evaluation."
+  ]
+}
