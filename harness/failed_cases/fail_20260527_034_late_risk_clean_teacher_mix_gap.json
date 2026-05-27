@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_034",
+  "category": "rl",
+  "content_id": "rl_behavior_clone_late_risk_clean_teacher_mix_staged_gru_context8",
+  "seed": "62300-62309",
+  "bot": "Stage01OpeningPlusLateRiskCleanTeacherMixBehaviorClone",
+  "time_seconds": 226.4006,
+  "symptom": "将 phase-aligned 轨迹、clean teacher 180-300 秒成功轨迹、edge recovery 样本和 late risk recovery 样本混合训练后，late 子模型 validation_accuracy=0.8025；deterministic high-pressure 60 秒为 100%/100%/90%，180 秒三图均 100%，但 300 秒 soda-creek、caramel-workshop、cracked-star-jar 仍全部 0%。",
+  "root_cause": "混合监督能保持 opening 与 handoff，但仍是离线 imitation / adapter repair 学习，无法在 180-300 秒闭环压力中优化路线、低血量恢复、Boss / hazard / enemy 联合压力和升级选择交互。失败分析显示 9 个 300 秒失败全部落在 late_180_to_300，说明 blocker 已收窄到 late-window long-run recovery，而不是 opening 或 mid handoff。",
+  "fix": "不得进入 stage 03、RL policy acceptance 或 rl_test_bot_candidate。下一步应停止只增加离线 imitation 样本，改做 closed-loop late survival 训练或加入明确 route planning、low-health recovery、hazard + boss pressure 与 upgrade-choice 联合目标；任何候选仍必须通过 deterministic high-pressure 60 秒、180 秒和 300 秒多图对比。",
+  "validation": "训练、打包、deterministic 60 秒 / 180 秒 / 300 秒 high-pressure 对比、failed-only traces 与失败分析记录在 harness/reports/2026-05-27_rl_behavior_clone_late_risk_clean_teacher_mix_staged_gru_context8_001/summary.md、late_training.json、packaging.json、comparison_60s_10seed.json、comparison_180s_3seed.json、comparison_300s_3seed.json、failure_analysis_300s.md 和 traces/。"
+}

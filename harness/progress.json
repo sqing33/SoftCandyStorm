@@ -1923,6 +1923,11 @@
       "id": "rl_expanded_clean_teacher_late_survival_regression",
       "summary": "使用新增 caramel-workshop seed 62405 训练 expanded clean teacher late 子模型后，validation_accuracy 从 0.7200 升至 0.7633，但 deterministic high-pressure 60 秒仍为 70%/100%/80%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%。clean teacher-only late replacement 仍不能进入 stage 03 或 RL acceptance。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_expanded_staged_gru_context8_001/summary.md"
+    },
+    {
+      "id": "rl_late_risk_clean_teacher_mix_regression",
+      "summary": "将 phase-aligned 轨迹、expanded clean teacher 成功轨迹、edge recovery 和 risk recovery 样本混合训练 late 子模型后，60 秒为 100%/100%/90%，180 秒三图均 100%，但 300 秒三图仍全 0%，9 个失败全部在 late_180_to_300。blocker 收窄到 late-window long-run recovery，仍不能进入 stage 03 或 RL acceptance。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_late_risk_clean_teacher_mix_staged_gru_context8_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1932,7 +1937,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "clean teacher-only late replacement、no-phase 消融、--phase-duration-seconds 300 absolute-time 重新打包，以及新增 caramel seed 62405 后的 expanded clean teacher late 子模型都已验证失败：300 秒 high-pressure 三图仍全 0%。下一步不要继续单独训练 clean teacher-only late replacement；应加入 opening/mid retention 或 contrastive 约束，或改做 closed-loop late survival 训练；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "clean teacher-only、expanded clean teacher、late risk + clean teacher mix 都已验证无法通过 300 秒 high-pressure 三图。mixed 版本保住 180 秒 handoff，但 300 秒失败全部落在 late_180_to_300。下一步应停止只加离线 imitation 样本，改做 closed-loop late survival 训练，或加入路线规划、low-health recovery、hazard + boss pressure 与 upgrade-choice 联合目标；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

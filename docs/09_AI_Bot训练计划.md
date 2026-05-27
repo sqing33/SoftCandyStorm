@@ -432,6 +432,8 @@ clean teacher late survival 候选用 `--phase-duration-seconds 300` 重新打�
 
 expanded clean teacher late 子模型训练后 validation_accuracy 从 0.7200 提升到 0.7633，但 deterministic high-pressure 结果没有修复：60 秒仍为 70% / 100% / 80%，180 秒为 66.67% / 100% / 33.33%，300 秒三图仍全部 0%。结论：新增 caramel clean teacher 只改善离线覆盖，不足以修复 online long-run recovery；下一步不要继续单独训练 clean teacher-only late replacement，应加入 opening/mid retention、contrastive 约束或 closed-loop late survival 目标后再复跑 gate。
 
+late risk + clean teacher mix 候选把 phase-aligned 规则轨迹、expanded clean teacher 成功轨迹、edge recovery 样本和 risk recovery 样本一起训练 late 子模型，validation_accuracy 达到 0.8025。配合 stage01 opening wrapper 后，60 秒为 100% / 100% / 90%，180 秒三图均 100%，但 300 秒三图仍全部 0%，且 9 个失败全部落在 `late_180_to_300`。结论：失败面已收窄到 late-window long-run recovery，下一步应转向 closed-loop late survival、路线规划约束、升级选择交互或更明确的 hazard + boss pressure 目标，而不是继续只加离线 imitation 样本。
+
 首个完整 staged GRU context8 候选分别训练 opening、mid、late 三段子策略并用相对路径打包；结果仍为 `repair`：60 秒 high-pressure 中 `soda-creek` 只有 20% 胜率且动作 3 占 76.72%，300 秒中 `soda-creek` 为 0%、`caramel-workshop` 和 `cracked-star-jar` 各 33.33%。这说明只按时间切换子模型不足以形成长局规划，下一步需要阶段目标监督、升级选择数据、更多 opening 覆盖或 PPO 蒸馏。
 
 为排查 staged 子策略的数据窗口错配，已重新导出 300 秒 high-pressure 三图 10 seed phase-aligned 轨迹，使 `opening` 覆盖 0-60 秒而不是 60 秒短局中的前 12 秒。该修复把 opening 样本从 1080 提升到 5388，但 phase-aligned staged GRU context8 仍为 `repair`：60 秒 `soda-creek` 0% 胜率、动作 3 占 79.11%，300 秒 `soda-creek` 和 `caramel-workshop` 均为 0%。结论是补 opening 覆盖不足以修复 movement-only imitation，下一步应引入阶段目标监督、升级选择数据、teacher soft targets 或 PPO 蒸馏初始化。
