@@ -251,6 +251,7 @@ class EdgeRecoveryFilterPolicy:
         self.policy = policy
         self.edge_distance = edge_distance
         self._step_context = {}
+        self._last_recovery_decision = None
 
     def reset(self):
         reset = getattr(self.policy, "reset", None)
@@ -274,11 +275,19 @@ class EdgeRecoveryFilterPolicy:
             set_random_seed(seed)
 
     def predict(self, observation, deterministic=True):
+        self._last_recovery_decision = None
         action, state = self.policy.predict(observation, deterministic=deterministic)
         action_index = action_to_int(action)
         if deterministic and self.action_pushes_into_edge(action_index):
             action_scores = policy_action_scores(self.policy, observation)
-            action_index = self.recovery_action(action_index, action_scores)
+            recovery_action = self.recovery_action(action_index, action_scores)
+            if recovery_action != action_index:
+                self._last_recovery_decision = self.build_recovery_decision(
+                    action_index,
+                    recovery_action,
+                    action_scores,
+                )
+            action_index = recovery_action
             return action_index, state
         return action, state
 
@@ -303,6 +312,40 @@ class EdgeRecoveryFilterPolicy:
             if not self.action_pushes_into_edge(action_index):
                 return action_index
         return blocked_action
+
+    def build_recovery_decision(self, blocked_action, recovery_action, action_scores):
+        scores = action_scores.get("scores", []) if isinstance(action_scores, dict) else []
+        ranked_actions = sorted(
+            range(min(len(scores), len(GYM_ACTION_MOVEMENTS))),
+            key=lambda index: float(scores[index]),
+            reverse=True,
+        )
+        blocked_score = score_at(scores, blocked_action)
+        recovery_score = score_at(scores, recovery_action)
+        return {
+            "mode": "edge_recovery_filter",
+            "edge_distance": self.edge_distance,
+            "original_action": int(blocked_action),
+            "target_action": int(recovery_action),
+            "score_kind": action_scores.get("kind") if isinstance(action_scores, dict) else None,
+            "original_action_score": blocked_score,
+            "target_action_score": recovery_score,
+            "score_margin": (
+                round(float(recovery_score) - float(blocked_score), 6)
+                if blocked_score is not None and recovery_score is not None
+                else None
+            ),
+            "target_rank": (
+                ranked_actions.index(recovery_action) + 1
+                if recovery_action in ranked_actions
+                else None
+            ),
+        }
+
+    def consume_recovery_decision(self):
+        decision = self._last_recovery_decision
+        self._last_recovery_decision = None
+        return decision
 
     def opening_policy_report(self):
         return opening_policy_report(self.policy)
@@ -333,6 +376,14 @@ def action_pushes_into_edge(action_index, diagnostics, edge_distance):
         or (bottom is not None and bottom <= edge_distance and dy < 0.0)
         or (top is not None and top <= edge_distance and dy > 0.0)
     )
+
+
+def score_at(scores, action_index):
+    if not isinstance(scores, list):
+        return None
+    if 0 <= int(action_index) < len(scores):
+        return round(float(scores[int(action_index)]), 6)
+    return None
 
 
 def as_float(value):
@@ -529,6 +580,7 @@ def train(
     trace_sample_stride=30,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
+    edge_recovery_samples_out=None,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -615,6 +667,7 @@ def train(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        edge_recovery_samples_out=edge_recovery_samples_out,
     )
     known_exploit_notes = known_exploits_from_evaluation(evaluation)
     gate_decision = training_gate_decision(known_exploit_notes)
@@ -757,6 +810,7 @@ def evaluate_saved_policy(
     trace_sample_stride=30,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
+    edge_recovery_samples_out=None,
 ):
     model_class = stable_baselines_model_classes()[algorithm]
     fallback_model_path = model_path or default_model_path(config, algorithm)
@@ -791,6 +845,7 @@ def evaluate_saved_policy(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        edge_recovery_samples_out=edge_recovery_samples_out,
     )
 
 
@@ -813,6 +868,7 @@ def evaluate_policy_model(
     trace_sample_stride=30,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
+    edge_recovery_samples_out=None,
 ):
     if behavior_clone_model is not None:
         upgrade_policy = (
@@ -835,6 +891,7 @@ def evaluate_policy_model(
             trace_sample_stride=trace_sample_stride,
             edge_recovery_filter=edge_recovery_filter,
             edge_recovery_distance=edge_recovery_distance,
+            edge_recovery_samples_out=edge_recovery_samples_out,
         )
     return evaluate_saved_policy(
         config,
@@ -854,6 +911,7 @@ def evaluate_policy_model(
         trace_sample_stride=trace_sample_stride,
         edge_recovery_filter=edge_recovery_filter,
         edge_recovery_distance=edge_recovery_distance,
+        edge_recovery_samples_out=edge_recovery_samples_out,
     )
 
 
@@ -872,6 +930,7 @@ def evaluate_behavior_clone_policy(
     trace_sample_stride=30,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
+    edge_recovery_samples_out=None,
 ):
     model_path = Path(model_path)
     policy = load_behavior_clone_policy(model_path)
@@ -893,6 +952,7 @@ def evaluate_behavior_clone_policy(
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
+        edge_recovery_samples_out=edge_recovery_samples_out,
     )
     evaluation["policy_kind"] = "behavior_clone"
     evaluation["algorithm"] = "behavior_clone"
@@ -922,6 +982,7 @@ def evaluate_model(
     trace_sample_stride=30,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
+    edge_recovery_samples_out=None,
 ):
     eval_random_seed = validate_eval_random_seed(eval_random_seed, deterministic)
     action_random_seed_report = seed_stochastic_action_sampling(
@@ -932,6 +993,7 @@ def evaluate_model(
     map_id = map_id or config["environment"].get("map_id", "frosting-grassland")
     max_steps = int(seconds * config["environment"]["tick_rate"]) + 10
     episode_reports = []
+    edge_recovery_samples = []
     total_reward = 0.0
     env = None
     try:
@@ -961,20 +1023,35 @@ def evaluate_model(
             reward_breakdown_totals = {}
             trace_steps = []
             while not terminated and not truncated and steps < max_steps:
+                pre_step_info = info
+                pre_step_observation = observation
                 set_policy_context = getattr(model, "set_step_context", None)
                 if callable(set_policy_context):
-                    set_policy_context(info)
+                    set_policy_context(pre_step_info)
                 action, _state = model.predict(
-                    observation, deterministic=deterministic
+                    pre_step_observation, deterministic=deterministic
                 )
                 action_index = action_to_int(action)
-                action_scores = policy_action_scores(model, observation)
+                adapter_decision = consume_policy_adapter_decision(model)
+                action_scores = policy_action_scores(model, pre_step_observation)
                 record_action_scores(
                     action_score_tracker,
                     action_scores,
                     action_index,
                 )
                 action_counts[str(action_index)] = action_counts.get(str(action_index), 0) + 1
+                if adapter_decision is not None:
+                    edge_recovery_samples.append(
+                        build_edge_recovery_sample(
+                            episode_seed=seed,
+                            step_number=steps + 1,
+                            observation=pre_step_observation,
+                            info=pre_step_info,
+                            adapter_decision=adapter_decision,
+                            action_scores=action_scores,
+                            config=config,
+                        )
+                    )
                 observation, reward, terminated, truncated, info = env.step(action_index)
                 step_number = steps + 1
                 if "upgrade_policy_decision" in info:
@@ -1024,6 +1101,11 @@ def evaluate_model(
                 ),
                 "upgrade_policy_decisions": upgrade_policy_decisions,
                 "upgrade_policy_decision_count": len(upgrade_policy_decisions),
+                "edge_recovery_sample_count": sum(
+                    1
+                    for sample in edge_recovery_samples
+                    if sample.get("seed") == seed and sample.get("map_id") == info["map_id"]
+                ),
                 "reward_breakdown": round_reward_breakdown(reward_breakdown_totals),
             }
             trace_path = write_episode_trace(
@@ -1040,6 +1122,10 @@ def evaluate_model(
             env.close()
 
     summary = summarize_evaluation(episode_reports, total_reward)
+    edge_recovery_samples_report = write_edge_recovery_samples(
+        edge_recovery_samples_out,
+        edge_recovery_samples,
+    )
     return {
         "report_version": 1,
         "status": "evaluated",
@@ -1055,6 +1141,7 @@ def evaluate_model(
         "trace_dir": str(trace_dir) if trace_dir is not None else None,
         "trace_failed_only": bool(trace_failed_only) if trace_dir is not None else None,
         "trace_sample_stride": trace_sample_stride if trace_dir is not None else None,
+        "edge_recovery_samples": edge_recovery_samples_report,
         "episodes": episode_reports,
         "summary": summary,
     }
@@ -1137,6 +1224,99 @@ def write_episode_trace(trace_dir, episode_report, trace_steps, *, failed_only=F
     }
     target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return str(target)
+
+
+def observation_to_list(observation):
+    if hasattr(observation, "tolist"):
+        observation = observation.tolist()
+    if isinstance(observation, tuple):
+        observation = list(observation)
+    if not isinstance(observation, list):
+        return [float(observation)]
+    return [float(value) for value in observation]
+
+
+def build_edge_recovery_sample(
+    *,
+    episode_seed,
+    step_number,
+    observation,
+    info,
+    adapter_decision,
+    action_scores,
+    config,
+):
+    observation_values = observation_to_list(observation)
+    score_payload = compact_full_action_scores(action_scores)
+    return {
+        "record_type": "edge_recovery_supervision_sample",
+        "schema_version": 1,
+        "sample_role": "repair_training_input",
+        "target_source": "edge_recovery_filter",
+        "seed": episode_seed,
+        "map_id": info.get("map_id"),
+        "step": step_number,
+        "tick": info.get("tick"),
+        "time_seconds": round(float(info.get("time_seconds", 0.0)), 4),
+        "observation_version": config["environment"].get("observation_version", 2),
+        "observation_len": len(observation_values),
+        "observation": observation_values,
+        "original_action": adapter_decision["original_action"],
+        "target_action": adapter_decision["target_action"],
+        "target_label": "highest_scored_non_wallward_action",
+        "adapter_decision": adapter_decision,
+        "action_scores": score_payload,
+        "diagnostics": info.get("diagnostics", {}),
+        "limitations": [
+            "This sample is produced by a hand-written diagnostic adapter.",
+            "It may be used for repair training or behavior constraints only.",
+            "It is not RL policy acceptance evidence and does not replace deterministic high-pressure gates.",
+        ],
+    }
+
+
+def compact_full_action_scores(action_scores):
+    if not action_scores or action_scores.get("kind") == "unavailable":
+        return {
+            "kind": "unavailable",
+            "reason": (action_scores or {}).get("reason", "no action score payload"),
+        }
+    scores = [round(float(score), 6) for score in action_scores.get("scores", [])]
+    return {
+        "kind": action_scores.get("kind"),
+        "scores": scores,
+        "top_actions": [
+            {
+                "action": str(index),
+                "score": round(float(score), 6),
+            }
+            for index, score in sorted(
+                enumerate(scores),
+                key=lambda item: item[1],
+                reverse=True,
+            )[:3]
+        ],
+    }
+
+
+def write_edge_recovery_samples(samples_path, samples):
+    if samples_path is None:
+        return None
+    target = Path(samples_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("w", encoding="utf-8") as handle:
+        for sample in samples:
+            handle.write(json.dumps(sample, ensure_ascii=False, sort_keys=True) + "\n")
+    return {
+        "path": str(target),
+        "sample_count": len(samples),
+        "record_type": "edge_recovery_supervision_sample",
+        "sample_role": "repair_training_input",
+        "limitations": [
+            "Samples are emitted only when edge_recovery_filter changes a deterministic action.",
+            "They are training/diagnostic material, not policy acceptance evidence.",
+        ],
+    }
 
 
 def action_to_int(action):
@@ -1384,6 +1564,13 @@ def policy_adapter_report(model):
     return None
 
 
+def consume_policy_adapter_decision(model):
+    consume = getattr(model, "consume_recovery_decision", None)
+    if callable(consume):
+        return consume()
+    return None
+
+
 def round_reward_breakdown(values):
     return {key: round(value, 4) for key, value in sorted(values.items())}
 
@@ -1545,6 +1732,16 @@ def run_rule_bot_matrix(config, bots, seed_start, seeds, seconds, map_id):
     }
 
 
+def derived_edge_recovery_samples_path(samples_out, map_id):
+    if samples_out is None:
+        return None
+    base = Path(samples_out)
+    safe_map_id = str(map_id).replace("/", "_")
+    if base.suffix:
+        return base.with_name(f"{base.stem}_{safe_map_id}{base.suffix}")
+    return base / f"{safe_map_id}_edge_recovery_samples.jsonl"
+
+
 def compare_policy_to_rule_bots(
     config,
     algorithm,
@@ -1565,6 +1762,7 @@ def compare_policy_to_rule_bots(
     trace_sample_stride=30,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
+    edge_recovery_samples_out=None,
 ):
     episodes = eval_episodes or config["evaluation"]["episodes"]
     seconds = eval_seconds or config["evaluation"]["seconds"]
@@ -1590,6 +1788,7 @@ def compare_policy_to_rule_bots(
         trace_sample_stride=trace_sample_stride,
         edge_recovery_filter=edge_recovery_filter,
         edge_recovery_distance=edge_recovery_distance,
+        edge_recovery_samples_out=edge_recovery_samples_out,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
     findings = comparison_findings(policy, rule_matrix["stdout"])
@@ -1607,6 +1806,7 @@ def compare_policy_to_rule_bots(
         "policy_kind": policy.get("policy_kind", "sb3"),
         "opening_policy": policy.get("opening_policy"),
         "policy_adapter": policy.get("policy_adapter"),
+        "edge_recovery_samples": policy.get("edge_recovery_samples"),
         "upgrade_policy": policy.get("upgrade_policy"),
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "map_id": map_id,
@@ -1650,6 +1850,7 @@ def compare_policy_to_rule_bots_across_maps(
     trace_sample_stride=30,
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
+    edge_recovery_samples_out=None,
 ):
     comparisons = [
         compare_policy_to_rule_bots(
@@ -1672,6 +1873,10 @@ def compare_policy_to_rule_bots_across_maps(
             trace_sample_stride=trace_sample_stride,
             edge_recovery_filter=edge_recovery_filter,
             edge_recovery_distance=edge_recovery_distance,
+            edge_recovery_samples_out=derived_edge_recovery_samples_path(
+                edge_recovery_samples_out,
+                map_id,
+            ),
         )
         for map_id in map_ids
     ]
@@ -1690,6 +1895,11 @@ def compare_policy_to_rule_bots_across_maps(
         "policy_kind": comparisons[0].get("policy_kind") if comparisons else None,
         "opening_policy": comparisons[0].get("opening_policy") if comparisons else None,
         "policy_adapter": comparisons[0].get("policy_adapter") if comparisons else None,
+        "edge_recovery_samples": [
+            comparison.get("edge_recovery_samples")
+            for comparison in comparisons
+            if comparison.get("edge_recovery_samples") is not None
+        ],
         "upgrade_policy": comparisons[0].get("upgrade_policy") if comparisons else None,
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "action_selection": comparisons[0]["action_selection"] if comparisons else None,
@@ -2069,6 +2279,11 @@ def main():
         help="Boundary distance threshold for --edge-recovery-filter.",
     )
     parser.add_argument(
+        "--edge-recovery-samples-out",
+        default=None,
+        help="Write JSONL supervision samples whenever --edge-recovery-filter changes a deterministic action.",
+    )
+    parser.add_argument(
         "--trace-dir",
         default=None,
         help="Write sampled policy episode traces during training evaluation, evaluation, or comparison.",
@@ -2139,6 +2354,8 @@ def main():
         parser.error("--upgrade-choice-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--edge-recovery-filter requires --evaluate-model or --compare-rule-bots")
+    if args.edge_recovery_samples_out and not args.edge_recovery_filter:
+        parser.error("--edge-recovery-samples-out requires --edge-recovery-filter")
     if args.trace_sample_stride <= 0:
         parser.error("--trace-sample-stride must be greater than 0")
 
@@ -2202,6 +2419,7 @@ def main():
                 trace_sample_stride=args.trace_sample_stride,
                 edge_recovery_filter=args.edge_recovery_filter,
                 edge_recovery_distance=args.edge_recovery_distance,
+                edge_recovery_samples_out=args.edge_recovery_samples_out,
             ),
         )
         return
@@ -2244,6 +2462,7 @@ def main():
                     trace_sample_stride=args.trace_sample_stride,
                     edge_recovery_filter=args.edge_recovery_filter,
                     edge_recovery_distance=args.edge_recovery_distance,
+                    edge_recovery_samples_out=args.edge_recovery_samples_out,
                 ),
             )
             return
@@ -2281,6 +2500,7 @@ def main():
                 trace_sample_stride=args.trace_sample_stride,
                 edge_recovery_filter=args.edge_recovery_filter,
                 edge_recovery_distance=args.edge_recovery_distance,
+                edge_recovery_samples_out=args.edge_recovery_samples_out,
             ),
         )
         return
@@ -2311,6 +2531,7 @@ def main():
             trace_sample_stride=args.trace_sample_stride,
             edge_recovery_filter=args.edge_recovery_filter,
             edge_recovery_distance=args.edge_recovery_distance,
+            edge_recovery_samples_out=args.edge_recovery_samples_out,
         ),
     )
 

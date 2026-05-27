@@ -1798,6 +1798,11 @@
       "id": "rl_curriculum_stage02_edge_recovery_filter_probe",
       "summary": "使用 edge_recovery_filter 复跑 stage02 staged policy，原 soda-creek seed 62201 deterministic handoff 失败局活到 180.0095 秒；60 秒 10 seed 和 180 秒 3 seed 三图均为 100%，但该结果仍是手写 adapter watch 证据，不是 policy acceptance。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_filter_probe_001/summary.md"
+    },
+    {
+      "id": "rl_edge_recovery_supervision_samples",
+      "summary": "train_sb3.py 新增 --edge-recovery-samples-out，可在 edge_recovery_filter 替换顶墙 deterministic 动作时导出 repair_training_input JSONL；首份 soda-creek seed 62201 样本导出 2215 条 observation v2 监督样本，并通过 tools/validate_edge_recovery_samples.py 校验，仍不能作为 RL acceptance。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1807,7 +1812,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；stochastic probe 说明恢复动作存在于 policy distribution 中但 deterministic argmax 会锁成顶墙路径。下一步可尝试 seeded stochastic gate、温度/熵约束、动作平滑或显式 handoff recovery 行为约束；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；stochastic probe 和 edge_recovery_filter 说明恢复动作存在但 deterministic argmax 会锁成顶墙路径。下一步用 edge_recovery_samples JSONL 转成显式 handoff recovery 行为约束或监督微调输入；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",

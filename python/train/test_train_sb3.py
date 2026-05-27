@@ -11,13 +11,17 @@ from python.train.train_sb3 import (
     algorithm_parameters_source_label,
     algorithm_overrides_from_args,
     apply_loaded_model_overrides,
+    build_edge_recovery_sample,
     build_trace_step,
     compact_action_score,
+    consume_policy_adapter_decision,
+    derived_edge_recovery_samples_path,
     merge_algorithm_parameters,
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
     should_record_trace_step,
     validate_eval_random_seed,
+    write_edge_recovery_samples,
     write_episode_trace,
 )
 
@@ -144,6 +148,32 @@ def test_edge_recovery_filter_chooses_best_non_wallward_action():
     assert policy.policy_adapter_report()["mode"] == "edge_recovery_filter"
 
 
+def test_edge_recovery_filter_records_consumable_recovery_decision():
+    policy = EdgeRecoveryFilterPolicy(DummyPolicy(7), edge_distance=32.0)
+    policy.set_step_context(
+        {
+            "diagnostics": {
+                "boundary": {
+                    "left_distance": 0.0,
+                    "right_distance": 400.0,
+                    "bottom_distance": 400.0,
+                    "top_distance": 400.0,
+                }
+            }
+        }
+    )
+
+    action, _state = policy.predict(None, deterministic=True)
+    decision = consume_policy_adapter_decision(policy)
+
+    assert action == 0
+    assert decision["mode"] == "edge_recovery_filter"
+    assert decision["original_action"] == 7
+    assert decision["target_action"] == 0
+    assert decision["target_rank"] == 2
+    assert consume_policy_adapter_decision(policy) is None
+
+
 def test_edge_recovery_filter_does_not_override_stochastic_actions():
     policy = EdgeRecoveryFilterPolicy(DummyPolicy(7), edge_distance=32.0)
     policy.set_step_context(
@@ -162,6 +192,79 @@ def test_edge_recovery_filter_does_not_override_stochastic_actions():
     action, _state = policy.predict(None, deterministic=False)
 
     assert action == 7
+    assert consume_policy_adapter_decision(policy) is None
+
+
+def test_build_edge_recovery_sample_includes_observation_and_diagnostics():
+    sample = build_edge_recovery_sample(
+        episode_seed=62201,
+        step_number=1801,
+        observation=[0.1, 0.2, 0.3],
+        info={
+            "map_id": "soda-creek",
+            "tick": 1800,
+            "time_seconds": 60.0,
+            "diagnostics": {
+                "boundary": {
+                    "left_distance": 0.0,
+                    "right_distance": 2400.0,
+                    "bottom_distance": 900.0,
+                    "top_distance": 900.0,
+                }
+            },
+        },
+        adapter_decision={
+            "mode": "edge_recovery_filter",
+            "edge_distance": 32.0,
+            "original_action": 7,
+            "target_action": 0,
+            "score_kind": "probability",
+            "original_action_score": 0.9,
+            "target_action_score": 0.1,
+            "score_margin": -0.8,
+            "target_rank": 2,
+        },
+        action_scores={
+            "kind": "probability",
+            "scores": [0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9, 0.0],
+        },
+        config={"environment": {"observation_version": 2}},
+    )
+
+    assert sample["record_type"] == "edge_recovery_supervision_sample"
+    assert sample["sample_role"] == "repair_training_input"
+    assert sample["observation_len"] == 3
+    assert sample["original_action"] == 7
+    assert sample["target_action"] == 0
+    assert sample["diagnostics"]["boundary"]["left_distance"] == 0.0
+
+
+def test_write_edge_recovery_samples_writes_jsonl(tmp_path):
+    target = tmp_path / "edge_samples.jsonl"
+    report = write_edge_recovery_samples(
+        target,
+        [
+            {
+                "record_type": "edge_recovery_supervision_sample",
+                "target_action": 0,
+            }
+        ],
+    )
+
+    lines = target.read_text(encoding="utf-8").splitlines()
+    assert report["sample_count"] == 1
+    assert json.loads(lines[0])["target_action"] == 0
+
+
+def test_derived_edge_recovery_samples_path_uses_map_suffix():
+    assert (
+        derived_edge_recovery_samples_path("samples.jsonl", "soda-creek").name
+        == "samples_soda-creek.jsonl"
+    )
+    assert (
+        derived_edge_recovery_samples_path("samples", "soda-creek").name
+        == "soda-creek_edge_recovery_samples.jsonl"
+    )
 
 
 def test_algorithm_parameter_source_records_warm_start_overrides():

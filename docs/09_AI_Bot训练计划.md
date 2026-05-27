@@ -450,6 +450,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 使用 `--edge-recovery-filter --edge-recovery-distance 32` 复跑 stage 02 staged policy 后，原 deterministic 失败 seed `soda-creek / 62201` 可活到 `180.0095s`；high-pressure 三图 60 秒 10 seed 与 180 秒 3 seed 也均为 100% 胜率，但动作熵低于 seeded stochastic 路径，约 `0.56-0.72`。报告位于 `harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_filter_probe_001/summary.md`。结论：这确认失败面是 deterministic edge-pushing handoff bug，但 wrapper 是手写 adapter，只能指导后续训练 / 行为约束，不能作为 policy acceptance。
 
+`--edge-recovery-samples-out` 可在 `edge_recovery_filter` 实际替换 deterministic 动作时输出 JSONL 监督样本。每条样本包含 observation v2、原始顶墙动作、目标非顶墙动作、policy action scores、边界诊断和限制说明，角色是 `repair_training_input`。`tools/validate_edge_recovery_samples.py` 会校验原动作确实顶边、目标动作不再顶边、observation 长度一致，并明确该样本不能作为 RL policy acceptance。首份 `soda-creek / 62201` staged policy 样本报告位于 `harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/summary.md`：共导出并校验 `2215` 条样本，时间范围 `6.8333-178.7759s`。下一步可以把这些样本转成 handoff recovery 行为约束或监督微调输入，但最终仍必须重新通过 deterministic high-pressure 60 秒 / 180 秒 / 300 秒多图对比和正式 acceptance manifest。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
