@@ -384,6 +384,8 @@ soft/top-k + `entropy_regularization = 0.05` 消融报告位于 `harness/reports
 
 基于 `per_map_uniform_0_2` 的 `soda-creek` 180 秒失败 trace，已导出 `50-80s` 中窗 route recovery repair samples，报告位于 `harness/reports/2026-05-27_rl_action_distribution_regularization_soda_midwindow_samples_001/summary.md`。本轮得到 `51` 条有效样本，全部来自 seed `62404`，原动作分布为 action `1/6`，目标动作为 action `5/2`；validator 判定 `edge_recovery_samples_valid`。由于 staged policy 以 `300s` 分段，`50-60s` 样本进入 opening dry-run，`60-80s` 的 `24` 条样本进入 mid dry-run。下一轮训练必须按 phase 拆开处理，不能只重训 opening。
 
+phase-split retrain 报告位于 `harness/reports/2026-05-27_rl_action_distribution_phase_split_retrain_001/summary.md`。同时重训 opening/mid 的 `phase_split_soda_mid` 可把 180 秒 `soda-creek` win rate 从 `0.0` 拉到 `0.4`，但 60 秒 `caramel-workshop` 和 `cracked-star-jar` 重新触发 action `3` bias repair，且 180 秒 `cracked-star-jar` 降到 `0.2`；只重训 mid 的两档保住了 60 秒短窗，却仍让 180 秒 `soda-creek` 停在 `0.0`。该结果记录为 `fail_20260527_047`，说明单 seed `50-80s` 样本不足，下一步应先扩展多 seed `45-100s` midwindow repair coverage。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。

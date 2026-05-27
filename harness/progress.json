@@ -2078,6 +2078,11 @@
       "id": "rl_action_distribution_regularization_soda_midwindow_samples",
       "summary": "从 per_map_uniform_0_2 的 soda-creek 180 秒失败 trace 导出 50-80 秒 route recovery repair samples：51 条样本全部来自 seed 62404，validator 通过；dry-run 显示 50-60 秒进入 opening，60-80 秒的 24 条样本进入 mid，下一轮训练应按 phase 拆开处理。",
       "report": "harness/reports/2026-05-27_rl_action_distribution_regularization_soda_midwindow_samples_001/summary.md"
+    },
+    {
+      "id": "rl_action_distribution_phase_split_retrain",
+      "summary": "phase-split retrain 完成：同时重训 opening/mid 可把 180 秒 soda-creek 提到 0.4，但破坏 60 秒 caramel/cracked 动作分布且 cracked 180 秒降到 0.2；只重训 mid 保住 60 秒但 soda 180 秒仍为 0.0，记录 fail_20260527_047。",
+      "report": "harness/reports/2026-05-27_rl_action_distribution_phase_split_retrain_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2087,7 +2092,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。已从 soda-creek 50-80 秒失败 trace 导出 51 条状态条件化 repair samples，下一步应按 phase 重训 opening/mid 并跑 60/180 秒三图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。单 seed phase-split retrain 证明 50-80 秒样本覆盖不足：opening+mid 会破坏短窗，只换 mid 又修不动 soda。下一步应扩展多 seed 45-100 秒 midwindow repair coverage，再做 per-map/per-phase target 消融；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

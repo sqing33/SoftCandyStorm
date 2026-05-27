@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_047",
+  "category": "rl_policy",
+  "content_id": "action_distribution_phase_split_retrain",
+  "seed": 62400,
+  "bot": "ActionDistributionPhaseSplitCloneSmoke",
+  "time_seconds": 180.0,
+  "symptom": "使用 soda-creek seed 62404 的 50-80 秒 route recovery repair samples 做 phase-split retrain 后出现取舍：同时重训 opening/mid 可把 180 秒 soda-creek win_rate 从 0.0 提到 0.4，但 60 秒 caramel-workshop 和 cracked-star-jar 重新触发 action 3 bias repair，且 180 秒 cracked-star-jar win_rate 降到 0.2；只重训 mid 可保住 60 秒三图，但 180 秒 soda-creek 仍为 0.0。",
+  "root_cause": "样本覆盖太窄，60-80 秒 mid repair 只有 24 条且全部来自单一 seed。opening 重训会改变短窗初始状态分布并破坏多图泛化；只重训 mid 又缺少足够多 seed、多状态的路线恢复监督，无法修复 soda-creek 中窗死亡。",
+  "fix": "不推进这些 checkpoint，不进入 300 秒评估、stage 03 或 RL acceptance。下一步应导出更多 soda-creek 多 seed 的 45-100 秒失败 trace，构建更宽的 phase-aligned midwindow repair samples，再做 per-map / per-phase target 消融。",
+  "validation": "训练、打包和 60/180 秒三图对比记录在 harness/reports/2026-05-27_rl_action_distribution_phase_split_retrain_001；phase_split_soda_mid 的 60 秒 gate 为 needs_policy_repair，mid_only_soda_mid 和 w16 的 180 秒 gate 为 needs_policy_repair。"
+}
