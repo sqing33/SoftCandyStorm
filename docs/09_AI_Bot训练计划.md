@@ -388,6 +388,8 @@ phase-split retrain 报告位于 `harness/reports/2026-05-27_rl_action_distribut
 
 多 seed `45-100s` midwindow repair coverage 已扩展，报告位于 `harness/reports/2026-05-27_rl_action_distribution_multiseed_midwindow_samples_001/summary.md`。使用 `per_map_uniform_0_2` 在 `soda-creek` 跑 `62400-62419` 共 20 个 seed 的 180 秒失败 trace 后，导出 `389` 条有效 route recovery repair samples，覆盖 seed `62404`、`62406`、`62410`、`62414`；其中 `60-100s` mid dry-run 可用 `281` 条 soft recovery samples，明显高于上一轮单 seed 的 `24` 条。该批样本仍只是 repair training input；下一步应优先做 mid-only staged 消融，保留旧 opening 子模型，避免重演 opening 重训导致的多图短窗 action-bias 回归。
 
+多 seed mid-only staged 消融报告位于 `harness/reports/2026-05-27_rl_action_distribution_multiseed_midonly_ablation_001/summary.md`。`mid_only_multiseed_w1` 与 `mid_only_multiseed_w4` 都保住了 60 秒三图短窗，但 180 秒 `soda-creek` 仍为 `0.0` win rate；`w4` 只把平均存活小幅抬到 `61.6816s`，同时 `cracked-star-jar` 180 秒回落到 `0.4`。该结果记录为 `fail_20260527_048`，说明边界顶墙样本扩量仍不足以解决中长窗策略缺口；下一步应补充非贴边危险状态、45 秒前早死诊断或 per-map/per-phase target，而不是继续提高 recovery weight。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。

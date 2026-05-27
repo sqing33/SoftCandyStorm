@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_048",
+  "category": "rl_policy",
+  "content_id": "action_distribution_multiseed_midonly_ablation",
+  "seed": 62400,
+  "bot": "ActionDistributionMultiseedMidOnlyCloneSmoke",
+  "time_seconds": 180.0,
+  "symptom": "使用扩展后的 soda-creek 45-100 秒多 seed route recovery repair samples 只重训 mid 子模型后，60 秒三图短窗保持无 repair map，但 180 秒 soda-creek 仍为 0.0 win_rate；w4 只把 soda-creek 平均存活从上一轮约 57.3 秒抬到 61.7 秒，同时 cracked-star-jar 180 秒 win_rate 降到 0.4，w1 也未修复 soda-creek 且同样让 cracked-star-jar 降到 0.4。",
+  "root_cause": "新增样本虽然从 24 条 mid recovery samples 扩到 281 条，但仍只覆盖边界顶墙且来自 4 个能活过中窗的失败 seed。单纯 mid-only 注入不能覆盖非贴边危险状态、升级后目标和长期路线规划；较高权重还会把其他地图的 mid 行为推向 action 5 偏置。",
+  "fix": "不推进 mid_only_multiseed_w1 或 w4 checkpoint，不进入 stage 03、300 秒评估或 RL acceptance。下一步应扩大非贴边危险状态样本或改成 per-map/per-phase target 消融，并优先分析 soda-creek 45 秒前早死和 60-100 秒边界样本之间的分布断层。",
+  "validation": "训练、打包和 60/180 秒三图对比记录在 harness/reports/2026-05-27_rl_action_distribution_multiseed_midonly_ablation_001；w1 与 w4 的 180 秒 gate 均为 multimap_comparison_recorded_needs_policy_repair。"
+}
