@@ -1,0 +1,218 @@
+{
+  "status": "trained",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_training_integration_smoke_001/ppo_upgrade_choice_training_integration_smoke.zip",
+  "reward_profile": "late-survival",
+  "metadata_path": "harness/reports/2026-05-27_rl_upgrade_choice_training_integration_smoke_001/ppo_upgrade_choice_training_integration_smoke_metadata.json",
+  "evaluation_path": "harness/reports/2026-05-27_rl_upgrade_choice_training_integration_smoke_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-27_rl_upgrade_choice_training_integration_smoke_001/ppo_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true,
+    "torch": true
+  },
+  "training": {
+    "total_timesteps": 256,
+    "requested_timesteps": 256,
+    "actual_timesteps": 256,
+    "seed": 12345,
+    "seconds": 120.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "observation_version": 2,
+    "observation_len": 145,
+    "maps": [
+      "soda-creek",
+      "caramel-workshop",
+      "cracked-star-jar"
+    ],
+    "map_selection": "random",
+    "map_preset": "high-pressure",
+    "reward_profile": "late-survival",
+    "upgrade_choice_model": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+    "seeds": [
+      62300,
+      62301,
+      62302,
+      62303,
+      62304,
+      62305
+    ],
+    "seed_selection": "cycle",
+    "started_at": "2026-05-27T05:13:35.339835+00:00",
+    "completed_at": "2026-05-27T05:13:36.277090+00:00",
+    "algorithm_parameters": {
+      "learning_rate": 0.0001,
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.02,
+      "clip_range": 0.2
+    },
+    "algorithm_parameters_source": "warm_start_metadata_with_overrides",
+    "warm_start_model": "harness/reports/2026-05-27_rl_closed_loop_late_survival_reward_profile_smoke_001/ppo_late_survival_reward_profile_smoke.zip",
+    "warm_start_metadata_path": "harness/reports/2026-05-27_rl_closed_loop_late_survival_reward_profile_smoke_001/ppo_late_survival_reward_profile_smoke_metadata.json",
+    "evaluation_policy": "deterministic",
+    "evaluation_action_random_seed": null,
+    "evaluation_map_id": "soda-creek"
+  },
+  "evaluation": {
+    "episodes": 1,
+    "win_rate": 1.0,
+    "average_survival_seconds": 120.0318,
+    "average_level": 4.0,
+    "average_kills": 184.0,
+    "average_reward": 5.6831,
+    "damage_taken_average": 77.0435,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 188,
+        "ratio": 0.0522
+      },
+      "3": {
+        "count": 1099,
+        "ratio": 0.3052
+      },
+      "4": {
+        "count": 992,
+        "ratio": 0.2755
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 1318,
+        "ratio": 0.366
+      },
+      "8": {
+        "count": 4,
+        "ratio": 0.0011
+      }
+    },
+    "action_entropy_bits": 1.7989,
+    "normalized_action_entropy": 0.5675,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 3601,
+      "mean_scores": {
+        "0": 0.0154,
+        "1": 0.0144,
+        "2": 0.0673,
+        "3": 0.1844,
+        "4": 0.2858,
+        "5": 0.0826,
+        "6": 0.0233,
+        "7": 0.263,
+        "8": 0.0638
+      },
+      "mean_top_actions": [
+        {
+          "action": "4",
+          "score": 0.2858
+        },
+        {
+          "action": "7",
+          "score": 0.263
+        },
+        {
+          "action": "3",
+          "score": 0.1844
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 188,
+          "ratio": 0.0522
+        },
+        "3": {
+          "count": 1099,
+          "ratio": 0.3052
+        },
+        "4": {
+          "count": 992,
+          "ratio": 0.2755
+        },
+        "5": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "6": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "7": {
+          "count": 1318,
+          "ratio": 0.366
+        },
+        "8": {
+          "count": 4,
+          "ratio": 0.0011
+        }
+      },
+      "dominant_top_action": {
+        "action": "7",
+        "count": 1318,
+        "ratio": 0.366
+      },
+      "mean_chosen_action_score": 0.6237,
+      "chosen_action_score_sample_count": 3601
+    },
+    "upgrade_policy_decision_count": 3,
+    "reward_breakdown_average": {
+      "action_repeat": -13.176,
+      "boss_pressure": 0.0,
+      "boundary_risk": -1.1341,
+      "corner_action_risk": 0.0,
+      "corner_risk_delta": -0.0018,
+      "damage_taken": -6.1635,
+      "enemy_pressure": -0.1451,
+      "hazard_risk": 0.0,
+      "kill": 14.72,
+      "level": 2.4,
+      "low_health": 0.0,
+      "opening_edge_risk_delta": -0.0012,
+      "safety_delta": -0.0035,
+      "survival": 1.2003,
+      "terminal": 1.0,
+      "total": 5.6831,
+      "xp": 6.988
+    }
+  },
+  "upgrade_policy": {
+    "mode": "upgrade_choice_ranker",
+    "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+    "limitations": [
+      "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+      "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+    ]
+  },
+  "known_exploits": [],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_rule_bot_comparison"
+}
