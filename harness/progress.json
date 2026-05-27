@@ -2033,6 +2033,11 @@
       "id": "rl_route_recovery_aux_multimap_boundary_opening_ablation",
       "summary": "完成 no-class-weight opening 消融：移除 inverse_frequency 后 action 6 过补偿显著缓解，no_class_weight_2_0 在 soda-creek/cracked-star-jar 的 action 6 占比分别降到 43.55%/37.97%，但 soda-creek win_rate 仍为 0.4；该结果仅说明后续应取消 class weighting，不能推进 stage 03。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_opening_ablation_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_multimap_boundary_history_probe",
+      "summary": "诊断 no_class_weight_2_0 的 soda-creek seed 62403 在线 trace：离线预测无 action collapse，但 20 秒后 nearest offline target 与 cold/online-prefix/teacher-prefix 都集中到 action 6，说明剩余偏置来自在线状态落入 action6 teacher 邻域，而不是单纯 GRU history 锁死。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_history_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2042,7 +2047,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。no-class-weight 消融缓解 action 6 过补偿，但 soda-creek 60 秒 win_rate 仍为 0.4。下一步应保留 class_weighting=none，诊断 online-prefix 历史和 teacher 目标，而不是继续单纯加权 repair samples。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。no-class-weight 消融缓解 action 6 过补偿，但 history probe 显示 20 秒后在线状态最近邻 teacher target 本身集中到 action 6。下一步应保留 class_weighting=none，从失败在线 trace 导出 20-47s route-risk repair samples 或引入 soft/top-k target。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

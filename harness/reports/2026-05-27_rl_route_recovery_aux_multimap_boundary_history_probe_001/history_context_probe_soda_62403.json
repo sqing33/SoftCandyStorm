@@ -1,0 +1,1443 @@
+{
+  "report_version": 1,
+  "status": "inspected",
+  "gate_decision": "history_context_probe_recorded_watch_only",
+  "model": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_opening_ablation_001/no_class_weight_2_0/staged.pt",
+  "trace": {
+    "path": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_history_probe_001/no_class_weight_2_0_soda_traces/soda-creek_seed62403_trace.json",
+    "map_id": "soda-creek",
+    "sample_count": 142
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_samples_001/multimap_boundary_samples.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl"
+    ],
+    "candidate_count": 2213,
+    "same_map_only": true,
+    "offline_min_seconds": 0.0,
+    "offline_max_seconds": 60.0
+  },
+  "conditioning": {
+    "phase_duration_seconds": 300.0
+  },
+  "parameters": {
+    "time_windows": [
+      {
+        "start_seconds": 0.0,
+        "end_seconds": 20.0
+      },
+      {
+        "start_seconds": 20.0,
+        "end_seconds": 40.0
+      },
+      {
+        "start_seconds": 40.0,
+        "end_seconds": 47.0
+      }
+    ],
+    "prefix_frames": 7,
+    "examples_per_window": 5
+  },
+  "windows": [
+    {
+      "start_seconds": 0.0,
+      "end_seconds": 20.0,
+      "sample_count": 60,
+      "online_action_distribution": {
+        "3": {
+          "count": 10,
+          "ratio": 0.1667
+        },
+        "5": {
+          "count": 29,
+          "ratio": 0.4833
+        },
+        "6": {
+          "count": 21,
+          "ratio": 0.35
+        }
+      },
+      "nearest_target_action_distribution": {
+        "3": {
+          "count": 10,
+          "ratio": 0.1667
+        },
+        "5": {
+          "count": 22,
+          "ratio": 0.3667
+        },
+        "4": {
+          "count": 7,
+          "ratio": 0.1167
+        },
+        "6": {
+          "count": 21,
+          "ratio": 0.35
+        }
+      },
+      "nearest_distance": {
+        "min": 0.000111,
+        "average": 1.545493,
+        "max": 2.435637
+      },
+      "top_action_distribution_by_mode": {
+        "cold": {
+          "3": {
+            "count": 9,
+            "ratio": 0.15
+          },
+          "5": {
+            "count": 30,
+            "ratio": 0.5
+          },
+          "6": {
+            "count": 21,
+            "ratio": 0.35
+          }
+        },
+        "online_prefix": {
+          "3": {
+            "count": 10,
+            "ratio": 0.1667
+          },
+          "5": {
+            "count": 29,
+            "ratio": 0.4833
+          },
+          "6": {
+            "count": 21,
+            "ratio": 0.35
+          }
+        },
+        "teacher_prefix": {
+          "3": {
+            "count": 15,
+            "ratio": 0.25
+          },
+          "6": {
+            "count": 31,
+            "ratio": 0.5167
+          },
+          "5": {
+            "count": 6,
+            "ratio": 0.1
+          },
+          "4": {
+            "count": 8,
+            "ratio": 0.1333
+          }
+        }
+      },
+      "examples": [
+        {
+          "trace_index": 0,
+          "trace_time_seconds": 0.0333,
+          "online_action": 3,
+          "nearest": {
+            "dataset_index": 16257,
+            "distance": 0.000111,
+            "target_action": 3,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 0.0,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 0,
+            "teacher": 0
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 3,
+              "top_score": 0.491451,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.491451
+                },
+                {
+                  "action": 2,
+                  "score": 0.17844
+                },
+                {
+                  "action": 1,
+                  "score": 0.093532
+                }
+              ],
+              "online_action_score": 0.491451,
+              "nearest_action_score": 0.491451
+            },
+            "online_prefix": {
+              "top_action": 3,
+              "top_score": 0.491451,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.491451
+                },
+                {
+                  "action": 2,
+                  "score": 0.17844
+                },
+                {
+                  "action": 1,
+                  "score": 0.093532
+                }
+              ],
+              "online_action_score": 0.491451,
+              "nearest_action_score": 0.491451
+            },
+            "teacher_prefix": {
+              "top_action": 3,
+              "top_score": 0.491451,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.491451
+                },
+                {
+                  "action": 2,
+                  "score": 0.17844
+                },
+                {
+                  "action": 1,
+                  "score": 0.093532
+                }
+              ],
+              "online_action_score": 0.491451,
+              "nearest_action_score": 0.491451
+            }
+          }
+        },
+        {
+          "trace_index": 1,
+          "trace_time_seconds": 0.3333,
+          "online_action": 3,
+          "nearest": {
+            "dataset_index": 16488,
+            "distance": 0.292279,
+            "target_action": 3,
+            "map_id": "soda-creek",
+            "seed": 48001,
+            "time_seconds": 0.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 1,
+            "teacher": 1
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 3,
+              "top_score": 0.745412,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.745412
+                },
+                {
+                  "action": 2,
+                  "score": 0.069739
+                },
+                {
+                  "action": 4,
+                  "score": 0.056693
+                }
+              ],
+              "online_action_score": 0.745412,
+              "nearest_action_score": 0.745412
+            },
+            "online_prefix": {
+              "top_action": 3,
+              "top_score": 0.682492,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.682492
+                },
+                {
+                  "action": 2,
+                  "score": 0.086512
+                },
+                {
+                  "action": 4,
+                  "score": 0.069118
+                }
+              ],
+              "online_action_score": 0.682492,
+              "nearest_action_score": 0.682492
+            },
+            "teacher_prefix": {
+              "top_action": 3,
+              "top_score": 0.682495,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.682495
+                },
+                {
+                  "action": 2,
+                  "score": 0.086512
+                },
+                {
+                  "action": 4,
+                  "score": 0.069117
+                }
+              ],
+              "online_action_score": 0.682495,
+              "nearest_action_score": 0.682495
+            }
+          }
+        },
+        {
+          "trace_index": 2,
+          "trace_time_seconds": 0.6667,
+          "online_action": 3,
+          "nearest": {
+            "dataset_index": 16489,
+            "distance": 0.29249,
+            "target_action": 3,
+            "map_id": "soda-creek",
+            "seed": 48001,
+            "time_seconds": 0.6667,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 2,
+            "teacher": 2
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 3,
+              "top_score": 0.736873,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.736873
+                },
+                {
+                  "action": 2,
+                  "score": 0.066224
+                },
+                {
+                  "action": 5,
+                  "score": 0.057951
+                }
+              ],
+              "online_action_score": 0.736873,
+              "nearest_action_score": 0.736873
+            },
+            "online_prefix": {
+              "top_action": 3,
+              "top_score": 0.713172,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.713172
+                },
+                {
+                  "action": 2,
+                  "score": 0.079148
+                },
+                {
+                  "action": 4,
+                  "score": 0.062937
+                }
+              ],
+              "online_action_score": 0.713172,
+              "nearest_action_score": 0.713172
+            },
+            "teacher_prefix": {
+              "top_action": 3,
+              "top_score": 0.722618,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.722618
+                },
+                {
+                  "action": 2,
+                  "score": 0.077773
+                },
+                {
+                  "action": 4,
+                  "score": 0.061467
+                }
+              ],
+              "online_action_score": 0.722618,
+              "nearest_action_score": 0.722618
+            }
+          }
+        },
+        {
+          "trace_index": 3,
+          "trace_time_seconds": 1.0,
+          "online_action": 3,
+          "nearest": {
+            "dataset_index": 16490,
+            "distance": 0.292794,
+            "target_action": 3,
+            "map_id": "soda-creek",
+            "seed": 48001,
+            "time_seconds": 1.0,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 3,
+            "teacher": 3
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 3,
+              "top_score": 0.726617,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.726617
+                },
+                {
+                  "action": 5,
+                  "score": 0.065155
+                },
+                {
+                  "action": 2,
+                  "score": 0.063103
+                }
+              ],
+              "online_action_score": 0.726617,
+              "nearest_action_score": 0.726617
+            },
+            "online_prefix": {
+              "top_action": 3,
+              "top_score": 0.735054,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.735054
+                },
+                {
+                  "action": 2,
+                  "score": 0.073358
+                },
+                {
+                  "action": 4,
+                  "score": 0.059499
+                }
+              ],
+              "online_action_score": 0.735054,
+              "nearest_action_score": 0.735054
+            },
+            "teacher_prefix": {
+              "top_action": 3,
+              "top_score": 0.74848,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.74848
+                },
+                {
+                  "action": 2,
+                  "score": 0.071653
+                },
+                {
+                  "action": 4,
+                  "score": 0.057051
+                }
+              ],
+              "online_action_score": 0.74848,
+              "nearest_action_score": 0.74848
+            }
+          }
+        },
+        {
+          "trace_index": 4,
+          "trace_time_seconds": 1.3333,
+          "online_action": 3,
+          "nearest": {
+            "dataset_index": 22711,
+            "distance": 0.489747,
+            "target_action": 3,
+            "map_id": "soda-creek",
+            "seed": 48009,
+            "time_seconds": 2.0,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 4,
+            "teacher": 6
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 3,
+              "top_score": 0.826399,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.826399
+                },
+                {
+                  "action": 4,
+                  "score": 0.07247
+                },
+                {
+                  "action": 5,
+                  "score": 0.047195
+                }
+              ],
+              "online_action_score": 0.826399,
+              "nearest_action_score": 0.826399
+            },
+            "online_prefix": {
+              "top_action": 3,
+              "top_score": 0.804262,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.804262
+                },
+                {
+                  "action": 4,
+                  "score": 0.063764
+                },
+                {
+                  "action": 2,
+                  "score": 0.049732
+                }
+              ],
+              "online_action_score": 0.804262,
+              "nearest_action_score": 0.804262
+            },
+            "teacher_prefix": {
+              "top_action": 3,
+              "top_score": 0.84348,
+              "top_actions": [
+                {
+                  "action": 3,
+                  "score": 0.84348
+                },
+                {
+                  "action": 4,
+                  "score": 0.071077
+                },
+                {
+                  "action": 5,
+                  "score": 0.038053
+                }
+              ],
+              "online_action_score": 0.84348,
+              "nearest_action_score": 0.84348
+            }
+          }
+        }
+      ]
+    },
+    {
+      "start_seconds": 20.0,
+      "end_seconds": 40.0,
+      "sample_count": 61,
+      "online_action_distribution": {
+        "6": {
+          "count": 61,
+          "ratio": 1.0
+        }
+      },
+      "nearest_target_action_distribution": {
+        "6": {
+          "count": 59,
+          "ratio": 0.9672
+        },
+        "3": {
+          "count": 2,
+          "ratio": 0.0328
+        }
+      },
+      "nearest_distance": {
+        "min": 2.459713,
+        "average": 2.894029,
+        "max": 3.351075
+      },
+      "top_action_distribution_by_mode": {
+        "cold": {
+          "6": {
+            "count": 61,
+            "ratio": 1.0
+          }
+        },
+        "online_prefix": {
+          "6": {
+            "count": 61,
+            "ratio": 1.0
+          }
+        },
+        "teacher_prefix": {
+          "6": {
+            "count": 61,
+            "ratio": 1.0
+          }
+        }
+      },
+      "examples": [
+        {
+          "trace_index": 60,
+          "trace_time_seconds": 20.0,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 2.459713,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.720728,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.720728
+                },
+                {
+                  "action": 5,
+                  "score": 0.134687
+                },
+                {
+                  "action": 4,
+                  "score": 0.065924
+                }
+              ],
+              "online_action_score": 0.720728,
+              "nearest_action_score": 0.720728
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.711235,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.711235
+                },
+                {
+                  "action": 5,
+                  "score": 0.140853
+                },
+                {
+                  "action": 4,
+                  "score": 0.072818
+                }
+              ],
+              "online_action_score": 0.711235,
+              "nearest_action_score": 0.711235
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.682882,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.682882
+                },
+                {
+                  "action": 5,
+                  "score": 0.138077
+                },
+                {
+                  "action": 4,
+                  "score": 0.084371
+                }
+              ],
+              "online_action_score": 0.682882,
+              "nearest_action_score": 0.682882
+            }
+          }
+        },
+        {
+          "trace_index": 61,
+          "trace_time_seconds": 20.3334,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 2.481441,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.643211,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.643211
+                },
+                {
+                  "action": 5,
+                  "score": 0.187172
+                },
+                {
+                  "action": 4,
+                  "score": 0.101771
+                }
+              ],
+              "online_action_score": 0.643211,
+              "nearest_action_score": 0.643211
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.693894,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.693894
+                },
+                {
+                  "action": 5,
+                  "score": 0.149031
+                },
+                {
+                  "action": 4,
+                  "score": 0.07949
+                }
+              ],
+              "online_action_score": 0.693894,
+              "nearest_action_score": 0.693894
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.658684,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.658684
+                },
+                {
+                  "action": 5,
+                  "score": 0.149746
+                },
+                {
+                  "action": 4,
+                  "score": 0.095661
+                }
+              ],
+              "online_action_score": 0.658684,
+              "nearest_action_score": 0.658684
+            }
+          }
+        },
+        {
+          "trace_index": 62,
+          "trace_time_seconds": 20.6667,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 2.472526,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.492994,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.492994
+                },
+                {
+                  "action": 5,
+                  "score": 0.263024
+                },
+                {
+                  "action": 4,
+                  "score": 0.183805
+                }
+              ],
+              "online_action_score": 0.492994,
+              "nearest_action_score": 0.492994
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.643751,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.643751
+                },
+                {
+                  "action": 5,
+                  "score": 0.172357
+                },
+                {
+                  "action": 4,
+                  "score": 0.107113
+                }
+              ],
+              "online_action_score": 0.643751,
+              "nearest_action_score": 0.643751
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.615263,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.615263
+                },
+                {
+                  "action": 5,
+                  "score": 0.164008
+                },
+                {
+                  "action": 4,
+                  "score": 0.121542
+                }
+              ],
+              "online_action_score": 0.615263,
+              "nearest_action_score": 0.615263
+            }
+          }
+        },
+        {
+          "trace_index": 63,
+          "trace_time_seconds": 21.0,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 2.509551,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.505329,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.505329
+                },
+                {
+                  "action": 5,
+                  "score": 0.2673
+                },
+                {
+                  "action": 4,
+                  "score": 0.169231
+                }
+              ],
+              "online_action_score": 0.505329,
+              "nearest_action_score": 0.505329
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.594239,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.594239
+                },
+                {
+                  "action": 5,
+                  "score": 0.204001
+                },
+                {
+                  "action": 4,
+                  "score": 0.130918
+                }
+              ],
+              "online_action_score": 0.594239,
+              "nearest_action_score": 0.594239
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.613423,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.613423
+                },
+                {
+                  "action": 5,
+                  "score": 0.169749
+                },
+                {
+                  "action": 4,
+                  "score": 0.119858
+                }
+              ],
+              "online_action_score": 0.613423,
+              "nearest_action_score": 0.613423
+            }
+          }
+        },
+        {
+          "trace_index": 64,
+          "trace_time_seconds": 21.3334,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 2.535458,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.491068,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.491068
+                },
+                {
+                  "action": 5,
+                  "score": 0.258988
+                },
+                {
+                  "action": 4,
+                  "score": 0.191181
+                }
+              ],
+              "online_action_score": 0.491068,
+              "nearest_action_score": 0.491068
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.570101,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.570101
+                },
+                {
+                  "action": 5,
+                  "score": 0.216233
+                },
+                {
+                  "action": 4,
+                  "score": 0.146975
+                }
+              ],
+              "online_action_score": 0.570101,
+              "nearest_action_score": 0.570101
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.6166,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.6166
+                },
+                {
+                  "action": 5,
+                  "score": 0.16269
+                },
+                {
+                  "action": 4,
+                  "score": 0.123422
+                }
+              ],
+              "online_action_score": 0.6166,
+              "nearest_action_score": 0.6166
+            }
+          }
+        }
+      ]
+    },
+    {
+      "start_seconds": 40.0,
+      "end_seconds": 47.0,
+      "sample_count": 21,
+      "online_action_distribution": {
+        "6": {
+          "count": 21,
+          "ratio": 1.0
+        }
+      },
+      "nearest_target_action_distribution": {
+        "3": {
+          "count": 2,
+          "ratio": 0.0952
+        },
+        "6": {
+          "count": 19,
+          "ratio": 0.9048
+        }
+      },
+      "nearest_distance": {
+        "min": 2.744961,
+        "average": 3.07377,
+        "max": 3.182367
+      },
+      "top_action_distribution_by_mode": {
+        "cold": {
+          "6": {
+            "count": 21,
+            "ratio": 1.0
+          }
+        },
+        "online_prefix": {
+          "6": {
+            "count": 21,
+            "ratio": 1.0
+          }
+        },
+        "teacher_prefix": {
+          "6": {
+            "count": 21,
+            "ratio": 1.0
+          }
+        }
+      },
+      "examples": [
+        {
+          "trace_index": 121,
+          "trace_time_seconds": 40.3331,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 1653,
+            "distance": 2.967865,
+            "target_action": 3,
+            "map_id": "soda-creek",
+            "seed": 62404,
+            "time_seconds": 52.9995,
+            "sample_source": "edge_recovery_supervision"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.665504,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.665504
+                },
+                {
+                  "action": 5,
+                  "score": 0.153096
+                },
+                {
+                  "action": 7,
+                  "score": 0.111107
+                }
+              ],
+              "online_action_score": 0.665504,
+              "nearest_action_score": 0.005835
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.658544,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.658544
+                },
+                {
+                  "action": 5,
+                  "score": 0.170119
+                },
+                {
+                  "action": 7,
+                  "score": 0.097936
+                }
+              ],
+              "online_action_score": 0.658544,
+              "nearest_action_score": 0.005936
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.586087,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.586087
+                },
+                {
+                  "action": 7,
+                  "score": 0.288693
+                },
+                {
+                  "action": 5,
+                  "score": 0.074477
+                }
+              ],
+              "online_action_score": 0.586087,
+              "nearest_action_score": 0.002278
+            }
+          }
+        },
+        {
+          "trace_index": 122,
+          "trace_time_seconds": 40.6664,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 1653,
+            "distance": 2.969809,
+            "target_action": 3,
+            "map_id": "soda-creek",
+            "seed": 62404,
+            "time_seconds": 52.9995,
+            "sample_source": "edge_recovery_supervision"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.680543,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.680543
+                },
+                {
+                  "action": 5,
+                  "score": 0.144739
+                },
+                {
+                  "action": 7,
+                  "score": 0.108914
+                }
+              ],
+              "online_action_score": 0.680543,
+              "nearest_action_score": 0.005357
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.667406,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.667406
+                },
+                {
+                  "action": 5,
+                  "score": 0.160969
+                },
+                {
+                  "action": 7,
+                  "score": 0.10207
+                }
+              ],
+              "online_action_score": 0.667406,
+              "nearest_action_score": 0.005641
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.593998,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.593998
+                },
+                {
+                  "action": 7,
+                  "score": 0.281333
+                },
+                {
+                  "action": 5,
+                  "score": 0.073911
+                }
+              ],
+              "online_action_score": 0.593998,
+              "nearest_action_score": 0.002205
+            }
+          }
+        },
+        {
+          "trace_index": 123,
+          "trace_time_seconds": 40.9997,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 3.00688,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.665815,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.665815
+                },
+                {
+                  "action": 5,
+                  "score": 0.164405
+                },
+                {
+                  "action": 7,
+                  "score": 0.098187
+                }
+              ],
+              "online_action_score": 0.665815,
+              "nearest_action_score": 0.665815
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.670553,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.670553
+                },
+                {
+                  "action": 5,
+                  "score": 0.161343
+                },
+                {
+                  "action": 7,
+                  "score": 0.099174
+                }
+              ],
+              "online_action_score": 0.670553,
+              "nearest_action_score": 0.670553
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.634726,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.634726
+                },
+                {
+                  "action": 5,
+                  "score": 0.167325
+                },
+                {
+                  "action": 7,
+                  "score": 0.093709
+                }
+              ],
+              "online_action_score": 0.634726,
+              "nearest_action_score": 0.634726
+            }
+          }
+        },
+        {
+          "trace_index": 124,
+          "trace_time_seconds": 41.333,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 3.105936,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.678718,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.678718
+                },
+                {
+                  "action": 5,
+                  "score": 0.153429
+                },
+                {
+                  "action": 7,
+                  "score": 0.096938
+                }
+              ],
+              "online_action_score": 0.678718,
+              "nearest_action_score": 0.678718
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.677882,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.677882
+                },
+                {
+                  "action": 5,
+                  "score": 0.157685
+                },
+                {
+                  "action": 7,
+                  "score": 0.095922
+                }
+              ],
+              "online_action_score": 0.677882,
+              "nearest_action_score": 0.677882
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.646741,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.646741
+                },
+                {
+                  "action": 5,
+                  "score": 0.160391
+                },
+                {
+                  "action": 7,
+                  "score": 0.091038
+                }
+              ],
+              "online_action_score": 0.646741,
+              "nearest_action_score": 0.646741
+            }
+          }
+        },
+        {
+          "trace_index": 125,
+          "trace_time_seconds": 41.6664,
+          "online_action": 6,
+          "nearest": {
+            "dataset_index": 16330,
+            "distance": 3.125139,
+            "target_action": 6,
+            "map_id": "soda-creek",
+            "seed": 48000,
+            "time_seconds": 24.3333,
+            "sample_source": "trajectory"
+          },
+          "prefix_lengths": {
+            "online": 7,
+            "teacher": 7
+          },
+          "score_modes": {
+            "cold": {
+              "top_action": 6,
+              "top_score": 0.669215,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.669215
+                },
+                {
+                  "action": 5,
+                  "score": 0.181209
+                },
+                {
+                  "action": 7,
+                  "score": 0.076423
+                }
+              ],
+              "online_action_score": 0.669215,
+              "nearest_action_score": 0.669215
+            },
+            "online_prefix": {
+              "top_action": 6,
+              "top_score": 0.684116,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.684116
+                },
+                {
+                  "action": 5,
+                  "score": 0.160351
+                },
+                {
+                  "action": 7,
+                  "score": 0.08667
+                }
+              ],
+              "online_action_score": 0.684116,
+              "nearest_action_score": 0.684116
+            },
+            "teacher_prefix": {
+              "top_action": 6,
+              "top_score": 0.653013,
+              "top_actions": [
+                {
+                  "action": 6,
+                  "score": 0.653013
+                },
+                {
+                  "action": 5,
+                  "score": 0.165234
+                },
+                {
+                  "action": 7,
+                  "score": 0.081487
+                }
+              ],
+              "online_action_score": 0.653013,
+              "nearest_action_score": 0.653013
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "History context probing is diagnostic evidence only.",
+    "It compares observation history prefixes, not supervised training or policy acceptance.",
+    "It does not replace deterministic high-pressure gates, Replay, or human playtest."
+  ],
+  "dependency_status": {
+    "numpy": true,
+    "torch": true
+  }
+}
