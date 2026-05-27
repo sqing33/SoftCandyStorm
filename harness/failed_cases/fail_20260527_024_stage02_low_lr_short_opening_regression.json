@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_024",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage02_low_lr_short",
+  "seed": 62400,
+  "bot": "PpoStage02LowLrShort",
+  "time_seconds": 24.5666,
+  "symptom": "stage 02 low-lr short continuation 从 stage 01 corner_risk_delta checkpoint warm start，只训练 1024 timesteps 并把 PPO learning_rate 降到 0.0001；但 60 秒 high-pressure 10 seed opening 回归中 soda-creek 仍只有 80% 胜率，seed 62400 在 24.5666 秒死亡，seed 62407 在 50.0996 秒死亡。",
+  "root_cause": "降低学习率和缩短 continuation 仍不足以显式保护 stage 01 opening seed 集合；mixed-map PPO 更新会继续破坏 soda-creek opening 稳定性，且 seed 62400 比上一轮 mixed retention 更早死亡。",
+  "fix": "不要进入 stage 03；下一步应加入 explicit opening replay / regularization，把 soda-creek opening 失败 seed 或 trace 约束纳入 stage 02 更新，而不是继续只调学习率或 timesteps。",
+  "validation": "训练报告：harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/ppo_training_report.json；60 秒 opening 回归：harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/comparison_60s_10seed.json；失败分析：harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/failure_analysis_60s.md。结论为 policy repair；因 60 秒 hard gate 失败，未运行 180 秒三图对比。"
+}

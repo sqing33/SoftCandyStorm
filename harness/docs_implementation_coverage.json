@@ -435,7 +435,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum smoke / repair、阶段平衡 teacher 蒸馏 smoke、阶段平衡 PPO 闭环 repair、RL policy failure analysis、time-bucket curriculum plan、stage 01 opening repair/retry/trace/snapshot trace/snapshot compare/corner reward diagnostic/corner reward retrain regression/directional corner reward smoke/corner risk delta smoke/stage 02 mid regression/stage 02 mixed retention regression、升级选择样本导出 / 训练 smoke、Gym upgrade action mode smoke、多地图升级 ranker smoke、movement+upgrade 联合对比和 RL policy acceptance 门禁已建立；RL Bot 还没有达到正式压力测试基线。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum smoke / repair、阶段平衡 teacher 蒸馏 smoke、阶段平衡 PPO 闭环 repair、RL policy failure analysis、time-bucket curriculum plan、stage 01 opening repair/retry/trace/snapshot trace/snapshot compare/corner reward diagnostic/corner reward retrain regression/directional corner reward smoke/corner risk delta smoke/stage 02 mid regression/stage 02 mixed retention regression/stage 02 low-lr short regression、升级选择样本导出 / 训练 smoke、Gym upgrade action mode smoke、多地图升级 ranker smoke、movement+upgrade 联合对比和 RL policy acceptance 门禁已建立；RL Bot 还没有达到正式压力测试基线。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -700,7 +700,13 @@
             "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/failure_analysis_60s.md",
             "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/failure_analysis_180s.md",
             "harness/failed_cases/fail_20260527_023_stage02_mixed_retention_opening_regression.json",
-            "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/stage02_mixed_retention.zip"
+            "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/stage02_mixed_retention.zip",
+            "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/summary.md",
+            "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/ppo_training_report.json",
+            "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/comparison_60s_10seed.json",
+            "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/failure_analysis_60s.md",
+            "harness/failed_cases/fail_20260527_024_stage02_low_lr_short_opening_regression.json",
+            "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/stage02_low_lr_short.zip"
           ],
           "gaps": [
             "context3、context5 和 caramel-recovery context5 behavior clone 的 60 秒 high-pressure 三图 5 seed 对比都已通过短窗动作分布检查，但 300 秒三图 3 seed 对比仍为 repair：目标图修复会移动失败面，caramel-recovery 模型把 cracked-star-jar 拉回 0%。地图 one-hot 条件化 MLP 消除了 0% 胜率回归但仍只是 watch；首个 GRU context8 map-conditioned 候选训练 / 评估链路可用，但 300 秒三图均为 0% 胜率，结论为 repair。新增 sequence_diagnostics 已确认该 GRU 数据集 fully seeded ratio 98.56%、late low-health ratio 23.43%、无诊断 flag；entropy regularization 已经过完整 21950 样本训练和 high-pressure 60/300 秒对比，动作分布更健康但 300 秒 soda-creek 与 cracked-star-jar 仍为 0% 胜率，结论仍为 repair。time-phase conditioning 训练入口、dry-run、512 样本 smoke 和完整候选对比均已完成，但 300 秒 soda-creek / caramel-workshop 仍为 0%，结论仍为 repair。time_phase_balance curriculum 入口已能按 opening/mid/late 训练样本占比记录反比采样倍率，并通过 1 epoch GRU context8 smoke 与 5 秒 Gym 加载评估；完整 time_phase_balance_danger_action_change GRU context8 候选让 60 秒三图 gate 通过且 300 秒动作分布不再塌缩，但 soda-creek 300 秒仍为 0%，结论仍为 repair；将该 teacher 蒸馏为 SB3 PPO zip 后，10 秒 deterministic 评估又出现 action 3 100% 塌缩；再做 10k timestep PPO 闭环后 60 秒三图 gate 通过，但 300 秒 soda-creek / caramel-workshop 仍为 0%；新增 failure analysis 工具确认 soda-creek 失败偏 opening 早死，而 caramel-workshop 偏 late 180-300 秒崩盘。staged policy 打包 / 加载管线已跑通，完整 staged GRU context8 候选也已完成 60/300 秒对比，但 60 秒 soda-creek 动作偏置、300 秒 soda-creek 0%。phase-aligned 300 秒轨迹把 opening 覆盖修正到 0-60 秒并增加到 5388 条样本，复测仍在 60 秒 soda-creek 0%、300 秒 soda-creek / caramel-workshop 0%。action-change weighting 能把 60 秒 soda-creek entropy 拉到 0.6104 并消除动作分布 repair，但 300 秒三图全部 0%。PPO 蒸馏初始化入口、首个全量蒸馏 warm-start、target-entropy warm-start 和 ent_coef warm-start 都已完成；ent_coef 能把 60 秒动作熵提高到 0.5 以上，但 300 秒三图仍全部 0%。升级选择监督入口已能导出、单独读取 upgrade_sample、训练最小监督 ranker、接入 Gym action mode，并扩展到 high-pressure 三图 64 条 upgrade sample 的多地图 ranker smoke；联合对比确认 ranker 不能修复旧 movement clone 的 action 3 100% 塌缩，300 秒三图仍全部 0%。当前不能推进为 RL 测试 Bot。 基于失败分析已生成 opening/mid/late 三阶段 PPO curriculum manifest，但尚未执行 stage 训练、规则 Bot 对比或新的 failure case 复盘，因此只能作为下一步计划证据。 time-bucket curriculum stage 01 opening 已完成 5120 actual timestep 训练和 60 秒三图对比，但 soda-creek 仍有 seed 62101 在 29.1666 秒死亡，已记录 fail_20260527_018；因此 opening 修复仍不能作为已通过前置条件。 stage 01 retry 20k 只把 soda-creek 60 秒 10 seed 胜率提高到 80%，仍有 2 个 opening death 且失败局 action 4 高占比；新增失败局 trace 确认 seed 62406 / 62409 在死亡前持续高置信 action 4，snapshot trace 进一步确认两个失败 seed 都在右下角 boundary.min_distance = 0、enemy_pressure_risk = 1、nearest_enemy.hitbox_distance = 0 时死亡；成功/失败 snapshot compare 显示成功 seed 也会贴边，但会转 action 7 并把 enemy_pressure_risk 拉回 0。结论是 generic PPO 延长训练不足以解除开局 blocker，下一步应针对右下角敌压上升时持续 action 4 的状态-动作组合做 opening 修复。",
@@ -711,7 +717,8 @@
             "directional corner_action_risk smoke 避免 action 8 塌缩，但 soda-creek 60 秒 10 seed 仍只有 70% 胜率；该结果不是 stage 01 通过证据。",
             "corner_risk_delta smoke 已在 stage 01 opening 60 秒 deterministic / stochastic high-pressure 10 seed 对比中三图 100% 胜率，但尚未证明 180 秒 mid-window、300 秒长局或 RL policy acceptance。",
             "stage 02 单图 mid-window 训练重新拉回 soda-creek opening/mid 失败，并让 caramel-workshop 出现 action 2 77.81% action-bias repair；不能进入 stage 03。",
-            "stage 02 mixed retention 改善目标图动作分布，但 soda-creek opening 60 秒 10 seed 仍回落到 80%；需要更强 opening retention 后才能进入 stage 03。"
+            "stage 02 mixed retention 改善目标图动作分布，但 soda-creek opening 60 秒 10 seed 仍回落到 80%；需要更强 opening retention 后才能进入 stage 03。",
+            "stage 02 low-lr short continuation 降低学习率并缩短到 1024 timesteps 后，soda-creek opening 60 秒 10 seed 仍为 80%，且 seed 62400 更早死亡；下一步需要 explicit opening replay / regularization。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

@@ -476,11 +476,17 @@
         "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/failure_analysis_60s.md",
         "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/failure_analysis_180s.md",
         "harness/failed_cases/fail_20260527_023_stage02_mixed_retention_opening_regression.json",
-        "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/stage02_mixed_retention.zip"
+        "harness/reports/2026-05-27_rl_curriculum_stage02_mixed_retention_001/stage02_mixed_retention.zip",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/summary.md",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/ppo_training_report.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/comparison_60s_10seed.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/failure_analysis_60s.md",
+        "harness/failed_cases/fail_20260527_024_stage02_low_lr_short_opening_regression.json",
+        "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/stage02_low_lr_short.zip"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
-        "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认旧坏路径是右下角 action 4，首个 action-specific 20k 重训又转为 action 8 塌缩。corner_risk_delta smoke 已让 stage 01 opening 60 秒 deterministic / stochastic 10 seed 三图 100% 胜率，但 stage 02 单图训练和 mixed retention 都会让 soda-creek opening 或 mid-window 回归失败。",
+        "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认旧坏路径是右下角 action 4，首个 action-specific 20k 重训又转为 action 8 塌缩。corner_risk_delta smoke 已让 stage 01 opening 60 秒 deterministic / stochastic 10 seed 三图 100% 胜率，但 stage 02 单图训练、mixed retention 和 low-lr short continuation 都会让 soda-creek opening 或 mid-window 回归失败。",
         "当前 RL Bot 不能作为正式压力测试基线。"
       ],
       "blockers": [
@@ -490,7 +496,7 @@
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
-        "继续重做 stage_02：尝试更短 continuation、较低学习率或显式 opening replay / regularization。",
+        "继续重做 stage_02：更短 continuation 与较低学习率组合已失败，下一轮应加入显式 opening replay / regularization。",
         "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图对比；通过前不得进入 stage_03 或 RL 测试 Bot。"
       ]
     },
