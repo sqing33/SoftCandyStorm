@@ -262,6 +262,22 @@ def test_time_phase_filter_keeps_only_requested_samples():
     assert filtered["observations"] == [[0.3, 0.1, 0.4], [0.3, 0.6, 0.5]]
 
 
+def test_time_phase_filter_recounts_edge_recovery_samples():
+    dataset = tiny_dataset()
+    dataset["edge_recovery_sample_records"] = 2
+    dataset["sample_metadata"] = [dict(item) for item in dataset["sample_metadata"]]
+    dataset["sample_metadata"][0]["sample_source"] = "edge_recovery_supervision"
+    dataset["sample_metadata"][2]["sample_source"] = "edge_recovery_supervision"
+
+    filtered, _ = filter_dataset_by_time_phase(
+        dataset,
+        "opening",
+        [0.25, 0.35],
+    )
+
+    assert filtered["edge_recovery_sample_records"] == 1
+
+
 def test_staged_behavior_clone_dispatches_between_phase_models(tmp_path):
     phase_paths = {}
     thresholds = [0.15, 0.25]

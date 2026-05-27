@@ -1026,6 +1026,11 @@ def filter_dataset_by_time_phase(dataset, phase, thresholds):
     filtered["observations"] = [dataset["observations"][index] for index in keep_indices]
     filtered["actions"] = [dataset["actions"][index] for index in keep_indices]
     filtered["sample_metadata"] = [dataset["sample_metadata"][index] for index in keep_indices]
+    filtered["edge_recovery_sample_records"] = sum(
+        1
+        for sample in filtered["sample_metadata"]
+        if sample.get("sample_source") == "edge_recovery_supervision"
+    )
     return filtered, {
         "mode": phase,
         "thresholds": thresholds,
