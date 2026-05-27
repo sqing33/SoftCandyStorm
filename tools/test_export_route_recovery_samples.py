@@ -11,11 +11,11 @@ from pathlib import Path
 from export_route_recovery_samples import build_report
 
 
-def write_trace(path: Path, *, include_observation: bool = True) -> None:
+def write_trace(path: Path, *, include_observation: bool = True, time_seconds: float = 1.0) -> None:
     step = {
         "step": 30,
         "tick": 30,
-        "time_seconds": 1.0,
+        "time_seconds": time_seconds,
         "action": 3,
         "reward": -0.1,
         "health": 110.0,
@@ -102,6 +102,31 @@ class RouteRecoverySampleExportTests(unittest.TestCase):
         self.assertEqual(report["decision"], "route_recovery_samples_unavailable")
         self.assertEqual(report["missing_observation_count"], 1)
         self.assertEqual(sample_text, "")
+
+    def test_time_window_filters_hotspots(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            early = root / "early_trace.json"
+            late = root / "late_trace.json"
+            samples = root / "samples.jsonl"
+            write_trace(early, time_seconds=10.0)
+            write_trace(late, time_seconds=25.0)
+
+            report = build_report(
+                [root],
+                samples_out=samples,
+                edge_distance=32.0,
+                route_recovery_threshold=0.0,
+                min_boundary_edge_risk=0.75,
+                min_seconds=20.0,
+                max_seconds=30.0,
+            )
+            rows = [json.loads(line) for line in samples.read_text().splitlines()]
+
+        self.assertEqual(report["decision"], "route_recovery_samples_exported")
+        self.assertEqual(report["outside_time_window_count"], 1)
+        self.assertEqual(report["sample_count"], 1)
+        self.assertEqual(rows[0]["time_seconds"], 25.0)
 
 
 if __name__ == "__main__":

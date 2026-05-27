@@ -324,6 +324,8 @@ def build_report(
     edge_distance: float,
     route_recovery_threshold: float,
     min_boundary_edge_risk: float,
+    min_seconds: float | None = None,
+    max_seconds: float | None = None,
     max_samples: int | None = None,
 ) -> dict[str, Any]:
     paths = trace_paths(inputs)
@@ -334,6 +336,7 @@ def build_report(
     missing_observation_count = 0
     original_not_edge_count = 0
     no_target_count = 0
+    outside_time_window_count = 0
 
     for path in paths:
         payload = load_json_object(path)
@@ -347,6 +350,13 @@ def build_report(
             if not isinstance(step, dict):
                 continue
             inspected_step_count += 1
+            time_seconds = float(step.get("time_seconds", 0.0))
+            if min_seconds is not None and time_seconds < min_seconds:
+                outside_time_window_count += 1
+                continue
+            if max_seconds is not None and time_seconds >= max_seconds:
+                outside_time_window_count += 1
+                continue
             route_recovery = as_number((step.get("reward_breakdown") or {}).get("route_recovery"))
             if route_recovery is None or route_recovery >= route_recovery_threshold:
                 continue
@@ -411,6 +421,7 @@ def build_report(
         "inspected_step_count": inspected_step_count,
         "negative_route_recovery_count": negative_route_count,
         "boundary_hotspot_count": boundary_hotspot_count,
+        "outside_time_window_count": outside_time_window_count,
         "missing_observation_count": missing_observation_count,
         "original_not_edge_count": original_not_edge_count,
         "no_target_count": no_target_count,
@@ -419,6 +430,8 @@ def build_report(
         "edge_distance": edge_distance,
         "route_recovery_threshold": route_recovery_threshold,
         "min_boundary_edge_risk": min_boundary_edge_risk,
+        "min_seconds": min_seconds,
+        "max_seconds": max_seconds,
         "map_distribution": count_map(sample.get("map_id") for sample in samples),
         "original_action_distribution": count_map(sample.get("original_action") for sample in samples),
         "target_action_distribution": count_map(sample.get("target_action") for sample in samples),
@@ -440,6 +453,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Inspected trace rows: `{report['inspected_step_count']}`",
         f"- Negative route_recovery rows: `{report['negative_route_recovery_count']}`",
         f"- Boundary hotspot rows: `{report['boundary_hotspot_count']}`",
+        f"- Outside time window rows: `{report['outside_time_window_count']}`",
         f"- Missing observation rows: `{report['missing_observation_count']}`",
         f"- Exported samples: `{report['sample_count']}`",
         f"- Samples: `{report['samples_path']}`",
@@ -470,8 +484,20 @@ def main() -> int:
     parser.add_argument("--edge-distance", type=float, default=32.0)
     parser.add_argument("--route-recovery-threshold", type=float, default=0.0)
     parser.add_argument("--min-boundary-edge-risk", type=float, default=0.75)
+    parser.add_argument("--min-seconds", type=float, default=None)
+    parser.add_argument("--max-seconds", type=float, default=None)
     parser.add_argument("--max-samples", type=int, default=None)
     args = parser.parse_args()
+    if args.min_seconds is not None and args.min_seconds < 0.0:
+        parser.error("--min-seconds must be greater than or equal to zero")
+    if args.max_seconds is not None and args.max_seconds <= 0.0:
+        parser.error("--max-seconds must be greater than zero")
+    if (
+        args.min_seconds is not None
+        and args.max_seconds is not None
+        and args.max_seconds <= args.min_seconds
+    ):
+        parser.error("--max-seconds must be greater than --min-seconds")
 
     report = build_report(
         args.traces,
@@ -479,6 +505,8 @@ def main() -> int:
         edge_distance=args.edge_distance,
         route_recovery_threshold=args.route_recovery_threshold,
         min_boundary_edge_risk=args.min_boundary_edge_risk,
+        min_seconds=args.min_seconds,
+        max_seconds=args.max_seconds,
         max_samples=args.max_samples,
     )
     if args.report is not None:
