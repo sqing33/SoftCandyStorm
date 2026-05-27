@@ -434,6 +434,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 对 staged opening 的 `soda-creek` seed `62201` 进行 failed-only trace 后，失败面从“开局是否活过 60 秒”收窄为“60 秒交接后能否从边界钉死状态恢复”。交接时玩家已在 `(-1200, -900)` 左下边界，`edge_risk = 1.0`，但 `enemy_pressure_risk = 0` 且生命仍有 92.4698；fallback policy 随后在 `60-75s` 采样窗口里全部选择 action `7`，相当于持续向左顶墙，生命降到 59.7596 并重新被敌人贴上。最终 115.5319 秒死亡时仍在左边界，action `7` 置信度为 0.8487。下一轮 stage 02 应优先训练/约束 handoff recovery，而不是继续只调 opening reward。
 
+同一 staged policy、同一 `soda-creek` seed `62201` 的 stochastic 探针连续两次活到 180 秒；带 trace 的一局在 60 秒交接时位于 `(-862.2731, -900)`，生命 113.2499，`60-75s` 采样动作覆盖 `0/3/4/6/7/8`，到 90 秒已回到 `x = -222.8753` 且低血量风险为 0。这个结果不能替代 deterministic gate，也不能作为 RL acceptance；但它说明恢复动作已经存在于 policy distribution 中，失败主要来自 deterministic argmax 在交接点压成高置信顶墙路径。后续可审计方向是 seeded stochastic 规则、温度/熵约束、动作平滑或显式 handoff recovery 行为约束。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

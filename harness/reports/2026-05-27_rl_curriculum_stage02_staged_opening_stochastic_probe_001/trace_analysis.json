@@ -1,0 +1,168 @@
+{
+  "report_version": 1,
+  "decision": "stage02_staged_opening_stochastic_probe_recorded",
+  "source_evaluation": "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_stochastic_probe_001/evaluation_with_trace.json",
+  "source_trace": "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_stochastic_probe_001/traces/soda-creek_seed62201_trace.json",
+  "policy_kind": "staged_sb3_opening",
+  "action_selection": "stochastic",
+  "map_id": "soda-creek",
+  "seed": 62201,
+  "opening_seconds": 60.0,
+  "terminal": {
+    "kind": "victory",
+    "reason": "duration_reached",
+    "time_seconds": 180.0095,
+    "level": 7,
+    "kills": 366,
+    "damage_taken": 25.7433
+  },
+  "sample_count": 361,
+  "buckets": [
+    {
+      "id": "opening_0_60",
+      "sample_count": 121,
+      "action_counts": {
+        "0": 2,
+        "1": 1,
+        "2": 10,
+        "3": 11,
+        "4": 33,
+        "5": 5,
+        "6": 6,
+        "7": 39,
+        "8": 14
+      },
+      "min_health": 113.2499,
+      "max_enemy_pressure_risk": 0.4475,
+      "max_low_health_risk": 0.0,
+      "max_safety_risk_score": 0.2211
+    },
+    {
+      "id": "handoff_60_75",
+      "sample_count": 30,
+      "action_counts": {
+        "0": 3,
+        "3": 5,
+        "4": 12,
+        "6": 1,
+        "7": 7,
+        "8": 2
+      },
+      "min_health": 99.8898,
+      "max_enemy_pressure_risk": 0.5036,
+      "max_low_health_risk": 0.0,
+      "max_safety_risk_score": 0.3045
+    },
+    {
+      "id": "mid_75_90",
+      "sample_count": 30,
+      "action_counts": {
+        "0": 1,
+        "1": 1,
+        "2": 7,
+        "3": 4,
+        "4": 6,
+        "5": 3,
+        "6": 1,
+        "7": 5,
+        "8": 2
+      },
+      "min_health": 99.8898,
+      "max_enemy_pressure_risk": 0.086,
+      "max_low_health_risk": 0.0,
+      "max_safety_risk_score": 0.18
+    },
+    {
+      "id": "stable_90_180",
+      "sample_count": 180,
+      "action_counts": {
+        "0": 4,
+        "1": 7,
+        "2": 7,
+        "3": 11,
+        "4": 65,
+        "5": 9,
+        "6": 6,
+        "7": 56,
+        "8": 15
+      },
+      "min_health": 94.2565,
+      "max_enemy_pressure_risk": 0.5133,
+      "max_low_health_risk": 0.0,
+      "max_safety_risk_score": 0.3202
+    }
+  ],
+  "keyframes": [
+    {
+      "time_seconds": 59.9994,
+      "label": "handoff_before",
+      "action": 5,
+      "health": 113.2499,
+      "damage_taken": 6.75,
+      "player_position": {
+        "x": -862.2731,
+        "y": -900.0
+      },
+      "boundary_min_distance": 0.0,
+      "enemy_pressure_risk": 0.0,
+      "nearest_enemy_hitbox_distance": 127.5016,
+      "chosen_action_score": 0.0788
+    },
+    {
+      "time_seconds": 74.9992,
+      "label": "post_handoff_recovery",
+      "action": 3,
+      "health": 99.8898,
+      "damage_taken": 20.11,
+      "player_position": {
+        "x": -771.4541,
+        "y": -887.2722
+      },
+      "boundary_min_distance": 12.7278,
+      "enemy_pressure_risk": 0.0821,
+      "nearest_enemy_hitbox_distance": 74.5905,
+      "chosen_action_score": 0.1834
+    },
+    {
+      "time_seconds": 89.999,
+      "label": "recovered_space",
+      "action": 7,
+      "health": 99.8898,
+      "damage_taken": 20.11,
+      "player_position": {
+        "x": -222.8753,
+        "y": -842.3608
+      },
+      "boundary_min_distance": 57.6392,
+      "enemy_pressure_risk": 0.086,
+      "nearest_enemy_hitbox_distance": 74.647,
+      "chosen_action_score": 0.5819
+    },
+    {
+      "time_seconds": 180.0095,
+      "label": "victory",
+      "action": 4,
+      "health": 94.2565,
+      "damage_taken": 25.7433,
+      "player_position": {
+        "x": -1186.3457,
+        "y": -792.9051
+      },
+      "boundary_min_distance": 13.6543,
+      "enemy_pressure_risk": 0.1598,
+      "nearest_enemy_hitbox_distance": 72.2028,
+      "chosen_action_score": 0.7033
+    }
+  ],
+  "findings": [
+    "The same staged policy and seed survives to 180s under stochastic action selection in two one-episode probes.",
+    "The traced stochastic run reaches the 60s handoff near the bottom edge but not pinned to the left corner; health is 113.2499 instead of the deterministic trace's 92.4698.",
+    "From 60s to 75s, stochastic sampling includes actions 0, 3, 4, 6, 7, and 8 instead of deterministic action 7 only, which lets the player move away from the corner before pressure attaches.",
+    "By 89.999s the player has recovered to x = -222.8753 with boundary_min_distance 57.6392 and no low-health risk, while the deterministic run had already dropped to 24.8195 health.",
+    "This does not make stochastic evaluation an acceptance gate, but it shows that the policy distribution contains recovery actions that deterministic argmax suppresses."
+  ],
+  "limitations": [
+    "This is a one-seed stochastic probe and is not deterministic policy acceptance.",
+    "Stochastic evaluation may hide unstable behavior and must be followed by seeded multi-seed comparison before any gate change."
+  ]
+}

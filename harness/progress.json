@@ -1111,6 +1111,11 @@
       "id": "rl_curriculum_stage02_staged_opening_trace",
       "summary": "对 staged opening wrapper 的 soda-creek seed 62201 生成 failed-only trace：60 秒 handoff 时玩家已在左下边界且生命 92.4698，fallback 在 60-75 秒采样窗口全部选择 action 7 持续顶左墙，最终 115.5319 秒仍在左边界被 bouncy-gummy 接触击杀；下一步应修 handoff recovery。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_trace_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_stochastic_handoff_probe",
+      "summary": "同一 staged opening policy 与 soda-creek seed 62201 在 stochastic action selection 下两次活到 180 秒；带 trace 的探针显示 60-75 秒动作不再被 deterministic action 7 锁死，90 秒时已回到 x=-222.8753 且低血量风险为 0。该结果只说明 policy distribution 存在恢复动作，不是 RL acceptance。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_stochastic_probe_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1772,7 +1777,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery：60 秒时玩家已左下角钉死，fallback 持续 action 7 顶左墙并在 115.5319 秒死亡。下一步优先让 policy 在 edge_risk=1 且压力回升前离开边界，可尝试 handoff replay / 行为约束或分离 mid policy；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；stochastic probe 说明恢复动作存在于 policy distribution 中但 deterministic argmax 会锁成顶墙路径。下一步可尝试 seeded stochastic gate、温度/熵约束、动作平滑或显式 handoff recovery 行为约束；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",
