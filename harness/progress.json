@@ -1136,6 +1136,11 @@
       "id": "rl_rule_bot_late_survival_probe_teacher_selection",
       "summary": "记录 high-pressure 三图 300 秒规则 Bot late survival 探针：soda-creek 与 cracked-star-jar 找到 KiteBot 干净长局轨迹候选，caramel-workshop 只找到 TankBot seed 62301 的非随机胜利样本；这些结果只用于选择 180-300 秒真实轨迹导出，不是 RL policy gate、stage03 许可或 acceptance 证据。",
       "report": "harness/reports/2026-05-27_rl_rule_bot_late_survival_probe_summary_001/summary.md"
+    },
+    {
+      "id": "rl_rule_bot_late_survival_trajectory_export",
+      "summary": "导出真实规则 Bot 180-300 秒 late-window 轨迹 12007 条，覆盖 soda-creek、cracked-star-jar、caramel-workshop；behavior clone dry-run 确认样本 100% 为 late phase、三图分布约 36/32/32、最大单动作占比 15.16%，但该数据集仍只是训练输入，不是 policy gate 或 acceptance 证据。",
+      "report": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1892,7 +1897,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "late-risk auxiliary staged clone 已完成训练和 60/180/300 秒 deterministic high-pressure 对比：60 秒与 180 秒三图 100%，但 300 秒三图全部 0%，9 个失败全在 late_180_to_300。规则 Bot late survival 探针已找到真实长局 teacher 候选：soda-creek / cracked-star-jar 优先导出 KiteBot 180-300 秒窗口，caramel-workshop 优先导出 TankBot seed 62301，并把 Greedy/Coward/Route near-failure 作为对照；通过 300 秒多图长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "真实规则 Bot 180-300 秒 late-window trajectory 已导出 12007 条并通过 behavior clone dry-run：late phase 100%，三图分布约 36/32/32，最大单动作占比 15.16%。下一步应先决定 clean teacher only 或 clean+contrast 样本混合，再训练 late 子模型并复跑 deterministic 60/180/300 秒 high-pressure 多图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
