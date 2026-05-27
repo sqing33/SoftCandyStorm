@@ -380,6 +380,8 @@ soft/top-k recovery target opening 消融报告位于 `harness/reports/2026-05-2
 
 soft/top-k + `entropy_regularization = 0.05` 消融报告位于 `harness/reports/2026-05-27_rl_recovery_soft_target_entropy_opening_ablation_001/summary.md`。更高熵正则让 offline validation entropy 升到 `1.464027`，但 deterministic 60 秒三图仍由 action `3` dominant，且 `soda-creek` win rate 从 `0.6` 回退到 `0.4`。该结果记录为 `fail_20260527_045`，说明单独提高 per-sample entropy regularization 太间接；下一步应实现显式 action-distribution regularization、per-map action diversity constraint 或更宽的 safe-action teacher target。
 
+`train_behavior_clone.py` 现支持 `--action-distribution-regularization` 与 `--action-distribution-target`，可用 global 或 per-map target 约束 batch 平均预测动作分布。动作分布正则 opening 消融报告位于 `harness/reports/2026-05-27_rl_action_distribution_regularization_opening_ablation_001/summary.md`。`per_map_uniform_0_2` 在 60 秒 high-pressure 三图中消除了 compare 内部 action-bias repair，`caramel-workshop` action `3` ratio 从 `0.7561` 降到 `0.6562`；但 180 秒探针中 `soda-creek` win rate 仍为 `0.0`，整体 gate 为 `multimap_comparison_recorded_needs_policy_repair`。该结果记录为 `fail_20260527_046`，说明动作分布正则能缓解短窗 argmax 偏置，但不能替代状态条件化路线恢复、升级后目标或闭环 PPO/curriculum。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。

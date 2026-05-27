@@ -2068,6 +2068,11 @@
       "id": "rl_recovery_soft_target_entropy_opening_ablation",
       "summary": "soft/top-k + entropy_regularization=0.05 消融完成：offline entropy 上升但 soda-creek 60 秒 win_rate 回退到 0.4，三图仍由 action 3 dominant；记录 fail_20260527_045。",
       "report": "harness/reports/2026-05-27_rl_recovery_soft_target_entropy_opening_ablation_001/summary.md"
+    },
+    {
+      "id": "rl_action_distribution_regularization_opening_ablation",
+      "summary": "行为克隆动作分布正则与 per-map uniform-present opening 消融完成：per_map_uniform_0_2 消除了 60 秒三图 compare 内部 action-bias repair，但 180 秒 soda-creek 胜率仍为 0.0，记录 fail_20260527_046，不能推进 stage 03 或 RL acceptance。",
+      "report": "harness/reports/2026-05-27_rl_action_distribution_regularization_opening_ablation_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2077,7 +2082,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 又回退到 0.4，说明 per-sample entropy 太间接。下一步应实现显式 action-distribution regularization、per-map action diversity constraint 或更宽 safe-action teacher target；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。下一步应基于 soda-creek 180 秒失败 trace 做状态条件化路线恢复样本、升级后目标监督或 closed-loop PPO/curriculum；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

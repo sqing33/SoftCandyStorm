@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_046",
+  "category": "rl_policy",
+  "content_id": "action_distribution_regularization_opening_ablation",
+  "seed": 62400,
+  "bot": "ActionDistributionRegularizedOpeningCloneSmoke",
+  "time_seconds": 180.0,
+  "symptom": "per_map_uniform_present 动作分布正则系数 0.2 能让 60 秒 high-pressure 三图不再触发 action-bias repair，但 180 秒探针中 soda-creek 胜率仍为 0.0，平均存活只有 52.6997 秒；caramel-workshop 为 0.8，cracked-star-jar 为 0.4，整体 gate 为 multimap_comparison_recorded_needs_policy_repair。",
+  "root_cause": "动作分布正则只约束 batch 或 per-map 的平均预测分布，不能表达具体状态下何时需要路线恢复、何时应该切换升级后目标或如何避免 soda-creek 中窗死亡。它缓解了 deterministic action collapse，但没有补足 60-180 秒的闭环路线决策。",
+  "fix": "不推进该 checkpoint，不进入 300 秒评估、stage 03 或 RL acceptance。下一步应基于 soda-creek 180 秒失败 trace 导出 50-80 秒状态条件化 repair samples，或把 route recovery reward profile 纳入 closed-loop PPO / curriculum，而不是继续只提高动作分布正则系数。",
+  "validation": "训练、打包、60 秒三图对比和 180 秒三图探针记录在 harness/reports/2026-05-27_rl_action_distribution_regularization_opening_ablation_001；60 秒 per_map_uniform_0_2 gate 为 multimap_comparison_recorded_not_balance_gate，但 180 秒 gate 为 multimap_comparison_recorded_needs_policy_repair。"
+}
