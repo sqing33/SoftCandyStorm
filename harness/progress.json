@@ -1888,6 +1888,11 @@
       "id": "rl_late_risk_aux_staged_gru_longrun_regression",
       "summary": "late-risk auxiliary staged GRU context8 候选已把 1079 条 180-300 秒 risk recovery 样本混入 late 子模型训练并完成打包；60 秒和 180 秒 deterministic high-pressure 三图仍为 100%，但 300 秒三图全部为 0%，9 个失败全在 late_180_to_300，说明 risk recovery imitation 没有解除 long-run blocker。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md"
+    },
+    {
+      "id": "rl_clean_teacher_late_survival_regression",
+      "summary": "clean teacher-only late survival staged GRU context8 候选已用 6124 条真实规则 Bot 180-300 秒轨迹训练并打包；但 60 秒 high-pressure 回退到 80%/100%/70%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%，已记录 fail_20260527_032，说明 clean late replacement 同时破坏短窗保留和 long-run blocker。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_staged_gru_context8_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1897,7 +1902,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "真实规则 Bot 180-300 秒 late-window trajectory 已导出 12007 条并通过 behavior clone dry-run：late phase 100%，三图分布约 36/32/32，最大单动作占比 15.16%。下一步应先决定 clean teacher only 或 clean+contrast 样本混合，再训练 late 子模型并复跑 deterministic 60/180/300 秒 high-pressure 多图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "clean teacher-only late replacement 已验证失败：60 秒和 180 秒短窗回归，300 秒三图仍全 0%。下一步不要直接推进 clean teacher-only；应先修 horizon-safe staged dispatch 或加入 opening/mid retention，再补足 caramel-workshop clean teacher 覆盖，并复跑 deterministic 60/180/300 秒 high-pressure 多图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
