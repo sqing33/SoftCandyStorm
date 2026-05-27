@@ -435,7 +435,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum smoke / repair、阶段平衡 teacher 蒸馏 smoke、阶段平衡 PPO 闭环 repair、RL policy failure analysis、time-bucket curriculum plan、stage 01 opening repair/retry/trace/snapshot trace/snapshot compare/corner reward diagnostic/corner reward retrain regression/directional corner reward smoke/corner risk delta smoke/stage 02 mid regression/stage 02 mixed retention regression/stage 02 low-lr short regression/stage 02 seed replay short regression/seed 62405 trace compare/stage 02 opening edge delta regression/trace compare/staged opening policy mid regression/handoff trace/stochastic probe/edge recovery supervision samples 与 behavior clone 数据入口、升级选择样本导出 / 训练 smoke、Gym upgrade action mode smoke、多地图升级 ranker smoke、movement+upgrade 联合对比和 RL policy acceptance 门禁已建立；RL Bot 还没有达到正式压力测试基线。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum smoke / repair、阶段平衡 teacher 蒸馏 smoke、阶段平衡 PPO 闭环 repair、RL policy failure analysis、time-bucket curriculum plan、stage 01 opening repair/retry/trace/snapshot trace/snapshot compare/corner reward diagnostic/corner reward retrain regression/directional corner reward smoke/corner risk delta smoke/stage 02 mid regression/stage 02 mixed retention regression/stage 02 low-lr short regression/stage 02 seed replay short regression/seed 62405 trace compare/stage 02 opening edge delta regression/trace compare/staged opening policy mid regression/handoff trace/stochastic probe/edge recovery supervision samples 与 behavior clone 数据入口 / 辅助加权、升级选择样本导出 / 训练 smoke、Gym upgrade action mode smoke、多地图升级 ranker smoke、movement+upgrade 联合对比和 RL policy acceptance 门禁已建立；RL Bot 还没有达到正式压力测试基线。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -773,7 +773,7 @@
             "stage 02 staged opening wrapper 证明分离 opening policy 能保住 60 秒 high-pressure 三图 10 seed gate，但 180 秒对比中 soda-creek seed 62201 仍在 115.5319 秒死亡；问题转移到 60 秒 handoff 后的 mid-window recovery，stage 03 继续阻塞。",
             "staged opening trace 进一步显示 handoff 时玩家已在左下边界且生命 92.4698，fallback 在 60-75 秒采样窗口全部选择 action 7 持续顶左墙；下一轮应修 handoff recovery，而不是继续只调 opening reward。",
             "stochastic handoff probe 显示同一 staged policy 与 seed 62201 的恢复动作存在于概率分布中：带 trace 的 stochastic 运行活到 180 秒，60-75 秒动作不再被 action 7 锁死；但这只是单 seed 随机探针，不能替代 deterministic 或 seeded stochastic 多 seed gate。",
-            "edge_recovery_filter 已能把顶墙动作导出为 2215 条 repair_training_input 监督样本，并通过专用校验器确认原动作顶边、目标动作离边；train_behavior_clone.py 也已能把这些样本作为 movement repair target 读取并完成 1 epoch smoke；但这些样本和 smoke 模型仍只是训练输入和诊断材料，不能作为 deterministic gate、stage 03 许可或 rl_test_bot_candidate evidence。"
+            "edge_recovery_filter 已能把顶墙动作导出为 2215 条 repair_training_input 监督样本，并通过专用校验器确认原动作顶边、目标动作离边；train_behavior_clone.py 也已能把这些样本作为 movement repair target 读取、完成 1 epoch smoke，并支持 --edge-recovery-sample-weight 在混合原轨迹时形成辅助采样约束；但这些样本和 smoke 模型仍只是训练输入和诊断材料，不能作为 deterministic gate、stage 03 许可或 rl_test_bot_candidate evidence。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

@@ -1048,7 +1048,9 @@ def build_action_change_flags(sample_metadata, actions):
 
 
 def build_sample_weights(dataset, indices, args, np_module):
-    if args.sample_weighting == "none":
+    edge_recovery_sample_weight = float(getattr(args, "edge_recovery_sample_weight", 1.0))
+    use_edge_recovery_weight = abs(edge_recovery_sample_weight - 1.0) > 1e-6
+    if args.sample_weighting == "none" and not use_edge_recovery_weight:
         return None, {
             "mode": "none",
             "min": 1.0,
@@ -1073,6 +1075,7 @@ def build_sample_weights(dataset, indices, args, np_module):
     use_time_phase_balance = args.sample_weighting in TIME_PHASE_BALANCE_WEIGHTING_MODES
     phase_multipliers = {}
     phase_balance_report = None
+    edge_recovery_weighted_count = 0
     if use_time_phase_balance:
         phase_multipliers, phase_balance_report = build_time_phase_balance_weights(
             dataset,
@@ -1102,6 +1105,9 @@ def build_sample_weights(dataset, indices, args, np_module):
                 args.danger_low_health_weight * low_health_pressure
                 + args.danger_late_weight * late_pressure
             )
+        if sample.get("sample_source") == "edge_recovery_supervision":
+            weight *= edge_recovery_sample_weight
+            edge_recovery_weighted_count += 1
         if use_action_change and action_change_flags[int(index)]:
             weight += args.action_change_weight
             action_change_count += 1
@@ -1116,10 +1122,19 @@ def build_sample_weights(dataset, indices, args, np_module):
 
     values = np_module.asarray(weights, dtype=np_module.float32)
     report = {
-        "mode": args.sample_weighting,
+        "mode": "edge_recovery_auxiliary"
+        if args.sample_weighting == "none" and use_edge_recovery_weight
+        else args.sample_weighting,
+        "base_mode": args.sample_weighting,
         "min": round(float(values.min()), 6),
         "max": round(float(values.max()), 6),
         "mean": round(float(values.mean()), 6),
+        "edge_recovery_sample_weight": round(edge_recovery_sample_weight, 6),
+        "edge_recovery_weighted_sample_count": int(edge_recovery_weighted_count),
+        "edge_recovery_weighted_sample_ratio": round(
+            edge_recovery_weighted_count / max(1, len(indices)),
+            4,
+        ),
         "danger_health_threshold": args.danger_health_threshold,
         "danger_low_health_weight": args.danger_low_health_weight,
         "danger_late_start_seconds": args.danger_late_start_seconds,
@@ -1674,6 +1689,12 @@ def main():
     parser.add_argument("--danger-late-weight", type=float, default=1.0)
     parser.add_argument("--action-change-weight", type=float, default=2.0)
     parser.add_argument(
+        "--edge-recovery-sample-weight",
+        type=float,
+        default=1.0,
+        help="Multiply edge_recovery_supervision_sample rows when mixing repair samples with trajectory data.",
+    )
+    parser.add_argument(
         "--entropy-regularization",
         type=float,
         default=0.0,
@@ -1718,6 +1739,8 @@ def main():
         parser.error("--entropy-regularization must be greater than or equal to zero")
     if args.action_change_weight < 0.0:
         parser.error("--action-change-weight must be greater than or equal to zero")
+    if args.edge_recovery_sample_weight <= 0.0:
+        parser.error("--edge-recovery-sample-weight must be greater than zero")
     try:
         args.time_phase_thresholds = normalize_time_phase_thresholds(args.time_phase_thresholds)
     except ValueError as exc:

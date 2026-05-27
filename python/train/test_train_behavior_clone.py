@@ -76,6 +76,7 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         danger_late_horizon_seconds=300.0,
         danger_late_weight=1.0,
         action_change_weight=2.0,
+        edge_recovery_sample_weight=1.0,
         entropy_regularization=0.0,
         class_weighting="none",
         batch_size=4,
@@ -194,6 +195,33 @@ def test_time_phase_balance_weighting_boosts_underrepresented_phase(tmp_path):
     assert weights.tolist() == pytest.approx(
         [1.333333, 0.8, 0.8, 0.8, 1.333333, 1.333333, 0.8, 0.8],
         rel=1e-5,
+    )
+
+
+def test_edge_recovery_sample_weight_boosts_repair_samples(tmp_path):
+    import numpy as np
+
+    dataset = tiny_dataset()
+    dataset["sample_metadata"] = [dict(item) for item in dataset["sample_metadata"]]
+    dataset["sample_metadata"][1]["sample_source"] = "edge_recovery_supervision"
+    dataset["sample_metadata"][5]["sample_source"] = "edge_recovery_supervision"
+    args = args_for(tmp_path, architecture="mlp")
+    args.edge_recovery_sample_weight = 3.5
+
+    weights, report = build_sample_weights(
+        dataset,
+        list(range(len(dataset["actions"]))),
+        args,
+        np,
+    )
+
+    assert report["mode"] == "edge_recovery_auxiliary"
+    assert report["base_mode"] == "none"
+    assert report["edge_recovery_sample_weight"] == 3.5
+    assert report["edge_recovery_weighted_sample_count"] == 2
+    assert weights.tolist() == pytest.approx(
+        [1.0, 3.5, 1.0, 1.0, 1.0, 3.5, 1.0, 1.0],
+        rel=1e-6,
     )
 
 

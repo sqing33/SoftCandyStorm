@@ -1813,6 +1813,11 @@
       "id": "rl_edge_recovery_behavior_clone_dataset_smoke",
       "summary": "train_behavior_clone.py 现在可读取 edge_recovery_supervision_sample 作为 movement repair target，并单独统计 edge_recovery_sample_records；2215 条 edge recovery 样本已完成 dry-run 和 1 epoch MLP smoke，结论仍为 behavior_clone_smoke_only_not_policy_gate。",
       "report": "harness/reports/2026-05-27_rl_edge_recovery_behavior_clone_dataset_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_edge_recovery_behavior_clone_auxiliary_weight",
+      "summary": "train_behavior_clone.py 新增 --edge-recovery-sample-weight，可在原规则 Bot 轨迹与 edge_recovery_supervision_sample 混合训练时显式上采样 repair 样本，并在 sample_weights 报告中记录加权样本数；该能力只形成 handoff recovery 辅助约束，不是 policy gate。",
+      "report": "python/train/train_behavior_clone.py"
     }
   ],
   "next_recommended": [
@@ -1822,7 +1827,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；edge_recovery_samples 已接入 behavior clone 数据入口。下一步将其作为辅助约束和原有轨迹数据混合训练，再跑 60 秒 opening 10 seed 与 180 秒三图 deterministic 对比。"
+      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；edge_recovery_samples 已接入 behavior clone 数据入口并支持辅助加权。下一步将其与原有轨迹数据混合训练，再跑 60 秒 opening 10 seed 与 180 秒三图 deterministic 对比。"
     },
     {
       "id": "phase4_full_pack_manual_review",
