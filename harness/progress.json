@@ -1958,6 +1958,11 @@
       "id": "rl_route_recovery_trace_hotspots",
       "summary": "新增 route_recovery trace 热点分析并跑完 300 秒 high-pressure failed-only traces：735/966 个采样点为负，boundary_edge 出现在 721 个负样本，action 4 是主要贴边坏动作；最坏热点集中在 cracked-star-jar seed 62300 的 120-185 秒。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_trace_hotspots_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_supervision_samples",
+      "summary": "复跑 route_recovery 300 秒 high-pressure 三图 failed-only trace 并写入 observation，从 735 个负 route_recovery 采样点中导出 689 条 edge_recovery_supervision_sample；validator 判定 edge_recovery_samples_valid，behavior clone dry-run 判定 dataset_validated_not_training_gate，样本只作为 repair_training_input，不是 RL acceptance。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_supervision_samples_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1967,7 +1972,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：late-survival 1024 timestep 300 秒三图全 0%，5120 timestep 只把 cracked-star-jar 提到 33.33% 且引入中窗回归；long-run-retention 2048 timestep 又回到 300 秒三图全 0%；route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 trace 热点显示 blocker 主要是 boundary-pinned action 4，下一步不应继续只堆 timesteps、只扩大升级样本或直接放大 route_recovery，应把贴边热点转为监督恢复样本、policy constraint 或分阶段 policy；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新已从带 observation 的 300 秒 failed-only trace 导出 689 条贴边恢复 repair_training_input，下一步应把这些样本与规则 Bot 轨迹做监督修复 / policy constraint / 分阶段 policy 实验，而不是继续只堆 timesteps、只扩大升级样本或直接放大 route_recovery；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
