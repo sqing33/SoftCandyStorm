@@ -378,6 +378,8 @@ phase-aligned 在线 route-risk 样本报告位于 `harness/reports/2026-05-27_r
 
 soft/top-k recovery target opening 消融报告位于 `harness/reports/2026-05-27_rl_recovery_soft_target_opening_ablation_001/summary.md`。`soft_topk_0_6` 将 `soda-creek` 60 秒 win rate 从硬标签 route-risk ablation 的 `0.4` 提升到 `0.6`，平均存活提升到 `49.0996s`；但 `caramel-workshop` action `3` ratio 达到 `0.7582`，整体 gate 为 `multimap_comparison_recorded_needs_policy_repair`。该结果记录为 `fail_20260527_044`，仍不能进入 180/300 秒评估；下一步应尝试 per-map action diversity constraint、动作分布正则或更宽的 safe-action teacher target。
 
+soft/top-k + `entropy_regularization = 0.05` 消融报告位于 `harness/reports/2026-05-27_rl_recovery_soft_target_entropy_opening_ablation_001/summary.md`。更高熵正则让 offline validation entropy 升到 `1.464027`，但 deterministic 60 秒三图仍由 action `3` dominant，且 `soda-creek` win rate 从 `0.6` 回退到 `0.4`。该结果记录为 `fail_20260527_045`，说明单独提高 per-sample entropy regularization 太间接；下一步应实现显式 action-distribution regularization、per-map action diversity constraint 或更宽的 safe-action teacher target。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。

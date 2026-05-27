@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_045",
+  "category": "rl_training",
+  "content_id": "recovery_soft_target_entropy_opening_ablation",
+  "seed": 62400,
+  "bot": "RecoverySoftTargetEntropyOpeningCloneSmoke",
+  "time_seconds": 60.0,
+  "symptom": "将 soft/top-k opening 消融的 entropy_regularization 从 0.01 提高到 0.05 后，offline validation entropy 上升到 1.464027，但 60 秒 deterministic high-pressure comparison 没有产生更健康的在线动作分布：soda-creek win_rate 从 0.6 回退到 0.4，action 3 ratio 为 0.6697；caramel-workshop 和 cracked-star-jar 仍分别有 0.6624 / 0.6061 的 action 3 ratio。",
+  "root_cause": "per-sample entropy regularization 太间接，不能约束 deterministic argmax 在在线状态分布中的跨图动作占比。模型仍将主要概率质量集中到 action 3，且更高熵正则牺牲了 soda-creek 的短窗生存表现。",
+  "fix": "不推进该 checkpoint，不进入 180/300 秒评估。下一步应实现或实验显式 action-distribution regularization、per-map action diversity constraint，或构造更宽的 safe-action teacher target，而不是继续单独调高 entropy_regularization。",
+  "validation": "训练、打包和 deterministic 60 秒 high-pressure 三图对比记录在 harness/reports/2026-05-27_rl_recovery_soft_target_entropy_opening_ablation_001。比较 gate_decision 为 multimap_comparison_recorded_not_balance_gate，但 minimum_policy_win_rate 只有 0.4，average_policy_win_rate 为 0.6667，不能作为 policy gate。"
+}
