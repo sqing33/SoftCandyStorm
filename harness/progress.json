@@ -2008,6 +2008,11 @@
       "id": "rl_route_recovery_aux_history_context_probe",
       "summary": "新增 probe_behavior_clone_history_context.py，对同一目标 observation 比较 cold、online-prefix 与 nearest teacher-prefix 三种 GRU history 的 action scores；55-60 秒窗口 cold/online-prefix 仍全部 top action 3，但 teacher-prefix 有 9/15 样本转向 action 2，说明 online history 正在稳定错误恢复上下文。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_history_context_probe_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_focused_boundary_samples",
+      "summary": "基于 route_recovery entropy retry 的 soda-creek seed 62300 60 秒 trace 导出 134 条 focused boundary edge_recovery_supervision_sample；样本只保留 route_recovery 为负、贴边且原动作继续顶边的帧，目标动作均通过不再顶边校验，validator 通过且 behavior clone dry-run 判定 dataset_validated_not_training_gate。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_focused_boundary_samples_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2017,7 +2022,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段、teacher sequence 和 history context probe 显示真正问题在 transition / recovery history：55-60 秒 cold/online-prefix 仍全部 top action 3，但 teacher-prefix 有 9/15 样本转向 action 2。下一步应把这些窗口转成 focused repair / GRU history constraint；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段、teacher sequence 和 history context probe 显示真正问题在 transition / recovery history。已从 soda-creek seed 62300 60 秒 trace 导出 134 条 focused boundary repair samples，并通过 validator/dry-run；下一步是把它们加入受控训练候选，再跑 deterministic high-pressure 多图对比。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

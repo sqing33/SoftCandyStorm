@@ -1,0 +1,250 @@
+{
+  "status": "ok",
+  "mode": "dry_run",
+  "gate_decision": "dataset_validated_not_training_gate",
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_route_recovery_aux_focused_boundary_samples_001/focused_boundary_samples.jsonl"
+    ],
+    "sample_count": 134,
+    "episode_count": 0,
+    "skipped_upgrade_samples": 0,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 134,
+    "risk_recovery_sample_records": 0,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 7,
+        "ratio": 0.0522
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "4": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "5": {
+        "count": 22,
+        "ratio": 0.1642
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 63,
+        "ratio": 0.4701
+      },
+      "8": {
+        "count": 42,
+        "ratio": 0.3134
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 6.6667,
+      "time_seconds_max": 60.0328,
+      "health_ratio_min": 0.0,
+      "health_ratio_average": 0.4411,
+      "map_distribution": {
+        "soda-creek": {
+          "count": 134,
+          "ratio": 1.0
+        }
+      },
+      "sample_source_distribution": {
+        "edge_recovery_supervision": {
+          "count": 134,
+          "ratio": 1.0
+        }
+      }
+    },
+    "metadata": []
+  },
+  "sequence_diagnostics": {
+    "context_frames": 1,
+    "history_limit": 0,
+    "sample_count": 134,
+    "episode_key_count": 1,
+    "padding": {
+      "total_missing_frames": 0,
+      "average_missing_frames": 0.0,
+      "fully_seeded_samples": 134,
+      "fully_seeded_ratio": 1.0
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 0.0,
+      "max": 0.0
+    },
+    "action_transitions": {
+      "transition_count": 133,
+      "same_action_count": 115,
+      "same_action_ratio": 0.8647,
+      "changed_action_ratio": 0.1353
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 133,
+        "ratio": 0.9925
+      },
+      "mid_late_start_to_180": {
+        "count": 1,
+        "ratio": 0.0075
+      },
+      "late_gte_180": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 1,
+      "ratio": 0.0075
+    },
+    "per_map": {
+      "soda-creek": {
+        "sample_count": 134,
+        "sample_ratio": 1.0,
+        "time_seconds_min": 6.6667,
+        "time_seconds_max": 60.0328,
+        "average_missing_frames": 0.0,
+        "fully_seeded_ratio": 1.0,
+        "average_sequence_span_seconds": 0.0,
+        "late_low_health_ratio": 0.0075,
+        "action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 7,
+            "ratio": 0.0522
+          },
+          "2": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "3": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "4": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "5": {
+            "count": 22,
+            "ratio": 0.1642
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 63,
+            "ratio": 0.4701
+          },
+          "8": {
+            "count": 42,
+            "ratio": 0.3134
+          }
+        }
+      }
+    },
+    "diagnosis_flags": [
+      {
+        "id": "high_action_persistence",
+        "severity": "watch",
+        "summary": "Consecutive samples often keep the same action; inspect sample stride and deterministic target bias."
+      },
+      {
+        "id": "low_late_low_health_coverage",
+        "severity": "watch",
+        "summary": "Few samples cover late low-health recovery states; this can hide long-run policy failures."
+      }
+    ]
+  },
+  "time_phase_conditioning": {
+    "mode": "none",
+    "labels": [],
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "dimension": 0,
+    "phase_distribution": {
+      "opening": {
+        "count": 17,
+        "ratio": 0.1269
+      },
+      "mid": {
+        "count": 55,
+        "ratio": 0.4104
+      },
+      "late": {
+        "count": 62,
+        "ratio": 0.4627
+      }
+    }
+  },
+  "time_phase_filter": {
+    "mode": "all",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 134,
+    "after_sample_count": 134,
+    "phase_distribution": {
+      "opening": {
+        "count": 17,
+        "ratio": 0.1269
+      },
+      "mid": {
+        "count": 55,
+        "ratio": 0.4104
+      },
+      "late": {
+        "count": 62,
+        "ratio": 0.4627
+      }
+    }
+  },
+  "edge_recovery_time_window_filter": {
+    "mode": "all",
+    "min_seconds": null,
+    "max_seconds": null,
+    "before_sample_count": 134,
+    "after_sample_count": 134,
+    "before_edge_recovery_sample_count": 134,
+    "after_edge_recovery_sample_count": 134,
+    "dropped_edge_recovery_sample_count": 0
+  },
+  "risk_recovery_time_window_filter": {
+    "mode": "all",
+    "min_seconds": null,
+    "max_seconds": null,
+    "before_sample_count": 134,
+    "after_sample_count": 134,
+    "before_risk_recovery_sample_count": 0,
+    "after_risk_recovery_sample_count": 0,
+    "dropped_risk_recovery_sample_count": 0
+  },
+  "dependencies": {
+    "numpy": true,
+    "torch": true
+  }
+}
