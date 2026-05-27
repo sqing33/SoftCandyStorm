@@ -1938,6 +1938,11 @@
       "id": "rl_closed_loop_late_survival_reward_profile_extended_regression",
       "summary": "从 late-survival smoke checkpoint 继续 5120 timesteps、learning_rate=0.0001 后，300 秒 cracked-star-jar 提升到 33.33%，但 soda-creek 和 caramel-workshop 仍为 0%，且 180 秒从 66.67%/100%/100% 回落到 33.33%/100%/66.67%，记录 fail_20260527_036。继续只堆 timesteps 会带来中窗 retention 回归。",
       "report": "harness/reports/2026-05-27_rl_closed_loop_late_survival_reward_profile_extended_001/summary.md"
+    },
+    {
+      "id": "rl_closed_loop_long_run_retention_reward_profile_regression",
+      "summary": "新增 long-run-retention reward profile 并从 late-survival extended checkpoint 继续 2048 timesteps；60 秒 high-pressure 三图为 66.67%/66.67%/100%，180 秒为 33.33%/66.67%/100%，300 秒三图全 0%，记录 fail_20260527_037。早启动 retention 与重复动作惩罚没有解除 long-run blocker，且带来短窗回归。",
+      "report": "harness/reports/2026-05-27_rl_closed_loop_long_run_retention_reward_profile_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1947,7 +1952,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "late-survival reward profile 已打通真实 closed-loop 训练链路；1024 timestep smoke 300 秒三图全 0%，5120 timestep 扩展只把 cracked-star-jar 提到 33.33%，但引入 180 秒中窗回归和 action 4 偏置。下一步应加入 mid-window retention、动作多样性、low-health recovery、hazard + boss pressure 路线目标和 upgrade-choice 交互；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路已验证但仍阻塞：late-survival 1024 timestep 300 秒三图全 0%，5120 timestep 只把 cracked-star-jar 提到 33.33% 且引入中窗回归；long-run-retention 2048 timestep 又回到 300 秒三图全 0%，并带来 60 秒短窗回归。下一步不应继续只堆 timesteps，应结合 opening retention、显式路线 / recovery objective、动作多样性、low-health recovery、hazard + boss pressure 和 upgrade-choice 交互；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_037",
+  "category": "rl",
+  "content_id": "rl_closed_loop_long_run_retention_reward_profile_smoke",
+  "seed": "62300-62302",
+  "bot": "PpoLongRunRetentionRewardProfileSmoke",
+  "time_seconds": 157.9588,
+  "symptom": "从 late-survival extended checkpoint 使用 long-run-retention profile 继续训练 2048 timesteps 后，60 秒 high-pressure 三图只有 66.67% / 66.67% / 100%，180 秒为 33.33% / 66.67% / 100%，300 秒三图全部 0%；相比上一轮 extended，cracked-star-jar 的 300 秒胜率从 33.33% 回落到 0%。",
+  "root_cause": "long-run-retention 从 60 秒开始强化生存、安全和重复动作惩罚，但在已有 action 4 偏置的 checkpoint 上没有学到稳定路线恢复或低血量脱险。300 秒三图仍以 action 4 为主，且失败横跨 opening、mid 和 late 窗口，说明单纯加早期 retention reward 会放大惩罚信号，却不足以提供可执行的路线目标、升级交互或阶段策略。",
+  "fix": "不得进入 stage 03、RL policy acceptance 或 rl_test_bot_candidate。下一步不应继续只增加 long-run-retention timesteps，应保留 opening retention，加入 60-300 秒显式路线 / recovery objective、低血量脱险、hazard + boss pressure 路线目标、动作多样性约束和 upgrade-choice 交互；也应考虑从更健康的 opening checkpoint 或 staged curriculum 重新组织训练。",
+  "validation": "训练、deterministic high-pressure 60 秒 / 180 秒 / 300 秒对比、failed-only traces 与失败分析记录在 harness/reports/2026-05-27_rl_closed_loop_long_run_retention_reward_profile_smoke_001/summary.md、ppo_training_report.json、comparison_60s_3seed.json、comparison_180s_3seed.json、comparison_300s_3seed.json、failure_analysis_300s.md 和 traces_300s/。"
+}
