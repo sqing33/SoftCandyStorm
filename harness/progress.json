@@ -1738,6 +1738,11 @@
       "id": "rl_curriculum_stage02_seed_replay_short_regression",
       "summary": "stage 02 seed-replay short continuation 将 opening gate seed 62400-62409 用于训练 reset 后，soda-creek 60 秒胜率从 80% 提升到 90%，但 seed 62405 仍在 47.3330 秒死亡，记录 fail_20260527_025，仍不能进入 stage 03。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_seed_replay_short_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_seed62405_trace_compare",
+      "summary": "对 seed 62405 对比 stage 01 成功轨迹与 stage 02 seed replay 失败轨迹：stage 01 在右下角压力升高后切到 action 7 向左撤离，stage 02 从右上角开始持续 action 4 沿右边界下行到右下角死亡，说明下一轮需要 targeted opening regularization。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_seed62405_trace_compare_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1747,7 +1752,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage 02 seed replay 将 soda-creek opening gate 从 80% 推到 90%，但 seed 62405 仍失败。下一步应聚焦 seed 62405 failed-only trace 或更强 opening regularization；每轮必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "seed 62405 trace compare 显示 stage 02 丢掉了 stage 01 在右下角压力下切 action 7 离角落的触发。下一步应做右边界 / 右下角压力状态的 targeted opening regularization；每轮必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",
