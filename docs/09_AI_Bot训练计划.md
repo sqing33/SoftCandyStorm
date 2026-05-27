@@ -601,6 +601,8 @@ handoff recovery samples 的首个 mid-only 小权重消融没有带来在线收
 
 60 秒交接点 trace 进一步说明，短窗胜率不能直接解释为健康交接。对 `stage01 opening wrapper + handoff_mid_w0_5 fallback` 复跑 180 秒 high-pressure 三图 5 seed 并输出 sampled trace 后，15/15 个 episode 在交接前最后一帧都处于 `edge_risk >= 0.9`。三图在 180 秒仍各为 `0.6` 胜率；`soda-creek` / `caramel-workshop` / `cracked-star-jar` 的平均交接生命分别为 `93.0918` / `98.5834` / `87.0172`，但 `cracked-star-jar` seed `62404` 交接时生命只有 `3.7330`。首个 fallback action 主要是 action `8`、`3` 和 `2`，60-75 秒窗口继续呈现单方向段：`soda-creek` action `3:113, 8:96`，`caramel-workshop` action `8:133, 3:62`，`cracked-star-jar` action `3:104, 2:90`。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_trace_001/summary.md`。结论：fallback 需要明确学习“从贴边交接状态回到可持续路线”，后续监督样本应优先提取 `60-90s` non-edge recovery，并过滤极低血量残局。
 
+带 observation 的 60-90 秒复跑已形成更窄的接手修复样本池。复跑 `stage01 opening wrapper + handoff_mid_w0_5 fallback` 的 180 秒 high-pressure 三图 5 seed 后，三图仍各为 `0.6`，但 trace 可被监督训练链路消费。`tools/export_route_recovery_samples.py` 新增 `--min-health-ratio`，并从 `60-90s`、负 `route_recovery`、`boundary.edge_risk >= 0.75`、原动作继续顶边的 trace 行中导出 `713` 条样本；`min_health_ratio=0.25` 没有丢样本，导出样本的 `health_ratio` 为 `0.5002-0.6650`。`tools/validate_edge_recovery_samples.py` 判定 `edge_recovery_samples_valid`，`train_behavior_clone.py --dry-run` 判定 `dataset_validated_not_training_gate`。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_obs_samples_001/summary.md`。结论：这批样本只能作为 fallback / mid-window repair training input；下一步应做 fallback-only 或 mid-only 小权重消融，并继续保留 60/180/300 秒 deterministic high-pressure 三图门禁。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

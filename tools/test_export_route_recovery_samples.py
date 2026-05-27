@@ -149,6 +149,28 @@ class RouteRecoverySampleExportTests(unittest.TestCase):
         self.assertEqual(report["phase_duration_seconds"], 300.0)
         self.assertAlmostEqual(rows[0]["observation"][0], 25.0 / 300.0)
 
+    def test_min_health_ratio_filters_low_health_samples(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            trace = root / "low_health_trace.json"
+            samples = root / "samples.jsonl"
+            write_trace(trace)
+
+            report = build_report(
+                [trace],
+                samples_out=samples,
+                edge_distance=32.0,
+                route_recovery_threshold=0.0,
+                min_boundary_edge_risk=0.75,
+                min_health_ratio=0.25,
+            )
+            sample_text = samples.read_text()
+
+        self.assertEqual(report["decision"], "route_recovery_samples_unavailable")
+        self.assertEqual(report["low_health_filtered_count"], 1)
+        self.assertEqual(report["sample_count"], 0)
+        self.assertEqual(sample_text, "")
+
     def test_original_action_filter_keeps_only_requested_actions(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

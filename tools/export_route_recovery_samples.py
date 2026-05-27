@@ -341,6 +341,7 @@ def build_report(
     min_seconds: float | None = None,
     max_seconds: float | None = None,
     phase_duration_seconds: float | None = None,
+    min_health_ratio: float | None = None,
     original_actions: set[int] | None = None,
     max_samples: int | None = None,
 ) -> dict[str, Any]:
@@ -352,6 +353,7 @@ def build_report(
     missing_observation_count = 0
     original_not_edge_count = 0
     original_action_filtered_count = 0
+    low_health_filtered_count = 0
     no_target_count = 0
     outside_time_window_count = 0
 
@@ -395,6 +397,14 @@ def build_report(
                 time_seconds=time_seconds,
                 phase_duration_seconds=phase_duration_seconds,
             )
+            health_ratio = health_ratio_from_observation(observation)
+            if (
+                min_health_ratio is not None
+                and health_ratio is not None
+                and health_ratio < min_health_ratio
+            ):
+                low_health_filtered_count += 1
+                continue
 
             original_action = int(step.get("action", 0))
             if original_actions is not None and original_action not in original_actions:
@@ -450,6 +460,7 @@ def build_report(
         "missing_observation_count": missing_observation_count,
         "original_not_edge_count": original_not_edge_count,
         "original_action_filtered_count": original_action_filtered_count,
+        "low_health_filtered_count": low_health_filtered_count,
         "no_target_count": no_target_count,
         "sample_count": len(samples),
         "samples_path": str(samples_out),
@@ -459,6 +470,7 @@ def build_report(
         "min_seconds": min_seconds,
         "max_seconds": max_seconds,
         "phase_duration_seconds": phase_duration_seconds,
+        "min_health_ratio": min_health_ratio,
         "original_actions": sorted(original_actions) if original_actions is not None else None,
         "map_distribution": count_map(sample.get("map_id") for sample in samples),
         "original_action_distribution": count_map(sample.get("original_action") for sample in samples),
@@ -483,6 +495,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Boundary hotspot rows: `{report['boundary_hotspot_count']}`",
         f"- Outside time window rows: `{report['outside_time_window_count']}`",
         f"- Original action filtered rows: `{report['original_action_filtered_count']}`",
+        f"- Low health filtered rows: `{report['low_health_filtered_count']}`",
         f"- Missing observation rows: `{report['missing_observation_count']}`",
         f"- Exported samples: `{report['sample_count']}`",
         f"- Samples: `{report['samples_path']}`",
@@ -522,6 +535,12 @@ def main() -> int:
         help="Rewrite observation progress using time_seconds / this horizon before writing samples.",
     )
     parser.add_argument(
+        "--min-health-ratio",
+        type=float,
+        default=None,
+        help="Skip samples whose normalized health observation is below this value.",
+    )
+    parser.add_argument(
         "--original-actions",
         default=None,
         help="Comma-separated original policy actions to export, for example `3` or `1,3,6`.",
@@ -540,6 +559,8 @@ def main() -> int:
         parser.error("--max-seconds must be greater than --min-seconds")
     if args.phase_duration_seconds is not None and args.phase_duration_seconds <= 0.0:
         parser.error("--phase-duration-seconds must be greater than zero")
+    if args.min_health_ratio is not None and not (0.0 <= args.min_health_ratio <= 1.0):
+        parser.error("--min-health-ratio must be between 0 and 1")
     original_actions = None
     if args.original_actions:
         try:
@@ -565,6 +586,7 @@ def main() -> int:
         min_seconds=args.min_seconds,
         max_seconds=args.max_seconds,
         phase_duration_seconds=args.phase_duration_seconds,
+        min_health_ratio=args.min_health_ratio,
         original_actions=original_actions,
         max_samples=args.max_samples,
     )
