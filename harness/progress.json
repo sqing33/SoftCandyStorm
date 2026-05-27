@@ -1091,6 +1091,11 @@
       "id": "bot_policy_mid_skill_calibration_20seed",
       "summary": "校准 GreedyXpBot 与 TankBot 中技能策略后，重跑 Phase 4 full pack 9 Bot x 20 seed x 600 秒矩阵：全部 Bot 回到目标区间，GreedyXpBot 50.0%、TankBot 25.0%；strict replay-batch 180/180 通过，headless 性能预算 valid。",
       "report": "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_opening_edge_delta_regression",
+      "summary": "stage 02 opening-edge-delta continuation 新增 opening_edge_risk_delta 状态奖励并沿用 seed replay / low-lr short 配置，但 60 秒 high-pressure 10 seed 中 soda-creek 回落到 50%，5 个 opening death 已记录 fail_20260527_026，仍不能进入 stage 03。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1752,7 +1757,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "seed 62405 trace compare 显示 stage 02 丢掉了 stage 01 在右下角压力下切 action 7 离角落的触发。下一步应做右边界 / 右下角压力状态的 targeted opening regularization；每轮必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "opening_edge_risk_delta 已验证不能单独保住 stage 02：soda-creek 60 秒 10 seed 回落到 50%。下一步应对 62400、62401、62403、62405、62409 做 failed-only snapshot trace，对比 stage 01 成功路径，再考虑成功轨迹 replay / 行为约束、分离 opening policy 或更窄的右边界压力 regularization；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",
