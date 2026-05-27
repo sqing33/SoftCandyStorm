@@ -1,0 +1,292 @@
+{
+  "status": "ok",
+  "mode": "dry_run",
+  "gate_decision": "dataset_validated_not_training_gate",
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_late_boundary_handoff_cracked_star_samples_001/cracked_star_handoff_60_90_recovery_samples.jsonl"
+    ],
+    "sample_count": 190,
+    "episode_count": 0,
+    "skipped_upgrade_samples": 0,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 190,
+    "risk_recovery_sample_records": 0,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 34,
+        "ratio": 0.1789
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 29,
+        "ratio": 0.1526
+      },
+      "4": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 41,
+        "ratio": 0.2158
+      },
+      "7": {
+        "count": 86,
+        "ratio": 0.4526
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 60.3328,
+      "time_seconds_max": 89.999,
+      "health_ratio_min": 0.5002,
+      "health_ratio_average": 0.5608,
+      "map_distribution": {
+        "cracked-star-jar": {
+          "count": 190,
+          "ratio": 1.0
+        }
+      },
+      "sample_source_distribution": {
+        "edge_recovery_supervision": {
+          "count": 190,
+          "ratio": 1.0
+        }
+      }
+    },
+    "metadata": []
+  },
+  "sequence_diagnostics": {
+    "context_frames": 8,
+    "history_limit": 7,
+    "sample_count": 190,
+    "episode_key_count": 5,
+    "padding": {
+      "total_missing_frames": 140,
+      "average_missing_frames": 0.7368,
+      "fully_seeded_samples": 155,
+      "fully_seeded_ratio": 0.8158
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 2.6156,
+      "max": 16.6664
+    },
+    "action_transitions": {
+      "transition_count": 185,
+      "same_action_count": 182,
+      "same_action_ratio": 0.9838,
+      "changed_action_ratio": 0.0162
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid_late_start_to_180": {
+        "count": 190,
+        "ratio": 1.0
+      },
+      "late_gte_180": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 190,
+      "ratio": 1.0
+    },
+    "per_map": {
+      "cracked-star-jar": {
+        "sample_count": 190,
+        "sample_ratio": 1.0,
+        "time_seconds_min": 60.3328,
+        "time_seconds_max": 89.999,
+        "average_missing_frames": 0.7368,
+        "fully_seeded_ratio": 0.8158,
+        "average_sequence_span_seconds": 2.6156,
+        "late_low_health_ratio": 1.0,
+        "action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 34,
+            "ratio": 0.1789
+          },
+          "2": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "3": {
+            "count": 29,
+            "ratio": 0.1526
+          },
+          "4": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "5": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "6": {
+            "count": 41,
+            "ratio": 0.2158
+          },
+          "7": {
+            "count": 86,
+            "ratio": 0.4526
+          },
+          "8": {
+            "count": 0,
+            "ratio": 0.0
+          }
+        }
+      }
+    },
+    "diagnosis_flags": [
+      {
+        "id": "high_action_persistence",
+        "severity": "watch",
+        "summary": "Consecutive samples often keep the same action; inspect sample stride and deterministic target bias."
+      }
+    ]
+  },
+  "time_phase_conditioning": {
+    "mode": "one_hot",
+    "labels": [
+      "opening",
+      "mid",
+      "late"
+    ],
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "dimension": 3,
+    "phase_distribution": {
+      "opening": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid": {
+        "count": 190,
+        "ratio": 1.0
+      },
+      "late": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    }
+  },
+  "time_phase_filter": {
+    "mode": "mid",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 190,
+    "after_sample_count": 190,
+    "phase_distribution": {
+      "opening": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid": {
+        "count": 190,
+        "ratio": 1.0
+      },
+      "late": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    }
+  },
+  "edge_recovery_time_window_filter": {
+    "mode": "time_window",
+    "min_seconds": 60.0,
+    "max_seconds": 90.0,
+    "before_sample_count": 190,
+    "after_sample_count": 190,
+    "before_edge_recovery_sample_count": 190,
+    "after_edge_recovery_sample_count": 190,
+    "dropped_edge_recovery_sample_count": 0
+  },
+  "risk_recovery_time_window_filter": {
+    "mode": "all",
+    "min_seconds": null,
+    "max_seconds": null,
+    "before_sample_count": 190,
+    "after_sample_count": 190,
+    "before_risk_recovery_sample_count": 0,
+    "after_risk_recovery_sample_count": 0,
+    "dropped_risk_recovery_sample_count": 0
+  },
+  "recovery_soft_targets": {
+    "mode": "top_k_scores",
+    "primary_mass": 0.65,
+    "top_k": 3,
+    "soft_sample_count": 190,
+    "fallback_one_hot_count": 0,
+    "average_nonzero_actions": 2.6684
+  },
+  "action_distribution_regularization": {
+    "enabled": true,
+    "coefficient": 0.2,
+    "target_mode": "per_map_uniform_present",
+    "map_ids": [
+      "cracked-star-jar"
+    ],
+    "scope": "per_map",
+    "target_distribution_by_map": {
+      "cracked-star-jar": {
+        "0": 0.0,
+        "1": 0.25,
+        "2": 0.0,
+        "3": 0.25,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.25,
+        "7": 0.25,
+        "8": 0.0
+      }
+    },
+    "train_action_counts_by_map": {
+      "cracked-star-jar": {
+        "0": 0,
+        "1": 34,
+        "2": 0,
+        "3": 29,
+        "4": 0,
+        "5": 0,
+        "6": 41,
+        "7": 86,
+        "8": 0
+      }
+    }
+  },
+  "dependencies": {
+    "numpy": true,
+    "torch": true
+  }
+}

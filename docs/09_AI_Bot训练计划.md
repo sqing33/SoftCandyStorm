@@ -607,6 +607,8 @@ handoff recovery samples 的首个 mid-only 小权重消融没有带来在线收
 
 fallback-only probe 证明问题不是 staged late 子模型或 phase dispatch 单独造成。该 probe 前 60 秒仍用 stage01 opening wrapper，60 秒后直接切到上一轮训练出的 `mid.pt`，不经过 staged `opening/mid/late` dispatcher。60 秒保持 `1.0/1.0/0.8`，但 180 秒降为 `0.4/0.8/0.2`，300 秒三图全为 `0.0`，记录 `fail_20260527_059`。300 秒失败分析显示 opening bucket 为 `0`，但 15 个死亡局全部落在 mid / late，且 `cracked-star-jar` action `7` 占比达到 `61.49%`。结论：不能继续只把 `60-90s` handoff 样本加权到同一个 mid clone；下一步应转向 `cracked-star-jar` 专项 handoff 样本，或 late-window low-health / hazard / Boss pressure recovery。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_fallback_only_probe_001/summary.md`。
 
+`tools/export_route_recovery_samples.py` 已支持 `--map-id` 按地图导出 route-recovery 修复样本，并用该能力从现有 observation trace 中切出 `cracked-star-jar` 专项 handoff 样本。过滤 `60-90s`、负 `route_recovery`、`boundary.edge_risk >= 0.75`、`min_health_ratio = 0.25` 后得到 `190` 条样本，覆盖 seed `62400-62404`，时间范围 `60.3328-89.999s`，校验和 behavior clone dry-run 均通过。样本 target action 分布为 `7:86, 6:41, 1:34, 3:29`，这说明后续不能做全局 action `7` 惩罚或加权；必须保留 map / position conditioning、soft target 和动作分布正则。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_cracked_star_samples_001/summary.md`。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
