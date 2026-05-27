@@ -1733,6 +1733,11 @@
       "id": "rl_curriculum_stage02_low_lr_short_regression",
       "summary": "stage 02 low-lr short continuation 将 learning_rate 降到 0.0001 且只训练 1024 timesteps，但 60 秒 opening 回归中 soda-creek 仍只有 80%，seed 62400 更早在 24.5666 秒死亡，记录 fail_20260527_024，仍不能进入 stage 03。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_low_lr_short_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_seed_replay_short_regression",
+      "summary": "stage 02 seed-replay short continuation 将 opening gate seed 62400-62409 用于训练 reset 后，soda-creek 60 秒胜率从 80% 提升到 90%，但 seed 62405 仍在 47.3330 秒死亡，记录 fail_20260527_025，仍不能进入 stage 03。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_seed_replay_short_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1742,7 +1747,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage 02 mixed retention 与 low-lr short continuation 都让 soda-creek opening gate 停在 80%，低学习率短训还让 seed 62400 更早死亡。下一步应加入显式 opening replay/regularization；每轮必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "stage 02 seed replay 将 soda-creek opening gate 从 80% 推到 90%，但 seed 62405 仍失败。下一步应聚焦 seed 62405 failed-only trace 或更强 opening regularization；每轮必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
     },
     {
       "id": "phase4_full_pack_manual_review",

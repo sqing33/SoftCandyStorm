@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_025",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage02_seed_replay_short",
+  "seed": 62405,
+  "bot": "PpoStage02SeedReplayShort",
+  "time_seconds": 47.333,
+  "symptom": "stage 02 seed-replay short continuation 将 opening gate seed 62400-62409 显式用于训练 reset，并保持 learning_rate 0.0001 / ent_coef 0.02 / 1024 timesteps；60 秒 high-pressure 10 seed opening 回归中 soda-creek 提升到 90% 胜率，但 seed 62405 仍在 47.3330 秒死亡。",
+  "root_cause": "训练 seed replay 能缓解 generic PPO continuation 对 stage 01 opening 的覆盖，但 1024 timestep 的混合训练仍没有学到 seed 62405 的稳定逃离路径；当前 regularization 只覆盖 seed 集合，不会针对失败轨迹中的局部状态-动作错误提供额外约束。",
+  "fix": "不要进入 stage 03；下一步应对 seed 62405 生成 failed-only trace，或在 stage 02 中加入更强的 opening regularization / replay 权重，再先跑 60 秒 10 seed gate。",
+  "validation": "训练报告：harness/reports/2026-05-27_rl_curriculum_stage02_seed_replay_short_001/ppo_training_report.json；60 秒 opening 回归：harness/reports/2026-05-27_rl_curriculum_stage02_seed_replay_short_001/comparison_60s_10seed.json；失败分析：harness/reports/2026-05-27_rl_curriculum_stage02_seed_replay_short_001/failure_analysis_60s.md。结论为 policy repair；因 60 秒 hard gate 失败，未运行 180 秒三图对比。"
+}
