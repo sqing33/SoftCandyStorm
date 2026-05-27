@@ -1126,6 +1126,11 @@
       "id": "rl_late_recovery_supervision_pipeline",
       "summary": "train_sb3.py 新增 --late-recovery-filter，可在 180 秒后根据 edge、hazard、Boss / enemy pressure 和低血量风险改写 deterministic 高风险动作，并把替换结果导出为 risk_recovery_supervision_sample；train_behavior_clone.py 已可读取、加权和按时间窗过滤这些 late repair 样本。该能力只提供训练材料，不是 stage 03、300 秒 gate 或 RL acceptance 通过证据。",
       "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_late_recovery_samples_recorded",
+      "summary": "使用 late_recovery_filter 对 handoff-window staged clone 的 300 秒 high-pressure 三图评估导出 1079 条 180-300 秒 risk_recovery_supervision_sample，覆盖 edge、hazard、Boss / enemy pressure 和 idle-under-pressure；behavior clone dry-run 已确认 1079 条样本可按 180-300 秒窗口读取。adapter 评估仍为三图 0% 胜率，因此该报告只作为 late 子模型训练材料，不是 stage 03、300 秒 gate 或 RL acceptance 通过证据。",
+      "report": "harness/reports/2026-05-27_rl_late_recovery_samples_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1863,6 +1868,11 @@
       "id": "rl_edge_aux_handoff_window_late_trace",
       "summary": "对 handoff-window edge-aux staged clone 的 300 秒 late failures 复跑 failed-only trace；8 个终局中 7 个 edge-pinned、5 个带 hazard pressure、5 个带 boss pressure、5 个 direct contact，说明 late repair 需要同时处理离边、hazard field、Boss / enemy pressure 和低血量恢复。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_late_trace_001/summary.md"
+    },
+    {
+      "id": "rl_late_recovery_samples_training_input",
+      "summary": "late recovery 样本报告已把 300 秒 late failure 面转成 1079 条 risk_recovery_supervision_sample；三图 adapter 评估仍是 0% 胜率，且 dry-run 标记 low_late_low_health_coverage 为 watch，因此只能进入 late 子模型训练队列，不能作为 gate 通过或 acceptance 证据。",
+      "report": "harness/reports/2026-05-27_rl_late_recovery_samples_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1872,7 +1882,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage01 opening + handoff-window edge-aux fallback 已通过 deterministic 60 秒 opening gate 和 180 秒 handoff probe，但 300 秒 late trace 显示失败是 edge + hazard / boss 混合压力；late recovery supervision 管线已具备样本导出和 BC 读取能力，下一步应先导出 180-300 秒 risk_recovery_supervision_sample，混入 late 子模型训练，再重新跑 60/180/300 秒 high-pressure 对比；通过前不能进入 stage 03 或 RL acceptance。"
+      "summary": "stage01 opening + handoff-window edge-aux fallback 已通过 deterministic 60 秒 opening gate 和 180 秒 handoff probe，但 300 秒 late trace 显示失败是 edge + hazard / boss 混合压力；当前已导出 1079 条 180-300 秒 risk_recovery_supervision_sample，下一步应把这些样本混入 late 子模型训练，重新打包 staged clone，再跑 60/180/300 秒 high-pressure 对比；通过前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

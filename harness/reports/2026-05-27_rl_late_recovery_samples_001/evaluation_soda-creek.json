@@ -1,0 +1,575 @@
+{
+  "report_version": 1,
+  "status": "evaluated",
+  "phase": "rl_phase_1_movement_survival",
+  "map_id": "soda-creek",
+  "policy_kind": "staged_sb3_opening_behavior_clone",
+  "opening_policy": {
+    "mode": "staged_sb3_opening",
+    "opening_model_path": "harness/reports/2026-05-27_rl_curriculum_stage01_corner_risk_delta_smoke_001/stage01_corner_risk_delta_smoke.zip",
+    "fallback_model_path": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_staged_gru_context8_001/staged.pt",
+    "opening_seconds": 60.0,
+    "limitations": [
+      "The opening model is used only during evaluation/comparison before opening_seconds.",
+      "This wrapper does not train a new policy and is not policy acceptance evidence by itself."
+    ]
+  },
+  "policy_adapter": {
+    "mode": "late_recovery_filter",
+    "min_seconds": 180.0,
+    "edge_distance": 32.0,
+    "hazard_threshold": 0.2,
+    "boss_threshold": 0.05,
+    "enemy_threshold": 0.05,
+    "low_health_threshold": 0.25,
+    "toward_dot_threshold": 0.15,
+    "wrapped_policy_kind": "staged_sb3_opening",
+    "limitations": [
+      "This deterministic wrapper is diagnostic repair evidence only.",
+      "It produces late-window supervision samples and cannot be used as RL policy acceptance evidence."
+    ]
+  },
+  "action_selection": "deterministic",
+  "action_random_seed": null,
+  "action_random_seed_report": {
+    "seed": null,
+    "seeded_sources": []
+  },
+  "upgrade_policy": {
+    "mode": "bridge_default_first_option",
+    "model_path": null
+  },
+  "trace_dir": null,
+  "trace_failed_only": null,
+  "trace_sample_stride": null,
+  "edge_recovery_samples": {
+    "path": "harness/reports/2026-05-27_rl_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+    "sample_count": 445,
+    "record_type": "risk_recovery_supervision_sample",
+    "record_type_counts": {
+      "risk_recovery_supervision_sample": 445
+    },
+    "sample_role": "repair_training_input",
+    "limitations": [
+      "Samples are emitted only when a deterministic recovery filter changes an action.",
+      "They are training/diagnostic material, not policy acceptance evidence."
+    ]
+  },
+  "episodes": [
+    {
+      "seed": 62300,
+      "map_id": "soda-creek",
+      "steps": 8299,
+      "reward": 83.6466,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 276.65402,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "level": 11,
+      "kills": 904,
+      "xp_collected": 1118.7025,
+      "damage_taken": 120.20336,
+      "action_counts": {
+        "0": 637,
+        "1": 38,
+        "2": 636,
+        "3": 2500,
+        "4": 753,
+        "5": 630,
+        "6": 49,
+        "7": 1700,
+        "8": 1356
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 8299,
+        "mean_scores": {
+          "0": 0.0772,
+          "1": 0.0194,
+          "2": 0.0603,
+          "3": 0.2934,
+          "4": 0.0961,
+          "5": 0.0823,
+          "6": 0.0241,
+          "7": 0.1933,
+          "8": 0.1539
+        },
+        "mean_top_actions": [
+          {
+            "action": "3",
+            "score": 0.2934
+          },
+          {
+            "action": "7",
+            "score": 0.1933
+          },
+          {
+            "action": "8",
+            "score": 0.1539
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 658,
+            "ratio": 0.0793
+          },
+          "1": {
+            "count": 31,
+            "ratio": 0.0037
+          },
+          "2": {
+            "count": 636,
+            "ratio": 0.0766
+          },
+          "3": {
+            "count": 2501,
+            "ratio": 0.3014
+          },
+          "4": {
+            "count": 748,
+            "ratio": 0.0901
+          },
+          "5": {
+            "count": 626,
+            "ratio": 0.0754
+          },
+          "6": {
+            "count": 49,
+            "ratio": 0.0059
+          },
+          "7": {
+            "count": 1703,
+            "ratio": 0.2052
+          },
+          "8": {
+            "count": 1347,
+            "ratio": 0.1623
+          }
+        },
+        "dominant_top_action": {
+          "action": "3",
+          "count": 2501,
+          "ratio": 0.3014
+        },
+        "mean_chosen_action_score": 0.8458,
+        "chosen_action_score_sample_count": 8299
+      },
+      "upgrade_policy_decisions": [],
+      "upgrade_policy_decision_count": 0,
+      "edge_recovery_sample_count": 71,
+      "reward_breakdown": {
+        "action_repeat": -27.712,
+        "boss_pressure": -0.0031,
+        "boundary_risk": -2.7748,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": 0.0,
+        "damage_taken": -9.6163,
+        "enemy_pressure": -0.2027,
+        "hazard_risk": -0.1282,
+        "kill": 72.32,
+        "level": 8.0,
+        "low_health": -0.74,
+        "opening_edge_risk_delta": 0.0,
+        "safety_delta": -0.0108,
+        "survival": 2.7663,
+        "terminal": -3.0,
+        "total": 83.6466,
+        "xp": 44.748
+      }
+    },
+    {
+      "seed": 62301,
+      "map_id": "soda-creek",
+      "steps": 8721,
+      "reward": 87.9057,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 290.71725,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "level": 11,
+      "kills": 1010,
+      "xp_collected": 1089.103,
+      "damage_taken": 120.55697,
+      "action_counts": {
+        "0": 163,
+        "1": 572,
+        "2": 480,
+        "3": 1917,
+        "4": 894,
+        "5": 1330,
+        "6": 233,
+        "7": 1296,
+        "8": 1836
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 8721,
+        "mean_scores": {
+          "0": 0.0301,
+          "1": 0.0641,
+          "2": 0.033,
+          "3": 0.2366,
+          "4": 0.1171,
+          "5": 0.1303,
+          "6": 0.0327,
+          "7": 0.1466,
+          "8": 0.2096
+        },
+        "mean_top_actions": [
+          {
+            "action": "3",
+            "score": 0.2366
+          },
+          {
+            "action": "8",
+            "score": 0.2096
+          },
+          {
+            "action": "7",
+            "score": 0.1466
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 198,
+            "ratio": 0.0227
+          },
+          "1": {
+            "count": 580,
+            "ratio": 0.0665
+          },
+          "2": {
+            "count": 438,
+            "ratio": 0.0502
+          },
+          "3": {
+            "count": 1947,
+            "ratio": 0.2233
+          },
+          "4": {
+            "count": 872,
+            "ratio": 0.1
+          },
+          "5": {
+            "count": 1334,
+            "ratio": 0.153
+          },
+          "6": {
+            "count": 229,
+            "ratio": 0.0263
+          },
+          "7": {
+            "count": 1299,
+            "ratio": 0.149
+          },
+          "8": {
+            "count": 1824,
+            "ratio": 0.2092
+          }
+        },
+        "dominant_top_action": {
+          "action": "3",
+          "count": 1947,
+          "ratio": 0.2233
+        },
+        "mean_chosen_action_score": 0.8517,
+        "chosen_action_score_sample_count": 8721
+      },
+      "upgrade_policy_decisions": [],
+      "upgrade_policy_decision_count": 0,
+      "edge_recovery_sample_count": 222,
+      "reward_breakdown": {
+        "action_repeat": -27.492,
+        "boss_pressure": -0.0303,
+        "boundary_risk": -3.5305,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": 0.0001,
+        "damage_taken": -9.6445,
+        "enemy_pressure": -0.5176,
+        "hazard_risk": -0.0542,
+        "kill": 80.8,
+        "level": 8.0,
+        "low_health": -3.0829,
+        "opening_edge_risk_delta": -0.0,
+        "safety_delta": -0.0133,
+        "survival": 2.907,
+        "terminal": -3.0,
+        "total": 87.9057,
+        "xp": 43.564
+      }
+    },
+    {
+      "seed": 62302,
+      "map_id": "soda-creek",
+      "steps": 7642,
+      "reward": 55.4624,
+      "terminated": true,
+      "truncated": false,
+      "time_seconds": 254.75879,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "level": 9,
+      "kills": 672,
+      "xp_collected": 840.8014,
+      "damage_taken": 120.450005,
+      "action_counts": {
+        "0": 466,
+        "1": 224,
+        "2": 484,
+        "3": 1957,
+        "4": 696,
+        "5": 1108,
+        "6": 13,
+        "7": 1612,
+        "8": 1082
+      },
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 7642,
+        "mean_scores": {
+          "0": 0.0637,
+          "1": 0.0354,
+          "2": 0.0443,
+          "3": 0.2585,
+          "4": 0.1168,
+          "5": 0.1211,
+          "6": 0.0176,
+          "7": 0.1983,
+          "8": 0.1444
+        },
+        "mean_top_actions": [
+          {
+            "action": "3",
+            "score": 0.2585
+          },
+          {
+            "action": "7",
+            "score": 0.1983
+          },
+          {
+            "action": "8",
+            "score": 0.1444
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 488,
+            "ratio": 0.0639
+          },
+          "1": {
+            "count": 191,
+            "ratio": 0.025
+          },
+          "2": {
+            "count": 435,
+            "ratio": 0.0569
+          },
+          "3": {
+            "count": 2009,
+            "ratio": 0.2629
+          },
+          "4": {
+            "count": 691,
+            "ratio": 0.0904
+          },
+          "5": {
+            "count": 1115,
+            "ratio": 0.1459
+          },
+          "6": {
+            "count": 17,
+            "ratio": 0.0022
+          },
+          "7": {
+            "count": 1631,
+            "ratio": 0.2134
+          },
+          "8": {
+            "count": 1065,
+            "ratio": 0.1394
+          }
+        },
+        "dominant_top_action": {
+          "action": "3",
+          "count": 2009,
+          "ratio": 0.2629
+        },
+        "mean_chosen_action_score": 0.8471,
+        "chosen_action_score_sample_count": 7642
+      },
+      "upgrade_policy_decisions": [],
+      "upgrade_policy_decision_count": 0,
+      "edge_recovery_sample_count": 152,
+      "reward_breakdown": {
+        "action_repeat": -25.192,
+        "boss_pressure": -0.0142,
+        "boundary_risk": -2.3574,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": 0.0,
+        "damage_taken": -9.636,
+        "enemy_pressure": -0.2631,
+        "hazard_risk": -0.1852,
+        "kill": 53.76,
+        "level": 6.4,
+        "low_health": -0.2178,
+        "opening_edge_risk_delta": 0.0,
+        "safety_delta": -0.0111,
+        "survival": 2.5473,
+        "terminal": -3.0,
+        "total": 55.4624,
+        "xp": 33.632
+      }
+    }
+  ],
+  "summary": {
+    "episodes": 3,
+    "win_rate": 0.0,
+    "average_survival_seconds": 274.0434,
+    "average_level": 10.3333,
+    "average_kills": 862.0,
+    "average_reward": 75.6716,
+    "damage_taken_average": 120.4034,
+    "action_distribution": {
+      "0": {
+        "count": 1266,
+        "ratio": 0.0513
+      },
+      "1": {
+        "count": 834,
+        "ratio": 0.0338
+      },
+      "2": {
+        "count": 1600,
+        "ratio": 0.0649
+      },
+      "3": {
+        "count": 6374,
+        "ratio": 0.2585
+      },
+      "4": {
+        "count": 2343,
+        "ratio": 0.095
+      },
+      "5": {
+        "count": 3068,
+        "ratio": 0.1244
+      },
+      "6": {
+        "count": 295,
+        "ratio": 0.012
+      },
+      "7": {
+        "count": 4608,
+        "ratio": 0.1868
+      },
+      "8": {
+        "count": 4274,
+        "ratio": 0.1733
+      }
+    },
+    "action_entropy_bits": 2.8092,
+    "normalized_action_entropy": 0.8862,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 24662,
+      "mean_scores": {
+        "0": 0.0564,
+        "1": 0.0402,
+        "2": 0.0457,
+        "3": 0.2625,
+        "4": 0.1099,
+        "5": 0.1113,
+        "6": 0.0251,
+        "7": 0.1783,
+        "8": 0.1707
+      },
+      "mean_top_actions": [
+        {
+          "action": "3",
+          "score": 0.2625
+        },
+        {
+          "action": "7",
+          "score": 0.1783
+        },
+        {
+          "action": "8",
+          "score": 0.1707
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 1344,
+          "ratio": 0.0545
+        },
+        "1": {
+          "count": 802,
+          "ratio": 0.0325
+        },
+        "2": {
+          "count": 1509,
+          "ratio": 0.0612
+        },
+        "3": {
+          "count": 6457,
+          "ratio": 0.2618
+        },
+        "4": {
+          "count": 2311,
+          "ratio": 0.0937
+        },
+        "5": {
+          "count": 3075,
+          "ratio": 0.1247
+        },
+        "6": {
+          "count": 295,
+          "ratio": 0.012
+        },
+        "7": {
+          "count": 4633,
+          "ratio": 0.1879
+        },
+        "8": {
+          "count": 4236,
+          "ratio": 0.1718
+        }
+      },
+      "dominant_top_action": {
+        "action": "3",
+        "count": 6457,
+        "ratio": 0.2618
+      },
+      "mean_chosen_action_score": 0.8483,
+      "chosen_action_score_sample_count": 24662
+    },
+    "upgrade_policy_decision_count": 0,
+    "reward_breakdown_average": {
+      "action_repeat": -26.7987,
+      "boss_pressure": -0.0159,
+      "boundary_risk": -2.8876,
+      "corner_action_risk": 0.0,
+      "corner_risk_delta": 0.0,
+      "damage_taken": -9.6323,
+      "enemy_pressure": -0.3278,
+      "hazard_risk": -0.1225,
+      "kill": 68.96,
+      "level": 7.4667,
+      "low_health": -1.3469,
+      "opening_edge_risk_delta": 0.0,
+      "safety_delta": -0.0117,
+      "survival": 2.7402,
+      "terminal": -3.0,
+      "total": 75.6716,
+      "xp": 40.648
+    }
+  },
+  "algorithm": "behavior_clone",
+  "model_path": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_staged_gru_context8_001/staged.pt",
+  "limitations": [
+    "Behavior clone evaluation reuses the Gym bridge and action diagnostics, but it is still not a balance or fun gate.",
+    "The clone still predicts movement actions only; an optional upgrade-choice ranker can fill upgrade prompts during evaluation."
+  ]
+}
