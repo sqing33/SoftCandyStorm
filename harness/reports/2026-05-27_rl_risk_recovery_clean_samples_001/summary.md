@@ -13,6 +13,15 @@
 - `worse_target_risk_score`: 5
 - `above_max_target_risk_score`: 0
 
+## Behavior Clone Dry Run
+
+- Report: `behavior_clone_dry_run.json`
+- Gate decision: `dataset_validated_not_training_gate`
+- Risk recovery rows: `702`
+- Time phase filter: `late`, retained `702/702`
+- Risk recovery time window: `180-300s`, retained `702/702`
+- Recovery soft target: `top_k_scores`, soft samples `702`, fallback one-hot `0`
+
 ## Kept Target Actions
 - `1`: 72
 - `2`: 59
