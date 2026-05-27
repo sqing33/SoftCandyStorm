@@ -178,6 +178,8 @@ def load_trajectory_dataset(path, limit=None):
                             "sample_source": sample_source,
                             "original_action": record.get("original_action"),
                             "target_source": record.get("target_source"),
+                            "action_scores": record.get("action_scores"),
+                            "adapter_decision": record.get("adapter_decision"),
                         }
                     )
                     continue
@@ -660,10 +662,20 @@ def train_behavior_clone(dataset, args):
         args,
         np,
     )
-    train_dataset = TensorDataset(
-        torch.from_numpy(observations[train_indices]),
-        torch.from_numpy(actions[train_indices]),
-    )
+    soft_targets, soft_target_report = build_recovery_soft_targets(dataset, args, np)
+    if soft_targets is None:
+        train_dataset = TensorDataset(
+            torch.from_numpy(observations[train_indices]),
+            torch.from_numpy(actions[train_indices]),
+        )
+        validation_soft_targets = None
+    else:
+        train_dataset = TensorDataset(
+            torch.from_numpy(observations[train_indices]),
+            torch.from_numpy(actions[train_indices]),
+            torch.from_numpy(soft_targets[train_indices]),
+        )
+        validation_soft_targets = torch.from_numpy(soft_targets[validation_indices])
     sampler = None
     shuffle = True
     if train_weights is not None:
@@ -711,9 +723,22 @@ def train_behavior_clone(dataset, args):
         total_entropy = 0.0
         total_correct = 0
         total_seen = 0
-        for batch_x, batch_y in train_loader:
+        for batch in train_loader:
+            if soft_targets is None:
+                batch_x, batch_y = batch
+                batch_soft_y = None
+            else:
+                batch_x, batch_y, batch_soft_y = batch
             logits = model(batch_x)
-            cross_entropy_loss = loss_fn(logits, batch_y)
+            if batch_soft_y is None:
+                cross_entropy_loss = loss_fn(logits, batch_y)
+            else:
+                cross_entropy_loss = soft_cross_entropy_loss(
+                    logits,
+                    batch_soft_y,
+                    class_weight_values,
+                    torch,
+                )
             entropy = logit_entropy_nats(logits, torch)
             loss = cross_entropy_loss - args.entropy_regularization * entropy
             optimizer.zero_grad()
@@ -726,7 +751,14 @@ def train_behavior_clone(dataset, args):
             total_correct += int((logits.argmax(dim=1) == batch_y).sum().item())
             total_seen += len(batch_y)
 
-        validation_metrics = evaluate_classifier(model, validation_x, validation_y, loss_fn)
+        validation_metrics = evaluate_classifier(
+            model,
+            validation_x,
+            validation_y,
+            loss_fn,
+            soft_targets=validation_soft_targets,
+            class_weights=class_weight_values,
+        )
         history.append(
             {
                 "epoch": epoch,
@@ -764,6 +796,7 @@ def train_behavior_clone(dataset, args):
             "class_weights": class_weight_report,
             "sample_weighting": args.sample_weighting,
             "sample_weights": sample_weight_report,
+            "recovery_soft_targets": soft_target_report,
             "entropy_regularization": args.entropy_regularization,
             "state_dict": model.state_dict(),
             "dataset_paths": dataset["paths"],
@@ -803,6 +836,7 @@ def train_behavior_clone(dataset, args):
             "class_weights": class_weight_report,
             "sample_weighting": args.sample_weighting,
             "sample_weights": sample_weight_report,
+            "recovery_soft_targets": soft_target_report,
             "entropy_regularization": args.entropy_regularization,
             "train_samples": int(len(train_indices)),
             "validation_samples": int(len(validation_indices)),
@@ -829,6 +863,121 @@ def build_class_weights(actions, action_count, mode, np_module, torch_module):
         torch_module.from_numpy(weights),
         [round(float(weight), 6) for weight in weights.tolist()],
     )
+
+
+def build_recovery_soft_targets(dataset, args, np_module):
+    mode = getattr(args, "recovery_soft_target", "none")
+    action_count = int(dataset["action_count"])
+    if mode == "none":
+        return None, {
+            "mode": "none",
+            "soft_sample_count": 0,
+            "fallback_one_hot_count": 0,
+        }
+    if mode != "top_k_scores":
+        raise ValueError(f"unsupported recovery soft target mode: {mode}")
+
+    actions = [int(action) for action in dataset["actions"]]
+    targets = np_module.zeros((len(actions), action_count), dtype=np_module.float32)
+    soft_sample_count = 0
+    fallback_one_hot_count = 0
+    nonzero_action_total = 0
+    primary_mass = clamp(float(args.recovery_soft_target_primary_mass), 0.0, 1.0)
+    top_k = int(args.recovery_soft_target_top_k)
+
+    for index, action in enumerate(actions):
+        sample = dataset["sample_metadata"][index]
+        distribution = None
+        if sample.get("sample_source") in {
+            "edge_recovery_supervision",
+            "risk_recovery_supervision",
+        }:
+            distribution = recovery_top_k_distribution(
+                sample,
+                action,
+                action_count,
+                primary_mass,
+                top_k,
+                np_module,
+            )
+        if distribution is None:
+            targets[index, action] = 1.0
+            fallback_one_hot_count += 1 if sample.get("sample_source") else 0
+            nonzero_action_total += 1
+            continue
+        targets[index] = distribution
+        soft_sample_count += 1
+        nonzero_action_total += int((distribution > 0.0).sum())
+
+    return targets, {
+        "mode": mode,
+        "primary_mass": round(primary_mass, 6),
+        "top_k": top_k,
+        "soft_sample_count": int(soft_sample_count),
+        "fallback_one_hot_count": int(fallback_one_hot_count),
+        "average_nonzero_actions": round(nonzero_action_total / max(1, len(actions)), 4),
+    }
+
+
+def recovery_top_k_distribution(sample, target_action, action_count, primary_mass, top_k, np_module):
+    if top_k <= 1:
+        return None
+    if not (0 <= int(target_action) < action_count):
+        return None
+    action_scores = sample.get("action_scores")
+    top_actions = action_scores.get("top_actions") if isinstance(action_scores, dict) else None
+    if not isinstance(top_actions, list):
+        return None
+
+    original_action = sample.get("original_action")
+    candidates = []
+    seen = {int(target_action)}
+    if isinstance(original_action, int):
+        seen.add(int(original_action))
+    for item in top_actions:
+        if not isinstance(item, dict):
+            continue
+        action = item.get("action")
+        try:
+            action = int(action)
+        except (TypeError, ValueError):
+            continue
+        if action in seen or not (0 <= action < action_count):
+            continue
+        score = item.get("score", 0.0)
+        try:
+            score_value = max(0.0, float(score))
+        except (TypeError, ValueError):
+            score_value = 0.0
+        candidates.append((action, score_value))
+        seen.add(action)
+        if len(candidates) >= max(0, top_k - 1):
+            break
+    if not candidates:
+        return None
+
+    distribution = np_module.zeros(action_count, dtype=np_module.float32)
+    distribution[int(target_action)] = primary_mass
+    residual = max(0.0, 1.0 - primary_mass)
+    score_total = sum(score for _, score in candidates)
+    for action, score in candidates:
+        if score_total > 0.0:
+            mass = residual * (score / score_total)
+        else:
+            mass = residual / len(candidates)
+        distribution[action] = float(mass)
+    total = float(distribution.sum())
+    if total <= 0.0:
+        return None
+    return distribution / total
+
+
+def soft_cross_entropy_loss(logits, targets, class_weights, torch_module):
+    log_probabilities = torch_module.log_softmax(logits, dim=1)
+    losses = -(targets * log_probabilities)
+    if class_weights is not None:
+        losses = losses * class_weights.to(logits.device)
+    return losses.sum(dim=1).mean()
 
 
 def build_context_observations(dataset, context_frames, np_module):
@@ -2056,13 +2205,16 @@ def save_staged_behavior_clone_policy(
     }
 
 
-def evaluate_classifier(model, x, y, loss_fn):
+def evaluate_classifier(model, x, y, loss_fn, *, soft_targets=None, class_weights=None):
     import torch
 
     model.eval()
     with torch.no_grad():
         logits = model(x)
-        loss = loss_fn(logits, y)
+        if soft_targets is None:
+            loss = loss_fn(logits, y)
+        else:
+            loss = soft_cross_entropy_loss(logits, soft_targets, class_weights, torch)
         entropy = logit_entropy_nats(logits, torch)
         accuracy = (logits.argmax(dim=1) == y).float().mean()
     return {
@@ -2202,6 +2354,24 @@ def main():
         help="Keep risk recovery repair samples before this time; regular trajectory samples are unaffected.",
     )
     parser.add_argument(
+        "--recovery-soft-target",
+        choices=["none", "top_k_scores"],
+        default="none",
+        help="Use soft targets for recovery samples instead of a single hard repair action.",
+    )
+    parser.add_argument(
+        "--recovery-soft-target-primary-mass",
+        type=float,
+        default=0.65,
+        help="Probability mass assigned to the recovery target action when --recovery-soft-target is enabled.",
+    )
+    parser.add_argument(
+        "--recovery-soft-target-top-k",
+        type=int,
+        default=3,
+        help="Maximum number of actions kept in a recovery soft target, including the target action.",
+    )
+    parser.add_argument(
         "--entropy-regularization",
         type=float,
         default=0.0,
@@ -2250,6 +2420,10 @@ def main():
         parser.error("--edge-recovery-sample-weight must be greater than zero")
     if args.risk_recovery_sample_weight <= 0.0:
         parser.error("--risk-recovery-sample-weight must be greater than zero")
+    if not (0.0 < args.recovery_soft_target_primary_mass <= 1.0):
+        parser.error("--recovery-soft-target-primary-mass must be in (0, 1]")
+    if args.recovery_soft_target_top_k < 2:
+        parser.error("--recovery-soft-target-top-k must be at least 2")
     if args.edge_recovery_min_seconds is not None and args.edge_recovery_min_seconds < 0.0:
         parser.error("--edge-recovery-min-seconds must be greater than or equal to zero")
     if args.edge_recovery_max_seconds is not None and args.edge_recovery_max_seconds <= 0.0:
@@ -2293,6 +2467,9 @@ def main():
             args.time_phase_thresholds,
         )
         if args.dry_run:
+            import numpy as np
+
+            _, soft_target_report = build_recovery_soft_targets(dataset, args, np)
             write_report(
                 args.report,
                 {
@@ -2321,6 +2498,7 @@ def main():
                     "time_phase_filter": time_phase_filter_report,
                     "edge_recovery_time_window_filter": edge_recovery_time_window_report,
                     "risk_recovery_time_window_filter": risk_recovery_time_window_report,
+                    "recovery_soft_targets": soft_target_report,
                     "dependencies": dependency_status(),
                 },
             )

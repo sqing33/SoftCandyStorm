@@ -2053,6 +2053,11 @@
       "id": "rl_route_recovery_aux_online_route_risk_opening_ablation",
       "summary": "低权重 phase-aligned 在线 route-risk opening 消融完成：60 秒 high-pressure 三图为 0.4/0.8/0.8，action 6 偏置被压低但转为 action 3 dominant，soda-creek 平均存活降至 40.8197 秒；记录 fail_20260527_043，不能推进策略。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_online_route_risk_opening_ablation_001/summary.md"
+    },
+    {
+      "id": "rl_recovery_soft_target_training_support",
+      "summary": "train_behavior_clone.py 支持 --recovery-soft-target top_k_scores，可让 recovery samples 使用 soft/top-k target；当前 opening 混合数据 dry-run 覆盖 372/372 条 recovery samples，fallback_one_hot_count 为 0。",
+      "report": "harness/reports/2026-05-27_rl_recovery_soft_target_training_support_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2062,7 +2067,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。no-class-weight 与 phase-aligned 在线 route-risk 消融压低 action 6 后转为 action 3 dominant，soda-creek 仍只有 0.4 win_rate。下一步应停止单纯堆单标签 route-risk samples，改做 soft/top-k target 或 per-state action constraint。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。no-class-weight 与 phase-aligned 在线 route-risk 消融压低 action 6 后转为 action 3 dominant，soda-creek 仍只有 0.4 win_rate。soft/top-k target 训练工具已就绪，下一步应训练 soft target opening 消融并只跑 60 秒三图 deterministic gate。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

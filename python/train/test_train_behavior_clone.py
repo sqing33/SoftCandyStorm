@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from python.train.train_behavior_clone import (
+    build_recovery_soft_targets,
     build_sample_weights,
     diagnose_behavior_clone_policy_on_dataset,
     diagnose_sequence_dataset,
@@ -81,6 +82,9 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         action_change_weight=2.0,
         edge_recovery_sample_weight=1.0,
         risk_recovery_sample_weight=1.0,
+        recovery_soft_target="none",
+        recovery_soft_target_primary_mass=0.65,
+        recovery_soft_target_top_k=3,
         entropy_regularization=0.0,
         class_weighting="none",
         batch_size=4,
@@ -183,6 +187,28 @@ def test_entropy_regularization_is_reported(tmp_path):
     assert report["final"]["train_entropy_nats"] > 0.0
     assert report["final"]["validation_entropy_nats"] > 0.0
     assert report["final"]["train_cross_entropy_loss"] >= report["final"]["train_loss"]
+
+
+def test_recovery_soft_target_training_is_reported(tmp_path):
+    dataset = tiny_dataset()
+    dataset["sample_metadata"][0]["sample_source"] = "edge_recovery_supervision"
+    dataset["sample_metadata"][0]["original_action"] = 1
+    dataset["sample_metadata"][0]["action_scores"] = {
+        "kind": "probability",
+        "top_actions": [
+            {"action": 1, "score": 0.5},
+            {"action": 2, "score": 0.3},
+        ],
+    }
+    dataset["edge_recovery_sample_records"] = 1
+    args = args_for(tmp_path, architecture="mlp")
+    args.recovery_soft_target = "top_k_scores"
+    args.recovery_soft_target_primary_mass = 0.7
+
+    report = train_behavior_clone(dataset, args)
+
+    assert report["training"]["recovery_soft_targets"]["mode"] == "top_k_scores"
+    assert report["training"]["recovery_soft_targets"]["soft_sample_count"] == 1
 
 
 def test_action_change_sample_weighting_boosts_transition_samples(tmp_path):
@@ -571,6 +597,73 @@ def test_edge_recovery_samples_load_as_repair_movement_targets(tmp_path):
     assert dataset["action_count"] == 9
     assert summary["edge_recovery_sample_records"] == 1
     assert summary["sample_summary"]["sample_source_distribution"]["edge_recovery_supervision"]["count"] == 1
+
+
+def test_recovery_soft_targets_spread_mass_across_non_original_top_actions(tmp_path):
+    import numpy as np
+
+    dataset_path = tmp_path / "edge_recovery_soft_samples.jsonl"
+    records = [
+        {
+            "record_type": "edge_recovery_supervision_sample",
+            "schema_version": 1,
+            "sample_role": "repair_training_input",
+            "target_source": "route_recovery_trace_hotspot",
+            "seed": 62400,
+            "map_id": "soda-creek",
+            "tick": 600,
+            "time_seconds": 20.0,
+            "observation_version": 2,
+            "observation_len": 3,
+            "observation": [0.1, 0.2, 0.3],
+            "original_action": 7,
+            "target_action": 0,
+            "action_scores": {
+                "kind": "probability",
+                "top_actions": [
+                    {"action": 7, "score": 0.7},
+                    {"action": 2, "score": 0.2},
+                    {"action": 3, "score": 0.1},
+                ],
+            },
+            "adapter_decision": {
+                "mode": "route_recovery_trace_hotspot",
+                "original_action": 7,
+                "target_action": 0,
+            },
+        },
+        {
+            "record_type": "sample",
+            "seed": 62400,
+            "map_id": "soda-creek",
+            "tick": 601,
+            "time_seconds": 20.033,
+            "health_ratio": 1.0,
+            "level": 1,
+            "kills": 1,
+            "observation": [0.2, 0.3, 0.4],
+            "action": 1,
+        },
+    ]
+    dataset_path.write_text(
+        "\n".join(json.dumps(record) for record in records) + "\n",
+        encoding="utf-8",
+    )
+    dataset = load_trajectory_dataset(dataset_path)
+    args = args_for(tmp_path, architecture="mlp")
+    args.recovery_soft_target = "top_k_scores"
+    args.recovery_soft_target_primary_mass = 0.6
+    args.recovery_soft_target_top_k = 3
+
+    targets, report = build_recovery_soft_targets(dataset, args, np)
+
+    assert report["mode"] == "top_k_scores"
+    assert report["soft_sample_count"] == 1
+    assert targets[0][0] == pytest.approx(0.6)
+    assert targets[0][7] == pytest.approx(0.0)
+    assert targets[0][2] == pytest.approx(0.266666, rel=1e-4)
+    assert targets[0][3] == pytest.approx(0.133333, rel=1e-4)
+    assert targets[1][1] == pytest.approx(1.0)
 
 
 def test_risk_recovery_samples_load_as_repair_movement_targets(tmp_path):
