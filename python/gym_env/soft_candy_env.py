@@ -138,9 +138,15 @@ class SoftCandyStormEnv(gym.Env):
 
     def _normalize_reward_profile(self, reward_profile):
         reward_profile = reward_profile or "standard"
-        if reward_profile not in {"standard", "late-survival", "long-run-retention"}:
+        if reward_profile not in {
+            "standard",
+            "late-survival",
+            "long-run-retention",
+            "late-route-recovery",
+        }:
             raise ValueError(
-                "reward_profile must be `standard`, `late-survival`, or `long-run-retention`"
+                "reward_profile must be `standard`, `late-survival`, "
+                "`long-run-retention`, or `late-route-recovery`"
             )
         return reward_profile
 
