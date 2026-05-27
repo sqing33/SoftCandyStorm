@@ -74,6 +74,12 @@ def count_distribution(values):
     return ratio_counts(counts, len(values))
 
 
+def dominant_distribution_entry(distribution):
+    if not distribution:
+        return ("none", {"count": 0, "ratio": 0.0})
+    return max(distribution.items(), key=lambda item: (item[1]["count"], item[0]))
+
+
 def entropy_bits(values):
     counts = {}
     for value in values:
@@ -96,6 +102,71 @@ def summarize_distances(distances):
     }
 
 
+def first_action_change(records, key):
+    if not records:
+        return None
+    first_action = records[0][key]
+    for record in records[1:]:
+        if record[key] != first_action:
+            return {
+                "trace_index": record["trace_index"],
+                "time_seconds": round(record["time_seconds"], 4),
+                "from_action": int(first_action),
+                "to_action": int(record[key]),
+            }
+    return None
+
+
+def summarize_time_buckets(records, bucket_seconds):
+    if bucket_seconds is None:
+        return []
+    bucket_seconds = float(bucket_seconds)
+    if bucket_seconds <= 0.0:
+        raise ValueError("time_bucket_seconds must be greater than zero")
+
+    buckets = {}
+    for record in records:
+        bucket_index = int(record["time_seconds"] // bucket_seconds)
+        bucket = buckets.setdefault(
+            bucket_index,
+            {
+                "bucket_index": bucket_index,
+                "start_seconds": round(bucket_index * bucket_seconds, 4),
+                "end_seconds": round((bucket_index + 1) * bucket_seconds, 4),
+                "online_actions": [],
+                "nearest_actions": [],
+                "nearest_distances": [],
+                "match_count": 0,
+            },
+        )
+        bucket["online_actions"].append(record["online_action"])
+        bucket["nearest_actions"].append(record["nearest_action"])
+        bucket["nearest_distances"].append(record["nearest_distance"])
+        if record["online_action"] == record["nearest_action"]:
+            bucket["match_count"] += 1
+
+    summaries = []
+    for bucket_index in sorted(buckets):
+        bucket = buckets[bucket_index]
+        sample_count = len(bucket["online_actions"])
+        summaries.append(
+            {
+                "bucket_index": bucket["bucket_index"],
+                "start_seconds": bucket["start_seconds"],
+                "end_seconds": bucket["end_seconds"],
+                "sample_count": sample_count,
+                "online_action_distribution": count_distribution(bucket["online_actions"]),
+                "nearest_target_action_distribution": count_distribution(bucket["nearest_actions"]),
+                "nearest_target_matches_online_action_ratio": round(
+                    bucket["match_count"] / max(1, sample_count),
+                    4,
+                ),
+                "nearest_distance": summarize_distances(bucket["nearest_distances"]),
+            }
+        )
+    return summaries
+
+
 def compare_trace_to_dataset(
     trace,
     dataset,
@@ -106,6 +177,7 @@ def compare_trace_to_dataset(
     offline_max_seconds=None,
     nearest_k=3,
     example_limit=12,
+    time_bucket_seconds=None,
 ):
     import numpy as np
 
@@ -126,6 +198,7 @@ def compare_trace_to_dataset(
     nearest_actions = []
     online_actions = []
     distances = []
+    records = []
     examples = []
     k = max(1, min(int(nearest_k), len(indices)))
     for trace_index, (step, observation) in enumerate(zip(trace["steps"], trace["observations"])):
@@ -143,6 +216,15 @@ def compare_trace_to_dataset(
         nearest_actions.append(nearest_action)
         online_actions.append(online_action)
         distances.append(nearest_distance)
+        records.append(
+            {
+                "trace_index": trace_index,
+                "time_seconds": float(step.get("time_seconds", 0.0)),
+                "online_action": online_action,
+                "nearest_action": nearest_action,
+                "nearest_distance": nearest_distance,
+            }
+        )
         if len(examples) < example_limit:
             neighbors = []
             for position in nearest_positions:
@@ -203,7 +285,10 @@ def compare_trace_to_dataset(
             "online_action_entropy_bits": round(action_entropy, 4),
             "normalized_online_action_entropy": round(action_entropy / max_entropy, 4),
             "nearest_distance": summarize_distances(distances),
+            "first_online_action_change": first_action_change(records, "online_action"),
+            "first_nearest_target_change": first_action_change(records, "nearest_action"),
         },
+        "time_buckets": summarize_time_buckets(records, time_bucket_seconds),
         "examples": examples,
         "limitations": [
             "Nearest-neighbor trace comparison is diagnostic evidence only.",
@@ -240,6 +325,19 @@ def write_markdown(path, report):
         f"- Online normalized action entropy: `{report['summary']['normalized_online_action_entropy']}`",
         f"- Nearest distance average: `{distance['average']}`",
         "",
+        "## Transitions",
+        "",
+        "```json",
+        json.dumps(
+            {
+                "first_online_action_change": report["summary"]["first_online_action_change"],
+                "first_nearest_target_change": report["summary"]["first_nearest_target_change"],
+            },
+            indent=2,
+            ensure_ascii=False,
+        ),
+        "```",
+        "",
         "## Action Distributions",
         "",
         "### Online",
@@ -254,9 +352,41 @@ def write_markdown(path, report):
         json.dumps(report["summary"]["nearest_target_action_distribution"], indent=2, ensure_ascii=False),
         "```",
         "",
-        "## Examples",
+        "## Time Buckets",
         "",
     ]
+    if report["time_buckets"]:
+        lines.extend(
+            [
+                "| Window | Samples | Online Top | Nearest Top | Match Ratio | Avg Distance |",
+                "|---|---:|---|---|---:|---:|",
+            ]
+        )
+        for bucket in report["time_buckets"]:
+            online_top = dominant_distribution_entry(bucket["online_action_distribution"])
+            nearest_top = dominant_distribution_entry(bucket["nearest_target_action_distribution"])
+            lines.append(
+                "| `{:.4g}-{:.4g}` | `{}` | `{}` `{:.4f}` | `{}` `{:.4f}` | `{:.4f}` | `{:.6f}` |".format(
+                    bucket["start_seconds"],
+                    bucket["end_seconds"],
+                    bucket["sample_count"],
+                    online_top[0],
+                    online_top[1]["ratio"],
+                    nearest_top[0],
+                    nearest_top[1]["ratio"],
+                    bucket["nearest_target_matches_online_action_ratio"],
+                    bucket["nearest_distance"]["average"],
+                )
+            )
+        lines.append("")
+    else:
+        lines.extend(["No time buckets requested.", ""])
+    lines.extend(
+        [
+            "## Examples",
+            "",
+        ]
+    )
     for example in report["examples"]:
         nearest = example["nearest"][0]
         lines.append(
@@ -288,6 +418,7 @@ def main():
     parser.add_argument("--phase-duration-seconds", type=float, default=None)
     parser.add_argument("--nearest-k", type=int, default=3)
     parser.add_argument("--example-limit", type=int, default=12)
+    parser.add_argument("--time-bucket-seconds", type=float, default=None)
     parser.add_argument("--report", default=None)
     parser.add_argument("--markdown", default=None)
     args = parser.parse_args()
@@ -296,6 +427,8 @@ def main():
         parser.error("--nearest-k must be greater than zero")
     if args.example_limit < 0:
         parser.error("--example-limit must be greater than or equal to zero")
+    if args.time_bucket_seconds is not None and args.time_bucket_seconds <= 0:
+        parser.error("--time-bucket-seconds must be greater than zero")
     if (
         args.offline_min_seconds is not None
         and args.offline_max_seconds is not None
@@ -314,6 +447,7 @@ def main():
         offline_max_seconds=args.offline_max_seconds,
         nearest_k=args.nearest_k,
         example_limit=args.example_limit,
+        time_bucket_seconds=args.time_bucket_seconds,
     )
     report["dependency_status"] = dependency_status()
     write_json(args.report, report)

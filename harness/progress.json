@@ -1993,6 +1993,11 @@
       "id": "rl_behavior_clone_trace_dataset_nearest_diagnostic",
       "summary": "新增 compare_behavior_clone_trace_to_dataset.py 在线 trace 最近邻诊断工具，并对 route_recovery entropy retry 的 5 秒 soda-creek trace 与同图 0-60 秒 opening 样本做对比；151 个在线样本中 nearest offline target 有 147 个同为 action 3，匹配率 0.9735，说明该短窗低熵更像极窄 opening teacher 邻域，而不是全局离线 checkpoint 塌缩。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_absolute_time_conditioning_fix_001/trace_dataset_nearest_opening.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_60s_nearest_transition_diagnostic",
+      "summary": "将 route_recovery entropy retry checkpoint 的 soda-creek seed 62300 评估拉长到 60 秒并加入 5 秒分桶近邻诊断：policy 活到 60.0328 秒但受到 84.1101 伤害，stride-10 sampled trace 中 nearest teacher 在 7.0 秒已从 action 3 切到 action 5，online 到 22.6667 秒才切出；25-35 秒出现 online action 5 与 nearest action 3/8 的明显错位。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_60s_nearest_transition_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2002,7 +2007,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒在线 smoke 仍为 action 3 占 100%；离线完整数据诊断显示非全局塌缩，absolute-time conditioning 修复后仍未解除短窗低熵，而最近邻诊断显示同图 0-60 秒 opening teacher 也有 147/151 个最近目标为 action 3。下一步应拉长短窗或做 60 秒分段近邻/历史诊断，定位 teacher 何时转向恢复动作、GRU history 是否跟上，以及 opening 之后的 handoff / long-run recovery 缺口；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段近邻诊断显示真正问题在 transition / recovery：sampled nearest teacher 7.0 秒已切出 action 3，online 到 22.6667 秒才切出，25-35 秒和 55-60 秒存在明显动作错位与边界风险。下一步应聚焦这些窗口的 teacher 轨迹、GRU hidden history、恢复动作监督和 action-change 约束；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
