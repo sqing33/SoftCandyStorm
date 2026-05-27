@@ -1998,6 +1998,11 @@
       "id": "rl_route_recovery_aux_60s_nearest_transition_diagnostic",
       "summary": "将 route_recovery entropy retry checkpoint 的 soda-creek seed 62300 评估拉长到 60 秒并加入 5 秒分桶近邻诊断：policy 活到 60.0328 秒但受到 84.1101 伤害，stride-10 sampled trace 中 nearest teacher 在 7.0 秒已从 action 3 切到 action 5，online 到 22.6667 秒才切出；25-35 秒出现 online action 5 与 nearest action 3/8 的明显错位。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_60s_nearest_transition_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_teacher_sequence_windows",
+      "summary": "新增 inspect_behavior_clone_teacher_sequences.py，把 25-35 秒和 55-60 秒近邻错位展开成 teacher episode 动作序列：25-30 秒 online 纯 action 5 而 KiteBot seed 48003 多数为 action 3；30-35 秒 nearest repair seed 62301/62302 多数为 action 8；55-60 秒同时间 KiteBot seed 48009 连续 action 2 而 online 仍纯 action 3。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_teacher_sequence_windows_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2007,7 +2012,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段近邻诊断显示真正问题在 transition / recovery：sampled nearest teacher 7.0 秒已切出 action 3，online 到 22.6667 秒才切出，25-35 秒和 55-60 秒存在明显动作错位与边界风险。下一步应聚焦这些窗口的 teacher 轨迹、GRU hidden history、恢复动作监督和 action-change 约束；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段与 teacher sequence 诊断显示真正问题在 transition / recovery：30-35 秒 online 纯 action 5 而 nearest repair 多数 action 8，55-60 秒 online 纯 action 3 而同时间 KiteBot seed 48009 连续 action 2。下一步应把这些窗口转成 focused repair / GRU history probe；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
