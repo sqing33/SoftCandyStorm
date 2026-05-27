@@ -430,6 +430,8 @@ Gym bridge 现在支持在 `step` 请求中传入 `upgrade_choice`。`SoftCandyS
 
 为排查 staged 子策略的数据窗口错配，已重新导出 300 秒 high-pressure 三图 10 seed phase-aligned 轨迹，使 `opening` 覆盖 0-60 秒而不是 60 秒短局中的前 12 秒。该修复把 opening 样本从 1080 提升到 5388，但 phase-aligned staged GRU context8 仍为 `repair`：60 秒 `soda-creek` 0% 胜率、动作 3 占 79.11%，300 秒 `soda-creek` 和 `caramel-workshop` 均为 0%。结论是补 opening 覆盖不足以修复 movement-only imitation，下一步应引入阶段目标监督、升级选择数据、teacher soft targets 或 PPO 蒸馏初始化。
 
+stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略”这个方向：评估时前 60 秒使用 stage 01 `corner_risk_delta` checkpoint，60 秒后切回 stage 02 `opening_edge_delta` checkpoint。60 秒 high-pressure 三图 10 seed 全部为 100% 胜率，说明 stage 01 opening 行为可以被保留；但 180 秒三图 3 seed 中 `soda-creek` seed `62201` 在 115.5319 秒死亡，`soda-creek` 胜率只有 66.67%。该结果只证明 staged evaluation 有诊断价值，不是新训练 checkpoint，也不是 RL policy acceptance；stage 02 仍需修复 60 秒 handoff 后的中局压力恢复，不能进入 stage 03。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

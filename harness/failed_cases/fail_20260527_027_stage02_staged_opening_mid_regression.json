@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_027",
+  "category": "rl",
+  "content_id": "rl_curriculum_stage02_staged_opening_policy",
+  "seed": 62201,
+  "bot": "PpoStage02StagedOpeningPolicy",
+  "time_seconds": 115.5319,
+  "symptom": "stage 02 staged opening policy 使用 stage 01 corner_risk_delta checkpoint 覆盖前 60 秒，并在 60 秒后切换到 stage 02 opening_edge_delta fallback；60 秒 high-pressure 三图 10 seed 全部 100% 胜率，但 180 秒 high-pressure 三图 3 seed 中 soda-creek seed 62201 在 115.5319 秒因 player_health_depleted 死亡，soda-creek 胜率只有 66.67%。",
+  "root_cause": "分离 opening policy 能保住 0-60 秒开局逃离行为，但 60 秒后 fallback 到 stage 02 opening_edge_delta 仍未解决 soda-creek mid-window 压力恢复；失败局 dominant action 7 占 59.32%，说明问题不是没有切到 action 7，而是 handoff 后缺少持续恢复、重新拉开敌压或中局目标策略。",
+  "fix": "不要进入 stage 03，也不要把 60 秒 opening gate 通过视为 RL policy acceptance；下一步对 soda-creek seed 62201 生成 staged policy failed-only trace，重点分析 60 秒 handoff 到 115 秒死亡之间的边界距离、enemy_pressure_risk、最近敌人 hitbox_distance 和 action score，再考虑 mid-window replay、行为约束、map-specific recovery 或单独 mid policy。",
+  "validation": "60 秒 opening gate：harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/comparison_60s_10seed.json；180 秒三图对比：harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/comparison_180s_3seed.json；失败分析：harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/failure_analysis_180s.md；总结：harness/reports/2026-05-27_rl_curriculum_stage02_staged_opening_policy_001/summary.md。结论为 policy repair；stage 03 仍被阻塞。"
+}
