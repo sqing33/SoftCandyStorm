@@ -456,6 +456,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 首个 `edge_recovery_sample_weight = 4.0` 的 staged GRU context8 混合候选使用 phase-aligned 三图 KiteBot 轨迹与 `2215` 条 edge recovery 样本训练三段子策略，但没有通过 60 秒 opening hard gate：`soda-creek` 10 seed 胜率只有 `40%`，action `3` 占 `87.27%`，action entropy 为 `0.7851` bits。报告位于 `harness/reports/2026-05-27_rl_behavior_clone_edge_recovery_aux_staged_gru_context8_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_028_edge_recovery_aux_opening_regression.json`。因此未运行 180 秒 handoff 对比，也不能进入 stage 03；下一轮必须先修 opening action `3` collapse。
 
+加入 `inverse_frequency` class weighting 与 `entropy_regularization = 0.02` 后，动作分布明显改善但仍未通过 opening hard gate：`soda-creek` 60 秒 10 seed 胜率为 `50%`，action `3` 占比降到 `66.58%`，action entropy 提高到 `1.6725` bits；`caramel-workshop` 与 `cracked-star-jar` 均为 `90%`。报告位于 `harness/reports/2026-05-27_rl_behavior_clone_edge_aux_entropy_class_staged_gru_context8_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_029_edge_aux_entropy_class_opening_gap.json`。结论：class / entropy 可以缓解 action collapse，但不能替代 opening retention 或 handoff-only 约束。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

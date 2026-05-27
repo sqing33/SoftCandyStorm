@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_029",
+  "category": "rl",
+  "content_id": "rl_behavior_clone_edge_aux_entropy_class_staged_gru_context8",
+  "seed": "62400-62409",
+  "bot": "BehaviorCloneEdgeAuxEntropyClassStagedGruContext8",
+  "time_seconds": 22.5,
+  "symptom": "在 edge recovery 混合样本基础上加入 inverse_frequency class weighting 和 entropy_regularization=0.02 后，60 秒 high-pressure 三图 10 seed 的动作分布改善，但 soda-creek 胜率仍只有 50%，未达到 opening hard gate；soda-creek action 3 占比从上一轮 87.27% 降到 66.58%，action entropy 从 0.7851 bits 升到 1.6725 bits。",
+  "root_cause": "class weighting 和 entropy regularization 能缓解 deterministic action 3 collapse，但没有补足 soda-creek opening 的生存策略；当前监督目标仍主要来自 movement imitation 和单 seed edge adapter 样本，缺少足够稳定的 opening retention / 成功路径约束，因此胜率没有恢复到可进入 handoff 对比的水平。",
+  "fix": "不要运行 180 秒 handoff 对比或进入 stage 03；下一轮应优先补充或重加权成功 opening replay、显式保留 stage 01 opening policy，或把 edge recovery 样本限定为 handoff/mid-window 约束，避免继续用同一监督 clone 反复微调。",
+  "validation": "训练与 60 秒对比记录在 harness/reports/2026-05-27_rl_behavior_clone_edge_aux_entropy_class_staged_gru_context8_001/summary.md 和 comparison_60s_10seed.json；因 60 秒 soda-creek hard gate 未达标，未运行 180 秒三图 deterministic 对比。"
+}
