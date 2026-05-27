@@ -585,6 +585,10 @@ stage 02 的 staged opening wrapper 进一步验证了“分离开局策略”�
 
 加入 `inverse_frequency` class weighting 与 `entropy_regularization = 0.02` 后，动作分布明显改善但仍未通过 opening hard gate：`soda-creek` 60 秒 10 seed 胜率为 `50%`，action `3` 占比降到 `66.58%`，action entropy 提高到 `1.6725` bits；`caramel-workshop` 与 `cracked-star-jar` 均为 `90%`。报告位于 `harness/reports/2026-05-27_rl_behavior_clone_edge_aux_entropy_class_staged_gru_context8_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_029_edge_aux_entropy_class_opening_gap.json`。结论：class / entropy 可以缓解 action collapse，但不能替代 opening retention 或 handoff-only 约束。
 
+在 `opening_action3_w0_5_windowed` 修复 60 秒短窗后，后续 late-window 实验继续暴露 300 秒长局缺口。780 条 `risk_recovery_supervision_sample` 的 late-only 消融保住 60/180 秒 regression，但 300 秒只把 `cracked-star-jar` 提到 `0.2`，`soda-creek` 与 `caramel-workshop` 仍为 `0.0`；`late-route-recovery` closed-loop smoke 证明 reward/profile 链路可用，但 300 秒三图仍全失败。随后 254 条 action4 贴边修复样本的 mid/late 消融保住 60 秒短窗，却让 180 秒 `soda-creek` 回落到 `0.4`，300 秒三图仍全为 `0.0`。这些结果都只能作为 repair 证据，不能进入 stage 03 或 RL acceptance。
+
+基于 action4_w0_5 失败面导出的 `1001` 条 180-300 秒 late boundary recovery samples 进一步做了 late-only 小权重消融。该候选保留当前 opening 与 mid，只替换 late 子模型；60 秒 high-pressure 三图为 `0.4/1.0/0.8`，180 秒为 `0.6/1.0/0.8`，300 秒为 `0.0/0.0/0.4`。结论是样本方向有局部价值，尤其让 `cracked-star-jar` 长窗出现恢复信号，但 `soda-creek` 和 `caramel-workshop` 仍无法 300 秒存活，且失败分析显示 dominant action 转为 action `1` 后仍集中死于 late 低血量/贴边压力。报告位于 `harness/reports/2026-05-27_rl_late_boundary_lateonly_ablation_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_053_late_boundary_lateonly_ablation_gap.json`；下一步应转向 closed-loop late boundary escape / low-health survival curriculum，或补充 180-300 秒成功/近成功 clean survival 对照样本，而不是单纯继续提高 repair 样本权重。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

@@ -1,0 +1,680 @@
+{
+  "status": "trained",
+  "gate_decision": "behavior_clone_smoke_only_not_policy_gate",
+  "model_path": "harness/reports/2026-05-27_rl_late_boundary_lateonly_ablation_001/late_boundary_w0_5/late.pt",
+  "started_at": "2026-05-27T09:28:30.986761+00:00",
+  "completed_at": "2026-05-27T09:28:33.038412+00:00",
+  "dependency_status": {
+    "numpy": true,
+    "torch": true
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_caramel-workshop.jsonl",
+      "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_cracked-star-jar.jsonl",
+      "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "harness/reports/2026-05-27_rl_late_route_action4_midlate_late_boundary_samples_001/late_boundary_recovery_samples.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_caramel_teacher_expansion_001/tank_caramel_workshop_seed62405_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_cracked_star_jar_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_soda_creek_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/tank_caramel_workshop_seed62301_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl"
+    ],
+    "sample_count": 15051,
+    "episode_count": 42,
+    "skipped_upgrade_samples": 315,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 1001,
+    "risk_recovery_sample_records": 780,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 32,
+        "ratio": 0.0021
+      },
+      "1": {
+        "count": 2202,
+        "ratio": 0.1463
+      },
+      "2": {
+        "count": 1619,
+        "ratio": 0.1076
+      },
+      "3": {
+        "count": 2325,
+        "ratio": 0.1545
+      },
+      "4": {
+        "count": 1626,
+        "ratio": 0.108
+      },
+      "5": {
+        "count": 1929,
+        "ratio": 0.1282
+      },
+      "6": {
+        "count": 1516,
+        "ratio": 0.1007
+      },
+      "7": {
+        "count": 2121,
+        "ratio": 0.1409
+      },
+      "8": {
+        "count": 1681,
+        "ratio": 0.1117
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 180.0095,
+      "time_seconds_max": 299.8484,
+      "health_ratio_min": 0.0014,
+      "health_ratio_average": 0.6433,
+      "map_distribution": {
+        "caramel-workshop": {
+          "count": 3556,
+          "ratio": 0.2363
+        },
+        "cracked-star-jar": {
+          "count": 5466,
+          "ratio": 0.3632
+        },
+        "soda-creek": {
+          "count": 6029,
+          "ratio": 0.4006
+        }
+      },
+      "sample_source_distribution": {
+        "edge_recovery_supervision": {
+          "count": 1001,
+          "ratio": 0.0665
+        },
+        "risk_recovery_supervision": {
+          "count": 780,
+          "ratio": 0.0518
+        },
+        "trajectory": {
+          "count": 13270,
+          "ratio": 0.8817
+        }
+      }
+    },
+    "metadata": [
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_caramel_teacher_expansion_001/tank_caramel_workshop_seed62405_late_180_300.jsonl",
+        "bot": "tank",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_cracked_star_jar_late_180_300.jsonl",
+        "bot": "kite",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_soda_creek_late_180_300.jsonl",
+        "bot": "kite",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/tank_caramel_workshop_seed62301_late_180_300.jsonl",
+        "bot": "tank",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+        "bot": "kite",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+        "bot": "kite",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl",
+        "bot": "kite",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      }
+    ]
+  },
+  "sequence_diagnostics": {
+    "context_frames": 8,
+    "history_limit": 7,
+    "sample_count": 15051,
+    "episode_key_count": 56,
+    "padding": {
+      "total_missing_frames": 1568,
+      "average_missing_frames": 0.1042,
+      "fully_seeded_samples": 14659,
+      "fully_seeded_ratio": 0.974
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 2.0631,
+      "max": 37.6658
+    },
+    "action_transitions": {
+      "transition_count": 14995,
+      "same_action_count": 11222,
+      "same_action_ratio": 0.7484,
+      "changed_action_ratio": 0.2516
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid_late_start_to_180": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late_gte_180": {
+        "count": 15051,
+        "ratio": 1.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 7859,
+      "ratio": 0.5222
+    },
+    "per_map": {
+      "caramel-workshop": {
+        "sample_count": 3556,
+        "sample_ratio": 0.2363,
+        "time_seconds_min": 180.0095,
+        "time_seconds_max": 299.8484,
+        "average_missing_frames": 0.1654,
+        "fully_seeded_ratio": 0.9587,
+        "average_sequence_span_seconds": 2.2194,
+        "late_low_health_ratio": 0.4688,
+        "action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 664,
+            "ratio": 0.1867
+          },
+          "2": {
+            "count": 373,
+            "ratio": 0.1049
+          },
+          "3": {
+            "count": 509,
+            "ratio": 0.1431
+          },
+          "4": {
+            "count": 358,
+            "ratio": 0.1007
+          },
+          "5": {
+            "count": 441,
+            "ratio": 0.124
+          },
+          "6": {
+            "count": 339,
+            "ratio": 0.0953
+          },
+          "7": {
+            "count": 466,
+            "ratio": 0.131
+          },
+          "8": {
+            "count": 406,
+            "ratio": 0.1142
+          }
+        }
+      },
+      "cracked-star-jar": {
+        "sample_count": 5466,
+        "sample_ratio": 0.3632,
+        "time_seconds_min": 180.0095,
+        "time_seconds_max": 299.8484,
+        "average_missing_frames": 0.0973,
+        "fully_seeded_ratio": 0.9757,
+        "average_sequence_span_seconds": 2.0964,
+        "late_low_health_ratio": 0.4475,
+        "action_distribution": {
+          "0": {
+            "count": 30,
+            "ratio": 0.0055
+          },
+          "1": {
+            "count": 731,
+            "ratio": 0.1337
+          },
+          "2": {
+            "count": 614,
+            "ratio": 0.1123
+          },
+          "3": {
+            "count": 930,
+            "ratio": 0.1701
+          },
+          "4": {
+            "count": 540,
+            "ratio": 0.0988
+          },
+          "5": {
+            "count": 679,
+            "ratio": 0.1242
+          },
+          "6": {
+            "count": 592,
+            "ratio": 0.1083
+          },
+          "7": {
+            "count": 680,
+            "ratio": 0.1244
+          },
+          "8": {
+            "count": 670,
+            "ratio": 0.1226
+          }
+        }
+      },
+      "soda-creek": {
+        "sample_count": 6029,
+        "sample_ratio": 0.4006,
+        "time_seconds_min": 180.0095,
+        "time_seconds_max": 299.8484,
+        "average_missing_frames": 0.0743,
+        "fully_seeded_ratio": 0.9814,
+        "average_sequence_span_seconds": 1.9407,
+        "late_low_health_ratio": 0.6213,
+        "action_distribution": {
+          "0": {
+            "count": 2,
+            "ratio": 0.0003
+          },
+          "1": {
+            "count": 807,
+            "ratio": 0.1339
+          },
+          "2": {
+            "count": 632,
+            "ratio": 0.1048
+          },
+          "3": {
+            "count": 886,
+            "ratio": 0.147
+          },
+          "4": {
+            "count": 728,
+            "ratio": 0.1207
+          },
+          "5": {
+            "count": 809,
+            "ratio": 0.1342
+          },
+          "6": {
+            "count": 585,
+            "ratio": 0.097
+          },
+          "7": {
+            "count": 975,
+            "ratio": 0.1617
+          },
+          "8": {
+            "count": 605,
+            "ratio": 0.1003
+          }
+        }
+      }
+    },
+    "diagnosis_flags": []
+  },
+  "training": {
+    "seed": 12345,
+    "architecture": "gru",
+    "epochs": 5,
+    "batch_size": 256,
+    "learning_rate": 0.001,
+    "hidden_size": 128,
+    "context_frames": 8,
+    "input_observation_len": 1208,
+    "sequence_input_len": 151,
+    "base_observation_len": 145,
+    "map_conditioning": {
+      "mode": "one_hot",
+      "map_ids": [
+        "caramel-workshop",
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "dimension": 3,
+      "base_input_observation_len": 145,
+      "input_observation_len": 148,
+      "sequence_len": 8,
+      "total_input_observation_len": 1184
+    },
+    "time_phase_conditioning": {
+      "mode": "one_hot",
+      "labels": [
+        "opening",
+        "mid",
+        "late"
+      ],
+      "thresholds": [
+        0.2,
+        0.6
+      ],
+      "dimension": 3,
+      "base_input_observation_len": 148,
+      "input_observation_len": 151,
+      "phase_distribution": {
+        "opening": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "mid": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late": {
+          "count": 15051,
+          "ratio": 1.0
+        }
+      },
+      "sequence_len": 8,
+      "total_input_observation_len": 1208
+    },
+    "validation_split": 0.2,
+    "class_weighting": "none",
+    "class_weights": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "sample_weighting": "danger_action_change",
+    "sample_weights": {
+      "mode": "danger_action_change",
+      "base_mode": "danger_action_change",
+      "min": 1.178478,
+      "max": 9.959703,
+      "mean": 2.933084,
+      "edge_recovery_sample_weight": 0.5,
+      "edge_recovery_weighted_sample_count": 797,
+      "edge_recovery_weighted_sample_ratio": 0.0662,
+      "risk_recovery_sample_weight": 4.0,
+      "risk_recovery_weighted_sample_count": 631,
+      "risk_recovery_weighted_sample_ratio": 0.0524,
+      "danger_health_threshold": 0.7,
+      "danger_low_health_weight": 2.0,
+      "danger_late_start_seconds": 60.0,
+      "danger_late_horizon_seconds": 300.0,
+      "danger_late_weight": 1.0,
+      "action_change_weight": 2.0,
+      "action_change_sample_count": 3008,
+      "action_change_sample_ratio": 0.2498
+    },
+    "recovery_soft_targets": {
+      "mode": "top_k_scores",
+      "primary_mass": 0.6,
+      "top_k": 3,
+      "soft_sample_count": 1781,
+      "fallback_one_hot_count": 0,
+      "average_nonzero_actions": 1.1967
+    },
+    "entropy_regularization": 0.02,
+    "action_distribution_regularization": {
+      "enabled": true,
+      "coefficient": 0.2,
+      "target_mode": "per_map_uniform_present",
+      "map_ids": [
+        "caramel-workshop",
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "scope": "per_map",
+      "target_distribution_by_map": {
+        "caramel-workshop": {
+          "0": 0.0,
+          "1": 0.125,
+          "2": 0.125,
+          "3": 0.125,
+          "4": 0.125,
+          "5": 0.125,
+          "6": 0.125,
+          "7": 0.125,
+          "8": 0.125
+        },
+        "cracked-star-jar": {
+          "0": 0.111111,
+          "1": 0.111111,
+          "2": 0.111111,
+          "3": 0.111111,
+          "4": 0.111111,
+          "5": 0.111111,
+          "6": 0.111111,
+          "7": 0.111111,
+          "8": 0.111111
+        },
+        "soda-creek": {
+          "0": 0.0,
+          "1": 0.125,
+          "2": 0.125,
+          "3": 0.125,
+          "4": 0.125,
+          "5": 0.125,
+          "6": 0.125,
+          "7": 0.125,
+          "8": 0.125
+        }
+      },
+      "train_action_counts_by_map": {
+        "caramel-workshop": {
+          "0": 0,
+          "1": 532,
+          "2": 295,
+          "3": 409,
+          "4": 288,
+          "5": 360,
+          "6": 274,
+          "7": 384,
+          "8": 309
+        },
+        "cracked-star-jar": {
+          "0": 24,
+          "1": 597,
+          "2": 482,
+          "3": 736,
+          "4": 435,
+          "5": 555,
+          "6": 462,
+          "7": 532,
+          "8": 523
+        },
+        "soda-creek": {
+          "0": 0,
+          "1": 648,
+          "2": 501,
+          "3": 718,
+          "4": 586,
+          "5": 655,
+          "6": 464,
+          "7": 793,
+          "8": 479
+        }
+      }
+    },
+    "train_samples": 12041,
+    "validation_samples": 3010
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.877146,
+      "train_cross_entropy_loss": 1.915857,
+      "train_entropy_nats": 2.012804,
+      "train_action_distribution_loss": 0.007727,
+      "train_accuracy": 0.2911,
+      "validation_loss": 1.647,
+      "validation_entropy_nats": 1.716778,
+      "validation_action_distribution_loss": 0.00821,
+      "validation_accuracy": 0.3807
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.520824,
+      "train_cross_entropy_loss": 1.552631,
+      "train_entropy_nats": 1.670473,
+      "train_action_distribution_loss": 0.008013,
+      "train_accuracy": 0.4151,
+      "validation_loss": 1.448351,
+      "validation_entropy_nats": 1.565774,
+      "validation_action_distribution_loss": 0.007202,
+      "validation_accuracy": 0.4641
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.400468,
+      "train_cross_entropy_loss": 1.429538,
+      "train_entropy_nats": 1.54081,
+      "train_action_distribution_loss": 0.008729,
+      "train_accuracy": 0.4686,
+      "validation_loss": 1.384313,
+      "validation_entropy_nats": 1.515941,
+      "validation_action_distribution_loss": 0.007479,
+      "validation_accuracy": 0.4977
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.335539,
+      "train_cross_entropy_loss": 1.363938,
+      "train_entropy_nats": 1.497873,
+      "train_action_distribution_loss": 0.007791,
+      "train_accuracy": 0.5038,
+      "validation_loss": 1.301752,
+      "validation_entropy_nats": 1.447954,
+      "validation_action_distribution_loss": 0.008296,
+      "validation_accuracy": 0.5309
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.273226,
+      "train_cross_entropy_loss": 1.300261,
+      "train_entropy_nats": 1.441295,
+      "train_action_distribution_loss": 0.008956,
+      "train_accuracy": 0.5169,
+      "validation_loss": 1.226445,
+      "validation_entropy_nats": 1.395933,
+      "validation_action_distribution_loss": 0.00719,
+      "validation_accuracy": 0.5608
+    }
+  ],
+  "final": {
+    "epoch": 5,
+    "train_loss": 1.273226,
+    "train_cross_entropy_loss": 1.300261,
+    "train_entropy_nats": 1.441295,
+    "train_action_distribution_loss": 0.008956,
+    "train_accuracy": 0.5169,
+    "validation_loss": 1.226445,
+    "validation_entropy_nats": 1.395933,
+    "validation_action_distribution_loss": 0.00719,
+    "validation_accuracy": 0.5608
+  },
+  "limitations": [
+    "Behavior cloning imitates rule Bot movement only; it is not a balance or fun gate.",
+    "The exported Phase 1 dataset skips upgrade-choice states, matching the current movement-only RL action space.",
+    "A cloned policy must still pass Gym evaluation and rule Bot comparison before it can become an RL test Bot candidate."
+  ],
+  "time_phase_filter": {
+    "mode": "late",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 30350,
+    "after_sample_count": 15051,
+    "phase_distribution": {
+      "opening": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late": {
+        "count": 15051,
+        "ratio": 1.0
+      }
+    }
+  },
+  "edge_recovery_time_window_filter": {
+    "mode": "all",
+    "min_seconds": null,
+    "max_seconds": null,
+    "before_sample_count": 30350,
+    "after_sample_count": 30350,
+    "before_edge_recovery_sample_count": 1001,
+    "after_edge_recovery_sample_count": 1001,
+    "dropped_edge_recovery_sample_count": 0
+  },
+  "risk_recovery_time_window_filter": {
+    "mode": "all",
+    "min_seconds": null,
+    "max_seconds": null,
+    "before_sample_count": 30350,
+    "after_sample_count": 30350,
+    "before_risk_recovery_sample_count": 780,
+    "after_risk_recovery_sample_count": 780,
+    "dropped_risk_recovery_sample_count": 0
+  }
+}
