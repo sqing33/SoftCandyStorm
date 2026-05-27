@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_041",
+  "category": "rl_training",
+  "content_id": "route_recovery_aux_focused_boundary_opening",
+  "seed": 62300,
+  "bot": "RouteRecoveryAuxFocusedBoundaryOpeningCloneSmoke",
+  "time_seconds": 42.3664,
+  "symptom": "Focused boundary opening retrain broke the 5 second action 3 collapse into a 3/5 mix, but the 60 second soda-creek smoke died at 42.3664 seconds with action 7 selected on 995/1271 frames.",
+  "root_cause": "Only 17 focused edge_recovery samples survived the opening phase filter, so the repair signal was too narrow to learn a stable boundary recovery policy. The low-disturbance opening retrain shifted the deterministic dominant action from action 3 to action 7 without solving 20-60 second route recovery, while mid and late subpolicies were unchanged from the prior entropy retry.",
+  "fix": "Do not promote this checkpoint. Expand focused boundary recovery coverage across more seeds, maps, and 20-60 second states; audit target action balance before retraining; and require deterministic 60 second high-pressure multimap comparison before any longer run or acceptance review.",
+  "validation": "Training, packaging, 5 second evaluation, 60 second evaluation, and sampled 60 second trace are recorded in harness/reports/2026-05-27_rl_route_recovery_aux_focused_boundary_opening_001. The 5 second evaluation has action 3 ratio 0.6755 and action 5 ratio 0.3245, but the 60 second evaluation has gate_decision evaluation_recorded_needs_action_bias_repair, action 7 ratio 0.7828, damage_taken 120.2898, and terminal_reason player_health_depleted."
+}

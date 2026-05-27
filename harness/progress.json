@@ -2013,6 +2013,11 @@
       "id": "rl_route_recovery_aux_focused_boundary_samples",
       "summary": "基于 route_recovery entropy retry 的 soda-creek seed 62300 60 秒 trace 导出 134 条 focused boundary edge_recovery_supervision_sample；样本只保留 route_recovery 为负、贴边且原动作继续顶边的帧，目标动作均通过不再顶边校验，validator 通过且 behavior clone dry-run 判定 dataset_validated_not_training_gate。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_focused_boundary_samples_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_focused_boundary_opening_regression",
+      "summary": "使用 focused boundary samples 只重训 opening 子模型后，5 秒 soda-creek seed 62300 从纯 action 3 变为 action 3/5 混合，但 60 秒同 seed 在 42.3664 秒死亡且 action 7 占 78.28%，记录 fail_20260527_041；该 checkpoint 只能作为 repair regression 证据。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_focused_boundary_opening_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2022,7 +2027,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段、teacher sequence 和 history context probe 显示真正问题在 transition / recovery history。已从 soda-creek seed 62300 60 秒 trace 导出 134 条 focused boundary repair samples，并通过 validator/dry-run；下一步是把它们加入受控训练候选，再跑 deterministic high-pressure 多图对比。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 focused boundary opening retrain 打破了 5 秒纯 action 3，但 60 秒同 seed 死于 42.3664 秒并产生 action 7 dominant bias。下一步不能只放大这批 focused samples，必须扩展多 seed / 多图 20-60 秒边界恢复覆盖、审查 target action balance，再跑 deterministic high-pressure 多图对比。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
