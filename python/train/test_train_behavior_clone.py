@@ -6,6 +6,7 @@ import pytest
 from python.train.train_behavior_clone import (
     build_sample_weights,
     diagnose_sequence_dataset,
+    filter_edge_recovery_samples_by_time_window,
     filter_dataset_by_time_phase,
     load_trajectory_dataset,
     load_upgrade_choice_dataset,
@@ -276,6 +277,29 @@ def test_time_phase_filter_recounts_edge_recovery_samples():
     )
 
     assert filtered["edge_recovery_sample_records"] == 1
+
+
+def test_edge_recovery_time_window_filter_only_drops_repair_samples():
+    dataset = tiny_dataset()
+    dataset["edge_recovery_sample_records"] = 2
+    dataset["sample_metadata"] = [dict(item) for item in dataset["sample_metadata"]]
+    dataset["sample_metadata"][1]["sample_source"] = "edge_recovery_supervision"
+    dataset["sample_metadata"][5]["sample_source"] = "edge_recovery_supervision"
+
+    filtered, report = filter_edge_recovery_samples_by_time_window(
+        dataset,
+        min_seconds=4.0,
+        max_seconds=6.0,
+    )
+
+    assert report["mode"] == "time_window"
+    assert report["before_sample_count"] == 8
+    assert report["after_sample_count"] == 7
+    assert report["before_edge_recovery_sample_count"] == 2
+    assert report["after_edge_recovery_sample_count"] == 1
+    assert report["dropped_edge_recovery_sample_count"] == 1
+    assert filtered["edge_recovery_sample_records"] == 1
+    assert filtered["actions"] == [0, 1, 2, 2, 1, 0, 2]
 
 
 def test_staged_behavior_clone_dispatches_between_phase_models(tmp_path):

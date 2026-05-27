@@ -119,6 +119,8 @@ Use `--opening-model <zip> --opening-seconds <seconds>` with `--evaluate-model` 
 
 Use `--edge-recovery-filter` with `--evaluate-model` or `--compare-rule-bots` to run a deterministic diagnostic wrapper that replaces a wall-pushing action with the highest-scoring action that does not keep pushing into a nearby map edge. Reports include `policy_adapter.mode = edge_recovery_filter`. This is only handoff repair evidence; the RL acceptance validator rejects policy-adapter reports.
 
+Behavior clone repair experiments can load `edge_recovery_supervision_sample` rows and upweight them with `--edge-recovery-sample-weight`. Use `--edge-recovery-min-seconds` and `--edge-recovery-max-seconds` to keep those repair rows inside a handoff or mid-window while leaving normal rule Bot trajectory samples untouched. This is meant to prevent edge recovery samples from contaminating an opening submodel when a staged clone is trained.
+
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
 ## Policy Acceptance Gate

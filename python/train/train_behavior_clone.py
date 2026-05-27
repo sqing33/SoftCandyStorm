@@ -1040,6 +1040,63 @@ def filter_dataset_by_time_phase(dataset, phase, thresholds):
     }
 
 
+def filter_edge_recovery_samples_by_time_window(dataset, min_seconds=None, max_seconds=None):
+    if min_seconds is None and max_seconds is None:
+        edge_count = int(dataset.get("edge_recovery_sample_records", 0))
+        return dataset, {
+            "mode": "all",
+            "min_seconds": None,
+            "max_seconds": None,
+            "before_sample_count": len(dataset["actions"]),
+            "after_sample_count": len(dataset["actions"]),
+            "before_edge_recovery_sample_count": edge_count,
+            "after_edge_recovery_sample_count": edge_count,
+            "dropped_edge_recovery_sample_count": 0,
+        }
+
+    min_seconds = None if min_seconds is None else float(min_seconds)
+    max_seconds = None if max_seconds is None else float(max_seconds)
+    keep_indices = []
+    before_edge_count = 0
+    after_edge_count = 0
+    dropped_edge_count = 0
+    for index, sample in enumerate(dataset["sample_metadata"]):
+        if sample.get("sample_source") != "edge_recovery_supervision":
+            keep_indices.append(index)
+            continue
+        before_edge_count += 1
+        time_seconds = float(sample.get("time_seconds", 0.0))
+        keep = True
+        if min_seconds is not None and time_seconds < min_seconds:
+            keep = False
+        if max_seconds is not None and time_seconds >= max_seconds:
+            keep = False
+        if keep:
+            keep_indices.append(index)
+            after_edge_count += 1
+        else:
+            dropped_edge_count += 1
+
+    if len(keep_indices) < 2:
+        raise ValueError("edge recovery time window filter leaves fewer than two samples")
+
+    filtered = dict(dataset)
+    filtered["observations"] = [dataset["observations"][index] for index in keep_indices]
+    filtered["actions"] = [dataset["actions"][index] for index in keep_indices]
+    filtered["sample_metadata"] = [dataset["sample_metadata"][index] for index in keep_indices]
+    filtered["edge_recovery_sample_records"] = after_edge_count
+    return filtered, {
+        "mode": "time_window",
+        "min_seconds": min_seconds,
+        "max_seconds": max_seconds,
+        "before_sample_count": len(dataset["actions"]),
+        "after_sample_count": len(keep_indices),
+        "before_edge_recovery_sample_count": before_edge_count,
+        "after_edge_recovery_sample_count": after_edge_count,
+        "dropped_edge_recovery_sample_count": dropped_edge_count,
+    }
+
+
 def build_action_change_flags(sample_metadata, actions):
     flags = []
     previous_actions = {}
@@ -1700,6 +1757,18 @@ def main():
         help="Multiply edge_recovery_supervision_sample rows when mixing repair samples with trajectory data.",
     )
     parser.add_argument(
+        "--edge-recovery-min-seconds",
+        type=float,
+        default=None,
+        help="Keep edge recovery repair samples at or after this time; regular trajectory samples are unaffected.",
+    )
+    parser.add_argument(
+        "--edge-recovery-max-seconds",
+        type=float,
+        default=None,
+        help="Keep edge recovery repair samples before this time; regular trajectory samples are unaffected.",
+    )
+    parser.add_argument(
         "--entropy-regularization",
         type=float,
         default=0.0,
@@ -1746,6 +1815,16 @@ def main():
         parser.error("--action-change-weight must be greater than or equal to zero")
     if args.edge_recovery_sample_weight <= 0.0:
         parser.error("--edge-recovery-sample-weight must be greater than zero")
+    if args.edge_recovery_min_seconds is not None and args.edge_recovery_min_seconds < 0.0:
+        parser.error("--edge-recovery-min-seconds must be greater than or equal to zero")
+    if args.edge_recovery_max_seconds is not None and args.edge_recovery_max_seconds <= 0.0:
+        parser.error("--edge-recovery-max-seconds must be greater than zero")
+    if (
+        args.edge_recovery_min_seconds is not None
+        and args.edge_recovery_max_seconds is not None
+        and args.edge_recovery_max_seconds <= args.edge_recovery_min_seconds
+    ):
+        parser.error("--edge-recovery-max-seconds must be greater than --edge-recovery-min-seconds")
     try:
         args.time_phase_thresholds = normalize_time_phase_thresholds(args.time_phase_thresholds)
     except ValueError as exc:
@@ -1753,6 +1832,11 @@ def main():
 
     try:
         dataset = load_trajectory_dataset(args.dataset, limit=args.limit_samples)
+        dataset, edge_recovery_time_window_report = filter_edge_recovery_samples_by_time_window(
+            dataset,
+            min_seconds=args.edge_recovery_min_seconds,
+            max_seconds=args.edge_recovery_max_seconds,
+        )
         dataset, time_phase_filter_report = filter_dataset_by_time_phase(
             dataset,
             args.time_phase_filter,
@@ -1785,12 +1869,14 @@ def main():
                         ),
                     },
                     "time_phase_filter": time_phase_filter_report,
+                    "edge_recovery_time_window_filter": edge_recovery_time_window_report,
                     "dependencies": dependency_status(),
                 },
             )
             return
         report = train_behavior_clone(dataset, args)
         report["time_phase_filter"] = time_phase_filter_report
+        report["edge_recovery_time_window_filter"] = edge_recovery_time_window_report
         write_report(args.report, report)
     except (OSError, RuntimeError, ValueError) as exc:
         parser.error(str(exc))
