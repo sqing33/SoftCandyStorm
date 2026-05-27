@@ -122,6 +122,26 @@ def parse_map_list(value):
     return maps
 
 
+def parse_seed_list(value):
+    if value is None:
+        return None
+    seeds = []
+    for item in value.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            seed = int(item)
+        except ValueError as exc:
+            raise ValueError(f"invalid seed `{item}`") from exc
+        if seed < 0:
+            raise ValueError("training seeds must be non-negative")
+        seeds.append(seed)
+    if not seeds:
+        raise ValueError("seed list must include at least one seed")
+    return seeds
+
+
 def resolve_train_maps(train_maps, train_map_preset):
     parsed_maps = parse_map_list(train_maps)
     if parsed_maps is not None and train_map_preset is not None:
@@ -132,6 +152,24 @@ def resolve_train_maps(train_maps, train_map_preset):
         return list(BASE_DEMO_MAP_PRESETS[train_map_preset]), train_map_preset
     except KeyError as exc:
         raise ValueError(f"unknown train map preset `{train_map_preset}`") from exc
+
+
+def resolve_train_seed_values(train_seeds, train_seed_start, train_seed_count):
+    parsed_seeds = parse_seed_list(train_seeds)
+    has_range = train_seed_start is not None or train_seed_count is not None
+    if parsed_seeds is not None and has_range:
+        raise ValueError("--train-seeds cannot be combined with --train-seed-start/--train-seed-count")
+    if parsed_seeds is not None:
+        return parsed_seeds
+    if not has_range:
+        return None
+    if train_seed_start is None or train_seed_count is None:
+        raise ValueError("--train-seed-start and --train-seed-count must be used together")
+    if train_seed_start < 0:
+        raise ValueError("--train-seed-start must be non-negative")
+    if train_seed_count <= 0:
+        raise ValueError("--train-seed-count must be greater than 0")
+    return [train_seed_start + offset for offset in range(train_seed_count)]
 
 
 def validate_positive_seconds(value, flag_name):
@@ -150,6 +188,8 @@ def build_env(
     map_ids=None,
     map_selection="cycle",
     upgrade_policy=None,
+    seed_values=None,
+    seed_selection="cycle",
 ):
     env_cfg = config["environment"]
     selected_map_id = map_id if map_id is not None else env_cfg.get("map_id", "frosting-grassland")
@@ -160,6 +200,8 @@ def build_env(
         map_id=selected_map_id,
         map_ids=map_ids,
         map_selection=map_selection,
+        seed_values=seed_values,
+        seed_selection=seed_selection,
         observation_version=env_cfg.get("observation_version", 2),
         content_dir=env_cfg["content_dir"],
         upgrade_policy=upgrade_policy,
@@ -174,6 +216,8 @@ def dry_run(
     train_maps=None,
     train_map_selection="cycle",
     train_map_preset=None,
+    train_seed_values=None,
+    train_seed_selection="cycle",
 ):
     requested_seconds = train_seconds or config["environment"]["seconds"]
     env = build_env(
@@ -181,10 +225,13 @@ def dry_run(
         seconds=min(requested_seconds, 5.0),
         map_ids=train_maps,
         map_selection=train_map_selection,
+        seed_values=train_seed_values,
+        seed_selection=train_seed_selection,
     )
     total_reward = 0.0
     try:
-        observation, info = env.reset(seed=config["environment"]["seed"])
+        reset_seed = None if train_seed_values else config["environment"]["seed"]
+        observation, info = env.reset(seed=reset_seed)
         assert len(observation) == config["environment"]["observation_len"]
         terminated = False
         truncated = False
@@ -202,6 +249,8 @@ def dry_run(
             "steps": completed_steps,
             "terminated": terminated,
             "truncated": truncated,
+            "seed": info["seed"],
+            "map_id": info["map_id"],
             "time_seconds": info["time_seconds"],
             "observation_len": info["observation_len"],
             "action_count": info["action_count"],
@@ -211,6 +260,8 @@ def dry_run(
             or [config["environment"].get("map_id", "frosting-grassland")],
             "training_map_selection": train_map_selection if train_maps else "single",
             "training_map_preset": train_map_preset,
+            "training_seeds": train_seed_values,
+            "training_seed_selection": train_seed_selection if train_seed_values else "single",
             "total_reward": round(total_reward, 4),
             "dependencies": dependency_status(),
         }
@@ -230,6 +281,8 @@ def train(
     train_maps=None,
     train_map_selection="cycle",
     train_map_preset=None,
+    train_seed_values=None,
+    train_seed_selection="cycle",
     algorithm_overrides=None,
     eval_deterministic=True,
     eval_map_id=None,
@@ -250,6 +303,8 @@ def train(
         seconds=effective_train_seconds,
         map_ids=train_maps,
         map_selection=train_map_selection,
+        seed_values=train_seed_values,
+        seed_selection=train_seed_selection,
     )
     model_dir = Path(config["outputs"]["model_dir"])
     report_dir = (
@@ -357,6 +412,8 @@ def train(
         or [config["environment"].get("map_id", "frosting-grassland")],
         "training_map_selection": train_map_selection if train_maps else "single",
         "training_map_preset": train_map_preset,
+        "training_seeds": train_seed_values,
+        "training_seed_selection": train_seed_selection if train_seed_values else "single",
     }
     metadata_path = metadata_path_for(config, algorithm, model_out=model_out)
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
@@ -382,6 +439,8 @@ def train(
             or [config["environment"].get("map_id", "frosting-grassland")],
             "map_selection": train_map_selection if train_maps else "single",
             "map_preset": train_map_preset,
+            "seeds": train_seed_values,
+            "seed_selection": train_seed_selection if train_seed_values else "single",
             "started_at": started_at,
             "completed_at": completed_at,
             "algorithm_parameters": algorithm_parameters,
@@ -1585,6 +1644,23 @@ def main():
         help="Use a predefined base_demo training map set.",
     )
     parser.add_argument(
+        "--train-seeds",
+        default=None,
+        help="Comma-separated training seeds to replay during PPO/DQN training resets.",
+    )
+    parser.add_argument(
+        "--train-seed-start",
+        type=int,
+        default=None,
+        help="First training seed for a contiguous replay range.",
+    )
+    parser.add_argument(
+        "--train-seed-count",
+        type=int,
+        default=None,
+        help="Number of training seeds in the contiguous replay range.",
+    )
+    parser.add_argument(
         "--ent-coef",
         type=float,
         default=None,
@@ -1598,6 +1674,11 @@ def main():
     )
     parser.add_argument(
         "--train-map-selection",
+        choices=["cycle", "random"],
+        default="cycle",
+    )
+    parser.add_argument(
+        "--train-seed-selection",
         choices=["cycle", "random"],
         default="cycle",
     )
@@ -1644,6 +1725,11 @@ def main():
             args.train_maps,
             args.train_map_preset,
         )
+        train_seed_values = resolve_train_seed_values(
+            args.train_seeds,
+            args.train_seed_start,
+            args.train_seed_count,
+        )
     except ValueError as exc:
         parser.error(str(exc))
     if args.compare_map_preset is not None and not args.compare_rule_bots:
@@ -1679,6 +1765,8 @@ def main():
                 train_maps=train_maps,
                 train_map_selection=args.train_map_selection,
                 train_map_preset=train_map_preset,
+                train_seed_values=train_seed_values,
+                train_seed_selection=args.train_seed_selection,
             ),
         )
         return
@@ -1787,6 +1875,8 @@ def main():
             train_maps=train_maps,
             train_map_selection=args.train_map_selection,
             train_map_preset=train_map_preset,
+            train_seed_values=train_seed_values,
+            train_seed_selection=args.train_seed_selection,
             algorithm_overrides=algorithm_overrides,
             eval_deterministic=not args.eval_stochastic,
             eval_map_id=args.map_id,

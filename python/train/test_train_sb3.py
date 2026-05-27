@@ -10,6 +10,7 @@ from python.train.train_sb3 import (
     build_trace_step,
     compact_action_score,
     merge_algorithm_parameters,
+    resolve_train_seed_values,
     should_record_trace_step,
     write_episode_trace,
 )
@@ -43,6 +44,19 @@ def test_algorithm_overrides_rejects_non_positive_learning_rate():
 
     with pytest.raises(ValueError, match="--learning-rate"):
         algorithm_overrides_from_args(args)
+
+
+def test_resolve_train_seed_values_accepts_range():
+    assert resolve_train_seed_values(None, 62400, 3) == [62400, 62401, 62402]
+
+
+def test_resolve_train_seed_values_accepts_explicit_list():
+    assert resolve_train_seed_values("62400,62407", None, None) == [62400, 62407]
+
+
+def test_resolve_train_seed_values_rejects_mixed_sources():
+    with pytest.raises(ValueError, match="--train-seeds"):
+        resolve_train_seed_values("62400", 62400, 2)
 
 
 def test_algorithm_parameter_source_records_warm_start_overrides():

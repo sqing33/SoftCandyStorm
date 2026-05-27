@@ -61,6 +61,8 @@ class SoftCandyStormEnv(gym.Env):
         harness_cmd=None,
         cwd=None,
         upgrade_policy=None,
+        seed_values=None,
+        seed_selection="cycle",
     ):
         self.seed_value = seed
         self.seconds = seconds
@@ -69,6 +71,11 @@ class SoftCandyStormEnv(gym.Env):
         self.map_selection = map_selection
         if self.map_selection not in {"cycle", "random"}:
             raise ValueError("map_selection must be `cycle` or `random`")
+        self.seed_values = self._normalize_seed_values(seed_values)
+        self.seed_selection = seed_selection
+        if self.seed_selection not in {"cycle", "random"}:
+            raise ValueError("seed_selection must be `cycle` or `random`")
+        self.seed_episode_index = 0
         self.observation_version = int(observation_version)
         self.map_id = self.map_ids[0]
         self.episode_index = 0
@@ -116,6 +123,27 @@ class SoftCandyStormEnv(gym.Env):
         if not normalized:
             raise ValueError("map_ids must include at least one map id")
         return normalized
+
+    def _normalize_seed_values(self, seed_values):
+        if seed_values is None:
+            return None
+        normalized = [int(seed) for seed in seed_values]
+        if not normalized:
+            raise ValueError("seed_values must include at least one seed")
+        if any(seed < 0 for seed in normalized):
+            raise ValueError("seed_values must be non-negative")
+        return normalized
+
+    def _select_seed_value(self):
+        if not self.seed_values:
+            return self.seed_value
+        if self.seed_selection == "random":
+            rng = random.Random(self.seed_value + self.seed_episode_index)
+            selected = rng.choice(self.seed_values)
+        else:
+            selected = self.seed_values[self.seed_episode_index % len(self.seed_values)]
+        self.seed_episode_index += 1
+        return selected
 
     def _select_map_id(self, explicit_map_id=None):
         if explicit_map_id is not None:
@@ -176,11 +204,14 @@ class SoftCandyStormEnv(gym.Env):
     def reset(self, *, seed=None, options=None):
         if seed is not None:
             self.seed_value = seed
+            selected_seed = seed
+        else:
+            selected_seed = self._select_seed_value()
         options = options or {}
         map_id = self._select_map_id(options.get("map_id"))
         payload = {
             "command": "reset",
-            "seed": self.seed_value,
+            "seed": selected_seed,
             "map_id": map_id,
             "seconds": options.get("seconds", self.seconds),
             "tick_rate": options.get("tick_rate", self.tick_rate),

@@ -31,3 +31,26 @@ def test_no_pending_upgrade_prompt_omits_policy_decision():
     env.last_info = {"upgrade_options": []}
 
     assert env._upgrade_choice_for_pending_prompt() is None
+
+
+def test_seed_selector_cycles_training_seed_values():
+    env = SoftCandyStormEnv.__new__(SoftCandyStormEnv)
+    env.seed_value = 999
+    env.seed_values = [62400, 62401]
+    env.seed_selection = "cycle"
+    env.seed_episode_index = 0
+
+    assert env._select_seed_value() == 62400
+    assert env._select_seed_value() == 62401
+    assert env._select_seed_value() == 62400
+
+
+def test_seed_selector_rejects_empty_seed_values():
+    env = SoftCandyStormEnv.__new__(SoftCandyStormEnv)
+
+    try:
+        env._normalize_seed_values([])
+    except ValueError as exc:
+        assert "seed_values" in str(exc)
+    else:
+        raise AssertionError("expected empty seed values to be rejected")

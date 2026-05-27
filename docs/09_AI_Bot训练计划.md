@@ -315,6 +315,8 @@ target-entropy 蒸馏候选使用 `--teacher-temperature 1.5 --uniform-target-mi
 
 `train_sb3.py` 的 warm-start 路径现在允许 `--model-in ... --ent-coef <value>` 覆盖 PPO entropy coefficient，也允许 `--model-in ... --learning-rate <value>` 覆盖学习率；加载模型后会刷新 SB3 learning-rate schedule，并在训练报告中把 `algorithm_parameters_source` 标记为 `warm_start_metadata_with_overrides`。该能力用于可审计地测试 PPO 探索和小步修复；默认不改变旧模型行为，也不能绕过 high-pressure 对比和 RL acceptance。
 
+`train_sb3.py` 现在还支持训练期 seed replay：`--train-seeds <a,b,c>` 或 `--train-seed-start <N> --train-seed-count <M>` 会把指定 seed 集合传给 Gym 环境，让 PPO/DQN 训练 reset 显式覆盖已知 opening / mid-window 回归 seed；`--seed-start` 仍只用于评估和规则 Bot 对比。该能力用于 stage 02 opening retention / regularization 实验，不能替代 60 秒 opening gate、180 秒三图对比或 failure case 审查。
+
 首个 `ent_coef = 0.02` 的 target-entropy warm-start 候选改善了 60 秒动作分布：high-pressure 三图 normalized entropy 为 0.5801 / 0.5823 / 0.5307，dominant action ratio 均低于 0.45；但短窗胜率仍只有 80% / 60% / 80%，300 秒三图仍全部 0%。结论：entropy coefficient 是短窗动作多样性修复方向，但不能解决 movement-only policy 的长局目标缺失。
 
 升级选择监督入口已经补上最小数据链路：`export-bot-trajectories --include-upgrade-samples true` 会在不破坏 movement dataset 的前提下输出 `upgrade_sample`，`train_behavior_clone.py` 的 movement loader 默认跳过并统计这些记录，`load_upgrade_choice_dataset` / `summarize_upgrade_choice_dataset` 可单独读取升级选择样本。当前 smoke 报告位于 `harness/reports/2026-05-27_rl_upgrade_choice_export_smoke_001/summary.md`；后续应扩大多地图升级样本覆盖、改进升级词表和阶段目标监督，而不是继续只调 movement entropy。

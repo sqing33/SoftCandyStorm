@@ -34,6 +34,19 @@ env = SoftCandyStormEnv(
 
 Explicit reset options such as `options={"map_id": "frosting-grassland"}` still override the training map selector, which keeps evaluation deterministic for a single map.
 
+Training can also replay a fixed seed set on resets. This is intended for curriculum repair runs where a policy must retain known opening or mid-window regression seeds while learning another map:
+
+```python
+env = SoftCandyStormEnv(
+    map_ids=["soda-creek", "caramel-workshop"],
+    map_selection="random",
+    seed_values=[62400, 62401, 62402, 62403],
+    seed_selection="cycle",
+)
+```
+
+Explicit `reset(seed=...)` still overrides the training seed selector for evaluation.
+
 The first RL phase uses a 9-action discrete movement space:
 
 ```text

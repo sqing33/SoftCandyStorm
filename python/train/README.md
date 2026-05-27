@@ -85,6 +85,12 @@ For PPO exploration experiments, use `--ent-coef <value>` to override the entrop
 python3 python/train/train_sb3.py --algorithm ppo --ent-coef 0.02 --train-maps frosting-grassland,soda-creek,caramel-workshop --train-map-selection random
 ```
 
+For curriculum retention experiments, use `--train-seeds <a,b,c>` or `--train-seed-start <N> --train-seed-count <M>` to replay known regression seeds during training resets. Training reports record the seed set and selection mode, while `--seed-start` remains reserved for evaluation and rule Bot comparison:
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --model-in harness/reports/local_stage01/stage01.zip --train-maps soda-creek,caramel-workshop --train-map-selection random --train-seed-start 62400 --train-seed-count 10 --train-seed-selection cycle
+```
+
 ## Policy vs Rule Bot Comparison
 
 Compare a saved SB3 policy against rule Bot baselines with the same map, seed range, and duration:
