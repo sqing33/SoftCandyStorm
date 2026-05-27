@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_061",
+  "category": "rl_policy",
+  "content_id": "risk_recovery_clean_lateonly_ablation",
+  "seed": 62400,
+  "bot": "CleanRiskLateOnlyClone",
+  "time_seconds": 300.0,
+  "symptom": "使用 702 条 clean risk recovery rows 低权重重训 late 子模型后，60 秒和 180 秒 high-pressure 三图 regression 保持为 not_balance_gate，但 300 秒三图全部 0.0 win_rate；soda-creek、caramel-workshop 和 cracked-star-jar 都仍需要 policy repair。",
+  "root_cause": "clean filter 去除了 target_risk_reasons 非空和 target risk score 更差的 adapter rows，但剩余样本仍是离线 imitation 信号，只能改善部分平均存活，不能优化 180-300 秒闭环路线、升级后目标选择、Boss/hazard 压力处理和持续低血量逃生。相比 raw w4，soda-creek 与 caramel-workshop 平均存活略升，但 cracked-star-jar 从 0.2 胜率回落到 0.0。",
+  "fix": "不推进 clean_late_w0_5 到 stage 03、RL acceptance、playtest 或 release。下一步应停止只调整同一批 adapter-derived late samples 的权重，转向 closed-loop late survival/curriculum、升级选择后的目标规划、或针对 180-300 秒失败种子的在线 reward / route objective。",
+  "validation": "训练、打包和 60/180/300 秒三图对比记录在 harness/reports/2026-05-27_rl_risk_recovery_clean_lateonly_ablation_001；300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair，failure_analysis_300s.md 记录 15/15 失败，其中 caramel-workshop 全部为 late_180_to_300 失败。"
+}

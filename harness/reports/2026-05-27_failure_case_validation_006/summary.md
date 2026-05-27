@@ -2,16 +2,17 @@
 
 - Root: `harness/failed_cases`
 - Decision: `failure_cases_valid`
-- File count: 34
-- Record count: 34
+- File count: 91
+- Record count: 91
 
 ## Categories
 
-- `balance`: 6
+- `balance`: 7
 - `bot_policy_gate`: 1
 - `replay_regression`: 1
-- `rl`: 9
-- `rl_policy`: 16
+- `rl`: 42
+- `rl_policy`: 32
+- `rl_training`: 7
 - `tooling`: 1
 
 ## Errors
