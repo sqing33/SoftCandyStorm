@@ -1891,8 +1891,13 @@
     },
     {
       "id": "rl_clean_teacher_late_survival_regression",
-      "summary": "clean teacher-only late survival staged GRU context8 候选已用 6124 条真实规则 Bot 180-300 秒轨迹训练并打包；但 60 秒 high-pressure 回退到 80%/100%/70%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%，已记录 fail_20260527_032，说明 clean late replacement 同时破坏短窗保留和 long-run blocker。",
+      "summary": "clean teacher-only late survival staged GRU context8 候选已用 6124 条真实规则 Bot 180-300 秒轨迹训练并打包；time-phase one-hot 版 60 秒回退到 80%/100%/70%，no-phase 消融仍为 80%/100%/60%，两者 300 秒三图全 0%，已记录 fail_20260527_032，说明 clean late replacement 同时破坏短窗保留和 long-run blocker。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_staged_gru_context8_001/summary.md"
+    },
+    {
+      "id": "rl_clean_teacher_no_phase_late_survival_ablation",
+      "summary": "去掉 clean teacher late 子模型的 time-phase-conditioning 后完成 no-phase 消融：validation_accuracy 升至 0.7331，但 60 秒 high-pressure 仍只有 80%/100%/60%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%；短窗回归不是 phase one-hot 单点问题。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_no_phase_staged_gru_context8_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1902,7 +1907,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "clean teacher-only late replacement 已验证失败：60 秒和 180 秒短窗回归，300 秒三图仍全 0%。下一步不要直接推进 clean teacher-only；应先修 horizon-safe staged dispatch 或加入 opening/mid retention，再补足 caramel-workshop clean teacher 覆盖，并复跑 deterministic 60/180/300 秒 high-pressure 多图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "clean teacher-only late replacement 和 no-phase 消融都已验证失败：60 秒和 180 秒短窗回归，300 秒三图仍全 0%。下一步不要直接推进 clean teacher-only；应先修 horizon-safe staged dispatch 或加入 opening/mid retention，再补足 caramel-workshop clean teacher 覆盖，并复跑 deterministic 60/180/300 秒 high-pressure 多图对比；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
