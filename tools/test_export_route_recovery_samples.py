@@ -149,6 +149,28 @@ class RouteRecoverySampleExportTests(unittest.TestCase):
         self.assertEqual(report["phase_duration_seconds"], 300.0)
         self.assertAlmostEqual(rows[0]["observation"][0], 25.0 / 300.0)
 
+    def test_original_action_filter_keeps_only_requested_actions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            trace = root / "soda-creek_seed62300_trace.json"
+            samples = root / "samples.jsonl"
+            write_trace(trace)
+
+            report = build_report(
+                [trace],
+                samples_out=samples,
+                edge_distance=32.0,
+                route_recovery_threshold=0.0,
+                min_boundary_edge_risk=0.75,
+                original_actions={1},
+            )
+            sample_text = samples.read_text()
+
+        self.assertEqual(report["decision"], "route_recovery_samples_unavailable")
+        self.assertEqual(report["original_action_filtered_count"], 1)
+        self.assertEqual(report["sample_count"], 0)
+        self.assertEqual(sample_text, "")
+
 
 if __name__ == "__main__":
     unittest.main()

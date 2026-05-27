@@ -341,6 +341,7 @@ def build_report(
     min_seconds: float | None = None,
     max_seconds: float | None = None,
     phase_duration_seconds: float | None = None,
+    original_actions: set[int] | None = None,
     max_samples: int | None = None,
 ) -> dict[str, Any]:
     paths = trace_paths(inputs)
@@ -350,6 +351,7 @@ def build_report(
     boundary_hotspot_count = 0
     missing_observation_count = 0
     original_not_edge_count = 0
+    original_action_filtered_count = 0
     no_target_count = 0
     outside_time_window_count = 0
 
@@ -395,6 +397,9 @@ def build_report(
             )
 
             original_action = int(step.get("action", 0))
+            if original_actions is not None and original_action not in original_actions:
+                original_action_filtered_count += 1
+                continue
             if not action_pushes_into_edge(original_action, diagnostics, edge_distance):
                 original_not_edge_count += 1
                 continue
@@ -444,6 +449,7 @@ def build_report(
         "outside_time_window_count": outside_time_window_count,
         "missing_observation_count": missing_observation_count,
         "original_not_edge_count": original_not_edge_count,
+        "original_action_filtered_count": original_action_filtered_count,
         "no_target_count": no_target_count,
         "sample_count": len(samples),
         "samples_path": str(samples_out),
@@ -453,6 +459,7 @@ def build_report(
         "min_seconds": min_seconds,
         "max_seconds": max_seconds,
         "phase_duration_seconds": phase_duration_seconds,
+        "original_actions": sorted(original_actions) if original_actions is not None else None,
         "map_distribution": count_map(sample.get("map_id") for sample in samples),
         "original_action_distribution": count_map(sample.get("original_action") for sample in samples),
         "target_action_distribution": count_map(sample.get("target_action") for sample in samples),
@@ -475,6 +482,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Negative route_recovery rows: `{report['negative_route_recovery_count']}`",
         f"- Boundary hotspot rows: `{report['boundary_hotspot_count']}`",
         f"- Outside time window rows: `{report['outside_time_window_count']}`",
+        f"- Original action filtered rows: `{report['original_action_filtered_count']}`",
         f"- Missing observation rows: `{report['missing_observation_count']}`",
         f"- Exported samples: `{report['sample_count']}`",
         f"- Samples: `{report['samples_path']}`",
@@ -513,6 +521,11 @@ def main() -> int:
         default=None,
         help="Rewrite observation progress using time_seconds / this horizon before writing samples.",
     )
+    parser.add_argument(
+        "--original-actions",
+        default=None,
+        help="Comma-separated original policy actions to export, for example `3` or `1,3,6`.",
+    )
     parser.add_argument("--max-samples", type=int, default=None)
     args = parser.parse_args()
     if args.min_seconds is not None and args.min_seconds < 0.0:
@@ -527,6 +540,21 @@ def main() -> int:
         parser.error("--max-seconds must be greater than --min-seconds")
     if args.phase_duration_seconds is not None and args.phase_duration_seconds <= 0.0:
         parser.error("--phase-duration-seconds must be greater than zero")
+    original_actions = None
+    if args.original_actions:
+        try:
+            original_actions = {
+                int(item.strip())
+                for item in args.original_actions.split(",")
+                if item.strip()
+            }
+        except ValueError:
+            parser.error("--original-actions must be a comma-separated list of integers")
+        if not original_actions:
+            parser.error("--original-actions must include at least one action")
+        invalid_actions = sorted(action for action in original_actions if action not in GYM_ACTION_MOVEMENTS)
+        if invalid_actions:
+            parser.error(f"--original-actions contains unsupported actions: {invalid_actions}")
 
     report = build_report(
         args.traces,
@@ -537,6 +565,7 @@ def main() -> int:
         min_seconds=args.min_seconds,
         max_seconds=args.max_seconds,
         phase_duration_seconds=args.phase_duration_seconds,
+        original_actions=original_actions,
         max_samples=args.max_samples,
     )
     if args.report is not None:
