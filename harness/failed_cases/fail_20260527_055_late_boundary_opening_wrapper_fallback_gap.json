@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_055",
+  "category": "rl_policy",
+  "content_id": "late_boundary_opening_wrapper_probe",
+  "seed": 62400,
+  "bot": "Stage01OpeningWrapperLateBoundaryFallback",
+  "time_seconds": 300.0,
+  "symptom": "使用 stage01 corner_risk_delta SB3 opening wrapper 负责前 60 秒、再切到 late boundary closed-loop fallback 后，60 秒 high-pressure 三图提升到 1.0/1.0/0.8，180 秒为 0.4/0.8/0.6，但 300 秒仍只有 0.0/0.0/0.2，不能通过 multimap policy gate。",
+  "root_cause": "opening wrapper 清除了 300 秒失败分析中的 opening death，但 fallback 接手后仍无法处理 60 秒后的 handoff/mid/late 高压状态。14 个死亡局全部发生在 60 秒后：soda-creek 主要死在 60-180 秒，caramel-workshop 主要死在 180-300 秒，cracked-star-jar 在 mid/late 各半；dominant action 全部转向 action 7，说明 fallback 仍学到单方向路线而非稳定恢复策略。",
+  "fix": "不把该 wrapper 组合推进 stage 03、RL acceptance、playtest 或 release。下一步应基于 wrapper 组合的 failed-only trace 导出 60-180 秒 handoff recovery 样本，或训练专门接手 opening wrapper 后状态分布的 fallback；继续保留 deterministic 60/180/300 秒高压三图门禁。",
+  "validation": "60/180/300 秒 high-pressure 三图对比和 300 秒失败分析记录在 harness/reports/2026-05-27_rl_late_boundary_opening_wrapper_probe_001；300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair，failure_analysis_300s.json 记录 14 个死亡局且 opening bucket 为 0。"
+}

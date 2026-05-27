@@ -591,6 +591,8 @@ stage 02 的 staged opening wrapper 进一步验证了“分离开局策略”�
 
 从 `late-route-recovery` checkpoint 继续做 closed-loop late boundary curriculum smoke 后，结论更保守：在 high-pressure 三图和 seed `62400-62404` 上继续 `4096` timesteps，没有改善 300 秒 gate，反而破坏 opening/mid retention。60 秒为 `0.4/0.8/1.0`，180 秒为 `0.2/0.4/0.8`，300 秒仍为 `0.0/0.0/0.4`；300 秒失败分析中 `soda-creek` 已有 3 个 opening 死亡，`caramel-workshop` 也出现 opening/mid 死亡。报告位于 `harness/reports/2026-05-27_rl_late_boundary_closed_loop_curriculum_smoke_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_054_late_boundary_closed_loop_curriculum_regression.json`。下一轮 closed-loop 必须先加入 opening/mid retention 约束或 staged opening wrapper，并把 60/180 秒 gate 作为训练中止条件，不能继续只在失败 seed 上加 timestep。
 
+使用 stage01 `corner_risk_delta` SB3 opening wrapper 负责前 60 秒、再切到上述 closed-loop fallback 的 evaluation-only probe 证明：opening wrapper 能清除 opening death，但不能修复 fallback。60 秒提升到 `1.0/1.0/0.8`，180 秒为 `0.4/0.8/0.6`，300 秒仍只有 `0.0/0.0/0.2`；300 秒失败分析中 14 个死亡局全部发生在 60 秒之后，`soda-creek` 主要死在 handoff/mid，`caramel-workshop` 主要死在 late。报告位于 `harness/reports/2026-05-27_rl_late_boundary_opening_wrapper_probe_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_055_late_boundary_opening_wrapper_fallback_gap.json`。下一步应基于该 wrapper 组合导出 `60-180s` handoff recovery 样本，或训练专门接手 opening wrapper 后状态分布的 fallback。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
