@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_056",
+  "category": "rl_policy",
+  "content_id": "late_boundary_handoff_midonly_ablation",
+  "seed": 62400,
+  "bot": "BehaviorCloneStagedHandoffMidW0_5",
+  "time_seconds": 300.0,
+  "symptom": "基于 2438 条 60-180 秒 handoff recovery samples 训练 mid-only 小权重消融后，60 秒 high-pressure 三图为 0.4/1.0/0.8，180 秒为 0.6/1.0/0.8，300 秒仍为 0.0/0.0/0.4，不能通过 multimap policy gate。",
+  "root_cause": "handoff 样本只替换 mid 子模型，没有修复 opening retention 和 late-window long-run recovery。300 秒失败分析记录 13 个死亡局：soda-creek 有 2 个 opening 早死和 3 个 late 死亡，caramel-workshop 5 个失败全部在 180-300 秒，cracked-star-jar 有 1 个 opening 早死和 2 个 late 死亡；dominant action 回到 action 3，说明 mid 子模型替换改变了在线分布但没有形成稳定路线恢复。",
+  "fix": "不把该 staged checkpoint 推进 stage 03、RL acceptance、playtest 或 release。下一步应比较 opening wrapper + fallback-only 与 staged mid-only 的交接状态分布，或把 handoff recovery 样本转成 fallback policy 约束；同时继续单独处理 late-window low-health、hazard 和 Boss pressure recovery，不继续只提高 handoff 样本权重。",
+  "validation": "dry-run、mid 子模型训练、staged 打包、60/180/300 秒 high-pressure 三图对比和 300 秒失败分析记录在 harness/reports/2026-05-27_rl_late_boundary_handoff_midonly_ablation_001；300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair，failure_analysis_300s.json 记录 13 个死亡局。"
+}

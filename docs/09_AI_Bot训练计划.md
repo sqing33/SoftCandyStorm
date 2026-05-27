@@ -595,6 +595,8 @@ stage 02 的 staged opening wrapper 进一步验证了“分离开局策略”�
 
 基于上述 wrapper 失败面，已从 `60-180s`、负 `route_recovery`、贴边高风险 sampled trace 行导出 `2438` 条 handoff recovery samples，并通过 `tools/validate_edge_recovery_samples.py`。样本 100% 落在 mid phase，原动作以 action `7` 和 action `4` 为主，目标动作分布为 action `3/0/8/2/...`；其中 target action `0` 占 `26.99%`，说明后续训练必须保留 soft target 和动作分布正则，避免把 fallback 修成静止策略。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_samples_001/summary.md`。这批样本只是 fallback / mid-window repair input，不是 RL policy gate。
 
+handoff recovery samples 的首个 mid-only 小权重消融没有带来在线收益。该实验只替换 staged behavior clone 的 mid 子模型，保留 `opening_action3_w0_5_windowed` opening 子模型和 `late_boundary_w0_5` late 子模型；mid 训练使用 `edge_recovery_sample_weight=0.5`、`recovery_soft_target=top_k_scores`、`entropy_regularization=0.02` 和 `action_distribution_regularization=0.2 / per_map_uniform_present`。训练集共有 `12691` 条 mid 样本，其中 `2780` 条为 handoff repair input，validation accuracy 为 `0.6608`。但 deterministic high-pressure 三图结果仍为 60 秒 `0.4/1.0/0.8`、180 秒 `0.6/1.0/0.8`、300 秒 `0.0/0.0/0.4`，与上一轮 late-only 消融没有本质改善；300 秒失败分析仍记录 `13` 个死亡局，`caramel-workshop` 全部死于 `180-300s`，`soda-creek` 和 `cracked-star-jar` 同时存在 opening 早死和 late 死亡。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_midonly_ablation_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_056_late_boundary_handoff_midonly_ablation_gap.json`。结论：mid-only handoff imitation 不能解除 long-run blocker，下一步应比较 opening wrapper + fallback-only 与 staged mid-only 的交接状态分布，并继续单独处理 late-window low-health、hazard 和 Boss pressure recovery。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
