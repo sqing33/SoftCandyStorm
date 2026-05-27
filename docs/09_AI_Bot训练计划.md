@@ -426,6 +426,8 @@ Gym bridge 现在支持在 `step` 请求中传入 `upgrade_choice`。`SoftCandyS
 
 为支持真正的分阶段策略实验，训练入口已支持 `--time-phase-filter opening|mid|late`，并新增 `create_staged_behavior_clone_policy.py` 将三段子模型打包成 staged checkpoint；旧 staged checkpoint 默认按当前 observation 的归一化时间进度选择 opening / mid / late 子策略。打包时可传入 `--phase-duration-seconds 300`，让在线 Gym 评估改用 `time_seconds / 300` 做绝对时间分段，避免 60 秒短窗在 36 秒就因为进度达到 0.6 而提前切到 late 子模型。首个 packaging smoke 已证明 staged checkpoint 可通过 `train_sb3.py --behavior-clone-model` 加载并比较规则 Bot，但 1 epoch 子策略仍有动作偏置 repair，不能作为策略通过证据。
 
+clean teacher late survival 候选用 `--phase-duration-seconds 300` 重新打包后完成 deterministic high-pressure 60 / 180 / 300 秒复测：60 秒为 `soda-creek` 70%、`caramel-workshop` 100%、`cracked-star-jar` 80%，180 秒为 66.67%、100%、33.33%，300 秒三图仍全部 0%。结论：absolute-time dispatch 修复的是评估分段机制，但 clean teacher-only late replacement 仍缺少 opening / mid retention 和 long-run recovery objective，不能进入 stage 03 或 RL acceptance。
+
 首个完整 staged GRU context8 候选分别训练 opening、mid、late 三段子策略并用相对路径打包；结果仍为 `repair`：60 秒 high-pressure 中 `soda-creek` 只有 20% 胜率且动作 3 占 76.72%，300 秒中 `soda-creek` 为 0%、`caramel-workshop` 和 `cracked-star-jar` 各 33.33%。这说明只按时间切换子模型不足以形成长局规划，下一步需要阶段目标监督、升级选择数据、更多 opening 覆盖或 PPO 蒸馏。
 
 为排查 staged 子策略的数据窗口错配，已重新导出 300 秒 high-pressure 三图 10 seed phase-aligned 轨迹，使 `opening` 覆盖 0-60 秒而不是 60 秒短局中的前 12 秒。该修复把 opening 样本从 1080 提升到 5388，但 phase-aligned staged GRU context8 仍为 `repair`：60 秒 `soda-creek` 0% 胜率、动作 3 占 79.11%，300 秒 `soda-creek` 和 `caramel-workshop` 均为 0%。结论是补 opening 覆盖不足以修复 movement-only imitation，下一步应引入阶段目标监督、升级选择数据、teacher soft targets 或 PPO 蒸馏初始化。
