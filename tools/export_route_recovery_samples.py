@@ -236,6 +236,12 @@ def compact_action_score(action_score: Any) -> dict[str, Any]:
     return result
 
 
+def health_ratio_from_observation(observation: list[float]) -> float | None:
+    if len(observation) < 2:
+        return None
+    return max(0.0, min(1.0, float(observation[1])))
+
+
 def build_sample(
     *,
     trace_path: Path,
@@ -251,6 +257,7 @@ def build_sample(
     diagnostics = step.get("diagnostics") if isinstance(step.get("diagnostics"), dict) else {}
     action_score = step.get("action_score") if isinstance(step.get("action_score"), dict) else {}
     tags = pressure_tags(diagnostics)
+    health_ratio = health_ratio_from_observation(observation)
     adapter_decision = {
         "mode": SOURCE_NAME,
         "edge_distance": edge_distance,
@@ -270,6 +277,8 @@ def build_sample(
         "step": int(step.get("step", 0)),
         "tick": step.get("tick"),
         "time_seconds": round(float(step.get("time_seconds", 0.0)), 4),
+        "health": step.get("health"),
+        "health_ratio": round(health_ratio, 6) if health_ratio is not None else None,
         "level": step.get("level"),
         "kills": step.get("kills"),
         "observation_version": step.get("observation_version"),

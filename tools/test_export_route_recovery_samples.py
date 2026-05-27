@@ -81,6 +81,7 @@ class RouteRecoverySampleExportTests(unittest.TestCase):
         self.assertEqual(rows[0]["original_action"], 3)
         self.assertEqual(rows[0]["target_action"], 7)
         self.assertEqual(rows[0]["observation_len"], 3)
+        self.assertEqual(rows[0]["health_ratio"], 0.2)
 
     def test_skips_hotspot_without_observation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
