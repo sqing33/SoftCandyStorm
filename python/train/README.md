@@ -115,6 +115,8 @@ Evaluation reports also include `action_score_diagnostic`. For probability polic
 
 Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` with training, `--evaluate-model`, or `--compare-rule-bots` when diagnosing whether a policy still has useful action probability mass even though deterministic argmax collapses.
 
+Use `--opening-model <zip> --opening-seconds <seconds>` with `--evaluate-model` or `--compare-rule-bots` to test a staged SB3 policy that uses a known opening checkpoint before falling back to `--model`. This is evaluation-only evidence for split-policy repair; it does not train a new checkpoint or count as policy acceptance by itself.
+
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
 ## Policy Acceptance Gate

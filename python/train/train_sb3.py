@@ -113,6 +113,66 @@ def apply_loaded_model_overrides(model, overrides):
                 setup_lr_schedule()
 
 
+class StagedOpeningPolicy:
+    policy_kind = "staged_sb3_opening"
+
+    def __init__(
+        self,
+        opening_model,
+        fallback_model,
+        opening_seconds,
+        opening_model_path,
+        fallback_model_path,
+    ):
+        if opening_seconds <= 0.0:
+            raise ValueError("opening_seconds must be greater than 0")
+        self.opening_model = opening_model
+        self.fallback_model = fallback_model
+        self.opening_seconds = opening_seconds
+        self.opening_model_path = str(opening_model_path)
+        self.fallback_model_path = str(fallback_model_path)
+        self._time_seconds = 0.0
+
+    def reset(self):
+        self._time_seconds = 0.0
+        for model in (self.opening_model, self.fallback_model):
+            reset = getattr(model, "reset", None)
+            if callable(reset):
+                reset()
+
+    def set_map_id(self, map_id):
+        for model in (self.opening_model, self.fallback_model):
+            set_map_id = getattr(model, "set_map_id", None)
+            if callable(set_map_id):
+                set_map_id(map_id)
+
+    def set_step_context(self, info):
+        self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+
+    def active_model(self):
+        if self._time_seconds < self.opening_seconds:
+            return self.opening_model
+        return self.fallback_model
+
+    def predict(self, observation, deterministic=True):
+        return self.active_model().predict(observation, deterministic=deterministic)
+
+    def action_scores(self, observation):
+        return policy_action_scores(self.active_model(), observation)
+
+    def opening_policy_report(self):
+        return {
+            "mode": "staged_sb3_opening",
+            "opening_model_path": self.opening_model_path,
+            "fallback_model_path": self.fallback_model_path,
+            "opening_seconds": self.opening_seconds,
+            "limitations": [
+                "The opening model is used only during evaluation/comparison before opening_seconds.",
+                "This wrapper does not train a new policy and is not policy acceptance evidence by itself.",
+            ],
+        }
+
+
 def parse_map_list(value):
     if value is None:
         return None
@@ -496,6 +556,8 @@ def evaluate_saved_policy(
     config,
     algorithm,
     model_path=None,
+    opening_model_path=None,
+    opening_seconds=60.0,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -507,7 +569,17 @@ def evaluate_saved_policy(
     trace_sample_stride=30,
 ):
     model_class = stable_baselines_model_classes()[algorithm]
-    model = model_class.load(model_path or default_model_path(config, algorithm))
+    fallback_model_path = model_path or default_model_path(config, algorithm)
+    model = model_class.load(fallback_model_path)
+    if opening_model_path is not None:
+        opening_model = model_class.load(opening_model_path)
+        model = StagedOpeningPolicy(
+            opening_model,
+            model,
+            opening_seconds,
+            opening_model_path,
+            fallback_model_path,
+        )
     upgrade_policy = (
         load_upgrade_choice_policy(upgrade_choice_model) if upgrade_choice_model else None
     )
@@ -530,6 +602,8 @@ def evaluate_policy_model(
     config,
     algorithm,
     model_path=None,
+    opening_model_path=None,
+    opening_seconds=60.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -564,6 +638,8 @@ def evaluate_policy_model(
         config,
         algorithm,
         model_path=model_path,
+        opening_model_path=opening_model_path,
+        opening_seconds=opening_seconds,
         eval_episodes=eval_episodes,
         eval_seconds=eval_seconds,
         seed_start=seed_start,
@@ -663,6 +739,9 @@ def evaluate_model(
             reward_breakdown_totals = {}
             trace_steps = []
             while not terminated and not truncated and steps < max_steps:
+                set_policy_context = getattr(model, "set_step_context", None)
+                if callable(set_policy_context):
+                    set_policy_context(info)
                 action, _state = model.predict(
                     observation, deterministic=deterministic
                 )
@@ -744,6 +823,8 @@ def evaluate_model(
         "status": "evaluated",
         "phase": config["phase"],
         "map_id": map_id,
+        "policy_kind": getattr(model, "policy_kind", "sb3"),
+        "opening_policy": opening_policy_report(model),
         "action_selection": "deterministic" if deterministic else "stochastic",
         "upgrade_policy": upgrade_policy_report(upgrade_policy),
         "trace_dir": str(trace_dir) if trace_dir is not None else None,
@@ -1059,6 +1140,18 @@ def upgrade_policy_report(upgrade_policy):
     }
 
 
+def opening_policy_report(model):
+    report = getattr(model, "opening_policy_report", None)
+    if callable(report):
+        return report()
+    return {
+        "mode": "single_policy",
+        "opening_model_path": None,
+        "fallback_model_path": None,
+        "opening_seconds": None,
+    }
+
+
 def round_reward_breakdown(values):
     return {key: round(value, 4) for key, value in sorted(values.items())}
 
@@ -1224,6 +1317,8 @@ def compare_policy_to_rule_bots(
     config,
     algorithm,
     model_path=None,
+    opening_model_path=None,
+    opening_seconds=60.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -1245,6 +1340,8 @@ def compare_policy_to_rule_bots(
         config,
         algorithm,
         model_path=model_path,
+        opening_model_path=opening_model_path,
+        opening_seconds=opening_seconds,
         behavior_clone_model=behavior_clone_model,
         eval_episodes=episodes,
         eval_seconds=seconds,
@@ -1270,6 +1367,7 @@ def compare_policy_to_rule_bots(
             behavior_clone_model,
         ),
         "policy_kind": policy.get("policy_kind", "sb3"),
+        "opening_policy": policy.get("opening_policy"),
         "upgrade_policy": policy.get("upgrade_policy"),
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "map_id": map_id,
@@ -1296,6 +1394,8 @@ def compare_policy_to_rule_bots_across_maps(
     algorithm,
     map_ids,
     model_path=None,
+    opening_model_path=None,
+    opening_seconds=60.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -1313,6 +1413,8 @@ def compare_policy_to_rule_bots_across_maps(
             config,
             algorithm,
             model_path=model_path,
+            opening_model_path=opening_model_path,
+            opening_seconds=opening_seconds,
             behavior_clone_model=behavior_clone_model,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
@@ -1339,7 +1441,8 @@ def compare_policy_to_rule_bots_across_maps(
             model_path,
             behavior_clone_model,
         ),
-        "policy_kind": "behavior_clone" if behavior_clone_model is not None else "sb3",
+        "policy_kind": comparisons[0].get("policy_kind") if comparisons else None,
+        "opening_policy": comparisons[0].get("opening_policy") if comparisons else None,
         "upgrade_policy": comparisons[0].get("upgrade_policy") if comparisons else None,
         "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "action_selection": comparisons[0]["action_selection"] if comparisons else None,
@@ -1618,6 +1721,17 @@ def main():
     parser.add_argument("--map-id", default=None)
     parser.add_argument("--model", default=None)
     parser.add_argument(
+        "--opening-model",
+        default=None,
+        help="Optional SB3 zip used only before --opening-seconds during evaluation/comparison.",
+    )
+    parser.add_argument(
+        "--opening-seconds",
+        type=float,
+        default=60.0,
+        help="Duration for --opening-model before falling back to --model.",
+    )
+    parser.add_argument(
         "--behavior-clone-model",
         default=None,
         help="Evaluate or compare a train_behavior_clone.py checkpoint instead of an SB3 zip.",
@@ -1721,6 +1835,10 @@ def main():
     try:
         algorithm_overrides = algorithm_overrides_from_args(args)
         train_seconds = validate_positive_seconds(args.train_seconds, "--train-seconds")
+        opening_seconds = validate_positive_seconds(
+            args.opening_seconds,
+            "--opening-seconds",
+        )
         train_maps, train_map_preset = resolve_train_maps(
             args.train_maps,
             args.train_map_preset,
@@ -1738,6 +1856,10 @@ def main():
         parser.error("--compare-map-preset cannot be used together with --map-id")
     if args.behavior_clone_model and args.model:
         parser.error("--behavior-clone-model cannot be combined with --model")
+    if args.opening_model and args.behavior_clone_model:
+        parser.error("--opening-model cannot be combined with --behavior-clone-model")
+    if args.opening_model and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--opening-model requires --evaluate-model or --compare-rule-bots")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.upgrade_choice_model and not (args.evaluate_model or args.compare_rule_bots):
@@ -1778,6 +1900,12 @@ def main():
                 config,
                 args.algorithm,
                 model_path=Path(args.model) if args.model else None,
+                opening_model_path=(
+                    Path(args.opening_model)
+                    if args.opening_model
+                    else None
+                ),
+                opening_seconds=opening_seconds,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
@@ -1810,6 +1938,12 @@ def main():
                     args.algorithm,
                     BASE_DEMO_MAP_PRESETS[args.compare_map_preset],
                     model_path=Path(args.model) if args.model else None,
+                    opening_model_path=(
+                        Path(args.opening_model)
+                        if args.opening_model
+                        else None
+                    ),
+                    opening_seconds=opening_seconds,
                     behavior_clone_model=(
                         Path(args.behavior_clone_model)
                         if args.behavior_clone_model
@@ -1838,6 +1972,12 @@ def main():
                 config,
                 args.algorithm,
                 model_path=Path(args.model) if args.model else None,
+                opening_model_path=(
+                    Path(args.opening_model)
+                    if args.opening_model
+                    else None
+                ),
+                opening_seconds=opening_seconds,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model

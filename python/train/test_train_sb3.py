@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from python.train.train_sb3 import (
+    StagedOpeningPolicy,
     algorithm_parameters_source_label,
     algorithm_overrides_from_args,
     apply_loaded_model_overrides,
@@ -14,6 +15,28 @@ from python.train.train_sb3 import (
     should_record_trace_step,
     write_episode_trace,
 )
+
+
+class DummyPolicy:
+    def __init__(self, action):
+        self.action = action
+        self.reset_count = 0
+        self.map_id = None
+
+    def reset(self):
+        self.reset_count += 1
+
+    def set_map_id(self, map_id):
+        self.map_id = map_id
+
+    def predict(self, observation, deterministic=True):
+        return self.action, None
+
+    def action_scores(self, observation):
+        return {
+            "kind": "probability",
+            "scores": [1.0 if index == self.action else 0.0 for index in range(9)],
+        }
 
 
 def test_merge_algorithm_parameters_preserves_base_and_applies_overrides():
@@ -165,3 +188,32 @@ def test_write_episode_trace_respects_failed_only(tmp_path):
     assert payload["record_type"] == "policy_episode_trace"
     assert payload["sample_count"] == 1
     assert payload["episode"]["terminal_kind"] == "defeat"
+
+
+def test_staged_opening_policy_switches_after_opening_seconds():
+    opening = DummyPolicy(7)
+    fallback = DummyPolicy(4)
+    policy = StagedOpeningPolicy(
+        opening,
+        fallback,
+        60.0,
+        "opening.zip",
+        "fallback.zip",
+    )
+
+    policy.reset()
+    policy.set_map_id("soda-creek")
+    policy.set_step_context({"time_seconds": 59.9})
+    opening_action, _ = policy.predict(None)
+    opening_scores = policy.action_scores(None)
+    policy.set_step_context({"time_seconds": 60.0})
+    fallback_action, _ = policy.predict(None)
+
+    assert opening.reset_count == 1
+    assert fallback.reset_count == 1
+    assert opening.map_id == "soda-creek"
+    assert fallback.map_id == "soda-creek"
+    assert opening_action == 7
+    assert opening_scores["scores"][7] == 1.0
+    assert fallback_action == 4
+    assert policy.opening_policy_report()["mode"] == "staged_sb3_opening"
