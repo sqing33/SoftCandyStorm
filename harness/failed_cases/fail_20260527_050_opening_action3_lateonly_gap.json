@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_050",
+  "category": "rl_policy",
+  "content_id": "action_distribution_opening_action3_lateonly_ablation",
+  "seed": 62400,
+  "bot": "OpeningAction3LateOnlyRiskClone",
+  "time_seconds": 300.0,
+  "symptom": "保留 opening_action3_w0_5_windowed opening 与原 mid，只重训 late 子模型后，60 秒与 180 秒 high-pressure 三图均保持无 repair map；但 300 秒三图仍为 repair，soda-creek 和 caramel-workshop 仍为 0.0 win_rate，cracked-star-jar 只提升到 0.2。",
+  "root_cause": "当前 780 条 risk_recovery_supervision_sample 能提升 late action entropy 并略微改善 cracked-star-jar，但仍是离线 imitation 信号，不能优化 180-300 秒长期路线、升级后目标选择、Boss/hazard 压力处理和持续低血量逃生。失败仍集中在 opening 早死残留和 late_180_to_300 玩家生命耗尽。",
+  "fix": "不推进 late_risk_current_w4 到 stage 03、RL acceptance、playtest 或 release。下一步应从离线 late-only imitation 转向 closed-loop late survival/curriculum，或加入升级选择、路线规划约束和更强 late objective；继续训练前仍要保留 60 秒 hard gate 与 180 秒 regression。",
+  "validation": "训练、打包和 60/180/300 秒三图对比记录在 harness/reports/2026-05-27_rl_action_distribution_opening_action3_lateonly_ablation_001；60 秒与 180 秒 gate 为 multimap_comparison_recorded_not_balance_gate，300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair。"
+}
