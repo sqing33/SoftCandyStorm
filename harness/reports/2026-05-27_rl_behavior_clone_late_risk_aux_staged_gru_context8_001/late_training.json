@@ -1,0 +1,681 @@
+{
+  "status": "trained",
+  "gate_decision": "behavior_clone_smoke_only_not_policy_gate",
+  "model_path": "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/late.pt",
+  "started_at": "2026-05-27T03:26:30.960270+00:00",
+  "completed_at": "2026-05-27T03:26:35.206226+00:00",
+  "dependency_status": {
+    "numpy": true,
+    "torch": true
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/edge_recovery_samples.jsonl",
+      "harness/reports/2026-05-27_rl_late_recovery_samples_001/risk_recovery_samples_all.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl"
+    ],
+    "sample_count": 8546,
+    "episode_count": 30,
+    "skipped_upgrade_samples": 276,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 1040,
+    "risk_recovery_sample_records": 1079,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 219,
+        "ratio": 0.0256
+      },
+      "1": {
+        "count": 1184,
+        "ratio": 0.1385
+      },
+      "2": {
+        "count": 942,
+        "ratio": 0.1102
+      },
+      "3": {
+        "count": 1890,
+        "ratio": 0.2212
+      },
+      "4": {
+        "count": 874,
+        "ratio": 0.1023
+      },
+      "5": {
+        "count": 946,
+        "ratio": 0.1107
+      },
+      "6": {
+        "count": 738,
+        "ratio": 0.0864
+      },
+      "7": {
+        "count": 928,
+        "ratio": 0.1086
+      },
+      "8": {
+        "count": 825,
+        "ratio": 0.0965
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 108.032,
+      "time_seconds_max": 299.6817,
+      "health_ratio_min": 0.0014,
+      "health_ratio_average": 0.711,
+      "map_distribution": {
+        "caramel-workshop": {
+          "count": 1789,
+          "ratio": 0.2093
+        },
+        "cracked-star-jar": {
+          "count": 2818,
+          "ratio": 0.3297
+        },
+        "soda-creek": {
+          "count": 3939,
+          "ratio": 0.4609
+        }
+      },
+      "sample_source_distribution": {
+        "edge_recovery_supervision": {
+          "count": 1040,
+          "ratio": 0.1217
+        },
+        "risk_recovery_supervision": {
+          "count": 1079,
+          "ratio": 0.1263
+        },
+        "trajectory": {
+          "count": 6427,
+          "ratio": 0.752
+        }
+      }
+    },
+    "metadata": [
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+        "bot": "kite",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+        "bot": "kite",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl",
+        "bot": "kite",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      }
+    ]
+  },
+  "sequence_diagnostics": {
+    "context_frames": 8,
+    "history_limit": 7,
+    "sample_count": 8546,
+    "episode_key_count": 31,
+    "padding": {
+      "total_missing_frames": 868,
+      "average_missing_frames": 0.1016,
+      "fully_seeded_samples": 8329,
+      "fully_seeded_ratio": 0.9746
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 2.2718,
+      "max": 32.2736
+    },
+    "action_transitions": {
+      "transition_count": 8515,
+      "same_action_count": 5866,
+      "same_action_ratio": 0.6889,
+      "changed_action_ratio": 0.3111
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid_late_start_to_180": {
+        "count": 1040,
+        "ratio": 0.1217
+      },
+      "late_gte_180": {
+        "count": 7506,
+        "ratio": 0.8783
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 3335,
+      "ratio": 0.3902
+    },
+    "per_map": {
+      "caramel-workshop": {
+        "sample_count": 1789,
+        "sample_ratio": 0.2093,
+        "time_seconds_min": 180.0095,
+        "time_seconds_max": 299.6817,
+        "average_missing_frames": 0.1409,
+        "fully_seeded_ratio": 0.9648,
+        "average_sequence_span_seconds": 2.354,
+        "late_low_health_ratio": 0.3991,
+        "action_distribution": {
+          "0": {
+            "count": 70,
+            "ratio": 0.0391
+          },
+          "1": {
+            "count": 308,
+            "ratio": 0.1722
+          },
+          "2": {
+            "count": 227,
+            "ratio": 0.1269
+          },
+          "3": {
+            "count": 227,
+            "ratio": 0.1269
+          },
+          "4": {
+            "count": 218,
+            "ratio": 0.1219
+          },
+          "5": {
+            "count": 250,
+            "ratio": 0.1397
+          },
+          "6": {
+            "count": 152,
+            "ratio": 0.085
+          },
+          "7": {
+            "count": 176,
+            "ratio": 0.0984
+          },
+          "8": {
+            "count": 161,
+            "ratio": 0.09
+          }
+        }
+      },
+      "cracked-star-jar": {
+        "sample_count": 2818,
+        "sample_ratio": 0.3297,
+        "time_seconds_min": 180.0095,
+        "time_seconds_max": 299.6817,
+        "average_missing_frames": 0.0994,
+        "fully_seeded_ratio": 0.9752,
+        "average_sequence_span_seconds": 2.5465,
+        "late_low_health_ratio": 0.3935,
+        "action_distribution": {
+          "0": {
+            "count": 14,
+            "ratio": 0.005
+          },
+          "1": {
+            "count": 426,
+            "ratio": 0.1512
+          },
+          "2": {
+            "count": 335,
+            "ratio": 0.1189
+          },
+          "3": {
+            "count": 392,
+            "ratio": 0.1391
+          },
+          "4": {
+            "count": 331,
+            "ratio": 0.1175
+          },
+          "5": {
+            "count": 342,
+            "ratio": 0.1214
+          },
+          "6": {
+            "count": 300,
+            "ratio": 0.1065
+          },
+          "7": {
+            "count": 328,
+            "ratio": 0.1164
+          },
+          "8": {
+            "count": 350,
+            "ratio": 0.1242
+          }
+        }
+      },
+      "soda-creek": {
+        "sample_count": 3939,
+        "sample_ratio": 0.4609,
+        "time_seconds_min": 108.032,
+        "time_seconds_max": 299.6817,
+        "average_missing_frames": 0.0853,
+        "fully_seeded_ratio": 0.9787,
+        "average_sequence_span_seconds": 2.038,
+        "late_low_health_ratio": 0.3839,
+        "action_distribution": {
+          "0": {
+            "count": 135,
+            "ratio": 0.0343
+          },
+          "1": {
+            "count": 450,
+            "ratio": 0.1142
+          },
+          "2": {
+            "count": 380,
+            "ratio": 0.0965
+          },
+          "3": {
+            "count": 1271,
+            "ratio": 0.3227
+          },
+          "4": {
+            "count": 325,
+            "ratio": 0.0825
+          },
+          "5": {
+            "count": 354,
+            "ratio": 0.0899
+          },
+          "6": {
+            "count": 286,
+            "ratio": 0.0726
+          },
+          "7": {
+            "count": 424,
+            "ratio": 0.1076
+          },
+          "8": {
+            "count": 314,
+            "ratio": 0.0797
+          }
+        }
+      }
+    },
+    "diagnosis_flags": [
+      {
+        "id": "map_sample_imbalance",
+        "severity": "watch",
+        "summary": "Map sample coverage is imbalanced; map-conditioned policies should be checked for shifted failure surfaces."
+      }
+    ]
+  },
+  "training": {
+    "seed": 12345,
+    "architecture": "gru",
+    "epochs": 20,
+    "batch_size": 256,
+    "learning_rate": 0.001,
+    "hidden_size": 128,
+    "context_frames": 8,
+    "input_observation_len": 1184,
+    "sequence_input_len": 148,
+    "base_observation_len": 145,
+    "map_conditioning": {
+      "mode": "one_hot",
+      "map_ids": [
+        "caramel-workshop",
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "dimension": 3,
+      "base_input_observation_len": 145,
+      "input_observation_len": 148,
+      "sequence_len": 8,
+      "total_input_observation_len": 1184
+    },
+    "time_phase_conditioning": {
+      "mode": "none",
+      "labels": [],
+      "thresholds": [
+        0.2,
+        0.6
+      ],
+      "dimension": 0,
+      "base_input_observation_len": 148,
+      "input_observation_len": 148,
+      "phase_distribution": {
+        "opening": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "mid": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late": {
+          "count": 8546,
+          "ratio": 1.0
+        }
+      },
+      "sequence_len": 8,
+      "total_input_observation_len": 1184
+    },
+    "validation_split": 0.2,
+    "class_weighting": "inverse_frequency",
+    "class_weights": [
+      4.316288,
+      0.801336,
+      1.015597,
+      0.502758,
+      1.089909,
+      1.008853,
+      1.31658,
+      0.999561,
+      1.138931
+    ],
+    "sample_weighting": "danger_action_change",
+    "sample_weights": {
+      "mode": "danger_action_change",
+      "base_mode": "danger_action_change",
+      "min": 1.50004,
+      "max": 9.84251,
+      "mean": 3.872407,
+      "edge_recovery_sample_weight": 4.0,
+      "edge_recovery_weighted_sample_count": 833,
+      "edge_recovery_weighted_sample_ratio": 0.1218,
+      "risk_recovery_sample_weight": 4.0,
+      "risk_recovery_weighted_sample_count": 862,
+      "risk_recovery_weighted_sample_ratio": 0.1261,
+      "danger_health_threshold": 0.7,
+      "danger_low_health_weight": 2.0,
+      "danger_late_start_seconds": 60.0,
+      "danger_late_horizon_seconds": 300.0,
+      "danger_late_weight": 1.0,
+      "action_change_weight": 2.0,
+      "action_change_sample_count": 2084,
+      "action_change_sample_ratio": 0.3048
+    },
+    "entropy_regularization": 0.02,
+    "train_samples": 6837,
+    "validation_samples": 1709
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.838936,
+      "train_cross_entropy_loss": 1.880302,
+      "train_entropy_nats": 2.068293,
+      "train_accuracy": 0.2033,
+      "validation_loss": 1.724704,
+      "validation_entropy_nats": 1.928643,
+      "validation_accuracy": 0.3528
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.429,
+      "train_cross_entropy_loss": 1.462986,
+      "train_entropy_nats": 1.699309,
+      "train_accuracy": 0.43,
+      "validation_loss": 1.417358,
+      "validation_entropy_nats": 1.619795,
+      "validation_accuracy": 0.4201
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.246864,
+      "train_cross_entropy_loss": 1.275722,
+      "train_entropy_nats": 1.442925,
+      "train_accuracy": 0.5115,
+      "validation_loss": 1.254359,
+      "validation_entropy_nats": 1.451846,
+      "validation_accuracy": 0.5237
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.110482,
+      "train_cross_entropy_loss": 1.136574,
+      "train_entropy_nats": 1.304622,
+      "train_accuracy": 0.5527,
+      "validation_loss": 1.177652,
+      "validation_entropy_nats": 1.362434,
+      "validation_accuracy": 0.526
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.067799,
+      "train_cross_entropy_loss": 1.093106,
+      "train_entropy_nats": 1.265315,
+      "train_accuracy": 0.5681,
+      "validation_loss": 1.115712,
+      "validation_entropy_nats": 1.306487,
+      "validation_accuracy": 0.5535
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.01908,
+      "train_cross_entropy_loss": 1.043568,
+      "train_entropy_nats": 1.224392,
+      "train_accuracy": 0.5823,
+      "validation_loss": 1.075535,
+      "validation_entropy_nats": 1.241063,
+      "validation_accuracy": 0.5892
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.992814,
+      "train_cross_entropy_loss": 1.016494,
+      "train_entropy_nats": 1.183964,
+      "train_accuracy": 0.6001,
+      "validation_loss": 1.037418,
+      "validation_entropy_nats": 1.257704,
+      "validation_accuracy": 0.5922
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.936737,
+      "train_cross_entropy_loss": 0.960041,
+      "train_entropy_nats": 1.165187,
+      "train_accuracy": 0.6096,
+      "validation_loss": 0.998504,
+      "validation_entropy_nats": 1.199413,
+      "validation_accuracy": 0.6179
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.899486,
+      "train_cross_entropy_loss": 0.921991,
+      "train_entropy_nats": 1.125224,
+      "train_accuracy": 0.6323,
+      "validation_loss": 0.955981,
+      "validation_entropy_nats": 1.147287,
+      "validation_accuracy": 0.6366
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.871329,
+      "train_cross_entropy_loss": 0.893128,
+      "train_entropy_nats": 1.089958,
+      "train_accuracy": 0.6475,
+      "validation_loss": 0.932366,
+      "validation_entropy_nats": 1.091303,
+      "validation_accuracy": 0.629
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.829677,
+      "train_cross_entropy_loss": 0.850598,
+      "train_entropy_nats": 1.046042,
+      "train_accuracy": 0.6579,
+      "validation_loss": 0.911701,
+      "validation_entropy_nats": 1.075092,
+      "validation_accuracy": 0.6565
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.785731,
+      "train_cross_entropy_loss": 0.806449,
+      "train_entropy_nats": 1.035922,
+      "train_accuracy": 0.6773,
+      "validation_loss": 0.880412,
+      "validation_entropy_nats": 1.027092,
+      "validation_accuracy": 0.677
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.754066,
+      "train_cross_entropy_loss": 0.77357,
+      "train_entropy_nats": 0.975245,
+      "train_accuracy": 0.6905,
+      "validation_loss": 0.872476,
+      "validation_entropy_nats": 1.001846,
+      "validation_accuracy": 0.6793
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.737363,
+      "train_cross_entropy_loss": 0.756707,
+      "train_entropy_nats": 0.967186,
+      "train_accuracy": 0.7031,
+      "validation_loss": 0.842424,
+      "validation_entropy_nats": 0.970726,
+      "validation_accuracy": 0.6998
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.700677,
+      "train_cross_entropy_loss": 0.719307,
+      "train_entropy_nats": 0.931481,
+      "train_accuracy": 0.7184,
+      "validation_loss": 0.848125,
+      "validation_entropy_nats": 0.935265,
+      "validation_accuracy": 0.7022
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.672251,
+      "train_cross_entropy_loss": 0.690136,
+      "train_entropy_nats": 0.894231,
+      "train_accuracy": 0.7319,
+      "validation_loss": 0.821238,
+      "validation_entropy_nats": 0.921895,
+      "validation_accuracy": 0.6887
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.640327,
+      "train_cross_entropy_loss": 0.657875,
+      "train_entropy_nats": 0.877377,
+      "train_accuracy": 0.7407,
+      "validation_loss": 0.805448,
+      "validation_entropy_nats": 0.885218,
+      "validation_accuracy": 0.701
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.632979,
+      "train_cross_entropy_loss": 0.650226,
+      "train_entropy_nats": 0.862386,
+      "train_accuracy": 0.7508,
+      "validation_loss": 0.786496,
+      "validation_entropy_nats": 0.867003,
+      "validation_accuracy": 0.7133
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.595408,
+      "train_cross_entropy_loss": 0.612086,
+      "train_entropy_nats": 0.83386,
+      "train_accuracy": 0.7689,
+      "validation_loss": 0.782174,
+      "validation_entropy_nats": 0.855357,
+      "validation_accuracy": 0.7285
+    },
+    {
+      "epoch": 20,
+      "train_loss": 0.588914,
+      "train_cross_entropy_loss": 0.605295,
+      "train_entropy_nats": 0.819045,
+      "train_accuracy": 0.7764,
+      "validation_loss": 0.774651,
+      "validation_entropy_nats": 0.81666,
+      "validation_accuracy": 0.7238
+    }
+  ],
+  "final": {
+    "epoch": 20,
+    "train_loss": 0.588914,
+    "train_cross_entropy_loss": 0.605295,
+    "train_entropy_nats": 0.819045,
+    "train_accuracy": 0.7764,
+    "validation_loss": 0.774651,
+    "validation_entropy_nats": 0.81666,
+    "validation_accuracy": 0.7238
+  },
+  "limitations": [
+    "Behavior cloning imitates rule Bot movement only; it is not a balance or fun gate.",
+    "The exported Phase 1 dataset skips upgrade-choice states, matching the current movement-only RL action space.",
+    "A cloned policy must still pass Gym evaluation and rule Bot comparison before it can become an RL test Bot candidate."
+  ],
+  "time_phase_filter": {
+    "mode": "late",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 24644,
+    "after_sample_count": 8546,
+    "phase_distribution": {
+      "opening": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late": {
+        "count": 8546,
+        "ratio": 1.0
+      }
+    }
+  },
+  "edge_recovery_time_window_filter": {
+    "mode": "time_window",
+    "min_seconds": 60.0,
+    "max_seconds": 180.0,
+    "before_sample_count": 25020,
+    "after_sample_count": 24644,
+    "before_edge_recovery_sample_count": 2215,
+    "after_edge_recovery_sample_count": 1839,
+    "dropped_edge_recovery_sample_count": 376
+  },
+  "risk_recovery_time_window_filter": {
+    "mode": "time_window",
+    "min_seconds": 180.0,
+    "max_seconds": 300.0,
+    "before_sample_count": 24644,
+    "after_sample_count": 24644,
+    "before_risk_recovery_sample_count": 1079,
+    "after_risk_recovery_sample_count": 1079,
+    "dropped_risk_recovery_sample_count": 0
+  }
+}

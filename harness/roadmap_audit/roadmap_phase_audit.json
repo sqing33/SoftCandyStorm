@@ -554,7 +554,14 @@
         "harness/reports/2026-05-27_rl_late_recovery_samples_001/sample_analysis.json",
         "harness/reports/2026-05-27_rl_late_recovery_samples_001/behavior_clone_dry_run.json",
         "harness/reports/2026-05-27_rl_late_recovery_samples_001/risk_recovery_samples_all.jsonl",
-        "python/train/test_train_behavior_clone.py"
+        "python/train/test_train_behavior_clone.py",
+        "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md",
+        "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/late_training.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/packaging.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/comparison_60s_10seed.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/comparison_180s_3seed.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/comparison_300s_3seed.json",
+        "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/failure_analysis_300s.md"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -569,7 +576,8 @@
         "edge-aux staged opening handoff trace 已确认 soda-creek / cracked-star-jar seed 62201 的失败是 deterministic fallback 长时间 edge-pinned 并高置信顶住阻塞边界；stage 03 仍阻塞，下一轮必须训练或约束 handoff/mid edge recovery。",
         "handoff-window edge-aux staged GRU context8 候选在 deterministic 60 秒和 180 秒多图 probe 均通过，但 300 秒 probe 仍有 8 个 late_180_to_300 失败；Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。",
         "handoff-window late trace 显示 300 秒 failure 已转为 edge + hazard / boss 混合压力恢复问题；Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。",
-        "late recovery supervision 管线已具备 edge + hazard / boss 混合压力动作改写、risk_recovery_supervision_sample 导出、BC 读取、样本加权和时间窗过滤能力；首批 high-pressure 三图导出 1079 条 180-300 秒样本且 dry-run 读取有效。但样本来自手写 adapter，adapter 评估仍为三图 0% 胜率，尚未训练/复测新候选，因此 Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。"
+        "late recovery supervision 管线已具备 edge + hazard / boss 混合压力动作改写、risk_recovery_supervision_sample 导出、BC 读取、样本加权和时间窗过滤能力；首批 high-pressure 三图导出 1079 条 180-300 秒样本且 dry-run 读取有效。但样本来自手写 adapter，adapter 评估仍为三图 0% 胜率。",
+        "late-risk auxiliary staged GRU context8 已把 1079 条 risk recovery 样本混入 late 子模型并完成 60/180/300 秒 deterministic high-pressure 对比：60 秒和 180 秒三图仍为 100%，但 300 秒三图全部 0%，9 个失败全在 late_180_to_300，因此 Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -577,8 +585,8 @@
       "next_actions": [
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
-        "将已导出的 risk_recovery_samples_all.jsonl 按 180-300 秒窗口混入 late 子模型训练，并记录样本来源、权重和时间窗。",
-        "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图 handoff 对比，最后跑 300 秒三图 long-run 对比；全部通过前不得进入 stage_03 或 RL 测试 Bot。"
+        "停止只堆 hand-written adapter imitation；下一轮优先导出真实 180-300 秒长局 survival trajectory，或加入 route objective、low-health recovery、hazard / boss joint objective。",
+        "每轮 late repair 后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图 handoff 对比，最后跑 300 秒三图 long-run 对比；全部通过前不得进入 stage_03 或 RL 测试 Bot。"
       ]
     },
     {

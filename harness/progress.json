@@ -1873,6 +1873,11 @@
       "id": "rl_late_recovery_samples_training_input",
       "summary": "late recovery 样本报告已把 300 秒 late failure 面转成 1079 条 risk_recovery_supervision_sample；三图 adapter 评估仍是 0% 胜率，且 dry-run 标记 low_late_low_health_coverage 为 watch，因此只能进入 late 子模型训练队列，不能作为 gate 通过或 acceptance 证据。",
       "report": "harness/reports/2026-05-27_rl_late_recovery_samples_001/summary.md"
+    },
+    {
+      "id": "rl_late_risk_aux_staged_gru_longrun_regression",
+      "summary": "late-risk auxiliary staged GRU context8 候选已把 1079 条 180-300 秒 risk recovery 样本混入 late 子模型训练并完成打包；60 秒和 180 秒 deterministic high-pressure 三图仍为 100%，但 300 秒三图全部为 0%，9 个失败全在 late_180_to_300，说明 risk recovery imitation 没有解除 long-run blocker。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1882,7 +1887,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage01 opening + handoff-window edge-aux fallback 已通过 deterministic 60 秒 opening gate 和 180 秒 handoff probe，但 300 秒 late trace 显示失败是 edge + hazard / boss 混合压力；当前已导出 1079 条 180-300 秒 risk_recovery_supervision_sample，下一步应把这些样本混入 late 子模型训练，重新打包 staged clone，再跑 60/180/300 秒 high-pressure 对比；通过前不能进入 stage 03 或 RL acceptance。"
+      "summary": "late-risk auxiliary staged clone 已完成训练和 60/180/300 秒 deterministic high-pressure 对比：60 秒与 180 秒三图 100%，但 300 秒三图全部 0%，9 个失败全在 late_180_to_300。下一步应停止只堆 hand-written adapter imitation，改用真实 180-300 秒长局 survival trajectory、route objective、low-health recovery、hazard / boss joint objective 或 closed-loop PPO late survival 训练；通过 300 秒多图长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
