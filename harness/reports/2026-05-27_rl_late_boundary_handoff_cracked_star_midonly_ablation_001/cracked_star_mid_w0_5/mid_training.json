@@ -1,0 +1,622 @@
+{
+  "status": "trained",
+  "gate_decision": "behavior_clone_smoke_only_not_policy_gate",
+  "model_path": "harness/reports/2026-05-27_rl_late_boundary_handoff_cracked_star_midonly_ablation_001/cracked_star_mid_w0_5/mid.pt",
+  "started_at": "2026-05-27T10:36:32.384716+00:00",
+  "completed_at": "2026-05-27T10:36:33.802255+00:00",
+  "dependency_status": {
+    "numpy": true,
+    "torch": true
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_late_boundary_handoff_cracked_star_samples_001/cracked_star_handoff_60_90_recovery_samples.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl"
+    ],
+    "sample_count": 10101,
+    "episode_count": 30,
+    "skipped_upgrade_samples": 276,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 190,
+    "risk_recovery_sample_records": 0,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 1367,
+        "ratio": 0.1353
+      },
+      "2": {
+        "count": 1156,
+        "ratio": 0.1144
+      },
+      "3": {
+        "count": 1470,
+        "ratio": 0.1455
+      },
+      "4": {
+        "count": 933,
+        "ratio": 0.0924
+      },
+      "5": {
+        "count": 1305,
+        "ratio": 0.1292
+      },
+      "6": {
+        "count": 1160,
+        "ratio": 0.1148
+      },
+      "7": {
+        "count": 1528,
+        "ratio": 0.1513
+      },
+      "8": {
+        "count": 1182,
+        "ratio": 0.117
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 60.3328,
+      "time_seconds_max": 179.6761,
+      "health_ratio_min": 0.0044,
+      "health_ratio_average": 0.9565,
+      "map_distribution": {
+        "caramel-workshop": {
+          "count": 3409,
+          "ratio": 0.3375
+        },
+        "cracked-star-jar": {
+          "count": 3774,
+          "ratio": 0.3736
+        },
+        "soda-creek": {
+          "count": 2918,
+          "ratio": 0.2889
+        }
+      },
+      "sample_source_distribution": {
+        "edge_recovery_supervision": {
+          "count": 190,
+          "ratio": 0.0188
+        },
+        "trajectory": {
+          "count": 9911,
+          "ratio": 0.9812
+        }
+      }
+    },
+    "metadata": [
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+        "bot": "kite",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+        "bot": "kite",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl",
+        "bot": "kite",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      }
+    ]
+  },
+  "sequence_diagnostics": {
+    "context_frames": 8,
+    "history_limit": 7,
+    "sample_count": 10101,
+    "episode_key_count": 34,
+    "padding": {
+      "total_missing_frames": 952,
+      "average_missing_frames": 0.0942,
+      "fully_seeded_samples": 9863,
+      "fully_seeded_ratio": 0.9764
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 2.315,
+      "max": 16.6664
+    },
+    "action_transitions": {
+      "transition_count": 10067,
+      "same_action_count": 7333,
+      "same_action_ratio": 0.7284,
+      "changed_action_ratio": 0.2716
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid_late_start_to_180": {
+        "count": 10101,
+        "ratio": 1.0
+      },
+      "late_gte_180": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 615,
+      "ratio": 0.0609
+    },
+    "per_map": {
+      "caramel-workshop": {
+        "sample_count": 3409,
+        "sample_ratio": 0.3375,
+        "time_seconds_min": 60.3328,
+        "time_seconds_max": 179.6761,
+        "average_missing_frames": 0.0821,
+        "fully_seeded_ratio": 0.9795,
+        "average_sequence_span_seconds": 2.3089,
+        "late_low_health_ratio": 0.1176,
+        "action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 451,
+            "ratio": 0.1323
+          },
+          "2": {
+            "count": 400,
+            "ratio": 0.1173
+          },
+          "3": {
+            "count": 559,
+            "ratio": 0.164
+          },
+          "4": {
+            "count": 265,
+            "ratio": 0.0777
+          },
+          "5": {
+            "count": 431,
+            "ratio": 0.1264
+          },
+          "6": {
+            "count": 346,
+            "ratio": 0.1015
+          },
+          "7": {
+            "count": 538,
+            "ratio": 0.1578
+          },
+          "8": {
+            "count": 419,
+            "ratio": 0.1229
+          }
+        }
+      },
+      "cracked-star-jar": {
+        "sample_count": 3774,
+        "sample_ratio": 0.3736,
+        "time_seconds_min": 60.3328,
+        "time_seconds_max": 179.6761,
+        "average_missing_frames": 0.1113,
+        "fully_seeded_ratio": 0.9722,
+        "average_sequence_span_seconds": 2.3267,
+        "late_low_health_ratio": 0.0503,
+        "action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 543,
+            "ratio": 0.1439
+          },
+          "2": {
+            "count": 392,
+            "ratio": 0.1039
+          },
+          "3": {
+            "count": 501,
+            "ratio": 0.1328
+          },
+          "4": {
+            "count": 362,
+            "ratio": 0.0959
+          },
+          "5": {
+            "count": 457,
+            "ratio": 0.1211
+          },
+          "6": {
+            "count": 506,
+            "ratio": 0.1341
+          },
+          "7": {
+            "count": 587,
+            "ratio": 0.1555
+          },
+          "8": {
+            "count": 426,
+            "ratio": 0.1129
+          }
+        }
+      },
+      "soda-creek": {
+        "sample_count": 2918,
+        "sample_ratio": 0.2889,
+        "time_seconds_min": 60.3328,
+        "time_seconds_max": 179.6761,
+        "average_missing_frames": 0.0864,
+        "fully_seeded_ratio": 0.9784,
+        "average_sequence_span_seconds": 2.3071,
+        "late_low_health_ratio": 0.0082,
+        "action_distribution": {
+          "0": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 373,
+            "ratio": 0.1278
+          },
+          "2": {
+            "count": 364,
+            "ratio": 0.1247
+          },
+          "3": {
+            "count": 410,
+            "ratio": 0.1405
+          },
+          "4": {
+            "count": 306,
+            "ratio": 0.1049
+          },
+          "5": {
+            "count": 417,
+            "ratio": 0.1429
+          },
+          "6": {
+            "count": 308,
+            "ratio": 0.1056
+          },
+          "7": {
+            "count": 403,
+            "ratio": 0.1381
+          },
+          "8": {
+            "count": 337,
+            "ratio": 0.1155
+          }
+        }
+      }
+    },
+    "diagnosis_flags": []
+  },
+  "training": {
+    "seed": 12345,
+    "architecture": "gru",
+    "epochs": 5,
+    "batch_size": 256,
+    "learning_rate": 0.001,
+    "hidden_size": 128,
+    "context_frames": 8,
+    "input_observation_len": 1208,
+    "sequence_input_len": 151,
+    "base_observation_len": 145,
+    "map_conditioning": {
+      "mode": "one_hot",
+      "map_ids": [
+        "caramel-workshop",
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "dimension": 3,
+      "base_input_observation_len": 145,
+      "input_observation_len": 148,
+      "sequence_len": 8,
+      "total_input_observation_len": 1184
+    },
+    "time_phase_conditioning": {
+      "mode": "one_hot",
+      "labels": [
+        "opening",
+        "mid",
+        "late"
+      ],
+      "thresholds": [
+        0.2,
+        0.6
+      ],
+      "dimension": 3,
+      "base_input_observation_len": 148,
+      "input_observation_len": 151,
+      "phase_distribution": {
+        "opening": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "mid": {
+          "count": 10101,
+          "ratio": 1.0
+        },
+        "late": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "sequence_len": 8,
+      "total_input_observation_len": 1208
+    },
+    "validation_split": 0.2,
+    "class_weighting": "none",
+    "class_weights": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "sample_weighting": "none",
+    "sample_weights": {
+      "mode": "edge_recovery_auxiliary",
+      "base_mode": "none",
+      "min": 0.5,
+      "max": 1.0,
+      "mean": 0.990162,
+      "edge_recovery_sample_weight": 0.5,
+      "edge_recovery_weighted_sample_count": 159,
+      "edge_recovery_weighted_sample_ratio": 0.0197,
+      "risk_recovery_sample_weight": 1.0,
+      "risk_recovery_weighted_sample_count": 0,
+      "risk_recovery_weighted_sample_ratio": 0.0,
+      "danger_health_threshold": 0.7,
+      "danger_low_health_weight": 2.0,
+      "danger_late_start_seconds": 60.0,
+      "danger_late_horizon_seconds": 300.0,
+      "danger_late_weight": 1.0
+    },
+    "recovery_soft_targets": {
+      "mode": "top_k_scores",
+      "primary_mass": 0.65,
+      "top_k": 3,
+      "soft_sample_count": 190,
+      "fallback_one_hot_count": 0,
+      "average_nonzero_actions": 1.0314
+    },
+    "entropy_regularization": 0.02,
+    "action_distribution_regularization": {
+      "enabled": true,
+      "coefficient": 0.2,
+      "target_mode": "per_map_uniform_present",
+      "map_ids": [
+        "caramel-workshop",
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "scope": "per_map",
+      "target_distribution_by_map": {
+        "caramel-workshop": {
+          "0": 0.0,
+          "1": 0.125,
+          "2": 0.125,
+          "3": 0.125,
+          "4": 0.125,
+          "5": 0.125,
+          "6": 0.125,
+          "7": 0.125,
+          "8": 0.125
+        },
+        "cracked-star-jar": {
+          "0": 0.0,
+          "1": 0.125,
+          "2": 0.125,
+          "3": 0.125,
+          "4": 0.125,
+          "5": 0.125,
+          "6": 0.125,
+          "7": 0.125,
+          "8": 0.125
+        },
+        "soda-creek": {
+          "0": 0.0,
+          "1": 0.125,
+          "2": 0.125,
+          "3": 0.125,
+          "4": 0.125,
+          "5": 0.125,
+          "6": 0.125,
+          "7": 0.125,
+          "8": 0.125
+        }
+      },
+      "train_action_counts_by_map": {
+        "caramel-workshop": {
+          "0": 0,
+          "1": 347,
+          "2": 314,
+          "3": 449,
+          "4": 196,
+          "5": 340,
+          "6": 274,
+          "7": 433,
+          "8": 340
+        },
+        "cracked-star-jar": {
+          "0": 0,
+          "1": 430,
+          "2": 323,
+          "3": 396,
+          "4": 287,
+          "5": 363,
+          "6": 406,
+          "7": 480,
+          "8": 341
+        },
+        "soda-creek": {
+          "0": 0,
+          "1": 293,
+          "2": 302,
+          "3": 333,
+          "4": 235,
+          "5": 346,
+          "6": 258,
+          "7": 322,
+          "8": 273
+        }
+      }
+    },
+    "train_samples": 8081,
+    "validation_samples": 2020
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.904868,
+      "train_cross_entropy_loss": 1.945597,
+      "train_entropy_nats": 2.092534,
+      "train_action_distribution_loss": 0.005609,
+      "train_accuracy": 0.3302,
+      "validation_loss": 1.634888,
+      "validation_entropy_nats": 1.854623,
+      "validation_action_distribution_loss": 0.005576,
+      "validation_accuracy": 0.3975
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.383881,
+      "train_cross_entropy_loss": 1.415673,
+      "train_entropy_nats": 1.640921,
+      "train_action_distribution_loss": 0.005129,
+      "train_accuracy": 0.4701,
+      "validation_loss": 1.317348,
+      "validation_entropy_nats": 1.52425,
+      "validation_action_distribution_loss": 0.004473,
+      "validation_accuracy": 0.5129
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.168166,
+      "train_cross_entropy_loss": 1.195664,
+      "train_entropy_nats": 1.437401,
+      "train_action_distribution_loss": 0.006249,
+      "train_accuracy": 0.5674,
+      "validation_loss": 1.195041,
+      "validation_entropy_nats": 1.393964,
+      "validation_action_distribution_loss": 0.002112,
+      "validation_accuracy": 0.5931
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.060715,
+      "train_cross_entropy_loss": 1.085504,
+      "train_entropy_nats": 1.306182,
+      "train_action_distribution_loss": 0.006671,
+      "train_accuracy": 0.6151,
+      "validation_loss": 1.100312,
+      "validation_entropy_nats": 1.258082,
+      "validation_action_distribution_loss": 0.002598,
+      "validation_accuracy": 0.6292
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.977335,
+      "train_cross_entropy_loss": 1.000377,
+      "train_entropy_nats": 1.220078,
+      "train_action_distribution_loss": 0.0068,
+      "train_accuracy": 0.6534,
+      "validation_loss": 1.032161,
+      "validation_entropy_nats": 1.180527,
+      "validation_action_distribution_loss": 0.003558,
+      "validation_accuracy": 0.6589
+    }
+  ],
+  "final": {
+    "epoch": 5,
+    "train_loss": 0.977335,
+    "train_cross_entropy_loss": 1.000377,
+    "train_entropy_nats": 1.220078,
+    "train_action_distribution_loss": 0.0068,
+    "train_accuracy": 0.6534,
+    "validation_loss": 1.032161,
+    "validation_entropy_nats": 1.180527,
+    "validation_action_distribution_loss": 0.003558,
+    "validation_accuracy": 0.6589
+  },
+  "limitations": [
+    "Behavior cloning imitates rule Bot movement only; it is not a balance or fun gate.",
+    "The exported Phase 1 dataset skips upgrade-choice states, matching the current movement-only RL action space.",
+    "A cloned policy must still pass Gym evaluation and rule Bot comparison before it can become an RL test Bot candidate."
+  ],
+  "time_phase_filter": {
+    "mode": "mid",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 21916,
+    "after_sample_count": 10101,
+    "phase_distribution": {
+      "opening": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid": {
+        "count": 10101,
+        "ratio": 1.0
+      },
+      "late": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    }
+  },
+  "edge_recovery_time_window_filter": {
+    "mode": "time_window",
+    "min_seconds": 60.0,
+    "max_seconds": 90.0,
+    "before_sample_count": 21916,
+    "after_sample_count": 21916,
+    "before_edge_recovery_sample_count": 190,
+    "after_edge_recovery_sample_count": 190,
+    "dropped_edge_recovery_sample_count": 0
+  },
+  "risk_recovery_time_window_filter": {
+    "mode": "all",
+    "min_seconds": null,
+    "max_seconds": null,
+    "before_sample_count": 21916,
+    "after_sample_count": 21916,
+    "before_risk_recovery_sample_count": 0,
+    "after_risk_recovery_sample_count": 0,
+    "dropped_risk_recovery_sample_count": 0
+  }
+}

@@ -609,6 +609,8 @@ fallback-only probe 证明问题不是 staged late 子模型或 phase dispatch �
 
 `tools/export_route_recovery_samples.py` 已支持 `--map-id` 按地图导出 route-recovery 修复样本，并用该能力从现有 observation trace 中切出 `cracked-star-jar` 专项 handoff 样本。过滤 `60-90s`、负 `route_recovery`、`boundary.edge_risk >= 0.75`、`min_health_ratio = 0.25` 后得到 `190` 条样本，覆盖 seed `62400-62404`，时间范围 `60.3328-89.999s`，校验和 behavior clone dry-run 均通过。样本 target action 分布为 `7:86, 6:41, 1:34, 3:29`，这说明后续不能做全局 action `7` 惩罚或加权；必须保留 map / position conditioning、soft target 和动作分布正则。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_cracked_star_samples_001/summary.md`。
 
+`cracked-star-jar` 专项样本的 mid-only 小权重消融只有局部收益，仍没有通过长窗门禁。该消融把 `190` 条专项样本与三图 phase-aligned KiteBot 轨迹混合训练 mid 子模型，然后保留既有 opening / late 子模型打包 staged fallback 并接入 stage01 opening wrapper。60 秒保持 `1.0/1.0/0.8`，180 秒为 `0.6/1.0/0.6`，300 秒三图全为 `0.0`，记录 `fail_20260527_060`。结果说明专项样本把 `cracked-star-jar` 180 秒从 `0.4` 拉回 `0.6`，并把其 300 秒平均存活推到 `174.6401s`，但三图仍无 300 秒胜局且 action `7` 继续主导。下一步应转向 late-window low-health / hazard / Boss pressure recovery，或补充 180-300 秒成功/近成功 clean survival 对照样本。报告位于 `harness/reports/2026-05-27_rl_late_boundary_handoff_cracked_star_midonly_ablation_001/summary.md`。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
