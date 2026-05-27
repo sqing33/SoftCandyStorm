@@ -1,0 +1,91 @@
+{
+  "report_id": "2026-05-27_rl_rule_bot_late_survival_probe_summary_001",
+  "decision": "teacher_selection_probe_recorded",
+  "limitations": [
+    "This report records rule bot late survival teacher candidates only.",
+    "It is not an RL policy gate, not seeded stochastic acceptance evidence, and not a hand-written adapter pass.",
+    "It does not clear rl_policy_multimap_generalization_gap and must not permit stage03 or RL acceptance."
+  ],
+  "source_reports": [
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_probe_soda_creek_001/summary.md",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_probe_caramel_workshop_001/summary.md",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_probe_cracked_star_jar_001/summary.md",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_probe_caramel_workshop_extra_001/summary.md"
+  ],
+  "clean_teacher_candidates": [
+    {
+      "map_id": "soda-creek",
+      "bot": "kite",
+      "seed_start": 62300,
+      "seeds": 5,
+      "winning_seeds": [62300, 62301, 62302, 62304],
+      "sample_start_seconds": 180,
+      "sample_end_seconds": 300,
+      "role": "primary_clean_late_survival_teacher"
+    },
+    {
+      "map_id": "cracked-star-jar",
+      "bot": "kite",
+      "seed_start": 62300,
+      "seeds": 5,
+      "winning_seeds": [62302, 62303],
+      "sample_start_seconds": 180,
+      "sample_end_seconds": 300,
+      "role": "primary_clean_late_survival_teacher"
+    },
+    {
+      "map_id": "caramel-workshop",
+      "bot": "tank",
+      "seed_start": 62301,
+      "seeds": 1,
+      "winning_seeds": [62301],
+      "sample_start_seconds": 180,
+      "sample_end_seconds": 300,
+      "role": "single_clean_non_random_late_survival_teacher"
+    }
+  ],
+  "contrast_candidates": [
+    {
+      "map_id": "soda-creek",
+      "bot": "kite",
+      "seeds": [62303],
+      "reason": "near-failure at 222.1s"
+    },
+    {
+      "map_id": "soda-creek",
+      "bot": "greedy",
+      "seeds": [62302],
+      "reason": "victory with different movement bias"
+    },
+    {
+      "map_id": "cracked-star-jar",
+      "bot": "greedy",
+      "seeds": [62300, 62301, 62302, 62303, 62304],
+      "reason": "near-failure late pressure contrast"
+    },
+    {
+      "map_id": "caramel-workshop",
+      "bot": "greedy",
+      "seeds": [62300, 62301, 62302, 62303, 62304],
+      "reason": "late deaths around 217.9-232.4s"
+    },
+    {
+      "map_id": "caramel-workshop",
+      "bot": "coward",
+      "seeds": [62300, 62301, 62302, 62303],
+      "reason": "late deaths around 220.2-241.2s"
+    },
+    {
+      "map_id": "caramel-workshop",
+      "bot": "random",
+      "seeds": [62302, 62303],
+      "reason": "watch/diversity only; not primary teacher"
+    }
+  ],
+  "next_required_validation": [
+    "Export 180-300s JSONL trajectories from real rule bot runs.",
+    "Run behavior clone dry-run and record sample_count, map_distribution, health distribution, and action distribution.",
+    "Keep random and adapter-derived samples separated from clean rule bot teacher data.",
+    "Re-run deterministic high-pressure 60s, 180s, and 300s comparisons before any stage03 or acceptance decision."
+  ]
+}

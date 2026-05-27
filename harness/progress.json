@@ -1131,6 +1131,11 @@
       "id": "rl_late_recovery_samples_recorded",
       "summary": "使用 late_recovery_filter 对 handoff-window staged clone 的 300 秒 high-pressure 三图评估导出 1079 条 180-300 秒 risk_recovery_supervision_sample，覆盖 edge、hazard、Boss / enemy pressure 和 idle-under-pressure；behavior clone dry-run 已确认 1079 条样本可按 180-300 秒窗口读取。adapter 评估仍为三图 0% 胜率，因此该报告只作为 late 子模型训练材料，不是 stage 03、300 秒 gate 或 RL acceptance 通过证据。",
       "report": "harness/reports/2026-05-27_rl_late_recovery_samples_001/summary.md"
+    },
+    {
+      "id": "rl_rule_bot_late_survival_probe_teacher_selection",
+      "summary": "记录 high-pressure 三图 300 秒规则 Bot late survival 探针：soda-creek 与 cracked-star-jar 找到 KiteBot 干净长局轨迹候选，caramel-workshop 只找到 TankBot seed 62301 的非随机胜利样本；这些结果只用于选择 180-300 秒真实轨迹导出，不是 RL policy gate、stage03 许可或 acceptance 证据。",
+      "report": "harness/reports/2026-05-27_rl_rule_bot_late_survival_probe_summary_001/summary.md"
     }
   ],
   "current_findings": [
@@ -1887,7 +1892,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "late-risk auxiliary staged clone 已完成训练和 60/180/300 秒 deterministic high-pressure 对比：60 秒与 180 秒三图 100%，但 300 秒三图全部 0%，9 个失败全在 late_180_to_300。下一步应停止只堆 hand-written adapter imitation，改用真实 180-300 秒长局 survival trajectory、route objective、low-health recovery、hazard / boss joint objective 或 closed-loop PPO late survival 训练；通过 300 秒多图长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "late-risk auxiliary staged clone 已完成训练和 60/180/300 秒 deterministic high-pressure 对比：60 秒与 180 秒三图 100%，但 300 秒三图全部 0%，9 个失败全在 late_180_to_300。规则 Bot late survival 探针已找到真实长局 teacher 候选：soda-creek / cracked-star-jar 优先导出 KiteBot 180-300 秒窗口，caramel-workshop 优先导出 TankBot seed 62301，并把 Greedy/Coward/Route near-failure 作为对照；通过 300 秒多图长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
