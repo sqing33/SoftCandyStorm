@@ -1928,6 +1928,11 @@
       "id": "rl_late_risk_clean_teacher_mix_regression",
       "summary": "将 phase-aligned 轨迹、expanded clean teacher 成功轨迹、edge recovery 和 risk recovery 样本混合训练 late 子模型后，60 秒为 100%/100%/90%，180 秒三图均 100%，但 300 秒三图仍全 0%，9 个失败全部在 late_180_to_300。blocker 收窄到 late-window long-run recovery，仍不能进入 stage 03 或 RL acceptance。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_late_risk_clean_teacher_mix_staged_gru_context8_001/summary.md"
+    },
+    {
+      "id": "rl_closed_loop_late_survival_reward_profile_smoke",
+      "summary": "新增 late-survival reward profile 并完成首个真实 closed-loop PPO smoke：从 stage01 corner_risk_delta checkpoint warm start 训练 1024 timesteps 后，60 秒 high-pressure 三图 3 seed 均为 100%，180 秒为 66.67%/100%/100%，但 300 秒三图仍全 0%。失败分析显示 9 个 300 秒失败中 8 个在 late_180_to_300，记录 fail_20260527_035；该模型不能进入 stage 03 或 RL acceptance。",
+      "report": "harness/reports/2026-05-27_rl_closed_loop_late_survival_reward_profile_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1937,7 +1942,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "clean teacher-only、expanded clean teacher、late risk + clean teacher mix 都已验证无法通过 300 秒 high-pressure 三图。mixed 版本保住 180 秒 handoff，但 300 秒失败全部落在 late_180_to_300。下一步应停止只加离线 imitation 样本，改做 closed-loop late survival 训练，或加入路线规划、low-health recovery、hazard + boss pressure 与 upgrade-choice 联合目标；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "late-survival reward profile 已打通真实 closed-loop 训练链路，但首个 1024 timestep smoke 仍在 300 秒 high-pressure 三图全 0%，失败集中在 late_180_to_300。下一步应扩大 closed-loop late survival 训练规模，并针对失败 seed 加入 low-health recovery、hazard + boss pressure 路线目标、upgrade-choice 交互和 opening retention；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

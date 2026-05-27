@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_035",
+  "category": "rl",
+  "content_id": "rl_closed_loop_late_survival_reward_profile_smoke",
+  "seed": "62300-62302",
+  "bot": "PpoLateSurvivalRewardProfileSmoke",
+  "time_seconds": 193.0627,
+  "symptom": "新增 late-survival reward profile 后，从 stage01 corner_risk_delta PPO checkpoint warm start 进行 1024 timestep closed-loop 训练。deterministic high-pressure 三图 60 秒均为 100%，180 秒为 66.67% / 100% / 100%，但 300 秒 soda-creek、caramel-workshop、cracked-star-jar 仍全部 0%。",
+  "root_cause": "真实 closed-loop reward profile 链路已可用，但 smoke 规模训练不足以学习 180-300 秒长局路线、低血量恢复、边界压力、hazard / Boss / enemy 联合压力处理。失败分析显示 9 个 300 秒失败中 8 个落在 late_180_to_300，另有 soda-creek seed 62301 opening 早死，说明 late-window blocker 仍未解除且需要保留 opening regression 检查。",
+  "fix": "不得进入 stage 03、RL policy acceptance 或 rl_test_bot_candidate。下一步应继续使用真实 closed-loop 训练，但扩大 late-survival 训练规模并针对 62300-62302 失败 seed 加入低血量恢复、hazard + boss pressure 路线目标和 opening retention；任何候选仍必须通过 deterministic high-pressure 60 秒、180 秒和 300 秒多图对比。",
+  "validation": "训练、deterministic high-pressure 60 秒 / 180 秒 / 300 秒对比、failed-only traces 与失败分析记录在 harness/reports/2026-05-27_rl_closed_loop_late_survival_reward_profile_smoke_001/summary.md、ppo_training_report.json、comparison_60s_3seed.json、comparison_180s_3seed.json、comparison_300s_3seed.json、failure_analysis_300s.md 和 traces_300s/。"
+}
