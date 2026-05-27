@@ -73,7 +73,12 @@
       "checked_at": "2026-05-27",
       "command": "spctl -a -vv target/debug/game_harness",
       "result": "仍返回 rejected / exit 3；该信号单独不能代表当前会话无法执行本地二进制，因为 game_harness --help、cargo test 和 Gym 对比已可运行"
+    },
+    {
+      "checked_at": "2026-05-27",
+      "command": "python3 tools/diagnose_local_binary_launch.py --repo-root . --report harness/reports/2026-05-27_local_binary_launch_post_devtoolssecurity_001/local_binary_launch_diagnostic.json --markdown harness/reports/2026-05-27_local_binary_launch_post_devtoolssecurity_001/summary.md --timeout 5",
+      "result": "用户再次确认 DevToolsSecurity / developer-mode 设置并重启后，当前会话诊断仍为 local_binary_launch_ok；新编译 hello 0.004 秒执行成功，target/debug/game_harness --help、cargo test --workspace 和 60 秒 KiteBot headless simulate 均已通过"
     }
   ],
-  "validation": "DevTools Terminal 权限恢复后已完成诊断、game_harness --help、cargo test --workspace、RL 依赖检查和 context3 behavior clone 60/300 秒 high-pressure 对比；本机启动阻塞解除，但 context3 policy 自身仍因 caramel-workshop 300 秒 0% 胜率保持 repair"
+  "validation": "DevTools Terminal / Codex 相关权限恢复后已多次完成诊断、game_harness --help、cargo test --workspace、60 秒 headless simulate、RL 依赖检查和 context3 behavior clone 60/300 秒 high-pressure 对比；本机启动阻塞解除，但 context3 policy 自身仍因 caramel-workshop 300 秒 0% 胜率保持 repair"
 }
