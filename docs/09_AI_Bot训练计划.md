@@ -326,6 +326,8 @@ Gym reward breakdown 已新增 `opening_edge_risk_delta`，用于在 opening 阶
 
 stage 02 opening-edge-delta trace compare 已对 5 个失败 seed 复跑 failed-only snapshot trace，并和 stage 01 `corner_risk_delta` 同 seed 成功轨迹对比。stage 02 在 seed `62401` / `62409` 从未切到 action `7`，seed `62400` / `62403` 只在 terminal sample 才切到 action `7`，seed `62405` 虽较早切到 action `7` 但仍在左下角被最近敌人贴身击杀；stage 01 同 seed 胜利轨迹的共同点不是“完全不贴边”，而是更早且持续的撤离段把最终 `enemy_pressure_risk` 降到低值。报告位于 `harness/reports/2026-05-27_rl_curriculum_stage02_opening_edge_delta_trace_compare_001/summary.md`。结论：下一轮优先尝试成功轨迹 replay / 行为约束或分离 opening policy，而不是继续只堆 scalar reward。
 
+Gym reward breakdown 已新增 `route_recovery`，用于在移动动作帧根据当前边界、敌人、危险区和 Boss 压力估算恢复方向：朝远离风险的方向移动给小额正奖励，继续朝贴边/危险源方向移动给小额负奖励，升级选择帧保持 0。它比早期 `corner_action_risk` 更通用，也比纯状态 delta 更直接地给动作选择反馈；但它仍只是 closed-loop 训练塑形信号，必须通过 high-pressure 60 / 180 / 300 秒多图对比验证，不能单独作为 RL policy acceptance。
+
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
 
 `python/train/distill_behavior_clone_to_sb3.py` 已提供 PPO 蒸馏初始化入口：它从规则 Bot 轨迹读取 observation，用 behavior clone teacher 输出 soft action probability，再监督训练 SB3 PPO `MlpPolicy` 并保存标准 `.zip` 与 metadata。蒸馏入口现在支持 `--teacher-temperature` 与 `--uniform-target-mix`，用于在 teacher probability 过尖或动作偏置过重时显式提高 target entropy；这些旋钮只属于 repair 实验，不是 policy gate。首个 256 样本 smoke 已证明 distilled `.zip` 可以被 `train_sb3.py --evaluate-model` 加载，但 1 epoch 模型仍为动作 3 deterministic smoke，不是策略通过证据；后续应在更大数据上蒸馏后继续 PPO 环境训练，并跑 high-pressure 60/300 秒对比。
@@ -556,9 +558,9 @@ reward =
 当前 Gym reward 已输出可观测 breakdown 字段：
 
 - 基础成长：`survival`、`kill`、`xp`、`level`、`damage_taken`、`action_repeat`、`terminal`
-- 安全塑形：`low_health`、`boundary_risk`、`enemy_pressure`、`hazard_risk`、`boss_pressure`、`safety_delta`
+- 安全塑形：`low_health`、`boundary_risk`、`enemy_pressure`、`hazard_risk`、`boss_pressure`、`safety_delta`、`route_recovery`
 
-安全塑形只作为训练信号，不是内容平衡门禁。它的目标是减少固定方向逃生、低血量贴边、忽略危险区和 Boss 压力等 RL policy exploit；是否真正改善泛化，仍必须通过多地图规则 Bot 对比验证。`safety_delta` 使用上一帧与当前帧的聚合风险差值，风险下降给小额正奖励，风险上升给小额负奖励，避免只用静态惩罚把 policy 推向过度保守。
+安全塑形只作为训练信号，不是内容平衡门禁。它的目标是减少固定方向逃生、低血量贴边、忽略危险区和 Boss 压力等 RL policy exploit；是否真正改善泛化，仍必须通过多地图规则 Bot 对比验证。`safety_delta` 使用上一帧与当前帧的聚合风险差值，风险下降给小额正奖励，风险上升给小额负奖励，避免只用静态惩罚把 policy 推向过度保守。`route_recovery` 根据当前动作是否朝恢复方向移动给小额反馈，用于修复高压状态下继续贴边或冲向危险源的动作偏置。
 
 ## DQN 使用场景
 

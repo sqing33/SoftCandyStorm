@@ -40,6 +40,8 @@ const GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT: f32 = 0.012;
 const GYM_REWARD_OPENING_CORNER_DELTA_CLAMP: f32 = 0.25;
 const GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT: f32 = 0.008;
 const GYM_REWARD_OPENING_EDGE_DELTA_CLAMP: f32 = 0.25;
+const GYM_REWARD_ROUTE_RECOVERY_WEIGHT: f32 = 0.0025;
+const GYM_REWARD_ROUTE_RECOVERY_CLAMP: f32 = 1.0;
 const GYM_REWARD_OPENING_CORNER_SECONDS: f32 = 60.0;
 const GYM_REWARD_CORNER_DISTANCE_RATIO: f32 = 0.12;
 const GYM_REWARD_LATE_SURVIVAL_START_SECONDS: f32 = 180.0;
@@ -51,6 +53,7 @@ const GYM_REWARD_LATE_SURVIVAL_BOUNDARY_SCALE: f32 = 3.0;
 const GYM_REWARD_LATE_SURVIVAL_ENEMY_SCALE: f32 = 2.0;
 const GYM_REWARD_LATE_SURVIVAL_HAZARD_SCALE: f32 = 3.0;
 const GYM_REWARD_LATE_SURVIVAL_BOSS_SCALE: f32 = 3.0;
+const GYM_REWARD_LATE_SURVIVAL_ROUTE_RECOVERY_SCALE: f32 = 2.0;
 const GYM_REWARD_LATE_SURVIVAL_VICTORY_BONUS: f32 = 2.0;
 const GYM_REWARD_LATE_SURVIVAL_DEFEAT_PENALTY: f32 = -2.0;
 const GYM_REWARD_LONG_RUN_RETENTION_START_SECONDS: f32 = 60.0;
@@ -63,6 +66,7 @@ const GYM_REWARD_LONG_RUN_RETENTION_ENEMY_SCALE: f32 = 1.75;
 const GYM_REWARD_LONG_RUN_RETENTION_HAZARD_SCALE: f32 = 2.5;
 const GYM_REWARD_LONG_RUN_RETENTION_BOSS_SCALE: f32 = 2.5;
 const GYM_REWARD_LONG_RUN_RETENTION_ACTION_REPEAT_SCALE: f32 = 1.5;
+const GYM_REWARD_LONG_RUN_RETENTION_ROUTE_RECOVERY_SCALE: f32 = 2.5;
 const GYM_REWARD_LONG_RUN_RETENTION_VICTORY_BONUS: f32 = 1.5;
 const GYM_REWARD_LONG_RUN_RETENTION_DEFEAT_PENALTY: f32 = -1.5;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
@@ -892,6 +896,7 @@ struct GymRewardBreakdown {
     corner_action_risk: f32,
     corner_risk_delta: f32,
     opening_edge_risk_delta: f32,
+    route_recovery: f32,
     terminal: f32,
     total: f32,
 }
@@ -902,6 +907,7 @@ struct GymRewardShaping {
     safety_delta: f32,
     corner_risk_delta: f32,
     opening_edge_risk_delta: f32,
+    route_recovery: f32,
 }
 
 #[derive(Debug, Serialize)]
@@ -2753,6 +2759,11 @@ impl GymBridgeState {
             self.clear_action_repeat();
             0.0
         };
+        let route_recovery = if movement_action_active {
+            gym_route_recovery_action_reward(&snapshot, action_index)
+        } else {
+            0.0
+        };
         let action = if movement_action_active {
             game_core::PlayerAction {
                 movement: gym_discrete_movement(action_index),
@@ -2805,6 +2816,7 @@ impl GymBridgeState {
             safety_delta,
             corner_risk_delta,
             opening_edge_risk_delta,
+            route_recovery,
         };
         let reward_breakdown = gym_reward_breakdown(
             self.reward_profile,
@@ -3053,6 +3065,13 @@ fn gym_reward_breakdown(
         GYM_REWARD_LONG_RUN_RETENTION_SAFETY_SCALE,
     );
     let corner_action_risk = 0.0;
+    let route_recovery = gym_reward_profile_scaled_component(
+        profile,
+        time_seconds,
+        shaping.route_recovery,
+        GYM_REWARD_LATE_SURVIVAL_ROUTE_RECOVERY_SCALE,
+        GYM_REWARD_LONG_RUN_RETENTION_ROUTE_RECOVERY_SCALE,
+    );
 
     let terminal = if let Some(terminal) = terminal {
         let base = match terminal.kind {
@@ -3082,6 +3101,7 @@ fn gym_reward_breakdown(
         + corner_action_risk
         + shaping.corner_risk_delta
         + shaping.opening_edge_risk_delta
+        + route_recovery
         + terminal;
     GymRewardBreakdown {
         survival,
@@ -3099,6 +3119,7 @@ fn gym_reward_breakdown(
         corner_action_risk,
         corner_risk_delta: shaping.corner_risk_delta,
         opening_edge_risk_delta: shaping.opening_edge_risk_delta,
+        route_recovery,
         terminal,
         total,
     }
@@ -3242,6 +3263,86 @@ fn gym_opening_edge_risk_delta_reward(previous_risk: f32, current_risk: f32) -> 
         GYM_REWARD_OPENING_EDGE_DELTA_CLAMP,
     );
     risk_delta * GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT
+}
+
+fn gym_route_recovery_action_reward(snapshot: &game_core::RunSnapshot, action: usize) -> f32 {
+    let movement = gym_discrete_movement(action);
+    if movement.length_squared() <= f32::EPSILON {
+        return 0.0;
+    }
+
+    let pressure = gym_route_recovery_pressure(snapshot);
+    if pressure.length_squared() <= f32::EPSILON {
+        return 0.0;
+    }
+
+    let action_direction = movement.normalized_or_zero();
+    let recovery_direction = pressure.normalized_or_zero();
+    let alignment = vec2_dot(action_direction, recovery_direction).clamp(-1.0, 1.0);
+    let urgency = pressure.length().min(GYM_REWARD_ROUTE_RECOVERY_CLAMP);
+    alignment * urgency * GYM_REWARD_ROUTE_RECOVERY_WEIGHT
+}
+
+fn gym_route_recovery_pressure(snapshot: &game_core::RunSnapshot) -> Vec2 {
+    let mut desired = Vec2::ZERO;
+    desired += gym_boundary_recovery_vector(snapshot) * 0.8;
+    desired += gym_enemy_recovery_vector(snapshot) * 1.0;
+    desired += gym_hazard_recovery_vector(snapshot) * 1.1;
+    desired += gym_boss_recovery_vector(snapshot) * 0.9;
+
+    let low_health_boost = 1.0 + low_health_risk(snapshot) * 0.5;
+    (desired * low_health_boost).clamp_length_max(GYM_REWARD_ROUTE_RECOVERY_CLAMP)
+}
+
+fn gym_boundary_recovery_vector(snapshot: &game_core::RunSnapshot) -> Vec2 {
+    let half_width = (snapshot.map.width * 0.5).max(1.0);
+    let half_height = (snapshot.map.height * 0.5).max(1.0);
+    let left_distance = (snapshot.player.position.x + half_width).max(0.0);
+    let right_distance = (half_width - snapshot.player.position.x).max(0.0);
+    let bottom_distance = (snapshot.player.position.y + half_height).max(0.0);
+    let top_distance = (half_height - snapshot.player.position.y).max(0.0);
+    let edge_x = snapshot.map.width.max(1.0) * GYM_REWARD_CORNER_DISTANCE_RATIO;
+    let edge_y = snapshot.map.height.max(1.0) * GYM_REWARD_CORNER_DISTANCE_RATIO;
+    let left_risk = proximity_risk(left_distance, edge_x);
+    let right_risk = proximity_risk(right_distance, edge_x);
+    let bottom_risk = proximity_risk(bottom_distance, edge_y);
+    let top_risk = proximity_risk(top_distance, edge_y);
+
+    Vec2::new(left_risk - right_risk, bottom_risk - top_risk).clamp_length_max(1.0)
+}
+
+fn gym_enemy_recovery_vector(snapshot: &game_core::RunSnapshot) -> Vec2 {
+    let player_position = snapshot.player.position;
+    let mut desired = Vec2::ZERO;
+    for enemy in snapshot.visible_enemies.iter().take(GYM_MAX_ENEMIES) {
+        let away = player_position - enemy.position;
+        let distance = (away.length() - enemy.radius).max(0.0);
+        let danger_radius = 96.0 + enemy.radius + enemy.threat.clamp(0.0, 80.0);
+        let proximity = proximity_risk(distance, danger_radius);
+        let threat = 0.5 + clamp_unit(enemy.threat / 100.0);
+        desired += away.normalized_or_zero() * proximity * threat;
+    }
+    desired.clamp_length_max(1.0)
+}
+
+fn gym_hazard_recovery_vector(snapshot: &game_core::RunSnapshot) -> Vec2 {
+    let Some(hazard) = nearest_hazard(snapshot) else {
+        return Vec2::ZERO;
+    };
+    let away = snapshot.player.position - hazard.position;
+    away.normalized_or_zero() * hazard_pressure_risk(snapshot)
+}
+
+fn gym_boss_recovery_vector(snapshot: &game_core::RunSnapshot) -> Vec2 {
+    let Some(boss) = &snapshot.boss else {
+        return Vec2::ZERO;
+    };
+    let away = snapshot.player.position - boss.position;
+    away.normalized_or_zero() * boss_pressure_risk(snapshot)
+}
+
+fn vec2_dot(left: Vec2, right: Vec2) -> f32 {
+    left.x * right.x + left.y * right.y
 }
 
 fn gym_opening_corner_pressure_risk(snapshot: &game_core::RunSnapshot) -> f32 {
@@ -6884,10 +6985,11 @@ mod tests {
         gym_discrete_movement, gym_observation, gym_observation_len,
         gym_opening_corner_pressure_risk, gym_opening_corner_risk_delta_reward,
         gym_opening_edge_pressure_risk, gym_opening_edge_risk_delta_reward, gym_reward_breakdown,
-        gym_safety_delta_reward, gym_safety_risk_score, gym_snapshot_diagnostics, movement_changed,
-        GymBridgeRequest, GymRewardProfile, GymRewardShaping, ManualAcceptanceDecision,
-        GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN, GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT,
-        GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT, GYM_REWARD_SAFETY_DELTA_WEIGHT,
+        gym_route_recovery_action_reward, gym_safety_delta_reward, gym_safety_risk_score,
+        gym_snapshot_diagnostics, movement_changed, GymBridgeRequest, GymRewardProfile,
+        GymRewardShaping, ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
+        GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT, GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT,
+        GYM_REWARD_ROUTE_RECOVERY_WEIGHT, GYM_REWARD_SAFETY_DELTA_WEIGHT,
         REQUIRED_PLAYTEST_RUN_IDS,
     };
     use game_core::{
@@ -6968,6 +7070,7 @@ mod tests {
             Some(&terminal),
             GymRewardShaping {
                 action_repeat: -0.002,
+                route_recovery: 0.003,
                 ..GymRewardShaping::default()
             },
             None,
@@ -6987,6 +7090,7 @@ mod tests {
         assert_eq!(breakdown.corner_action_risk, 0.0);
         assert_eq!(breakdown.corner_risk_delta, 0.0);
         assert_eq!(breakdown.opening_edge_risk_delta, 0.0);
+        assert!((breakdown.route_recovery - 0.003).abs() < 0.0001);
         assert!((breakdown.terminal - 1.0).abs() < 0.0001);
         assert!(
             (breakdown.total
@@ -7005,6 +7109,7 @@ mod tests {
                     + breakdown.corner_action_risk
                     + breakdown.corner_risk_delta
                     + breakdown.opening_edge_risk_delta
+                    + breakdown.route_recovery
                     + breakdown.terminal))
                 .abs()
                 < 0.0001
@@ -7063,6 +7168,7 @@ mod tests {
         assert_eq!(breakdown.corner_action_risk, 0.0);
         assert_eq!(breakdown.corner_risk_delta, 0.0);
         assert_eq!(breakdown.opening_edge_risk_delta, 0.0);
+        assert_eq!(breakdown.route_recovery, 0.0);
         assert!(
             (breakdown.total
                 - (breakdown.low_health
@@ -7073,7 +7179,8 @@ mod tests {
                     + breakdown.safety_delta
                     + breakdown.corner_action_risk
                     + breakdown.corner_risk_delta
-                    + breakdown.opening_edge_risk_delta))
+                    + breakdown.opening_edge_risk_delta
+                    + breakdown.route_recovery))
                 .abs()
                 < 0.0001
         );
@@ -7161,15 +7268,68 @@ mod tests {
         assert_eq!(recovery_breakdown.corner_action_risk, 0.0);
         assert!(recovery_breakdown.corner_risk_delta > 0.0);
         assert!(recovery_breakdown.opening_edge_risk_delta > 0.0);
+        assert_eq!(recovery_breakdown.route_recovery, 0.0);
         assert!(
             (recovery_breakdown.total
                 - (recovery_breakdown.boundary_risk
                     + recovery_breakdown.enemy_pressure
                     + recovery_breakdown.corner_risk_delta
-                    + recovery_breakdown.opening_edge_risk_delta))
+                    + recovery_breakdown.opening_edge_risk_delta
+                    + recovery_breakdown.route_recovery))
                 .abs()
                 < 0.0001
         );
+    }
+
+    #[test]
+    fn gym_route_recovery_rewards_inward_boundary_escape() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        let half_width = snapshot.map.width * 0.5;
+        snapshot.player.position = Vec2::new(half_width - 6.0, 0.0);
+        snapshot.player.health = snapshot.player.max_health * 0.25;
+        snapshot.visible_enemies.push(EnemySnapshot {
+            entity_id: 204,
+            enemy_id: "test-enemy".to_string(),
+            position: snapshot.player.position + Vec2::new(32.0, 0.0),
+            velocity: Vec2::ZERO,
+            health: 20.0,
+            max_health: 20.0,
+            radius: 18.0,
+            threat: 80.0,
+            behavior: EnemyBehavior::Chase,
+            is_boss: false,
+            is_elite: false,
+        });
+
+        let inward = gym_route_recovery_action_reward(&snapshot, 7);
+        let outward = gym_route_recovery_action_reward(&snapshot, 3);
+        let idle = gym_route_recovery_action_reward(&snapshot, 0);
+
+        assert!(inward > 0.0);
+        assert!(outward < 0.0);
+        assert_eq!(idle, 0.0);
+        assert!(inward <= GYM_REWARD_ROUTE_RECOVERY_WEIGHT + f32::EPSILON);
+        assert!(inward > outward);
+    }
+
+    #[test]
+    fn gym_route_recovery_penalizes_moving_toward_hazard() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        snapshot.player.position = Vec2::ZERO;
+        snapshot.active_hazards.push(HazardSnapshot {
+            position: snapshot.player.position + Vec2::new(24.0, 0.0),
+            radius: 72.0,
+            slow_multiplier: 0.5,
+            damage_per_second: 18.0,
+            remaining_seconds: 3.0,
+        });
+
+        let away = gym_route_recovery_action_reward(&snapshot, 7);
+        let toward = gym_route_recovery_action_reward(&snapshot, 3);
+
+        assert!(away > 0.0);
+        assert!(toward < 0.0);
+        assert!(away > toward);
     }
 
     #[test]
@@ -7215,6 +7375,7 @@ mod tests {
         };
         let shaping = GymRewardShaping {
             safety_delta: 0.01,
+            route_recovery: 0.01,
             ..GymRewardShaping::default()
         };
         let terminal = TerminalState {
@@ -7244,6 +7405,7 @@ mod tests {
 
         assert!(late.survival > standard.survival);
         assert!(late.safety_delta > standard.safety_delta);
+        assert!(late.route_recovery > standard.route_recovery);
         assert!(late.terminal > standard.terminal);
         assert!(late.total > standard.total);
     }
@@ -7259,6 +7421,7 @@ mod tests {
         let shaping = GymRewardShaping {
             action_repeat: -0.01,
             safety_delta: 0.2,
+            route_recovery: 0.01,
             ..GymRewardShaping::default()
         };
         let terminal = TerminalState {
@@ -7289,6 +7452,7 @@ mod tests {
         assert!(retention.survival > standard.survival);
         assert!(retention.action_repeat < standard.action_repeat);
         assert!(retention.safety_delta > standard.safety_delta);
+        assert!(retention.route_recovery > standard.route_recovery);
         assert!(retention.terminal > standard.terminal);
         assert!(retention.total > standard.total);
     }
