@@ -2093,6 +2093,11 @@
       "id": "rl_action_distribution_multiseed_midonly_ablation",
       "summary": "多 seed mid-only staged 消融完成：w1/w4 都保住 60 秒三图短窗，但 180 秒 soda-creek 仍为 0.0，cracked-star-jar 回落到 0.4，记录 fail_20260527_048。",
       "report": "harness/reports/2026-05-27_rl_action_distribution_multiseed_midonly_ablation_001/summary.md"
+    },
+    {
+      "id": "rl_action_distribution_soda_failure_distribution",
+      "summary": "诊断 per_map_uniform_0_2 在 soda-creek 20 seed 180 秒评估的失败分布：18 局失败中 14 局在 60 秒前死亡，route recovery 热点以 opening action 3 贴边为主，说明下一步应回到受控 opening repair。",
+      "report": "harness/reports/2026-05-27_rl_action_distribution_soda_failure_distribution_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2102,7 +2107,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。单 seed phase-split retrain 证明 50-80 秒样本覆盖不足：opening+mid 会破坏短窗，只换 mid 又修不动 soda。多 seed 45-100 秒样本已扩展到 389 条，但 w1/w4 mid-only 消融仍未修复 180 秒 soda-creek 且 cracked-star-jar 回落到 0.4；下一步应补充非贴边危险状态、45 秒前早死诊断或 per-map/per-phase target，而不是继续提高 recovery weight。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。单 seed phase-split retrain 证明 50-80 秒样本覆盖不足：opening+mid 会破坏短窗，只换 mid 又修不动 soda。多 seed 45-100 秒样本已扩展到 389 条，但 w1/w4 mid-only 消融仍未修复 180 秒 soda-creek 且 cracked-star-jar 回落到 0.4；失败分布显示 18 局失败中 14 局在 60 秒前死亡，下一步应导出 20-45 秒多 seed opening edge-risk/action 3 样本做低权重受控消融。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
