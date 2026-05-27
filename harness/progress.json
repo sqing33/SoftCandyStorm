@@ -2003,6 +2003,11 @@
       "id": "rl_route_recovery_aux_teacher_sequence_windows",
       "summary": "新增 inspect_behavior_clone_teacher_sequences.py，把 25-35 秒和 55-60 秒近邻错位展开成 teacher episode 动作序列：25-30 秒 online 纯 action 5 而 KiteBot seed 48003 多数为 action 3；30-35 秒 nearest repair seed 62301/62302 多数为 action 8；55-60 秒同时间 KiteBot seed 48009 连续 action 2 而 online 仍纯 action 3。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_teacher_sequence_windows_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_history_context_probe",
+      "summary": "新增 probe_behavior_clone_history_context.py，对同一目标 observation 比较 cold、online-prefix 与 nearest teacher-prefix 三种 GRU history 的 action scores；55-60 秒窗口 cold/online-prefix 仍全部 top action 3，但 teacher-prefix 有 9/15 样本转向 action 2，说明 online history 正在稳定错误恢复上下文。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_history_context_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2012,7 +2017,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段与 teacher sequence 诊断显示真正问题在 transition / recovery：30-35 秒 online 纯 action 5 而 nearest repair 多数 action 8，55-60 秒 online 纯 action 3 而同时间 KiteBot seed 48009 连续 action 2。下一步应把这些窗口转成 focused repair / GRU history probe；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 route_recovery entropy retry 的 5 秒 smoke 低熵已被定位为极窄 opening teacher 邻域；60 秒分段、teacher sequence 和 history context probe 显示真正问题在 transition / recovery history：55-60 秒 cold/online-prefix 仍全部 top action 3，但 teacher-prefix 有 9/15 样本转向 action 2。下一步应把这些窗口转成 focused repair / GRU history constraint；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
