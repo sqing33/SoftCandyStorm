@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import python.train.train_sb3 as train_sb3
 from python.train.train_sb3 import (
     EdgeRecoveryFilterPolicy,
     StagedOpeningPolicy,
@@ -17,6 +18,7 @@ from python.train.train_sb3 import (
     consume_policy_adapter_decision,
     derived_edge_recovery_samples_path,
     merge_algorithm_parameters,
+    load_behavior_clone_policy_with_optional_opening,
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
     should_record_trace_step,
@@ -402,3 +404,38 @@ def test_staged_opening_policy_switches_after_opening_seconds():
     assert opening_scores["scores"][7] == 1.0
     assert fallback_action == 4
     assert policy.opening_policy_report()["mode"] == "staged_sb3_opening"
+
+
+def test_behavior_clone_fallback_can_be_wrapped_with_sb3_opening(monkeypatch):
+    class DummyModelClass:
+        @staticmethod
+        def load(path):
+            assert str(path) == "opening.zip"
+            return DummyPolicy(7)
+
+    monkeypatch.setattr(
+        train_sb3,
+        "stable_baselines_model_classes",
+        lambda: {"ppo": DummyModelClass},
+    )
+    monkeypatch.setattr(
+        train_sb3,
+        "load_behavior_clone_policy",
+        lambda path: DummyPolicy(4),
+    )
+
+    policy = load_behavior_clone_policy_with_optional_opening(
+        "ppo",
+        "fallback.pt",
+        opening_model_path="opening.zip",
+        opening_seconds=60.0,
+    )
+
+    policy.set_step_context({"time_seconds": 10.0})
+    opening_action, _ = policy.predict(None)
+    policy.set_step_context({"time_seconds": 60.0})
+    fallback_action, _ = policy.predict(None)
+
+    assert opening_action == 7
+    assert fallback_action == 4
+    assert policy.opening_policy_report()["fallback_model_path"] == "fallback.pt"

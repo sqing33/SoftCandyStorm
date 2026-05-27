@@ -1833,6 +1833,11 @@
       "id": "rl_edge_recovery_handoff_only_dataset_smoke",
       "summary": "train_behavior_clone.py 新增 --edge-recovery-min-seconds / --edge-recovery-max-seconds，只过滤 edge_recovery_supervision_sample，不影响规则 Bot 轨迹；首个 dry-run 证明 opening 子集 edge repair 样本为 0，mid 子集保留 799 条 60 秒后 handoff repair 样本。",
       "report": "harness/reports/2026-05-27_rl_edge_recovery_handoff_only_dataset_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_edge_aux_staged_opening_handoff_probe",
+      "summary": "train_sb3.py 允许 --opening-model 与 --behavior-clone-model 组合；首个 SB3 opening + edge-aux behavior clone fallback probe 保住 60 秒三图 10 seed opening gate，但 180 秒 handoff probe 中 soda-creek 与 cracked-star-jar seed 62201 仍在 mid_60_to_180 死亡，记录 fail_20260527_030。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1842,7 +1847,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "edge recovery handoff-only 数据过滤入口已完成 smoke；下一步应在保留 stage 01 opening 的前提下，只训练或评估 60 秒后的 handoff/mid 子策略，通过 60 秒 10 seed opening gate 后才允许重新跑 180 秒 handoff 对比。"
+      "summary": "stage01 opening + behavior clone fallback 组合入口已证明能保住 60 秒 opening gate，但 180 秒 soda-creek / cracked-star-jar seed 62201 仍失败；下一步应输出这两个失败局的 failed-only snapshot trace，并专门训练或约束 handoff/mid fallback。"
     },
     {
       "id": "phase4_full_pack_manual_review",

@@ -115,7 +115,7 @@ Evaluation reports also include `action_score_diagnostic`. For probability polic
 
 Evaluation defaults to deterministic policy actions. Use `--eval-stochastic` with training, `--evaluate-model`, or `--compare-rule-bots` when diagnosing whether a policy still has useful action probability mass even though deterministic argmax collapses. Add `--eval-random-seed <N>` with `--eval-stochastic` to make sampled action selection reproducible; reports record `action_random_seed` and the seeded random sources. Seeded stochastic evaluation is diagnostic evidence only and does not replace deterministic high-pressure gates or RL policy acceptance.
 
-Use `--opening-model <zip> --opening-seconds <seconds>` with `--evaluate-model` or `--compare-rule-bots` to test a staged SB3 policy that uses a known opening checkpoint before falling back to `--model`. This is evaluation-only evidence for split-policy repair; it does not train a new checkpoint or count as policy acceptance by itself.
+Use `--opening-model <zip> --opening-seconds <seconds>` with `--evaluate-model` or `--compare-rule-bots` to test a staged policy that uses a known SB3 opening checkpoint before falling back to `--model` or `--behavior-clone-model`. This is evaluation-only evidence for split-policy repair; it does not train a new checkpoint or count as policy acceptance by itself.
 
 Use `--edge-recovery-filter` with `--evaluate-model` or `--compare-rule-bots` to run a deterministic diagnostic wrapper that replaces a wall-pushing action with the highest-scoring action that does not keep pushing into a nearby map edge. Reports include `policy_adapter.mode = edge_recovery_filter`. This is only handoff repair evidence; the RL acceptance validator rejects policy-adapter reports.
 

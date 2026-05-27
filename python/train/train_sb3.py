@@ -878,7 +878,10 @@ def evaluate_policy_model(
         )
         return evaluate_behavior_clone_policy(
             config,
+            algorithm,
             behavior_clone_model,
+            opening_model_path=opening_model_path,
+            opening_seconds=opening_seconds,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
             seed_start=seed_start,
@@ -917,7 +920,10 @@ def evaluate_policy_model(
 
 def evaluate_behavior_clone_policy(
     config,
+    algorithm,
     model_path,
+    opening_model_path=None,
+    opening_seconds=60.0,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -933,7 +939,12 @@ def evaluate_behavior_clone_policy(
     edge_recovery_samples_out=None,
 ):
     model_path = Path(model_path)
-    policy = load_behavior_clone_policy(model_path)
+    policy = load_behavior_clone_policy_with_optional_opening(
+        algorithm,
+        model_path,
+        opening_model_path=opening_model_path,
+        opening_seconds=opening_seconds,
+    )
     policy = wrap_edge_recovery_filter(
         policy,
         enabled=edge_recovery_filter,
@@ -954,7 +965,11 @@ def evaluate_behavior_clone_policy(
         trace_sample_stride=trace_sample_stride,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
-    evaluation["policy_kind"] = "behavior_clone"
+    evaluation["policy_kind"] = (
+        "staged_sb3_opening_behavior_clone"
+        if opening_model_path is not None
+        else "behavior_clone"
+    )
     evaluation["algorithm"] = "behavior_clone"
     evaluation["model_path"] = str(model_path)
     evaluation["limitations"] = [
@@ -965,6 +980,25 @@ def evaluate_behavior_clone_policy(
         evaluation["upgrade_policy_kind"] = "upgrade_choice_ranker"
         evaluation["upgrade_choice_model"] = upgrade_policy.checkpoint_path
     return evaluation
+
+
+def load_behavior_clone_policy_with_optional_opening(
+    algorithm,
+    behavior_clone_model_path,
+    opening_model_path=None,
+    opening_seconds=60.0,
+):
+    fallback_policy = load_behavior_clone_policy(behavior_clone_model_path)
+    if opening_model_path is None:
+        return fallback_policy
+    opening_model = stable_baselines_model_classes()[algorithm].load(opening_model_path)
+    return StagedOpeningPolicy(
+        opening_model,
+        fallback_policy,
+        opening_seconds,
+        opening_model_path,
+        behavior_clone_model_path,
+    )
 
 
 def evaluate_model(
@@ -2344,8 +2378,6 @@ def main():
         parser.error("--compare-map-preset cannot be used together with --map-id")
     if args.behavior_clone_model and args.model:
         parser.error("--behavior-clone-model cannot be combined with --model")
-    if args.opening_model and args.behavior_clone_model:
-        parser.error("--opening-model cannot be combined with --behavior-clone-model")
     if args.opening_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--opening-model requires --evaluate-model or --compare-rule-bots")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
