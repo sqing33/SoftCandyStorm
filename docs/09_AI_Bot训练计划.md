@@ -428,6 +428,8 @@ Gym bridge 现在支持在 `step` 请求中传入 `upgrade_choice`。`SoftCandyS
 
 clean teacher late survival 候选用 `--phase-duration-seconds 300` 重新打包后完成 deterministic high-pressure 60 / 180 / 300 秒复测：60 秒为 `soda-creek` 70%、`caramel-workshop` 100%、`cracked-star-jar` 80%，180 秒为 66.67%、100%、33.33%，300 秒三图仍全部 0%。结论：absolute-time dispatch 修复的是评估分段机制，但 clean teacher-only late replacement 仍缺少 opening / mid retention 和 long-run recovery objective，不能进入 stage 03 或 RL acceptance。
 
+为补足 `caramel-workshop` clean teacher 覆盖，额外扫描 TankBot seed `62305-62324` 和 `62400-62449`。第一段 0/20 胜利，第二段只有 seed `62405` 胜利；该 seed 达到 300 秒、512 kills、level 8 且只受到 11.266667 damage。导出它的 180-300 秒轨迹后，expanded clean teacher dry-run 从 6124 条样本提升到 6843 条，`caramel-workshop` 占比从 11.76% 提升到 21.03%。这只是数据覆盖证据，后续仍必须训练新 late 子模型并复跑 deterministic 60 / 180 / 300 秒对比。
+
 首个完整 staged GRU context8 候选分别训练 opening、mid、late 三段子策略并用相对路径打包；结果仍为 `repair`：60 秒 high-pressure 中 `soda-creek` 只有 20% 胜率且动作 3 占 76.72%，300 秒中 `soda-creek` 为 0%、`caramel-workshop` 和 `cracked-star-jar` 各 33.33%。这说明只按时间切换子模型不足以形成长局规划，下一步需要阶段目标监督、升级选择数据、更多 opening 覆盖或 PPO 蒸馏。
 
 为排查 staged 子策略的数据窗口错配，已重新导出 300 秒 high-pressure 三图 10 seed phase-aligned 轨迹，使 `opening` 覆盖 0-60 秒而不是 60 秒短局中的前 12 秒。该修复把 opening 样本从 1080 提升到 5388，但 phase-aligned staged GRU context8 仍为 `repair`：60 秒 `soda-creek` 0% 胜率、动作 3 占 79.11%，300 秒 `soda-creek` 和 `caramel-workshop` 均为 0%。结论是补 opening 覆盖不足以修复 movement-only imitation，下一步应引入阶段目标监督、升级选择数据、teacher soft targets 或 PPO 蒸馏初始化。

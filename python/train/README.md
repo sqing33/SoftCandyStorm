@@ -413,6 +413,8 @@ When a staged checkpoint is trained against a fixed long-run horizon, pass `--ph
 
 The clean-teacher late survival candidate was repackaged with `--phase-duration-seconds 300` and rerun on deterministic high-pressure 60 / 180 / 300 second comparisons. The absolute-time package still recorded 70% / 100% / 80% at 60 seconds, 66.67% / 100% / 33.33% at 180 seconds, and 0% / 0% / 0% at 300 seconds. Treat absolute-time dispatch as correct packaging plumbing, not as a clean-teacher strategy fix.
 
+To improve the weakest clean-teacher map coverage, an extra `caramel-workshop` TankBot scan found one additional 300-second victory at seed `62405`. Exporting its `180-300s` window added `719` clean trajectory samples and raised the clean-teacher `caramel-workshop` share from `11.76%` to `21.03%`. This is dataset coverage only; train a new late subpolicy and rerun the normal deterministic high-pressure comparisons before treating it as repair evidence.
+
 The first packaging smoke proved the staged checkpoint can be loaded through the existing Gym comparison path, but the 1 epoch subpolicies still showed action-bias repair findings. Treat staged packaging as plumbing until a fully trained staged policy passes the normal acceptance gate.
 
 The first full staged GRU context8 candidate trained separate opening, mid, and late subpolicies and packaged them with relative paths. It still failed earlier than the time-phase single model: the 60-second high-pressure comparison marked `soda-creek` as repair with 20% win rate and action 3 at 76.72%, and the 300-second comparison kept `soda-creek` at 0%. This confirms that staged dispatch alone is not enough; the next repair should add phase objectives, upgrade-choice supervision, broader opening data, or PPO distillation.
