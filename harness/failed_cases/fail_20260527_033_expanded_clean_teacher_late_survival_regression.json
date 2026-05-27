@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_033",
+  "category": "rl",
+  "content_id": "rl_behavior_clone_late_survival_clean_teacher_expanded_staged_gru_context8",
+  "seed": "62300-62309",
+  "bot": "Stage01OpeningPlusExpandedCleanTeacherLateSurvivalBehaviorClone",
+  "time_seconds": 171.7034,
+  "symptom": "加入 caramel-workshop TankBot seed 62405 后，expanded clean teacher late 数据集从 6124 条样本增至 6843 条，caramel-workshop 占比从 11.76% 升至 21.03%，late 子模型 validation_accuracy 从 0.7200 升至 0.7633。但替换 staged policy 的 late.pt 并用 --phase-duration-seconds 300 打包后，deterministic high-pressure 60 秒仍为 soda-creek 70%、caramel-workshop 100%、cracked-star-jar 80%，180 秒为 66.67%、100%、33.33%，300 秒三图全部 0%。",
+  "root_cause": "新增 caramel clean teacher 轨迹只改善了离线样本覆盖和 validation accuracy，没有给策略提供 opening/mid retention、closed-loop long-run recovery、hazard + boss 联合压力恢复或路线目标。300 秒 failure analysis 显示 caramel-workshop 三个失败都在 late_180_to_300，但 soda-creek 与 cracked-star-jar 仍各有 opening_lt_60 失败，说明失败面不是单纯 caramel 样本不足。",
+  "fix": "不得进入 stage 03、RL policy acceptance 或 rl_test_bot_candidate。下一轮不要继续单独训练 clean teacher-only late replacement；应加入 opening/mid retention 或 contrastive 约束，或者改做 closed-loop late survival 训练，显式覆盖 route、low-health recovery、hazard 与 boss pressure，再重新跑 deterministic high-pressure 60 秒、180 秒和 300 秒多图对比。",
+  "validation": "训练、打包、deterministic 60 秒 / 180 秒 / 300 秒 high-pressure 对比、failed-only traces 与失败分析记录在 harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_expanded_staged_gru_context8_001/summary.md、late_training.json、packaging.json、comparison_60s_10seed.json、comparison_180s_3seed.json、comparison_300s_3seed.json、failure_analysis_300s.md 和 traces/。"
+}
