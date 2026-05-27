@@ -1,0 +1,136 @@
+{
+  "report_version": 1,
+  "decision": "risk_recovery_clean_samples_exported",
+  "sources": [
+    "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+    "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_caramel-workshop.jsonl",
+    "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_cracked-star-jar.jsonl"
+  ],
+  "out": "harness/reports/2026-05-27_rl_risk_recovery_clean_samples_001/risk_recovery_samples_clean.jsonl",
+  "input_sample_count": 780,
+  "kept_sample_count": 702,
+  "drop_count": 78,
+  "drop_reasons": {
+    "invalid_sample": 0,
+    "target_risk_reasons": 73,
+    "worse_target_risk_score": 5,
+    "above_max_target_risk_score": 0
+  },
+  "source_warning_count": 5,
+  "filter": {
+    "allow_target_risk": false,
+    "allow_worse_target_risk": false,
+    "target_risk_tolerance": 1e-06,
+    "max_target_risk_score": null
+  },
+  "kept_original_action_distribution": {
+    "1": 80,
+    "2": 109,
+    "3": 91,
+    "4": 93,
+    "5": 61,
+    "6": 119,
+    "7": 81,
+    "8": 68
+  },
+  "kept_target_action_distribution": {
+    "1": 72,
+    "2": 59,
+    "3": 144,
+    "4": 77,
+    "5": 147,
+    "6": 36,
+    "7": 94,
+    "8": 73
+  },
+  "kept_risk_reason_distribution": {
+    "toward_enemy_pressure": 368,
+    "toward_hazard": 169,
+    "wallward_edge": 147,
+    "toward_boss": 59
+  },
+  "validation_decision": "risk_recovery_samples_valid",
+  "drop_examples": [
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "line": 120,
+      "target_risk_reasons": [
+        "toward_enemy_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "line": 124,
+      "target_risk_reasons": [
+        "toward_enemy_pressure"
+      ]
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "line": 173,
+      "target_risk_delta": 0.013189
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "line": 174,
+      "target_risk_delta": 0.038882
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "line": 175,
+      "target_risk_reasons": [
+        "toward_enemy_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "line": 184,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_soda-creek.jsonl",
+      "line": 185,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_cracked-star-jar.jsonl",
+      "line": 29,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_cracked-star-jar.jsonl",
+      "line": 30,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/risk_recovery_samples_cracked-star-jar.jsonl",
+      "line": 31,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    }
+  ],
+  "limitations": [
+    "Clean risk-recovery subsets are still adapter-derived repair training inputs.",
+    "Filtering removes obvious target-risk rows; it does not prove policy quality.",
+    "Any policy trained with this output still needs deterministic high-pressure gates and failure-case review."
+  ]
+}

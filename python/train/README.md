@@ -147,6 +147,14 @@ python3 tools/validate_risk_recovery_samples.py harness/reports/local_late_recov
 
 The validator checks sample role, target source, observation shape, late-window timing, adapter risk reasons, target residual risk, and acceptance-evidence wording. A valid report only means the rows are usable as repair training input; it does not upgrade adapter probes into policy gates.
 
+When a validation report shows target residual-risk warnings, export a clean subset before a focused ablation:
+
+```bash
+python3 tools/filter_risk_recovery_samples.py harness/reports/local_late_recovery/*.jsonl --out harness/reports/local_late_recovery/risk_recovery_samples_clean.jsonl --report harness/reports/local_late_recovery/filter_report.json
+```
+
+The clean subset removes invalid rows, rows whose target action still has adapter target-risk reasons, and rows whose continuous target risk score is worse than the original action. It is still adapter-derived repair data, so train it with low weight / ablation discipline and rerun deterministic 60 / 180 / 300 second high-pressure gates.
+
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
 ## Policy Acceptance Gate

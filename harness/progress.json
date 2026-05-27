@@ -1143,6 +1143,11 @@
       "report": "harness/reports/2026-05-27_rl_late_recovery_sample_validation_001/summary.md"
     },
     {
+      "id": "rl_risk_recovery_clean_sample_filter",
+      "summary": "新增 clean risk recovery 样本筛选工具，默认丢弃 target_risk_reasons 非空或 target risk score 高于 original 的 late adapter rows；当前 opening action3 late recovery 780 条样本筛得 702 条 clean rows，并再次通过 risk recovery validator。该 clean subset 仍只是低权重/消融训练输入，不是 policy gate。",
+      "report": "harness/reports/2026-05-27_rl_risk_recovery_clean_samples_001/summary.md"
+    },
+    {
       "id": "rl_rule_bot_late_survival_probe_teacher_selection",
       "summary": "记录 high-pressure 三图 300 秒规则 Bot late survival 探针：soda-creek 与 cracked-star-jar 找到 KiteBot 干净长局轨迹候选，caramel-workshop 只找到 TankBot seed 62301 的非随机胜利样本；这些结果只用于选择 180-300 秒真实轨迹导出，不是 RL policy gate、stage03 许可或 acceptance 证据。",
       "report": "harness/reports/2026-05-27_rl_rule_bot_late_survival_probe_summary_001/summary.md"
