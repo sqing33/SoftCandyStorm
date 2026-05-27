@@ -34,6 +34,24 @@ The suspected mismatch was real but not sufficient to repair this checkpoint. Re
 
 The gate remains `evaluation_recorded_needs_action_bias_repair`. The fix should stay because it makes staged absolute-time dispatch internally consistent, but the route_recovery entropy retry checkpoint is still not a policy candidate.
 
+## Trace Dataset Nearest Neighbor Diagnostic
+
+Follow-up diagnostic report: `harness/reports/2026-05-27_rl_route_recovery_aux_absolute_time_conditioning_fix_001/trace_dataset_nearest_opening.json`
+
+The online 5 second trace was compared against same-map offline opening samples from `0-60s`, with trace progress reconditioned by `time_seconds / 300`. The nearest offline target distribution was also dominated by action `3`:
+
+| Metric | Result |
+|---|---:|
+| Trace samples | 151 |
+| Offline candidates | 1848 |
+| Online action `3` ratio | 1.0000 |
+| Nearest target action `3` ratio | 0.9735 |
+| Nearest target matches online action ratio | 0.9735 |
+| Online normalized action entropy | 0.0000 |
+| Average nearest distance | 0.761550 |
+
+This shifts the diagnosis: the 5 second online loop is not explained by global offline checkpoint collapse, and it is also not primarily contradicted by nearest same-map opening teacher targets. The toy-window action entropy gate is still useful as a warning, but this particular trace is mostly following a narrow opening teacher neighborhood. Further repair should inspect longer handoff / recovery windows, history padding, and whether the supervision set has enough early alternatives after the first few seconds.
+
 ## Next Step
 
-The remaining blocker is likely closed-loop history / state distribution drift: the opening child policy repeatedly selects action `3`, then its own GRU history reinforces that path. Next diagnostics should compare the online 5 second trace against nearest offline opening trajectories and inspect whether any teacher / target sequence covers this "start by moving right for the whole toy window" rollout.
+Do not promote this checkpoint. The next useful diagnostic is a longer short-window or 60 second evaluation that checks when the teacher neighborhood stops preferring action `3`, then compares the policy history against teacher recovery alternatives around that transition.
