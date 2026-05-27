@@ -2023,6 +2023,11 @@
       "id": "rl_route_recovery_aux_multimap_boundary_samples",
       "summary": "使用 entropy retry staged checkpoint 在 high-pressure 三图各跑 seed 62400-62404 的 60 秒 sampled traces，并导出 1676 条多图 edge_recovery_supervision_sample；validator 通过，behavior clone dry-run 判定 dataset_validated_not_training_gate，样本覆盖 caramel-workshop、cracked-star-jar 和 soda-creek。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_samples_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_multimap_boundary_opening_regression",
+      "summary": "基于 1676 条多图 boundary samples 只重训 opening 子模型后，60 秒 high-pressure 三图 gate 仍需 repair：soda-creek win_rate 0.4 且 action 6 占 77.26%，caramel-workshop 和 cracked-star-jar 也出现 action 6 dominant bias；记录 fail_20260527_042。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_opening_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2032,7 +2037,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新 focused boundary opening retrain 打破了 5 秒纯 action 3，但 60 秒同 seed 死于 42.3664 秒并产生 action 7 dominant bias。已扩展 15 条多图 60 秒 traces 并导出 1676 条 boundary repair samples；下一步应基于这批样本做受控 opening retrain，审查 target balance，并先跑 deterministic 60 秒三图 gate。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias，并在 60 秒 high-pressure 三图 gate 判定 needs_policy_repair。下一步应先做 class weighting 与 edge_recovery_sample_weight 消融，仍以 60 秒三图 deterministic gate 为最小门槛。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

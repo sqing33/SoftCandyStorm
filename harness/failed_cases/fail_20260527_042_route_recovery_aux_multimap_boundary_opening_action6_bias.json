@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_042",
+  "category": "rl_training",
+  "content_id": "route_recovery_aux_multimap_boundary_opening",
+  "seed": 62400,
+  "bot": "RouteRecoveryAuxMultimapBoundaryOpeningCloneSmoke",
+  "time_seconds": 60.0,
+  "symptom": "Controlled multimap boundary opening retrain used 229 opening edge_recovery repair samples and avoided the previous action 3/action 7 framing, but the 60 second high-pressure comparison failed the soda-creek action-distribution gate and selected action 6 on 5703/7382 soda-creek frames. The same action 6 bias also dominated caramel-workshop and cracked-star-jar.",
+  "root_cause": "The wider boundary repair input fixed sample coverage but the training recipe still overcorrected online behavior. The combination of inverse-frequency class weighting, entropy regularization 0.01, and edge_recovery_sample_weight 2.0 produced a new deterministic opening bias toward action 6 even though the offline training action distribution was not action 6 dominant.",
+  "fix": "Do not promote this checkpoint. Run controlled ablations before any long-window evaluation: remove or reduce inverse_frequency class weighting, compare edge_recovery_sample_weight 1.0/1.5/2.0, and keep the deterministic 60 second high-pressure three-map gate as the minimum acceptance screen.",
+  "validation": "Training, packaging, and deterministic 60 second high-pressure comparison are recorded in harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_opening_001. The comparison gate_decision is multimap_comparison_recorded_needs_policy_repair; soda-creek win_rate is 0.4, average_survival is 49.2129 seconds, damage_taken_average is 106.7094, normalized_action_entropy is 0.3962, and action 6 ratio is 0.7726."
+}
