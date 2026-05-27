@@ -398,6 +398,8 @@ phase-split retrain 报告位于 `harness/reports/2026-05-27_rl_action_distribut
 
 基于该 checkpoint 的 300 秒 failed-only trace 诊断位于 `harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_trace_001/summary.md`。15 条失败里 12 条死在 `late_180_to_300`，所有 terminal frames 都贴边且低血量，`boundary_edge` route recovery hotspots 为 `6839` 条；late bucket 的负 route recovery 主要来自 action `1`。下一步应导出 late risk-recovery samples 或做闭环 late survival curriculum，保留当前 opening 子模型，只替换 late 子模型或训练中后期目标策略。
 
+当前 checkpoint 对应的 late recovery 样本批次位于 `harness/reports/2026-05-27_rl_action_distribution_opening_action3_late_recovery_samples_001/summary.md`。`--late-recovery-filter` 导出 `780` 条 `risk_recovery_supervision_sample`，全部位于 `180-300s` late 窗口；adapter 仅把 `soda-creek` / `cracked-star-jar` 300 秒 win rate 拉到 `0.2`，`caramel-workshop` 仍为 `0.0`。该批样本只能用于 late-only 受控消融，不能视作 policy repair 完成。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。
