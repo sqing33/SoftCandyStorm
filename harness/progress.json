@@ -1793,6 +1793,11 @@
       "id": "rl_edge_recovery_filter_diagnostic",
       "summary": "train_sb3.py 新增 --edge-recovery-filter deterministic 诊断 wrapper，可在贴边状态把继续顶墙动作替换为最高分非顶墙动作；报告写入 policy_adapter，正式 acceptance validator 会拒绝此类手写 adapter 证据。",
       "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_curriculum_stage02_edge_recovery_filter_probe",
+      "summary": "使用 edge_recovery_filter 复跑 stage02 staged policy，原 soda-creek seed 62201 deterministic handoff 失败局活到 180.0095 秒；60 秒 10 seed 和 180 秒 3 seed 三图均为 100%，但该结果仍是手写 adapter watch 证据，不是 policy acceptance。",
+      "report": "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_filter_probe_001/summary.md"
     }
   ],
   "next_recommended": [

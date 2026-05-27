@@ -1563,6 +1563,8 @@ def compare_policy_to_rule_bots(
     trace_dir=None,
     trace_failed_only=False,
     trace_sample_stride=30,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
 ):
     episodes = eval_episodes or config["evaluation"]["episodes"]
     seconds = eval_seconds or config["evaluation"]["seconds"]

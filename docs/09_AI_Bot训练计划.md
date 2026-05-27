@@ -448,6 +448,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 `train_sb3.py` 还提供 `--edge-recovery-filter` 作为 deterministic handoff repair 诊断 wrapper：当 policy 在贴近地图边界时仍选择继续往墙里推的动作，它会改选当前动作分布中最高分且不继续顶墙的动作，并在报告中写入 `policy_adapter.mode = edge_recovery_filter`。该 wrapper 只用于定位 deterministic argmax 的卡墙失败面；正式 acceptance validator 会拒绝任何带 `policy_adapter` 的报告，避免把手写过滤器误当成训练策略通过。
 
+使用 `--edge-recovery-filter --edge-recovery-distance 32` 复跑 stage 02 staged policy 后，原 deterministic 失败 seed `soda-creek / 62201` 可活到 `180.0095s`；high-pressure 三图 60 秒 10 seed 与 180 秒 3 seed 也均为 100% 胜率，但动作熵低于 seeded stochastic 路径，约 `0.56-0.72`。报告位于 `harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_filter_probe_001/summary.md`。结论：这确认失败面是 deterministic edge-pushing handoff bug，但 wrapper 是手写 adapter，只能指导后续训练 / 行为约束，不能作为 policy acceptance。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
