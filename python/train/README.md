@@ -123,6 +123,8 @@ Behavior clone repair experiments can load `edge_recovery_supervision_sample` ro
 
 The first handoff-window staged GRU context8 candidate used `--edge-recovery-min-seconds 60 --edge-recovery-max-seconds 180` with the stage01 opening wrapper. It preserved the 60-second high-pressure opening gate and closed the 180-second seed `62201` handoff failures, but the 300-second high-pressure probe still failed in the `late_180_to_300` bucket across all maps. Treat the result as late-window repair evidence, not stage 03 or RL acceptance.
 
+The failed-only late trace shows the next repair should be broader than wall recovery: 7 / 8 terminal frames are still edge-pinned, but 5 / 8 also include hazard pressure and 5 / 8 include boss pressure. Late-window experiments should combine edge escape, hazard avoidance, boss pressure, and low-health recovery before re-running the 300-second gate.
+
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
 ## Policy Acceptance Gate
