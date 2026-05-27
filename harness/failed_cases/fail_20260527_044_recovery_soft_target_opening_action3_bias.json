@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_044",
+  "category": "rl_training",
+  "content_id": "recovery_soft_target_opening_ablation",
+  "seed": 62400,
+  "bot": "RecoverySoftTargetOpeningCloneSmoke",
+  "time_seconds": 60.0,
+  "symptom": "soft/top-k recovery target opening 消融把 soda-creek 60 秒 win_rate 从上一轮硬标签 route-risk ablation 的 0.4 提升到 0.6，但三图 deterministic comparison 仍未通过：caramel-workshop action 3 ratio 达到 0.7582，触发 comparison_recorded_needs_action_bias_repair；cracked-star-jar action 3 ratio 也达到 0.6079。",
+  "root_cause": "soft/top-k target 缓解了单标签 route-risk 样本的部分偏置，但 recovery samples 只占 opening 训练集 6.46%，且主训练轨迹和 repair target 仍让 deterministic argmax 向 action 3 聚集。当前 top-k 分布不足以约束每图动作多样性，也不能防止 action bias 从 action 6 迁移到 action 3。",
+  "fix": "不推进该 staged checkpoint，不进入 180/300 秒评估。下一步应尝试 per-map action diversity constraint、更强的动作分布正则，或构造更宽的 safe-action teacher target，而不是继续提高 recovery sample 权重。",
+  "validation": "训练、打包和 deterministic 60 秒 high-pressure 三图对比记录在 harness/reports/2026-05-27_rl_recovery_soft_target_opening_ablation_001。比较 gate_decision 为 multimap_comparison_recorded_needs_policy_repair，repair_maps 为 [\"caramel-workshop\"]，minimum_policy_win_rate 为 0.6，average_policy_win_rate 为 0.7333。"
+}
