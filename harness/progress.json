@@ -1843,6 +1843,11 @@
       "id": "rl_edge_aux_staged_opening_handoff_probe",
       "summary": "train_sb3.py 允许 --opening-model 与 --behavior-clone-model 组合；首个 SB3 opening + edge-aux behavior clone fallback probe 保住 60 秒三图 10 seed opening gate，但 180 秒 handoff probe 中 soda-creek 与 cracked-star-jar seed 62201 仍在 mid_60_to_180 死亡，记录 fail_20260527_030。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_probe_001/summary.md"
+    },
+    {
+      "id": "rl_edge_aux_handoff_window_staged_late_gap",
+      "summary": "handoff-window edge-aux staged GRU context8 候选把 edge recovery repair 样本限制到 60-180 秒后训练；stage01 opening wrapper 下 60 秒三图 10 seed 和 180 秒三图 3 seed 均为 100%，修掉 seed 62201 handoff gap，但 300 秒三图 3 seed 仍为 soda-creek 0%、caramel-workshop 0%、cracked-star-jar 33.33%，8 个失败全部在 late_180_to_300，记录 fail_20260527_031。",
+      "report": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_staged_gru_context8_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1852,7 +1857,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage01 opening + behavior clone fallback 组合入口已证明能保住 60 秒 opening gate；failed-only trace 确认 soda-creek / cracked-star-jar seed 62201 的失败核心是 deterministic fallback 在 edge-pinned 状态下持续顶住阻塞边界。下一步应训练或约束 handoff/mid fallback 离边恢复，再复跑 deterministic 60 秒 opening gate 与 180 秒多图 handoff probe。"
+      "summary": "stage01 opening + handoff-window edge-aux fallback 已通过 deterministic 60 秒 opening gate 和 180 秒 handoff probe，但 300 秒三图仍在 late_180_to_300 失败；下一步应对 300 秒 late-window 失败 seed 输出 trace，并训练或约束 180-300 秒 late recovery，不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
