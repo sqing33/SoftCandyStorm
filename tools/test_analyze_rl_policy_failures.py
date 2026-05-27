@@ -119,6 +119,48 @@ class RlPolicyFailureAnalysisTests(unittest.TestCase):
             self.assertEqual(soda["failure_time_bucket_distribution"]["late_180_to_300"]["count"], 1)
             self.assertEqual(soda["policy_dominant_action"]["action"], "3")
 
+    def test_build_report_accepts_single_policy_evaluation(self) -> None:
+        payload = {
+            "report_version": 1,
+            "status": "evaluated",
+            "algorithm": "behavior_clone",
+            "model_path": "fixture.pt",
+            "seconds": 180,
+            "seed_start": 62400,
+            "seeds": 2,
+            "gate_decision": "evaluation_recorded_not_policy_gate",
+            "policy": {
+                "map_id": "soda-creek",
+                "gate_decision": "evaluation_recorded_not_policy_gate",
+                "episodes": [
+                    episode(62400, 22.5, "defeat"),
+                    episode(62401, 180.0, "victory"),
+                ],
+                "summary": {
+                    "win_rate": 0.5,
+                    "average_survival_seconds": 101.25,
+                    "normalized_action_entropy": 0.6,
+                    "action_distribution": {
+                        "1": {"count": 10, "ratio": 0.25},
+                        "3": {"count": 30, "ratio": 0.75},
+                    },
+                    "reward_breakdown_average": {"total": -0.5},
+                },
+            },
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "evaluation.json"
+            write_json(path, payload)
+
+            report = build_report(path)
+
+        self.assertEqual(report["decision"], "rl_policy_failure_analysis_recorded")
+        self.assertEqual(report["map_count"], 1)
+        self.assertEqual(report["total_failures"], 1)
+        self.assertEqual(report["repair_maps"], ["soda-creek"])
+        self.assertEqual(report["maps"][0]["map_id"], "soda-creek")
+        self.assertEqual(report["maps"][0]["failure_time_bucket_distribution"]["opening_lt_60"]["count"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

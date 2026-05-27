@@ -138,7 +138,16 @@ def build_report(comparison_path: Path) -> dict[str, Any]:
     payload = load_json_object(comparison_path)
     maps = payload.get("maps")
     if not isinstance(maps, list):
-        raise ValueError("comparison report must contain a `maps` list")
+        policy = payload.get("policy")
+        if not isinstance(policy, dict):
+            raise ValueError("comparison report must contain a `maps` list or a single `policy` object")
+        maps = [
+            {
+                "map_id": payload.get("map_id") or policy.get("map_id") or "unknown",
+                "gate_decision": policy.get("gate_decision") or payload.get("gate_decision"),
+                "policy": policy,
+            }
+        ]
 
     map_reports = [map_report(entry) for entry in maps]
     total_failures = sum(item["failure_count"] for item in map_reports)
