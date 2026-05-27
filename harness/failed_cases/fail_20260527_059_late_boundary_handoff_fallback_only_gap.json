@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_059",
+  "category": "rl_policy",
+  "content_id": "late_boundary_handoff_fallback_only_probe",
+  "seed": 62400,
+  "bot": "Stage01OpeningWrapperMidFallbackOnly",
+  "time_seconds": 300.0,
+  "symptom": "将 713 条 60-90 秒 handoff 样本训练出的 mid.pt 直接作为 stage01 opening wrapper 的 60 秒后 fallback 后，60 秒三图保持 1.0/1.0/0.8，但 180 秒降到 0.4/0.8/0.2，300 秒三图全为 0.0，不能通过 multimap policy gate。",
+  "root_cause": "fallback-only 对照比上一轮 staged fallback 更差，说明问题不是 staged late 子模型或 phase dispatch 单独造成。mid.pt 直接接手后仍存在跨图 route recovery 不稳定和 action 7 顶边倾向；300 秒失败分析记录 15 个死亡局，opening bucket 为 0，但 soda-creek 为 mid 3 / late 2，caramel-workshop 为 mid 1 / late 4，cracked-star-jar 为 mid 4 / late 1，且 cracked-star-jar 的 action 7 占比达到 61.49%。",
+  "fix": "不推进该 fallback-only 组合到 stage 03、RL acceptance、playtest 或 release。下一步不应继续只提高 60-90 秒 handoff 样本权重，应转向 cracked-star-jar 专项 handoff 样本，或训练 late-window low-health / hazard / Boss pressure recovery；若继续 fallback 方向，需要把 action 7 顶边压制和跨图 route recovery 写成显式训练/评估约束。",
+  "validation": "60/180/300 秒 wrapper 对比和失败分析记录在 harness/reports/2026-05-27_rl_late_boundary_handoff_opening_wrapper_fallback_only_probe_001/mid_fallback_only；300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair，failure_analysis_300s.json 记录 15 个死亡局且 opening bucket 为 0。"
+}
