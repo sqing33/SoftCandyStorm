@@ -589,6 +589,8 @@ stage 02 的 staged opening wrapper 进一步验证了“分离开局策略”�
 
 基于 action4_w0_5 失败面导出的 `1001` 条 180-300 秒 late boundary recovery samples 进一步做了 late-only 小权重消融。该候选保留当前 opening 与 mid，只替换 late 子模型；60 秒 high-pressure 三图为 `0.4/1.0/0.8`，180 秒为 `0.6/1.0/0.8`，300 秒为 `0.0/0.0/0.4`。结论是样本方向有局部价值，尤其让 `cracked-star-jar` 长窗出现恢复信号，但 `soda-creek` 和 `caramel-workshop` 仍无法 300 秒存活，且失败分析显示 dominant action 转为 action `1` 后仍集中死于 late 低血量/贴边压力。报告位于 `harness/reports/2026-05-27_rl_late_boundary_lateonly_ablation_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_053_late_boundary_lateonly_ablation_gap.json`；下一步应转向 closed-loop late boundary escape / low-health survival curriculum，或补充 180-300 秒成功/近成功 clean survival 对照样本，而不是单纯继续提高 repair 样本权重。
 
+从 `late-route-recovery` checkpoint 继续做 closed-loop late boundary curriculum smoke 后，结论更保守：在 high-pressure 三图和 seed `62400-62404` 上继续 `4096` timesteps，没有改善 300 秒 gate，反而破坏 opening/mid retention。60 秒为 `0.4/0.8/1.0`，180 秒为 `0.2/0.4/0.8`，300 秒仍为 `0.0/0.0/0.4`；300 秒失败分析中 `soda-creek` 已有 3 个 opening 死亡，`caramel-workshop` 也出现 opening/mid 死亡。报告位于 `harness/reports/2026-05-27_rl_late_boundary_closed_loop_curriculum_smoke_001/summary.md`，failure case 为 `harness/failed_cases/fail_20260527_054_late_boundary_closed_loop_curriculum_regression.json`。下一轮 closed-loop 必须先加入 opening/mid retention 约束或 staged opening wrapper，并把 60/180 秒 gate 作为训练中止条件，不能继续只在失败 seed 上加 timestep。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：

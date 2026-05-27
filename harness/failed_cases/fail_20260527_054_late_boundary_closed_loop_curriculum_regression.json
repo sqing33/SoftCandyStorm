@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_054",
+  "category": "rl_policy",
+  "content_id": "late_boundary_closed_loop_curriculum_smoke",
+  "seed": 62400,
+  "bot": "PpoLateBoundaryClosedLoopCurriculumSmoke",
+  "time_seconds": 300.0,
+  "symptom": "从 late-route-recovery checkpoint warm start，在 high-pressure 三图和 seed 62400-62404 上继续 4096 timesteps 后，300 秒 soda-creek 与 caramel-workshop 仍为 0.0 win_rate，cracked-star-jar 为 0.4；同时 180 秒回落到 0.2/0.4/0.8，60 秒 caramel-workshop 从上一轮 late-only 行为克隆的 1.0 回落到 0.8。",
+  "root_cause": "直接对失败 seed 做 late-route-recovery closed-loop continuation 破坏了 opening/mid retention。失败分析显示 soda-creek 5 个失败中 3 个发生在 60 秒前、1 个发生在 60-180 秒；caramel-workshop 也出现 opening 和 mid 失败。策略没有单一动作 100% 塌缩，但 action 4/7 成为主要路线，route_recovery 仍为负，说明 reward 未形成稳定的低血量、贴边、hazard 和 Boss 压力恢复策略。",
+  "fix": "不继续从该 checkpoint 加 timestep，也不推进 stage 03、RL acceptance、playtest 或 release。下一轮 closed-loop 需要先加入 opening/mid retention 约束或 staged opening wrapper，并把 60/180 秒 gate 作为训练中止条件；也可先补充 180-300 秒成功/近成功 clean survival 对照样本。",
+  "validation": "dry-run、4096 timestep PPO continuation、60/180/300 秒 high-pressure 三图对比和 300 秒失败分析记录在 harness/reports/2026-05-27_rl_late_boundary_closed_loop_curriculum_smoke_001；300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair，failure_analysis_300s.json 记录 13 个死亡局。"
+}

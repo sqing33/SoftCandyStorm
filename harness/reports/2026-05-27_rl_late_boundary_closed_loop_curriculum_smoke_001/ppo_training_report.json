@@ -1,0 +1,218 @@
+{
+  "status": "trained",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-27_rl_late_boundary_closed_loop_curriculum_smoke_001/ppo_late_boundary_closed_loop_curriculum_smoke.zip",
+  "reward_profile": "late-route-recovery",
+  "metadata_path": "harness/reports/2026-05-27_rl_late_boundary_closed_loop_curriculum_smoke_001/ppo_late_boundary_closed_loop_curriculum_smoke_metadata.json",
+  "evaluation_path": "harness/reports/local_rl_training/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/local_rl_training/ppo_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true,
+    "torch": true
+  },
+  "training": {
+    "total_timesteps": 4096,
+    "requested_timesteps": 4096,
+    "actual_timesteps": 4096,
+    "seed": 12345,
+    "seconds": 300.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "observation_version": 2,
+    "observation_len": 145,
+    "maps": [
+      "soda-creek",
+      "caramel-workshop",
+      "cracked-star-jar"
+    ],
+    "map_selection": "random",
+    "map_preset": "high-pressure",
+    "reward_profile": "late-route-recovery",
+    "upgrade_choice_model": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+    "seeds": [
+      62400,
+      62401,
+      62402,
+      62403,
+      62404
+    ],
+    "seed_selection": "random",
+    "started_at": "2026-05-27T09:37:13.929630+00:00",
+    "completed_at": "2026-05-27T09:37:17.473584+00:00",
+    "algorithm_parameters": {
+      "learning_rate": 0.0001,
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.02,
+      "clip_range": 0.2
+    },
+    "algorithm_parameters_source": "warm_start_metadata_with_overrides",
+    "warm_start_model": "harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001/ppo_late_route_recovery_reward_profile_smoke.zip",
+    "warm_start_metadata_path": "harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001/ppo_late_route_recovery_reward_profile_smoke_metadata.json",
+    "evaluation_policy": "deterministic",
+    "evaluation_action_random_seed": null,
+    "evaluation_map_id": "soda-creek"
+  },
+  "evaluation": {
+    "episodes": 3,
+    "win_rate": 0.6667,
+    "average_survival_seconds": 56.8217,
+    "average_level": 2.0,
+    "average_kills": 57.3333,
+    "average_reward": -9.1816,
+    "damage_taken_average": 97.3901,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 751,
+        "ratio": 0.1469
+      },
+      "3": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "4": {
+        "count": 2154,
+        "ratio": 0.4212
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 2209,
+        "ratio": 0.432
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "action_entropy_bits": 1.455,
+    "normalized_action_entropy": 0.459,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 5114,
+      "mean_scores": {
+        "0": 0.0119,
+        "1": 0.0161,
+        "2": 0.0844,
+        "3": 0.0449,
+        "4": 0.3495,
+        "5": 0.0712,
+        "6": 0.0113,
+        "7": 0.3315,
+        "8": 0.0794
+      },
+      "mean_top_actions": [
+        {
+          "action": "4",
+          "score": 0.3495
+        },
+        {
+          "action": "7",
+          "score": 0.3315
+        },
+        {
+          "action": "2",
+          "score": 0.0844
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 751,
+          "ratio": 0.1469
+        },
+        "3": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "4": {
+          "count": 2154,
+          "ratio": 0.4212
+        },
+        "5": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "6": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "7": {
+          "count": 2209,
+          "ratio": 0.432
+        },
+        "8": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "dominant_top_action": {
+        "action": "7",
+        "count": 2209,
+        "ratio": 0.432
+      },
+      "mean_chosen_action_score": 0.7366,
+      "chosen_action_score_sample_count": 5114
+    },
+    "upgrade_policy_decision_count": 3,
+    "reward_breakdown_average": {
+      "action_repeat": -6.4547,
+      "boss_pressure": 0.0,
+      "boundary_risk": -0.6828,
+      "corner_action_risk": 0.0,
+      "corner_risk_delta": -0.0038,
+      "damage_taken": -7.7912,
+      "enemy_pressure": -0.1865,
+      "hazard_risk": 0.0,
+      "kill": 4.5867,
+      "level": 0.8,
+      "low_health": -0.1695,
+      "opening_edge_risk_delta": -0.0026,
+      "route_recovery": -1.548,
+      "safety_delta": -0.0081,
+      "survival": 0.5682,
+      "terminal": -0.3333,
+      "total": -9.1816,
+      "xp": 2.044
+    }
+  },
+  "upgrade_policy": {
+    "mode": "upgrade_choice_ranker",
+    "model_path": "harness/reports/2026-05-27_rl_upgrade_choice_multimap_ranker_smoke_001/upgrade_choice_multimap_smoke.pt",
+    "limitations": [
+      "The upgrade policy fills upgrade prompts only; movement actions still come from the evaluated policy.",
+      "Using an upgrade ranker during evaluation is not an RL policy acceptance gate."
+    ]
+  },
+  "known_exploits": [],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_rule_bot_comparison"
+}
