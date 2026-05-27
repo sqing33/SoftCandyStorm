@@ -14,6 +14,7 @@ from python.train.train_sb3 import (
     algorithm_overrides_from_args,
     apply_loaded_model_overrides,
     build_edge_recovery_sample,
+    build_env,
     build_trace_step,
     compact_action_score,
     consume_policy_adapter_decision,
@@ -101,6 +102,31 @@ def test_validate_eval_random_seed_requires_stochastic_evaluation():
         validate_eval_random_seed(17, deterministic=True)
     with pytest.raises(ValueError, match="non-negative"):
         validate_eval_random_seed(-1, deterministic=False)
+
+
+def test_build_env_passes_reward_profile(monkeypatch):
+    captured = {}
+
+    class DummyEnv:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(train_sb3, "SoftCandyStormEnv", DummyEnv)
+    config = {
+        "environment": {
+            "seed": 12345,
+            "seconds": 300,
+            "tick_rate": 30,
+            "map_id": "soda-creek",
+            "observation_version": 2,
+            "content_dir": "content/base_demo",
+        }
+    }
+
+    env = build_env(config, reward_profile="late-survival")
+
+    assert isinstance(env, DummyEnv)
+    assert captured["reward_profile"] == "late-survival"
 
 
 def test_seed_stochastic_action_sampling_replays_python_random_sequence():

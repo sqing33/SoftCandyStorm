@@ -42,6 +42,17 @@ const GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT: f32 = 0.008;
 const GYM_REWARD_OPENING_EDGE_DELTA_CLAMP: f32 = 0.25;
 const GYM_REWARD_OPENING_CORNER_SECONDS: f32 = 60.0;
 const GYM_REWARD_CORNER_DISTANCE_RATIO: f32 = 0.12;
+const GYM_REWARD_LATE_SURVIVAL_START_SECONDS: f32 = 180.0;
+const GYM_REWARD_LATE_SURVIVAL_RAMP_SECONDS: f32 = 60.0;
+const GYM_REWARD_LATE_SURVIVAL_SURVIVAL_SCALE: f32 = 3.0;
+const GYM_REWARD_LATE_SURVIVAL_SAFETY_SCALE: f32 = 4.0;
+const GYM_REWARD_LATE_SURVIVAL_LOW_HEALTH_SCALE: f32 = 4.0;
+const GYM_REWARD_LATE_SURVIVAL_BOUNDARY_SCALE: f32 = 3.0;
+const GYM_REWARD_LATE_SURVIVAL_ENEMY_SCALE: f32 = 2.0;
+const GYM_REWARD_LATE_SURVIVAL_HAZARD_SCALE: f32 = 3.0;
+const GYM_REWARD_LATE_SURVIVAL_BOSS_SCALE: f32 = 3.0;
+const GYM_REWARD_LATE_SURVIVAL_VICTORY_BONUS: f32 = 2.0;
+const GYM_REWARD_LATE_SURVIVAL_DEFEAT_PENALTY: f32 = -2.0;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
     "new_001",
@@ -315,6 +326,7 @@ struct GymBridgeArgs {
     seconds: f32,
     tick_rate: u32,
     observation_version: u8,
+    reward_profile: GymRewardProfile,
     content_dir: Option<PathBuf>,
 }
 
@@ -326,7 +338,31 @@ impl Default for GymBridgeArgs {
             seconds: 600.0,
             tick_rate: 30,
             observation_version: GYM_DEFAULT_OBSERVATION_VERSION,
+            reward_profile: GymRewardProfile::Standard,
             content_dir: Some(PathBuf::from("content/base_demo")),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum GymRewardProfile {
+    Standard,
+    LateSurvival,
+}
+
+impl GymRewardProfile {
+    fn parse(value: &str) -> Option<Self> {
+        match value {
+            "standard" => Some(Self::Standard),
+            "late-survival" => Some(Self::LateSurvival),
+            _ => None,
+        }
+    }
+
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Standard => "standard",
+            Self::LateSurvival => "late-survival",
         }
     }
 }
@@ -751,6 +787,7 @@ struct GymBridgeInfo {
     map_id: String,
     tick_rate: u32,
     observation_version: u8,
+    reward_profile: String,
     tick: u64,
     time_seconds: f32,
     health: f32,
@@ -975,6 +1012,7 @@ struct GymBridgeState {
     seconds: f32,
     tick_rate: u32,
     observation_version: u8,
+    reward_profile: GymRewardProfile,
     tick: u64,
     last_action_index: Option<usize>,
     repeated_action_steps: u32,
@@ -1659,6 +1697,10 @@ fn parse_gym_bridge_args(values: Vec<String>) -> Result<GymBridgeArgs, String> {
                     ));
                 }
             }
+            "--reward-profile" => {
+                parsed.reward_profile = GymRewardProfile::parse(value)
+                    .ok_or_else(|| format!("invalid --reward-profile `{value}`"))?;
+            }
             "--content-dir" => {
                 parsed.content_dir = Some(PathBuf::from(value));
             }
@@ -2293,6 +2335,7 @@ fn run_gym_bridge(args: GymBridgeArgs) {
         args.seconds,
         args.tick_rate,
         args.observation_version,
+        args.reward_profile,
     );
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
@@ -2582,6 +2625,7 @@ impl GymBridgeState {
         seconds: f32,
         tick_rate: u32,
         observation_version: u8,
+        reward_profile: GymRewardProfile,
     ) -> Self {
         let core = reset_gym_core(&content.pack, seed, &map_id, seconds, tick_rate);
         let last_safety_risk = Some(gym_safety_risk_score(&core.snapshot()));
@@ -2595,6 +2639,7 @@ impl GymBridgeState {
             seconds,
             tick_rate,
             observation_version,
+            reward_profile,
             tick: 0,
             last_action_index: None,
             repeated_action_steps: 0,
@@ -2747,6 +2792,7 @@ impl GymBridgeState {
             opening_edge_risk_delta,
         };
         let reward_breakdown = gym_reward_breakdown(
+            self.reward_profile,
             &result.reward_hint,
             &result.events,
             result.terminal.as_ref(),
@@ -2805,6 +2851,7 @@ impl GymBridgeState {
             map_id: self.map_id.clone(),
             tick_rate: self.tick_rate,
             observation_version: self.observation_version,
+            reward_profile: self.reward_profile.as_str().to_string(),
             tick: self.tick,
             time_seconds: snapshot.time_seconds,
             health: snapshot.player.health,
@@ -2921,6 +2968,7 @@ fn gym_discrete_action_index(movement: Vec2) -> usize {
 }
 
 fn gym_reward_breakdown(
+    profile: GymRewardProfile,
     hint: &game_core::RewardHint,
     events: &[GameEvent],
     terminal: Option<&game_core::TerminalState>,
@@ -2931,26 +2979,62 @@ fn gym_reward_breakdown(
         .iter()
         .filter(|event| matches!(event, GameEvent::EnemyKilled { .. }))
         .count() as f32;
-    let survival = hint.survival_delta * GYM_REWARD_SURVIVAL_WEIGHT;
+    let late_scale =
+        gym_late_survival_scale(profile, snapshot.map(|snapshot| snapshot.time_seconds));
+    let survival = hint.survival_delta
+        * GYM_REWARD_SURVIVAL_WEIGHT
+        * (1.0 + late_scale * GYM_REWARD_LATE_SURVIVAL_SURVIVAL_SCALE);
     let kill = kill_delta * GYM_REWARD_KILL_WEIGHT;
     let xp = hint.xp_delta * GYM_REWARD_XP_WEIGHT;
     let level = hint.level_delta as f32 * GYM_REWARD_LEVEL_WEIGHT;
     let damage_taken = hint.damage_taken_delta * GYM_REWARD_DAMAGE_WEIGHT;
-    let low_health = snapshot.map_or(0.0, gym_low_health_reward);
-    let boundary_risk = snapshot.map_or(0.0, gym_boundary_risk_reward);
-    let enemy_pressure = snapshot.map_or(0.0, gym_enemy_pressure_reward);
-    let hazard_risk = snapshot.map_or(0.0, gym_hazard_risk_reward);
-    let boss_pressure = snapshot.map_or(0.0, gym_boss_pressure_reward);
+    let low_health = gym_late_survival_scaled_component(
+        profile,
+        snapshot.map(|snapshot| snapshot.time_seconds),
+        snapshot.map_or(0.0, gym_low_health_reward),
+        GYM_REWARD_LATE_SURVIVAL_LOW_HEALTH_SCALE,
+    );
+    let boundary_risk = gym_late_survival_scaled_component(
+        profile,
+        snapshot.map(|snapshot| snapshot.time_seconds),
+        snapshot.map_or(0.0, gym_boundary_risk_reward),
+        GYM_REWARD_LATE_SURVIVAL_BOUNDARY_SCALE,
+    );
+    let enemy_pressure = gym_late_survival_scaled_component(
+        profile,
+        snapshot.map(|snapshot| snapshot.time_seconds),
+        snapshot.map_or(0.0, gym_enemy_pressure_reward),
+        GYM_REWARD_LATE_SURVIVAL_ENEMY_SCALE,
+    );
+    let hazard_risk = gym_late_survival_scaled_component(
+        profile,
+        snapshot.map(|snapshot| snapshot.time_seconds),
+        snapshot.map_or(0.0, gym_hazard_risk_reward),
+        GYM_REWARD_LATE_SURVIVAL_HAZARD_SCALE,
+    );
+    let boss_pressure = gym_late_survival_scaled_component(
+        profile,
+        snapshot.map(|snapshot| snapshot.time_seconds),
+        snapshot.map_or(0.0, gym_boss_pressure_reward),
+        GYM_REWARD_LATE_SURVIVAL_BOSS_SCALE,
+    );
+    let safety_delta = gym_late_survival_scaled_component(
+        profile,
+        snapshot.map(|snapshot| snapshot.time_seconds),
+        shaping.safety_delta,
+        GYM_REWARD_LATE_SURVIVAL_SAFETY_SCALE,
+    );
     let corner_action_risk = 0.0;
 
     let terminal = if let Some(terminal) = terminal {
-        match terminal.kind {
+        let base = match terminal.kind {
             TerminalKind::Victory => GYM_REWARD_VICTORY,
             TerminalKind::Defeat => GYM_REWARD_DEFEAT,
             TerminalKind::Timeout => 0.0,
             TerminalKind::Aborted => GYM_REWARD_ABORTED,
             TerminalKind::InvalidState => GYM_REWARD_INVALID_STATE,
-        }
+        };
+        base + gym_late_survival_terminal_adjustment(profile, terminal)
     } else {
         0.0
     };
@@ -2966,7 +3050,7 @@ fn gym_reward_breakdown(
         + enemy_pressure
         + hazard_risk
         + boss_pressure
-        + shaping.safety_delta
+        + safety_delta
         + corner_action_risk
         + shaping.corner_risk_delta
         + shaping.opening_edge_risk_delta
@@ -2983,12 +3067,49 @@ fn gym_reward_breakdown(
         enemy_pressure,
         hazard_risk,
         boss_pressure,
-        safety_delta: shaping.safety_delta,
+        safety_delta,
         corner_action_risk,
         corner_risk_delta: shaping.corner_risk_delta,
         opening_edge_risk_delta: shaping.opening_edge_risk_delta,
         terminal,
         total,
+    }
+}
+
+fn gym_late_survival_scaled_component(
+    profile: GymRewardProfile,
+    time_seconds: Option<f32>,
+    component: f32,
+    scale: f32,
+) -> f32 {
+    component * (1.0 + gym_late_survival_scale(profile, time_seconds) * scale)
+}
+
+fn gym_late_survival_scale(profile: GymRewardProfile, time_seconds: Option<f32>) -> f32 {
+    if profile != GymRewardProfile::LateSurvival {
+        return 0.0;
+    }
+    let Some(time_seconds) = time_seconds else {
+        return 0.0;
+    };
+    ((time_seconds - GYM_REWARD_LATE_SURVIVAL_START_SECONDS)
+        / GYM_REWARD_LATE_SURVIVAL_RAMP_SECONDS)
+        .clamp(0.0, 1.0)
+}
+
+fn gym_late_survival_terminal_adjustment(
+    profile: GymRewardProfile,
+    terminal: &game_core::TerminalState,
+) -> f32 {
+    let scale = gym_late_survival_scale(profile, Some(terminal.time_seconds));
+    if scale <= 0.0 {
+        return 0.0;
+    }
+
+    match terminal.kind {
+        TerminalKind::Victory => GYM_REWARD_LATE_SURVIVAL_VICTORY_BONUS * scale,
+        TerminalKind::Defeat => GYM_REWARD_LATE_SURVIVAL_DEFEAT_PENALTY * scale,
+        TerminalKind::Timeout | TerminalKind::Aborted | TerminalKind::InvalidState => 0.0,
     }
 }
 
@@ -6661,7 +6782,7 @@ fn print_help() {
         "  cargo run -p game_harness -- lock-accepted-content [--accepted-dir harness/accepted_content] [--lock-file harness/accepted_content/accepted_content.lock.json] [--runtime-content-root harness/accepted_content] [--report-dir harness/reports/local_accepted_content_lock]"
     );
     eprintln!(
-        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--content-dir content/base_demo]",
+        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--reward-profile standard|late-survival] [--content-dir content/base_demo]",
         DEFAULT_MAP_ID
     );
     eprintln!(
@@ -6683,8 +6804,8 @@ mod tests {
         gym_opening_corner_pressure_risk, gym_opening_corner_risk_delta_reward,
         gym_opening_edge_pressure_risk, gym_opening_edge_risk_delta_reward, gym_reward_breakdown,
         gym_safety_delta_reward, gym_safety_risk_score, gym_snapshot_diagnostics, movement_changed,
-        GymBridgeRequest, GymRewardShaping, ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN,
-        GYM_OBSERVATION_V2_LEN, GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT,
+        GymBridgeRequest, GymRewardProfile, GymRewardShaping, ManualAcceptanceDecision,
+        GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN, GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT,
         GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT, GYM_REWARD_SAFETY_DELTA_WEIGHT,
         REQUIRED_PLAYTEST_RUN_IDS,
     };
@@ -6760,6 +6881,7 @@ mod tests {
             kills: 0,
         };
         let breakdown = gym_reward_breakdown(
+            GymRewardProfile::Standard,
             &hint,
             &[],
             Some(&terminal),
@@ -6843,6 +6965,7 @@ mod tests {
         });
 
         let breakdown = gym_reward_breakdown(
+            GymRewardProfile::Standard,
             &RewardHint::default(),
             &[],
             None,
@@ -6927,6 +7050,7 @@ mod tests {
         let top_left_corner_risk = gym_opening_corner_pressure_risk(&top_left_snapshot);
 
         let recovery_breakdown = gym_reward_breakdown(
+            GymRewardProfile::Standard,
             &RewardHint::default(),
             &[],
             None,
@@ -6976,6 +7100,63 @@ mod tests {
         assert!(reduced_risk > 0.0);
         assert!(increased_risk < 0.0);
         assert!((clamped_reward - 0.25 * GYM_REWARD_SAFETY_DELTA_WEIGHT).abs() < 0.0001);
+    }
+
+    #[test]
+    fn gym_reward_profile_parses_late_survival() {
+        assert_eq!(
+            GymRewardProfile::parse("late-survival"),
+            Some(GymRewardProfile::LateSurvival)
+        );
+        assert_eq!(
+            GymRewardProfile::parse("standard"),
+            Some(GymRewardProfile::Standard)
+        );
+        assert_eq!(GymRewardProfile::parse("late_survival"), None);
+        assert_eq!(GymRewardProfile::LateSurvival.as_str(), "late-survival");
+    }
+
+    #[test]
+    fn gym_late_survival_profile_amplifies_late_window_rewards() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        snapshot.time_seconds = 240.0;
+        let hint = RewardHint {
+            survival_delta: 1.0,
+            ..RewardHint::default()
+        };
+        let shaping = GymRewardShaping {
+            safety_delta: 0.01,
+            ..GymRewardShaping::default()
+        };
+        let terminal = TerminalState {
+            kind: TerminalKind::Victory,
+            time_seconds: 300.0,
+            reason: "duration_reached".to_string(),
+            final_level: 1,
+            kills: 0,
+        };
+
+        let standard = gym_reward_breakdown(
+            GymRewardProfile::Standard,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+        let late = gym_reward_breakdown(
+            GymRewardProfile::LateSurvival,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+
+        assert!(late.survival > standard.survival);
+        assert!(late.safety_delta > standard.safety_delta);
+        assert!(late.terminal > standard.terminal);
+        assert!(late.total > standard.total);
     }
 
     #[test]

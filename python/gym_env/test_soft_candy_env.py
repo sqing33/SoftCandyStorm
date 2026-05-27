@@ -54,3 +54,21 @@ def test_seed_selector_rejects_empty_seed_values():
         assert "seed_values" in str(exc)
     else:
         raise AssertionError("expected empty seed values to be rejected")
+
+
+def test_reward_profile_accepts_late_survival():
+    env = SoftCandyStormEnv.__new__(SoftCandyStormEnv)
+
+    assert env._normalize_reward_profile("late-survival") == "late-survival"
+    assert env._normalize_reward_profile(None) == "standard"
+
+
+def test_reward_profile_rejects_unknown_value():
+    env = SoftCandyStormEnv.__new__(SoftCandyStormEnv)
+
+    try:
+        env._normalize_reward_profile("late_survival")
+    except ValueError as exc:
+        assert "reward_profile" in str(exc)
+    else:
+        raise AssertionError("expected unknown reward profile to be rejected")

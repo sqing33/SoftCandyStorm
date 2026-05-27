@@ -67,6 +67,12 @@ Use `--train-seconds` to change training episode length without changing evaluat
 python3 python/train/train_sb3.py --algorithm ppo --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
 ```
 
+Use `--reward-profile late-survival` for closed-loop late-window survival repair experiments. This profile is applied inside the Rust `gym-bridge`: after 180 seconds it ramps up survival, safety-risk reduction, low-health, boundary, enemy, hazard, boss-pressure, and terminal survival rewards/penalties. It is training evidence only; deterministic high-pressure 60/180/300-second gates are still required before any RL test Bot candidate review.
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-survival --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
+```
+
 In training mode, pass `--map-id <id>` to choose the post-training evaluation map. This keeps short action-gate checks aligned with focused high-pressure or curriculum experiments instead of always falling back to the config default map.
 
 ```bash

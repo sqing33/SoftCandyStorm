@@ -865,6 +865,7 @@ def build_env(
     map_id=None,
     map_ids=None,
     map_selection="cycle",
+    reward_profile="standard",
     upgrade_policy=None,
     seed_values=None,
     seed_selection="cycle",
@@ -878,6 +879,7 @@ def build_env(
         map_id=selected_map_id,
         map_ids=map_ids,
         map_selection=map_selection,
+        reward_profile=reward_profile,
         seed_values=seed_values,
         seed_selection=seed_selection,
         observation_version=env_cfg.get("observation_version", 2),
@@ -894,6 +896,7 @@ def dry_run(
     train_maps=None,
     train_map_selection="cycle",
     train_map_preset=None,
+    reward_profile="standard",
     train_seed_values=None,
     train_seed_selection="cycle",
 ):
@@ -903,6 +906,7 @@ def dry_run(
         seconds=min(requested_seconds, 5.0),
         map_ids=train_maps,
         map_selection=train_map_selection,
+        reward_profile=reward_profile,
         seed_values=train_seed_values,
         seed_selection=train_seed_selection,
     )
@@ -938,6 +942,7 @@ def dry_run(
             or [config["environment"].get("map_id", "frosting-grassland")],
             "training_map_selection": train_map_selection if train_maps else "single",
             "training_map_preset": train_map_preset,
+            "reward_profile": reward_profile,
             "training_seeds": train_seed_values,
             "training_seed_selection": train_seed_selection if train_seed_values else "single",
             "total_reward": round(total_reward, 4),
@@ -959,6 +964,7 @@ def train(
     train_maps=None,
     train_map_selection="cycle",
     train_map_preset=None,
+    reward_profile="standard",
     train_seed_values=None,
     train_seed_selection="cycle",
     algorithm_overrides=None,
@@ -992,6 +998,7 @@ def train(
         seconds=effective_train_seconds,
         map_ids=train_maps,
         map_selection=train_map_selection,
+        reward_profile=reward_profile,
         seed_values=train_seed_values,
         seed_selection=train_seed_selection,
     )
@@ -1069,6 +1076,7 @@ def train(
         map_id=eval_map_id,
         deterministic=eval_deterministic,
         eval_random_seed=eval_random_seed,
+        reward_profile=reward_profile,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
@@ -1095,6 +1103,7 @@ def train(
         "content_dir": config["environment"]["content_dir"],
         "content_rules": "headless GameCore via game_harness gym-bridge",
         "reward_config": "prototype reward in game_harness gym_reward",
+        "reward_profile": reward_profile,
         "warm_start_model": str(warm_start_model) if warm_start_model else None,
         "warm_start_metadata_path": (
             str(warm_start_metadata_path) if warm_start_metadata_path else None
@@ -1125,6 +1134,7 @@ def train(
         "status": "trained",
         "algorithm": algorithm,
         "model_path": str(model_path),
+        "reward_profile": reward_profile,
         "metadata_path": str(metadata_path),
         "evaluation_path": str(evaluation_path),
         "known_exploits_path": str(exploit_path),
@@ -1143,6 +1153,7 @@ def train(
             or [config["environment"].get("map_id", "frosting-grassland")],
             "map_selection": train_map_selection if train_maps else "single",
             "map_preset": train_map_preset,
+            "reward_profile": reward_profile,
             "seeds": train_seed_values,
             "seed_selection": train_seed_selection if train_seed_values else "single",
             "started_at": started_at,
@@ -1209,6 +1220,7 @@ def evaluate_saved_policy(
     map_id=None,
     deterministic=True,
     eval_random_seed=None,
+    reward_profile="standard",
     upgrade_choice_model=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -1260,6 +1272,7 @@ def evaluate_saved_policy(
         map_id=map_id,
         deterministic=deterministic,
         eval_random_seed=eval_random_seed,
+        reward_profile=reward_profile,
         upgrade_policy=upgrade_policy,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -1281,6 +1294,7 @@ def evaluate_policy_model(
     map_id=None,
     deterministic=True,
     eval_random_seed=None,
+    reward_profile="standard",
     upgrade_choice_model=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -1314,6 +1328,7 @@ def evaluate_policy_model(
             map_id=map_id,
             deterministic=deterministic,
             eval_random_seed=eval_random_seed,
+            reward_profile=reward_profile,
             upgrade_policy=upgrade_policy,
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
@@ -1341,6 +1356,7 @@ def evaluate_policy_model(
         map_id=map_id,
         deterministic=deterministic,
         eval_random_seed=eval_random_seed,
+        reward_profile=reward_profile,
         upgrade_choice_model=upgrade_choice_model,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -1370,6 +1386,7 @@ def evaluate_behavior_clone_policy(
     map_id=None,
     deterministic=True,
     eval_random_seed=None,
+    reward_profile="standard",
     upgrade_policy=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -1413,6 +1430,7 @@ def evaluate_behavior_clone_policy(
         map_id=map_id,
         deterministic=deterministic,
         eval_random_seed=eval_random_seed,
+        reward_profile=reward_profile,
         upgrade_policy=upgrade_policy,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -1464,6 +1482,7 @@ def evaluate_model(
     map_id=None,
     deterministic=True,
     eval_random_seed=None,
+    reward_profile="standard",
     upgrade_policy=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -1497,6 +1516,7 @@ def evaluate_model(
             seed=seed_start,
             seconds=seconds,
             map_id=map_id,
+            reward_profile=reward_profile,
             upgrade_policy=upgrade_policy,
         )
         for index in range(episodes):
@@ -1626,6 +1646,7 @@ def evaluate_model(
         "status": "evaluated",
         "phase": config["phase"],
         "map_id": map_id,
+        "reward_profile": reward_profile,
         "policy_kind": getattr(model, "policy_kind", "sb3"),
         "opening_policy": opening_policy_report(model),
         "policy_adapter": policy_adapter_report(model),
@@ -2271,6 +2292,7 @@ def compare_policy_to_rule_bots(
     rule_bots=None,
     deterministic=True,
     eval_random_seed=None,
+    reward_profile="standard",
     upgrade_choice_model=None,
     trace_dir=None,
     trace_failed_only=False,
@@ -2304,6 +2326,7 @@ def compare_policy_to_rule_bots(
         map_id=map_id,
         deterministic=deterministic,
         eval_random_seed=eval_random_seed,
+        reward_profile=reward_profile,
         upgrade_choice_model=upgrade_choice_model,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
@@ -2341,6 +2364,7 @@ def compare_policy_to_rule_bots(
         "map_id": map_id,
         "action_selection": policy["action_selection"],
         "action_random_seed": policy.get("action_random_seed"),
+        "reward_profile": reward_profile,
         "seed_start": seed_start,
         "seeds": episodes,
         "seconds": seconds,
@@ -2372,6 +2396,7 @@ def compare_policy_to_rule_bots_across_maps(
     rule_bots=None,
     deterministic=True,
     eval_random_seed=None,
+    reward_profile="standard",
     map_preset=None,
     upgrade_choice_model=None,
     trace_dir=None,
@@ -2403,6 +2428,7 @@ def compare_policy_to_rule_bots_across_maps(
             rule_bots=rule_bots,
             deterministic=deterministic,
             eval_random_seed=eval_random_seed,
+            reward_profile=reward_profile,
             upgrade_choice_model=upgrade_choice_model,
             trace_dir=trace_dir,
             trace_failed_only=trace_failed_only,
@@ -2449,6 +2475,7 @@ def compare_policy_to_rule_bots_across_maps(
         "action_random_seed": (
             comparisons[0].get("action_random_seed") if comparisons else eval_random_seed
         ),
+        "reward_profile": reward_profile,
         "map_preset": map_preset,
         "map_ids": map_ids,
         "seed_start": comparisons[0]["seed_start"] if comparisons else seed_start,
@@ -2748,6 +2775,12 @@ def main():
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
     parser.add_argument(
+        "--reward-profile",
+        choices=["standard", "late-survival"],
+        default="standard",
+        help="Select the Rust gym-bridge reward profile used by dry-run, training, and policy reward reports.",
+    )
+    parser.add_argument(
         "--train-seconds",
         type=float,
         default=None,
@@ -2954,6 +2987,7 @@ def main():
                 train_maps=train_maps,
                 train_map_selection=args.train_map_selection,
                 train_map_preset=train_map_preset,
+                reward_profile=args.reward_profile,
                 train_seed_values=train_seed_values,
                 train_seed_selection=args.train_seed_selection,
             ),
@@ -2984,6 +3018,7 @@ def main():
                 map_id=args.map_id,
                 deterministic=not args.eval_stochastic,
                 eval_random_seed=eval_random_seed,
+                reward_profile=args.reward_profile,
                 upgrade_choice_model=(
                     Path(args.upgrade_choice_model)
                     if args.upgrade_choice_model
@@ -3033,6 +3068,7 @@ def main():
                     rule_bots=rule_bots,
                     deterministic=not args.eval_stochastic,
                     eval_random_seed=eval_random_seed,
+                    reward_profile=args.reward_profile,
                     map_preset=args.compare_map_preset,
                     upgrade_choice_model=(
                         Path(args.upgrade_choice_model)
@@ -3079,6 +3115,7 @@ def main():
                 rule_bots=rule_bots,
                 deterministic=not args.eval_stochastic,
                 eval_random_seed=eval_random_seed,
+                reward_profile=args.reward_profile,
                 upgrade_choice_model=(
                     Path(args.upgrade_choice_model)
                     if args.upgrade_choice_model
@@ -3115,6 +3152,7 @@ def main():
             train_maps=train_maps,
             train_map_selection=args.train_map_selection,
             train_map_preset=train_map_preset,
+            reward_profile=args.reward_profile,
             train_seed_values=train_seed_values,
             train_seed_selection=args.train_seed_selection,
             algorithm_overrides=algorithm_overrides,

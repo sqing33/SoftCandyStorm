@@ -57,6 +57,7 @@ class SoftCandyStormEnv(gym.Env):
         map_ids=None,
         map_selection="cycle",
         observation_version=2,
+        reward_profile="standard",
         content_dir="content/base_demo",
         harness_cmd=None,
         cwd=None,
@@ -77,6 +78,7 @@ class SoftCandyStormEnv(gym.Env):
             raise ValueError("seed_selection must be `cycle` or `random`")
         self.seed_episode_index = 0
         self.observation_version = int(observation_version)
+        self.reward_profile = self._normalize_reward_profile(reward_profile)
         self.map_id = self.map_ids[0]
         self.episode_index = 0
         self.content_dir = content_dir
@@ -134,6 +136,12 @@ class SoftCandyStormEnv(gym.Env):
             raise ValueError("seed_values must be non-negative")
         return normalized
 
+    def _normalize_reward_profile(self, reward_profile):
+        reward_profile = reward_profile or "standard"
+        if reward_profile not in {"standard", "late-survival"}:
+            raise ValueError("reward_profile must be `standard` or `late-survival`")
+        return reward_profile
+
     def _select_seed_value(self):
         if not self.seed_values:
             return self.seed_value
@@ -169,6 +177,8 @@ class SoftCandyStormEnv(gym.Env):
             str(self.tick_rate),
             "--observation-version",
             str(self.observation_version),
+            "--reward-profile",
+            self.reward_profile,
             "--map-id",
             self.map_id,
             "--content-dir",
