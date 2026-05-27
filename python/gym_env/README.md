@@ -61,7 +61,7 @@ The first RL phase uses a 9-action discrete movement space:
 8 up-left
 ```
 
-Upgrade choices are handled by a simple rule policy in the bridge for now, matching the Phase 1 plan in `docs/09_AI_Bot训练计划.md`.
+Upgrade choices default to the bridge's first-option fallback. Callers can pass an `upgrade_policy` object with `choose(observation, upgrade_options)` when they need a supervised ranker to fill pending upgrade prompts during training or evaluation.
 
 ## Dependency Notes
 

@@ -129,6 +129,117 @@ def test_build_env_passes_reward_profile(monkeypatch):
     assert captured["reward_profile"] == "long-run-retention"
 
 
+def test_training_uses_upgrade_choice_model(monkeypatch, tmp_path):
+    captured = {}
+    upgrade_policy = object()
+
+    class DummyEnv:
+        def close(self):
+            captured["env_closed"] = True
+
+    class DummyModel:
+        def __init__(self, policy, env, verbose=0, **kwargs):
+            captured["model_policy"] = policy
+            captured["model_env"] = env
+            captured["model_kwargs"] = kwargs
+            self.num_timesteps = 0
+
+        def learn(self, total_timesteps):
+            self.num_timesteps = total_timesteps
+
+        def save(self, path):
+            captured["model_saved"] = str(path)
+            path.write_text("dummy model", encoding="utf-8")
+
+    def fake_build_env(config, **kwargs):
+        captured["build_env_kwargs"] = kwargs
+        return DummyEnv()
+
+    def fake_evaluate_model(model, config, **kwargs):
+        captured["evaluate_kwargs"] = kwargs
+        return {
+            "action_selection": "deterministic",
+            "action_random_seed": None,
+            "map_id": "soda-creek",
+            "upgrade_policy": {
+                "mode": "upgrade_choice_ranker",
+                "model_path": "ranker.pt",
+            },
+            "summary": {
+                "episodes": 1,
+                "win_rate": 0.0,
+                "average_survival_seconds": 1.0,
+                "average_level": 1.0,
+                "average_kills": 1.0,
+                "average_reward": 0.0,
+                "damage_taken_average": 0.0,
+                "action_distribution": {
+                    str(index): {
+                        "count": 1 if index == 0 else 0,
+                        "ratio": 1.0 if index == 0 else 0.0,
+                    }
+                    for index in range(9)
+                },
+                "normalized_action_entropy": 1.0,
+                "reward_breakdown_average": {"terminal": 0.0, "total": 0.0},
+                "upgrade_policy_decision_count": 1,
+            },
+        }
+
+    monkeypatch.setattr(train_sb3, "require_dependencies", lambda: {})
+    monkeypatch.setattr(train_sb3, "stable_baselines_model_classes", lambda: {"ppo": DummyModel})
+    monkeypatch.setattr(train_sb3, "load_upgrade_choice_policy", lambda path: upgrade_policy)
+    monkeypatch.setattr(train_sb3, "build_env", fake_build_env)
+    monkeypatch.setattr(train_sb3, "evaluate_model", fake_evaluate_model)
+    monkeypatch.setattr(train_sb3, "dependency_status", lambda: {})
+
+    config = {
+        "phase": "test",
+        "environment": {
+            "seed": 12345,
+            "seconds": 300,
+            "tick_rate": 30,
+            "map_id": "soda-creek",
+            "observation_version": 2,
+            "observation_len": 145,
+            "content_dir": "content/base_demo",
+        },
+        "algorithms": {
+            "ppo": {
+                "enabled": True,
+                "policy": "MlpPolicy",
+                "total_timesteps": 2,
+                "n_steps": 1,
+            }
+        },
+        "outputs": {
+            "model_dir": str(tmp_path / "models"),
+            "report_dir": str(tmp_path / "reports"),
+            "metadata_file": "{algorithm}_metadata.json",
+        },
+        "evaluation": {
+            "episodes": 1,
+            "seconds": 1,
+            "seed_start": 1,
+        },
+    }
+
+    report = train_sb3.train(
+        config,
+        "ppo",
+        total_timesteps=2,
+        model_out=tmp_path / "model.zip",
+        report_dir_out=tmp_path / "reports",
+        upgrade_choice_model=tmp_path / "ranker.pt",
+    )
+
+    assert captured["build_env_kwargs"]["upgrade_policy"] is upgrade_policy
+    assert captured["evaluate_kwargs"]["upgrade_policy"] is upgrade_policy
+    assert report["training"]["upgrade_choice_model"].endswith("ranker.pt")
+    assert report["upgrade_policy"]["mode"] == "upgrade_choice_ranker"
+    assert captured["env_closed"] is True
+
+
 def test_seed_stochastic_action_sampling_replays_python_random_sequence():
     report = seed_stochastic_action_sampling(1234)
     first = random.random()

@@ -899,6 +899,7 @@ def dry_run(
     reward_profile="standard",
     train_seed_values=None,
     train_seed_selection="cycle",
+    upgrade_choice_model=None,
 ):
     requested_seconds = train_seconds or config["environment"]["seconds"]
     env = build_env(
@@ -943,6 +944,7 @@ def dry_run(
             "training_map_selection": train_map_selection if train_maps else "single",
             "training_map_preset": train_map_preset,
             "reward_profile": reward_profile,
+            "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
             "training_seeds": train_seed_values,
             "training_seed_selection": train_seed_selection if train_seed_values else "single",
             "total_reward": round(total_reward, 4),
@@ -985,6 +987,7 @@ def train(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    upgrade_choice_model=None,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -993,6 +996,9 @@ def train(
     selected = algorithm_config(config, algorithm)
     train_steps = total_timesteps or selected["total_timesteps"]
     effective_train_seconds = train_seconds or config["environment"]["seconds"]
+    upgrade_policy = (
+        load_upgrade_choice_policy(upgrade_choice_model) if upgrade_choice_model else None
+    )
     env = build_env(
         config,
         seconds=effective_train_seconds,
@@ -1001,6 +1007,7 @@ def train(
         reward_profile=reward_profile,
         seed_values=train_seed_values,
         seed_selection=train_seed_selection,
+        upgrade_policy=upgrade_policy,
     )
     model_dir = Path(config["outputs"]["model_dir"])
     report_dir = (
@@ -1077,6 +1084,7 @@ def train(
         deterministic=eval_deterministic,
         eval_random_seed=eval_random_seed,
         reward_profile=reward_profile,
+        upgrade_policy=upgrade_policy,
         trace_dir=trace_dir,
         trace_failed_only=trace_failed_only,
         trace_sample_stride=trace_sample_stride,
@@ -1104,6 +1112,7 @@ def train(
         "content_rules": "headless GameCore via game_harness gym-bridge",
         "reward_config": "prototype reward in game_harness gym_reward",
         "reward_profile": reward_profile,
+        "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
         "warm_start_model": str(warm_start_model) if warm_start_model else None,
         "warm_start_metadata_path": (
             str(warm_start_metadata_path) if warm_start_metadata_path else None
@@ -1154,6 +1163,7 @@ def train(
             "map_selection": train_map_selection if train_maps else "single",
             "map_preset": train_map_preset,
             "reward_profile": reward_profile,
+            "upgrade_choice_model": str(upgrade_choice_model) if upgrade_choice_model else None,
             "seeds": train_seed_values,
             "seed_selection": train_seed_selection if train_seed_values else "single",
             "started_at": started_at,
@@ -1169,6 +1179,7 @@ def train(
             "evaluation_map_id": evaluation["map_id"],
         },
         "evaluation": evaluation["summary"],
+        "upgrade_policy": evaluation["upgrade_policy"],
         "known_exploits": known_exploit_notes["known_exploits"],
         "limitations": known_exploit_notes["limitations"],
         "gate_decision": gate_decision,
@@ -2769,7 +2780,7 @@ def main():
     parser.add_argument(
         "--upgrade-choice-model",
         default=None,
-        help="Optional train_upgrade_choice.py checkpoint used to choose upgrade prompts during evaluation/comparison.",
+        help="Optional train_upgrade_choice.py checkpoint used to choose upgrade prompts during training, evaluation, and comparison.",
     )
     parser.add_argument("--model-in", default=None)
     parser.add_argument("--model-out", default=None)
@@ -2952,8 +2963,6 @@ def main():
         parser.error("--opening-model requires --evaluate-model or --compare-rule-bots")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
-    if args.upgrade_choice_model and not (args.evaluate_model or args.compare_rule_bots):
-        parser.error("--upgrade-choice-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--edge-recovery-filter requires --evaluate-model or --compare-rule-bots")
     if args.late_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
@@ -2990,6 +2999,11 @@ def main():
                 reward_profile=args.reward_profile,
                 train_seed_values=train_seed_values,
                 train_seed_selection=args.train_seed_selection,
+                upgrade_choice_model=(
+                    Path(args.upgrade_choice_model)
+                    if args.upgrade_choice_model
+                    else None
+                ),
             ),
         )
         return
@@ -3173,6 +3187,11 @@ def main():
             late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
             late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
             late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
+            upgrade_choice_model=(
+                Path(args.upgrade_choice_model)
+                if args.upgrade_choice_model
+                else None
+            ),
         ),
     )
 
