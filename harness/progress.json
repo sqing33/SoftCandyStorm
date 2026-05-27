@@ -2028,6 +2028,11 @@
       "id": "rl_route_recovery_aux_multimap_boundary_opening_regression",
       "summary": "基于 1676 条多图 boundary samples 只重训 opening 子模型后，60 秒 high-pressure 三图 gate 仍需 repair：soda-creek win_rate 0.4 且 action 6 占 77.26%，caramel-workshop 和 cracked-star-jar 也出现 action 6 dominant bias；记录 fail_20260527_042。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_opening_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_multimap_boundary_opening_ablation",
+      "summary": "完成 no-class-weight opening 消融：移除 inverse_frequency 后 action 6 过补偿显著缓解，no_class_weight_2_0 在 soda-creek/cracked-star-jar 的 action 6 占比分别降到 43.55%/37.97%，但 soda-creek win_rate 仍为 0.4；该结果仅说明后续应取消 class weighting，不能推进 stage 03。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_multimap_boundary_opening_ablation_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2037,7 +2042,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias，并在 60 秒 high-pressure 三图 gate 判定 needs_policy_repair。下一步应先做 class weighting 与 edge_recovery_sample_weight 消融，仍以 60 秒三图 deterministic gate 为最小门槛。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。no-class-weight 消融缓解 action 6 过补偿，但 soda-creek 60 秒 win_rate 仍为 0.4。下一步应保留 class_weighting=none，诊断 online-prefix 历史和 teacher 目标，而不是继续单纯加权 repair samples。通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
