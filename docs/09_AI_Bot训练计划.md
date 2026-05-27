@@ -438,6 +438,8 @@ stage 02 的 SB3 staged opening wrapper 进一步验证了“分离开局策略�
 
 `train_sb3.py` 的 evaluation / comparison / training 后评估路径现已支持 `--eval-stochastic --eval-random-seed <N>`，会在随机动作采样前 seed Python、NumPy、Torch 和支持 `set_random_seed` 的 policy model，并在报告中写入 `action_random_seed` 与 `action_random_seed_report`。该能力只用于复现 stochastic 探针和诊断 policy distribution 中是否存在恢复动作；不能绕过 deterministic high-pressure gate、180/300 秒多图对比、failure case 审查或 RL policy acceptance manifest。
 
+使用同一 staged policy、`soda-creek` map seed `62201` 和 `action_random_seed = 62201` 复跑 seeded stochastic probe 后，两份无 trace evaluation JSON 字节级一致，带 trace 版本也保持相同 summary；该轨迹在 60 秒交接时位于开阔区域 `(497.8561, 133.6539)`，生命 `119.55`，最终以 `180.0095s` 胜利结束，normalized action entropy 为 `0.8275`。报告位于 `harness/reports/2026-05-27_rl_curriculum_stage02_seeded_stochastic_probe_001/summary.md`。结论仍是诊断证据：seeded stochastic 单 seed 成功不能替代 deterministic gate 或多 seed / 多图 acceptance。
+
 ## RL Policy Acceptance Gate
 
 训练报告、行为克隆 validation accuracy、短局动作熵和单次 Gym 对比都不能单独把模型推进为 RL 测试 Bot。每个候选 policy 必须先写入 acceptance manifest，再由纯 Python 门禁统一检查：
