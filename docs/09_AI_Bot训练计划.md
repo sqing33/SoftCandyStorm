@@ -168,7 +168,7 @@ v2 已覆盖：
 - `--train-map-selection cycle|random`：控制多地图 reset 轮换方式。
 - `--train-map-preset all-base-demo|high-pressure|stable-open`：使用常见 `base_demo` 地图集合。
 - `--train-seconds`：覆盖训练 episode 时长，独立于 `--eval-seconds`。
-- `--reward-profile standard|late-survival`：选择 Rust `gym-bridge` 侧 reward shaping。`late-survival` 只作为 closed-loop 长局修复实验入口，会在 180 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并提高 300 秒存活终局奖励；它不是验收捷径，也不能替代 deterministic high-pressure 60 / 180 / 300 多图门禁。
+- `--reward-profile standard|late-survival|long-run-retention`：选择 Rust `gym-bridge` 侧 reward shaping。`late-survival` 只作为 closed-loop 长局修复实验入口，会在 180 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并提高 300 秒存活终局奖励。`long-run-retention` 用于修复 late-survival 扩展训练暴露出的中窗 retention 回归，会从 60 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并放大重复动作惩罚，帮助观察 60-180 秒安全保持和动作多样性。两者都是训练实验入口，不是验收捷径，也不能替代 deterministic high-pressure 60 / 180 / 300 多图门禁。
 - `--map-id`：在训练模式下指定训练后评估地图，避免 high-pressure 或 curriculum 实验仍默认用 `frosting-grassland` 做短局 gate。
 - `--model-in`：从已有 SB3 模型 warm start 继续训练，用于课程学习、失败策略修复和后续规则 Bot 轨迹蒸馏实验。
 
@@ -178,6 +178,12 @@ v2 已覆盖：
 
 ```bash
 python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-survival --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
+```
+
+针对 60-180 秒 retention 回归和 action 偏置，可以先用 `long-run-retention` 做小规模 closed-loop 修复实验：
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --reward-profile long-run-retention --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
 ```
 
 Harness 还提供规则 Bot 轨迹导出入口：

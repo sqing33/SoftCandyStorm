@@ -123,10 +123,10 @@ def test_build_env_passes_reward_profile(monkeypatch):
         }
     }
 
-    env = build_env(config, reward_profile="late-survival")
+    env = build_env(config, reward_profile="long-run-retention")
 
     assert isinstance(env, DummyEnv)
-    assert captured["reward_profile"] == "late-survival"
+    assert captured["reward_profile"] == "long-run-retention"
 
 
 def test_seed_stochastic_action_sampling_replays_python_random_sequence():

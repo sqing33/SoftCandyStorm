@@ -56,10 +56,11 @@ def test_seed_selector_rejects_empty_seed_values():
         raise AssertionError("expected empty seed values to be rejected")
 
 
-def test_reward_profile_accepts_late_survival():
+def test_reward_profile_accepts_repair_profiles():
     env = SoftCandyStormEnv.__new__(SoftCandyStormEnv)
 
     assert env._normalize_reward_profile("late-survival") == "late-survival"
+    assert env._normalize_reward_profile("long-run-retention") == "long-run-retention"
     assert env._normalize_reward_profile(None) == "standard"
 
 
