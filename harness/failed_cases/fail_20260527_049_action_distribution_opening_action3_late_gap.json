@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_049",
+  "category": "rl_policy",
+  "content_id": "action_distribution_opening_action3_low_weight_ablation",
+  "seed": 62400,
+  "bot": "OpeningAction3LowWeightStagedClone",
+  "time_seconds": 300.0,
+  "symptom": "使用 20-45 秒 opening action 3 repair samples 低权重重训 opening 子模型后，60 秒和 180 秒 high-pressure 三图均无 repair map，soda-creek 180 秒 win_rate 从 0.0 提升到 0.6；但 300 秒 high-pressure 三图仍全部为 0.0 win_rate，repair_maps 覆盖 soda-creek、caramel-workshop 和 cracked-star-jar。",
+  "root_cause": "本轮样本修复了 opening action 3 贴边早死问题，但训练仍只覆盖 movement opening repair。300 秒失败显示策略缺口已经转移到中后期：三图 dominant action 都变为 action 1，仍缺少 late survival、Boss/hazard pressure、升级后目标选择和长期路线规划。",
+  "fix": "不推进 opening_action3_w0_5_windowed checkpoint 到 stage 03、RL acceptance、playtest 或 release。保留该 opening 子模型作为较强 opening baseline，下一步应对 180-300 秒失败 trace 导出 late survival / hazard / boss pressure / action 1 drift 样本，或改用闭环 PPO/curriculum 修复中后期目标策略。",
+  "validation": "训练、打包和 60/180/300 秒三图对比记录在 harness/reports/2026-05-27_rl_action_distribution_opening_action3_low_weight_ablation_001；60 秒与 180 秒 gate 为 multimap_comparison_recorded_not_balance_gate，300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair。"
+}

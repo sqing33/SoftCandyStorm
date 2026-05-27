@@ -394,6 +394,8 @@ phase-split retrain 报告位于 `harness/reports/2026-05-27_rl_action_distribut
 
 基于上述诊断，`tools/export_route_recovery_samples.py` 已支持 `--original-actions`，可按原始 policy action 精确导出 repair samples。首个 `20-45s` opening action `3` 样本包位于 `harness/reports/2026-05-27_rl_action_distribution_opening_action3_samples_001/summary.md`：导出 `587` 条有效样本，覆盖 18 个失败 seed，目标动作分布为 action `5/7/8/1`。混合 opening dry-run 后 soft recovery samples 为 `724` 条，但 `soda-creek` 样本占比升到 `40.85%`；后续训练必须低权重、保留 per-map 动作分布正则，并先通过 60 秒三图 hard gate。
 
+低权重 opening action `3` 消融报告位于 `harness/reports/2026-05-27_rl_action_distribution_opening_action3_low_weight_ablation_001/summary.md`。`opening_action3_w0_5_windowed` 使用 `edge_recovery_sample_weight=0.5`、`20-45s` repair window 和 `per_map_uniform_present` 正则，保住 60 秒 hard gate，并把 `soda-creek` 180 秒 win rate 从 `0.0` 提升到 `0.6`；但 300 秒 high-pressure 三图仍全为 `0.0`，记录 `fail_20260527_049`。结论：opening 早死可修，但中后期仍缺 late survival、Boss/hazard pressure、升级后目标选择和长期路线规划，不能推进 stage 03 或 RL acceptance。
+
 `train_sb3.py --evaluate-model` 的单模型评估报告现在会直接写入 `findings` 与 `gate_decision`，复用已有 `policy_quality_findings` 识别 dominant action、低动作熵和 terminal reward dominance。该字段只用于把 evaluation smoke 中的 action collapse 标成 `evaluation_recorded_needs_action_bias_repair` 或 watch，不是 RL acceptance；正式候选仍必须走 high-pressure comparison 和 `validate_rl_policy_acceptance.py`。
 
 首个完整 `danger_action_change` staged GRU context8 候选改善了短窗动作分布：60 秒 high-pressure 中 `soda-creek` 从 0% 提升到 40%，normalized entropy 从 0.2356 提升到 0.6104，dominant action ratio 从 0.7911 降到 0.5226。但 300 秒三图仍全部为 0% 胜率，说明动作变化点加权只能修复短窗偏置，不能替代升级选择、阶段目标、路线规划或 PPO 闭环优化。

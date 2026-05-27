@@ -1,0 +1,38 @@
+{
+  "status": "packaged",
+  "gate_decision": "staged_behavior_clone_packaged_not_policy_gate",
+  "model_path": "harness/reports/2026-05-27_rl_action_distribution_opening_action3_low_weight_ablation_001/opening_action3_w0_5_windowed/staged.pt",
+  "phase_thresholds": [
+    0.2,
+    0.6
+  ],
+  "phase_duration_seconds": 300.0,
+  "phase_dispatch": "absolute_time_seconds",
+  "phase_labels": [
+    "opening",
+    "mid",
+    "late"
+  ],
+  "subpolicies": [
+    {
+      "phase": "opening",
+      "model_path": "opening.pt"
+    },
+    {
+      "phase": "mid",
+      "model_path": "/Users/chongqing/Codes/软糖风暴/harness/reports/2026-05-27_rl_route_recovery_aux_entropy_retry_001/mid.pt"
+    },
+    {
+      "phase": "late",
+      "model_path": "/Users/chongqing/Codes/软糖风暴/harness/reports/2026-05-27_rl_route_recovery_aux_entropy_retry_001/late.pt"
+    }
+  ],
+  "validation": {
+    "action_count": 9,
+    "base_observation_len": 145
+  },
+  "limitations": [
+    "A staged behavior clone only dispatches between supervised movement clones; it is not an RL test Bot gate.",
+    "Each staged checkpoint must still pass high-pressure comparison and RL policy acceptance review."
+  ]
+}
