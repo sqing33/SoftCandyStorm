@@ -343,6 +343,7 @@ def build_report(
     phase_duration_seconds: float | None = None,
     min_health_ratio: float | None = None,
     original_actions: set[int] | None = None,
+    map_ids: set[str] | None = None,
     max_samples: int | None = None,
 ) -> dict[str, Any]:
     paths = trace_paths(inputs)
@@ -356,12 +357,17 @@ def build_report(
     low_health_filtered_count = 0
     no_target_count = 0
     outside_time_window_count = 0
+    map_filtered_trace_count = 0
 
     for path in paths:
         payload = load_json_object(path)
         episode = payload.get("episode", {})
         if not isinstance(episode, dict):
             episode = {}
+        episode_map_id = str(episode.get("map_id", ""))
+        if map_ids is not None and episode_map_id not in map_ids:
+            map_filtered_trace_count += 1
+            continue
         steps = payload.get("steps")
         if not isinstance(steps, list):
             raise ValueError(f"{path} must contain a `steps` list")
@@ -457,6 +463,7 @@ def build_report(
         "negative_route_recovery_count": negative_route_count,
         "boundary_hotspot_count": boundary_hotspot_count,
         "outside_time_window_count": outside_time_window_count,
+        "map_filtered_trace_count": map_filtered_trace_count,
         "missing_observation_count": missing_observation_count,
         "original_not_edge_count": original_not_edge_count,
         "original_action_filtered_count": original_action_filtered_count,
@@ -472,6 +479,7 @@ def build_report(
         "phase_duration_seconds": phase_duration_seconds,
         "min_health_ratio": min_health_ratio,
         "original_actions": sorted(original_actions) if original_actions is not None else None,
+        "map_ids": sorted(map_ids) if map_ids is not None else None,
         "map_distribution": count_map(sample.get("map_id") for sample in samples),
         "original_action_distribution": count_map(sample.get("original_action") for sample in samples),
         "target_action_distribution": count_map(sample.get("target_action") for sample in samples),
@@ -494,6 +502,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Negative route_recovery rows: `{report['negative_route_recovery_count']}`",
         f"- Boundary hotspot rows: `{report['boundary_hotspot_count']}`",
         f"- Outside time window rows: `{report['outside_time_window_count']}`",
+        f"- Map filtered traces: `{report['map_filtered_trace_count']}`",
         f"- Original action filtered rows: `{report['original_action_filtered_count']}`",
         f"- Low health filtered rows: `{report['low_health_filtered_count']}`",
         f"- Missing observation rows: `{report['missing_observation_count']}`",
@@ -545,6 +554,12 @@ def main() -> int:
         default=None,
         help="Comma-separated original policy actions to export, for example `3` or `1,3,6`.",
     )
+    parser.add_argument(
+        "--map-id",
+        action="append",
+        default=None,
+        help="Keep only traces whose episode map_id matches. Repeat or comma-separate values.",
+    )
     parser.add_argument("--max-samples", type=int, default=None)
     args = parser.parse_args()
     if args.min_seconds is not None and args.min_seconds < 0.0:
@@ -576,6 +591,16 @@ def main() -> int:
         invalid_actions = sorted(action for action in original_actions if action not in GYM_ACTION_MOVEMENTS)
         if invalid_actions:
             parser.error(f"--original-actions contains unsupported actions: {invalid_actions}")
+    map_ids = None
+    if args.map_id:
+        map_ids = {
+            item.strip()
+            for value in args.map_id
+            for item in value.split(",")
+            if item.strip()
+        }
+        if not map_ids:
+            parser.error("--map-id must include at least one map id")
 
     report = build_report(
         args.traces,
@@ -588,6 +613,7 @@ def main() -> int:
         phase_duration_seconds=args.phase_duration_seconds,
         min_health_ratio=args.min_health_ratio,
         original_actions=original_actions,
+        map_ids=map_ids,
         max_samples=args.max_samples,
     )
     if args.report is not None:
