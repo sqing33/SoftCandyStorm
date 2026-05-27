@@ -1121,6 +1121,11 @@
       "id": "rl_edge_aux_staged_opening_handoff_trace",
       "summary": "对 SB3 opening + edge-aux behavior clone fallback 的 soda-creek / cracked-star-jar seed 62201 失败局输出 failed-only trace；两个失败均在 mid_60_to_180 死亡，采样帧中 edge_risk >= 0.9 占比超过 90%，终局仍高置信选择顶住阻塞边界的 action 5 / action 7，确认下一步应修 handoff/mid edge recovery，而不是 opening retention。",
       "report": "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_staged_opening_handoff_trace_001/summary.md"
+    },
+    {
+      "id": "rl_late_recovery_supervision_pipeline",
+      "summary": "train_sb3.py 新增 --late-recovery-filter，可在 180 秒后根据 edge、hazard、Boss / enemy pressure 和低血量风险改写 deterministic 高风险动作，并把替换结果导出为 risk_recovery_supervision_sample；train_behavior_clone.py 已可读取、加权和按时间窗过滤这些 late repair 样本。该能力只提供训练材料，不是 stage 03、300 秒 gate 或 RL acceptance 通过证据。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "current_findings": [
@@ -1867,7 +1872,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "stage01 opening + handoff-window edge-aux fallback 已通过 deterministic 60 秒 opening gate 和 180 秒 handoff probe，但 300 秒 late trace 显示失败是 edge + hazard / boss 混合压力；下一步应训练或约束 180-300 秒 late recovery，覆盖离边、hazard avoidance、Boss / enemy pressure 和低血量恢复，不能进入 stage 03 或 RL acceptance。"
+      "summary": "stage01 opening + handoff-window edge-aux fallback 已通过 deterministic 60 秒 opening gate 和 180 秒 handoff probe，但 300 秒 late trace 显示失败是 edge + hazard / boss 混合压力；late recovery supervision 管线已具备样本导出和 BC 读取能力，下一步应先导出 180-300 秒 risk_recovery_supervision_sample，混入 late 子模型训练，再重新跑 60/180/300 秒 high-pressure 对比；通过前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",

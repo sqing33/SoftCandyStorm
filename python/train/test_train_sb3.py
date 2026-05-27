@@ -7,6 +7,7 @@ import pytest
 import python.train.train_sb3 as train_sb3
 from python.train.train_sb3 import (
     EdgeRecoveryFilterPolicy,
+    LateRecoveryFilterPolicy,
     StagedOpeningPolicy,
     action_pushes_into_edge,
     algorithm_parameters_source_label,
@@ -197,6 +198,68 @@ def test_edge_recovery_filter_does_not_override_stochastic_actions():
     assert consume_policy_adapter_decision(policy) is None
 
 
+def test_late_recovery_filter_redirects_wallward_hazard_action():
+    observation = [0.0] * 145
+    observation[130] = 0.3
+    observation[131] = -0.3
+    observation[132] = 0.4
+    policy = LateRecoveryFilterPolicy(
+        DummyPolicy(4),
+        min_seconds=180.0,
+        edge_distance=32.0,
+        hazard_threshold=0.2,
+    )
+    policy.set_step_context(
+        {
+            "time_seconds": 220.0,
+            "diagnostics": {
+                "player_position": {"x": 1150.0, "y": -850.0},
+                "boundary": {
+                    "left_distance": 2300.0,
+                    "right_distance": 0.0,
+                    "bottom_distance": 0.0,
+                    "top_distance": 1700.0,
+                },
+                "hazard_pressure_risk": 1.0,
+                "boss_pressure_risk": 0.0,
+                "enemy_pressure_risk": 0.0,
+                "low_health_risk": 0.5,
+            },
+        }
+    )
+
+    action, _state = policy.predict(observation, deterministic=True)
+    decision = consume_policy_adapter_decision(policy)
+
+    assert action == 1
+    assert decision["mode"] == "late_recovery_filter"
+    assert decision["original_action"] == 4
+    assert decision["target_action"] == 1
+    assert "wallward_edge" in decision["risk_reasons"]
+    assert "toward_hazard" in decision["risk_reasons"]
+
+
+def test_late_recovery_filter_ignores_opening_window():
+    policy = LateRecoveryFilterPolicy(DummyPolicy(4), min_seconds=180.0)
+    policy.set_step_context(
+        {
+            "time_seconds": 60.0,
+            "diagnostics": {
+                "boundary": {
+                    "right_distance": 0.0,
+                    "bottom_distance": 0.0,
+                },
+                "hazard_pressure_risk": 1.0,
+            },
+        }
+    )
+
+    action, _state = policy.predict([0.0] * 145, deterministic=True)
+
+    assert action == 4
+    assert consume_policy_adapter_decision(policy) is None
+
+
 def test_build_edge_recovery_sample_includes_observation_and_diagnostics():
     sample = build_edge_recovery_sample(
         episode_seed=62201,
@@ -239,6 +302,35 @@ def test_build_edge_recovery_sample_includes_observation_and_diagnostics():
     assert sample["original_action"] == 7
     assert sample["target_action"] == 0
     assert sample["diagnostics"]["boundary"]["left_distance"] == 0.0
+
+
+def test_build_late_recovery_sample_uses_risk_record_type():
+    sample = build_edge_recovery_sample(
+        episode_seed=62300,
+        step_number=6601,
+        observation=[0.1, 0.2, 0.3],
+        info={
+            "map_id": "caramel-workshop",
+            "tick": 6600,
+            "time_seconds": 220.0,
+            "diagnostics": {"hazard_pressure_risk": 1.0},
+        },
+        adapter_decision={
+            "mode": "late_recovery_filter",
+            "original_action": 4,
+            "target_action": 1,
+            "risk_reasons": ["wallward_edge", "toward_hazard"],
+        },
+        action_scores={
+            "kind": "probability",
+            "scores": [0.1, 0.2, 0.0, 0.0, 0.7, 0.0, 0.0, 0.0, 0.0],
+        },
+        config={"environment": {"observation_version": 2}},
+    )
+
+    assert sample["record_type"] == "risk_recovery_supervision_sample"
+    assert sample["target_source"] == "late_recovery_filter"
+    assert sample["target_label"] == "highest_scored_late_safe_action"
 
 
 def test_write_edge_recovery_samples_writes_jsonl(tmp_path):
@@ -404,6 +496,65 @@ def test_staged_opening_policy_switches_after_opening_seconds():
     assert opening_scores["scores"][7] == 1.0
     assert fallback_action == 4
     assert policy.opening_policy_report()["mode"] == "staged_sb3_opening"
+
+
+def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch):
+    captured = {}
+
+    def fake_evaluate_policy_model(config, algorithm, **kwargs):
+        captured.update(kwargs)
+        return {
+            "policy_kind": "late_recovery_filter",
+            "opening_policy": None,
+            "policy_adapter": {"mode": "late_recovery_filter"},
+            "edge_recovery_samples": None,
+            "upgrade_policy": None,
+            "action_selection": "deterministic",
+            "summary": {
+                "episodes": 1,
+                "win_rate": 1.0,
+                "average_kills": 5.0,
+                "dominant_action_ratio": 0.1,
+                "normalized_action_entropy": 1.0,
+            },
+        }
+
+    monkeypatch.setattr(train_sb3, "evaluate_policy_model", fake_evaluate_policy_model)
+    monkeypatch.setattr(
+        train_sb3,
+        "run_rule_bot_matrix",
+        lambda config, bots, seed_start, episodes, seconds, map_id: {
+            "stdout": {"bots": []},
+            "command": ["game_harness", "matrix"],
+            "stderr": "",
+        },
+    )
+
+    report = train_sb3.compare_policy_to_rule_bots(
+        {
+            "phase": "test",
+            "evaluation": {"episodes": 1, "seconds": 5, "seed_start": 10},
+            "environment": {"tick_rate": 30},
+            "models": {"ppo": "unused.zip"},
+            "outputs": {"model_dir": "python/train/models"},
+        },
+        "ppo",
+        late_recovery_filter=True,
+        late_recovery_min_seconds=180.0,
+        late_recovery_hazard_threshold=0.3,
+        late_recovery_boss_threshold=0.2,
+        late_recovery_enemy_threshold=0.1,
+        late_recovery_low_health_threshold=0.4,
+        late_recovery_toward_dot_threshold=0.25,
+    )
+
+    assert captured["late_recovery_filter"] is True
+    assert captured["late_recovery_hazard_threshold"] == 0.3
+    assert captured["late_recovery_boss_threshold"] == 0.2
+    assert captured["late_recovery_enemy_threshold"] == 0.1
+    assert captured["late_recovery_low_health_threshold"] == 0.4
+    assert captured["late_recovery_toward_dot_threshold"] == 0.25
+    assert report["policy_adapter"]["mode"] == "late_recovery_filter"
 
 
 def test_behavior_clone_fallback_can_be_wrapped_with_sb3_opening(monkeypatch):

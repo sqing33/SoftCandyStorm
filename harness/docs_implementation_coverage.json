@@ -808,7 +808,8 @@
             "edge_recovery_filter 已能把顶墙动作导出为 2215 条 repair_training_input 监督样本，并通过专用校验器确认原动作顶边、目标动作离边；train_behavior_clone.py 也已能把这些样本作为 movement repair target 读取、完成 1 epoch smoke，并支持 --edge-recovery-sample-weight 在混合原轨迹时形成辅助采样约束；首个 edge weight 4.0 staged GRU context8 混合候选仍在 60 秒 soda-creek opening gate 回归到 40% 胜率和 action 3 87.27%，加入 class weighting 与 entropy 后也只有 50% 胜率，因此没有运行 180 秒 handoff 对比，不能作为 deterministic gate、stage 03 许可或 rl_test_bot_candidate evidence。",
             "edge-aux staged opening handoff trace 已确认 soda-creek / cracked-star-jar seed 62201 的 deterministic fallback 失败不是 opening retention，而是 60 秒后长期 edge-pinned 且终局仍高置信选择顶墙动作；下一步必须训练或约束 handoff/mid fallback 的离边恢复，并重新通过 deterministic 60 秒 opening gate、180 秒多图 handoff probe 和后续 300 秒长局对比，stage 03 仍阻塞。",
             "handoff-window edge-aux staged GRU context8 候选已把 seed 62201 handoff gap 修到 deterministic 180 秒三图 100%，但 300 秒三图仍在 late_180_to_300 出现 8 个失败；当前 blocker 已从 handoff/mid recovery 推进到 late-window long-run recovery，stage 03 和 rl_test_bot_candidate 继续阻塞。",
-            "handoff-window late trace 显示 300 秒失败已从单纯 handoff edge recovery 转为 late-window mixed pressure：多数终局仍 edge-pinned，同时 hazard pressure、boss pressure 和 direct contact 共同出现；下一步 late recovery 需要合并离边、hazard avoidance、Boss / enemy pressure 与低血量恢复目标。"
+            "handoff-window late trace 显示 300 秒失败已从单纯 handoff edge recovery 转为 late-window mixed pressure：多数终局仍 edge-pinned，同时 hazard pressure、boss pressure 和 direct contact 共同出现；下一步 late recovery 需要合并离边、hazard avoidance、Boss / enemy pressure 与低血量恢复目标。",
+            "late recovery supervision 管线已能导出 risk_recovery_supervision_sample，并让 behavior clone 读取、加权和按 180-300 秒时间窗过滤；但这仍是手写 adapter 产生的训练材料，尚未导出真实 late 样本、训练新 late 子模型或通过 deterministic 300 秒 high-pressure 三图 gate，stage 03 和 rl_test_bot_candidate 继续阻塞。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

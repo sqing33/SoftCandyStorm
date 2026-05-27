@@ -125,6 +125,8 @@ The first handoff-window staged GRU context8 candidate used `--edge-recovery-min
 
 The failed-only late trace shows the next repair should be broader than wall recovery: 7 / 8 terminal frames are still edge-pinned, but 5 / 8 also include hazard pressure and 5 / 8 include boss pressure. Late-window experiments should combine edge escape, hazard avoidance, boss pressure, and low-health recovery before re-running the 300-second gate.
 
+Use `--late-recovery-filter` with evaluation or rule-Bot comparison to emit deterministic late-window repair decisions after `--late-recovery-min-seconds` (default 180s). The filter can redirect wallward edge actions, hazard-facing movement, boss/enemy pressure movement, and idle actions under late pressure. When paired with `--edge-recovery-samples-out`, these decisions are written as `risk_recovery_supervision_sample` rows. Behavior clone experiments can load those rows as movement repair targets, upweight them with `--risk-recovery-sample-weight`, and keep them in a late window with `--risk-recovery-min-seconds` / `--risk-recovery-max-seconds`. This is training material only; it remains policy-adapter evidence and does not satisfy stage 03 or RL acceptance.
+
 Training reports use `trained_needs_action_bias_repair` when the policy collapses to a dominant action or very low normalized action entropy; comparison reports use `comparison_recorded_needs_action_bias_repair` for the same condition.
 
 ## Policy Acceptance Gate

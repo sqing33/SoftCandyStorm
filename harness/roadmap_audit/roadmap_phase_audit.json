@@ -549,7 +549,8 @@
         "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_staged_gru_context8_001/comparison_300s_3seed.json",
         "harness/failed_cases/fail_20260527_031_edge_aux_handoff_window_late_gap.json",
         "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_late_trace_001/summary.md",
-        "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_late_trace_001/trace_analysis.json"
+        "harness/reports/2026-05-27_rl_behavior_clone_edge_aux_handoff_window_late_trace_001/trace_analysis.json",
+        "python/train/test_train_behavior_clone.py"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -563,7 +564,8 @@
         "edge recovery 监督样本已把手写 adapter 的 2215 次替换动作固化为 repair_training_input，并接入 behavior clone 数据入口完成 dry-run / 1 epoch smoke；训练入口也已支持 --edge-recovery-sample-weight 和 handoff-only 时间窗过滤，用于混合原轨迹时只在 60 秒后 handoff/mid 窗口引入 repair 样本，首个 dataset smoke 证明 opening 子集 edge repair 样本为 0、mid 子集保留 799 条 repair 样本。train_sb3.py 也已允许 stage01 SB3 opening 包裹 behavior clone fallback，首个 probe 保住 60 秒三图 10 seed opening gate，但 180 秒 soda-creek 与 cracked-star-jar seed 62201 仍在 mid_60_to_180 失败；因此 blocker 已收窄到 handoff/mid recovery，仍不是可用 policy，也不能解除 deterministic handoff blocker。",
         "edge-aux staged opening handoff trace 已确认 soda-creek / cracked-star-jar seed 62201 的失败是 deterministic fallback 长时间 edge-pinned 并高置信顶住阻塞边界；stage 03 仍阻塞，下一轮必须训练或约束 handoff/mid edge recovery。",
         "handoff-window edge-aux staged GRU context8 候选在 deterministic 60 秒和 180 秒多图 probe 均通过，但 300 秒 probe 仍有 8 个 late_180_to_300 失败；Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。",
-        "handoff-window late trace 显示 300 秒 failure 已转为 edge + hazard / boss 混合压力恢复问题；Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。"
+        "handoff-window late trace 显示 300 秒 failure 已转为 edge + hazard / boss 混合压力恢复问题；Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。",
+        "late recovery supervision 管线已具备 edge + hazard / boss 混合压力动作改写、risk_recovery_supervision_sample 导出、BC 读取、样本加权和时间窗过滤能力；但尚未把 180-300 秒失败区间导出成样本并训练/复测新候选，因此 Phase 6 仍卡在 late-window long-run recovery，不得进入 stage 03。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -571,9 +573,8 @@
       "next_actions": [
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
-        "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
-        "继续重做 stage_02：handoff-window late trace 已确认 300 秒失败是 edge + hazard / boss 混合压力；下一步训练或约束 180-300 秒 late recovery，并覆盖离边、hazard avoidance、Boss / enemy pressure 和低血量恢复。",
-        "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图对比；通过前不得进入 stage_03 或 RL 测试 Bot。"
+        "用 --late-recovery-filter 对 handoff-window 候选的 180-300 秒失败区间导出 risk_recovery_supervision_sample，混入 late 子模型训练，并记录样本来源、权重和时间窗。",
+        "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图 handoff 对比，最后跑 300 秒三图 long-run 对比；全部通过前不得进入 stage_03 或 RL 测试 Bot。"
       ]
     },
     {

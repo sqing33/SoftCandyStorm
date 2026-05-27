@@ -52,6 +52,8 @@ GYM_ACTION_MOVEMENTS = {
     7: (-1.0, 0.0),
     8: (-math.sqrt(0.5), math.sqrt(0.5)),
 }
+GYM_OBSERVATION_V2_NEAREST_HAZARD_START = 130
+GYM_OBSERVATION_V2_BOSS_START = 137
 
 
 def load_config(path):
@@ -362,6 +364,278 @@ class EdgeRecoveryFilterPolicy:
         }
 
 
+class LateRecoveryFilterPolicy:
+    policy_kind = "late_recovery_filter"
+
+    def __init__(
+        self,
+        policy,
+        min_seconds=180.0,
+        edge_distance=32.0,
+        hazard_threshold=0.2,
+        boss_threshold=0.05,
+        enemy_threshold=0.05,
+        low_health_threshold=0.25,
+        toward_dot_threshold=0.15,
+    ):
+        if min_seconds < 0.0:
+            raise ValueError("min_seconds must be non-negative")
+        if edge_distance < 0.0:
+            raise ValueError("edge_distance must be non-negative")
+        self.policy = policy
+        self.min_seconds = float(min_seconds)
+        self.edge_distance = float(edge_distance)
+        self.hazard_threshold = float(hazard_threshold)
+        self.boss_threshold = float(boss_threshold)
+        self.enemy_threshold = float(enemy_threshold)
+        self.low_health_threshold = float(low_health_threshold)
+        self.toward_dot_threshold = float(toward_dot_threshold)
+        self._step_context = {}
+        self._last_recovery_decision = None
+
+    def reset(self):
+        reset = getattr(self.policy, "reset", None)
+        if callable(reset):
+            reset()
+
+    def set_map_id(self, map_id):
+        set_map_id = getattr(self.policy, "set_map_id", None)
+        if callable(set_map_id):
+            set_map_id(map_id)
+
+    def set_step_context(self, info):
+        self._step_context = info or {}
+        set_step_context = getattr(self.policy, "set_step_context", None)
+        if callable(set_step_context):
+            set_step_context(info)
+
+    def set_random_seed(self, seed):
+        set_random_seed = getattr(self.policy, "set_random_seed", None)
+        if callable(set_random_seed):
+            set_random_seed(seed)
+
+    def predict(self, observation, deterministic=True):
+        self._last_recovery_decision = None
+        action, state = self.policy.predict(observation, deterministic=deterministic)
+        action_index = action_to_int(action)
+        if deterministic:
+            action_scores = policy_action_scores(self.policy, observation)
+            recovery_action, original_reasons, target_reasons = self.recovery_action(
+                action_index,
+                action_scores,
+                observation,
+            )
+            if recovery_action != action_index:
+                self._last_recovery_decision = self.build_recovery_decision(
+                    action_index,
+                    recovery_action,
+                    action_scores,
+                    original_reasons,
+                    target_reasons,
+                    observation,
+                )
+                action_index = recovery_action
+                return action_index, state
+        return action, state
+
+    def action_scores(self, observation):
+        return policy_action_scores(self.policy, observation)
+
+    def recovery_action(self, blocked_action, action_scores, observation):
+        original_reasons = self.action_risk_reasons(blocked_action, observation)
+        if not original_reasons:
+            return blocked_action, [], []
+
+        scores = action_scores.get("scores", []) if isinstance(action_scores, dict) else []
+        ranked_actions = sorted(
+            range(min(max(len(scores), len(GYM_ACTION_MOVEMENTS)), len(GYM_ACTION_MOVEMENTS))),
+            key=lambda index: score_at(scores, index) if score_at(scores, index) is not None else 0.0,
+            reverse=True,
+        )
+        for action_index in ranked_actions:
+            reasons = self.action_risk_reasons(action_index, observation)
+            if not reasons:
+                return action_index, original_reasons, []
+
+        best_action = min(
+            ranked_actions or range(len(GYM_ACTION_MOVEMENTS)),
+            key=lambda index: (
+                self.action_risk_score(index, observation),
+                -(score_at(scores, index) or 0.0),
+            ),
+        )
+        return best_action, original_reasons, self.action_risk_reasons(best_action, observation)
+
+    def action_risk_reasons(self, action_index, observation):
+        if self.current_time_seconds() < self.min_seconds:
+            return []
+        diagnostics = self._step_context.get("diagnostics", {}) or {}
+        reasons = []
+        if action_pushes_into_edge(action_index, diagnostics, self.edge_distance):
+            reasons.append("wallward_edge")
+
+        pressure = self.pressure_context(observation)
+        if (
+            int(action_index) == 0
+            and pressure["combined_pressure"] > 0.0
+            and (
+                pressure["low_health_risk"] >= self.low_health_threshold
+                or pressure["hazard_pressure_risk"] >= self.hazard_threshold
+                or pressure["boss_pressure_risk"] >= self.boss_threshold
+                or pressure["enemy_pressure_risk"] >= self.enemy_threshold
+            )
+        ):
+            reasons.append("idle_under_late_pressure")
+        if (
+            pressure["hazard_pressure_risk"] >= self.hazard_threshold
+            and action_moves_toward_vector(
+                action_index,
+                pressure["hazard_vector"],
+                self.toward_dot_threshold,
+            )
+        ):
+            reasons.append("toward_hazard")
+        if (
+            pressure["boss_pressure_risk"] >= self.boss_threshold
+            and action_moves_toward_vector(
+                action_index,
+                pressure["boss_vector"],
+                self.toward_dot_threshold,
+            )
+        ):
+            reasons.append("toward_boss")
+        if (
+            pressure["enemy_pressure_risk"] >= self.enemy_threshold
+            and action_moves_toward_vector(
+                action_index,
+                pressure["enemy_vector"],
+                self.toward_dot_threshold,
+            )
+        ):
+            reasons.append("toward_enemy_pressure")
+        return reasons
+
+    def action_risk_score(self, action_index, observation):
+        diagnostics = self._step_context.get("diagnostics", {}) or {}
+        pressure = self.pressure_context(observation)
+        score = 0.0
+        if action_pushes_into_edge(action_index, diagnostics, self.edge_distance):
+            score += 1.0
+        low_health_boost = 1.0 + pressure["low_health_risk"]
+        score += pressure["hazard_pressure_risk"] * max(
+            0.0,
+            action_vector_alignment(action_index, pressure["hazard_vector"]),
+        )
+        score += pressure["boss_pressure_risk"] * max(
+            0.0,
+            action_vector_alignment(action_index, pressure["boss_vector"]),
+        )
+        score += pressure["enemy_pressure_risk"] * max(
+            0.0,
+            action_vector_alignment(action_index, pressure["enemy_vector"]),
+        )
+        if int(action_index) == 0 and pressure["combined_pressure"] > 0.0:
+            score += 0.25 * pressure["combined_pressure"]
+        return round(score * low_health_boost, 6)
+
+    def pressure_context(self, observation):
+        diagnostics = self._step_context.get("diagnostics", {}) or {}
+        hazard_pressure = as_float(diagnostics.get("hazard_pressure_risk")) or 0.0
+        boss_pressure = as_float(diagnostics.get("boss_pressure_risk")) or 0.0
+        enemy_pressure = as_float(diagnostics.get("enemy_pressure_risk")) or 0.0
+        low_health = as_float(diagnostics.get("low_health_risk")) or 0.0
+        hazard_vector = observation_v2_nearest_hazard_vector(observation)
+        boss_vector = observation_v2_boss_vector(observation)
+        enemy_vector = diagnostics_enemy_vector(diagnostics)
+        combined = max(hazard_pressure, boss_pressure, enemy_pressure)
+        return {
+            "hazard_pressure_risk": clamp_float(hazard_pressure, 0.0, 1.0),
+            "boss_pressure_risk": clamp_float(boss_pressure, 0.0, 1.0),
+            "enemy_pressure_risk": clamp_float(enemy_pressure, 0.0, 1.0),
+            "low_health_risk": clamp_float(low_health, 0.0, 1.0),
+            "combined_pressure": clamp_float(combined, 0.0, 1.0),
+            "hazard_vector": hazard_vector,
+            "boss_vector": boss_vector,
+            "enemy_vector": enemy_vector,
+        }
+
+    def current_time_seconds(self):
+        return float(self._step_context.get("time_seconds", 0.0) or 0.0)
+
+    def build_recovery_decision(
+        self,
+        blocked_action,
+        recovery_action,
+        action_scores,
+        original_reasons,
+        target_reasons,
+        observation,
+    ):
+        scores = action_scores.get("scores", []) if isinstance(action_scores, dict) else []
+        ranked_actions = sorted(
+            range(min(len(scores), len(GYM_ACTION_MOVEMENTS))),
+            key=lambda index: float(scores[index]),
+            reverse=True,
+        )
+        blocked_score = score_at(scores, blocked_action)
+        recovery_score = score_at(scores, recovery_action)
+        return {
+            "mode": "late_recovery_filter",
+            "min_seconds": self.min_seconds,
+            "edge_distance": self.edge_distance,
+            "thresholds": {
+                "hazard": self.hazard_threshold,
+                "boss": self.boss_threshold,
+                "enemy": self.enemy_threshold,
+                "low_health": self.low_health_threshold,
+                "toward_dot": self.toward_dot_threshold,
+            },
+            "original_action": int(blocked_action),
+            "target_action": int(recovery_action),
+            "risk_reasons": list(original_reasons),
+            "target_risk_reasons": list(target_reasons),
+            "pressure_context": self.pressure_context(observation),
+            "score_kind": action_scores.get("kind") if isinstance(action_scores, dict) else None,
+            "original_action_score": blocked_score,
+            "target_action_score": recovery_score,
+            "score_margin": (
+                round(float(recovery_score) - float(blocked_score), 6)
+                if blocked_score is not None and recovery_score is not None
+                else None
+            ),
+            "target_rank": (
+                ranked_actions.index(recovery_action) + 1
+                if recovery_action in ranked_actions
+                else None
+            ),
+        }
+
+    def consume_recovery_decision(self):
+        decision = self._last_recovery_decision
+        self._last_recovery_decision = None
+        return decision
+
+    def opening_policy_report(self):
+        return opening_policy_report(self.policy)
+
+    def policy_adapter_report(self):
+        return {
+            "mode": "late_recovery_filter",
+            "min_seconds": self.min_seconds,
+            "edge_distance": self.edge_distance,
+            "hazard_threshold": self.hazard_threshold,
+            "boss_threshold": self.boss_threshold,
+            "enemy_threshold": self.enemy_threshold,
+            "low_health_threshold": self.low_health_threshold,
+            "toward_dot_threshold": self.toward_dot_threshold,
+            "wrapped_policy_kind": getattr(self.policy, "policy_kind", "sb3"),
+            "limitations": [
+                "This deterministic wrapper is diagnostic repair evidence only.",
+                "It produces late-window supervision samples and cannot be used as RL policy acceptance evidence.",
+            ],
+        }
+
+
 def action_pushes_into_edge(action_index, diagnostics, edge_distance):
     movement = GYM_ACTION_MOVEMENTS.get(int(action_index), (0.0, 0.0))
     boundary = (diagnostics or {}).get("boundary") or {}
@@ -394,10 +668,127 @@ def as_float(value):
     return None
 
 
+def clamp_float(value, minimum, maximum):
+    return min(max(float(value), minimum), maximum)
+
+
+def action_vector_alignment(action_index, vector):
+    movement = GYM_ACTION_MOVEMENTS.get(int(action_index), (0.0, 0.0))
+    vx, vy = vector or (0.0, 0.0)
+    mx, my = movement
+    movement_len = math.hypot(mx, my)
+    vector_len = math.hypot(vx, vy)
+    if movement_len <= 0.0 or vector_len <= 1e-6:
+        return 0.0
+    return (mx * vx + my * vy) / (movement_len * vector_len)
+
+
+def action_moves_toward_vector(action_index, vector, threshold):
+    return action_vector_alignment(action_index, vector) > float(threshold)
+
+
+def observation_values_or_empty(observation):
+    if observation is None:
+        return []
+    try:
+        return observation_to_list(observation)
+    except (TypeError, ValueError):
+        return []
+
+
+def observation_v2_nearest_hazard_vector(observation):
+    values = observation_values_or_empty(observation)
+    index = GYM_OBSERVATION_V2_NEAREST_HAZARD_START
+    if len(values) <= index + 2:
+        return (0.0, 0.0)
+    if values[index + 2] <= 0.0:
+        return (0.0, 0.0)
+    return (float(values[index]), float(values[index + 1]))
+
+
+def observation_v2_boss_vector(observation):
+    values = observation_values_or_empty(observation)
+    index = GYM_OBSERVATION_V2_BOSS_START
+    if len(values) <= index + 2:
+        return (0.0, 0.0)
+    if values[index] <= 0.0:
+        return (0.0, 0.0)
+    return (float(values[index + 1]), float(values[index + 2]))
+
+
+def diagnostics_enemy_vector(diagnostics):
+    player = (diagnostics or {}).get("player_position") or {}
+    enemy = ((diagnostics or {}).get("nearest_enemy") or {}).get("position") or {}
+    player_x = as_float(player.get("x"))
+    player_y = as_float(player.get("y"))
+    enemy_x = as_float(enemy.get("x"))
+    enemy_y = as_float(enemy.get("y"))
+    if None in {player_x, player_y, enemy_x, enemy_y}:
+        return (0.0, 0.0)
+    return (enemy_x - player_x, enemy_y - player_y)
+
+
 def wrap_edge_recovery_filter(policy, enabled=False, edge_distance=32.0):
     if not enabled:
         return policy
     return EdgeRecoveryFilterPolicy(policy, edge_distance=edge_distance)
+
+
+def wrap_late_recovery_filter(
+    policy,
+    enabled=False,
+    min_seconds=180.0,
+    edge_distance=32.0,
+    hazard_threshold=0.2,
+    boss_threshold=0.05,
+    enemy_threshold=0.05,
+    low_health_threshold=0.25,
+    toward_dot_threshold=0.15,
+):
+    if not enabled:
+        return policy
+    return LateRecoveryFilterPolicy(
+        policy,
+        min_seconds=min_seconds,
+        edge_distance=edge_distance,
+        hazard_threshold=hazard_threshold,
+        boss_threshold=boss_threshold,
+        enemy_threshold=enemy_threshold,
+        low_health_threshold=low_health_threshold,
+        toward_dot_threshold=toward_dot_threshold,
+    )
+
+
+def wrap_recovery_filter_for_eval(
+    policy,
+    *,
+    edge_recovery_filter=False,
+    edge_recovery_distance=32.0,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
+):
+    if late_recovery_filter:
+        return wrap_late_recovery_filter(
+            policy,
+            enabled=True,
+            min_seconds=late_recovery_min_seconds,
+            edge_distance=edge_recovery_distance,
+            hazard_threshold=late_recovery_hazard_threshold,
+            boss_threshold=late_recovery_boss_threshold,
+            enemy_threshold=late_recovery_enemy_threshold,
+            low_health_threshold=late_recovery_low_health_threshold,
+            toward_dot_threshold=late_recovery_toward_dot_threshold,
+        )
+    return wrap_edge_recovery_filter(
+        policy,
+        enabled=edge_recovery_filter,
+        edge_distance=edge_recovery_distance,
+    )
 
 
 def parse_map_list(value):
@@ -581,6 +972,13 @@ def train(
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -651,10 +1049,17 @@ def train(
     finally:
         env.close()
 
-    evaluation_model = wrap_edge_recovery_filter(
+    evaluation_model = wrap_recovery_filter_for_eval(
         model,
-        enabled=edge_recovery_filter,
-        edge_distance=edge_recovery_distance,
+        edge_recovery_filter=edge_recovery_filter,
+        edge_recovery_distance=edge_recovery_distance,
+        late_recovery_filter=late_recovery_filter,
+        late_recovery_min_seconds=late_recovery_min_seconds,
+        late_recovery_hazard_threshold=late_recovery_hazard_threshold,
+        late_recovery_boss_threshold=late_recovery_boss_threshold,
+        late_recovery_enemy_threshold=late_recovery_enemy_threshold,
+        late_recovery_low_health_threshold=late_recovery_low_health_threshold,
+        late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
     )
     evaluation = evaluate_model(
         evaluation_model,
@@ -811,6 +1216,13 @@ def evaluate_saved_policy(
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
 ):
     model_class = stable_baselines_model_classes()[algorithm]
     fallback_model_path = model_path or default_model_path(config, algorithm)
@@ -824,10 +1236,17 @@ def evaluate_saved_policy(
             opening_model_path,
             fallback_model_path,
         )
-    model = wrap_edge_recovery_filter(
+    model = wrap_recovery_filter_for_eval(
         model,
-        enabled=edge_recovery_filter,
-        edge_distance=edge_recovery_distance,
+        edge_recovery_filter=edge_recovery_filter,
+        edge_recovery_distance=edge_recovery_distance,
+        late_recovery_filter=late_recovery_filter,
+        late_recovery_min_seconds=late_recovery_min_seconds,
+        late_recovery_hazard_threshold=late_recovery_hazard_threshold,
+        late_recovery_boss_threshold=late_recovery_boss_threshold,
+        late_recovery_enemy_threshold=late_recovery_enemy_threshold,
+        late_recovery_low_health_threshold=late_recovery_low_health_threshold,
+        late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
     )
     upgrade_policy = (
         load_upgrade_choice_policy(upgrade_choice_model) if upgrade_choice_model else None
@@ -869,6 +1288,13 @@ def evaluate_policy_model(
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
 ):
     if behavior_clone_model is not None:
         upgrade_policy = (
@@ -895,6 +1321,13 @@ def evaluate_policy_model(
             edge_recovery_filter=edge_recovery_filter,
             edge_recovery_distance=edge_recovery_distance,
             edge_recovery_samples_out=edge_recovery_samples_out,
+            late_recovery_filter=late_recovery_filter,
+            late_recovery_min_seconds=late_recovery_min_seconds,
+            late_recovery_hazard_threshold=late_recovery_hazard_threshold,
+            late_recovery_boss_threshold=late_recovery_boss_threshold,
+            late_recovery_enemy_threshold=late_recovery_enemy_threshold,
+            late_recovery_low_health_threshold=late_recovery_low_health_threshold,
+            late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
         )
     return evaluate_saved_policy(
         config,
@@ -915,6 +1348,13 @@ def evaluate_policy_model(
         edge_recovery_filter=edge_recovery_filter,
         edge_recovery_distance=edge_recovery_distance,
         edge_recovery_samples_out=edge_recovery_samples_out,
+        late_recovery_filter=late_recovery_filter,
+        late_recovery_min_seconds=late_recovery_min_seconds,
+        late_recovery_hazard_threshold=late_recovery_hazard_threshold,
+        late_recovery_boss_threshold=late_recovery_boss_threshold,
+        late_recovery_enemy_threshold=late_recovery_enemy_threshold,
+        late_recovery_low_health_threshold=late_recovery_low_health_threshold,
+        late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
     )
 
 
@@ -937,6 +1377,13 @@ def evaluate_behavior_clone_policy(
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
 ):
     model_path = Path(model_path)
     policy = load_behavior_clone_policy_with_optional_opening(
@@ -945,10 +1392,17 @@ def evaluate_behavior_clone_policy(
         opening_model_path=opening_model_path,
         opening_seconds=opening_seconds,
     )
-    policy = wrap_edge_recovery_filter(
+    policy = wrap_recovery_filter_for_eval(
         policy,
-        enabled=edge_recovery_filter,
-        edge_distance=edge_recovery_distance,
+        edge_recovery_filter=edge_recovery_filter,
+        edge_recovery_distance=edge_recovery_distance,
+        late_recovery_filter=late_recovery_filter,
+        late_recovery_min_seconds=late_recovery_min_seconds,
+        late_recovery_hazard_threshold=late_recovery_hazard_threshold,
+        late_recovery_boss_threshold=late_recovery_boss_threshold,
+        late_recovery_enemy_threshold=late_recovery_enemy_threshold,
+        late_recovery_low_health_threshold=late_recovery_low_health_threshold,
+        late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
     )
     evaluation = evaluate_model(
         policy,
@@ -1017,6 +1471,13 @@ def evaluate_model(
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
 ):
     eval_random_seed = validate_eval_random_seed(eval_random_seed, deterministic)
     action_random_seed_report = seed_stochastic_action_sampling(
@@ -1282,11 +1743,24 @@ def build_edge_recovery_sample(
 ):
     observation_values = observation_to_list(observation)
     score_payload = compact_full_action_scores(action_scores)
+    mode = adapter_decision.get("mode")
+    is_late_recovery = mode == "late_recovery_filter"
+    record_type = (
+        "risk_recovery_supervision_sample"
+        if is_late_recovery
+        else "edge_recovery_supervision_sample"
+    )
+    target_source = "late_recovery_filter" if is_late_recovery else "edge_recovery_filter"
+    target_label = (
+        "highest_scored_late_safe_action"
+        if is_late_recovery
+        else "highest_scored_non_wallward_action"
+    )
     return {
-        "record_type": "edge_recovery_supervision_sample",
+        "record_type": record_type,
         "schema_version": 1,
         "sample_role": "repair_training_input",
-        "target_source": "edge_recovery_filter",
+        "target_source": target_source,
         "seed": episode_seed,
         "map_id": info.get("map_id"),
         "step": step_number,
@@ -1297,7 +1771,7 @@ def build_edge_recovery_sample(
         "observation": observation_values,
         "original_action": adapter_decision["original_action"],
         "target_action": adapter_decision["target_action"],
-        "target_label": "highest_scored_non_wallward_action",
+        "target_label": target_label,
         "adapter_decision": adapter_decision,
         "action_scores": score_payload,
         "diagnostics": info.get("diagnostics", {}),
@@ -1341,13 +1815,20 @@ def write_edge_recovery_samples(samples_path, samples):
     with target.open("w", encoding="utf-8") as handle:
         for sample in samples:
             handle.write(json.dumps(sample, ensure_ascii=False, sort_keys=True) + "\n")
+    record_type_counts = {}
+    for sample in samples:
+        record_type = sample.get("record_type", "unknown")
+        record_type_counts[record_type] = record_type_counts.get(record_type, 0) + 1
     return {
         "path": str(target),
         "sample_count": len(samples),
-        "record_type": "edge_recovery_supervision_sample",
+        "record_type": (
+            next(iter(record_type_counts)) if len(record_type_counts) == 1 else "mixed"
+        ),
+        "record_type_counts": record_type_counts,
         "sample_role": "repair_training_input",
         "limitations": [
-            "Samples are emitted only when edge_recovery_filter changes a deterministic action.",
+            "Samples are emitted only when a deterministic recovery filter changes an action.",
             "They are training/diagnostic material, not policy acceptance evidence.",
         ],
     }
@@ -1797,6 +2278,13 @@ def compare_policy_to_rule_bots(
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
 ):
     episodes = eval_episodes or config["evaluation"]["episodes"]
     seconds = eval_seconds or config["evaluation"]["seconds"]
@@ -1823,6 +2311,13 @@ def compare_policy_to_rule_bots(
         edge_recovery_filter=edge_recovery_filter,
         edge_recovery_distance=edge_recovery_distance,
         edge_recovery_samples_out=edge_recovery_samples_out,
+        late_recovery_filter=late_recovery_filter,
+        late_recovery_min_seconds=late_recovery_min_seconds,
+        late_recovery_hazard_threshold=late_recovery_hazard_threshold,
+        late_recovery_boss_threshold=late_recovery_boss_threshold,
+        late_recovery_enemy_threshold=late_recovery_enemy_threshold,
+        late_recovery_low_health_threshold=late_recovery_low_health_threshold,
+        late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
     findings = comparison_findings(policy, rule_matrix["stdout"])
@@ -1885,6 +2380,13 @@ def compare_policy_to_rule_bots_across_maps(
     edge_recovery_filter=False,
     edge_recovery_distance=32.0,
     edge_recovery_samples_out=None,
+    late_recovery_filter=False,
+    late_recovery_min_seconds=180.0,
+    late_recovery_hazard_threshold=0.2,
+    late_recovery_boss_threshold=0.05,
+    late_recovery_enemy_threshold=0.05,
+    late_recovery_low_health_threshold=0.25,
+    late_recovery_toward_dot_threshold=0.15,
 ):
     comparisons = [
         compare_policy_to_rule_bots(
@@ -1911,6 +2413,13 @@ def compare_policy_to_rule_bots_across_maps(
                 edge_recovery_samples_out,
                 map_id,
             ),
+            late_recovery_filter=late_recovery_filter,
+            late_recovery_min_seconds=late_recovery_min_seconds,
+            late_recovery_hazard_threshold=late_recovery_hazard_threshold,
+            late_recovery_boss_threshold=late_recovery_boss_threshold,
+            late_recovery_enemy_threshold=late_recovery_enemy_threshold,
+            late_recovery_low_health_threshold=late_recovery_low_health_threshold,
+            late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
         )
         for map_id in map_ids
     ]
@@ -2315,7 +2824,22 @@ def main():
     parser.add_argument(
         "--edge-recovery-samples-out",
         default=None,
-        help="Write JSONL supervision samples whenever --edge-recovery-filter changes a deterministic action.",
+        help="Write JSONL supervision samples whenever a recovery filter changes a deterministic action.",
+    )
+    parser.add_argument(
+        "--late-recovery-filter",
+        action="store_true",
+        help="Use a deterministic 180-300s safety recovery filter during evaluation/comparison only.",
+    )
+    parser.add_argument("--late-recovery-min-seconds", type=float, default=180.0)
+    parser.add_argument("--late-recovery-hazard-threshold", type=float, default=0.2)
+    parser.add_argument("--late-recovery-boss-threshold", type=float, default=0.05)
+    parser.add_argument("--late-recovery-enemy-threshold", type=float, default=0.05)
+    parser.add_argument("--late-recovery-low-health-threshold", type=float, default=0.25)
+    parser.add_argument(
+        "--late-recovery-toward-dot-threshold",
+        type=float,
+        default=0.15,
     )
     parser.add_argument(
         "--trace-dir",
@@ -2370,6 +2894,19 @@ def main():
         )
         if args.edge_recovery_distance < 0.0:
             raise ValueError("--edge-recovery-distance must be non-negative")
+        if args.late_recovery_min_seconds < 0.0:
+            raise ValueError("--late-recovery-min-seconds must be non-negative")
+        for name in (
+            "late_recovery_hazard_threshold",
+            "late_recovery_boss_threshold",
+            "late_recovery_enemy_threshold",
+            "late_recovery_low_health_threshold",
+        ):
+            value = getattr(args, name)
+            if not (0.0 <= value <= 1.0):
+                raise ValueError(f"--{name.replace('_', '-')} must be between 0 and 1")
+        if not (-1.0 <= args.late_recovery_toward_dot_threshold <= 1.0):
+            raise ValueError("--late-recovery-toward-dot-threshold must be between -1 and 1")
     except ValueError as exc:
         parser.error(str(exc))
     if args.compare_map_preset is not None and not args.compare_rule_bots:
@@ -2386,8 +2923,14 @@ def main():
         parser.error("--upgrade-choice-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--edge-recovery-filter requires --evaluate-model or --compare-rule-bots")
-    if args.edge_recovery_samples_out and not args.edge_recovery_filter:
-        parser.error("--edge-recovery-samples-out requires --edge-recovery-filter")
+    if args.late_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--late-recovery-filter requires --evaluate-model or --compare-rule-bots")
+    if args.edge_recovery_filter and args.late_recovery_filter:
+        parser.error("--edge-recovery-filter and --late-recovery-filter cannot be combined")
+    if args.edge_recovery_samples_out and not (
+        args.edge_recovery_filter or args.late_recovery_filter
+    ):
+        parser.error("--edge-recovery-samples-out requires a recovery filter")
     if args.trace_sample_stride <= 0:
         parser.error("--trace-sample-stride must be greater than 0")
 
@@ -2452,6 +2995,13 @@ def main():
                 edge_recovery_filter=args.edge_recovery_filter,
                 edge_recovery_distance=args.edge_recovery_distance,
                 edge_recovery_samples_out=args.edge_recovery_samples_out,
+                late_recovery_filter=args.late_recovery_filter,
+                late_recovery_min_seconds=args.late_recovery_min_seconds,
+                late_recovery_hazard_threshold=args.late_recovery_hazard_threshold,
+                late_recovery_boss_threshold=args.late_recovery_boss_threshold,
+                late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
+                late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
+                late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
             ),
         )
         return
@@ -2495,6 +3045,13 @@ def main():
                     edge_recovery_filter=args.edge_recovery_filter,
                     edge_recovery_distance=args.edge_recovery_distance,
                     edge_recovery_samples_out=args.edge_recovery_samples_out,
+                    late_recovery_filter=args.late_recovery_filter,
+                    late_recovery_min_seconds=args.late_recovery_min_seconds,
+                    late_recovery_hazard_threshold=args.late_recovery_hazard_threshold,
+                    late_recovery_boss_threshold=args.late_recovery_boss_threshold,
+                    late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
+                    late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
+                    late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
                 ),
             )
             return
@@ -2533,6 +3090,13 @@ def main():
                 edge_recovery_filter=args.edge_recovery_filter,
                 edge_recovery_distance=args.edge_recovery_distance,
                 edge_recovery_samples_out=args.edge_recovery_samples_out,
+                late_recovery_filter=args.late_recovery_filter,
+                late_recovery_min_seconds=args.late_recovery_min_seconds,
+                late_recovery_hazard_threshold=args.late_recovery_hazard_threshold,
+                late_recovery_boss_threshold=args.late_recovery_boss_threshold,
+                late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
+                late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
+                late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
             ),
         )
         return
@@ -2564,6 +3128,13 @@ def main():
             edge_recovery_filter=args.edge_recovery_filter,
             edge_recovery_distance=args.edge_recovery_distance,
             edge_recovery_samples_out=args.edge_recovery_samples_out,
+            late_recovery_filter=args.late_recovery_filter,
+            late_recovery_min_seconds=args.late_recovery_min_seconds,
+            late_recovery_hazard_threshold=args.late_recovery_hazard_threshold,
+            late_recovery_boss_threshold=args.late_recovery_boss_threshold,
+            late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
+            late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
+            late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
         ),
     )
 

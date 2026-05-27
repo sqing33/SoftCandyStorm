@@ -101,6 +101,7 @@ def load_trajectory_dataset(path, limit=None):
     skipped_upgrade_samples = 0
     upgrade_sample_records = 0
     edge_recovery_sample_records = 0
+    risk_recovery_sample_records = 0
     paths = dataset_paths(path)
 
     for dataset_path in paths:
@@ -134,10 +135,13 @@ def load_trajectory_dataset(path, limit=None):
                 if record_type == "upgrade_sample":
                     upgrade_sample_records += 1
                     continue
-                if record_type == "edge_recovery_supervision_sample":
+                if record_type in {
+                    "edge_recovery_supervision_sample",
+                    "risk_recovery_supervision_sample",
+                }:
                     if record.get("sample_role") != "repair_training_input":
                         raise ValueError(
-                            f"edge recovery sample must be repair_training_input in {dataset_path}:{line_number}"
+                            f"recovery sample must be repair_training_input in {dataset_path}:{line_number}"
                         )
                     observation = record.get("observation")
                     action = record.get("target_action")
@@ -147,11 +151,19 @@ def load_trajectory_dataset(path, limit=None):
                         )
                     if not isinstance(action, int):
                         raise ValueError(
-                            f"edge recovery sample missing integer target_action in {dataset_path}:{line_number}"
+                            f"recovery sample missing integer target_action in {dataset_path}:{line_number}"
                         )
                     observations.append([float(value) for value in observation])
                     actions.append(action)
-                    edge_recovery_sample_records += 1
+                    sample_source = (
+                        "risk_recovery_supervision"
+                        if record_type == "risk_recovery_supervision_sample"
+                        else "edge_recovery_supervision"
+                    )
+                    if sample_source == "risk_recovery_supervision":
+                        risk_recovery_sample_records += 1
+                    else:
+                        edge_recovery_sample_records += 1
                     sample_metadata.append(
                         {
                             "path": str(dataset_path),
@@ -162,8 +174,9 @@ def load_trajectory_dataset(path, limit=None):
                             "health_ratio": float(record.get("health_ratio", 1.0)),
                             "level": int(record.get("level", 0)),
                             "kills": int(record.get("kills", 0)),
-                            "sample_source": "edge_recovery_supervision",
+                            "sample_source": sample_source,
                             "original_action": record.get("original_action"),
+                            "target_source": record.get("target_source"),
                         }
                     )
                     continue
@@ -206,7 +219,7 @@ def load_trajectory_dataset(path, limit=None):
     ]
     if metadata_action_counts:
         action_count = max(action_count, max(metadata_action_counts))
-    if edge_recovery_sample_records:
+    if edge_recovery_sample_records or risk_recovery_sample_records:
         action_count = max(action_count, DEFAULT_MOVEMENT_ACTION_COUNT)
 
     return {
@@ -219,6 +232,7 @@ def load_trajectory_dataset(path, limit=None):
         "skipped_upgrade_samples": skipped_upgrade_samples,
         "upgrade_sample_records": upgrade_sample_records,
         "edge_recovery_sample_records": edge_recovery_sample_records,
+        "risk_recovery_sample_records": risk_recovery_sample_records,
         "observation_len": observation_len,
         "action_count": action_count,
     }
@@ -332,6 +346,7 @@ def summarize_dataset(dataset):
         "skipped_upgrade_samples": dataset["skipped_upgrade_samples"],
         "upgrade_sample_records": dataset.get("upgrade_sample_records", 0),
         "edge_recovery_sample_records": dataset.get("edge_recovery_sample_records", 0),
+        "risk_recovery_sample_records": dataset.get("risk_recovery_sample_records", 0),
         "observation_len": dataset["observation_len"],
         "action_count": dataset["action_count"],
         "action_distribution": {
@@ -1031,6 +1046,11 @@ def filter_dataset_by_time_phase(dataset, phase, thresholds):
         for sample in filtered["sample_metadata"]
         if sample.get("sample_source") == "edge_recovery_supervision"
     )
+    filtered["risk_recovery_sample_records"] = sum(
+        1
+        for sample in filtered["sample_metadata"]
+        if sample.get("sample_source") == "risk_recovery_supervision"
+    )
     return filtered, {
         "mode": phase,
         "thresholds": thresholds,
@@ -1041,30 +1061,60 @@ def filter_dataset_by_time_phase(dataset, phase, thresholds):
 
 
 def filter_edge_recovery_samples_by_time_window(dataset, min_seconds=None, max_seconds=None):
+    return filter_recovery_samples_by_time_window(
+        dataset,
+        source_name="edge_recovery_supervision",
+        count_key="edge_recovery_sample_records",
+        label="edge_recovery",
+        min_seconds=min_seconds,
+        max_seconds=max_seconds,
+    )
+
+
+def filter_risk_recovery_samples_by_time_window(dataset, min_seconds=None, max_seconds=None):
+    return filter_recovery_samples_by_time_window(
+        dataset,
+        source_name="risk_recovery_supervision",
+        count_key="risk_recovery_sample_records",
+        label="risk_recovery",
+        min_seconds=min_seconds,
+        max_seconds=max_seconds,
+    )
+
+
+def filter_recovery_samples_by_time_window(
+    dataset,
+    *,
+    source_name,
+    count_key,
+    label,
+    min_seconds=None,
+    max_seconds=None,
+):
     if min_seconds is None and max_seconds is None:
-        edge_count = int(dataset.get("edge_recovery_sample_records", 0))
+        recovery_count = int(dataset.get(count_key, 0))
         return dataset, {
             "mode": "all",
             "min_seconds": None,
             "max_seconds": None,
             "before_sample_count": len(dataset["actions"]),
             "after_sample_count": len(dataset["actions"]),
-            "before_edge_recovery_sample_count": edge_count,
-            "after_edge_recovery_sample_count": edge_count,
-            "dropped_edge_recovery_sample_count": 0,
+            f"before_{label}_sample_count": recovery_count,
+            f"after_{label}_sample_count": recovery_count,
+            f"dropped_{label}_sample_count": 0,
         }
 
     min_seconds = None if min_seconds is None else float(min_seconds)
     max_seconds = None if max_seconds is None else float(max_seconds)
     keep_indices = []
-    before_edge_count = 0
-    after_edge_count = 0
-    dropped_edge_count = 0
+    before_recovery_count = 0
+    after_recovery_count = 0
+    dropped_recovery_count = 0
     for index, sample in enumerate(dataset["sample_metadata"]):
-        if sample.get("sample_source") != "edge_recovery_supervision":
+        if sample.get("sample_source") != source_name:
             keep_indices.append(index)
             continue
-        before_edge_count += 1
+        before_recovery_count += 1
         time_seconds = float(sample.get("time_seconds", 0.0))
         keep = True
         if min_seconds is not None and time_seconds < min_seconds:
@@ -1073,9 +1123,9 @@ def filter_edge_recovery_samples_by_time_window(dataset, min_seconds=None, max_s
             keep = False
         if keep:
             keep_indices.append(index)
-            after_edge_count += 1
+            after_recovery_count += 1
         else:
-            dropped_edge_count += 1
+            dropped_recovery_count += 1
 
     if len(keep_indices) < 2:
         raise ValueError("edge recovery time window filter leaves fewer than two samples")
@@ -1084,16 +1134,16 @@ def filter_edge_recovery_samples_by_time_window(dataset, min_seconds=None, max_s
     filtered["observations"] = [dataset["observations"][index] for index in keep_indices]
     filtered["actions"] = [dataset["actions"][index] for index in keep_indices]
     filtered["sample_metadata"] = [dataset["sample_metadata"][index] for index in keep_indices]
-    filtered["edge_recovery_sample_records"] = after_edge_count
+    filtered[count_key] = after_recovery_count
     return filtered, {
         "mode": "time_window",
         "min_seconds": min_seconds,
         "max_seconds": max_seconds,
         "before_sample_count": len(dataset["actions"]),
         "after_sample_count": len(keep_indices),
-        "before_edge_recovery_sample_count": before_edge_count,
-        "after_edge_recovery_sample_count": after_edge_count,
-        "dropped_edge_recovery_sample_count": dropped_edge_count,
+        f"before_{label}_sample_count": before_recovery_count,
+        f"after_{label}_sample_count": after_recovery_count,
+        f"dropped_{label}_sample_count": dropped_recovery_count,
     }
 
 
@@ -1111,8 +1161,10 @@ def build_action_change_flags(sample_metadata, actions):
 
 def build_sample_weights(dataset, indices, args, np_module):
     edge_recovery_sample_weight = float(getattr(args, "edge_recovery_sample_weight", 1.0))
+    risk_recovery_sample_weight = float(getattr(args, "risk_recovery_sample_weight", 1.0))
     use_edge_recovery_weight = abs(edge_recovery_sample_weight - 1.0) > 1e-6
-    if args.sample_weighting == "none" and not use_edge_recovery_weight:
+    use_risk_recovery_weight = abs(risk_recovery_sample_weight - 1.0) > 1e-6
+    if args.sample_weighting == "none" and not use_edge_recovery_weight and not use_risk_recovery_weight:
         return None, {
             "mode": "none",
             "min": 1.0,
@@ -1138,6 +1190,7 @@ def build_sample_weights(dataset, indices, args, np_module):
     phase_multipliers = {}
     phase_balance_report = None
     edge_recovery_weighted_count = 0
+    risk_recovery_weighted_count = 0
     if use_time_phase_balance:
         phase_multipliers, phase_balance_report = build_time_phase_balance_weights(
             dataset,
@@ -1170,6 +1223,9 @@ def build_sample_weights(dataset, indices, args, np_module):
         if sample.get("sample_source") == "edge_recovery_supervision":
             weight *= edge_recovery_sample_weight
             edge_recovery_weighted_count += 1
+        if sample.get("sample_source") == "risk_recovery_supervision":
+            weight *= risk_recovery_sample_weight
+            risk_recovery_weighted_count += 1
         if use_action_change and action_change_flags[int(index)]:
             weight += args.action_change_weight
             action_change_count += 1
@@ -1185,7 +1241,11 @@ def build_sample_weights(dataset, indices, args, np_module):
     values = np_module.asarray(weights, dtype=np_module.float32)
     report = {
         "mode": "edge_recovery_auxiliary"
-        if args.sample_weighting == "none" and use_edge_recovery_weight
+        if args.sample_weighting == "none" and use_edge_recovery_weight and not use_risk_recovery_weight
+        else "risk_recovery_auxiliary"
+        if args.sample_weighting == "none" and use_risk_recovery_weight and not use_edge_recovery_weight
+        else "mixed_recovery_auxiliary"
+        if args.sample_weighting == "none" and use_edge_recovery_weight and use_risk_recovery_weight
         else args.sample_weighting,
         "base_mode": args.sample_weighting,
         "min": round(float(values.min()), 6),
@@ -1195,6 +1255,12 @@ def build_sample_weights(dataset, indices, args, np_module):
         "edge_recovery_weighted_sample_count": int(edge_recovery_weighted_count),
         "edge_recovery_weighted_sample_ratio": round(
             edge_recovery_weighted_count / max(1, len(indices)),
+            4,
+        ),
+        "risk_recovery_sample_weight": round(risk_recovery_sample_weight, 6),
+        "risk_recovery_weighted_sample_count": int(risk_recovery_weighted_count),
+        "risk_recovery_weighted_sample_ratio": round(
+            risk_recovery_weighted_count / max(1, len(indices)),
             4,
         ),
         "danger_health_threshold": args.danger_health_threshold,
@@ -1757,6 +1823,12 @@ def main():
         help="Multiply edge_recovery_supervision_sample rows when mixing repair samples with trajectory data.",
     )
     parser.add_argument(
+        "--risk-recovery-sample-weight",
+        type=float,
+        default=1.0,
+        help="Multiply risk_recovery_supervision_sample rows when mixing late safety repair samples.",
+    )
+    parser.add_argument(
         "--edge-recovery-min-seconds",
         type=float,
         default=None,
@@ -1767,6 +1839,18 @@ def main():
         type=float,
         default=None,
         help="Keep edge recovery repair samples before this time; regular trajectory samples are unaffected.",
+    )
+    parser.add_argument(
+        "--risk-recovery-min-seconds",
+        type=float,
+        default=None,
+        help="Keep risk recovery repair samples at or after this time; regular trajectory samples are unaffected.",
+    )
+    parser.add_argument(
+        "--risk-recovery-max-seconds",
+        type=float,
+        default=None,
+        help="Keep risk recovery repair samples before this time; regular trajectory samples are unaffected.",
     )
     parser.add_argument(
         "--entropy-regularization",
@@ -1815,6 +1899,8 @@ def main():
         parser.error("--action-change-weight must be greater than or equal to zero")
     if args.edge_recovery_sample_weight <= 0.0:
         parser.error("--edge-recovery-sample-weight must be greater than zero")
+    if args.risk_recovery_sample_weight <= 0.0:
+        parser.error("--risk-recovery-sample-weight must be greater than zero")
     if args.edge_recovery_min_seconds is not None and args.edge_recovery_min_seconds < 0.0:
         parser.error("--edge-recovery-min-seconds must be greater than or equal to zero")
     if args.edge_recovery_max_seconds is not None and args.edge_recovery_max_seconds <= 0.0:
@@ -1825,6 +1911,16 @@ def main():
         and args.edge_recovery_max_seconds <= args.edge_recovery_min_seconds
     ):
         parser.error("--edge-recovery-max-seconds must be greater than --edge-recovery-min-seconds")
+    if args.risk_recovery_min_seconds is not None and args.risk_recovery_min_seconds < 0.0:
+        parser.error("--risk-recovery-min-seconds must be greater than or equal to zero")
+    if args.risk_recovery_max_seconds is not None and args.risk_recovery_max_seconds <= 0.0:
+        parser.error("--risk-recovery-max-seconds must be greater than zero")
+    if (
+        args.risk_recovery_min_seconds is not None
+        and args.risk_recovery_max_seconds is not None
+        and args.risk_recovery_max_seconds <= args.risk_recovery_min_seconds
+    ):
+        parser.error("--risk-recovery-max-seconds must be greater than --risk-recovery-min-seconds")
     try:
         args.time_phase_thresholds = normalize_time_phase_thresholds(args.time_phase_thresholds)
     except ValueError as exc:
@@ -1836,6 +1932,11 @@ def main():
             dataset,
             min_seconds=args.edge_recovery_min_seconds,
             max_seconds=args.edge_recovery_max_seconds,
+        )
+        dataset, risk_recovery_time_window_report = filter_risk_recovery_samples_by_time_window(
+            dataset,
+            min_seconds=args.risk_recovery_min_seconds,
+            max_seconds=args.risk_recovery_max_seconds,
         )
         dataset, time_phase_filter_report = filter_dataset_by_time_phase(
             dataset,
@@ -1870,6 +1971,7 @@ def main():
                     },
                     "time_phase_filter": time_phase_filter_report,
                     "edge_recovery_time_window_filter": edge_recovery_time_window_report,
+                    "risk_recovery_time_window_filter": risk_recovery_time_window_report,
                     "dependencies": dependency_status(),
                 },
             )
@@ -1877,6 +1979,7 @@ def main():
         report = train_behavior_clone(dataset, args)
         report["time_phase_filter"] = time_phase_filter_report
         report["edge_recovery_time_window_filter"] = edge_recovery_time_window_report
+        report["risk_recovery_time_window_filter"] = risk_recovery_time_window_report
         write_report(args.report, report)
     except (OSError, RuntimeError, ValueError) as exc:
         parser.error(str(exc))

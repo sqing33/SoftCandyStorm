@@ -7,6 +7,7 @@ from python.train.train_behavior_clone import (
     build_sample_weights,
     diagnose_sequence_dataset,
     filter_edge_recovery_samples_by_time_window,
+    filter_risk_recovery_samples_by_time_window,
     filter_dataset_by_time_phase,
     load_trajectory_dataset,
     load_upgrade_choice_dataset,
@@ -78,6 +79,7 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         danger_late_weight=1.0,
         action_change_weight=2.0,
         edge_recovery_sample_weight=1.0,
+        risk_recovery_sample_weight=1.0,
         entropy_regularization=0.0,
         class_weighting="none",
         batch_size=4,
@@ -226,6 +228,33 @@ def test_edge_recovery_sample_weight_boosts_repair_samples(tmp_path):
     )
 
 
+def test_risk_recovery_sample_weight_boosts_late_repair_samples(tmp_path):
+    import numpy as np
+
+    dataset = tiny_dataset()
+    dataset["risk_recovery_sample_records"] = 2
+    dataset["sample_metadata"] = [dict(item) for item in dataset["sample_metadata"]]
+    dataset["sample_metadata"][3]["sample_source"] = "risk_recovery_supervision"
+    dataset["sample_metadata"][7]["sample_source"] = "risk_recovery_supervision"
+    args = args_for(tmp_path, architecture="mlp")
+    args.risk_recovery_sample_weight = 4.0
+
+    weights, report = build_sample_weights(
+        dataset,
+        list(range(len(dataset["actions"]))),
+        args,
+        np,
+    )
+
+    assert report["mode"] == "risk_recovery_auxiliary"
+    assert report["risk_recovery_sample_weight"] == 4.0
+    assert report["risk_recovery_weighted_sample_count"] == 2
+    assert weights.tolist() == pytest.approx(
+        [1.0, 1.0, 1.0, 4.0, 1.0, 1.0, 1.0, 4.0],
+        rel=1e-6,
+    )
+
+
 def test_time_phase_conditioning_stays_loadable_online(tmp_path):
     args = args_for(
         tmp_path,
@@ -299,6 +328,27 @@ def test_edge_recovery_time_window_filter_only_drops_repair_samples():
     assert report["after_edge_recovery_sample_count"] == 1
     assert report["dropped_edge_recovery_sample_count"] == 1
     assert filtered["edge_recovery_sample_records"] == 1
+    assert filtered["actions"] == [0, 1, 2, 2, 1, 0, 2]
+
+
+def test_risk_recovery_time_window_filter_only_drops_late_repair_samples():
+    dataset = tiny_dataset()
+    dataset["risk_recovery_sample_records"] = 2
+    dataset["sample_metadata"] = [dict(item) for item in dataset["sample_metadata"]]
+    dataset["sample_metadata"][2]["sample_source"] = "risk_recovery_supervision"
+    dataset["sample_metadata"][6]["sample_source"] = "risk_recovery_supervision"
+
+    filtered, report = filter_risk_recovery_samples_by_time_window(
+        dataset,
+        min_seconds=5.0,
+        max_seconds=7.0,
+    )
+
+    assert report["mode"] == "time_window"
+    assert report["before_risk_recovery_sample_count"] == 2
+    assert report["after_risk_recovery_sample_count"] == 1
+    assert report["dropped_risk_recovery_sample_count"] == 1
+    assert filtered["risk_recovery_sample_records"] == 1
     assert filtered["actions"] == [0, 1, 2, 2, 1, 0, 2]
 
 
@@ -443,3 +493,46 @@ def test_edge_recovery_samples_load_as_repair_movement_targets(tmp_path):
     assert dataset["action_count"] == 9
     assert summary["edge_recovery_sample_records"] == 1
     assert summary["sample_summary"]["sample_source_distribution"]["edge_recovery_supervision"]["count"] == 1
+
+
+def test_risk_recovery_samples_load_as_repair_movement_targets(tmp_path):
+    dataset_path = tmp_path / "risk_recovery_samples.jsonl"
+    records = [
+        {
+            "record_type": "risk_recovery_supervision_sample",
+            "schema_version": 1,
+            "sample_role": "repair_training_input",
+            "target_source": "late_recovery_filter",
+            "seed": 62300,
+            "map_id": "caramel-workshop",
+            "tick": 6600,
+            "time_seconds": 220.0,
+            "observation_version": 2,
+            "observation_len": 3,
+            "observation": [0.8, 0.2, 0.3],
+            "original_action": 4,
+            "target_action": 7,
+            "adapter_decision": {
+                "mode": "late_recovery_filter",
+                "original_action": 4,
+                "target_action": 7,
+                "risk_reasons": ["wallward_edge", "toward_hazard"],
+            },
+            "diagnostics": {
+                "hazard_pressure_risk": 1.0,
+                "boss_pressure_risk": 0.2,
+            },
+        }
+    ]
+    dataset_path.write_text(
+        "\n".join(json.dumps(record) for record in records) + "\n",
+        encoding="utf-8",
+    )
+
+    dataset = load_trajectory_dataset(dataset_path)
+    summary = summarize_dataset(dataset)
+
+    assert dataset["actions"] == [7]
+    assert dataset["action_count"] == 9
+    assert summary["risk_recovery_sample_records"] == 1
+    assert summary["sample_summary"]["sample_source_distribution"]["risk_recovery_supervision"]["count"] == 1
