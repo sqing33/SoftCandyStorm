@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_039",
+  "category": "rl_training",
+  "content_id": "route_recovery_aux_staged_smoke",
+  "seed": 62300,
+  "bot": "RouteRecoveryAuxStagedCloneSmoke",
+  "time_seconds": 5.0333,
+  "symptom": "1 epoch route_recovery auxiliary staged behavior clone load smoke survived the 5 second toy window but selected action 7 on 151/151 frames, producing zero action entropy.",
+  "root_cause": "The smoke only verifies mixed dataset training and staged checkpoint loading. It is undertrained, evaluated on a trivial 5 second window, and should not be interpreted as a usable deterministic policy.",
+  "fix": "Use this checkpoint only as smoke evidence. Before any policy promotion, train a real mixed route-recovery auxiliary candidate with stronger action diversity checks and rerun deterministic 60/180/300 second high-pressure comparisons.",
+  "validation": "Recorded in harness/reports/2026-05-27_rl_route_recovery_aux_staged_smoke_001/evaluation_5s_soda.json with action 7 ratio 1.0 and gate decision kept as smoke-only."
+}

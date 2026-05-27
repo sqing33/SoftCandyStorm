@@ -1968,6 +1968,11 @@
       "id": "rl_route_recovery_behavior_clone_smoke",
       "summary": "使用 689 条 route_recovery 贴边恢复 repair 样本完成 1 epoch MLP behavior clone smoke，validation accuracy 为 0.6522、validation entropy 为 2.193724 nats；结论仍是 behavior_clone_smoke_only_not_policy_gate，只证明训练路径可用。",
       "report": "harness/reports/2026-05-27_rl_route_recovery_behavior_clone_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_route_recovery_aux_staged_smoke",
+      "summary": "将 phase-aligned KiteBot 轨迹与 route_recovery repair 样本混合完成 GRU context8 三段 staged smoke：opening 排除 repair 样本，mid 保留 342 条，late 保留 40 条；打包和 5 秒加载路径跑通，但 deterministic action 7 占 100%，已记录 fail_20260527_039，不能作为策略候选。",
+      "report": "harness/reports/2026-05-27_rl_route_recovery_aux_staged_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1977,7 +1982,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新已从带 observation 的 300 秒 failed-only trace 导出 689 条贴边恢复 repair_training_input，并完成 1 epoch behavior clone smoke；下一步应把这些样本与规则 Bot 轨迹做监督修复 / policy constraint / 分阶段 policy 实验，而不是继续只堆 timesteps、只扩大升级样本或直接放大 route_recovery；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。最新已从带 observation 的 300 秒 failed-only trace 导出 689 条贴边恢复 repair_training_input，并完成样本训练 smoke 与 staged 混合 smoke；staged smoke 出现 action 7 确定性塌缩，下一步需要更强 action-diversity/entropy 或 policy constraint 训练，而不是继续只堆 timesteps、只扩大升级样本或直接放大 route_recovery；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
