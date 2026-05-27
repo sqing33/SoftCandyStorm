@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_052",
+  "category": "rl_policy",
+  "content_id": "late_route_action4_midlate_ablation",
+  "seed": 62400,
+  "bot": "BehaviorCloneStagedAction4MidLateW0_5",
+  "time_seconds": 300.0,
+  "symptom": "基于 late-route-recovery checkpoint 导出的 254 条 mid/late action 4 贴边修复样本进行低权重 staged behavior clone 消融后，60 秒 high-pressure 三图未触发 repair，但 180 秒 soda-creek 从上一轮 late-only 的 0.6 win_rate 回落到 0.4，300 秒 soda-creek、caramel-workshop、cracked-star-jar 全部为 0.0 win_rate。",
+  "root_cause": "action4 样本覆盖不足以修复长局路线恢复：mid phase 只有 550 条 edge recovery 样本，late phase 只有 48 条 action4 edge recovery 样本，同时 late 失败仍集中在低血量贴边状态。取消 inverse_frequency 并使用 per-map 动作分布正则避免了明显 action collapse，但没有提供足够的 180-300 秒 boundary escape / survival 目标。",
+  "fix": "不推进该 staged checkpoint 到 stage 03、RL acceptance、playtest 或 release。下一步不要继续单纯放大当前 action4 样本权重；应扩展 180-300 秒多图 late action4/action1/低血量贴边恢复样本，或改用 closed-loop late survival / boundary escape curriculum，并保留 60 秒 hard gate 与 180 秒 regression。",
+  "validation": "dry-run、mid/late 训练、staged 打包、60/180/300 秒 high-pressure 三图对比和 300 秒失败分析记录在 harness/reports/2026-05-27_rl_late_route_action4_midlate_ablation_001；300 秒 gate 为 multimap_comparison_recorded_needs_policy_repair，failure_analysis_300s.json 记录 15/15 失败。"
+}

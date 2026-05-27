@@ -2133,6 +2133,11 @@
       "id": "rl_late_route_action4_repair_samples",
       "summary": "基于 late-route-recovery checkpoint 的 300 秒 failed-only observation traces，导出 254 条 60-300 秒 action 4 贴边负 route-recovery 修复样本；validator 通过，behavior clone dry-run 可读，但样本只适合小权重 mid/late 消融。",
       "report": "harness/reports/2026-05-27_rl_late_route_action4_samples_001/summary.md"
+    },
+    {
+      "id": "rl_late_route_action4_midlate_ablation",
+      "summary": "action4 mid/late 低权重消融完成：保留 opening_action3_w0_5_windowed，只重训 mid/late 并使用 edge_recovery_sample_weight=0.5、soft target 与 per-map 动作分布正则；60 秒短窗未破坏，但 180 秒 soda-creek 回落到 0.4，300 秒三图全 0.0，记录 fail_20260527_052。",
+      "report": "harness/reports/2026-05-27_rl_late_route_action4_midlate_ablation_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2142,7 +2147,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。单 seed phase-split retrain 证明 50-80 秒样本覆盖不足：opening+mid 会破坏短窗，只换 mid 又修不动 soda。多 seed 45-100 秒样本已扩展到 389 条，但 w1/w4 mid-only 消融仍未修复 180 秒 soda-creek 且 cracked-star-jar 回落到 0.4；失败分布显示 18 局失败中 14 局在 60 秒前死亡。20-45 秒 opening action 3 低权重消融已保住 60 秒 hard gate，并把 soda-creek 180 秒 win_rate 提到 0.6，但 300 秒三图仍全为 0.0；failed-only trace 显示 15 条失败中 12 条死在 180-300 秒，所有 terminal frames 都贴边且低血量。780 条 late risk samples 的 late-only 消融保住 60/180 秒，但 300 秒仅 cracked-star-jar 到 0.2，soda/caramel 仍为 0.0。late-route-recovery closed-loop smoke 保住 60 秒三图无 repair，并把 180 秒 caramel 提到 0.6667，但 300 秒三图仍全 0.0，route hotspot 显示 mid/late boundary_edge 下 action 4 仍是主要阻塞；当前已导出 254 条 60-300 秒 action 4 repair samples。下一步应针对这些样本做小权重 mid/late 消融、boundary escape curriculum、升级后目标选择或长期路线规划；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
+      "summary": "closed-loop reward profile 链路、upgrade-choice training 集成和 route_recovery action-aware reward 均已验证但仍阻塞：route_recovery + upgrade ranker 2048 timestep 仍为 300 秒三图全 0%。focused boundary opening retrain 产生 action 7 dominant bias；多图 boundary opening retrain 又产生 action 6 dominant bias。soft/top-k recovery target 将 soda-creek 短窗提升到 0.6，但更高 entropy_regularization 回退到 0.4；per-map 动作分布正则能消除 60 秒 action-bias repair，却在 180 秒 soda-creek 仍为 0.0 胜率。单 seed phase-split retrain 证明 50-80 秒样本覆盖不足：opening+mid 会破坏短窗，只换 mid 又修不动 soda。多 seed 45-100 秒样本已扩展到 389 条，但 w1/w4 mid-only 消融仍未修复 180 秒 soda-creek 且 cracked-star-jar 回落到 0.4；失败分布显示 18 局失败中 14 局在 60 秒前死亡。20-45 秒 opening action 3 低权重消融已保住 60 秒 hard gate，并把 soda-creek 180 秒 win_rate 提到 0.6，但 300 秒三图仍全为 0.0；failed-only trace 显示 15 条失败中 12 条死在 180-300 秒，所有 terminal frames 都贴边且低血量。780 条 late risk samples 的 late-only 消融保住 60/180 秒，但 300 秒仅 cracked-star-jar 到 0.2，soda/caramel 仍为 0.0。late-route-recovery closed-loop smoke 保住 60 秒三图无 repair，并把 180 秒 caramel 提到 0.6667，但 300 秒三图仍全 0.0，route hotspot 显示 mid/late boundary_edge 下 action 4 仍是主要阻塞；254 条 action4 样本的 mid/late 低权重消融保住 60 秒短窗，但 180 秒 soda-creek 回落到 0.4，300 秒三图全 0.0。下一步应扩展 180-300 秒 late boundary escape 覆盖、尝试 closed-loop late survival / boundary escape curriculum、升级后目标选择或长期路线规划；通过 300 秒长窗前不能进入 stage 03 或 RL acceptance。"
     },
     {
       "id": "phase4_full_pack_manual_review",
