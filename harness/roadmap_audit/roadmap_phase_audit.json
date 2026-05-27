@@ -525,7 +525,10 @@
         "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/summary.md",
         "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/evaluation_seed62201_samples.json",
         "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/edge_recovery_samples.jsonl",
-        "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/edge_recovery_samples_validation.json"
+        "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/edge_recovery_samples_validation.json",
+        "harness/reports/2026-05-27_rl_edge_recovery_behavior_clone_dataset_smoke_001/summary.md",
+        "harness/reports/2026-05-27_rl_edge_recovery_behavior_clone_dataset_smoke_001/dry_run.json",
+        "harness/reports/2026-05-27_rl_edge_recovery_behavior_clone_dataset_smoke_001/run_output.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -536,7 +539,7 @@
         "stage 02 staged opening wrapper 能把 60 秒 high-pressure 三图 10 seed opening gate 恢复到 100%，但 180 秒三图对比中 soda-creek seed 62201 于 115.5319 秒中局死亡；这说明分离 opening policy 有诊断价值，但 stage 02 仍卡在 handoff 后恢复。",
         "staged opening failed-only trace 显示 60 秒交接时玩家已左下角钉死，fallback 随后持续 action 7 顶左墙并在敌压回升后死亡；下一轮修复应围绕 edge-pinned handoff recovery。",
         "stochastic handoff probe 显示同一 seed 62201 在随机采样下可活到 180 秒，说明恢复动作存在于 policy distribution 中，但单 seed stochastic 结果不能作为 stage 02 或 RL acceptance 通过证据。",
-        "edge recovery 监督样本已把手写 adapter 的 2215 次替换动作固化为 repair_training_input，可用于下一轮 handoff recovery 行为约束；但它仍不是训练后的 policy，也不能解除 deterministic handoff blocker。"
+        "edge recovery 监督样本已把手写 adapter 的 2215 次替换动作固化为 repair_training_input，并接入 behavior clone 数据入口完成 dry-run / 1 epoch smoke；但它仍不是可用 policy，也不能解除 deterministic handoff blocker。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -545,7 +548,7 @@
         "停止继续堆同构 MLP 样本或单图补强。",
         "按失败时间桶拆分课程：优先修 soda-creek opening 早死，再修 caramel-workshop 180-300 秒恢复；不要用单一平均胜率掩盖不同失败面。",
         "执行 time-bucket curriculum stage_01 opening、stage_02 mid 和 stage_03 late，并分别记录 60/180/300 秒 high-pressure 对比与 failure case。",
-        "继续重做 stage_02：staged opening trace 已定位为 edge-pinned handoff recovery 失败，stochastic probe 和 edge recovery samples 显示恢复动作存在但 deterministic argmax 会压成顶墙路径；下一轮优先把样本转成显式 handoff recovery 行为约束或监督微调输入。",
+        "继续重做 stage_02：staged opening trace 已定位为 edge-pinned handoff recovery 失败，edge recovery samples 已进入 behavior clone 数据入口；下一轮优先把这些样本与原有轨迹混合成显式 handoff recovery 辅助约束。",
         "每轮 stage_02 更新后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图对比；通过前不得进入 stage_03 或 RL 测试 Bot。"
       ]
     },

@@ -1,0 +1,229 @@
+{
+  "status": "ok",
+  "mode": "dry_run",
+  "gate_decision": "dataset_validated_not_training_gate",
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/edge_recovery_samples.jsonl"
+    ],
+    "sample_count": 2215,
+    "episode_count": 0,
+    "skipped_upgrade_samples": 0,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 2215,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 392,
+        "ratio": 0.177
+      },
+      "1": {
+        "count": 38,
+        "ratio": 0.0172
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 1759,
+        "ratio": 0.7941
+      },
+      "4": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "5": {
+        "count": 23,
+        "ratio": 0.0104
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 1,
+        "ratio": 0.0005
+      },
+      "8": {
+        "count": 2,
+        "ratio": 0.0009
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 6.8333,
+      "time_seconds_max": 178.7759,
+      "health_ratio_min": 1.0,
+      "health_ratio_average": 1.0,
+      "map_distribution": {
+        "soda-creek": {
+          "count": 2215,
+          "ratio": 1.0
+        }
+      },
+      "sample_source_distribution": {
+        "edge_recovery_supervision": {
+          "count": 2215,
+          "ratio": 1.0
+        }
+      }
+    },
+    "metadata": []
+  },
+  "sequence_diagnostics": {
+    "context_frames": 1,
+    "history_limit": 0,
+    "sample_count": 2215,
+    "episode_key_count": 1,
+    "padding": {
+      "total_missing_frames": 0,
+      "average_missing_frames": 0.0,
+      "fully_seeded_samples": 2215,
+      "fully_seeded_ratio": 1.0
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 0.0,
+      "max": 0.0
+    },
+    "action_transitions": {
+      "transition_count": 2214,
+      "same_action_count": 2188,
+      "same_action_ratio": 0.9883,
+      "changed_action_ratio": 0.0117
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 376,
+        "ratio": 0.1698
+      },
+      "mid_late_start_to_180": {
+        "count": 1839,
+        "ratio": 0.8302
+      },
+      "late_gte_180": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 0,
+      "ratio": 0.0
+    },
+    "per_map": {
+      "soda-creek": {
+        "sample_count": 2215,
+        "sample_ratio": 1.0,
+        "time_seconds_min": 6.8333,
+        "time_seconds_max": 178.7759,
+        "average_missing_frames": 0.0,
+        "fully_seeded_ratio": 1.0,
+        "average_sequence_span_seconds": 0.0,
+        "late_low_health_ratio": 0.0,
+        "action_distribution": {
+          "0": {
+            "count": 392,
+            "ratio": 0.177
+          },
+          "1": {
+            "count": 38,
+            "ratio": 0.0172
+          },
+          "2": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "3": {
+            "count": 1759,
+            "ratio": 0.7941
+          },
+          "4": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "5": {
+            "count": 23,
+            "ratio": 0.0104
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 1,
+            "ratio": 0.0005
+          },
+          "8": {
+            "count": 2,
+            "ratio": 0.0009
+          }
+        }
+      }
+    },
+    "diagnosis_flags": [
+      {
+        "id": "high_action_persistence",
+        "severity": "watch",
+        "summary": "Consecutive samples often keep the same action; inspect sample stride and deterministic target bias."
+      },
+      {
+        "id": "low_late_low_health_coverage",
+        "severity": "watch",
+        "summary": "Few samples cover late low-health recovery states; this can hide long-run policy failures."
+      }
+    ]
+  },
+  "time_phase_conditioning": {
+    "mode": "none",
+    "labels": [],
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "dimension": 0,
+    "phase_distribution": {
+      "opening": {
+        "count": 203,
+        "ratio": 0.0916
+      },
+      "mid": {
+        "count": 972,
+        "ratio": 0.4388
+      },
+      "late": {
+        "count": 1040,
+        "ratio": 0.4695
+      }
+    }
+  },
+  "time_phase_filter": {
+    "mode": "all",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 2215,
+    "after_sample_count": 2215,
+    "phase_distribution": {
+      "opening": {
+        "count": 203,
+        "ratio": 0.0916
+      },
+      "mid": {
+        "count": 972,
+        "ratio": 0.4388
+      },
+      "late": {
+        "count": 1040,
+        "ratio": 0.4695
+      }
+    }
+  },
+  "dependencies": {
+    "numpy": true,
+    "torch": true
+  }
+}

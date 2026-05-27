@@ -9,6 +9,7 @@ from pathlib import Path
 REQUIRED_MODULES = ["numpy", "torch"]
 TIME_PHASE_LABELS = ["opening", "mid", "late"]
 DEFAULT_TIME_PHASE_THRESHOLDS = [0.2, 0.6]
+DEFAULT_MOVEMENT_ACTION_COUNT = 9
 TIME_PHASE_BALANCE_WEIGHTING_MODES = {
     "time_phase_balance",
     "time_phase_balance_danger",
@@ -99,6 +100,7 @@ def load_trajectory_dataset(path, limit=None):
     episode_count = 0
     skipped_upgrade_samples = 0
     upgrade_sample_records = 0
+    edge_recovery_sample_records = 0
     paths = dataset_paths(path)
 
     for dataset_path in paths:
@@ -131,6 +133,39 @@ def load_trajectory_dataset(path, limit=None):
                     continue
                 if record_type == "upgrade_sample":
                     upgrade_sample_records += 1
+                    continue
+                if record_type == "edge_recovery_supervision_sample":
+                    if record.get("sample_role") != "repair_training_input":
+                        raise ValueError(
+                            f"edge recovery sample must be repair_training_input in {dataset_path}:{line_number}"
+                        )
+                    observation = record.get("observation")
+                    action = record.get("target_action")
+                    if not isinstance(observation, list) or not observation:
+                        raise ValueError(
+                            f"edge recovery sample missing observation in {dataset_path}:{line_number}"
+                        )
+                    if not isinstance(action, int):
+                        raise ValueError(
+                            f"edge recovery sample missing integer target_action in {dataset_path}:{line_number}"
+                        )
+                    observations.append([float(value) for value in observation])
+                    actions.append(action)
+                    edge_recovery_sample_records += 1
+                    sample_metadata.append(
+                        {
+                            "path": str(dataset_path),
+                            "seed": int(record.get("seed", 0)),
+                            "map_id": record.get("map_id"),
+                            "tick": int(record.get("tick", 0)),
+                            "time_seconds": float(record.get("time_seconds", 0.0)),
+                            "health_ratio": float(record.get("health_ratio", 1.0)),
+                            "level": int(record.get("level", 0)),
+                            "kills": int(record.get("kills", 0)),
+                            "sample_source": "edge_recovery_supervision",
+                            "original_action": record.get("original_action"),
+                        }
+                    )
                     continue
                 if record_type == "summary":
                     continue
@@ -171,6 +206,8 @@ def load_trajectory_dataset(path, limit=None):
     ]
     if metadata_action_counts:
         action_count = max(action_count, max(metadata_action_counts))
+    if edge_recovery_sample_records:
+        action_count = max(action_count, DEFAULT_MOVEMENT_ACTION_COUNT)
 
     return {
         "paths": [str(path) for path in paths],
@@ -181,6 +218,7 @@ def load_trajectory_dataset(path, limit=None):
         "episode_count": episode_count,
         "skipped_upgrade_samples": skipped_upgrade_samples,
         "upgrade_sample_records": upgrade_sample_records,
+        "edge_recovery_sample_records": edge_recovery_sample_records,
         "observation_len": observation_len,
         "action_count": action_count,
     }
@@ -293,6 +331,7 @@ def summarize_dataset(dataset):
         "episode_count": dataset["episode_count"],
         "skipped_upgrade_samples": dataset["skipped_upgrade_samples"],
         "upgrade_sample_records": dataset.get("upgrade_sample_records", 0),
+        "edge_recovery_sample_records": dataset.get("edge_recovery_sample_records", 0),
         "observation_len": dataset["observation_len"],
         "action_count": dataset["action_count"],
         "action_distribution": {
@@ -311,11 +350,14 @@ def summarize_sample_metadata(sample_metadata):
     if not sample_metadata:
         return {}
     map_counts = {}
+    source_counts = {}
     times = []
     health_ratios = []
     for item in sample_metadata:
         map_id = item.get("map_id") or "unknown"
         map_counts[map_id] = map_counts.get(map_id, 0) + 1
+        source = item.get("sample_source") or "trajectory"
+        source_counts[source] = source_counts.get(source, 0) + 1
         times.append(float(item.get("time_seconds", 0.0)))
         health_ratios.append(float(item.get("health_ratio", 1.0)))
     sample_count = len(sample_metadata)
@@ -330,6 +372,13 @@ def summarize_sample_metadata(sample_metadata):
                 "ratio": round(count / sample_count, 4),
             }
             for map_id, count in sorted(map_counts.items())
+        },
+        "sample_source_distribution": {
+            source: {
+                "count": count,
+                "ratio": round(count / sample_count, 4),
+            }
+            for source, count in sorted(source_counts.items())
         },
     }
 

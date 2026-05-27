@@ -1803,6 +1803,11 @@
       "id": "rl_edge_recovery_supervision_samples",
       "summary": "train_sb3.py 新增 --edge-recovery-samples-out，可在 edge_recovery_filter 替换顶墙 deterministic 动作时导出 repair_training_input JSONL；首份 soda-creek seed 62201 样本导出 2215 条 observation v2 监督样本，并通过 tools/validate_edge_recovery_samples.py 校验，仍不能作为 RL acceptance。",
       "report": "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/summary.md"
+    },
+    {
+      "id": "rl_edge_recovery_behavior_clone_dataset_smoke",
+      "summary": "train_behavior_clone.py 现在可读取 edge_recovery_supervision_sample 作为 movement repair target，并单独统计 edge_recovery_sample_records；2215 条 edge recovery 样本已完成 dry-run 和 1 epoch MLP smoke，结论仍为 behavior_clone_smoke_only_not_policy_gate。",
+      "report": "harness/reports/2026-05-27_rl_edge_recovery_behavior_clone_dataset_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -1812,7 +1817,7 @@
     },
     {
       "id": "rl_policy_multimap_training",
-      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；stochastic probe 和 edge_recovery_filter 说明恢复动作存在但 deterministic argmax 会锁成顶墙路径。下一步用 edge_recovery_samples JSONL 转成显式 handoff recovery 行为约束或监督微调输入；每轮仍必须先过 60 秒 opening 10 seed，再看 180 秒三图。"
+      "summary": "staged opening trace 已把 stage 02 失败面定位为 handoff recovery；edge_recovery_samples 已接入 behavior clone 数据入口。下一步将其作为辅助约束和原有轨迹数据混合训练，再跑 60 秒 opening 10 seed 与 180 秒三图 deterministic 对比。"
     },
     {
       "id": "phase4_full_pack_manual_review",

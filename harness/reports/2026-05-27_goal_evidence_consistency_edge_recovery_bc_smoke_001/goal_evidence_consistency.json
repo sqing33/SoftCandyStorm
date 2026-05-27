@@ -1,0 +1,49 @@
+{
+  "report_version": 1,
+  "source": {
+    "docs_coverage": "harness/docs_implementation_coverage.json",
+    "roadmap_audit": "harness/roadmap_audit/roadmap_phase_audit.json",
+    "progress": "harness/progress.json",
+    "release_candidate_evidence": "harness/release/current_local_rc_evidence.json",
+    "release_package_manifest": "harness/release/current_local_package_manifest.json"
+  },
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "decision": "goal_evidence_consistent",
+  "docs_incomplete_count": 18,
+  "roadmap_incomplete_phase_count": 10,
+  "release_candidate_ready": false,
+  "release_package_status": "blocked",
+  "blockers_seen": [
+    "manual_asset_review_still_pending",
+    "manual_playtest_still_pending",
+    "phase8_public_demo_not_ready",
+    "release_candidate_not_ready",
+    "rl_policy_multimap_generalization_gap"
+  ],
+  "errors": [],
+  "warnings": [
+    "local_binary_launch_blocked: not present in any checked ledger"
+  ],
+  "checks": [
+    {
+      "id": "manual_playtest_waiting",
+      "status": "pass",
+      "summary": "Manual playtest evidence is kept as a waiting release gate until a real human review exists."
+    },
+    {
+      "id": "manual_gates_not_overclaimed",
+      "status": "pass",
+      "summary": "Manual review gates are not overclaimed as passing evidence."
+    },
+    {
+      "id": "not_ready_state_coherence",
+      "status": "pass",
+      "summary": "Docs, roadmap, RC evidence, and package manifest agree that the current local build is not ready."
+    }
+  ],
+  "limitations": [
+    "This validator checks ledger consistency only; it does not execute Rust, Bevy, Harness simulations, Replay, performance tests, or manual playtests.",
+    "A consistent not-ready decision is not release approval.",
+    "Manual review gates require real human-filled review records before they can become passing evidence."
+  ]
+}

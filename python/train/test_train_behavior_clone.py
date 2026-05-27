@@ -328,3 +328,50 @@ def test_upgrade_samples_are_loaded_separately_from_movement_dataset(tmp_path):
     assert movement_summary["upgrade_sample_records"] == 1
     assert upgrade_summary["sample_count"] == 1
     assert upgrade_summary["chosen_upgrade_distribution"]["gum-shield-level-1"]["count"] == 1
+
+
+def test_edge_recovery_samples_load_as_repair_movement_targets(tmp_path):
+    dataset_path = tmp_path / "edge_recovery_samples.jsonl"
+    records = [
+        {
+            "record_type": "edge_recovery_supervision_sample",
+            "schema_version": 1,
+            "sample_role": "repair_training_input",
+            "target_source": "edge_recovery_filter",
+            "seed": 62201,
+            "map_id": "soda-creek",
+            "tick": 1800,
+            "time_seconds": 60.0,
+            "observation_version": 2,
+            "observation_len": 3,
+            "observation": [0.1, 0.2, 0.3],
+            "original_action": 7,
+            "target_action": 0,
+            "adapter_decision": {
+                "mode": "edge_recovery_filter",
+                "edge_distance": 32.0,
+                "original_action": 7,
+                "target_action": 0,
+            },
+            "diagnostics": {
+                "boundary": {
+                    "left_distance": 0.0,
+                    "right_distance": 2400.0,
+                    "bottom_distance": 900.0,
+                    "top_distance": 900.0,
+                }
+            },
+        }
+    ]
+    dataset_path.write_text(
+        "\n".join(json.dumps(record) for record in records) + "\n",
+        encoding="utf-8",
+    )
+
+    dataset = load_trajectory_dataset(dataset_path)
+    summary = summarize_dataset(dataset)
+
+    assert dataset["actions"] == [0]
+    assert dataset["action_count"] == 9
+    assert summary["edge_recovery_sample_records"] == 1
+    assert summary["sample_summary"]["sample_source_distribution"]["edge_recovery_supervision"]["count"] == 1

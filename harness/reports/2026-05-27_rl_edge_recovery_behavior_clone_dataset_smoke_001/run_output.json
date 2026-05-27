@@ -1,0 +1,304 @@
+{
+  "status": "trained",
+  "gate_decision": "behavior_clone_smoke_only_not_policy_gate",
+  "model_path": "harness/reports/2026-05-27_rl_edge_recovery_behavior_clone_dataset_smoke_001/edge_recovery_behavior_clone_smoke.pt",
+  "started_at": "2026-05-27T01:34:10.529720+00:00",
+  "completed_at": "2026-05-27T01:34:10.598934+00:00",
+  "dependency_status": {
+    "numpy": true,
+    "torch": true
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_curriculum_stage02_edge_recovery_samples_001/edge_recovery_samples.jsonl"
+    ],
+    "sample_count": 2215,
+    "episode_count": 0,
+    "skipped_upgrade_samples": 0,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 2215,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 392,
+        "ratio": 0.177
+      },
+      "1": {
+        "count": 38,
+        "ratio": 0.0172
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 1759,
+        "ratio": 0.7941
+      },
+      "4": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "5": {
+        "count": 23,
+        "ratio": 0.0104
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 1,
+        "ratio": 0.0005
+      },
+      "8": {
+        "count": 2,
+        "ratio": 0.0009
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 6.8333,
+      "time_seconds_max": 178.7759,
+      "health_ratio_min": 1.0,
+      "health_ratio_average": 1.0,
+      "map_distribution": {
+        "soda-creek": {
+          "count": 2215,
+          "ratio": 1.0
+        }
+      },
+      "sample_source_distribution": {
+        "edge_recovery_supervision": {
+          "count": 2215,
+          "ratio": 1.0
+        }
+      }
+    },
+    "metadata": []
+  },
+  "sequence_diagnostics": {
+    "context_frames": 1,
+    "history_limit": 0,
+    "sample_count": 2215,
+    "episode_key_count": 1,
+    "padding": {
+      "total_missing_frames": 0,
+      "average_missing_frames": 0.0,
+      "fully_seeded_samples": 2215,
+      "fully_seeded_ratio": 1.0
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 0.0,
+      "max": 0.0
+    },
+    "action_transitions": {
+      "transition_count": 2214,
+      "same_action_count": 2188,
+      "same_action_ratio": 0.9883,
+      "changed_action_ratio": 0.0117
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 376,
+        "ratio": 0.1698
+      },
+      "mid_late_start_to_180": {
+        "count": 1839,
+        "ratio": 0.8302
+      },
+      "late_gte_180": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 0,
+      "ratio": 0.0
+    },
+    "per_map": {
+      "soda-creek": {
+        "sample_count": 2215,
+        "sample_ratio": 1.0,
+        "time_seconds_min": 6.8333,
+        "time_seconds_max": 178.7759,
+        "average_missing_frames": 0.0,
+        "fully_seeded_ratio": 1.0,
+        "average_sequence_span_seconds": 0.0,
+        "late_low_health_ratio": 0.0,
+        "action_distribution": {
+          "0": {
+            "count": 392,
+            "ratio": 0.177
+          },
+          "1": {
+            "count": 38,
+            "ratio": 0.0172
+          },
+          "2": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "3": {
+            "count": 1759,
+            "ratio": 0.7941
+          },
+          "4": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "5": {
+            "count": 23,
+            "ratio": 0.0104
+          },
+          "6": {
+            "count": 0,
+            "ratio": 0.0
+          },
+          "7": {
+            "count": 1,
+            "ratio": 0.0005
+          },
+          "8": {
+            "count": 2,
+            "ratio": 0.0009
+          }
+        }
+      }
+    },
+    "diagnosis_flags": [
+      {
+        "id": "high_action_persistence",
+        "severity": "watch",
+        "summary": "Consecutive samples often keep the same action; inspect sample stride and deterministic target bias."
+      },
+      {
+        "id": "low_late_low_health_coverage",
+        "severity": "watch",
+        "summary": "Few samples cover late low-health recovery states; this can hide long-run policy failures."
+      }
+    ]
+  },
+  "training": {
+    "seed": 12345,
+    "architecture": "mlp",
+    "epochs": 1,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "hidden_size": 64,
+    "context_frames": 1,
+    "input_observation_len": 146,
+    "sequence_input_len": 146,
+    "base_observation_len": 145,
+    "map_conditioning": {
+      "mode": "one_hot",
+      "map_ids": [
+        "soda-creek"
+      ],
+      "dimension": 1,
+      "base_input_observation_len": 145,
+      "input_observation_len": 146
+    },
+    "time_phase_conditioning": {
+      "mode": "none",
+      "labels": [],
+      "thresholds": [
+        0.2,
+        0.6
+      ],
+      "dimension": 0,
+      "base_input_observation_len": 146,
+      "input_observation_len": 146,
+      "phase_distribution": {
+        "opening": {
+          "count": 203,
+          "ratio": 0.0916
+        },
+        "mid": {
+          "count": 972,
+          "ratio": 0.4388
+        },
+        "late": {
+          "count": 1040,
+          "ratio": 0.4695
+        }
+      }
+    },
+    "validation_split": 0.2,
+    "class_weighting": "none",
+    "class_weights": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "sample_weighting": "none",
+    "sample_weights": {
+      "mode": "none",
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+    },
+    "entropy_regularization": 0.0,
+    "train_samples": 1772,
+    "validation_samples": 443
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.912337,
+      "train_cross_entropy_loss": 1.912337,
+      "train_entropy_nats": 2.175998,
+      "train_accuracy": 0.6072,
+      "validation_loss": 1.462831,
+      "validation_entropy_nats": 2.095966,
+      "validation_accuracy": 0.8036
+    }
+  ],
+  "final": {
+    "epoch": 1,
+    "train_loss": 1.912337,
+    "train_cross_entropy_loss": 1.912337,
+    "train_entropy_nats": 2.175998,
+    "train_accuracy": 0.6072,
+    "validation_loss": 1.462831,
+    "validation_entropy_nats": 2.095966,
+    "validation_accuracy": 0.8036
+  },
+  "limitations": [
+    "Behavior cloning imitates rule Bot movement only; it is not a balance or fun gate.",
+    "The exported Phase 1 dataset skips upgrade-choice states, matching the current movement-only RL action space.",
+    "A cloned policy must still pass Gym evaluation and rule Bot comparison before it can become an RL test Bot candidate."
+  ],
+  "time_phase_filter": {
+    "mode": "all",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 2215,
+    "after_sample_count": 2215,
+    "phase_distribution": {
+      "opening": {
+        "count": 203,
+        "ratio": 0.0916
+      },
+      "mid": {
+        "count": 972,
+        "ratio": 0.4388
+      },
+      "late": {
+        "count": 1040,
+        "ratio": 0.4695
+      }
+    }
+  }
+}
