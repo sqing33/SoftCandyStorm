@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260527_036",
+  "category": "rl",
+  "content_id": "rl_closed_loop_late_survival_reward_profile_extended",
+  "seed": "62300-62302",
+  "bot": "PpoLateSurvivalRewardProfileExtended",
+  "time_seconds": 195.4416,
+  "symptom": "从 late-survival smoke checkpoint 继续训练 5120 timesteps 后，60 秒 high-pressure 三图仍为 100%，300 秒 cracked-star-jar 从 0% 提升到 33.33%，但 soda-creek 和 caramel-workshop 仍为 0%，整体 300 秒平均胜率只有 11.11%；同时 180 秒三图从上一轮 66.67% / 100% / 100% 回落到 33.33% / 100% / 66.67%。",
+  "root_cause": "单纯扩大 closed-loop late-survival timesteps 产生了少量长窗改善，但没有形成稳定路线规划或低血量恢复；策略在 300 秒三图中更偏 action 4，且 soda-creek 与 cracked-star-jar 出现 mid_60_to_180 回归，说明 late reward 优化正在挤压中窗 retention 和动作多样性。",
+  "fix": "不得进入 stage 03、RL policy acceptance 或 rl_test_bot_candidate。下一步不应只继续堆 timesteps，应加入 mid-window retention、动作多样性约束、低血量恢复和 hazard + boss pressure 路线目标；任何新候选仍必须通过 deterministic high-pressure 60 秒、180 秒和 300 秒多图对比。",
+  "validation": "训练、deterministic high-pressure 60 秒 / 180 秒 / 300 秒对比、failed-only traces 与失败分析记录在 harness/reports/2026-05-27_rl_closed_loop_late_survival_reward_profile_extended_001/summary.md、ppo_training_report.json、comparison_60s_3seed.json、comparison_180s_3seed.json、comparison_300s_3seed.json、failure_analysis_300s.md 和 traces_300s/。"
+}
