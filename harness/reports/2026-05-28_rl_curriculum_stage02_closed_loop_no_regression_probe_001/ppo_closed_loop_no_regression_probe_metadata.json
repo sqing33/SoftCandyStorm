@@ -1,0 +1,49 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_closed_loop_no_regression_probe.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "seed": 12345,
+  "content_dir": "content/base_demo",
+  "content_rules": "headless GameCore via game_harness gym-bridge",
+  "reward_config": "prototype reward in game_harness gym_reward",
+  "reward_profile": "late-route-recovery",
+  "upgrade_choice_model": null,
+  "warm_start_model": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+  "warm_start_metadata_path": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300_metadata.json",
+  "observation_version": 2,
+  "observation_len": 145,
+  "training_seconds": 300.0,
+  "algorithm_parameters": {
+    "learning_rate": 5e-05,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.02,
+    "clip_range": 0.2
+  },
+  "algorithm_parameters_source": "warm_start_metadata_with_overrides",
+  "evaluation_policy": "deterministic",
+  "evaluation_action_random_seed": null,
+  "evaluation_map_id": "caramel-workshop",
+  "started_at": "2026-05-28T03:24:55.331341+00:00",
+  "completed_at": "2026-05-28T03:24:57.398552+00:00",
+  "evaluation_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_known_exploits.json",
+  "known_exploits": [],
+  "training_maps": [
+    "caramel-workshop",
+    "cracked-star-jar",
+    "soda-creek"
+  ],
+  "training_map_selection": "random",
+  "training_map_preset": null,
+  "training_seeds": [
+    62800,
+    62801,
+    62802
+  ],
+  "training_seed_selection": "cycle"
+}

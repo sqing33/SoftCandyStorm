@@ -1,0 +1,212 @@
+{
+  "status": "trained",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_closed_loop_no_regression_probe.zip",
+  "reward_profile": "late-route-recovery",
+  "metadata_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_closed_loop_no_regression_probe_metadata.json",
+  "evaluation_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_known_exploits.json",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true,
+    "torch": true
+  },
+  "training": {
+    "total_timesteps": 2048,
+    "requested_timesteps": 2048,
+    "actual_timesteps": 2048,
+    "seed": 12345,
+    "seconds": 300.0,
+    "tick_rate": 30,
+    "content_dir": "content/base_demo",
+    "observation_version": 2,
+    "observation_len": 145,
+    "maps": [
+      "caramel-workshop",
+      "cracked-star-jar",
+      "soda-creek"
+    ],
+    "map_selection": "random",
+    "map_preset": null,
+    "reward_profile": "late-route-recovery",
+    "upgrade_choice_model": null,
+    "seeds": [
+      62800,
+      62801,
+      62802
+    ],
+    "seed_selection": "cycle",
+    "started_at": "2026-05-28T03:24:55.331341+00:00",
+    "completed_at": "2026-05-28T03:24:57.398552+00:00",
+    "algorithm_parameters": {
+      "learning_rate": 5e-05,
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.02,
+      "clip_range": 0.2
+    },
+    "algorithm_parameters_source": "warm_start_metadata_with_overrides",
+    "warm_start_model": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+    "warm_start_metadata_path": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300_metadata.json",
+    "evaluation_policy": "deterministic",
+    "evaluation_action_random_seed": null,
+    "evaluation_map_id": "caramel-workshop"
+  },
+  "evaluation": {
+    "episodes": 3,
+    "win_rate": 0.0,
+    "average_survival_seconds": 212.5164,
+    "average_level": 6.3333,
+    "average_kills": 327.0,
+    "average_reward": -29.6549,
+    "damage_taken_average": 120.2378,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 1,
+        "ratio": 0.0001
+      },
+      "2": {
+        "count": 10647,
+        "ratio": 0.5567
+      },
+      "3": {
+        "count": 1242,
+        "ratio": 0.0649
+      },
+      "4": {
+        "count": 1301,
+        "ratio": 0.068
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 5934,
+        "ratio": 0.3103
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "action_entropy_bits": 1.5154,
+    "normalized_action_entropy": 0.4781,
+    "action_score_diagnostic": {
+      "kind": "probability",
+      "sample_count": 19125,
+      "mean_scores": {
+        "0": 0.0113,
+        "1": 0.0552,
+        "2": 0.3312,
+        "3": 0.1389,
+        "4": 0.1128,
+        "5": 0.0378,
+        "6": 0.0083,
+        "7": 0.2825,
+        "8": 0.022
+      },
+      "mean_top_actions": [
+        {
+          "action": "2",
+          "score": 0.3312
+        },
+        {
+          "action": "7",
+          "score": 0.2825
+        },
+        {
+          "action": "3",
+          "score": 0.1389
+        }
+      ],
+      "top_action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 1,
+          "ratio": 0.0001
+        },
+        "2": {
+          "count": 10647,
+          "ratio": 0.5567
+        },
+        "3": {
+          "count": 1242,
+          "ratio": 0.0649
+        },
+        "4": {
+          "count": 1301,
+          "ratio": 0.068
+        },
+        "5": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "6": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "7": {
+          "count": 5934,
+          "ratio": 0.3103
+        },
+        "8": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "dominant_top_action": {
+        "action": "2",
+        "count": 10647,
+        "ratio": 0.5567
+      },
+      "mean_chosen_action_score": 0.6522,
+      "chosen_action_score_sample_count": 19125
+    },
+    "upgrade_policy_decision_count": 0,
+    "reward_breakdown_average": {
+      "action_repeat": -24.3543,
+      "boss_pressure": -0.2668,
+      "boundary_risk": -6.0724,
+      "corner_action_risk": 0.0,
+      "corner_risk_delta": 0.0001,
+      "damage_taken": -9.619,
+      "enemy_pressure": -0.2613,
+      "hazard_risk": -5.8592,
+      "kill": 26.16,
+      "level": 4.2667,
+      "low_health": -2.5344,
+      "opening_edge_risk_delta": -0.0,
+      "route_recovery": -26.1651,
+      "safety_delta": -0.0565,
+      "survival": 3.3754,
+      "terminal": -5.0,
+      "total": -29.6549,
+      "xp": 16.732
+    }
+  },
+  "upgrade_policy": {
+    "mode": "bridge_default_first_option",
+    "model_path": null
+  },
+  "known_exploits": [],
+  "limitations": [
+    "Short RL smoke proves the SB3 training/evaluation path only; it is not a fun or balance gate.",
+    "Compare against rule Bot matrix before using an RL policy to judge new content."
+  ],
+  "gate_decision": "trained_needs_rule_bot_comparison"
+}

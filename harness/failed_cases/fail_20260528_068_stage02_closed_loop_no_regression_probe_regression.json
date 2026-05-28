@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_068",
+  "category": "rl_policy",
+  "content_id": "stage02-closed-loop-no-regression-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02ClosedLoopNoRegressionProbe",
+  "time_seconds": 300.0,
+  "symptom": "从 stage 02 PPO checkpoint 继续 closed-loop PPO 训练后，候选在 60 秒回退到 0.6667/0.6667/1.0，180 秒回退到 0.3333/0.6667/0.6667，300 秒三图全 0.0；相对 stage 02 baseline 触发 14 个 no-regression blockers，不能推进 stage 03 或 RL acceptance。",
+  "root_cause": "短步数 late-route-recovery PPO continuation 没有形成稳定的跨窗口保留约束；训练在修复长窗前破坏了 stage 02 已有的 opening/mid 行为，并让 300 秒 cracked-star-jar 从 baseline 0.3333 胜率回退到 0.0。",
+  "fix": "拒绝该 checkpoint，继续以 stage 02 PPO 作为当前最佳 baseline。下一轮 RL 修复必须把 60/180/300 秒 no-regression 校验作为硬约束，并优先解决 explicit replay retention、multi-window curriculum 或可审计 reward constraint。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、window regression 和三窗 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001；window_regression_vs_stage02.md 记录 policy_window_regression_failed 和 14 个 blockers。"
+}

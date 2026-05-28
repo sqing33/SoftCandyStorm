@@ -1,0 +1,278 @@
+{
+  "report_version": 1,
+  "source": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/comparison_60s.json",
+  "decision": "rl_policy_failure_analysis_recorded",
+  "gate_decision": "multimap_comparison_recorded_not_balance_gate",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/ppo_closed_loop_no_regression_probe.zip",
+  "map_preset": "high-pressure",
+  "seconds": 60.0,
+  "seed_start": 63100,
+  "seeds": 3,
+  "map_count": 3,
+  "total_failures": 2,
+  "repair_maps": [
+    "soda-creek",
+    "caramel-workshop"
+  ],
+  "findings": [],
+  "maps": [
+    {
+      "map_id": "soda-creek",
+      "gate_decision": "comparison_recorded_not_balance_gate",
+      "episodes": 3,
+      "failure_count": 1,
+      "win_rate": 0.6667,
+      "average_survival_seconds": 48.1774,
+      "minimum_survival_seconds": 24.4666,
+      "average_failure_survival_seconds": 24.4666,
+      "terminal_reason_distribution": {
+        "player_health_depleted": {
+          "count": 1,
+          "ratio": 1.0
+        }
+      },
+      "failure_time_bucket_distribution": {
+        "opening_lt_60": {
+          "count": 1,
+          "ratio": 1.0
+        },
+        "mid_60_to_180": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late_180_to_300": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "post_300": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "policy_normalized_action_entropy": 0.4707,
+      "policy_dominant_action": {
+        "action": "2",
+        "count": 2069,
+        "ratio": 0.4772
+      },
+      "reward_breakdown_average": {
+        "action_repeat": -5.536,
+        "boss_pressure": 0.0,
+        "boundary_risk": -0.4999,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.004,
+        "damage_taken": -7.3035,
+        "enemy_pressure": -0.145,
+        "hazard_risk": 0.0,
+        "kill": 4.0267,
+        "level": 0.8,
+        "low_health": -0.1632,
+        "opening_edge_risk_delta": -0.0027,
+        "route_recovery": -1.3613,
+        "safety_delta": -0.0087,
+        "survival": 0.4818,
+        "terminal": -0.3333,
+        "total": -7.8519,
+        "xp": 2.1973
+      },
+      "failures": [
+        {
+          "map_id": "soda-creek",
+          "seed": 63101,
+          "time_seconds": 24.4666,
+          "time_bucket": "opening_lt_60",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 1,
+          "kills": 15,
+          "damage_taken": 120.6299,
+          "dominant_action": {
+            "action": "2",
+            "count": 734,
+            "ratio": 1.0
+          },
+          "reward_breakdown": {
+            "action_repeat": -2.816,
+            "boss_pressure": 0.0,
+            "boundary_risk": -0.2226,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0118,
+            "damage_taken": -9.6504,
+            "enemy_pressure": -0.1646,
+            "hazard_risk": 0.0,
+            "kill": 1.2,
+            "level": 0.0,
+            "low_health": -0.0229,
+            "opening_edge_risk_delta": -0.0079,
+            "route_recovery": -0.8877,
+            "safety_delta": -0.014,
+            "survival": 0.2447,
+            "terminal": -3.0,
+            "total": -14.7133,
+            "xp": 0.64
+          }
+        }
+      ]
+    },
+    {
+      "map_id": "caramel-workshop",
+      "gate_decision": "comparison_recorded_not_balance_gate",
+      "episodes": 3,
+      "failure_count": 1,
+      "win_rate": 0.6667,
+      "average_survival_seconds": 49.3329,
+      "minimum_survival_seconds": 27.9333,
+      "average_failure_survival_seconds": 27.9333,
+      "terminal_reason_distribution": {
+        "player_health_depleted": {
+          "count": 1,
+          "ratio": 1.0
+        }
+      },
+      "failure_time_bucket_distribution": {
+        "opening_lt_60": {
+          "count": 1,
+          "ratio": 1.0
+        },
+        "mid_60_to_180": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late_180_to_300": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "post_300": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "policy_normalized_action_entropy": 0.3758,
+      "policy_dominant_action": {
+        "action": "2",
+        "count": 3153,
+        "ratio": 0.7101
+      },
+      "reward_breakdown_average": {
+        "action_repeat": -5.028,
+        "boss_pressure": 0.0,
+        "boundary_risk": -0.4979,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.0038,
+        "damage_taken": -5.148,
+        "enemy_pressure": -0.1323,
+        "hazard_risk": -0.5479,
+        "kill": 2.8533,
+        "level": 0.8,
+        "low_health": -0.0119,
+        "opening_edge_risk_delta": -0.0026,
+        "route_recovery": -1.7907,
+        "safety_delta": -0.0079,
+        "survival": 0.4933,
+        "terminal": -0.3333,
+        "total": -7.3577,
+        "xp": 2.0
+      },
+      "failures": [
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63101,
+          "time_seconds": 27.9333,
+          "time_bucket": "opening_lt_60",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 1,
+          "kills": 15,
+          "damage_taken": 120.5166,
+          "dominant_action": {
+            "action": "2",
+            "count": 838,
+            "ratio": 1.0
+          },
+          "reward_breakdown": {
+            "action_repeat": -3.232,
+            "boss_pressure": 0.0,
+            "boundary_risk": -0.2751,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0116,
+            "damage_taken": -9.6413,
+            "enemy_pressure": -0.2363,
+            "hazard_risk": -0.3723,
+            "kill": 1.2,
+            "level": 0.0,
+            "low_health": -0.0357,
+            "opening_edge_risk_delta": -0.0078,
+            "route_recovery": -0.9353,
+            "safety_delta": -0.0164,
+            "survival": 0.2793,
+            "terminal": -3.0,
+            "total": -15.4046,
+            "xp": 0.88
+          }
+        }
+      ]
+    },
+    {
+      "map_id": "cracked-star-jar",
+      "gate_decision": "comparison_recorded_not_balance_gate",
+      "episodes": 3,
+      "failure_count": 0,
+      "win_rate": 1.0,
+      "average_survival_seconds": 60.0328,
+      "minimum_survival_seconds": 60.0328,
+      "average_failure_survival_seconds": null,
+      "terminal_reason_distribution": {},
+      "failure_time_bucket_distribution": {
+        "opening_lt_60": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "mid_60_to_180": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late_180_to_300": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "post_300": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "policy_normalized_action_entropy": 0.3049,
+      "policy_dominant_action": {
+        "action": "7",
+        "count": 3282,
+        "ratio": 0.6074
+      },
+      "reward_breakdown_average": {
+        "action_repeat": -6.836,
+        "boss_pressure": 0.0,
+        "boundary_risk": -0.738,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.0006,
+        "damage_taken": -5.6818,
+        "enemy_pressure": -0.1461,
+        "hazard_risk": 0.0,
+        "kill": 5.6267,
+        "level": 1.6,
+        "low_health": -0.1817,
+        "opening_edge_risk_delta": -0.0004,
+        "route_recovery": -1.7386,
+        "safety_delta": -0.0049,
+        "survival": 0.6003,
+        "terminal": 1.0,
+        "total": -3.1852,
+        "xp": 3.316
+      },
+      "failures": []
+    }
+  ],
+  "limitations": [
+    "This report summarizes existing comparison output only.",
+    "It does not replay episodes or prove a fix.",
+    "Use it to choose the next curriculum, reward, or policy diagnostic target."
+  ]
+}
