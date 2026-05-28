@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_064",
+  "category": "rl_policy",
+  "content_id": "late-route-recovery-curriculum-stage-01-opening",
+  "seed": "62700-62702",
+  "bot": "PpoLateRouteRecoveryStage01Opening",
+  "time_seconds": 300.0,
+  "symptom": "按课程计划 stage 01 只针对 cracked-star-jar 和 soda-creek opening failures 继续训练 2048 timesteps 后，60 秒 high-pressure 三图达到 1.0/1.0/1.0，180 秒达到 0.6667/1.0/1.0，但 300 秒三图仍为 0.0/0.0/0.0，不能推进 stage 03 或 RL acceptance。",
+  "root_cause": "短窗 opening repair 成功移除了 300 秒评估中的 opening deaths，但策略转为 action 7 dominant；长窗失败集中在 mid/late，说明单独修 opening 会把失败面推迟，却没有形成 180-300 秒 route recovery、低血量和压力恢复能力。",
+  "fix": "不推进 stage_01_opening_lt_60 到 stage 03、RL acceptance、playtest 或 release。下一步若继续课程计划，stage 02 必须以 60/180/300 三窗回归为硬约束，重点处理 action 7 dominant 和 late route recovery；如果 stage 02 伤到短窗，应回滚到计划而不是保留该 PPO checkpoint。",
+  "validation": "训练、60/180/300 秒 high-pressure 三图对比和 300 秒失败分析记录在 harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60；failure_analysis_300s.md 记录 9/9 失败，其中 soda-creek 为 mid 1 / late 2，caramel-workshop 为 late 3，cracked-star-jar 为 late 3。"
+}
