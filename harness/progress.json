@@ -2443,6 +2443,11 @@
       "id": "rl_curriculum_stage02_phase_anchor_opening_wrapper_probe",
       "summary": "用 stage_02_late_180_to_300.zip 作为前 60 秒 opening wrapper、phase-specific anchor PPO 作为 fallback 做 evaluation-only 诊断：60 秒结果提升为 1.0/0.6667/1.0，但 180 秒变成 0.3333/0.6667/0.6667，300 秒仍为 0.0/0.0/0.0。相对无 wrapper 版本有 3 个 blockers，相对 current best 有 5 个 blockers，已记录 fail_20260528_085，说明下一步应修 60-180 秒 handoff 与 fallback constrained repair。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_phase_anchor_opening_wrapper_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_handoff_splice_wrapper_probe",
+      "summary": "打包 staged fallback：current-failure best 负责 opening/late，current-failure trace incremental fallback 负责 60-180 秒，并用 stage 02 SB3 opening wrapper 覆盖前 60 秒。60 秒保持 1.0/0.6667/1.0，180 秒为 0.3333/0.6667/1.0，但 300 秒仍为 0.0/0.0/0.0，丢掉 current best 的 cracked-star-jar 300 秒 0.3333 胜率。相对 current best 有 4 个 blockers，相对 seed63100 baseline 有 1 个 strict blocker，已记录 fail_20260528_086，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_wrapper_probe_001/summary.md"
     }
   ],
   "next_recommended": [

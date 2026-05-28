@@ -214,6 +214,8 @@ phase-specific anchor multiplier smoke 同样失败。该 run 使用全量 `3642
 
 显式 opening wrapper 诊断证明短窗可隔离但不能解除中后期问题。该 probe 使用 `stage_02_late_180_to_300.zip` 作为前 `60s` opening wrapper，之后切到 `ppo_phase_specific_anchor_smoke.zip`，不训练新 checkpoint。60 秒结果为 `1.0/0.6667/1.0`，修掉了 phase-specific anchor PPO 的 `soda-creek` 60 秒 blocker；但 180 秒变成 `0.3333/0.6667/0.6667`，300 秒仍为 `0.0/0.0/0.0`。相对无 wrapper 的 phase-specific anchor PPO 有 `3` 个 blockers，相对 current-failure fallback best 有 `5` 个 blockers，相对 seed63100 baseline 有 `2` 个 blockers。记录 `fail_20260528_085`；下一步应聚焦 60-180 秒 handoff 与 fallback constrained repair，尤其是 `soda-creek` seed `63101` 在 `70.1326s` 和 seed `63100` 在 `163.5393s` 的 post-wrapper death。
 
+handoff splice wrapper 进一步证明 mid specialist 不能直接拼进候选策略。该 evaluation-only probe 使用 stage 02 SB3 opening 负责前 `60s`，用 current-failure trace incremental fallback 负责 `60-180s`，再切回 current-failure best fallback 负责 `180s` 后窗口。60 秒保持 `1.0/0.6667/1.0`，180 秒 `cracked-star-jar` 从 current best 的 `0.6667` 提到 `1.0`，但 `soda-creek` 180 秒平均存活相对 current best 下降 `6.2791s`；300 秒仍为 `0.0/0.0/0.0`，并丢掉 current best 的 `cracked-star-jar` 300 秒 `0.3333` 胜率。相对 current best 有 `4` 个 blockers，相对 seed63100 baseline 仍有 `1` 个 strict blocker。记录 `fail_20260528_086`；下一步不能直接 splice，应把 current-failure best 作为硬 retention anchor，单独处理 late win-conversion 或 closed-loop constrained repair。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

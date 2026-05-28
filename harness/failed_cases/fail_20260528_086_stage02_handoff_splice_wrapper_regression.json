@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_086",
+  "category": "rl_policy",
+  "content_id": "stage02-handoff-splice-wrapper-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02HandoffSpliceWrapperProbe",
+  "time_seconds": 300.0,
+  "symptom": "前 60 秒使用 stage_02_late_180_to_300.zip，60-180 秒使用 current-failure trace incremental fallback，180 秒后切回 current-failure best fallback 后，60 秒保持 1.0/0.6667/1.0，180 秒为 0.3333/0.6667/1.0，但 300 秒仍为 0.0/0.0/0.0。相对 current-failure fallback best 有 4 个 no-regression blockers，并丢掉 cracked-star-jar 300 秒 0.3333 胜率。",
+  "root_cause": "mid specialist splice 能改善 cracked-star-jar 180 秒窗口，但没有保住 current-failure best 的 late retention。300 秒失败集中在 late_180_to_300：soda-creek 有 2 个 late death，caramel-workshop 有 2 个 late death，cracked-star-jar 3 个失败全部是 late death；同时 soda-creek 180 秒 survival 比 current best 低 6.2791 秒，说明 handoff splice 仍会改变中窗路线稳定性。",
+  "fix": "拒绝该 splice 作为 policy candidate，不进入 stage 03、rl_test_bot_candidate 或 RL acceptance。下一步应把 current-failure best 作为硬 retention anchor，避免直接把 incremental fallback 放入 60-180 秒窗口；若继续推进，应针对本 probe 的 late death 构造独立 late win-conversion 或 closed-loop constrained repair。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_wrapper_probe_001；comparison_60s/180s/300s.json 记录 deterministic high-pressure 三窗口结果，window_regression_vs_current_failure_best.md 为 4 个 blockers，window_regression_vs_seed63100_stage02.md 为 1 个 blocker，failure_analysis_300s.md 记录 9 个 300 秒失败 episode。"
+}
