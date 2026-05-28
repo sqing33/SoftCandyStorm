@@ -1,6 +1,10 @@
 import pytest
 
+from pathlib import Path
+
+from python.train import distill_behavior_clone_to_sb3 as distill_module
 from python.train.distill_behavior_clone_to_sb3 import (
+    collect_distillation_targets,
     mix_with_uniform,
     soften_probabilities,
     transform_target_probabilities,
@@ -41,3 +45,79 @@ def test_target_transform_keeps_default_behavior():
     transformed = transform_target_probabilities(original, 1.0, 0.0, np)
 
     assert transformed.tolist() == pytest.approx(original.tolist())
+
+
+def test_collect_targets_passes_opening_teacher_context(monkeypatch):
+    calls = {"contexts": [], "map_ids": [], "loader": None}
+
+    class FakeTeacher:
+        def __init__(self):
+            self.active_time_seconds = 0.0
+
+        def reset(self):
+            self.active_time_seconds = 0.0
+
+        def set_map_id(self, map_id):
+            calls["map_ids"].append(map_id)
+
+        def set_step_context(self, info):
+            calls["contexts"].append(info)
+            self.active_time_seconds = float(info["time_seconds"])
+
+        def predict(self, observation, deterministic=True):
+            return (1 if self.active_time_seconds < 60.0 else 2), None
+
+        def action_scores(self, observation):
+            if self.active_time_seconds < 60.0:
+                return {"kind": "probability", "scores": [0.1, 0.8, 0.1]}
+            return {"kind": "probability", "scores": [0.1, 0.1, 0.8]}
+
+    def fake_loader(algorithm, behavior_clone_model_path, opening_model_path=None, opening_seconds=60.0):
+        calls["loader"] = {
+            "algorithm": algorithm,
+            "behavior_clone_model_path": behavior_clone_model_path,
+            "opening_model_path": opening_model_path,
+            "opening_seconds": opening_seconds,
+        }
+        return FakeTeacher()
+
+    monkeypatch.setattr(
+        distill_module,
+        "load_behavior_clone_policy_with_optional_opening",
+        fake_loader,
+    )
+    dataset = {
+        "action_count": 3,
+        "observations": [
+            np.asarray([0.0, 0.1], dtype=np.float32),
+            np.asarray([0.2, 0.3], dtype=np.float32),
+        ],
+        "actions": [1, 2],
+        "sample_metadata": [
+            {"path": "episode_a", "seed": 1, "map_id": "soda-creek", "time_seconds": 30.0},
+            {"path": "episode_a", "seed": 1, "map_id": "soda-creek", "time_seconds": 90.0},
+        ],
+    }
+
+    targets, report = collect_distillation_targets(
+        dataset,
+        Path("fallback.pt"),
+        "teacher_probs",
+        1.0,
+        0.0,
+        np,
+        opening_algorithm="ppo",
+        opening_model=Path("opening.zip"),
+        opening_seconds=60.0,
+    )
+
+    assert calls["loader"]["algorithm"] == "ppo"
+    assert calls["loader"]["behavior_clone_model_path"] == Path("fallback.pt")
+    assert calls["loader"]["opening_model_path"] == Path("opening.zip")
+    assert calls["loader"]["opening_seconds"] == 60.0
+    assert calls["map_ids"] == ["soda-creek"]
+    assert [context["time_seconds"] for context in calls["contexts"]] == [30.0, 90.0]
+    assert targets.argmax(axis=1).tolist() == [1, 2]
+    assert report["opening_model"] == "opening.zip"
+    assert report["opening_seconds"] == 60.0
+    assert report["teacher_argmax_agreement"] == 1.0

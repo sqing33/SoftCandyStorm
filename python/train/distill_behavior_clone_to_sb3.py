@@ -10,7 +10,6 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from python.train.train_behavior_clone import (
-    load_behavior_clone_policy,
     load_trajectory_dataset,
     summarize_dataset,
 )
@@ -18,6 +17,7 @@ from python.train.train_sb3 import (
     algorithm_config,
     build_env,
     dependency_status,
+    load_behavior_clone_policy_with_optional_opening,
     load_config,
     require_dependencies,
     stable_baselines_model_classes,
@@ -82,6 +82,9 @@ def collect_distillation_targets(
     teacher_temperature,
     uniform_target_mix,
     np_module,
+    opening_algorithm="ppo",
+    opening_model=None,
+    opening_seconds=60.0,
 ):
     action_count = int(dataset["action_count"])
     if target_mode == "dataset_actions":
@@ -97,6 +100,8 @@ def collect_distillation_targets(
         return np_module.asarray(targets, dtype=np_module.float32), {
             "mode": target_mode,
             "teacher_model": None,
+            "opening_model": None,
+            "opening_seconds": None,
             "teacher_argmax_agreement": None,
             "target_transform": target_transform_report(1.0, uniform_target_mix),
             "target_entropy_nats": round(
@@ -110,7 +115,12 @@ def collect_distillation_targets(
             ),
         }
 
-    teacher = load_behavior_clone_policy(teacher_model)
+    teacher = load_behavior_clone_policy_with_optional_opening(
+        opening_algorithm,
+        teacher_model,
+        opening_model_path=opening_model,
+        opening_seconds=opening_seconds,
+    )
     targets = []
     teacher_argmax_actions = []
     agreement_count = 0
@@ -127,6 +137,15 @@ def collect_distillation_targets(
             if callable(set_map_id):
                 set_map_id(sample.get("map_id"))
             active_episode = episode_key
+        set_step_context = getattr(teacher, "set_step_context", None)
+        if callable(set_step_context):
+            set_step_context(
+                {
+                    "time_seconds": sample.get("time_seconds", 0.0),
+                    "map_id": sample.get("map_id"),
+                    "seed": sample.get("seed"),
+                }
+            )
         predicted_action, _state = teacher.predict(observation, deterministic=True)
         scores = teacher.action_scores(observation)
         if scores.get("kind") != "probability":
@@ -153,6 +172,8 @@ def collect_distillation_targets(
     return np_module.asarray(targets, dtype=np_module.float32), {
         "mode": target_mode,
         "teacher_model": str(teacher_model),
+        "opening_model": str(opening_model) if opening_model else None,
+        "opening_seconds": opening_seconds if opening_model else None,
         "teacher_argmax_agreement": round(
             agreement_count / max(1, len(dataset["actions"])),
             4,
@@ -235,6 +256,9 @@ def distill(config, args):
         args.teacher_temperature,
         args.uniform_target_mix,
         np,
+        opening_algorithm=args.opening_algorithm,
+        opening_model=Path(args.opening_model) if args.opening_model else None,
+        opening_seconds=args.opening_seconds,
     )
     observations = np.asarray(dataset["observations"], dtype=np.float32)
     if observations.shape[1] != int(config["environment"]["observation_len"]):
@@ -378,6 +402,23 @@ def main():
     parser.add_argument("--dataset", action="append", required=True)
     parser.add_argument("--teacher-model", default=None)
     parser.add_argument(
+        "--opening-model",
+        default=None,
+        help="Optional SB3 zip used as teacher before --opening-seconds when target-mode is teacher_probs.",
+    )
+    parser.add_argument(
+        "--opening-algorithm",
+        choices=["dqn", "ppo"],
+        default="ppo",
+        help="SB3 algorithm class used to load --opening-model.",
+    )
+    parser.add_argument(
+        "--opening-seconds",
+        type=float,
+        default=60.0,
+        help="Duration for --opening-model before falling back to --teacher-model.",
+    )
+    parser.add_argument(
         "--target-mode",
         choices=["teacher_probs", "dataset_actions"],
         default="teacher_probs",
@@ -407,6 +448,10 @@ def main():
 
     if args.target_mode == "teacher_probs" and not args.teacher_model:
         parser.error("--target-mode teacher_probs requires --teacher-model")
+    if args.opening_model and args.target_mode != "teacher_probs":
+        parser.error("--opening-model requires --target-mode teacher_probs")
+    if args.opening_model and args.opening_seconds <= 0.0:
+        parser.error("--opening-seconds must be greater than zero")
     if args.limit_samples is not None and args.limit_samples <= 0:
         parser.error("--limit-samples must be greater than zero")
     if args.epochs <= 0:

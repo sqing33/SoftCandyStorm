@@ -2388,6 +2388,11 @@
       "id": "rl_curriculum_stage02_late_win_conversion_distilled_probe",
       "summary": "把 current-failure fallback best 蒸馏为 SB3 PPO 初始化后，用 `late-win-conversion` 做 2048 timestep closed-loop 探针：60 秒为 0.3333/1.0/1.0，180 秒为 0.0/1.0/1.0，300 秒仍为 0.0/0.0/0.3333。相对 current-failure fallback best 和 seed63100 stage02 baseline 均触发 5 个 soda-creek no-regression blockers，记录 fail_20260528_080，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_late_win_conversion_distilled_probe_001/summary.md"
+    },
+    {
+      "id": "rl_opening_aware_sb3_distillation_support",
+      "summary": "distill_behavior_clone_to_sb3.py 新增 `--opening-model`、`--opening-algorithm` 和 `--opening-seconds`，可在 teacher_probs 蒸馏时按样本 time_seconds 使用 SB3 opening policy 或 behavior-clone fallback，避免把 staged opening teacher 错蒸馏成 fallback-only 目标；已补单测和 opening-aware smoke。",
+      "report": "python/train/distill_behavior_clone_to_sb3.py"
     }
   ],
   "next_recommended": [
@@ -2413,7 +2418,7 @@
     },
     {
       "id": "rl_policy_multimap_training_after_current_failure_trace_incremental_probe",
-      "summary": "current-failure trace samples 不能直接替换上一版 best，0.5x 增量混入也未解除 blocker；随后将 current-failure fallback best 蒸馏成 SB3 PPO 并用 `late-win-conversion` closed-loop 续训也失败，因 soda-creek 60/180 秒回归触发 5 个 no-regression blockers。下一步应避免单独依赖 final-minute reward 或 memoryless PPO distillation，优先设计 explicit opening retention、staged opening protection、KL/behavior-clone anchor 或 per-map constrained repair。"
+      "summary": "current-failure trace samples 不能直接替换上一版 best，0.5x 增量混入也未解除 blocker；随后将 current-failure fallback best 蒸馏成 SB3 PPO 并用 `late-win-conversion` closed-loop 续训也失败，因 soda-creek 60/180 秒回归触发 5 个 no-regression blockers。下一步应使用 opening-aware distillation 或其他 staged/anchored 方案保护 opening，再做 per-map constrained repair；仍不得推进 RL acceptance。"
     },
     {
       "id": "rl_policy_multimap_training",

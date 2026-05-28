@@ -1081,6 +1081,9 @@
             "harness/reports/2026-05-28_rl_curriculum_stage02_late_win_conversion_distilled_probe_001/window_regression_vs_seed63100_stage02.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_late_win_conversion_distilled_probe_001/failure_analysis_300s.md",
             "harness/failed_cases/fail_20260528_080_stage02_late_win_conversion_distilled_probe_regression.json",
+            "python/train/distill_behavior_clone_to_sb3.py",
+            "python/train/test_distill_behavior_clone_to_sb3.py",
+            "python/train/README.md",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/late_training.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/packaging.json",
@@ -1150,7 +1153,8 @@
             "current-failure trace fallback probe 对 seed63100 stage02 baseline no-regression 通过，但相对上一版 current-failure fallback best 回归并丢掉 cracked-star-jar 300 秒胜利，已记录 fail_20260528_078，说明更窄 trace samples 只能增量使用，不能直接替换上一版 best。",
             "current-failure trace incremental probe 保留上一版 path-weighted trace 数据底座并以 0.5x 增量混入 772 条更窄样本，但 300 秒仍为 0.3333/0.0/0.0；对 seed63100 baseline 触发 caramel-workshop strict no-regression blocker，对 previous best 丢掉 cracked-star-jar 300 秒胜利，已记录 fail_20260528_079，说明简单增量混入也不能解除 RL acceptance blocker。",
             "`late-win-conversion` reward profile 已作为 closed-loop 探针入口接入 Rust gym-bridge、Python Gym wrapper 和 train_sb3 CLI；它只提供 240 秒后 final-minute win-conversion 训练信号，仍必须经过固定窗口 high-pressure、no-regression、failure case 和 acceptance manifest 审查。",
-            "late-win-conversion distilled probe 将 current-failure fallback best 蒸馏为 SB3 PPO 后做 2048 timestep closed-loop 续训，但 soda-creek 60 秒回落到 0.3333、180 秒回落到 0.0；相对 current best 和 seed63100 baseline 均触发 5 个 no-regression blockers，已记录 fail_20260528_080，说明 final-minute reward profile 不能单独替代 opening retention 或 staged protection。"
+            "late-win-conversion distilled probe 将 current-failure fallback best 蒸馏为 SB3 PPO 后做 2048 timestep closed-loop 续训，但 soda-creek 60 秒回落到 0.3333、180 秒回落到 0.0；相对 current best 和 seed63100 baseline 均触发 5 个 no-regression blockers，已记录 fail_20260528_080，说明 final-minute reward profile 不能单独替代 opening retention 或 staged protection。",
+            "distill_behavior_clone_to_sb3.py 已支持 opening-aware teacher distillation：可通过 `--opening-model` / `--opening-seconds` 在 teacher_probs 蒸馏时按样本 time_seconds 复用 SB3 opening policy 和 behavior-clone fallback，避免再次把 staged opening teacher 错蒸馏成 fallback-only 目标；该能力仍只是下一轮 probe 的工具入口。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
