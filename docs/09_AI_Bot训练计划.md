@@ -212,6 +212,8 @@ full-dataset + `map_time_bucket_balance` 的更强 anchor 探针也已失败。�
 
 phase-specific anchor multiplier smoke 同样失败。该 run 使用全量 `36426` 样本、`map_time_bucket_balance`、全局 `weight=1.0`，并对 opening / mid / late 施加 `1.5x / 1.25x / 0.75x` multiplier。训练内 final validation 为 mean KL `0.342834`、argmax agreement `0.6798`；全量 anchor alignment 为 overall mean KL `0.345606`、argmax agreement `0.6841`。opening mean KL 降到 `0.220892`，但 opening argmax agreement 仍只有 `0.5769`，mid `60-180s` mean KL 仍为 `0.440395`。60 / 180 / 300 秒结果仍为 `0.6667/0.6667/1.0`、`0.6667/0.6667/0.6667`、`0.0/0.0/0.0`；相对 opening-aware probe 剩 `1` 个 blocker，相对 current-failure fallback best 仍有 `8` 个 blockers，相对 seed63100 baseline 有 `5` 个 blockers。记录 `fail_20260528_084`；下一步应把 opening freeze/wrapper 与 mid/late constrained repair 拆成两个独立目标，而不是继续做单次全量 anchor multiplier。
 
+显式 opening wrapper 诊断证明短窗可隔离但不能解除中后期问题。该 probe 使用 `stage_02_late_180_to_300.zip` 作为前 `60s` opening wrapper，之后切到 `ppo_phase_specific_anchor_smoke.zip`，不训练新 checkpoint。60 秒结果为 `1.0/0.6667/1.0`，修掉了 phase-specific anchor PPO 的 `soda-creek` 60 秒 blocker；但 180 秒变成 `0.3333/0.6667/0.6667`，300 秒仍为 `0.0/0.0/0.0`。相对无 wrapper 的 phase-specific anchor PPO 有 `3` 个 blockers，相对 current-failure fallback best 有 `5` 个 blockers，相对 seed63100 baseline 有 `2` 个 blockers。记录 `fail_20260528_085`；下一步应聚焦 60-180 秒 handoff 与 fallback constrained repair，尤其是 `soda-creek` seed `63101` 在 `70.1326s` 和 seed `63100` 在 `163.5393s` 的 post-wrapper death。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

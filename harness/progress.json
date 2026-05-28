@@ -2438,6 +2438,11 @@
       "id": "rl_curriculum_stage02_phase_specific_anchor_smoke",
       "summary": "使用 full 36426 样本、map_time_bucket_balance、全局 anchor weight 1.0，并对 opening/mid/late 施加 1.5x/1.25x/0.75x multiplier 重跑 1024 timestep PPO anchor smoke：opening mean KL 降到 0.220892，但 opening argmax agreement 仍只有 0.5769，overall mean KL 0.345606、argmax agreement 0.6841，mid_60_to_180 mean KL 0.440395。60/180/300 秒结果仍为 0.6667/0.6667/1.0、0.6667/0.6667/0.6667、0.0/0.0/0.0；相对 current best 有 8 个 blockers，已记录 fail_20260528_084，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_phase_specific_anchor_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_phase_anchor_opening_wrapper_probe",
+      "summary": "用 stage_02_late_180_to_300.zip 作为前 60 秒 opening wrapper、phase-specific anchor PPO 作为 fallback 做 evaluation-only 诊断：60 秒结果提升为 1.0/0.6667/1.0，但 180 秒变成 0.3333/0.6667/0.6667，300 秒仍为 0.0/0.0/0.0。相对无 wrapper 版本有 3 个 blockers，相对 current best 有 5 个 blockers，已记录 fail_20260528_085，说明下一步应修 60-180 秒 handoff 与 fallback constrained repair。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_phase_anchor_opening_wrapper_probe_001/summary.md"
     }
   ],
   "next_recommended": [

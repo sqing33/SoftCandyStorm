@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_085",
+  "category": "rl_policy",
+  "content_id": "stage02-phase-anchor-opening-wrapper-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02PhaseAnchorOpeningWrapperProbe",
+  "time_seconds": 300.0,
+  "symptom": "使用 stage_02_late_180_to_300.zip 作为前 60 秒 opening wrapper、ppo_phase_specific_anchor_smoke.zip 作为 fallback 后，60 秒 soda/caramel/cracked = 1.0/0.6667/1.0，但 180 秒为 0.3333/0.6667/0.6667，300 秒仍为 0.0/0.0/0.0。相对无 wrapper 的 phase-specific anchor PPO 有 3 个 no-regression blockers，相对 current-failure fallback best 有 5 个 blockers，不能推进 RL acceptance。",
+  "root_cause": "显式 opening wrapper 能修补 soda-creek 60 秒短窗，但没有解决 60 秒之后的 handoff / fallback 漂移。300 秒失败中 soda-creek 从原来的 1 个 opening death 转为 2 个 mid_60_to_180 deaths 和 1 个 late death；cracked-star-jar 仍有 mid 与 late death；caramel-workshop 仍保留 1 个 opening death 和 2 个 late death。该 probe 说明短窗 freeze 需要配套 mid/late constrained fallback，而不能作为单独策略。",
+  "fix": "拒绝该 wrapper 作为 policy candidate，不进入 stage 03、rl_test_bot_candidate 或 RL acceptance。下一步应围绕 60-180 秒 handoff 构造受约束 fallback repair，优先复盘 soda-creek seed 63101 在 70.1326 秒和 seed 63100 在 163.5393 秒的死亡轨迹，并继续以 current-failure fallback best 的 60/180/300 no-regression 作为硬约束。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_phase_anchor_opening_wrapper_probe_001；comparison_60s/180s/300s.json 记录 opening wrapper deterministic high-pressure 三窗口结果，window_regression_vs_phase_specific_anchor.md 为 3 个 blockers，window_regression_vs_current_failure_best.md 为 5 个 blockers，window_regression_vs_seed63100_stage02.md 为 2 个 blockers，failure_analysis_300s.md 记录 9 个 300 秒失败 episode。"
+}
