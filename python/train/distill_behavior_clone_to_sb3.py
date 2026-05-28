@@ -220,6 +220,19 @@ def tensor_distribution_logits(model, observations, torch_module):
     return logits
 
 
+def load_distillation_dataset(
+    dataset_paths,
+    *,
+    limit=None,
+    include_anchor_drift_samples=False,
+):
+    return load_trajectory_dataset(
+        dataset_paths,
+        limit=limit,
+        include_anchor_drift_samples=include_anchor_drift_samples,
+    )
+
+
 def evaluate_supervised(model, observations, targets, torch_module):
     model.policy.set_training_mode(False)
     with torch_module.no_grad():
@@ -248,7 +261,11 @@ def distill(config, args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    dataset = load_trajectory_dataset(args.dataset, limit=args.limit_samples)
+    dataset = load_distillation_dataset(
+        args.dataset,
+        limit=args.limit_samples,
+        include_anchor_drift_samples=args.include_anchor_drift_samples,
+    )
     targets, target_report = collect_distillation_targets(
         dataset,
         Path(args.teacher_model) if args.teacher_model else None,
@@ -424,6 +441,11 @@ def main():
         default="teacher_probs",
     )
     parser.add_argument("--limit-samples", type=int, default=None)
+    parser.add_argument(
+        "--include-anchor-drift-samples",
+        action="store_true",
+        help="Allow anchor_drift_sample JSONL rows exported with observations.",
+    )
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--learning-rate", type=float, default=0.0003)

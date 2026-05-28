@@ -1014,6 +1014,8 @@
             "python/train/test_train_sb3.py",
             "python/train/compare_sb3_to_behavior_clone_anchor.py",
             "python/train/test_compare_sb3_to_behavior_clone_anchor.py",
+            "python/train/distill_behavior_clone_to_sb3.py",
+            "python/train/test_distill_behavior_clone_to_sb3.py",
             "python/train/README.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/summary.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/fallback_training.json",
@@ -1291,7 +1293,8 @@
             "首个 mid-anchor guarded PPO smoke 被 guard 拒绝：请求 512 timesteps，实际在 256 timestep 后停止，validation mean KL 2.310775、argmax agreement 0.0；已记录 fail_20260528_089，因此未继续跑 fixed-window no-regression。",
             "compare_sb3_to_behavior_clone_anchor.py 已增加显式 --include-anchor-drift-samples，用于在训练前比较 start model 与 behavior-clone anchor 在 anchor_drift_sample 诊断行上的对齐情况；默认仍拒绝 drift diagnostics。",
             "首个 start-model drift-row alignment precheck 在 200 条 mid_60_to_180 drift rows 上失败：overall mean KL 2.26528、argmax agreement 0.0，三图分桶均超过阈值；已记录 fail_20260528_090，说明不能直接从该 start model 用 top-200 drift rows 做更长 PPO。",
-            "已有 SB3 checkpoint 起点 sweep 未找到合格替代：最接近的 phase_specific_anchor_smoke 仍为 overall mean KL 2.14298、argmax agreement 0.0，其余候选也全部失败；已记录 fail_20260528_091，说明不能只换旧 checkpoint 继续 PPO。"
+            "已有 SB3 checkpoint 起点 sweep 未找到合格替代：最接近的 phase_specific_anchor_smoke 仍为 overall mean KL 2.14298、argmax agreement 0.0，其余候选也全部失败；已记录 fail_20260528_091，说明不能只换旧 checkpoint 继续 PPO。",
+            "distill_behavior_clone_to_sb3.py 已增加显式 --include-anchor-drift-samples，可把带 observation 的 anchor_drift_sample 行用于 supervised SB3 re-alignment / distillation 初始化；默认仍拒绝 drift diagnostics。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

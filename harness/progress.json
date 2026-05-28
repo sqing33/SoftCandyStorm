@@ -2508,6 +2508,11 @@
       "id": "rl_anchor_drift_start_candidate_sweep",
       "summary": "已有 SB3 起点 sweep 比较了 7 个 checkpoint 在 200 条 mid_60_to_180 drift rows 上相对 current-failure fallback anchor 的对齐情况；最接近的 phase_specific_anchor_smoke 仍为 overall mean KL 2.14298、argmax agreement 0.0，其余候选也全部失败，已记录 fail_20260528_091。下一步不能只换旧 checkpoint 继续 PPO，应先做更宽 supervised re-alignment / distillation 或混合 full-anchor + drift rows。",
       "report": "harness/reports/2026-05-28_rl_anchor_drift_start_candidate_sweep_001/summary.md"
+    },
+    {
+      "id": "rl_anchor_drift_sb3_distillation_input_support",
+      "summary": "distill_behavior_clone_to_sb3.py 已增加 --include-anchor-drift-samples，可显式读取带 observation 的 anchor_drift_sample JSONL，用于 supervised SB3 re-alignment / distillation 初始化；默认仍拒绝 drift diagnostics，避免其被误用为普通 trajectory imitation 数据。该能力只是下一轮 repair initialization 工具，不是 policy gate。",
+      "report": "python/train/distill_behavior_clone_to_sb3.py"
     }
   ],
   "next_recommended": [

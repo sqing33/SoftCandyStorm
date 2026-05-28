@@ -5,6 +5,7 @@ from pathlib import Path
 from python.train import distill_behavior_clone_to_sb3 as distill_module
 from python.train.distill_behavior_clone_to_sb3 import (
     collect_distillation_targets,
+    load_distillation_dataset,
     mix_with_uniform,
     soften_probabilities,
     transform_target_probabilities,
@@ -121,3 +122,26 @@ def test_collect_targets_passes_opening_teacher_context(monkeypatch):
     assert report["opening_model"] == "opening.zip"
     assert report["opening_seconds"] == 60.0
     assert report["teacher_argmax_agreement"] == 1.0
+
+
+def test_load_distillation_dataset_can_include_anchor_drift_samples(tmp_path):
+    path = tmp_path / "drift.jsonl"
+    path.write_text(
+        "\n".join(
+            [
+                '{"record_type":"anchor_drift_sample","sample_role":"repair_diagnostics","observation":[0.1,0.2,0.3],"anchor_action":8,"candidate_action":4,"dataset_action":4,"map_id":"soda-creek","time_seconds":90.0,"health_ratio":1.0}',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="include_anchor_drift_samples"):
+        load_distillation_dataset(path)
+
+    dataset = load_distillation_dataset(path, include_anchor_drift_samples=True)
+
+    assert dataset["anchor_drift_sample_records"] == 1
+    assert dataset["action_count"] == 9
+    assert dataset["actions"] == [8]
+    assert dataset["sample_metadata"][0]["sample_source"] == "anchor_drift_diagnostic"

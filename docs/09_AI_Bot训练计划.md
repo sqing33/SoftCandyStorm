@@ -242,6 +242,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 已有 SB3 checkpoint 起点 sweep 也未找到合格替代。`phase_specific_anchor_smoke` 在这批 drift rows 上是最接近的现有起点，但 overall mean KL 仍为 `2.14298`、argmax agreement 仍为 `0.0`；`opening_aware_distilled`、`anchor_map_bucket_full_smoke`、`soda_caramel_closed_loop_anchor`、`anchor_regularized_smoke` 和 `stage02_late_180_to_300` 也全部失败。已记录 `fail_20260528_091`；下一步应增加更宽的 supervised SB3 re-alignment / distillation 或混合 full-anchor + drift rows，而不是只换一个旧 checkpoint 继续 PPO。
 
+`distill_behavior_clone_to_sb3.py` 现在也提供显式 `--include-anchor-drift-samples`，可把带 observation 的 `anchor_drift_sample` 行用于 supervised SB3 re-alignment / distillation 初始化。默认仍拒绝 drift diagnostics，避免它们绕过普通轨迹语义；该能力只是修复初始化入口，后续仍必须重新跑 anchor alignment、high-pressure no-regression、repair-probe gate 和 RL acceptance。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
