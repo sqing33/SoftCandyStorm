@@ -45,6 +45,17 @@ BASE_DEMO_MAP_PRESETS = {
         "jelly-platform",
     ],
 }
+ANCHOR_SAMPLE_WEIGHTING_MODES = {
+    "none",
+    "time_bucket_balance",
+    "map_time_bucket_balance",
+}
+ANCHOR_TIME_BUCKETS = [
+    ("opening_lt_60", 0.0, 60.0),
+    ("mid_60_to_180", 60.0, 180.0),
+    ("late_180_to_300", 180.0, 300.0),
+    ("post_300", 300.0, math.inf),
+]
 
 GYM_ACTION_MOVEMENTS = {
     0: (0.0, 0.0),
@@ -882,6 +893,7 @@ def validate_anchor_regularization_request(
     anchor_regularization_batch_size=256,
     anchor_regularization_learning_rate=None,
     anchor_limit_samples=None,
+    anchor_sample_weighting="none",
     anchor_validation_split=0.2,
 ):
     has_anchor_model = anchor_model is not None
@@ -911,6 +923,11 @@ def validate_anchor_regularization_request(
         and anchor_regularization_learning_rate <= 0.0
     ):
         raise ValueError("--anchor-regularization-learning-rate must be greater than 0")
+    if anchor_sample_weighting not in ANCHOR_SAMPLE_WEIGHTING_MODES:
+        raise ValueError(
+            "--anchor-sample-weighting must be one of "
+            + ", ".join(sorted(ANCHOR_SAMPLE_WEIGHTING_MODES))
+        )
     if not (0.0 < anchor_validation_split < 1.0):
         raise ValueError("--anchor-validation-split must be between 0 and 1")
     return True
@@ -1088,6 +1105,82 @@ def collect_anchor_regularization_targets(dataset, anchor_policy, np_module):
     }
 
 
+def anchor_time_bucket_label(time_seconds):
+    value = float(time_seconds or 0.0)
+    for label, start, end in ANCHOR_TIME_BUCKETS:
+        if start <= value < end:
+            return label
+    return "unknown"
+
+
+def build_anchor_sample_weights(sample_metadata, np_module, mode="none"):
+    if mode not in ANCHOR_SAMPLE_WEIGHTING_MODES:
+        raise ValueError(
+            "--anchor-sample-weighting must be one of "
+            + ", ".join(sorted(ANCHOR_SAMPLE_WEIGHTING_MODES))
+        )
+    sample_count = len(sample_metadata)
+    if sample_count == 0:
+        weights = np_module.ones(0, dtype=np_module.float32)
+        return weights, {
+            "mode": mode,
+            "sample_count": 0,
+            "group_count": 0,
+            "min": None,
+            "max": None,
+            "mean": None,
+            "groups": {},
+        }
+    if mode == "none":
+        weights = np_module.ones(sample_count, dtype=np_module.float32)
+        return weights, {
+            "mode": "none",
+            "sample_count": int(sample_count),
+            "group_count": 0,
+            "min": 1.0,
+            "max": 1.0,
+            "mean": 1.0,
+            "groups": {},
+        }
+
+    keys = []
+    counts = {}
+    for sample in sample_metadata:
+        bucket = anchor_time_bucket_label(sample.get("time_seconds", 0.0))
+        if mode == "time_bucket_balance":
+            key = bucket
+        else:
+            key = f"{sample.get('map_id') or 'unknown'}::{bucket}"
+        keys.append(key)
+        counts[key] = counts.get(key, 0) + 1
+
+    group_count = max(1, len(counts))
+    multipliers = {
+        key: sample_count / (group_count * count)
+        for key, count in counts.items()
+    }
+    weights = np_module.asarray(
+        [multipliers[key] for key in keys],
+        dtype=np_module.float32,
+    )
+    return weights, {
+        "mode": mode,
+        "sample_count": int(sample_count),
+        "group_count": int(len(counts)),
+        "min": round(float(weights.min()), 6),
+        "max": round(float(weights.max()), 6),
+        "mean": round(float(weights.mean()), 6),
+        "groups": {
+            key: {
+                "sample_count": int(count),
+                "sample_ratio": round(count / sample_count, 4),
+                "weight_multiplier": round(float(multipliers[key]), 6),
+            }
+            for key, count in sorted(counts.items())
+        },
+    }
+
+
 def prepare_anchor_regularization(
     config,
     algorithm,
@@ -1102,6 +1195,7 @@ def prepare_anchor_regularization(
     anchor_regularization_batch_size=256,
     anchor_regularization_learning_rate=None,
     anchor_limit_samples=None,
+    anchor_sample_weighting="none",
     anchor_validation_split=0.2,
     anchor_seed=12345,
 ):
@@ -1115,6 +1209,7 @@ def prepare_anchor_regularization(
         anchor_regularization_batch_size=anchor_regularization_batch_size,
         anchor_regularization_learning_rate=anchor_regularization_learning_rate,
         anchor_limit_samples=anchor_limit_samples,
+        anchor_sample_weighting=anchor_sample_weighting,
         anchor_validation_split=anchor_validation_split,
     ):
         return None
@@ -1137,6 +1232,11 @@ def prepare_anchor_regularization(
         ),
         np,
     )
+    sample_weights, sample_weighting_report = build_anchor_sample_weights(
+        dataset["sample_metadata"],
+        np,
+        anchor_sample_weighting,
+    )
     if observations.shape[1] != int(config["environment"]["observation_len"]):
         raise ValueError(
             "anchor dataset observation length does not match rl_training_config observation_len"
@@ -1144,6 +1244,7 @@ def prepare_anchor_regularization(
     return {
         "observations": observations,
         "targets": targets,
+        "sample_weights": sample_weights,
         "weight": float(anchor_regularization_weight),
         "interval_timesteps": int(anchor_regularization_interval),
         "epochs": int(anchor_regularization_epochs),
@@ -1164,6 +1265,7 @@ def prepare_anchor_regularization(
             "limit_samples": anchor_limit_samples,
             "dataset": summarize_dataset(dataset),
             "target": target_report,
+            "sample_weighting": sample_weighting_report,
             "regularization_weight": float(anchor_regularization_weight),
             "interval_timesteps": int(anchor_regularization_interval),
             "epochs_per_interval": int(anchor_regularization_epochs),
@@ -1230,6 +1332,9 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
 
     observations = anchor_regularization["observations"]
     targets = anchor_regularization["targets"]
+    sample_weights = anchor_regularization.get("sample_weights")
+    if sample_weights is None:
+        sample_weights = np.ones(len(observations), dtype=np.float32)
     rng = np.random.default_rng(anchor_regularization["seed"])
     indices = np.arange(len(observations))
     rng.shuffle(indices)
@@ -1240,6 +1345,7 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
     train_dataset = TensorDataset(
         torch.from_numpy(observations[train_indices]),
         torch.from_numpy(targets[train_indices]),
+        torch.from_numpy(sample_weights[train_indices]),
     )
     train_loader = DataLoader(
         train_dataset,
@@ -1278,17 +1384,20 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
             total_loss = 0.0
             total_seen = 0
             total_correct = 0
-            for batch_x, batch_y in train_loader:
+            total_weighted_loss = 0.0
+            for batch_x, batch_y, batch_weight in train_loader:
                 logits = tensor_distribution_logits(model, batch_x, torch)
                 log_probs = torch.log_softmax(logits, dim=-1)
-                kl_loss = (
+                per_sample_kl = (
                     batch_y * (torch.log(batch_y.clamp_min(1e-8)) - log_probs)
-                ).sum(dim=1).mean()
-                loss = kl_loss * anchor_regularization["weight"]
+                ).sum(dim=1)
+                weighted_kl_loss = (per_sample_kl * batch_weight).mean()
+                loss = weighted_kl_loss * anchor_regularization["weight"]
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                total_loss += float(kl_loss.item()) * len(batch_y)
+                total_loss += float(per_sample_kl.sum().item())
+                total_weighted_loss += float(weighted_kl_loss.item()) * len(batch_y)
                 total_seen += len(batch_y)
                 total_correct += int(
                     (logits.argmax(dim=1) == batch_y.argmax(dim=1)).sum().item()
@@ -1303,6 +1412,10 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
                 {
                     "epoch": epoch,
                     "train_mean_kl": round(total_loss / max(1, total_seen), 6),
+                    "weighted_train_mean_kl": round(
+                        total_weighted_loss / max(1, total_seen),
+                        6,
+                    ),
                     "train_argmax_agreement": round(
                         total_correct / max(1, total_seen),
                         4,
@@ -1389,6 +1502,7 @@ def train(
     anchor_regularization_batch_size=256,
     anchor_regularization_learning_rate=None,
     anchor_limit_samples=None,
+    anchor_sample_weighting="none",
     anchor_validation_split=0.2,
     anchor_seed=12345,
 ):
@@ -1466,6 +1580,7 @@ def train(
         anchor_regularization_batch_size=anchor_regularization_batch_size,
         anchor_regularization_learning_rate=anchor_regularization_learning_rate,
         anchor_limit_samples=anchor_limit_samples,
+        anchor_sample_weighting=anchor_sample_weighting,
         anchor_validation_split=anchor_validation_split,
         anchor_seed=anchor_seed,
     )
@@ -3285,6 +3400,12 @@ def main():
     parser.add_argument("--anchor-regularization-batch-size", type=int, default=256)
     parser.add_argument("--anchor-regularization-learning-rate", type=float, default=None)
     parser.add_argument("--anchor-limit-samples", type=int, default=None)
+    parser.add_argument(
+        "--anchor-sample-weighting",
+        choices=sorted(ANCHOR_SAMPLE_WEIGHTING_MODES),
+        default="none",
+        help="Optional offline anchor KL sample weighting for imbalanced phase/map samples.",
+    )
     parser.add_argument("--anchor-validation-split", type=float, default=0.2)
     parser.add_argument("--anchor-seed", type=int, default=12345)
     parser.add_argument("--model-in", default=None)
@@ -3449,6 +3570,7 @@ def main():
             anchor_regularization_batch_size=args.anchor_regularization_batch_size,
             anchor_regularization_learning_rate=args.anchor_regularization_learning_rate,
             anchor_limit_samples=args.anchor_limit_samples,
+            anchor_sample_weighting=args.anchor_sample_weighting,
             anchor_validation_split=args.anchor_validation_split,
         )
         train_maps, train_map_preset = resolve_train_maps(
@@ -3746,6 +3868,7 @@ def main():
             anchor_regularization_batch_size=args.anchor_regularization_batch_size,
             anchor_regularization_learning_rate=args.anchor_regularization_learning_rate,
             anchor_limit_samples=args.anchor_limit_samples,
+            anchor_sample_weighting=args.anchor_sample_weighting,
             anchor_validation_split=args.anchor_validation_split,
             anchor_seed=args.anchor_seed,
         ),

@@ -13,6 +13,7 @@ from python.train.train_sb3 import (
     algorithm_parameters_source_label,
     algorithm_overrides_from_args,
     apply_loaded_model_overrides,
+    build_anchor_sample_weights,
     build_edge_recovery_sample,
     build_env,
     build_trace_step,
@@ -135,6 +136,12 @@ def test_validate_anchor_regularization_requires_model_and_dataset_together():
         validate_anchor_regularization_request(anchor_model="anchor.pt")
     with pytest.raises(ValueError, match="--anchor-model"):
         validate_anchor_regularization_request(anchor_datasets=["samples.jsonl"])
+    with pytest.raises(ValueError, match="--anchor-sample-weighting"):
+        validate_anchor_regularization_request(
+            anchor_model="anchor.pt",
+            anchor_datasets=["samples.jsonl"],
+            anchor_sample_weighting="bad",
+        )
     assert validate_anchor_regularization_request(
         anchor_model="anchor.pt",
         anchor_datasets=["samples.jsonl"],
@@ -142,6 +149,7 @@ def test_validate_anchor_regularization_requires_model_and_dataset_together():
         anchor_regularization_interval=128,
         anchor_regularization_epochs=1,
         anchor_regularization_batch_size=16,
+        anchor_sample_weighting="time_bucket_balance",
     )
 
 
@@ -181,6 +189,45 @@ def test_collect_anchor_regularization_targets_sets_context_and_probabilities():
     assert anchor.map_ids == ["soda-creek"]
     assert [context["time_seconds"] for context in anchor.contexts] == [1.0, 2.0]
     assert report["anchor_argmax_agreement_with_dataset_actions"] == 1.0
+
+
+def test_build_anchor_sample_weights_balances_time_buckets():
+    np = pytest.importorskip("numpy")
+    sample_metadata = [
+        {"map_id": "soda-creek", "time_seconds": 10.0},
+        {"map_id": "soda-creek", "time_seconds": 30.0},
+        {"map_id": "soda-creek", "time_seconds": 210.0},
+    ]
+
+    weights, report = build_anchor_sample_weights(
+        sample_metadata,
+        np,
+        "time_bucket_balance",
+    )
+
+    assert weights.tolist() == pytest.approx([0.75, 0.75, 1.5])
+    assert report["mode"] == "time_bucket_balance"
+    assert report["groups"]["opening_lt_60"]["sample_count"] == 2
+    assert report["groups"]["late_180_to_300"]["weight_multiplier"] == 1.5
+
+
+def test_build_anchor_sample_weights_balances_map_time_buckets():
+    np = pytest.importorskip("numpy")
+    sample_metadata = [
+        {"map_id": "soda-creek", "time_seconds": 10.0},
+        {"map_id": "soda-creek", "time_seconds": 20.0},
+        {"map_id": "caramel-workshop", "time_seconds": 20.0},
+    ]
+
+    weights, report = build_anchor_sample_weights(
+        sample_metadata,
+        np,
+        "map_time_bucket_balance",
+    )
+
+    assert weights.tolist() == pytest.approx([0.75, 0.75, 1.5])
+    assert report["group_count"] == 2
+    assert report["groups"]["caramel-workshop::opening_lt_60"]["sample_count"] == 1
 
 
 def test_build_env_passes_reward_profile(monkeypatch):
@@ -462,11 +509,13 @@ def test_training_can_apply_anchor_regularization(monkeypatch, tmp_path):
         anchor_model=tmp_path / "anchor.pt",
         anchor_datasets=[tmp_path / "samples.jsonl"],
         anchor_regularization_interval=16,
+        anchor_sample_weighting="map_time_bucket_balance",
     )
 
     assert "plain_learn" not in captured
     assert captured["anchor_learn_timesteps"] == 32
     assert captured["anchor_prepare_kwargs"]["anchor_regularization_interval"] == 16
+    assert captured["anchor_prepare_kwargs"]["anchor_sample_weighting"] == "map_time_bucket_balance"
     assert report["anchor_regularization"]["status"] == "applied"
     assert report["training"]["anchor_regularization"]["final_validation"]["mean_kl"] == 0.123
     assert captured["env_closed"] is True

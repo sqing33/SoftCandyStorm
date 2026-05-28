@@ -505,10 +505,11 @@ uv run --with-requirements python/train/requirements.txt python python/train/tra
   --anchor-dataset harness/reports/local_anchor/anchor_samples \
   --anchor-regularization-interval 512 \
   --anchor-regularization-weight 1.0 \
+  --anchor-sample-weighting map_time_bucket_balance \
   --model-out harness/reports/local_probe/ppo_anchor_constrained.zip
 ```
 
-The training report records `anchor_regularization.final_validation.mean_kl` and `argmax_agreement`, plus per-chunk validation metrics. This is a training constraint and drift diagnostic only; a checkpoint still needs `compare_sb3_to_behavior_clone_anchor.py`, fixed-window high-pressure comparisons, no-regression validation, failure-case review, and the RL acceptance manifest before it can become a test Bot candidate.
+The training report records `anchor_regularization.final_validation.mean_kl` and `argmax_agreement`, plus per-chunk validation metrics. Use `--anchor-sample-weighting time_bucket_balance` when opening/mid/late samples are imbalanced, or `--anchor-sample-weighting map_time_bucket_balance` when a map and time bucket should not be diluted by the rest of the anchor dataset; the report records group counts and multipliers under `anchor_regularization.sample_weighting`. This is a training constraint and drift diagnostic only; a checkpoint still needs `compare_sb3_to_behavior_clone_anchor.py`, fixed-window high-pressure comparisons, no-regression validation, failure-case review, and the RL acceptance manifest before it can become a test Bot candidate.
 
 The first full distillation + PPO warm-start used 21,726 phase-aligned samples and the action-change staged GRU teacher. Five distillation epochs reached 0.6916 validation argmax accuracy, then 2,048 PPO timesteps on high-pressure maps completed. The policy still failed: all three 60-second maps triggered action-distribution repair, and all three 300-second maps recorded 0% win rate with action 3 dominant ratio above 0.76. Treat this as a repair result for the current teacher/reward setup, not a reason to promote PPO.
 

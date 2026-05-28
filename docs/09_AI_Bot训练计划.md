@@ -204,6 +204,8 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conv
 
 `train_sb3.py` 现在提供 closed-loop PPO 的 behavior-clone anchor KL regularization 入口。训练时传入 `--anchor-model` 和一个或多个 `--anchor-dataset` 后，脚本会把 PPO 训练切成若干 chunk，并在每个 chunk 后用离线 anchor 样本最小化当前 SB3 policy 相对 anchor 概率分布的 KL；`--anchor-opening-model` 可复用 SB3 opening + behavior-clone fallback 组合，避免 stage 02 续训再次丢掉 opening policy。训练报告会记录每个 chunk 的 validation KL、argmax agreement 和最终 `anchor_regularization.final_validation`。这只是漂移约束和修复训练工具，checkpoint 仍必须再跑 anchor alignment、60 / 180 / 300 秒 high-pressure、no-regression 和 RL acceptance。
 
+anchor KL 训练现支持 `--anchor-sample-weighting time_bucket_balance` 与 `--anchor-sample-weighting map_time_bucket_balance`。前者按 opening / mid / late / post 样本桶反比加权，后者按 `map_id + time bucket` 组合加权，用于避免全量 anchor 数据被某一阶段或地图主导；报告会在 `anchor_regularization.sample_weighting` 中记录每组样本数、权重倍数和均值。该能力只改变离线 KL 约束强度，不代表 checkpoint 通过，也不能替代全量 alignment 与窗口 no-regression。
+
 首个 anchor-regularized PPO smoke 从 opening-aware distilled PPO 重新训练 `1024` timesteps，并使用 `8192` 条 anchor 样本做每 `512` timestep 一次的 KL 约束。训练内 validation KL 降到 `0.265304`、argmax agreement 达到 `0.8462`，但全量 `36426` 样本 anchor alignment 仍失败：overall mean KL `0.346885`，argmax agreement `0.7044`。窗口对比相对上一轮 opening-aware PPO 只剩 `1` 个 no-regression blocker，但相对 current-failure fallback best 仍有 `7` 个 blockers，相对 seed63100 baseline 仍有 `4` 个 blockers；300 秒 `soda-creek` / `caramel-workshop` 仍为 `0.0` 胜率。该结果记录为 `fail_20260528_082`，说明 anchor 方向有改善信号但需要全量 / 分桶 / 更强约束。
 
 Harness 还提供规则 Bot 轨迹导出入口：
