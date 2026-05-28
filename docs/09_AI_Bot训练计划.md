@@ -196,6 +196,8 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conv
 
 为避免下一轮蒸馏再次丢失 staged opening 行为，`distill_behavior_clone_to_sb3.py` 已支持 `--opening-model` 和 `--opening-seconds`。当 teacher 是“SB3 opening + behavior-clone fallback”组合时，蒸馏脚本会按样本 `time_seconds` 选择 opening 或 fallback 概率目标；这仍只是初始化工具，必须继续经过 60 / 180 / 300 秒 high-pressure 与 no-regression 检查。
 
+首个 opening-aware `late-win-conversion` 蒸馏探针确认该工具能正确记录 opening teacher，但 checkpoint 仍被拒绝：60 秒为 `0.6667/0.6667/1.0`，180 秒为 `0.3333/0.6667/0.6667`，300 秒三图仍为 `0.0/0.0/0.0`。相对 current-failure fallback best 触发 `8` 个 no-regression blockers，且丢掉 `cracked-star-jar` 300 秒 `0.3333` 胜率；相对 seed63100 baseline 仍有 `4` 个 blockers。该结果记录为 `fail_20260528_081`，说明 opening-aware distillation 只能修正 teacher 入口，不能替代 KL / behavior-clone anchor、per-map constrained repair 或显式 retention 保护。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

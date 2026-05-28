@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_081",
+  "category": "rl_policy",
+  "content_id": "stage02-opening-aware-late-win-conversion-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02OpeningAwareLateWinConversionProbe",
+  "time_seconds": 300.0,
+  "symptom": "使用 SB3 stage 02 opening policy + current-failure fallback behavior-clone teacher 做 opening-aware 蒸馏后，再用 late-win-conversion reward profile 继续 2048 timesteps closed-loop 训练；60 秒结果为 soda/caramel/cracked = 0.6667/0.6667/1.0，180 秒为 0.3333/0.6667/0.6667，300 秒为 0.0/0.0/0.0。相对 current-failure fallback best 触发 8 个 no-regression blockers，相对 seed63100 stage02 baseline 触发 4 个 blockers，不能推进 RL acceptance。",
+  "root_cause": "opening-aware teacher 修正了上一轮 fallback-only 蒸馏错误，但 memoryless SB3 MlpPolicy 仍没有稳定保住多窗口行为。短 closed-loop 续训提高了动作熵和部分平均存活，却破坏了 current best 的 soda-creek 60 秒胜率和 cracked-star-jar 300 秒 0.3333 胜率；late-win-conversion 的 final-minute 信号仍无法把 180-300 秒存活转成三图胜利。",
+  "fix": "拒绝该 checkpoint，不推进 stage 03、rl_test_bot_candidate 或 RL acceptance。后续应保留 current-failure fallback best 作为 retention anchor，并尝试 KL / behavior-clone anchor、per-map constrained repair、显式 cracked retention 保护或多窗口约束，而不是继续从本轮 opening-aware PPO checkpoint 追加训练。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001；distill_run.json 记录 opening_model 与 opening_seconds，ppo_training_report.json 记录 2048 timestep late-win-conversion 续训，comparison_60s/180s/300s.json 记录 deterministic high-pressure 三窗口结果，window_regression_vs_current_failure_best.md 为 8 个 blockers，window_regression_vs_seed63100_stage02.md 为 4 个 blockers，failure_analysis_300s.md 记录 9 个 300 秒失败 episode。"
+}
