@@ -2298,6 +2298,11 @@
       "id": "rl_curriculum_stage02_long_run_retention_probe",
       "summary": "从 stage 02 PPO checkpoint 继续 long-run-retention probe：60 秒三图全胜且无 baseline 回归，180 秒为 0.6667/1.0/0.6667，300 秒三图全 0.0；相对 stage 02 baseline 仍有 6 个 no-regression blockers，记录 fail_20260528_069。该方向优于上一轮 late-route-recovery continuation，但仍不能替代 stage 02 baseline 或推进 stage 03。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_soda_cracked_retention_probe",
+      "summary": "从 long-run-retention checkpoint 继续 soda/cracked 窄地图 retention probe：cracked-star-jar 180 秒修到 1.0，caramel-workshop 未低于 baseline，但 soda-creek 60 秒回退到 0.6667，300 秒三图仍全 0.0；记录 fail_20260528_070。该 probe 证明缺少 opening replay retention 时，map-specific long-run continuation 会重新移动失败面。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_cracked_retention_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2312,6 +2317,10 @@
     {
       "id": "rl_policy_multimap_training_after_long_run_retention_probe",
       "summary": "long-run-retention probe 已保住 60 秒三图并把 window blockers 降到 6 个，但 180/300 秒 soda-creek 和 cracked-star-jar 仍相对 stage 02 回归，300 秒三图仍全 0。下一步应做 map/window-specific retention，而不是继续单一三图混合 continuation。"
+    },
+    {
+      "id": "rl_policy_multimap_training_after_soda_cracked_retention_probe",
+      "summary": "soda/cracked 窄地图 retention probe 修住 cracked-star-jar 180 秒，但破坏 soda-creek seed 63100 opening。下一步必须先做 explicit opening replay retention 或从 stage 02 baseline 重来，不能从该 checkpoint 继续推进。"
     },
     {
       "id": "rl_policy_multimap_training",
