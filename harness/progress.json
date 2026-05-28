@@ -2493,6 +2493,11 @@
       "id": "rl_curriculum_stage02_mid_anchor_guard_smoke",
       "summary": "首个 mid-anchor guarded PPO smoke 从 ppo_anchor_regularized_smoke.zip 出发，只使用 mid_anchor_drift_training_samples.jsonl 的 top 200 drift rows 作为 mid_60_to_180 anchor dataset，并设置 validation KL <= 0.25、argmax agreement >= 0.85。新 guard 在第一个 256 timestep chunk 后拒绝继续训练：validation mean KL 2.310775、argmax agreement 0.0；已记录 fail_20260528_089，未继续跑 fixed-window no-regression。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_anchor_drift_alignment_precheck_support",
+      "summary": "compare_sb3_to_behavior_clone_anchor.py 已增加 --include-anchor-drift-samples，可显式读取带 observation 的 anchor_drift_sample JSONL，用于训练前比较 start model 与 behavior-clone anchor 在高 KL drift rows 上的对齐情况；默认仍拒绝 drift diagnostics，避免其被误用为普通 behavior-clone 数据。",
+      "report": "python/train/compare_sb3_to_behavior_clone_anchor.py"
     }
   ],
   "next_recommended": [

@@ -236,6 +236,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 首个 mid-anchor guarded PPO smoke 从上一版 `ppo_anchor_regularized_smoke.zip` 出发，只使用 top `200` drift rows 作为 `mid_60_to_180` anchor dataset，并设置 `max_validation_kl = 0.25`、`min_argmax_agreement = 0.85`。该分支被 guard 拒绝：请求 `512` timesteps，实际在首个 `256` chunk 后停止，validation mean KL 为 `2.310775`、argmax agreement 为 `0.0`。已记录 `fail_20260528_089`；由于训练期 guard 已失败，没有继续跑 fixed-window no-regression。
 
+`compare_sb3_to_behavior_clone_anchor.py` 现在提供显式 `--include-anchor-drift-samples`，可在训练前用带 observation 的 `anchor_drift_sample` JSONL 对 start model 做 anchor alignment 预检。默认仍拒绝这类诊断行，避免 drift diagnostics 被误当作普通 behavior-clone 轨迹。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

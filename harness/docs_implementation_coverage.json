@@ -1012,6 +1012,8 @@
             "python/train/test_train_behavior_clone.py",
             "python/train/train_sb3.py",
             "python/train/test_train_sb3.py",
+            "python/train/compare_sb3_to_behavior_clone_anchor.py",
+            "python/train/test_compare_sb3_to_behavior_clone_anchor.py",
             "python/train/README.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/summary.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/fallback_training.json",
@@ -1274,7 +1276,8 @@
             "train_sb3.py 的 anchor regularization 路径现在可读取带 observation 的 anchor_drift_sample JSONL，普通 behavior-clone 数据入口默认仍拒绝这类诊断样本；已生成 mid_anchor_drift_training_samples.jsonl 并验证 200 条记录可读为 anchor_drift_sample_records，用于后续 KL repair 输入。",
             "validate_anchor_regularization_input.py 已对 mid_anchor_drift_training_samples.jsonl 跑真实 preflight，确认 200/200 条样本进入 mid_60_to_180 anchor target，map_time_bucket_balance 权重和 target argmax agreement 可审计；该报告不训练 PPO。",
             "train_sb3.py 已新增 anchor validation guard，可在 PPO anchor regularization 每个 chunk 后按 validation mean KL / argmax agreement 阈值停止后续续训，并在报告中记录 aborted_by_anchor_validation_guard；该 guard 只阻止 anchor drift 继续扩大，不替代 fixed-window no-regression 或 RL acceptance。",
-            "首个 mid-anchor guarded PPO smoke 被 guard 拒绝：请求 512 timesteps，实际在 256 timestep 后停止，validation mean KL 2.310775、argmax agreement 0.0；已记录 fail_20260528_089，因此未继续跑 fixed-window no-regression。"
+            "首个 mid-anchor guarded PPO smoke 被 guard 拒绝：请求 512 timesteps，实际在 256 timestep 后停止，validation mean KL 2.310775、argmax agreement 0.0；已记录 fail_20260528_089，因此未继续跑 fixed-window no-regression。",
+            "compare_sb3_to_behavior_clone_anchor.py 已增加显式 --include-anchor-drift-samples，用于在训练前比较 start model 与 behavior-clone anchor 在 anchor_drift_sample 诊断行上的对齐情况；默认仍拒绝 drift diagnostics。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

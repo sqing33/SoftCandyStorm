@@ -489,6 +489,8 @@ When the useful teacher is an evaluation wrapper with a stronger SB3 opening pol
 
 Use `compare_sb3_to_behavior_clone_anchor.py` after closed-loop PPO continuation when you need to measure how far a candidate drifted from a behavior-clone anchor. It reports KL divergence, argmax agreement, and per-map / per-time-bucket alignment over offline trajectory samples, and it can use the same `--opening-model <zip> --opening-seconds <seconds>` anchor wrapper. Passing thresholds in this report is only repair evidence; it does not replace high-pressure comparison or no-regression validation.
 
+When comparing against `anchor_drift_sample` JSONL rows from `export_anchor_drift_samples.py --include-observation`, pass `--include-anchor-drift-samples`. The flag is explicit so drift diagnostics do not silently become normal behavior-clone data; use it for pre-checking a start model against selected high-KL rows before launching another guarded PPO continuation.
+
 Use `--anchor-model` with repeated `--anchor-dataset` during PPO training when a closed-loop continuation must stay close to a behavior-clone anchor. The trainer runs PPO in chunks, then applies offline KL regularization on the anchor samples before the next chunk. Add `--anchor-opening-model` when the anchor should dispatch to an SB3 opening checkpoint before falling back to the behavior clone:
 
 ```bash

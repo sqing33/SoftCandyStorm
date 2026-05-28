@@ -295,10 +295,27 @@ def build_report(
     return report
 
 
+def load_alignment_dataset(
+    dataset_paths,
+    *,
+    limit=None,
+    include_anchor_drift_samples=False,
+):
+    return load_trajectory_dataset(
+        dataset_paths,
+        limit=limit,
+        include_anchor_drift_samples=include_anchor_drift_samples,
+    )
+
+
 def compare_from_args(args):
     require_dependencies()
     config = load_config(args.config)
-    dataset = load_trajectory_dataset(args.dataset, limit=args.dataset_limit)
+    dataset = load_alignment_dataset(
+        args.dataset,
+        limit=args.dataset_limit,
+        include_anchor_drift_samples=args.include_anchor_drift_samples,
+    )
     model_class = stable_baselines_model_classes()[args.algorithm]
     candidate_policy = model_class.load(args.model)
     anchor_policy = load_behavior_clone_policy_with_optional_opening(
@@ -351,6 +368,11 @@ def main():
     parser.add_argument("--opening-seconds", type=float, default=60.0)
     parser.add_argument("--dataset", action="append", required=True)
     parser.add_argument("--dataset-limit", type=int, default=None)
+    parser.add_argument(
+        "--include-anchor-drift-samples",
+        action="store_true",
+        help="Allow anchor_drift_sample JSONL rows exported with observations.",
+    )
     parser.add_argument("--sample-stride", type=int, default=1)
     parser.add_argument("--limit-samples", type=int, default=None)
     parser.add_argument("--max-mean-kl", type=float, default=None)

@@ -2,6 +2,7 @@ import pytest
 
 from python.train.compare_sb3_to_behavior_clone_anchor import (
     compare_policies_to_anchor,
+    load_alignment_dataset,
     probability_distribution,
     time_bucket_label,
 )
@@ -86,3 +87,25 @@ def test_compare_policies_to_anchor_passes_context_and_groups_metrics():
     assert report["by_map"]["soda-creek"]["sample_count"] == 2
     assert report["by_time_bucket"]["opening_lt_60"]["argmax_agreement"] == 1.0
     assert report["by_time_bucket"]["late_180_to_300"]["argmax_agreement"] == 0.0
+
+
+def test_load_alignment_dataset_can_include_anchor_drift_samples(tmp_path):
+    path = tmp_path / "drift.jsonl"
+    path.write_text(
+        "\n".join(
+            [
+                '{"record_type":"anchor_drift_sample","sample_role":"repair_diagnostics","observation":[0.1,0.2],"anchor_action":8,"candidate_action":4,"dataset_action":4,"map_id":"soda-creek","time_seconds":90.0,"health_ratio":1.0}',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="include_anchor_drift_samples"):
+        load_alignment_dataset(path)
+
+    dataset = load_alignment_dataset(path, include_anchor_drift_samples=True)
+
+    assert dataset["anchor_drift_sample_records"] == 1
+    assert dataset["actions"] == [8]
+    assert dataset["sample_metadata"][0]["sample_source"] == "anchor_drift_diagnostic"
