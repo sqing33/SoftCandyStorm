@@ -2293,6 +2293,11 @@
       "id": "rl_curriculum_stage02_closed_loop_no_regression_probe",
       "summary": "从当前最佳 stage 02 PPO checkpoint 继续 closed-loop PPO no-regression 探针：60 秒为 0.6667/0.6667/1.0，180 秒为 0.3333/0.6667/0.6667，300 秒三图全 0.0；相对 stage 02 baseline 触发 14 个 no-regression blockers，记录 fail_20260528_068。该 checkpoint 不能推进 stage 03 或 RL acceptance，stage 02 PPO 仍是当前最佳但未通过长窗。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_long_run_retention_probe",
+      "summary": "从 stage 02 PPO checkpoint 继续 long-run-retention probe：60 秒三图全胜且无 baseline 回归，180 秒为 0.6667/1.0/0.6667，300 秒三图全 0.0；相对 stage 02 baseline 仍有 6 个 no-regression blockers，记录 fail_20260528_069。该方向优于上一轮 late-route-recovery continuation，但仍不能替代 stage 02 baseline 或推进 stage 03。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2303,6 +2308,10 @@
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",
       "summary": "closed-loop PPO no-regression 探针已失败：相对 stage 02 baseline 触发 14 个 window regression blockers，300 秒三图仍为 0.0/0.0/0.0。下一步不要推进 stage 03 或 RL acceptance，应以 stage 02 PPO 为 baseline 重新设计 explicit replay retention / multi-window curriculum，并把 60/180/300 秒 no-regression 检查作为硬约束。"
+    },
+    {
+      "id": "rl_policy_multimap_training_after_long_run_retention_probe",
+      "summary": "long-run-retention probe 已保住 60 秒三图并把 window blockers 降到 6 个，但 180/300 秒 soda-creek 和 cracked-star-jar 仍相对 stage 02 回归，300 秒三图仍全 0。下一步应做 map/window-specific retention，而不是继续单一三图混合 continuation。"
     },
     {
       "id": "rl_policy_multimap_training",

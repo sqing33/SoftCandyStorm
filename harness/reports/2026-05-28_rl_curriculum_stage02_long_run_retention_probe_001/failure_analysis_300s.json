@@ -1,0 +1,556 @@
+{
+  "report_version": 1,
+  "source": "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/comparison_300s.json",
+  "decision": "rl_policy_failure_analysis_recorded",
+  "gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/ppo_long_run_retention_probe.zip",
+  "map_preset": "high-pressure",
+  "seconds": 300.0,
+  "seed_start": 63100,
+  "seeds": 3,
+  "map_count": 3,
+  "total_failures": 9,
+  "repair_maps": [
+    "soda-creek",
+    "caramel-workshop",
+    "cracked-star-jar"
+  ],
+  "findings": [
+    {
+      "id": "zero_policy_win_rate",
+      "severity": "repair",
+      "map_id": "soda-creek",
+      "summary": "Policy recorded 0% win rate on this map and should not be promoted as a multi-map RL test Bot."
+    },
+    {
+      "id": "zero_policy_win_rate",
+      "severity": "repair",
+      "map_id": "caramel-workshop",
+      "summary": "Policy recorded 0% win rate on this map and should not be promoted as a multi-map RL test Bot."
+    },
+    {
+      "id": "zero_policy_win_rate",
+      "severity": "repair",
+      "map_id": "cracked-star-jar",
+      "summary": "Policy recorded 0% win rate on this map and should not be promoted as a multi-map RL test Bot."
+    }
+  ],
+  "maps": [
+    {
+      "map_id": "soda-creek",
+      "gate_decision": "comparison_recorded_not_balance_gate",
+      "episodes": 3,
+      "failure_count": 3,
+      "win_rate": 0.0,
+      "average_survival_seconds": 179.1213,
+      "minimum_survival_seconds": 116.0986,
+      "average_failure_survival_seconds": 179.1213,
+      "terminal_reason_distribution": {
+        "player_health_depleted": {
+          "count": 3,
+          "ratio": 1.0
+        }
+      },
+      "failure_time_bucket_distribution": {
+        "opening_lt_60": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "mid_60_to_180": {
+          "count": 1,
+          "ratio": 0.3333
+        },
+        "late_180_to_300": {
+          "count": 2,
+          "ratio": 0.6667
+        },
+        "post_300": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "policy_normalized_action_entropy": 0.5111,
+      "policy_dominant_action": {
+        "action": "4",
+        "count": 6212,
+        "ratio": 0.3854
+      },
+      "reward_breakdown_average": {
+        "action_repeat": -19.944,
+        "boss_pressure": -0.0267,
+        "boundary_risk": -2.7188,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.0,
+        "damage_taken": -9.6134,
+        "enemy_pressure": -0.2744,
+        "hazard_risk": 0.0,
+        "kill": 31.2,
+        "level": 4.8,
+        "low_health": -1.4356,
+        "opening_edge_risk_delta": 0.0,
+        "route_recovery": -6.4717,
+        "safety_delta": -0.0122,
+        "survival": 1.7911,
+        "terminal": -3.0,
+        "total": 13.3791,
+        "xp": 19.0848
+      },
+      "failures": [
+        {
+          "map_id": "soda-creek",
+          "seed": 63100,
+          "time_seconds": 116.0986,
+          "time_bucket": "mid_60_to_180",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 5,
+          "kills": 199,
+          "damage_taken": 120.0301,
+          "dominant_action": {
+            "action": "4",
+            "count": 1991,
+            "ratio": 0.5716
+          },
+          "reward_breakdown": {
+            "action_repeat": -11.9,
+            "boss_pressure": 0.0,
+            "boundary_risk": -2.3023,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0001,
+            "damage_taken": -9.6024,
+            "enemy_pressure": -0.2703,
+            "hazard_risk": 0.0,
+            "kill": 15.92,
+            "level": 3.2,
+            "low_health": -1.9575,
+            "opening_edge_risk_delta": 0.0001,
+            "route_recovery": -4.2364,
+            "safety_delta": -0.0098,
+            "survival": 1.161,
+            "terminal": -3.0,
+            "total": -4.9176,
+            "xp": 8.08
+          }
+        },
+        {
+          "map_id": "soda-creek",
+          "seed": 63101,
+          "time_seconds": 211.0161,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 8,
+          "kills": 498,
+          "damage_taken": 120.4502,
+          "dominant_action": {
+            "action": "7",
+            "count": 2806,
+            "ratio": 0.4433
+          },
+          "reward_breakdown": {
+            "action_repeat": -24.088,
+            "boss_pressure": -0.0577,
+            "boundary_risk": -2.8545,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0002,
+            "damage_taken": -9.636,
+            "enemy_pressure": -0.2988,
+            "hazard_risk": 0.0,
+            "kill": 39.84,
+            "level": 5.6,
+            "low_health": -1.0874,
+            "opening_edge_risk_delta": 0.0001,
+            "route_recovery": -6.8436,
+            "safety_delta": -0.0136,
+            "survival": 2.11,
+            "terminal": -3.0,
+            "total": 22.6787,
+            "xp": 23.008
+          }
+        },
+        {
+          "map_id": "soda-creek",
+          "seed": 63102,
+          "time_seconds": 210.2493,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 8,
+          "kills": 473,
+          "damage_taken": 120.0236,
+          "dominant_action": {
+            "action": "2",
+            "count": 2355,
+            "ratio": 0.3734
+          },
+          "reward_breakdown": {
+            "action_repeat": -23.844,
+            "boss_pressure": -0.0223,
+            "boundary_risk": -2.9996,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0004,
+            "damage_taken": -9.6019,
+            "enemy_pressure": -0.254,
+            "hazard_risk": 0.0,
+            "kill": 37.84,
+            "level": 5.6,
+            "low_health": -1.2619,
+            "opening_edge_risk_delta": -0.0002,
+            "route_recovery": -8.3351,
+            "safety_delta": -0.0133,
+            "survival": 2.1023,
+            "terminal": -3.0,
+            "total": 22.3761,
+            "xp": 26.1664
+          }
+        }
+      ]
+    },
+    {
+      "map_id": "caramel-workshop",
+      "gate_decision": "comparison_recorded_not_balance_gate",
+      "episodes": 3,
+      "failure_count": 3,
+      "win_rate": 0.0,
+      "average_survival_seconds": 218.9511,
+      "minimum_survival_seconds": 214.6502,
+      "average_failure_survival_seconds": 218.9511,
+      "terminal_reason_distribution": {
+        "player_health_depleted": {
+          "count": 3,
+          "ratio": 1.0
+        }
+      },
+      "failure_time_bucket_distribution": {
+        "opening_lt_60": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "mid_60_to_180": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late_180_to_300": {
+          "count": 3,
+          "ratio": 1.0
+        },
+        "post_300": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "policy_normalized_action_entropy": 0.5055,
+      "policy_dominant_action": {
+        "action": "7",
+        "count": 9601,
+        "ratio": 0.4873
+      },
+      "reward_breakdown_average": {
+        "action_repeat": -23.9627,
+        "boss_pressure": -0.0448,
+        "boundary_risk": -2.3154,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": 0.0002,
+        "damage_taken": -9.6293,
+        "enemy_pressure": -0.1363,
+        "hazard_risk": -1.5919,
+        "kill": 27.76,
+        "level": 5.0667,
+        "low_health": -0.0499,
+        "opening_edge_risk_delta": 0.0001,
+        "route_recovery": -8.99,
+        "safety_delta": -0.0131,
+        "survival": 2.1893,
+        "terminal": -3.0,
+        "total": 7.1774,
+        "xp": 21.8947
+      },
+      "failures": [
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63100,
+          "time_seconds": 214.6502,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 9,
+          "kills": 344,
+          "damage_taken": 120.4869,
+          "dominant_action": {
+            "action": "2",
+            "count": 3361,
+            "ratio": 0.522
+          },
+          "reward_breakdown": {
+            "action_repeat": -22.316,
+            "boss_pressure": -0.0037,
+            "boundary_risk": -2.3558,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0001,
+            "damage_taken": -9.6389,
+            "enemy_pressure": -0.1016,
+            "hazard_risk": -2.1348,
+            "kill": 27.52,
+            "level": 6.4,
+            "low_health": -0.0158,
+            "opening_edge_risk_delta": 0.0,
+            "route_recovery": -8.5939,
+            "safety_delta": -0.0125,
+            "survival": 2.1463,
+            "terminal": -3.0,
+            "total": 17.3173,
+            "xp": 29.424
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63101,
+          "time_seconds": 215.417,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 4,
+          "kills": 329,
+          "damage_taken": 120.3067,
+          "dominant_action": {
+            "action": "7",
+            "count": 3636,
+            "ratio": 0.5627
+          },
+          "reward_breakdown": {
+            "action_repeat": -24.18,
+            "boss_pressure": -0.1307,
+            "boundary_risk": -2.2646,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0004,
+            "damage_taken": -9.6245,
+            "enemy_pressure": -0.2097,
+            "hazard_risk": -1.0933,
+            "kill": 26.32,
+            "level": 2.4,
+            "low_health": -0.0451,
+            "opening_edge_risk_delta": 0.0002,
+            "route_recovery": -10.2216,
+            "safety_delta": -0.0147,
+            "survival": 2.154,
+            "terminal": -3.0,
+            "total": -12.0698,
+            "xp": 7.84
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63102,
+          "time_seconds": 226.7861,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 9,
+          "kills": 368,
+          "damage_taken": 120.3065,
+          "dominant_action": {
+            "action": "7",
+            "count": 3378,
+            "ratio": 0.4965
+          },
+          "reward_breakdown": {
+            "action_repeat": -25.392,
+            "boss_pressure": 0.0,
+            "boundary_risk": -2.3258,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0001,
+            "damage_taken": -9.6245,
+            "enemy_pressure": -0.0976,
+            "hazard_risk": -1.5477,
+            "kill": 29.44,
+            "level": 6.4,
+            "low_health": -0.0888,
+            "opening_edge_risk_delta": 0.0,
+            "route_recovery": -8.1545,
+            "safety_delta": -0.0121,
+            "survival": 2.2677,
+            "terminal": -3.0,
+            "total": 16.2848,
+            "xp": 28.42
+          }
+        }
+      ]
+    },
+    {
+      "map_id": "cracked-star-jar",
+      "gate_decision": "comparison_recorded_not_balance_gate",
+      "episodes": 3,
+      "failure_count": 3,
+      "win_rate": 0.0,
+      "average_survival_seconds": 184.5127,
+      "minimum_survival_seconds": 97.9655,
+      "average_failure_survival_seconds": 184.5128,
+      "terminal_reason_distribution": {
+        "player_health_depleted": {
+          "count": 3,
+          "ratio": 1.0
+        }
+      },
+      "failure_time_bucket_distribution": {
+        "opening_lt_60": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "mid_60_to_180": {
+          "count": 1,
+          "ratio": 0.3333
+        },
+        "late_180_to_300": {
+          "count": 2,
+          "ratio": 0.6667
+        },
+        "post_300": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "policy_normalized_action_entropy": 0.5308,
+      "policy_dominant_action": {
+        "action": "7",
+        "count": 6357,
+        "ratio": 0.3828
+      },
+      "reward_breakdown_average": {
+        "action_repeat": -20.272,
+        "boss_pressure": -0.0415,
+        "boundary_risk": -2.5146,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": 0.0003,
+        "damage_taken": -9.6197,
+        "enemy_pressure": -0.2391,
+        "hazard_risk": -0.2565,
+        "kill": 29.52,
+        "level": 4.8,
+        "low_health": -1.0149,
+        "opening_edge_risk_delta": 0.0003,
+        "route_recovery": -7.0463,
+        "safety_delta": -0.011,
+        "survival": 1.845,
+        "terminal": -3.0,
+        "total": 14.4978,
+        "xp": 22.348
+      },
+      "failures": [
+        {
+          "map_id": "cracked-star-jar",
+          "seed": 63100,
+          "time_seconds": 221.8518,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 9,
+          "kills": 491,
+          "damage_taken": 120.5802,
+          "dominant_action": {
+            "action": "7",
+            "count": 2750,
+            "ratio": 0.4132
+          },
+          "reward_breakdown": {
+            "action_repeat": -25.064,
+            "boss_pressure": -0.091,
+            "boundary_risk": -2.2883,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0003,
+            "damage_taken": -9.6464,
+            "enemy_pressure": -0.1751,
+            "hazard_risk": -0.4254,
+            "kill": 39.28,
+            "level": 6.4,
+            "low_health": -0.0234,
+            "opening_edge_risk_delta": 0.0007,
+            "route_recovery": -7.2304,
+            "safety_delta": -0.0118,
+            "survival": 2.2183,
+            "terminal": -3.0,
+            "total": 28.1595,
+            "xp": 28.216
+          }
+        },
+        {
+          "map_id": "cracked-star-jar",
+          "seed": 63101,
+          "time_seconds": 97.9655,
+          "time_bucket": "mid_60_to_180",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 3,
+          "kills": 117,
+          "damage_taken": 120.0532,
+          "dominant_action": {
+            "action": "7",
+            "count": 1360,
+            "ratio": 0.4627
+          },
+          "reward_breakdown": {
+            "action_repeat": -11.268,
+            "boss_pressure": 0.0,
+            "boundary_risk": -1.3331,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0001,
+            "damage_taken": -9.6043,
+            "enemy_pressure": -0.2814,
+            "hazard_risk": 0.0,
+            "kill": 9.36,
+            "level": 1.6,
+            "low_health": -0.6209,
+            "opening_edge_risk_delta": 0.0001,
+            "route_recovery": -3.7302,
+            "safety_delta": -0.0098,
+            "survival": 0.9797,
+            "terminal": -3.0,
+            "total": -13.1319,
+            "xp": 4.776
+          }
+        },
+        {
+          "map_id": "cracked-star-jar",
+          "seed": 63102,
+          "time_seconds": 233.721,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 9,
+          "kills": 499,
+          "damage_taken": 120.1038,
+          "dominant_action": {
+            "action": "2",
+            "count": 2374,
+            "ratio": 0.3386
+          },
+          "reward_breakdown": {
+            "action_repeat": -24.484,
+            "boss_pressure": -0.0336,
+            "boundary_risk": -3.9225,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0004,
+            "damage_taken": -9.6083,
+            "enemy_pressure": -0.2609,
+            "hazard_risk": -0.3442,
+            "kill": 39.92,
+            "level": 6.4,
+            "low_health": -2.4005,
+            "opening_edge_risk_delta": 0.0002,
+            "route_recovery": -10.1784,
+            "safety_delta": -0.0115,
+            "survival": 2.337,
+            "terminal": -3.0,
+            "total": 28.4657,
+            "xp": 34.052
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "This report summarizes existing comparison output only.",
+    "It does not replay episodes or prove a fix.",
+    "Use it to choose the next curriculum, reward, or policy diagnostic target."
+  ]
+}

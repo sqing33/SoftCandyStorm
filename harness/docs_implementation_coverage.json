@@ -927,6 +927,16 @@
             "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/failure_analysis_180s.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_closed_loop_no_regression_probe_001/failure_analysis_300s.md",
             "harness/failed_cases/fail_20260528_068_stage02_closed_loop_no_regression_probe_regression.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/summary.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/ppo_training_report.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/comparison_60s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/comparison_180s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/comparison_300s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/window_regression_vs_stage02.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/failure_analysis_60s.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/failure_analysis_180s.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001/failure_analysis_300s.md",
+            "harness/failed_cases/fail_20260528_069_stage02_long_run_retention_probe_regression.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/late_training.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/packaging.json",
@@ -978,7 +988,8 @@
             "late-risk auxiliary staged GRU context8 已把 1079 条 risk recovery 样本混入 late 子模型并完成 60/180/300 秒 deterministic high-pressure 对比：60 秒和 180 秒三图仍为 100%，但 300 秒三图全部 0%，9 个失败全在 late_180_to_300，说明 risk recovery imitation 未解除 long-run blocker；stage 03 和 rl_test_bot_candidate 继续阻塞。",
             "规则 Bot late survival 探针已找到 soda-creek / cracked-star-jar 的 KiteBot 长局胜利样本，以及 caramel-workshop 的 TankBot seed 62301 非随机胜利样本；但这只是 teacher data selection，不是训练结果或 policy gate，下一步仍需导出 180-300 秒真实轨迹、跑 behavior clone dry-run、训练并通过 deterministic 60/180/300 秒 high-pressure 多图对比。",
             "真实规则 Bot 180-300 秒 late-window 轨迹已导出并通过 dry-run，样本全部来自 trajectory 且没有 adapter-derived repair sample；clean teacher-only late 子模型、no-phase 消融和 --phase-duration-seconds 300 absolute-time 重新打包均已完成 deterministic 60/180/300 秒 high-pressure 多图对比，但 60/180 秒仍有短窗回归，300 秒三图仍全 0%，因此 RL policy 仍不能推进 stage 03 或 acceptance。",
-            "closed-loop PPO no-regression 探针从 stage 02 PPO checkpoint 继续训练后，在 60/180/300 秒相对 baseline 触发 14 个 regression blockers，300 秒三图仍为 0%，并使 cracked-star-jar 从 baseline 0.3333 回退到 0%；stage 02 PPO 仍是当前最佳 RL checkpoint，但仍不是 stage 03 或 RL acceptance 通过证据。"
+            "closed-loop PPO no-regression 探针从 stage 02 PPO checkpoint 继续训练后，在 60/180/300 秒相对 baseline 触发 14 个 regression blockers，300 秒三图仍为 0%，并使 cracked-star-jar 从 baseline 0.3333 回退到 0%；stage 02 PPO 仍是当前最佳 RL checkpoint，但仍不是 stage 03 或 RL acceptance 通过证据。",
+            "long-run-retention probe 保住 60 秒三图且 blocker 降到 6 个，但 180 秒 soda-creek / cracked-star-jar 与 300 秒 soda-creek / cracked-star-jar 仍相对 stage 02 回归，300 秒三图仍全 0%；该结果只能作为下一轮 map/window-specific retention 的诊断证据。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
