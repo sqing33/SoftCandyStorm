@@ -1198,6 +1198,11 @@
             "harness/reports/2026-05-28_rl_anchor_drift_start_candidate_sweep_001/anchor_regularized_smoke_alignment.json",
             "harness/reports/2026-05-28_rl_anchor_drift_start_candidate_sweep_001/stage02_late_180_to_300_alignment.json",
             "harness/failed_cases/fail_20260528_091_stage02_anchor_drift_start_candidate_sweep.json",
+            "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/summary.md",
+            "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/distillation_report.json",
+            "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/anchor_drift_alignment.json",
+            "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/full_anchor_alignment.json",
+            "harness/failed_cases/fail_20260528_092_sb3_supervised_realign_full_anchor_drift_w40.json",
             "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/summary.md",
             "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/anchor_alignment.json",
             "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/summary.md",
@@ -1295,7 +1300,8 @@
             "首个 start-model drift-row alignment precheck 在 200 条 mid_60_to_180 drift rows 上失败：overall mean KL 2.26528、argmax agreement 0.0，三图分桶均超过阈值；已记录 fail_20260528_090，说明不能直接从该 start model 用 top-200 drift rows 做更长 PPO。",
             "已有 SB3 checkpoint 起点 sweep 未找到合格替代：最接近的 phase_specific_anchor_smoke 仍为 overall mean KL 2.14298、argmax agreement 0.0，其余候选也全部失败；已记录 fail_20260528_091，说明不能只换旧 checkpoint 继续 PPO。",
             "distill_behavior_clone_to_sb3.py 已增加显式 --include-anchor-drift-samples，可把带 observation 的 anchor_drift_sample 行用于 supervised SB3 re-alignment / distillation 初始化；默认仍拒绝 drift diagnostics。",
-            "distill_behavior_clone_to_sb3.py 已支持 --sample-path-weight PATH=WEIGHT，可在 broad full-anchor + 小型 repair slice 混合数据中按 exact path 或 directory prefix 放大指定来源的 supervised loss，并在 report.sample_weights 中记录权重分布与命中样本数。"
+            "distill_behavior_clone_to_sb3.py 已支持 --sample-path-weight PATH=WEIGHT，可在 broad full-anchor + 小型 repair slice 混合数据中按 exact path 或 directory prefix 放大指定来源的 supervised loss，并在 report.sample_weights 中记录权重分布与命中样本数。",
+            "首个 full-anchor + top drift rows 40x supervised SB3 re-alignment 已被 anchor alignment 拒绝：top drift rows mean KL 降到 0.200915，但 argmax agreement 0.785 且 soda/caramel 分桶仍超阈值；full-anchor overall mean KL 0.434754、argmax agreement 0.6385，已记录 fail_20260528_092，不能进入 guarded PPO 或 fixed-window no-regression。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

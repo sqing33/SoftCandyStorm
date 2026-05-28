@@ -246,6 +246,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 `distill_behavior_clone_to_sb3.py` 也支持重复传入 `--sample-path-weight PATH=WEIGHT`，用于让 broad full-anchor 数据中的小型 repair slice（例如 top drift rows）在 supervised SB3 初始化里具备可审计权重。路径匹配语义与 behavior-clone 训练一致，报告会记录命中数量和权重分布；该能力仍只是初始化工具，不构成 policy gate。
 
+首个 full-anchor + top drift rows `40x` supervised SB3 re-alignment 已被 anchor alignment 拒绝。该 probe 把 top drift rows overall mean KL 从旧起点的 `2.26528` 降到 `0.200915`，但 argmax agreement 只有 `0.785`，且 `soda-creek` / `caramel-workshop` 分桶仍超阈值；full-anchor 对齐更差，overall mean KL 为 `0.434754`、argmax agreement 为 `0.6385`。已记录 `fail_20260528_092`，因此不得从该 checkpoint 继续 guarded PPO 或 fixed-window no-regression。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260528_092",
+  "category": "rl_training",
+  "content_id": "sb3-supervised-realign-full-anchor-drift-w40",
+  "seed": 12345,
+  "bot": "ppo_supervised_realign_full_anchor_drift_w40",
+  "time_seconds": null,
+  "symptom": "A supervised SB3 PPO initialization trained on full-anchor data plus 200 weighted mid-window anchor_drift_sample rows reduced top drift-row mean KL to 0.200915, but still failed argmax and map-bucket thresholds. Full-anchor alignment also failed with overall mean KL 0.434754 and argmax agreement 0.6385.",
+  "root_cause": "The one-pass MlpPolicy distillation with 40x drift-row path weighting pulled the selected top drift rows closer to the current-failure fallback anchor but did not preserve or learn the broader staged anchor distribution. The resulting policy remained too high-entropy and too far from the behavior-clone anchor across maps and time buckets.",
+  "fix": "Do not use this checkpoint for guarded PPO or fixed-window no-regression. Improve the supervised initialization before closed-loop training by increasing distillation quality, separating full-anchor pretraining from drift fine-tuning, or adding better validation-weight reporting before selecting another weight recipe.",
+  "validation": "distill_behavior_clone_to_sb3.py produced distillation_report.json with --include-anchor-drift-samples and --sample-path-weight 40. compare_sb3_to_behavior_clone_anchor.py then rejected both anchor_drift_alignment.json and full_anchor_alignment.json against the configured KL and argmax thresholds, so no high-pressure no-regression or RL acceptance gate was attempted.",
+  "diagnostics": [
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/summary.md",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/distillation_report.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/anchor_drift_alignment.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/full_anchor_alignment.json"
+  ]
+}

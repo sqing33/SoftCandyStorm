@@ -2518,6 +2518,11 @@
       "id": "rl_sb3_distillation_sample_path_weighting",
       "summary": "distill_behavior_clone_to_sb3.py 已支持 --sample-path-weight PATH=WEIGHT，可在 broad full-anchor + 小型 repair slice 混合数据中按 exact path 或 directory prefix 放大指定来源的 supervised loss，并在 report.sample_weights 中记录权重分布与命中样本数。该能力用于下一轮 supervised SB3 re-alignment 初始化，不是 policy gate。",
       "report": "python/train/distill_behavior_clone_to_sb3.py"
+    },
+    {
+      "id": "rl_sb3_supervised_realign_full_anchor_drift_w40",
+      "summary": "首个 full-anchor + top drift rows 40x supervised SB3 re-alignment 已被 anchor alignment 拒绝：top drift rows mean KL 降到 0.200915，但 argmax agreement 0.785 且 soda/caramel 分桶仍超阈值；full-anchor overall mean KL 0.434754、argmax agreement 0.6385，已记录 fail_20260528_092。因此不得从该 checkpoint 继续 guarded PPO 或 no-regression。",
+      "report": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/summary.md"
     }
   ],
   "next_recommended": [
