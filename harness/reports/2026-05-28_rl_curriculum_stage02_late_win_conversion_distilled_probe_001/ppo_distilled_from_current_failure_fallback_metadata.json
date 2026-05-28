@@ -1,0 +1,68 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_late_win_conversion_distilled_probe_001/ppo_distilled_from_current_failure_fallback.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "distillation_source": {
+    "mode": "teacher_probs",
+    "teacher_model": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001/fallback.pt",
+    "teacher_argmax_agreement": 0.7771,
+    "target_transform": {
+      "teacher_temperature": 1.25,
+      "uniform_target_mix": 0.02
+    },
+    "target_entropy_nats": 1.136667,
+    "target_argmax_distribution": {
+      "0": {
+        "count": 391,
+        "ratio": 0.0107
+      },
+      "1": {
+        "count": 4715,
+        "ratio": 0.1294
+      },
+      "2": {
+        "count": 3394,
+        "ratio": 0.0932
+      },
+      "3": {
+        "count": 6532,
+        "ratio": 0.1793
+      },
+      "4": {
+        "count": 3602,
+        "ratio": 0.0989
+      },
+      "5": {
+        "count": 5442,
+        "ratio": 0.1494
+      },
+      "6": {
+        "count": 3288,
+        "ratio": 0.0903
+      },
+      "7": {
+        "count": 4657,
+        "ratio": 0.1278
+      },
+      "8": {
+        "count": 4405,
+        "ratio": 0.1209
+      }
+    }
+  },
+  "observation_version": 2,
+  "observation_len": 145,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.0,
+    "clip_range": 0.2
+  },
+  "started_at": "2026-05-28T05:28:42.869741+00:00",
+  "completed_at": "2026-05-28T05:28:44.947574+00:00"
+}

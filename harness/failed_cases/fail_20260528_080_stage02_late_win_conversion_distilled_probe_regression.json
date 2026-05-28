@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_080",
+  "category": "rl_policy",
+  "content_id": "stage02-late-win-conversion-distilled-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02LateWinConversionDistilledProbe",
+  "time_seconds": 300.0,
+  "symptom": "将 current-failure fallback best 作为 behavior-clone teacher 蒸馏为 SB3 PPO 初始化后，用 late-win-conversion reward profile 继续 2048 timesteps closed-loop 训练；60 秒结果为 soda/caramel/cracked = 0.3333/1.0/1.0，180 秒为 0.0/1.0/1.0，300 秒为 0.0/0.0/0.3333。相对 current-failure fallback best 和 seed63100 stage02 baseline 都触发 5 个 no-regression blockers，集中在 soda-creek：60 秒胜率 -0.6667，180 秒胜率 -0.3333，300 秒平均存活相对 current best 下降 102.9115 秒。",
+  "root_cause": "late-win-conversion 只在 240 秒后提供 final-minute 终局转换信号，无法保护被蒸馏为 memoryless SB3 MlpPolicy 后丢失的 opening / mid-window 行为。短 closed-loop 续训后策略在 soda-creek 出现 action 1 早期偏置，60 秒和 180 秒先回归；caramel-workshop 与 cracked-star-jar 的 late-window 平均存活有所改善，但没有把 300 秒窗口转成 soda/caramel 胜利。",
+  "fix": "拒绝该 checkpoint，不推进 stage 03、rl_test_bot_candidate 或 RL acceptance。后续若继续 closed-loop 路线，应保留 current-failure fallback best 作为 retention anchor，并显式加入 opening retention、staged opening protection、KL/behavior-clone anchor 或 per-map 约束；不要单独依赖 final-minute reward profile 修复长局。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_late_win_conversion_distilled_probe_001；distill_run.json 记录 teacher 蒸馏，train_run.json 记录 2048 timestep late-win-conversion 续训，comparison_60s/180s/300s.json 记录 deterministic high-pressure 三窗结果，window_regression_vs_current_failure_best.md 与 window_regression_vs_seed63100_stage02.md 均为 policy_window_regression_failed，failure_analysis_300s.md 记录 8 个 300 秒失败 episode。"
+}

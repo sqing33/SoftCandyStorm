@@ -2383,6 +2383,11 @@
       "id": "rl_late_win_conversion_reward_profile_support",
       "summary": "新增 Gym reward profile `late-win-conversion`，在 240 秒后 ramp up final-minute route recovery、重复动作惩罚和 victory/defeat terminal signal，用于 current-failure fallback best 后续 closed-loop win-conversion 探针；Python Gym wrapper 与 train_sb3 CLI 已同步接受该 profile，仍不能绕过 60/180/300 秒 deterministic high-pressure 与 no-regression 门禁。",
       "report": "crates/game_harness/src/main.rs"
+    },
+    {
+      "id": "rl_curriculum_stage02_late_win_conversion_distilled_probe",
+      "summary": "把 current-failure fallback best 蒸馏为 SB3 PPO 初始化后，用 `late-win-conversion` 做 2048 timestep closed-loop 探针：60 秒为 0.3333/1.0/1.0，180 秒为 0.0/1.0/1.0，300 秒仍为 0.0/0.0/0.3333。相对 current-failure fallback best 和 seed63100 stage02 baseline 均触发 5 个 soda-creek no-regression blockers，记录 fail_20260528_080，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_late_win_conversion_distilled_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2408,7 +2413,7 @@
     },
     {
       "id": "rl_policy_multimap_training_after_current_failure_trace_incremental_probe",
-      "summary": "current-failure trace samples 不能直接替换上一版 best，0.5x 增量混入也未解除 blocker：300 秒为 0.3333/0.0/0.0，对 seed63100 baseline 和 previous best 均有 window regression blockers。下一步应回到 current-failure fallback best 作为 retention anchor，只把 772 条样本保留为诊断/低权重候选，并优先用 `late-win-conversion` 或其他 closed-loop constrained repair 探针验证 per-map late win-conversion objective。"
+      "summary": "current-failure trace samples 不能直接替换上一版 best，0.5x 增量混入也未解除 blocker；随后将 current-failure fallback best 蒸馏成 SB3 PPO 并用 `late-win-conversion` closed-loop 续训也失败，因 soda-creek 60/180 秒回归触发 5 个 no-regression blockers。下一步应避免单独依赖 final-minute reward 或 memoryless PPO distillation，优先设计 explicit opening retention、staged opening protection、KL/behavior-clone anchor 或 per-map constrained repair。"
     },
     {
       "id": "rl_policy_multimap_training",

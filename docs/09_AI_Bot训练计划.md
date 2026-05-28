@@ -192,6 +192,8 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile long-run-rete
 python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conversion --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
 ```
 
+首个 `late-win-conversion` 蒸馏探针把 current-failure fallback best teacher 蒸馏为 SB3 PPO 后继续 2048 timestep closed-loop 训练，但 60 秒 `soda-creek` 从 `1.0` 回落到 `0.3333`，180 秒回落到 `0.0`，300 秒仍为 `0.0/0.0/0.3333`。该结果记录为 `fail_20260528_080`，说明 final-minute reward profile 只能作为诊断入口，不能单独替代 opening retention、staged opening protection 或 KL / behavior-clone anchor。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
