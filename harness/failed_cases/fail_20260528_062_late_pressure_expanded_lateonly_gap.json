@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_062",
+  "category": "rl_policy",
+  "content_id": "late_pressure_expanded_lateonly_ablation",
+  "seed": 62400,
+  "bot": "PressureLateOnlyClone",
+  "time_seconds": 300.0,
+  "symptom": "使用 1076 条 expanded late boundary rows 和 702 条 clean risk recovery rows 低权重重训 late 子模型后，60 秒 high-pressure 三图为 0.8/1.0/1.0，但 180 秒 caramel-workshop 回落到 0.2，300 秒 soda-creek 和 caramel-workshop 仍为 0.0，cracked-star-jar 为 0.4，整体仍是 multimap_comparison_recorded_needs_policy_repair。",
+  "root_cause": "扩充样本解决了 low-health/hazard/Boss pressure 样本不足的问题，但训练仍是离线 imitation late-only 修复，target action 8 偏高并把策略继续推向 action 1 主导；它改善部分长局存活和 cracked-star-jar，但没有形成跨图闭环路线恢复，也破坏了 caramel-workshop 180 秒 retention。",
+  "fix": "不推进 pressure_late_w0_5 到 stage 03、RL acceptance、playtest 或 release。下一步应避免继续单纯堆叠 adapter-derived edge rows，转向带 60-180 retention 约束的 fallback 训练、成功/近成功 clean survival 对照样本，或 closed-loop late survival curriculum。",
+  "validation": "训练、打包、60/180/300 秒三图对比和失败分析记录在 harness/reports/2026-05-28_rl_late_pressure_expanded_lateonly_ablation_001；failure_analysis_300s.md 记录 13/15 失败，其中 soda-creek 为 opening 1 / mid 2 / late 2，caramel-workshop 为 mid 3 / late 2，cracked-star-jar 为 late 3。"
+}
