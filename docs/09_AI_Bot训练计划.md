@@ -232,6 +232,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 `tools/validate_anchor_regularization_input.py` 提供 anchor regularization 输入预检：它会调用真实 `prepare_anchor_regularization`，但不执行 PPO learn。首个真实 preflight 使用 `mid_anchor_drift_training_samples.jsonl`、current-failure fallback best 和 stage 02 opening anchor，确认 `200/200` 条样本保留在 `mid_60_to_180`，anchor target 与记录的 anchor action argmax agreement 为 `1.0`，并记录 map/time-bucket balance 权重。报告位于 `harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_regularization_input_preflight.md`；它只是训练前输入门，不是 PPO 结果或放行证据。
 
+`train_sb3.py` 现在支持 anchor validation guard：当使用 PPO anchor regularization 时，可设置 `--anchor-guard-max-validation-kl` 和 `--anchor-guard-min-argmax-agreement`。训练会在每个 PPO chunk 后的 KL repair epoch 记录 `validation_guard`，一旦离线 anchor validation 超过阈值就停止后续 chunk，并在训练报告中写入 `aborted_by_anchor_validation_guard` / `trained_anchor_validation_guard_failed_not_policy_gate`。该 guard 只阻止明显漂移的续训继续加长，仍不能替代 fixed-window no-regression、repair-probe gate 或 RL acceptance。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

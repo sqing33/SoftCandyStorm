@@ -21,6 +21,7 @@ from python.train.train_sb3 import (
     compact_action_score,
     consume_policy_adapter_decision,
     derived_edge_recovery_samples_path,
+    evaluate_anchor_validation_guard,
     evaluation_gate_decision,
     filter_anchor_dataset_by_time_buckets,
     merge_algorithm_parameters,
@@ -31,6 +32,7 @@ from python.train.train_sb3 import (
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
     should_record_trace_step,
+    validate_anchor_validation_guard_thresholds,
     validate_anchor_regularization_request,
     validate_eval_random_seed,
     write_edge_recovery_samples,
@@ -608,6 +610,8 @@ def test_training_can_apply_anchor_regularization(monkeypatch, tmp_path):
         anchor_sample_weighting="map_time_bucket_balance",
         anchor_include_time_buckets=["opening_lt_60", "mid_60_to_180"],
         anchor_time_bucket_weights={"opening_lt_60": 2.0},
+        anchor_guard_max_validation_kl=0.25,
+        anchor_guard_min_argmax_agreement=0.8,
     )
 
     assert "plain_learn" not in captured
@@ -621,6 +625,8 @@ def test_training_can_apply_anchor_regularization(monkeypatch, tmp_path):
     assert captured["anchor_prepare_kwargs"]["anchor_time_bucket_weights"] == {
         "opening_lt_60": 2.0,
     }
+    assert captured["anchor_prepare_kwargs"]["anchor_guard_max_validation_kl"] == 0.25
+    assert captured["anchor_prepare_kwargs"]["anchor_guard_min_argmax_agreement"] == 0.8
     assert report["anchor_regularization"]["status"] == "applied"
     assert report["training"]["anchor_regularization"]["final_validation"]["mean_kl"] == 0.123
     assert captured["env_closed"] is True
@@ -1160,3 +1166,44 @@ def test_behavior_clone_fallback_can_be_wrapped_with_sb3_opening(monkeypatch):
     assert opening_action == 7
     assert fallback_action == 4
     assert policy.opening_policy_report()["fallback_model_path"] == "fallback.pt"
+
+
+def test_anchor_validation_guard_reports_threshold_failures():
+    guard = {
+        "enabled": True,
+        "max_validation_kl": 0.2,
+        "min_argmax_agreement": 0.9,
+    }
+
+    report = evaluate_anchor_validation_guard(
+        {"mean_kl": 0.35, "argmax_agreement": 0.75},
+        guard,
+    )
+
+    assert report["decision"] == "anchor_validation_guard_failed"
+    assert len(report["blockers"]) == 2
+    assert "validation_mean_kl" in report["blockers"][0]
+
+
+def test_anchor_validation_guard_can_pass_or_be_disabled():
+    assert (
+        evaluate_anchor_validation_guard(
+            {"mean_kl": 0.1, "argmax_agreement": 0.95},
+            {"enabled": True, "max_validation_kl": 0.2, "min_argmax_agreement": 0.9},
+        )["decision"]
+        == "anchor_validation_guard_passed"
+    )
+    assert (
+        evaluate_anchor_validation_guard(
+            {"mean_kl": 9.0, "argmax_agreement": 0.0},
+            {"enabled": False},
+        )["decision"]
+        == "anchor_validation_guard_not_configured"
+    )
+
+
+def test_anchor_validation_guard_rejects_invalid_thresholds():
+    with pytest.raises(ValueError):
+        validate_anchor_validation_guard_thresholds(max_validation_kl=-0.1)
+    with pytest.raises(ValueError):
+        validate_anchor_validation_guard_thresholds(min_argmax_agreement=1.1)

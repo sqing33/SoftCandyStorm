@@ -86,6 +86,8 @@ Top 200 中 `cracked-star-jar` 占 `128` 条、`soda-creek` 占 `40` 条、`cara
 
 `validate_anchor_regularization_input.py` 已对这份 training samples 跑真实 preflight：使用 current-failure fallback best + stage 02 opening anchor，`mid_60_to_180` time bucket filter 保留 `200/200` 条，target argmax agreement with dataset actions 为 `1.0`。`map_time_bucket_balance` 记录 `caramel-workshop::mid_60_to_180` 权重 `2.083333`、`soda-creek::mid_60_to_180` 权重 `1.666667`、`cracked-star-jar::mid_60_to_180` 权重 `0.520833`。该 preflight 只证明 anchor KL 输入可用，不训练 PPO checkpoint。
 
+`train_sb3.py` 已新增 anchor validation guard：下一次使用上述 drift samples 做 constrained PPO repair 时，可设置 validation KL 上限和 argmax agreement 下限，在每个 chunk 后的 KL repair epoch 失败即停止后续续训。这个 guard 是防止 anchor drift 被继续加长的训练期安全阀，不是 fixed-window no-regression 或 acceptance gate。
+
 ## 判断
 
 - Closed-loop training with the existing anchor regularization path is functional, but this configuration still drifts too far from the current-failure best anchor.

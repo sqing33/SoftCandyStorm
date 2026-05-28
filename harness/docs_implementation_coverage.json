@@ -1010,6 +1010,8 @@
             "harness/failed_cases/fail_20260528_075_stage02_map_specific_fallback_w025_cracked_regression.json",
             "python/train/train_behavior_clone.py",
             "python/train/test_train_behavior_clone.py",
+            "python/train/train_sb3.py",
+            "python/train/test_train_sb3.py",
             "python/train/README.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/summary.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/fallback_training.json",
@@ -1264,7 +1266,8 @@
             "首个 anchor-regularized PPO smoke 把训练内 validation KL 降到 0.265304、argmax agreement 提到 0.8462，但全量 anchor alignment 仍为 behavior_clone_anchor_alignment_failed，60/180/300 秒 no-regression 相对 opening-aware PPO 只剩 1 个 blocker，相对 current best 仍有 7 个 blockers、相对 seed63100 baseline 仍有 4 个 blockers；已记录 fail_20260528_082，说明该约束方向有信号但仍不能推进 RL acceptance。",
             "repair probe gate 已拒绝 soda/caramel closed-loop anchor probe，并新增 mid-window anchor drift 样本导出工具：36426 条样本中筛出 2888 条 mid_60_to_180 KL>=0.35 且 argmax 不一致的 rows，导出 top 200 作为 handoff/mid-window anchor objective 的诊断材料；这些样本不是 policy gate 或 RL acceptance 证据。",
             "train_sb3.py 的 anchor regularization 路径现在可读取带 observation 的 anchor_drift_sample JSONL，普通 behavior-clone 数据入口默认仍拒绝这类诊断样本；已生成 mid_anchor_drift_training_samples.jsonl 并验证 200 条记录可读为 anchor_drift_sample_records，用于后续 KL repair 输入。",
-            "validate_anchor_regularization_input.py 已对 mid_anchor_drift_training_samples.jsonl 跑真实 preflight，确认 200/200 条样本进入 mid_60_to_180 anchor target，map_time_bucket_balance 权重和 target argmax agreement 可审计；该报告不训练 PPO。"
+            "validate_anchor_regularization_input.py 已对 mid_anchor_drift_training_samples.jsonl 跑真实 preflight，确认 200/200 条样本进入 mid_60_to_180 anchor target，map_time_bucket_balance 权重和 target argmax agreement 可审计；该报告不训练 PPO。",
+            "train_sb3.py 已新增 anchor validation guard，可在 PPO anchor regularization 每个 chunk 后按 validation mean KL / argmax agreement 阈值停止后续续训，并在报告中记录 aborted_by_anchor_validation_guard；该 guard 只阻止 anchor drift 继续扩大，不替代 fixed-window no-regression 或 RL acceptance。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

@@ -942,6 +942,75 @@ def validate_anchor_regularization_request(
     return True
 
 
+def validate_anchor_validation_guard_thresholds(
+    *,
+    max_validation_kl=None,
+    min_argmax_agreement=None,
+):
+    if max_validation_kl is not None and max_validation_kl < 0.0:
+        raise ValueError("--anchor-guard-max-validation-kl must be non-negative")
+    if min_argmax_agreement is not None and not (0.0 <= min_argmax_agreement <= 1.0):
+        raise ValueError("--anchor-guard-min-argmax-agreement must be between 0 and 1")
+    return max_validation_kl is not None or min_argmax_agreement is not None
+
+
+def anchor_validation_guard_config(
+    *,
+    max_validation_kl=None,
+    min_argmax_agreement=None,
+):
+    enabled = validate_anchor_validation_guard_thresholds(
+        max_validation_kl=max_validation_kl,
+        min_argmax_agreement=min_argmax_agreement,
+    )
+    return {
+        "enabled": enabled,
+        "max_validation_kl": max_validation_kl,
+        "min_argmax_agreement": min_argmax_agreement,
+        "limitations": [
+            "This guard stops a PPO continuation when offline anchor validation drifts past the configured thresholds.",
+            "It is an online anchor-drift guard only; it does not replace fixed-window no-regression reports or RL policy acceptance.",
+        ],
+    }
+
+
+def evaluate_anchor_validation_guard(metrics, guard_config):
+    if not guard_config.get("enabled"):
+        return {
+            "decision": "anchor_validation_guard_not_configured",
+            "blockers": [],
+            "metrics": metrics,
+        }
+    blockers = []
+    max_kl = guard_config.get("max_validation_kl")
+    mean_kl = metrics.get("mean_kl")
+    if max_kl is not None and (mean_kl is None or mean_kl > max_kl):
+        blockers.append(
+            f"validation_mean_kl {mean_kl} exceeds max {max_kl}"
+        )
+    min_agreement = guard_config.get("min_argmax_agreement")
+    argmax_agreement = metrics.get("argmax_agreement")
+    if min_agreement is not None and (
+        argmax_agreement is None or argmax_agreement < min_agreement
+    ):
+        blockers.append(
+            f"validation_argmax_agreement {argmax_agreement} below min {min_agreement}"
+        )
+    return {
+        "decision": (
+            "anchor_validation_guard_failed"
+            if blockers
+            else "anchor_validation_guard_passed"
+        ),
+        "blockers": blockers,
+        "metrics": metrics,
+        "thresholds": {
+            "max_validation_kl": max_kl,
+            "min_argmax_agreement": min_agreement,
+        },
+    }
+
+
 def build_env(
     config,
     seed=None,
@@ -1382,6 +1451,8 @@ def prepare_anchor_regularization(
     anchor_time_bucket_weights=None,
     anchor_validation_split=0.2,
     anchor_seed=12345,
+    anchor_guard_max_validation_kl=None,
+    anchor_guard_min_argmax_agreement=None,
 ):
     if not validate_anchor_regularization_request(
         anchor_model=anchor_model,
@@ -1403,6 +1474,10 @@ def prepare_anchor_regularization(
         raise ValueError("anchor regularization is currently supported only for ppo")
     import numpy as np
 
+    validation_guard = anchor_validation_guard_config(
+        max_validation_kl=anchor_guard_max_validation_kl,
+        min_argmax_agreement=anchor_guard_min_argmax_agreement,
+    )
     dataset = load_trajectory_dataset(
         anchor_datasets,
         limit=anchor_limit_samples,
@@ -1447,6 +1522,7 @@ def prepare_anchor_regularization(
         "learning_rate": anchor_regularization_learning_rate,
         "validation_split": float(anchor_validation_split),
         "seed": int(anchor_seed),
+        "validation_guard": validation_guard,
         "report": {
             "mode": "behavior_clone_anchor_kl_regularization",
             "anchor_model": str(anchor_model),
@@ -1469,6 +1545,7 @@ def prepare_anchor_regularization(
             "learning_rate": anchor_regularization_learning_rate,
             "validation_split": float(anchor_validation_split),
             "seed": int(anchor_seed),
+            "validation_guard": validation_guard,
             "limitations": [
                 "Anchor regularization is repair training evidence only.",
                 "It constrains closed-loop PPO drift on offline samples but does not replace high-pressure comparison, no-regression validation, or RL policy acceptance.",
@@ -1565,6 +1642,8 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
     interval = int(anchor_regularization["interval_timesteps"])
     chunks = []
     reset_num_timesteps = True
+    guard_failure = None
+    validation_guard = anchor_regularization.get("validation_guard", {"enabled": False})
     while remaining > 0:
         chunk_timesteps = min(interval, remaining)
         call_model_learn(
@@ -1604,27 +1683,42 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
                 validation_y,
                 torch,
             )
-            interval_history.append(
-                {
-                    "epoch": epoch,
-                    "train_mean_kl": round(total_loss / max(1, total_seen), 6),
-                    "weighted_train_mean_kl": round(
-                        total_weighted_loss / max(1, total_seen),
-                        6,
-                    ),
-                    "train_argmax_agreement": round(
-                        total_correct / max(1, total_seen),
-                        4,
-                    ),
-                    "validation_mean_kl": validation_metrics["mean_kl"],
-                    "validation_argmax_agreement": validation_metrics[
-                        "argmax_agreement"
-                    ],
-                    "validation_policy_entropy_nats": validation_metrics[
-                        "policy_entropy_nats"
-                    ],
-                }
+            guard_report = evaluate_anchor_validation_guard(
+                validation_metrics,
+                validation_guard,
             )
+            epoch_report = {
+                "epoch": epoch,
+                "train_mean_kl": round(total_loss / max(1, total_seen), 6),
+                "weighted_train_mean_kl": round(
+                    total_weighted_loss / max(1, total_seen),
+                    6,
+                ),
+                "train_argmax_agreement": round(
+                    total_correct / max(1, total_seen),
+                    4,
+                ),
+                "validation_mean_kl": validation_metrics["mean_kl"],
+                "validation_argmax_agreement": validation_metrics[
+                    "argmax_agreement"
+                ],
+                "validation_policy_entropy_nats": validation_metrics[
+                    "policy_entropy_nats"
+                ],
+                "validation_guard": guard_report,
+            }
+            interval_history.append(epoch_report)
+            if guard_report["decision"] == "anchor_validation_guard_failed":
+                guard_failure = {
+                    **guard_report,
+                    "chunk_timesteps": chunk_timesteps,
+                    "epoch": epoch,
+                    "remaining_timesteps": remaining,
+                    "num_timesteps_after_chunk": int(
+                        getattr(model, "num_timesteps", total_timesteps - remaining)
+                    ),
+                }
+                break
         chunks.append(
             {
                 "chunk_timesteps": chunk_timesteps,
@@ -1635,6 +1729,8 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
                 "regularization_epochs": interval_history,
             }
         )
+        if guard_failure is not None:
+            break
 
     final_metrics = evaluate_anchor_regularization_batch(
         model,
@@ -1642,14 +1738,26 @@ def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regula
         validation_y,
         torch,
     )
+    final_guard = evaluate_anchor_validation_guard(final_metrics, validation_guard)
     return {
         **anchor_regularization["report"],
-        "status": "applied",
+        "status": (
+            "aborted_by_anchor_validation_guard"
+            if guard_failure is not None
+            else "applied"
+        ),
+        "guard_decision": (
+            "anchor_validation_guard_failed"
+            if guard_failure is not None
+            else final_guard["decision"]
+        ),
+        "guard_failure": guard_failure,
         "train_samples": int(len(train_indices)),
         "validation_samples": int(len(validation_indices)),
         "effective_learning_rate": float(learning_rate),
         "chunks": chunks,
         "final_validation": final_metrics,
+        "final_validation_guard": final_guard,
     }
 
 
@@ -1703,6 +1811,8 @@ def train(
     anchor_time_bucket_weights=None,
     anchor_validation_split=0.2,
     anchor_seed=12345,
+    anchor_guard_max_validation_kl=None,
+    anchor_guard_min_argmax_agreement=None,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -1783,6 +1893,8 @@ def train(
         anchor_time_bucket_weights=anchor_time_bucket_weights,
         anchor_validation_split=anchor_validation_split,
         anchor_seed=anchor_seed,
+        anchor_guard_max_validation_kl=anchor_guard_max_validation_kl,
+        anchor_guard_min_argmax_agreement=anchor_guard_min_argmax_agreement,
     )
 
     try:
@@ -1837,6 +1949,12 @@ def train(
     )
     known_exploit_notes = known_exploits_from_evaluation(evaluation)
     gate_decision = training_gate_decision(known_exploit_notes)
+    if (
+        anchor_regularization_report is not None
+        and anchor_regularization_report.get("guard_decision")
+        == "anchor_validation_guard_failed"
+    ):
+        gate_decision = "trained_anchor_validation_guard_failed_not_policy_gate"
     evaluation_path = report_dir / f"{algorithm}_evaluation_report.json"
     exploit_path = report_dir / f"{algorithm}_known_exploits.json"
     evaluation_path.write_text(
@@ -3624,6 +3742,18 @@ def main():
     )
     parser.add_argument("--anchor-validation-split", type=float, default=0.2)
     parser.add_argument("--anchor-seed", type=int, default=12345)
+    parser.add_argument(
+        "--anchor-guard-max-validation-kl",
+        type=float,
+        default=None,
+        help="Abort further PPO chunks when anchor validation mean KL exceeds this threshold.",
+    )
+    parser.add_argument(
+        "--anchor-guard-min-argmax-agreement",
+        type=float,
+        default=None,
+        help="Abort further PPO chunks when anchor validation argmax agreement drops below this threshold.",
+    )
     parser.add_argument("--model-in", default=None)
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
@@ -3797,6 +3927,10 @@ def main():
             anchor_time_bucket_weights=anchor_time_bucket_weights,
             anchor_validation_split=args.anchor_validation_split,
         )
+        anchor_validation_guard_requested = validate_anchor_validation_guard_thresholds(
+            max_validation_kl=args.anchor_guard_max_validation_kl,
+            min_argmax_agreement=args.anchor_guard_min_argmax_agreement,
+        )
         train_maps, train_map_preset = resolve_train_maps(
             args.train_maps,
             args.train_map_preset,
@@ -3853,6 +3987,8 @@ def main():
         parser.error("--anchor-include-time-buckets requires --anchor-model and --anchor-dataset")
     if args.anchor_time_bucket_weights and not anchor_regularization_requested:
         parser.error("--anchor-time-bucket-weights requires --anchor-model and --anchor-dataset")
+    if anchor_validation_guard_requested and not anchor_regularization_requested:
+        parser.error("--anchor-guard-* requires --anchor-model and --anchor-dataset")
     if args.edge_recovery_filter and args.late_recovery_filter:
         parser.error("--edge-recovery-filter and --late-recovery-filter cannot be combined")
     if args.edge_recovery_samples_out and not (
@@ -4101,6 +4237,8 @@ def main():
             anchor_time_bucket_weights=anchor_time_bucket_weights,
             anchor_validation_split=args.anchor_validation_split,
             anchor_seed=args.anchor_seed,
+            anchor_guard_max_validation_kl=args.anchor_guard_max_validation_kl,
+            anchor_guard_min_argmax_agreement=args.anchor_guard_min_argmax_agreement,
         ),
     )
 

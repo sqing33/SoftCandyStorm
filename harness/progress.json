@@ -2483,6 +2483,11 @@
       "id": "rl_anchor_regularization_input_preflight",
       "summary": "新增 tools/validate_anchor_regularization_input.py 与单测，用真实 prepare_anchor_regularization 预检 anchor dataset，但不执行 PPO learn。已对 mid_anchor_drift_training_samples.jsonl 跑真实 preflight：200/200 条样本保留在 mid_60_to_180，anchor target argmax agreement 为 1.0，map_time_bucket_balance 权重记录三图 mid bucket 分布；该报告只证明 KL repair 输入可用，不是 policy gate。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_regularization_input_preflight.md"
+    },
+    {
+      "id": "rl_anchor_validation_guard_support",
+      "summary": "train_sb3.py 已为 PPO anchor regularization 增加 anchor validation guard：可配置 validation mean KL 上限与 argmax agreement 下限，并在每个 PPO chunk 后的 KL repair epoch 记录 validation_guard；若阈值失败会停止后续 chunk，训练报告写入 aborted_by_anchor_validation_guard / trained_anchor_validation_guard_failed_not_policy_gate。该 guard 只阻止 anchor drift 续训加长，不替代 fixed-window no-regression、repair-probe gate 或 RL acceptance。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "next_recommended": [
