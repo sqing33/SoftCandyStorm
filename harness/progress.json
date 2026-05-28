@@ -2353,6 +2353,11 @@
       "id": "rl_curriculum_stage02_path_weighted_fallback_probe",
       "summary": "使用 --sample-path-weight 拆分 fallback 训练权重：全局 edge repair 仍为 0.25，cracked-star-jar late-survival anchors 提到 1.4x，caramel opening/late repair samples 降到 0.75x；300 秒 cracked-star-jar 保住 0.3333，但同 seed no-regression 仍因 cracked-star-jar 180 秒平均存活回退 9.1443 秒、soda-creek 300 秒平均存活回退 2.2886 秒失败，记录 fail_20260528_076，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_path_weighted_trace_samples",
+      "summary": "复跑 path-weighted fallback 的 300 秒 failed-only trace 并写入 observation：8 条失败 trace、2359 个 sampled rows 中 1724 个为 negative route_recovery；导出 soda mid 227、soda late 50、cracked mid 202、caramel opening 202、caramel late 144 条当前失败面 repair samples，均通过 edge_recovery_samples_valid，合并 dry-run 读取 825 条 edge_recovery_supervision。该报告只提供下一轮 repair input，不是 policy gate。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_trace_001/summary.md"
     }
   ],
   "next_recommended": [
