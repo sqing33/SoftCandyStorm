@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_077",
+  "category": "rl_policy",
+  "content_id": "stage02-current-failure-fallback-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02CurrentFailureFallbackProbe",
+  "time_seconds": 300.0,
+  "symptom": "混入 path-weighted failed-only trace 导出的 825 条 current-failure route-recovery samples 后，60/180/300 秒同 seed no-regression 全部通过，300 秒三图平均存活均高于 seed63100 stage02 baseline，cracked-star-jar 300 秒胜率保持 0.3333；但 soda-creek 与 caramel-workshop 300 秒胜率仍为 0.0，总失败 episode 仍为 8，不能推进 RL acceptance。",
+  "root_cause": "current-failure supervision 改善了平均存活和动作分布，但仍没有形成足够稳定的 300 秒胜利转换能力。soda-creek 仍有 mid/late 死亡，caramel-workshop 仍有 opening 与 late 死亡，cracked-star-jar 仍有 mid/late 失败。",
+  "fix": "保留该 checkpoint 作为当前 supervised fallback 诊断分支，但继续阻塞 stage 03 和 rl_test_bot_candidate。下一步应基于该分支复跑 failed-only trace 以定位剩余 late death，或转向 closed-loop constraint repair；不得把 policy_window_regression_passed 误当 acceptance。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、同 seed window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001；window_regression_vs_seed63100_stage02.md 记录 policy_window_regression_passed，但 comparison_300s.json 仍为 multimap_comparison_recorded_needs_policy_repair。"
+}
