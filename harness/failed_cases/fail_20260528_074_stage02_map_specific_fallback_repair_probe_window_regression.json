@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_074",
+  "category": "rl_policy",
+  "content_id": "stage02-map-specific-fallback-repair-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02MapSpecificFallbackRepairProbe",
+  "time_seconds": 300.0,
+  "symptom": "低权重混入当前失败面的 soda-creek mid 与 caramel-workshop opening/late route-recovery samples 后，cracked-star-jar 300 秒胜率从 0.3333 提升到 0.6667，总失败 episode 从 8 降到 7；但 strict no-regression 对 soda-creek 300 秒记录平均存活回退 0.0111 秒，且 soda-creek 与 caramel-workshop 300 秒胜率仍为 0.0，不能推进 RL acceptance。",
+  "root_cause": "共享 edge_recovery_sample_weight 从 0.25 提高到 0.35 后，map-specific repair 信号仍不足以解决 soda/caramel 长局失败，同时对 soda-creek 300 秒平均存活产生微小但严格口径下不可接受的回归。当前监督 fallback 仍缺少按地图和时间窗独立控制的修复强度。",
+  "fix": "拒绝该 checkpoint 作为 stage 03 或 rl_test_bot_candidate。下一步应降低或拆分 map-specific sample 权重，或回到 closed-loop reward / constraint repair，并继续使用 seed 63100 stage02 baseline 的 60/180/300 秒 window regression gate。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、同 seed window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_map_specific_fallback_repair_probe_001；window_regression_vs_seed63100_stage02.md 记录 policy_window_regression_failed，failure_analysis_300s.md 记录 7 个失败 episode。"
+}

@@ -2333,6 +2333,11 @@
       "id": "rl_curriculum_stage02_late_retention_map_repair_samples",
       "summary": "复跑 late-retention fallback best branch 的 300 秒失败局 trace：8 条失败 trace、1202 个采样点中 861 个为负 route_recovery，boundary_edge 占 830 行；按当前失败面导出 soda-creek 60-180 秒 115 条、caramel-workshop opening 102 条、caramel-workshop 180-300 秒 46 条 map-specific route recovery repair samples，均通过 edge_recovery_samples_valid。该报告只提供下一轮 fallback repair training input，不是 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_late_retention_map_repair_samples_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_map_specific_fallback_repair_probe",
+      "summary": "低权重混入当前失败面的三包 map-specific route-recovery samples，并把 edge repair rows 权重从 0.25 提高到 0.35：cracked-star-jar 300 秒从 0.3333 提升到 0.6667，总失败从 8 降到 7；但 soda-creek 300 秒平均存活出现 0.0111 秒 strict no-regression blocker，且 soda/caramel 300 秒仍为 0.0，记录 fail_20260528_074，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_map_specific_fallback_repair_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2354,7 +2359,7 @@
     },
     {
       "id": "rl_policy_multimap_training_after_staged_opening_probe",
-      "summary": "stage 02 opening + late-retention behavior-clone fallback 已通过 seed 63100 同 seed no-regression，并保住 cracked-star-jar 300 秒 0.3333；但 soda-creek/caramel-workshop 300 秒仍为 0.0。当前已导出 soda-creek mid 与 caramel-workshop opening/late 三包 map-specific route recovery repair samples；下一步应低权重混入训练并继续保持 RL acceptance blocked。"
+      "summary": "stage 02 opening + late-retention behavior-clone fallback 已通过 seed 63100 同 seed no-regression，并保住 cracked-star-jar 300 秒 0.3333；混入 map-specific route recovery samples 的 0.35 权重 probe 虽把 cracked-star-jar 300 秒提升到 0.6667，但触发 soda-creek 300 秒 strict no-regression blocker 且 soda/caramel 300 秒仍为 0.0。下一步应降低或拆分 map-specific sample 权重，或回到 closed-loop constraint repair，继续保持 RL acceptance blocked。"
     },
     {
       "id": "rl_policy_multimap_training",
