@@ -79,6 +79,13 @@ class RlCurriculumPlanTests(unittest.TestCase):
             self.assertEqual(plan["stages"][1]["model_in"], plan["stages"][0]["model_out"])
             self.assertIn("--train-seconds 60", plan["stages"][0]["train_command"])
             self.assertIn("--train-seconds 300", plan["stages"][2]["train_command"])
+            self.assertIn("--reward-profile late-route-recovery", plan["stages"][2]["train_command"])
+            self.assertEqual(plan["validation_windows"], [60, 180, 300])
+            self.assertEqual(len(plan["stages"][0]["compare_commands"]), 3)
+            self.assertIn("--eval-seconds 60", plan["stages"][0]["compare_commands"][0])
+            self.assertIn("--eval-seconds 300", plan["stages"][0]["compare_commands"][2])
+            self.assertIn("comparison_300s.json", plan["stages"][0]["compare_commands"][2])
+            self.assertIn("comparison_60s.json", plan["stages"][0]["compare_command"])
 
 
 if __name__ == "__main__":

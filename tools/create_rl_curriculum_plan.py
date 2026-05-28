@@ -77,11 +77,36 @@ def shell_join(parts: list[str]) -> str:
     return " ".join(parts)
 
 
+def format_seconds(value: int | float) -> str:
+    number = float(value)
+    return str(int(number)) if number.is_integer() else str(number)
+
+
+def parse_validation_windows(value: str) -> list[int]:
+    windows: list[int] = []
+    for raw_item in value.split(","):
+        item = raw_item.strip()
+        if not item:
+            continue
+        try:
+            seconds = int(item)
+        except ValueError as exc:
+            raise ValueError("--validation-windows must be a comma-separated list of integers") from exc
+        if seconds <= 0:
+            raise ValueError("--validation-windows values must be greater than zero")
+        if seconds not in windows:
+            windows.append(seconds)
+    if not windows:
+        raise ValueError("--validation-windows must include at least one value")
+    return windows
+
+
 def stage_command(
     stage: dict[str, Any],
     *,
     ent_coef: float,
     train_map_selection: str,
+    reward_profile: str,
 ) -> str:
     return shell_join(
         [
@@ -109,10 +134,12 @@ def stage_command(
             str(stage["timesteps"]),
             "--ent-coef",
             str(ent_coef),
+            "--reward-profile",
+            reward_profile,
             "--eval-episodes",
             "3",
             "--eval-seconds",
-            str(stage["eval_seconds"]),
+            format_seconds(stage["eval_seconds"]),
             "--map-id",
             stage["primary_eval_map"],
             "--report",
@@ -121,7 +148,8 @@ def stage_command(
     )
 
 
-def compare_command(stage: dict[str, Any]) -> str:
+def compare_command(stage: dict[str, Any], eval_seconds: int | float) -> str:
+    seconds_label = format_seconds(eval_seconds)
     return shell_join(
         [
             "uv",
@@ -140,13 +168,13 @@ def compare_command(stage: dict[str, Any]) -> str:
             "--eval-episodes",
             "3",
             "--eval-seconds",
-            str(stage["eval_seconds"]),
+            seconds_label,
             "--seed-start",
             str(stage["validation_seed_start"]),
             "--rule-bots",
             "random,kite,tank",
             "--report",
-            f"{stage['report_dir']}/comparison_{stage['eval_seconds']}s.json",
+            f"{stage['report_dir']}/comparison_{seconds_label}s.json",
         ]
     )
 
@@ -160,12 +188,15 @@ def build_plan(
     ent_coef: float,
     train_map_selection: str,
     validation_seed_start: int,
+    reward_profile: str = "late-route-recovery",
+    validation_windows: list[int] | None = None,
 ) -> dict[str, Any]:
     analysis = load_json_object(analysis_path)
     buckets = bucket_maps(analysis)
     stages: list[dict[str, Any]] = []
     model_in = initial_model
     output_root = Path(output_dir)
+    validation_windows = validation_windows or [60, 180, 300]
     stage_number = 1
     for bucket, entries in sorted(
         buckets.items(),
@@ -203,8 +234,13 @@ def build_plan(
             stage,
             ent_coef=ent_coef,
             train_map_selection=train_map_selection,
+            reward_profile=reward_profile,
         )
-        stage["compare_command"] = compare_command(stage)
+        stage["compare_commands"] = [
+            compare_command(stage, eval_seconds=window_seconds)
+            for window_seconds in validation_windows
+        ]
+        stage["compare_command"] = compare_command(stage, eval_seconds=stage["eval_seconds"])
         stages.append(stage)
         model_in = model_out
         stage_number += 1
@@ -217,7 +253,9 @@ def build_plan(
         "output_dir": output_dir,
         "timesteps_per_stage": timesteps_per_stage,
         "ent_coef": ent_coef,
+        "reward_profile": reward_profile,
         "train_map_selection": train_map_selection,
+        "validation_windows": validation_windows,
         "stage_count": len(stages),
         "stages": stages,
         "limitations": [
@@ -266,11 +304,10 @@ def write_markdown(plan: dict[str, Any], path: Path) -> None:
                 "",
                 "Compare:",
                 "",
-                "```bash",
-                stage["compare_command"],
-                "```",
             ]
         )
+        for command in stage["compare_commands"]:
+            lines.extend(["```bash", command, "```", ""])
 
     lines.extend(["", "## Limitations", ""])
     lines.extend(f"- {item}" for item in plan["limitations"])
@@ -285,8 +322,18 @@ def main() -> int:
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--timesteps-per-stage", type=int, default=5000)
     parser.add_argument("--ent-coef", type=float, default=0.02)
+    parser.add_argument(
+        "--reward-profile",
+        choices=["late-survival", "long-run-retention", "late-route-recovery"],
+        default="late-route-recovery",
+    )
     parser.add_argument("--train-map-selection", choices=["cycle", "random"], default="random")
     parser.add_argument("--validation-seed-start", type=int, default=62000)
+    parser.add_argument(
+        "--validation-windows",
+        default="60,180,300",
+        help="Comma-separated deterministic validation windows in seconds.",
+    )
     parser.add_argument("--report", type=Path, default=None)
     parser.add_argument("--markdown", type=Path, default=None)
     args = parser.parse_args()
@@ -295,6 +342,10 @@ def main() -> int:
         parser.error("--timesteps-per-stage must be greater than zero")
     if args.ent_coef < 0.0:
         parser.error("--ent-coef must be greater than or equal to zero")
+    try:
+        validation_windows = parse_validation_windows(args.validation_windows)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     plan = build_plan(
         args.analysis,
@@ -302,8 +353,10 @@ def main() -> int:
         output_dir=args.output_dir,
         timesteps_per_stage=args.timesteps_per_stage,
         ent_coef=args.ent_coef,
+        reward_profile=args.reward_profile,
         train_map_selection=args.train_map_selection,
         validation_seed_start=args.validation_seed_start,
+        validation_windows=validation_windows,
     )
     if args.report is not None:
         args.report.parent.mkdir(parents=True, exist_ok=True)

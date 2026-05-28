@@ -1,0 +1,138 @@
+{
+  "report_version": 1,
+  "source": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_mix_001/late_contrast_pressure/failure_analysis_300s.json",
+  "decision": "rl_curriculum_plan_created",
+  "initial_model": "harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001/ppo_late_route_recovery_reward_profile_smoke.zip",
+  "output_dir": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages",
+  "timesteps_per_stage": 2048,
+  "ent_coef": 0.02,
+  "reward_profile": "late-route-recovery",
+  "train_map_selection": "random",
+  "validation_windows": [
+    60,
+    180,
+    300
+  ],
+  "stage_count": 2,
+  "stages": [
+    {
+      "stage": 1,
+      "id": "stage_01_opening_lt_60",
+      "focus_bucket": "opening_lt_60",
+      "title": "opening survival repair",
+      "train_maps": [
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "train_seconds": 60,
+      "eval_seconds": 60,
+      "timesteps": 2048,
+      "ent_coef": 0.02,
+      "model_in": "harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001/ppo_late_route_recovery_reward_profile_smoke.zip",
+      "model_out": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip",
+      "report_dir": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60",
+      "primary_eval_map": "cracked-star-jar",
+      "validation_seed_start": 62700,
+      "source_failures": [
+        {
+          "map_id": "soda-creek",
+          "failure_count": 2,
+          "failure_ratio": 0.4,
+          "average_failure_survival_seconds": 150.2383,
+          "dominant_action": {
+            "action": "1",
+            "count": 11590,
+            "ratio": 0.5143
+          }
+        },
+        {
+          "map_id": "cracked-star-jar",
+          "failure_count": 1,
+          "failure_ratio": 0.25,
+          "average_failure_survival_seconds": 178.064,
+          "dominant_action": {
+            "action": "1",
+            "count": 15151,
+            "ratio": 0.4989
+          }
+        }
+      ],
+      "reason": "2 map(s) recorded opening_lt_60 failures; train this stage separately so early deaths and late collapses do not hide each other.",
+      "train_command": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --model-in harness/reports/2026-05-27_rl_late_route_recovery_reward_profile_smoke_001/ppo_late_route_recovery_reward_profile_smoke.zip --model-out harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --report-dir harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60 --train-maps cracked-star-jar,soda-creek --train-map-selection random --train-seconds 60 --timesteps 2048 --ent-coef 0.02 --reward-profile late-route-recovery --eval-episodes 3 --eval-seconds 60 --map-id cracked-star-jar --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/ppo_training_report.json",
+      "compare_commands": [
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --eval-episodes 3 --eval-seconds 60 --seed-start 62700 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/comparison_60s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --eval-episodes 3 --eval-seconds 180 --seed-start 62700 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/comparison_180s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --eval-episodes 3 --eval-seconds 300 --seed-start 62700 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/comparison_300s.json"
+      ],
+      "compare_command": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --eval-episodes 3 --eval-seconds 60 --seed-start 62700 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/comparison_60s.json"
+    },
+    {
+      "stage": 2,
+      "id": "stage_02_late_180_to_300",
+      "focus_bucket": "late_180_to_300",
+      "title": "late-run endurance repair",
+      "train_maps": [
+        "caramel-workshop",
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "train_seconds": 300,
+      "eval_seconds": 300,
+      "timesteps": 2048,
+      "ent_coef": 0.02,
+      "model_in": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip",
+      "model_out": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+      "report_dir": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300",
+      "primary_eval_map": "caramel-workshop",
+      "validation_seed_start": 62800,
+      "source_failures": [
+        {
+          "map_id": "soda-creek",
+          "failure_count": 3,
+          "failure_ratio": 0.6,
+          "average_failure_survival_seconds": 150.2383,
+          "dominant_action": {
+            "action": "1",
+            "count": 11590,
+            "ratio": 0.5143
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "failure_count": 4,
+          "failure_ratio": 1.0,
+          "average_failure_survival_seconds": 218.1093,
+          "dominant_action": {
+            "action": "1",
+            "count": 11617,
+            "ratio": 0.3303
+          }
+        },
+        {
+          "map_id": "cracked-star-jar",
+          "failure_count": 3,
+          "failure_ratio": 0.75,
+          "average_failure_survival_seconds": 178.064,
+          "dominant_action": {
+            "action": "1",
+            "count": 15151,
+            "ratio": 0.4989
+          }
+        }
+      ],
+      "reason": "3 map(s) recorded late_180_to_300 failures; train this stage separately so early deaths and late collapses do not hide each other.",
+      "train_command": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --model-in harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --model-out harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip --report-dir harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300 --train-maps caramel-workshop,cracked-star-jar,soda-creek --train-map-selection random --train-seconds 300 --timesteps 2048 --ent-coef 0.02 --reward-profile late-route-recovery --eval-episodes 3 --eval-seconds 300 --map-id caramel-workshop --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/ppo_training_report.json",
+      "compare_commands": [
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip --eval-episodes 3 --eval-seconds 60 --seed-start 62800 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/comparison_60s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip --eval-episodes 3 --eval-seconds 180 --seed-start 62800 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/comparison_180s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip --eval-episodes 3 --eval-seconds 300 --seed-start 62800 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/comparison_300s.json"
+      ],
+      "compare_command": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip --eval-episodes 3 --eval-seconds 300 --seed-start 62800 --rule-bots random,kite,tank --report harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/comparison_300s.json"
+    }
+  ],
+  "limitations": [
+    "This manifest plans staged training commands only; it does not run PPO.",
+    "Each stage must still be trained, compared against rule Bots, and recorded with failure cases if it fails.",
+    "Stage ordering is based on failure time buckets and should be revised if new comparison evidence contradicts it."
+  ]
+}
