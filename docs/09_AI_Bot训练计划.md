@@ -210,6 +210,8 @@ anchor KL 训练现支持 `--anchor-sample-weighting time_bucket_balance` 与 `-
 
 full-dataset + `map_time_bucket_balance` 的更强 anchor 探针也已失败。该 run 使用全量 `36426` 样本、`weight=2.0`、每 `512` timestep 做 `2` 个 KL epoch，opening bucket mean KL 从上一轮 `0.335834` 降到 `0.25152`，但 overall mean KL 仍为 `0.332669`、argmax agreement `0.6977`，mid `60-180s` mean KL 仍为 `0.420859`。60 / 180 / 300 秒结果为 `0.6667/0.6667/1.0`、`0.6667/0.6667/0.6667`、`0.0/0.0/0.0`，相对 current-failure fallback best 有 `8` 个 no-regression blockers，并丢掉 cracked-star-jar 300 秒 `0.3333` 胜率。记录 `fail_20260528_083`；下一步不应继续提高全局 anchor weight，应拆 phase-specific anchor、显式 opening freeze/wrapper 与 mid/late constrained repair。
 
+phase-specific anchor multiplier smoke 同样失败。该 run 使用全量 `36426` 样本、`map_time_bucket_balance`、全局 `weight=1.0`，并对 opening / mid / late 施加 `1.5x / 1.25x / 0.75x` multiplier。训练内 final validation 为 mean KL `0.342834`、argmax agreement `0.6798`；全量 anchor alignment 为 overall mean KL `0.345606`、argmax agreement `0.6841`。opening mean KL 降到 `0.220892`，但 opening argmax agreement 仍只有 `0.5769`，mid `60-180s` mean KL 仍为 `0.440395`。60 / 180 / 300 秒结果仍为 `0.6667/0.6667/1.0`、`0.6667/0.6667/0.6667`、`0.0/0.0/0.0`；相对 opening-aware probe 剩 `1` 个 blocker，相对 current-failure fallback best 仍有 `8` 个 blockers，相对 seed63100 baseline 有 `5` 个 blockers。记录 `fail_20260528_084`；下一步应把 opening freeze/wrapper 与 mid/late constrained repair 拆成两个独立目标，而不是继续做单次全量 anchor multiplier。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

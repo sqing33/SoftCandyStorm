@@ -2433,6 +2433,11 @@
       "id": "rl_curriculum_stage02_anchor_map_bucket_full_smoke",
       "summary": "使用 full 36426 样本、map_time_bucket_balance、anchor weight 2.0 和每 512 timestep 2 个 KL epoch 重跑 1024 timestep PPO anchor smoke：opening mean KL 从上一轮 0.335834 降到 0.25152，但 overall mean KL 仍为 0.332669、argmax agreement 0.6977，mid_60_to_180 mean KL 仍为 0.420859。60/180/300 秒结果为 0.6667/0.6667/1.0、0.6667/0.6667/0.6667、0.0/0.0/0.0；相对 current best 有 8 个 blockers，并丢掉 cracked-star-jar 300 秒 0.3333 胜率，已记录 fail_20260528_083，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_map_bucket_full_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_phase_specific_anchor_smoke",
+      "summary": "使用 full 36426 样本、map_time_bucket_balance、全局 anchor weight 1.0，并对 opening/mid/late 施加 1.5x/1.25x/0.75x multiplier 重跑 1024 timestep PPO anchor smoke：opening mean KL 降到 0.220892，但 opening argmax agreement 仍只有 0.5769，overall mean KL 0.345606、argmax agreement 0.6841，mid_60_to_180 mean KL 0.440395。60/180/300 秒结果仍为 0.6667/0.6667/1.0、0.6667/0.6667/0.6667、0.0/0.0/0.0；相对 current best 有 8 个 blockers，已记录 fail_20260528_084，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_phase_specific_anchor_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
