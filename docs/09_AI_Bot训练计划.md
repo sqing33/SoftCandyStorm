@@ -230,6 +230,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 `train_sb3.py` 的 anchor regularization 路径现在可以读取带 `observation` 的 `anchor_drift_sample` JSONL：普通 `train_behavior_clone.py` 数据入口默认仍会拒绝这类诊断样本，只有 `--anchor-dataset` 在 PPO anchor KL regularization 中会显式启用读取。使用方式是先用 `export_anchor_drift_samples.py --include-observation` 导出 top drift rows，再把该 JSONL 作为额外 `--anchor-dataset` 或单独 mid-window anchor dataset；训练报告会把它计入 `anchor_drift_sample_records` 和 `anchor_drift_diagnostic` sample source。本次已生成 `mid_anchor_drift_training_samples.jsonl`，包含 `200` 条带 observation 的 top drift rows，并用 loader 验证为 `observation_len = 145`、`action_count = 9`。该能力只是把高漂移样本纳入 KL 约束的工具入口，仍不能跳过 repair-probe gate 或 no-regression。
 
+`tools/validate_anchor_regularization_input.py` 提供 anchor regularization 输入预检：它会调用真实 `prepare_anchor_regularization`，但不执行 PPO learn。首个真实 preflight 使用 `mid_anchor_drift_training_samples.jsonl`、current-failure fallback best 和 stage 02 opening anchor，确认 `200/200` 条样本保留在 `mid_60_to_180`，anchor target 与记录的 anchor action argmax agreement 为 `1.0`，并记录 map/time-bucket balance 权重。报告位于 `harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_regularization_input_preflight.md`；它只是训练前输入门，不是 PPO 结果或放行证据。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

@@ -2478,6 +2478,11 @@
       "id": "rl_anchor_drift_samples_regularization_input",
       "summary": "train_behavior_clone.py 的通用数据加载默认拒绝 anchor_drift_sample，train_sb3.py 的 PPO anchor regularization 路径则显式允许带 observation 的 drift diagnostics 作为 --anchor-dataset 输入。已生成 mid_anchor_drift_training_samples.jsonl，包含 200 条 mid_60_to_180 top drift rows，并验证可读取为 observation_len 145、action_count 9、anchor_drift_sample_records 200；该文件只用于后续 KL repair 约束，不是 policy gate。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.md"
+    },
+    {
+      "id": "rl_anchor_regularization_input_preflight",
+      "summary": "新增 tools/validate_anchor_regularization_input.py 与单测，用真实 prepare_anchor_regularization 预检 anchor dataset，但不执行 PPO learn。已对 mid_anchor_drift_training_samples.jsonl 跑真实 preflight：200/200 条样本保留在 mid_60_to_180，anchor target argmax agreement 为 1.0，map_time_bucket_balance 权重记录三图 mid bucket 分布；该报告只证明 KL repair 输入可用，不是 policy gate。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_regularization_input_preflight.md"
     }
   ],
   "next_recommended": [

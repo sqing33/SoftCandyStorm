@@ -1,0 +1,198 @@
+{
+  "report_version": 1,
+  "decision": "anchor_regularization_input_valid",
+  "gate_decision": "anchor_regularization_input_valid_not_policy_gate",
+  "algorithm": "ppo",
+  "config": "python/train/rl_training_config.json",
+  "anchor_regularization": {
+    "mode": "behavior_clone_anchor_kl_regularization",
+    "anchor_model": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001/fallback.pt",
+    "anchor_opening_model": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+    "anchor_opening_seconds": 60.0,
+    "datasets": [
+      "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.jsonl"
+    ],
+    "limit_samples": null,
+    "dataset": {
+      "paths": [
+        "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.jsonl"
+      ],
+      "sample_count": 200,
+      "episode_count": 0,
+      "skipped_upgrade_samples": 0,
+      "upgrade_sample_records": 0,
+      "edge_recovery_sample_records": 0,
+      "risk_recovery_sample_records": 0,
+      "anchor_drift_sample_records": 200,
+      "observation_len": 145,
+      "action_count": 9,
+      "action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "3": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "4": {
+          "count": 17,
+          "ratio": 0.085
+        },
+        "5": {
+          "count": 2,
+          "ratio": 0.01
+        },
+        "6": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "7": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "8": {
+          "count": 179,
+          "ratio": 0.895
+        }
+      },
+      "sample_summary": {
+        "time_seconds_min": 60.3328,
+        "time_seconds_max": 179.6761,
+        "health_ratio_min": 1.0,
+        "health_ratio_average": 1.0,
+        "map_distribution": {
+          "caramel-workshop": {
+            "count": 32,
+            "ratio": 0.16
+          },
+          "cracked-star-jar": {
+            "count": 128,
+            "ratio": 0.64
+          },
+          "soda-creek": {
+            "count": 40,
+            "ratio": 0.2
+          }
+        },
+        "sample_source_distribution": {
+          "anchor_drift_diagnostic": {
+            "count": 200,
+            "ratio": 1.0
+          }
+        }
+      },
+      "metadata": []
+    },
+    "time_bucket_filter": {
+      "mode": "include_time_buckets",
+      "include_time_buckets": [
+        "mid_60_to_180"
+      ],
+      "sample_count_before": 200,
+      "sample_count_after": 200,
+      "dropped_sample_count": 0,
+      "bucket_counts_before": {
+        "mid_60_to_180": 200
+      },
+      "bucket_counts_after": {
+        "mid_60_to_180": 200
+      }
+    },
+    "target": {
+      "anchor_argmax_agreement_with_dataset_actions": 1.0,
+      "anchor_argmax_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "3": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "4": {
+          "count": 17,
+          "ratio": 0.085
+        },
+        "5": {
+          "count": 2,
+          "ratio": 0.01
+        },
+        "6": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "7": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "8": {
+          "count": 179,
+          "ratio": 0.895
+        }
+      }
+    },
+    "sample_weighting": {
+      "mode": "map_time_bucket_balance",
+      "sample_count": 200,
+      "group_count": 3,
+      "min": 0.520833,
+      "max": 2.083333,
+      "mean": 1.0,
+      "groups": {
+        "caramel-workshop::mid_60_to_180": {
+          "sample_count": 32,
+          "sample_ratio": 0.16,
+          "weight_multiplier": 2.083333
+        },
+        "cracked-star-jar::mid_60_to_180": {
+          "sample_count": 128,
+          "sample_ratio": 0.64,
+          "weight_multiplier": 0.520833
+        },
+        "soda-creek::mid_60_to_180": {
+          "sample_count": 40,
+          "sample_ratio": 0.2,
+          "weight_multiplier": 1.666667
+        }
+      },
+      "time_bucket_weights": {
+        "mode": "none",
+        "weights": {},
+        "matched_sample_counts": {}
+      }
+    },
+    "regularization_weight": 1.0,
+    "interval_timesteps": 512,
+    "epochs_per_interval": 1,
+    "batch_size": 256,
+    "learning_rate": null,
+    "validation_split": 0.2,
+    "seed": 12345,
+    "limitations": [
+      "Anchor regularization is repair training evidence only.",
+      "It constrains closed-loop PPO drift on offline samples but does not replace high-pressure comparison, no-regression validation, or RL policy acceptance."
+    ]
+  },
+  "limitations": [
+    "This preflight validates offline anchor regularization inputs only.",
+    "It does not train a PPO checkpoint.",
+    "It is not high-pressure, no-regression, repair-probe, or RL acceptance evidence."
+  ]
+}

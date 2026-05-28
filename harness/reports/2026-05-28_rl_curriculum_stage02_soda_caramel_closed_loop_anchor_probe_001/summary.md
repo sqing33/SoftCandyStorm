@@ -84,6 +84,8 @@ Top 200 中 `cracked-star-jar` 占 `128` 条、`soda-creek` 占 `40` 条、`cara
 
 另有一份 `--include-observation` 版本输出为 `mid_anchor_drift_training_samples.jsonl`，同样包含 `200` 条 top drift rows，并已确认可由 `train_sb3.py` 的 anchor regularization 路径读取为 `anchor_drift_sample_records = 200`、`observation_len = 145`、`action_count = 9`。这份文件是后续 mid-window anchor KL repair 的可读输入，不是新增 policy 结果。
 
+`validate_anchor_regularization_input.py` 已对这份 training samples 跑真实 preflight：使用 current-failure fallback best + stage 02 opening anchor，`mid_60_to_180` time bucket filter 保留 `200/200` 条，target argmax agreement with dataset actions 为 `1.0`。`map_time_bucket_balance` 记录 `caramel-workshop::mid_60_to_180` 权重 `2.083333`、`soda-creek::mid_60_to_180` 权重 `1.666667`、`cracked-star-jar::mid_60_to_180` 权重 `0.520833`。该 preflight 只证明 anchor KL 输入可用，不训练 PPO checkpoint。
+
 ## 判断
 
 - Closed-loop training with the existing anchor regularization path is functional, but this configuration still drifts too far from the current-failure best anchor.
@@ -118,3 +120,5 @@ Top 200 中 `cracked-star-jar` 占 `128` 条、`soda-creek` 占 `40` 条、`cara
 - `mid_anchor_drift_training_samples.jsonl`
 - `mid_anchor_drift_training_samples_report.json`
 - `mid_anchor_drift_training_samples.md`
+- `mid_anchor_regularization_input_preflight.json`
+- `mid_anchor_regularization_input_preflight.md`
