@@ -43,12 +43,16 @@ class DummyPolicy:
         self.action = action
         self.reset_count = 0
         self.map_id = None
+        self.contexts = []
 
     def reset(self):
         self.reset_count += 1
 
     def set_map_id(self, map_id):
         self.map_id = map_id
+
+    def set_step_context(self, info):
+        self.contexts.append(dict(info))
 
     def predict(self, observation, deterministic=True):
         return self.action, None
@@ -1037,6 +1041,8 @@ def test_staged_opening_policy_switches_after_opening_seconds():
     assert fallback.reset_count == 1
     assert opening.map_id == "soda-creek"
     assert fallback.map_id == "soda-creek"
+    assert [context["time_seconds"] for context in opening.contexts] == [59.9, 60.0]
+    assert [context["time_seconds"] for context in fallback.contexts] == [59.9, 60.0]
     assert opening_action == 7
     assert opening_scores["scores"][7] == 1.0
     assert fallback_action == 4

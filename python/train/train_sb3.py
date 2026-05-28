@@ -230,6 +230,10 @@ class StagedOpeningPolicy:
 
     def set_step_context(self, info):
         self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+        for model in (self.opening_model, self.fallback_model):
+            set_step_context = getattr(model, "set_step_context", None)
+            if callable(set_step_context):
+                set_step_context(info)
 
     def active_model(self):
         if self._time_seconds < self.opening_seconds:
