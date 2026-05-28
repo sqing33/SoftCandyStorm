@@ -56,6 +56,7 @@ ANCHOR_TIME_BUCKETS = [
     ("late_180_to_300", 180.0, 300.0),
     ("post_300", 300.0, math.inf),
 ]
+ANCHOR_TIME_BUCKET_LABELS = {label for label, _, _ in ANCHOR_TIME_BUCKETS}
 
 GYM_ACTION_MOVEMENTS = {
     0: (0.0, 0.0),
@@ -894,6 +895,8 @@ def validate_anchor_regularization_request(
     anchor_regularization_learning_rate=None,
     anchor_limit_samples=None,
     anchor_sample_weighting="none",
+    anchor_include_time_buckets=None,
+    anchor_time_bucket_weights=None,
     anchor_validation_split=0.2,
 ):
     has_anchor_model = anchor_model is not None
@@ -928,6 +931,8 @@ def validate_anchor_regularization_request(
             "--anchor-sample-weighting must be one of "
             + ", ".join(sorted(ANCHOR_SAMPLE_WEIGHTING_MODES))
         )
+    parse_anchor_time_bucket_list(anchor_include_time_buckets)
+    parse_anchor_time_bucket_weights(anchor_time_bucket_weights)
     if not (0.0 < anchor_validation_split < 1.0):
         raise ValueError("--anchor-validation-split must be between 0 and 1")
     return True
@@ -1113,7 +1118,163 @@ def anchor_time_bucket_label(time_seconds):
     return "unknown"
 
 
-def build_anchor_sample_weights(sample_metadata, np_module, mode="none"):
+def parse_anchor_time_bucket_list(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        labels = [item.strip() for item in value.split(",") if item.strip()]
+    else:
+        labels = [str(item).strip() for item in value if str(item).strip()]
+    if not labels:
+        raise ValueError("--anchor-include-time-buckets must include at least one bucket")
+    unknown = sorted({label for label in labels if label not in ANCHOR_TIME_BUCKET_LABELS})
+    if unknown:
+        raise ValueError(
+            "--anchor-include-time-buckets contains unknown bucket(s): "
+            + ", ".join(unknown)
+        )
+    return list(dict.fromkeys(labels))
+
+
+def parse_anchor_time_bucket_weights(value):
+    if value is None or value == "":
+        return {}
+    if isinstance(value, dict):
+        items = value.items()
+    else:
+        items = []
+        for raw_item in str(value).split(","):
+            item = raw_item.strip()
+            if not item:
+                continue
+            if "=" not in item:
+                raise ValueError(
+                    "--anchor-time-bucket-weights entries must use bucket=weight"
+                )
+            label, raw_weight = item.split("=", 1)
+            items.append((label.strip(), raw_weight.strip()))
+
+    weights = {}
+    for label, raw_weight in items:
+        if label not in ANCHOR_TIME_BUCKET_LABELS:
+            raise ValueError(
+                f"--anchor-time-bucket-weights contains unknown bucket `{label}`"
+            )
+        try:
+            weight = float(raw_weight)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"--anchor-time-bucket-weights has invalid weight for `{label}`"
+            ) from exc
+        if weight <= 0.0:
+            raise ValueError(
+                f"--anchor-time-bucket-weights for `{label}` must be greater than 0"
+            )
+        weights[label] = weight
+    return weights
+
+
+def time_bucket_counts(sample_metadata):
+    counts = {label: 0 for label, _, _ in ANCHOR_TIME_BUCKETS}
+    counts["unknown"] = 0
+    for sample in sample_metadata:
+        label = anchor_time_bucket_label(sample.get("time_seconds", 0.0))
+        counts[label] = counts.get(label, 0) + 1
+    return {label: count for label, count in counts.items() if count > 0}
+
+
+def filter_anchor_dataset_by_time_buckets(dataset, include_time_buckets=None):
+    labels = parse_anchor_time_bucket_list(include_time_buckets)
+    sample_count = len(dataset["sample_metadata"])
+    before_counts = time_bucket_counts(dataset["sample_metadata"])
+    if labels is None:
+        return dataset, {
+            "mode": "all_samples",
+            "include_time_buckets": None,
+            "sample_count_before": int(sample_count),
+            "sample_count_after": int(sample_count),
+            "dropped_sample_count": 0,
+            "bucket_counts_before": before_counts,
+            "bucket_counts_after": before_counts,
+        }
+
+    keep_indices = [
+        index
+        for index, sample in enumerate(dataset["sample_metadata"])
+        if anchor_time_bucket_label(sample.get("time_seconds", 0.0)) in labels
+    ]
+    filtered = dict(dataset)
+    filtered["observations"] = [dataset["observations"][index] for index in keep_indices]
+    filtered["actions"] = [dataset["actions"][index] for index in keep_indices]
+    filtered["sample_metadata"] = [
+        dataset["sample_metadata"][index] for index in keep_indices
+    ]
+    return filtered, {
+        "mode": "include_time_buckets",
+        "include_time_buckets": labels,
+        "sample_count_before": int(sample_count),
+        "sample_count_after": int(len(keep_indices)),
+        "dropped_sample_count": int(sample_count - len(keep_indices)),
+        "bucket_counts_before": before_counts,
+        "bucket_counts_after": time_bucket_counts(filtered["sample_metadata"]),
+    }
+
+
+def apply_anchor_time_bucket_weight_multipliers(
+    sample_metadata,
+    np_module,
+    weights,
+    time_bucket_weights=None,
+):
+    parsed_weights = parse_anchor_time_bucket_weights(time_bucket_weights)
+    if not parsed_weights:
+        return weights, {
+            "mode": "none",
+            "weights": {},
+            "matched_sample_counts": {},
+        }
+    matched_counts = {label: 0 for label in parsed_weights}
+    multipliers = []
+    for sample in sample_metadata:
+        label = anchor_time_bucket_label(sample.get("time_seconds", 0.0))
+        multiplier = parsed_weights.get(label, 1.0)
+        if label in matched_counts:
+            matched_counts[label] += 1
+        multipliers.append(multiplier)
+    adjusted = weights * np_module.asarray(multipliers, dtype=np_module.float32)
+    return adjusted, {
+        "mode": "custom_multipliers",
+        "weights": {
+            label: round(float(weight), 6)
+            for label, weight in sorted(parsed_weights.items())
+        },
+        "matched_sample_counts": {
+            label: int(count)
+            for label, count in sorted(matched_counts.items())
+        },
+    }
+
+
+def anchor_sample_weight_stats(weights):
+    if len(weights) == 0:
+        return {
+            "min": None,
+            "max": None,
+            "mean": None,
+        }
+    return {
+        "min": round(float(weights.min()), 6),
+        "max": round(float(weights.max()), 6),
+        "mean": round(float(weights.mean()), 6),
+    }
+
+
+def build_anchor_sample_weights(
+    sample_metadata,
+    np_module,
+    mode="none",
+    time_bucket_weights=None,
+):
     if mode not in ANCHOR_SAMPLE_WEIGHTING_MODES:
         raise ValueError(
             "--anchor-sample-weighting must be one of "
@@ -1130,17 +1291,28 @@ def build_anchor_sample_weights(sample_metadata, np_module, mode="none"):
             "max": None,
             "mean": None,
             "groups": {},
+            "time_bucket_weights": {
+                "mode": "none",
+                "weights": {},
+                "matched_sample_counts": {},
+            },
         }
     if mode == "none":
         weights = np_module.ones(sample_count, dtype=np_module.float32)
+        weights, time_bucket_weight_report = apply_anchor_time_bucket_weight_multipliers(
+            sample_metadata,
+            np_module,
+            weights,
+            time_bucket_weights,
+        )
+        stats = anchor_sample_weight_stats(weights)
         return weights, {
             "mode": "none",
             "sample_count": int(sample_count),
             "group_count": 0,
-            "min": 1.0,
-            "max": 1.0,
-            "mean": 1.0,
+            **stats,
             "groups": {},
+            "time_bucket_weights": time_bucket_weight_report,
         }
 
     keys = []
@@ -1163,13 +1335,18 @@ def build_anchor_sample_weights(sample_metadata, np_module, mode="none"):
         [multipliers[key] for key in keys],
         dtype=np_module.float32,
     )
+    weights, time_bucket_weight_report = apply_anchor_time_bucket_weight_multipliers(
+        sample_metadata,
+        np_module,
+        weights,
+        time_bucket_weights,
+    )
+    stats = anchor_sample_weight_stats(weights)
     return weights, {
         "mode": mode,
         "sample_count": int(sample_count),
         "group_count": int(len(counts)),
-        "min": round(float(weights.min()), 6),
-        "max": round(float(weights.max()), 6),
-        "mean": round(float(weights.mean()), 6),
+        **stats,
         "groups": {
             key: {
                 "sample_count": int(count),
@@ -1178,6 +1355,7 @@ def build_anchor_sample_weights(sample_metadata, np_module, mode="none"):
             }
             for key, count in sorted(counts.items())
         },
+        "time_bucket_weights": time_bucket_weight_report,
     }
 
 
@@ -1196,6 +1374,8 @@ def prepare_anchor_regularization(
     anchor_regularization_learning_rate=None,
     anchor_limit_samples=None,
     anchor_sample_weighting="none",
+    anchor_include_time_buckets=None,
+    anchor_time_bucket_weights=None,
     anchor_validation_split=0.2,
     anchor_seed=12345,
 ):
@@ -1210,6 +1390,8 @@ def prepare_anchor_regularization(
         anchor_regularization_learning_rate=anchor_regularization_learning_rate,
         anchor_limit_samples=anchor_limit_samples,
         anchor_sample_weighting=anchor_sample_weighting,
+        anchor_include_time_buckets=anchor_include_time_buckets,
+        anchor_time_bucket_weights=anchor_time_bucket_weights,
         anchor_validation_split=anchor_validation_split,
     ):
         return None
@@ -1218,6 +1400,10 @@ def prepare_anchor_regularization(
     import numpy as np
 
     dataset = load_trajectory_dataset(anchor_datasets, limit=anchor_limit_samples)
+    dataset, time_bucket_filter_report = filter_anchor_dataset_by_time_buckets(
+        dataset,
+        anchor_include_time_buckets,
+    )
     if len(dataset["actions"]) < 2:
         raise ValueError("anchor regularization requires at least two samples")
     observations, targets, target_report = collect_anchor_regularization_targets(
@@ -1236,6 +1422,7 @@ def prepare_anchor_regularization(
         dataset["sample_metadata"],
         np,
         anchor_sample_weighting,
+        anchor_time_bucket_weights,
     )
     if observations.shape[1] != int(config["environment"]["observation_len"]):
         raise ValueError(
@@ -1264,6 +1451,7 @@ def prepare_anchor_regularization(
             "datasets": [str(path) for path in anchor_datasets],
             "limit_samples": anchor_limit_samples,
             "dataset": summarize_dataset(dataset),
+            "time_bucket_filter": time_bucket_filter_report,
             "target": target_report,
             "sample_weighting": sample_weighting_report,
             "regularization_weight": float(anchor_regularization_weight),
@@ -1503,6 +1691,8 @@ def train(
     anchor_regularization_learning_rate=None,
     anchor_limit_samples=None,
     anchor_sample_weighting="none",
+    anchor_include_time_buckets=None,
+    anchor_time_bucket_weights=None,
     anchor_validation_split=0.2,
     anchor_seed=12345,
 ):
@@ -1581,6 +1771,8 @@ def train(
         anchor_regularization_learning_rate=anchor_regularization_learning_rate,
         anchor_limit_samples=anchor_limit_samples,
         anchor_sample_weighting=anchor_sample_weighting,
+        anchor_include_time_buckets=anchor_include_time_buckets,
+        anchor_time_bucket_weights=anchor_time_bucket_weights,
         anchor_validation_split=anchor_validation_split,
         anchor_seed=anchor_seed,
     )
@@ -3406,6 +3598,22 @@ def main():
         default="none",
         help="Optional offline anchor KL sample weighting for imbalanced phase/map samples.",
     )
+    parser.add_argument(
+        "--anchor-include-time-buckets",
+        default=None,
+        help=(
+            "Comma-separated anchor time buckets to keep for offline KL regularization "
+            "(opening_lt_60, mid_60_to_180, late_180_to_300, post_300)."
+        ),
+    )
+    parser.add_argument(
+        "--anchor-time-bucket-weights",
+        default=None,
+        help=(
+            "Comma-separated bucket=weight multipliers applied after "
+            "--anchor-sample-weighting, for phase-specific anchor objectives."
+        ),
+    )
     parser.add_argument("--anchor-validation-split", type=float, default=0.2)
     parser.add_argument("--anchor-seed", type=int, default=12345)
     parser.add_argument("--model-in", default=None)
@@ -3560,6 +3768,12 @@ def main():
             args.opening_seconds,
             "--opening-seconds",
         )
+        anchor_include_time_buckets = parse_anchor_time_bucket_list(
+            args.anchor_include_time_buckets,
+        )
+        anchor_time_bucket_weights = parse_anchor_time_bucket_weights(
+            args.anchor_time_bucket_weights,
+        )
         anchor_regularization_requested = validate_anchor_regularization_request(
             anchor_model=args.anchor_model,
             anchor_datasets=args.anchor_dataset,
@@ -3571,6 +3785,8 @@ def main():
             anchor_regularization_learning_rate=args.anchor_regularization_learning_rate,
             anchor_limit_samples=args.anchor_limit_samples,
             anchor_sample_weighting=args.anchor_sample_weighting,
+            anchor_include_time_buckets=anchor_include_time_buckets,
+            anchor_time_bucket_weights=anchor_time_bucket_weights,
             anchor_validation_split=args.anchor_validation_split,
         )
         train_maps, train_map_preset = resolve_train_maps(
@@ -3625,6 +3841,10 @@ def main():
         parser.error("anchor regularization is currently supported only with --algorithm ppo")
     if args.anchor_opening_model and not anchor_regularization_requested:
         parser.error("--anchor-opening-model requires --anchor-model and --anchor-dataset")
+    if args.anchor_include_time_buckets and not anchor_regularization_requested:
+        parser.error("--anchor-include-time-buckets requires --anchor-model and --anchor-dataset")
+    if args.anchor_time_bucket_weights and not anchor_regularization_requested:
+        parser.error("--anchor-time-bucket-weights requires --anchor-model and --anchor-dataset")
     if args.edge_recovery_filter and args.late_recovery_filter:
         parser.error("--edge-recovery-filter and --late-recovery-filter cannot be combined")
     if args.edge_recovery_samples_out and not (
@@ -3869,6 +4089,8 @@ def main():
             anchor_regularization_learning_rate=args.anchor_regularization_learning_rate,
             anchor_limit_samples=args.anchor_limit_samples,
             anchor_sample_weighting=args.anchor_sample_weighting,
+            anchor_include_time_buckets=anchor_include_time_buckets,
+            anchor_time_bucket_weights=anchor_time_bucket_weights,
             anchor_validation_split=args.anchor_validation_split,
             anchor_seed=args.anchor_seed,
         ),

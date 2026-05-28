@@ -2420,6 +2420,11 @@
       "report": "python/train/train_sb3.py"
     },
     {
+      "id": "rl_anchor_phase_specific_regularization_support",
+      "summary": "train_sb3.py 的 PPO anchor regularization 新增 `--anchor-include-time-buckets` 与 `--anchor-time-bucket-weights`，可把离线 KL 约束限定到 opening/mid/late/post 指定时间桶，或在 map/time bucket balance 后继续施加 phase-specific anchor multipliers；该能力用于拆分 opening freeze、mid/late constrained repair 和 no-regression 探针，不解除 RL acceptance blocker。",
+      "report": "python/train/train_sb3.py"
+    },
+    {
       "id": "rl_curriculum_stage02_anchor_regularized_smoke",
       "summary": "用新增 PPO anchor regularization 从 opening-aware distilled PPO 重新跑 1024 timestep smoke：训练内 anchor validation KL 为 0.265304、argmax agreement 为 0.8462，但全量 36426 样本 anchor alignment 仍失败，overall mean KL 0.346885、argmax agreement 0.7044。60/180/300 秒结果为 0.6667/0.6667/1.0、0.6667/0.6667/0.6667、0.0/0.0/0.3333；相对 opening-aware PPO 降到 1 个 blocker，但相对 current best 仍有 7 个 blockers，相对 seed63100 baseline 仍有 4 个 blockers，已记录 fail_20260528_082，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001/summary.md"

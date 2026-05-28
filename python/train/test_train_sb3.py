@@ -22,8 +22,11 @@ from python.train.train_sb3 import (
     consume_policy_adapter_decision,
     derived_edge_recovery_samples_path,
     evaluation_gate_decision,
+    filter_anchor_dataset_by_time_buckets,
     merge_algorithm_parameters,
     load_behavior_clone_policy_with_optional_opening,
+    parse_anchor_time_bucket_list,
+    parse_anchor_time_bucket_weights,
     policy_quality_findings,
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
@@ -142,6 +145,18 @@ def test_validate_anchor_regularization_requires_model_and_dataset_together():
             anchor_datasets=["samples.jsonl"],
             anchor_sample_weighting="bad",
         )
+    with pytest.raises(ValueError, match="unknown bucket"):
+        validate_anchor_regularization_request(
+            anchor_model="anchor.pt",
+            anchor_datasets=["samples.jsonl"],
+            anchor_include_time_buckets=["bad_bucket"],
+        )
+    with pytest.raises(ValueError, match="greater than 0"):
+        validate_anchor_regularization_request(
+            anchor_model="anchor.pt",
+            anchor_datasets=["samples.jsonl"],
+            anchor_time_bucket_weights={"opening_lt_60": 0.0},
+        )
     assert validate_anchor_regularization_request(
         anchor_model="anchor.pt",
         anchor_datasets=["samples.jsonl"],
@@ -150,7 +165,59 @@ def test_validate_anchor_regularization_requires_model_and_dataset_together():
         anchor_regularization_epochs=1,
         anchor_regularization_batch_size=16,
         anchor_sample_weighting="time_bucket_balance",
+        anchor_include_time_buckets=["opening_lt_60", "mid_60_to_180"],
+        anchor_time_bucket_weights={"opening_lt_60": 2.0},
     )
+
+
+def test_parse_anchor_time_bucket_controls_preserve_known_buckets():
+    assert parse_anchor_time_bucket_list("opening_lt_60,mid_60_to_180") == [
+        "opening_lt_60",
+        "mid_60_to_180",
+    ]
+    assert parse_anchor_time_bucket_list(
+        ["opening_lt_60", "opening_lt_60", "late_180_to_300"]
+    ) == ["opening_lt_60", "late_180_to_300"]
+    assert parse_anchor_time_bucket_weights(
+        "opening_lt_60=2,late_180_to_300=0.5"
+    ) == {
+        "opening_lt_60": 2.0,
+        "late_180_to_300": 0.5,
+    }
+
+
+def test_filter_anchor_dataset_by_time_buckets_keeps_selected_phases():
+    dataset = {
+        "paths": ["samples.jsonl"],
+        "observations": [[0.1], [0.2], [0.3]],
+        "actions": [0, 1, 2],
+        "sample_metadata": [
+            {"time_seconds": 10.0, "map_id": "soda-creek"},
+            {"time_seconds": 90.0, "map_id": "soda-creek"},
+            {"time_seconds": 240.0, "map_id": "soda-creek"},
+        ],
+        "metadata": [],
+        "episode_count": 1,
+        "skipped_upgrade_samples": 0,
+        "observation_len": 1,
+        "action_count": 3,
+    }
+
+    filtered, report = filter_anchor_dataset_by_time_buckets(
+        dataset,
+        ["opening_lt_60", "late_180_to_300"],
+    )
+
+    assert filtered["observations"] == [[0.1], [0.3]]
+    assert filtered["actions"] == [0, 2]
+    assert report["mode"] == "include_time_buckets"
+    assert report["sample_count_before"] == 3
+    assert report["sample_count_after"] == 2
+    assert report["dropped_sample_count"] == 1
+    assert report["bucket_counts_after"] == {
+        "opening_lt_60": 1,
+        "late_180_to_300": 1,
+    }
 
 
 def test_collect_anchor_regularization_targets_sets_context_and_probabilities():
@@ -228,6 +295,31 @@ def test_build_anchor_sample_weights_balances_map_time_buckets():
     assert weights.tolist() == pytest.approx([0.75, 0.75, 1.5])
     assert report["group_count"] == 2
     assert report["groups"]["caramel-workshop::opening_lt_60"]["sample_count"] == 1
+
+
+def test_build_anchor_sample_weights_applies_time_bucket_multipliers():
+    np = pytest.importorskip("numpy")
+    sample_metadata = [
+        {"map_id": "soda-creek", "time_seconds": 10.0},
+        {"map_id": "soda-creek", "time_seconds": 90.0},
+        {"map_id": "soda-creek", "time_seconds": 240.0},
+    ]
+
+    weights, report = build_anchor_sample_weights(
+        sample_metadata,
+        np,
+        "none",
+        {"opening_lt_60": 2.0, "late_180_to_300": 0.5},
+    )
+
+    assert weights.tolist() == pytest.approx([2.0, 1.0, 0.5])
+    assert report["time_bucket_weights"]["mode"] == "custom_multipliers"
+    assert report["time_bucket_weights"]["matched_sample_counts"] == {
+        "late_180_to_300": 1,
+        "opening_lt_60": 1,
+    }
+    assert report["min"] == 0.5
+    assert report["max"] == 2.0
 
 
 def test_build_env_passes_reward_profile(monkeypatch):
@@ -510,12 +602,21 @@ def test_training_can_apply_anchor_regularization(monkeypatch, tmp_path):
         anchor_datasets=[tmp_path / "samples.jsonl"],
         anchor_regularization_interval=16,
         anchor_sample_weighting="map_time_bucket_balance",
+        anchor_include_time_buckets=["opening_lt_60", "mid_60_to_180"],
+        anchor_time_bucket_weights={"opening_lt_60": 2.0},
     )
 
     assert "plain_learn" not in captured
     assert captured["anchor_learn_timesteps"] == 32
     assert captured["anchor_prepare_kwargs"]["anchor_regularization_interval"] == 16
     assert captured["anchor_prepare_kwargs"]["anchor_sample_weighting"] == "map_time_bucket_balance"
+    assert captured["anchor_prepare_kwargs"]["anchor_include_time_buckets"] == [
+        "opening_lt_60",
+        "mid_60_to_180",
+    ]
+    assert captured["anchor_prepare_kwargs"]["anchor_time_bucket_weights"] == {
+        "opening_lt_60": 2.0,
+    }
     assert report["anchor_regularization"]["status"] == "applied"
     assert report["training"]["anchor_regularization"]["final_validation"]["mean_kl"] == 0.123
     assert captured["env_closed"] is True
