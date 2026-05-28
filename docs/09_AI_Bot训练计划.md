@@ -234,6 +234,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 `train_sb3.py` 现在支持 anchor validation guard：当使用 PPO anchor regularization 时，可设置 `--anchor-guard-max-validation-kl` 和 `--anchor-guard-min-argmax-agreement`。训练会在每个 PPO chunk 后的 KL repair epoch 记录 `validation_guard`，一旦离线 anchor validation 超过阈值就停止后续 chunk，并在训练报告中写入 `aborted_by_anchor_validation_guard` / `trained_anchor_validation_guard_failed_not_policy_gate`。该 guard 只阻止明显漂移的续训继续加长，仍不能替代 fixed-window no-regression、repair-probe gate 或 RL acceptance。
 
+首个 mid-anchor guarded PPO smoke 从上一版 `ppo_anchor_regularized_smoke.zip` 出发，只使用 top `200` drift rows 作为 `mid_60_to_180` anchor dataset，并设置 `max_validation_kl = 0.25`、`min_argmax_agreement = 0.85`。该分支被 guard 拒绝：请求 `512` timesteps，实际在首个 `256` chunk 后停止，validation mean KL 为 `2.310775`、argmax agreement 为 `0.0`。已记录 `fail_20260528_089`；由于训练期 guard 已失败，没有继续跑 fixed-window no-regression。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

@@ -1,0 +1,16 @@
+{
+  "case_id": "fail_20260528_089",
+  "category": "rl_training",
+  "content_id": "stage02-mid-anchor-guard-smoke",
+  "seed": "63100-63102",
+  "bot": "ppo_mid_anchor_guard_smoke",
+  "time_seconds": null,
+  "symptom": "Mid-anchor guarded PPO smoke requested 512 timesteps but stopped after the first 256-timestep chunk because anchor validation guard failed: validation mean KL was 2.310775 above the 0.25 threshold and validation argmax agreement was 0.0 below the 0.85 threshold.",
+  "root_cause": "The top-200 drift rows were too narrow and too hard as the only mid-window anchor objective for this start checkpoint. After one PPO chunk plus KL repair, the policy was still far from the current-failure fallback anchor on those selected rows, so continuing the same run would likely amplify anchor drift instead of repairing it.",
+  "fix": "Do not continue this branch. Before another PPO continuation, pre-check start-model alignment on the drift rows, mix the top drift rows with broader opening/mid/late anchor data, or reduce the PPO update size while keeping anchor validation guard and fixed-window no-regression checks.",
+  "validation": "The training report records anchor_regularization.status = aborted_by_anchor_validation_guard, guard_decision = anchor_validation_guard_failed, and gate_decision = trained_anchor_validation_guard_failed_not_policy_gate. Fixed-window no-regression was intentionally not run because the training guard failed first.",
+  "diagnostics": [
+    "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/ppo_training_report.json",
+    "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/ppo_mid_anchor_guard_smoke_metadata.json"
+  ]
+}

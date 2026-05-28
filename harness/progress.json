@@ -2488,6 +2488,11 @@
       "id": "rl_anchor_validation_guard_support",
       "summary": "train_sb3.py 已为 PPO anchor regularization 增加 anchor validation guard：可配置 validation mean KL 上限与 argmax agreement 下限，并在每个 PPO chunk 后的 KL repair epoch 记录 validation_guard；若阈值失败会停止后续 chunk，训练报告写入 aborted_by_anchor_validation_guard / trained_anchor_validation_guard_failed_not_policy_gate。该 guard 只阻止 anchor drift 续训加长，不替代 fixed-window no-regression、repair-probe gate 或 RL acceptance。",
       "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_curriculum_stage02_mid_anchor_guard_smoke",
+      "summary": "首个 mid-anchor guarded PPO smoke 从 ppo_anchor_regularized_smoke.zip 出发，只使用 mid_anchor_drift_training_samples.jsonl 的 top 200 drift rows 作为 mid_60_to_180 anchor dataset，并设置 validation KL <= 0.25、argmax agreement >= 0.85。新 guard 在第一个 256 timestep chunk 后拒绝继续训练：validation mean KL 2.310775、argmax agreement 0.0；已记录 fail_20260528_089，未继续跑 fixed-window no-regression。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/summary.md"
     }
   ],
   "next_recommended": [

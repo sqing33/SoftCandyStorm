@@ -1,0 +1,327 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/ppo_mid_anchor_guard_smoke.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "seed": 12345,
+  "content_dir": "content/base_demo",
+  "content_rules": "headless GameCore via game_harness gym-bridge",
+  "reward_config": "prototype reward in game_harness gym_reward",
+  "reward_profile": "late-route-recovery",
+  "upgrade_choice_model": null,
+  "warm_start_model": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001/ppo_anchor_regularized_smoke.zip",
+  "warm_start_metadata_path": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001/ppo_anchor_regularized_smoke_metadata.json",
+  "observation_version": 2,
+  "observation_len": 145,
+  "training_seconds": 300.0,
+  "algorithm_parameters": {
+    "learning_rate": 2e-05,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.02,
+    "clip_range": 0.2
+  },
+  "algorithm_parameters_source": "warm_start_metadata_with_overrides",
+  "evaluation_policy": "deterministic",
+  "evaluation_action_random_seed": null,
+  "evaluation_map_id": "frosting-grassland",
+  "started_at": "2026-05-28T08:49:30.457769+00:00",
+  "completed_at": "2026-05-28T08:49:33.473316+00:00",
+  "evaluation_path": "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/ppo_known_exploits.json",
+  "known_exploits": [],
+  "training_maps": [
+    "soda-creek",
+    "caramel-workshop"
+  ],
+  "training_map_selection": "random",
+  "training_map_preset": null,
+  "training_seeds": [
+    63100,
+    63101,
+    63102
+  ],
+  "training_seed_selection": "random",
+  "anchor_regularization": {
+    "mode": "behavior_clone_anchor_kl_regularization",
+    "anchor_model": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001/fallback.pt",
+    "anchor_opening_model": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+    "anchor_opening_seconds": 60.0,
+    "datasets": [
+      "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.jsonl"
+    ],
+    "limit_samples": null,
+    "dataset": {
+      "paths": [
+        "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.jsonl"
+      ],
+      "sample_count": 200,
+      "episode_count": 0,
+      "skipped_upgrade_samples": 0,
+      "upgrade_sample_records": 0,
+      "edge_recovery_sample_records": 0,
+      "risk_recovery_sample_records": 0,
+      "anchor_drift_sample_records": 200,
+      "observation_len": 145,
+      "action_count": 9,
+      "action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "3": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "4": {
+          "count": 17,
+          "ratio": 0.085
+        },
+        "5": {
+          "count": 2,
+          "ratio": 0.01
+        },
+        "6": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "7": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "8": {
+          "count": 179,
+          "ratio": 0.895
+        }
+      },
+      "sample_summary": {
+        "time_seconds_min": 60.3328,
+        "time_seconds_max": 179.6761,
+        "health_ratio_min": 1.0,
+        "health_ratio_average": 1.0,
+        "map_distribution": {
+          "caramel-workshop": {
+            "count": 32,
+            "ratio": 0.16
+          },
+          "cracked-star-jar": {
+            "count": 128,
+            "ratio": 0.64
+          },
+          "soda-creek": {
+            "count": 40,
+            "ratio": 0.2
+          }
+        },
+        "sample_source_distribution": {
+          "anchor_drift_diagnostic": {
+            "count": 200,
+            "ratio": 1.0
+          }
+        }
+      },
+      "metadata": []
+    },
+    "time_bucket_filter": {
+      "mode": "include_time_buckets",
+      "include_time_buckets": [
+        "mid_60_to_180"
+      ],
+      "sample_count_before": 200,
+      "sample_count_after": 200,
+      "dropped_sample_count": 0,
+      "bucket_counts_before": {
+        "mid_60_to_180": 200
+      },
+      "bucket_counts_after": {
+        "mid_60_to_180": 200
+      }
+    },
+    "target": {
+      "anchor_argmax_agreement_with_dataset_actions": 1.0,
+      "anchor_argmax_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "2": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "3": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "4": {
+          "count": 17,
+          "ratio": 0.085
+        },
+        "5": {
+          "count": 2,
+          "ratio": 0.01
+        },
+        "6": {
+          "count": 1,
+          "ratio": 0.005
+        },
+        "7": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "8": {
+          "count": 179,
+          "ratio": 0.895
+        }
+      }
+    },
+    "sample_weighting": {
+      "mode": "map_time_bucket_balance",
+      "sample_count": 200,
+      "group_count": 3,
+      "min": 0.520833,
+      "max": 2.083333,
+      "mean": 1.0,
+      "groups": {
+        "caramel-workshop::mid_60_to_180": {
+          "sample_count": 32,
+          "sample_ratio": 0.16,
+          "weight_multiplier": 2.083333
+        },
+        "cracked-star-jar::mid_60_to_180": {
+          "sample_count": 128,
+          "sample_ratio": 0.64,
+          "weight_multiplier": 0.520833
+        },
+        "soda-creek::mid_60_to_180": {
+          "sample_count": 40,
+          "sample_ratio": 0.2,
+          "weight_multiplier": 1.666667
+        }
+      },
+      "time_bucket_weights": {
+        "mode": "none",
+        "weights": {},
+        "matched_sample_counts": {}
+      }
+    },
+    "regularization_weight": 2.0,
+    "interval_timesteps": 256,
+    "epochs_per_interval": 3,
+    "batch_size": 128,
+    "learning_rate": 5e-05,
+    "validation_split": 0.2,
+    "seed": 12345,
+    "validation_guard": {
+      "enabled": true,
+      "max_validation_kl": 0.25,
+      "min_argmax_agreement": 0.85,
+      "limitations": [
+        "This guard stops a PPO continuation when offline anchor validation drifts past the configured thresholds.",
+        "It is an online anchor-drift guard only; it does not replace fixed-window no-regression reports or RL policy acceptance."
+      ]
+    },
+    "limitations": [
+      "Anchor regularization is repair training evidence only.",
+      "It constrains closed-loop PPO drift on offline samples but does not replace high-pressure comparison, no-regression validation, or RL policy acceptance."
+    ],
+    "status": "aborted_by_anchor_validation_guard",
+    "guard_decision": "anchor_validation_guard_failed",
+    "guard_failure": {
+      "decision": "anchor_validation_guard_failed",
+      "blockers": [
+        "validation_mean_kl 2.310775 exceeds max 0.25",
+        "validation_argmax_agreement 0.0 below min 0.85"
+      ],
+      "metrics": {
+        "mean_kl": 2.310775,
+        "cross_entropy": 3.72953,
+        "argmax_agreement": 0.0,
+        "policy_entropy_nats": 1.319427
+      },
+      "thresholds": {
+        "max_validation_kl": 0.25,
+        "min_argmax_agreement": 0.85
+      },
+      "chunk_timesteps": 256,
+      "epoch": 1,
+      "remaining_timesteps": 256,
+      "num_timesteps_after_chunk": 256
+    },
+    "train_samples": 160,
+    "validation_samples": 40,
+    "effective_learning_rate": 5e-05,
+    "chunks": [
+      {
+        "chunk_timesteps": 256,
+        "remaining_timesteps": 256,
+        "num_timesteps_after_chunk": 256,
+        "regularization_epochs": [
+          {
+            "epoch": 1,
+            "train_mean_kl": 2.256851,
+            "weighted_train_mean_kl": 2.247939,
+            "train_argmax_agreement": 0.0,
+            "validation_mean_kl": 2.310775,
+            "validation_argmax_agreement": 0.0,
+            "validation_policy_entropy_nats": 1.319427,
+            "validation_guard": {
+              "decision": "anchor_validation_guard_failed",
+              "blockers": [
+                "validation_mean_kl 2.310775 exceeds max 0.25",
+                "validation_argmax_agreement 0.0 below min 0.85"
+              ],
+              "metrics": {
+                "mean_kl": 2.310775,
+                "cross_entropy": 3.72953,
+                "argmax_agreement": 0.0,
+                "policy_entropy_nats": 1.319427
+              },
+              "thresholds": {
+                "max_validation_kl": 0.25,
+                "min_argmax_agreement": 0.85
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "final_validation": {
+      "mean_kl": 2.310775,
+      "cross_entropy": 3.72953,
+      "argmax_agreement": 0.0,
+      "policy_entropy_nats": 1.319427
+    },
+    "final_validation_guard": {
+      "decision": "anchor_validation_guard_failed",
+      "blockers": [
+        "validation_mean_kl 2.310775 exceeds max 0.25",
+        "validation_argmax_agreement 0.0 below min 0.85"
+      ],
+      "metrics": {
+        "mean_kl": 2.310775,
+        "cross_entropy": 3.72953,
+        "argmax_agreement": 0.0,
+        "policy_entropy_nats": 1.319427
+      },
+      "thresholds": {
+        "max_validation_kl": 0.25,
+        "min_argmax_agreement": 0.85
+      }
+    }
+  }
+}
