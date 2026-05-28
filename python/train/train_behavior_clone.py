@@ -1788,12 +1788,105 @@ def build_action_change_flags(sample_metadata, actions):
     return flags
 
 
+def parse_sample_path_weight_spec(value):
+    if "=" not in value:
+        raise argparse.ArgumentTypeError("sample path weight must use PATH=WEIGHT")
+    path_text, weight_text = value.split("=", 1)
+    path_text = path_text.strip()
+    if not path_text:
+        raise argparse.ArgumentTypeError("sample path weight path must be non-empty")
+    try:
+        weight = float(weight_text.strip())
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("sample path weight must be numeric") from exc
+    if weight <= 0.0:
+        raise argparse.ArgumentTypeError("sample path weight must be greater than zero")
+    return {"path": path_text, "weight": weight}
+
+
+def normalize_sample_path_weights(value):
+    if not value:
+        return []
+    if isinstance(value, dict):
+        return [
+            {"path": str(path), "weight": float(weight)}
+            for path, weight in sorted(value.items())
+        ]
+    entries = []
+    for item in value:
+        if isinstance(item, str):
+            entries.append(parse_sample_path_weight_spec(item))
+        elif isinstance(item, dict):
+            entries.append(
+                {
+                    "path": str(item["path"]),
+                    "weight": float(item["weight"]),
+                }
+            )
+        elif isinstance(item, (list, tuple)) and len(item) == 2:
+            entries.append({"path": str(item[0]), "weight": float(item[1])})
+        else:
+            raise ValueError(f"unsupported sample path weight entry: {item!r}")
+    for item in entries:
+        if not item["path"]:
+            raise ValueError("sample path weight path must be non-empty")
+        if item["weight"] <= 0.0:
+            raise ValueError("sample path weight must be greater than zero")
+    return entries
+
+
+def sample_path_matches_weight(sample_path, weighted_path):
+    sample_path = str(sample_path or "")
+    weighted_path = str(weighted_path or "").rstrip("/")
+    return sample_path == weighted_path or sample_path.startswith(weighted_path + "/")
+
+
+def sample_path_weight_for(sample_path, path_weights):
+    multiplier = 1.0
+    matched_paths = []
+    for item in path_weights:
+        if sample_path_matches_weight(sample_path, item["path"]):
+            multiplier *= float(item["weight"])
+            matched_paths.append(item["path"])
+    return multiplier, matched_paths
+
+
+def sample_weight_mode(base_mode, use_edge_recovery_weight, use_risk_recovery_weight, use_path_weight):
+    if base_mode != "none":
+        return base_mode
+    active = []
+    if use_edge_recovery_weight:
+        active.append("edge_recovery")
+    if use_risk_recovery_weight:
+        active.append("risk_recovery")
+    if use_path_weight:
+        active.append("sample_path")
+    if not active:
+        return "none"
+    if active == ["edge_recovery"]:
+        return "edge_recovery_auxiliary"
+    if active == ["risk_recovery"]:
+        return "risk_recovery_auxiliary"
+    if active == ["sample_path"]:
+        return "sample_path_auxiliary"
+    return "mixed_" + "_".join(active) + "_auxiliary"
+
+
 def build_sample_weights(dataset, indices, args, np_module):
     edge_recovery_sample_weight = float(getattr(args, "edge_recovery_sample_weight", 1.0))
     risk_recovery_sample_weight = float(getattr(args, "risk_recovery_sample_weight", 1.0))
+    sample_path_weights = normalize_sample_path_weights(
+        getattr(args, "sample_path_weights", None)
+    )
     use_edge_recovery_weight = abs(edge_recovery_sample_weight - 1.0) > 1e-6
     use_risk_recovery_weight = abs(risk_recovery_sample_weight - 1.0) > 1e-6
-    if args.sample_weighting == "none" and not use_edge_recovery_weight and not use_risk_recovery_weight:
+    use_path_weight = bool(sample_path_weights)
+    if (
+        args.sample_weighting == "none"
+        and not use_edge_recovery_weight
+        and not use_risk_recovery_weight
+        and not use_path_weight
+    ):
         return None, {
             "mode": "none",
             "min": 1.0,
@@ -1820,6 +1913,11 @@ def build_sample_weights(dataset, indices, args, np_module):
     phase_balance_report = None
     edge_recovery_weighted_count = 0
     risk_recovery_weighted_count = 0
+    path_weighted_count = 0
+    path_weight_matches = {
+        item["path"]: {"path": item["path"], "weight": item["weight"], "matched_train_samples": 0}
+        for item in sample_path_weights
+    }
     if use_time_phase_balance:
         phase_multipliers, phase_balance_report = build_time_phase_balance_weights(
             dataset,
@@ -1865,17 +1963,25 @@ def build_sample_weights(dataset, indices, args, np_module):
                 args.time_phase_thresholds,
             )
             weight *= phase_multipliers.get(phase, 1.0)
+        path_multiplier, matched_paths = sample_path_weight_for(
+            sample.get("path"),
+            sample_path_weights,
+        )
+        if matched_paths:
+            path_weighted_count += 1
+            for path in matched_paths:
+                path_weight_matches[path]["matched_train_samples"] += 1
+            weight *= path_multiplier
         weights.append(weight)
 
     values = np_module.asarray(weights, dtype=np_module.float32)
     report = {
-        "mode": "edge_recovery_auxiliary"
-        if args.sample_weighting == "none" and use_edge_recovery_weight and not use_risk_recovery_weight
-        else "risk_recovery_auxiliary"
-        if args.sample_weighting == "none" and use_risk_recovery_weight and not use_edge_recovery_weight
-        else "mixed_recovery_auxiliary"
-        if args.sample_weighting == "none" and use_edge_recovery_weight and use_risk_recovery_weight
-        else args.sample_weighting,
+        "mode": sample_weight_mode(
+            args.sample_weighting,
+            use_edge_recovery_weight,
+            use_risk_recovery_weight,
+            use_path_weight,
+        ),
         "base_mode": args.sample_weighting,
         "min": round(float(values.min()), 6),
         "max": round(float(values.max()), 6),
@@ -1892,6 +1998,12 @@ def build_sample_weights(dataset, indices, args, np_module):
             risk_recovery_weighted_count / max(1, len(indices)),
             4,
         ),
+        "sample_path_weights": {
+            "enabled": use_path_weight,
+            "weighted_sample_count": int(path_weighted_count),
+            "weighted_sample_ratio": round(path_weighted_count / max(1, len(indices)), 4),
+            "entries": list(path_weight_matches.values()),
+        },
         "danger_health_threshold": args.danger_health_threshold,
         "danger_low_health_weight": args.danger_low_health_weight,
         "danger_late_start_seconds": args.danger_late_start_seconds,
@@ -2553,6 +2665,18 @@ def main():
         help="Multiply risk_recovery_supervision_sample rows when mixing late safety repair samples.",
     )
     parser.add_argument(
+        "--sample-path-weight",
+        dest="sample_path_weights",
+        action="append",
+        type=parse_sample_path_weight_spec,
+        default=[],
+        metavar="PATH=WEIGHT",
+        help=(
+            "Multiply samples from a specific JSONL path or directory prefix. "
+            "Repeat to split repair and retention anchors without changing the dataset."
+        ),
+    )
+    parser.add_argument(
         "--edge-recovery-min-seconds",
         type=float,
         default=None,
@@ -2707,6 +2831,12 @@ def main():
             import numpy as np
 
             _, soft_target_report = build_recovery_soft_targets(dataset, args, np)
+            _, sample_weight_report = build_sample_weights(
+                dataset,
+                list(range(len(dataset["actions"]))),
+                args,
+                np,
+            )
             _, _, action_distribution_report = build_action_distribution_regularization_targets(
                 dataset,
                 list(range(len(dataset["actions"]))),
@@ -2742,6 +2872,7 @@ def main():
                     "edge_recovery_time_window_filter": edge_recovery_time_window_report,
                     "risk_recovery_time_window_filter": risk_recovery_time_window_report,
                     "recovery_soft_targets": soft_target_report,
+                    "sample_weights": sample_weight_report,
                     "action_distribution_regularization": action_distribution_report,
                     "dependencies": dependency_status(),
                 },

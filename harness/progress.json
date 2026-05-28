@@ -2343,6 +2343,11 @@
       "id": "rl_curriculum_stage02_map_specific_fallback_w025_probe",
       "summary": "将 map-specific fallback repair 的 edge repair rows 权重降回 0.25：soda-creek 300 秒平均存活高于 baseline 10.4806 秒，但 cracked-star-jar 180/300 秒平均存活触发 2 个 strict no-regression blockers，300 秒三图胜率全为 0.0；记录 fail_20260528_075，说明单一全局 edge 权重无法同时保住 cracked retention 与修复 soda/caramel。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_map_specific_fallback_w025_probe_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_sample_path_weight_support",
+      "summary": "train_behavior_clone.py 新增 --sample-path-weight PATH=WEIGHT，可对特定 JSONL 或目录前缀施加额外监督采样乘法权重，并在 sample_weights.sample_path_weights 中记录匹配数量；已补充 README/docs 说明和 test_sample_path_weight_multiplies_matching_source_samples，便于下一轮将 map-specific repair 与 cracked retention anchors 分开调权。",
+      "report": "python/train/README.md"
     }
   ],
   "next_recommended": [

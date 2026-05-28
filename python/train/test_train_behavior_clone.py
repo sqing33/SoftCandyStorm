@@ -84,6 +84,7 @@ def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none
         action_change_weight=2.0,
         edge_recovery_sample_weight=1.0,
         risk_recovery_sample_weight=1.0,
+        sample_path_weights=[],
         recovery_soft_target="none",
         recovery_soft_target_primary_mass=0.65,
         recovery_soft_target_top_k=3,
@@ -348,6 +349,37 @@ def test_edge_recovery_sample_weight_boosts_repair_samples(tmp_path):
     assert report["edge_recovery_weighted_sample_count"] == 2
     assert weights.tolist() == pytest.approx(
         [1.0, 3.5, 1.0, 1.0, 1.0, 3.5, 1.0, 1.0],
+        rel=1e-6,
+    )
+
+
+def test_sample_path_weight_multiplies_matching_source_samples(tmp_path):
+    import numpy as np
+
+    dataset = tiny_dataset()
+    dataset["sample_metadata"] = [dict(item) for item in dataset["sample_metadata"]]
+    dataset["sample_metadata"][0]["path"] = "harness/reports/a/anchor.jsonl"
+    dataset["sample_metadata"][1]["path"] = "harness/reports/a/anchor.jsonl"
+    dataset["sample_metadata"][2]["path"] = "harness/reports/b/repair.jsonl"
+    args = args_for(tmp_path, architecture="mlp")
+    args.sample_path_weights = [
+        {"path": "harness/reports/a", "weight": 2.0},
+        {"path": "harness/reports/b/repair.jsonl", "weight": 0.5},
+    ]
+
+    weights, report = build_sample_weights(
+        dataset,
+        list(range(len(dataset["actions"]))),
+        args,
+        np,
+    )
+
+    assert report["mode"] == "sample_path_auxiliary"
+    assert report["sample_path_weights"]["weighted_sample_count"] == 3
+    assert report["sample_path_weights"]["entries"][0]["matched_train_samples"] == 2
+    assert report["sample_path_weights"]["entries"][1]["matched_train_samples"] == 1
+    assert weights.tolist() == pytest.approx(
+        [2.0, 2.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0],
         rel=1e-6,
     )
 
