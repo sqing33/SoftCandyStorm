@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_066",
+  "category": "rl_policy",
+  "content_id": "stage02-late-route-recovery-sample-only-probe",
+  "seed": "62900-62902",
+  "bot": "Stage02LateRouteRecoverySampleOnlyProbe",
+  "time_seconds": 300.0,
+  "symptom": "只用 527 条 180-300 秒 late route-recovery repair samples 训练新的 staged behavior clone late 子模型后，60 秒 high-pressure 三图从 stage 02 PPO 的 1.0/1.0/1.0 回退到 0.3333/1.0/0.6667，300 秒三图为 0.0/0.0/0.0，不能推进 stage 03 或 RL acceptance。",
+  "root_cause": "late-only repair samples 可被训练管线消费，但单独训练缺少 clean late survival trajectory 和 no-regression 约束；新 late 子模型把 repair labels 学成新的动作偏置，短窗出现 action 3 opening death，长窗又在 caramel-workshop/cracked-star-jar 上转为 action 1 dominant。",
+  "fix": "不继续使用该 staged.pt 或 late.pt 作为候选。下一步需要混入 clean late survival trajectories、降低 repair sample 权重或回到 closed-loop PPO reward shaping，并在训练后固定跑 60/180/300 秒三窗回归。",
+  "validation": "训练、packaging、60/180/300 秒 high-pressure 对比和 60/300 秒 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_late_repair_probe_001；failure_analysis_60s.md 记录 3 次 opening failure，failure_analysis_300s.md 记录 9/9 失败。"
+}
