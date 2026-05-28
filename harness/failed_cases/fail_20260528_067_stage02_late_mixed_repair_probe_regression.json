@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_067",
+  "category": "rl_policy",
+  "content_id": "stage02-late-route-recovery-mixed-clean-probe",
+  "seed": "63000-63002",
+  "bot": "Stage02LateRouteRecoveryMixedCleanProbe",
+  "time_seconds": 300.0,
+  "symptom": "将 527 条 late route-recovery repair samples 与 clean late survival trajectories 混合训练 staged behavior clone late 子模型后，60 秒 high-pressure 三图仍只有 0.3333/1.0/0.6667，180 秒为 0.0/1.0/0.3333，300 秒三图全 0.0，不能推进 stage 03 或 RL acceptance。",
+  "root_cause": "混入 clean late trajectory 和降低 repair rows 权重仍不足以保护 staged behavior clone 的 phase 行为；新 late 子模型在 soda-creek/cracked-star-jar 仍引入 opening/mid death，并在 caramel-workshop/cracked-star-jar 长窗上形成 action 1 dominant 失败模式。",
+  "fix": "停止沿用当前 staged behavior clone late 替换路线。下一步应回到 closed-loop PPO reward/curriculum shaping，或先实现显式 phase no-regression 约束，再重新尝试 supervised late replacement。",
+  "validation": "训练、packaging、60/180/300 秒 high-pressure 对比和三窗 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_late_mixed_repair_probe_001；failure_analysis_300s.md 记录 9/9 失败，且 soda-creek/cracked-star-jar 已出现 opening/mid regression。"
+}
