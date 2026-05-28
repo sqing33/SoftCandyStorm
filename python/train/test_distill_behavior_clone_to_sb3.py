@@ -5,6 +5,7 @@ from pathlib import Path
 from python.train import distill_behavior_clone_to_sb3 as distill_module
 from python.train.distill_behavior_clone_to_sb3 import (
     build_distillation_sample_weights,
+    build_distillation_validation_slice_groups,
     collect_distillation_targets,
     load_distillation_dataset,
     mix_with_uniform,
@@ -168,3 +169,31 @@ def test_build_distillation_sample_weights_matches_path_prefix():
     assert report["mode"] == "sample_path_auxiliary"
     assert report["sample_path_weights"]["weighted_sample_count"] == 2
     assert report["sample_path_weights"]["entries"][0]["matched_train_samples"] == 2
+
+
+def test_build_distillation_validation_slice_groups_tracks_sources_and_paths():
+    dataset = {
+        "sample_metadata": [
+            {
+                "path": "harness/reports/full_anchor/a.jsonl",
+            },
+            {
+                "path": "harness/reports/drift/mid_anchor_drift_training_samples.jsonl",
+                "sample_source": "anchor_drift_diagnostic",
+            },
+            {
+                "path": "harness/reports/drift/other.jsonl",
+                "sample_source": "anchor_drift_diagnostic",
+            },
+        ],
+    }
+
+    groups = build_distillation_validation_slice_groups(
+        dataset,
+        np.asarray([0, 1, 2]),
+        [{"path": "harness/reports/drift", "weight": 6.0}],
+    )
+
+    assert groups["sample_sources"]["trajectory"] == [0]
+    assert groups["sample_sources"]["anchor_drift_diagnostic"] == [1, 2]
+    assert groups["sample_path_weights"][0]["indices"] == [1, 2]

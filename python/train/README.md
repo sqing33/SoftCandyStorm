@@ -491,6 +491,8 @@ When a supervised SB3 re-alignment needs the `anchor_drift_sample` rows exported
 
 Use repeated `--sample-path-weight PATH=WEIGHT` with `distill_behavior_clone_to_sb3.py` when a broad full-anchor dataset needs a small repair slice, such as `anchor_drift_sample` rows, to affect supervised SB3 initialization. Matching uses the same exact-path or directory-prefix semantics as behavior-clone training and is reported under `sample_weights`; it is still initialization evidence only.
 
+Distillation reports include `validation_slices`, grouped by `sample_source` and by every configured `--sample-path-weight` match. Use these slice metrics to check whether a weighted repair source improved without hiding full-anchor regression behind the aggregate validation loss.
+
 Use `compare_sb3_to_behavior_clone_anchor.py` after closed-loop PPO continuation when you need to measure how far a candidate drifted from a behavior-clone anchor. It reports KL divergence, argmax agreement, and per-map / per-time-bucket alignment over offline trajectory samples, and it can use the same `--opening-model <zip> --opening-seconds <seconds>` anchor wrapper. Passing thresholds in this report is only repair evidence; it does not replace high-pressure comparison or no-regression validation.
 
 When comparing against `anchor_drift_sample` JSONL rows from `export_anchor_drift_samples.py --include-observation`, pass `--include-anchor-drift-samples`. The flag is explicit so drift diagnostics do not silently become normal behavior-clone data; use it for pre-checking a start model against selected high-KL rows before launching another guarded PPO continuation.

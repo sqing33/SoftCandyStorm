@@ -310,6 +310,109 @@ def evaluate_supervised(model, observations, targets, torch_module):
     }
 
 
+def build_distillation_validation_slice_groups(dataset, indices, sample_path_weights):
+    validation_indices = [int(index) for index in indices]
+    sample_metadata = dataset["sample_metadata"]
+    source_groups = {}
+    for index in validation_indices:
+        sample = sample_metadata[index]
+        source = sample.get("sample_source") or "trajectory"
+        source_groups.setdefault(source, []).append(index)
+
+    normalized_path_weights = normalize_sample_path_weights(sample_path_weights)
+    path_groups = [
+        {
+            "path": item["path"],
+            "weight": item["weight"],
+            "indices": [],
+        }
+        for item in normalized_path_weights
+    ]
+    path_group_by_path = {item["path"]: item for item in path_groups}
+    if normalized_path_weights:
+        for index in validation_indices:
+            sample = sample_metadata[index]
+            _multiplier, matched_paths = sample_path_weight_for(
+                sample.get("path"),
+                normalized_path_weights,
+            )
+            for path in matched_paths:
+                path_group_by_path[path]["indices"].append(index)
+
+    return {
+        "sample_sources": source_groups,
+        "sample_path_weights": path_groups,
+    }
+
+
+def evaluate_supervised_indices(model, observations, targets, indices, torch_module):
+    selected_indices = [int(index) for index in indices]
+    if not selected_indices:
+        return {
+            "sample_count": 0,
+            "loss": None,
+            "argmax_accuracy": None,
+            "policy_entropy_nats": None,
+        }
+    selected_observations = torch_module.from_numpy(observations[selected_indices])
+    selected_targets = torch_module.from_numpy(targets[selected_indices])
+    metrics = evaluate_supervised(
+        model,
+        selected_observations,
+        selected_targets,
+        torch_module,
+    )
+    return {
+        "sample_count": len(selected_indices),
+        **metrics,
+    }
+
+
+def evaluate_distillation_validation_slices(
+    model,
+    observations,
+    targets,
+    dataset,
+    validation_indices,
+    sample_path_weights,
+    torch_module,
+):
+    groups = build_distillation_validation_slice_groups(
+        dataset,
+        validation_indices,
+        sample_path_weights,
+    )
+    return {
+        "sample_sources": {
+            source: evaluate_supervised_indices(
+                model,
+                observations,
+                targets,
+                indices,
+                torch_module,
+            )
+            for source, indices in sorted(groups["sample_sources"].items())
+        },
+        "sample_path_weights": {
+            "enabled": bool(groups["sample_path_weights"]),
+            "entries": [
+                {
+                    "path": item["path"],
+                    "weight": item["weight"],
+                    **evaluate_supervised_indices(
+                        model,
+                        observations,
+                        targets,
+                        item["indices"],
+                        torch_module,
+                    ),
+                }
+                for item in groups["sample_path_weights"]
+            ],
+        },
+    }
+
+
 def distill(config, args):
     require_dependencies()
     import numpy as np
@@ -431,6 +534,15 @@ def distill(config, args):
             )
         completed_at = datetime.now(timezone.utc).isoformat()
         model.save(model_path)
+        validation_slices = evaluate_distillation_validation_slices(
+            model,
+            observations,
+            targets,
+            dataset,
+            validation_indices,
+            args.sample_path_weights,
+            torch,
+        )
     finally:
         env.close()
 
@@ -472,6 +584,7 @@ def distill(config, args):
             "completed_at": completed_at,
         },
         "sample_weights": sample_weight_report,
+        "validation_slices": validation_slices,
         "history": history,
         "final": history[-1] if history else {},
         "limitations": [

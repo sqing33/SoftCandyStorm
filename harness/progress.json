@@ -2523,6 +2523,11 @@
       "id": "rl_sb3_supervised_realign_full_anchor_drift_w40",
       "summary": "首个 full-anchor + top drift rows 40x supervised SB3 re-alignment 已被 anchor alignment 拒绝：top drift rows mean KL 降到 0.200915，但 argmax agreement 0.785 且 soda/caramel 分桶仍超阈值；full-anchor overall mean KL 0.434754、argmax agreement 0.6385，已记录 fail_20260528_092。因此不得从该 checkpoint 继续 guarded PPO 或 no-regression。",
       "report": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_distillation_validation_slice_metrics",
+      "summary": "distill_behavior_clone_to_sb3.py 的 report 已增加 validation_slices，会按 sample_source 和每个 --sample-path-weight 命中路径拆分 validation loss、argmax accuracy 与 entropy，用于下一轮 drift 权重或 full-anchor pretrain/fine-tune 时审查局部修复是否破坏 broad anchor。",
+      "report": "python/train/distill_behavior_clone_to_sb3.py"
     }
   ],
   "next_recommended": [

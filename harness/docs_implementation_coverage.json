@@ -1301,7 +1301,8 @@
             "已有 SB3 checkpoint 起点 sweep 未找到合格替代：最接近的 phase_specific_anchor_smoke 仍为 overall mean KL 2.14298、argmax agreement 0.0，其余候选也全部失败；已记录 fail_20260528_091，说明不能只换旧 checkpoint 继续 PPO。",
             "distill_behavior_clone_to_sb3.py 已增加显式 --include-anchor-drift-samples，可把带 observation 的 anchor_drift_sample 行用于 supervised SB3 re-alignment / distillation 初始化；默认仍拒绝 drift diagnostics。",
             "distill_behavior_clone_to_sb3.py 已支持 --sample-path-weight PATH=WEIGHT，可在 broad full-anchor + 小型 repair slice 混合数据中按 exact path 或 directory prefix 放大指定来源的 supervised loss，并在 report.sample_weights 中记录权重分布与命中样本数。",
-            "首个 full-anchor + top drift rows 40x supervised SB3 re-alignment 已被 anchor alignment 拒绝：top drift rows mean KL 降到 0.200915，但 argmax agreement 0.785 且 soda/caramel 分桶仍超阈值；full-anchor overall mean KL 0.434754、argmax agreement 0.6385，已记录 fail_20260528_092，不能进入 guarded PPO 或 fixed-window no-regression。"
+            "首个 full-anchor + top drift rows 40x supervised SB3 re-alignment 已被 anchor alignment 拒绝：top drift rows mean KL 降到 0.200915，但 argmax agreement 0.785 且 soda/caramel 分桶仍超阈值；full-anchor overall mean KL 0.434754、argmax agreement 0.6385，已记录 fail_20260528_092，不能进入 guarded PPO 或 fixed-window no-regression。",
+            "distill_behavior_clone_to_sb3.py 的 report 已增加 validation_slices，会按 sample_source 和每个 --sample-path-weight 命中路径拆分 validation loss、argmax accuracy 与 entropy，用于下一轮 drift 权重或 full-anchor pretrain/fine-tune 时审查局部修复是否破坏 broad anchor。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
