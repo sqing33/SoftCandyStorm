@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_079",
+  "category": "rl_policy",
+  "content_id": "stage02-current-failure-trace-incremental-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02CurrentFailureTraceIncrementalProbe",
+  "time_seconds": 300.0,
+  "symptom": "将 current-failure trace 新导出的 772 条 map/time-window route-recovery samples 以 0.5x 目录权重增量混入上一版 path-weighted trace 数据底座后，60 秒和 180 秒 high-pressure 对比保持可用，300 秒 soda-creek 胜率从 0.0 提到 0.3333；但 caramel-workshop 仍为 0.0，cracked-star-jar 从上一版 current-failure fallback best 的 0.3333 回退到 0.0。相对 seed63100 stage02 baseline 还触发 caramel-workshop 300 秒平均存活 -0.4445s 的 strict no-regression blocker；相对 previous best 触发 caramel-workshop 平均存活回退和 cracked-star-jar 胜率回退两个 blockers。",
+  "root_cause": "更窄 current-failure trace 样本即使低权重增量混入，也会改变 fallback 的 late-window retention 平衡：它带来 soda-creek 局部收益，但没有形成 caramel-workshop 长局胜利转换，同时削弱 cracked-star-jar 上一版 300 秒胜利保持。当前监督数据仍主要在 route-recovery/贴边恢复局部状态上补洞，缺少 per-map late win-conversion 目标和 closed-loop 状态分布约束。",
+  "fix": "不要推进该 checkpoint，不要用它替代 current-failure fallback best。下一步应回到上一版 best 作为 retention anchor，将 current-failure trace 样本保留为诊断或更低权重候选；若继续训练，应优先尝试 closed-loop constrained repair、per-map late win-conversion objective，或显式约束 cracked-star-jar retention 与 caramel-workshop 300 秒 survival/win conversion。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、seed63100 baseline window regression、previous-best window regression 和 300 秒 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_trace_incremental_probe_001；window_regression_vs_seed63100_stage02.md 为 policy_window_regression_failed，window_regression_vs_current_failure_best.md 也为 policy_window_regression_failed，comparison_300s.json 为 multimap_comparison_recorded_needs_policy_repair。"
+}
