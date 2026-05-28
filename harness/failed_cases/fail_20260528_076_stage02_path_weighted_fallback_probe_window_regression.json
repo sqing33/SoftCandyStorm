@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_076",
+  "category": "rl_policy",
+  "content_id": "stage02-path-weighted-fallback-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02PathWeightedFallbackProbe",
+  "time_seconds": 300.0,
+  "symptom": "使用 --sample-path-weight 将 cracked-star-jar late-survival anchors 提高到 1.4x、caramel map-specific repair samples 降到 0.75x 后，cracked-star-jar 300 秒胜率保住 0.3333；但同 seed window regression 仍触发 2 个 blockers：cracked-star-jar 180 秒平均存活回退 9.1443 秒，soda-creek 300 秒平均存活回退 2.2886 秒。soda-creek 和 caramel-workshop 300 秒胜率仍为 0.0，不能推进 RL acceptance。",
+  "root_cause": "路径级调权能拆开 retention anchors 与 map-specific repair samples，但当前权重组合仍只是监督采样概率调节，没有形成稳定的跨地图中后窗路线恢复策略。cracked retention、soda mid recovery 和 caramel opening/late recovery 仍互相牵制。",
+  "fix": "拒绝该 checkpoint。下一步不要推进 stage 03 或 rl_test_bot_candidate；应继续做更窄的 map/time-window 约束、增加 seed-matched clean survival anchors，或转向 closed-loop constraint repair，并保留 60/180/300 秒同 seed no-regression gate。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、同 seed window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001；window_regression_vs_seed63100_stage02.md 记录 policy_window_regression_failed 和 2 个 blockers，failure_analysis_300s.md 记录 8 个失败 episode。"
+}

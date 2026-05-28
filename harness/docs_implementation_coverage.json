@@ -1011,6 +1011,14 @@
             "python/train/train_behavior_clone.py",
             "python/train/test_train_behavior_clone.py",
             "python/train/README.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/summary.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/fallback_training.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/comparison_60s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/comparison_180s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/comparison_300s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/window_regression_vs_seed63100_stage02.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/failure_analysis_300s.md",
+            "harness/failed_cases/fail_20260528_076_stage02_path_weighted_fallback_probe_window_regression.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/late_training.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/packaging.json",
@@ -1072,7 +1080,8 @@
             "late-retention fallback 当前失败 trace 已导出 soda-creek 60-180 秒 115 条、caramel-workshop opening 102 条和 caramel-workshop 180-300 秒 46 条 map-specific route recovery samples，均通过 edge_recovery_samples_valid；这些仍只是 repair training input，不能解除 RL acceptance blocker。",
             "混入 map-specific route recovery samples 的 0.35 权重 probe 把 cracked-star-jar 300 秒提升到 0.6667，但触发 soda-creek 300 秒平均存活 strict no-regression blocker，且 soda-creek 与 caramel-workshop 300 秒仍为 0.0；该 checkpoint 已记录 fail_20260528_074 并继续阻塞 RL acceptance。",
             "map-specific route recovery samples 的 0.25 权重 probe 解除 soda-creek 300 秒平均存活微回归，但让 cracked-star-jar 180/300 秒平均存活触发 2 个 strict no-regression blockers，300 秒三图胜率全为 0.0；该 checkpoint 已记录 fail_20260528_075，说明不能继续只调单一全局 edge 权重。",
-            "train_behavior_clone.py 已新增 --sample-path-weight PATH=WEIGHT 并补充测试与文档，可对 JSONL 文件或目录前缀进行源级采样调权；该能力为后续拆分 map-specific repair 与 retention anchors 提供工具支持，但本身不是 policy gate。"
+            "train_behavior_clone.py 已新增 --sample-path-weight PATH=WEIGHT 并补充测试与文档，可对 JSONL 文件或目录前缀进行源级采样调权；该能力为后续拆分 map-specific repair 与 retention anchors 提供工具支持，但本身不是 policy gate。",
+            "首个 path-weighted fallback probe 将 cracked-star-jar late-survival anchors 提到 1.4x、caramel opening/late repair samples 降到 0.75x 后，cracked-star-jar 300 秒胜率保住 0.3333；但同 seed no-regression 仍因 cracked-star-jar 180 秒和 soda-creek 300 秒平均存活回退失败，记录 fail_20260528_076，说明路径级调权仍不能解除 RL acceptance blocker。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

@@ -2348,6 +2348,11 @@
       "id": "rl_behavior_clone_sample_path_weight_support",
       "summary": "train_behavior_clone.py 新增 --sample-path-weight PATH=WEIGHT，可对特定 JSONL 或目录前缀施加额外监督采样乘法权重，并在 sample_weights.sample_path_weights 中记录匹配数量；已补充 README/docs 说明和 test_sample_path_weight_multiplies_matching_source_samples，便于下一轮将 map-specific repair 与 cracked retention anchors 分开调权。",
       "report": "python/train/README.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_path_weighted_fallback_probe",
+      "summary": "使用 --sample-path-weight 拆分 fallback 训练权重：全局 edge repair 仍为 0.25，cracked-star-jar late-survival anchors 提到 1.4x，caramel opening/late repair samples 降到 0.75x；300 秒 cracked-star-jar 保住 0.3333，但同 seed no-regression 仍因 cracked-star-jar 180 秒平均存活回退 9.1443 秒、soda-creek 300 秒平均存活回退 2.2886 秒失败，记录 fail_20260528_076，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_fallback_probe_001/summary.md"
     }
   ],
   "next_recommended": [
