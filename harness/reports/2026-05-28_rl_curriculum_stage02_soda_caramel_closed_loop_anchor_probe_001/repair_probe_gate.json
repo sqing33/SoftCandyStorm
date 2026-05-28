@@ -1,0 +1,89 @@
+{
+  "report_version": 1,
+  "decision": "rl_repair_probe_gate_failed",
+  "gate_decision": "rl_repair_probe_gate_failed",
+  "training_report": {
+    "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/ppo_training_report.json",
+    "loaded": true,
+    "status": "trained",
+    "gate_decision": "trained_needs_rule_bot_comparison",
+    "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/ppo_soda_caramel_closed_loop_anchor_probe.zip",
+    "reward_profile": "late-route-recovery"
+  },
+  "anchor_alignment": {
+    "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/anchor_alignment.json",
+    "loaded": true,
+    "decision": "behavior_clone_anchor_alignment_failed",
+    "overall": {
+      "sample_count": 36426,
+      "mean_kl": 0.34314,
+      "max_kl": 3.513148,
+      "argmax_agreement": 0.6966,
+      "anchor_entropy_nats": 0.962823,
+      "candidate_entropy_nats": 1.493903
+    },
+    "blocker_count": 4
+  },
+  "window_regressions": [
+    {
+      "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/window_regression_vs_anchor_regularized_smoke.json",
+      "loaded": true,
+      "decision": "policy_window_regression_failed",
+      "blocker_count": 5,
+      "error_count": 0
+    },
+    {
+      "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/window_regression_vs_current_failure_best.json",
+      "loaded": true,
+      "decision": "policy_window_regression_failed",
+      "blocker_count": 6,
+      "error_count": 0
+    },
+    {
+      "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/window_regression_vs_seed63100_stage02.json",
+      "loaded": true,
+      "decision": "policy_window_regression_failed",
+      "blocker_count": 1,
+      "error_count": 0
+    }
+  ],
+  "failure_analysis": {
+    "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/failure_analysis_300s.json",
+    "loaded": true,
+    "decision": "rl_policy_failure_analysis_recorded",
+    "gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+    "total_failures": 9,
+    "repair_maps": [
+      "soda-creek",
+      "caramel-workshop",
+      "cracked-star-jar"
+    ]
+  },
+  "errors": [],
+  "blockers": [
+    "anchor_alignment: overall mean_kl 0.34314 exceeds 0.25",
+    "anchor_alignment: overall argmax_agreement 0.6966 below 0.75",
+    "anchor_alignment: by_map/soda-creek: mean_kl 0.369067 exceeds 0.35",
+    "anchor_alignment: by_time_bucket/mid_60_to_180: mean_kl 0.431042 exceeds 0.35",
+    "window_regression_vs_anchor_regularized_smoke: 180/soda-creek: win_rate_delta -0.3334 below required 0.0",
+    "window_regression_vs_anchor_regularized_smoke: 180/soda-creek: average_survival_seconds dropped 12.0816s beyond allowed 0.0s",
+    "window_regression_vs_anchor_regularized_smoke: 300/cracked-star-jar: win_rate_delta -0.3333 below required 0.0",
+    "window_regression_vs_anchor_regularized_smoke: 300/cracked-star-jar: average_survival_seconds dropped 8.8419s beyond allowed 0.0s",
+    "window_regression_vs_anchor_regularized_smoke: 300/soda-creek: average_survival_seconds dropped 29.842s beyond allowed 0.0s",
+    "window_regression_vs_current_failure_best: 180/cracked-star-jar: average_survival_seconds dropped 4.8339s beyond allowed 0.0s",
+    "window_regression_vs_current_failure_best: 180/soda-creek: average_survival_seconds dropped 26.4024s beyond allowed 0.0s",
+    "window_regression_vs_current_failure_best: 300/caramel-workshop: average_survival_seconds dropped 6.8348s beyond allowed 0.0s",
+    "window_regression_vs_current_failure_best: 300/cracked-star-jar: win_rate_delta -0.3333 below required 0.0",
+    "window_regression_vs_current_failure_best: 300/cracked-star-jar: average_survival_seconds dropped 25.5538s beyond allowed 0.0s",
+    "window_regression_vs_current_failure_best: 300/soda-creek: average_survival_seconds dropped 33.7396s beyond allowed 0.0s",
+    "window_regression_vs_seed63100_stage02: 300/cracked-star-jar: average_survival_seconds dropped 5.4463s beyond allowed 0.0s"
+  ],
+  "warnings": [
+    "failure_analysis: remaining failures mean this can only be limited repair evidence"
+  ],
+  "limitations": [
+    "This gate is for RL repair probes only; it is not policy acceptance.",
+    "Passing means a limited follow-up run may be considered, not that the policy is a candidate.",
+    "Release, playtest, and RL acceptance require their separate manifests and manual gates."
+  ]
+}

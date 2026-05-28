@@ -222,6 +222,8 @@ handoff splice late low-weight fallback probe 证实单纯低权重叠样本仍�
 
 soda / caramel focused closed-loop anchor probe 说明现有离线 KL anchor 还不足以保护 handoff / mid retention。该 run 从 anchor-regularized smoke checkpoint 出发，只在 `soda-creek` 与 `caramel-workshop` 上做 `1024` timestep `late-route-recovery` 训练，并用 current-failure fallback best + stage 02 opening 作为 full `36426` 样本 anchor。训练内 final anchor validation mean KL 为 `0.340916`、argmax agreement 为 `0.6914`；全量 alignment 仍失败，overall mean KL `0.34314`，mid `60-180s` mean KL `0.431042`。opening wrapper 保护下，60 秒为 `1.0/0.6667/1.0`，但 180 秒回落到 `0.3333/0.6667/0.6667`，300 秒三图仍为 `0.0/0.0/0.0`，且 action `7` 重新主导失败局。记录 `fail_20260528_088`；下一步不应继续扩大 PPO timesteps，应先解决 mid-window anchor drift，或增加在线 hard no-regression guard。
 
+为避免后续 RL repair probe 继续靠人工阅读分散报告判断是否能加长训练，`tools/validate_rl_repair_probe_gate.py` 已提供统一门禁：输入训练报告、anchor alignment、一个或多个 window regression 报告，以及可选 failure analysis，输出 `rl_repair_probe_gate_passed_for_limited_followup`、`rl_repair_probe_gate_failed` 或 `rl_repair_probe_gate_invalid`。该 gate 明确不是 acceptance；只要发现 anchor blockers、window regression blockers，或报告使用 `candidate` / `release` / `acceptance` 等过度措辞，就会拒绝。首个真实运行用于上述 soda / caramel closed-loop anchor probe，结果为 `rl_repair_probe_gate_failed`，记录 `16` 个 blockers 和 `1` 个 warning。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

@@ -2461,8 +2461,13 @@
     },
     {
       "id": "rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe",
-      "summary": "从 anchor-regularized smoke checkpoint 出发，只在 soda-creek/caramel-workshop 上做 1024 timestep late-route-recovery closed-loop 训练，并用 current-failure best + stage 02 opening 做 full 36426 样本 anchor。60 秒保持 1.0/0.6667/1.0，但 180 秒回落到 0.3333/0.6667/0.6667，300 秒仍为 0.0/0.0/0.0；全量 anchor alignment 失败，overall mean KL 0.34314、argmax agreement 0.6966，mid_60_to_180 mean KL 0.431042。已记录 fail_20260528_088，下一步应先解决 mid-window anchor drift 或增加 online hard no-regression guard。",
+      "summary": "从 anchor-regularized smoke checkpoint 出发，只在 soda-creek/caramel-workshop 上做 1024 timestep late-route-recovery closed-loop 训练，并用 current-failure best + stage 02 opening 做 full 36426 样本 anchor。60 秒保持 1.0/0.6667/1.0，但 180 秒回落到 0.3333/0.6667/0.6667，300 秒仍为 0.0/0.0/0.0；全量 anchor alignment 失败，overall mean KL 0.34314、argmax agreement 0.6966，mid_60_to_180 mean KL 0.431042。新增 repair probe gate 汇总后给出 16 个 blockers，已记录 fail_20260528_088，下一步应先解决 mid-window anchor drift 或增加 online hard no-regression guard。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/summary.md"
+    },
+    {
+      "id": "rl_repair_probe_gate_validator",
+      "summary": "新增 tools/validate_rl_repair_probe_gate.py 与单测，用于汇总训练报告、anchor alignment、window regression 和 failure analysis，阻止带有 anchor drift、window regression 或 candidate/release/acceptance 过度措辞的 repair probe 继续进入加长训练。该 gate 只允许 limited follow-up，不是 RL acceptance；已用 soda/caramel closed-loop anchor probe 真实产物验证会输出 rl_repair_probe_gate_failed。",
+      "report": "tools/validate_rl_repair_probe_gate.py"
     }
   ],
   "next_recommended": [

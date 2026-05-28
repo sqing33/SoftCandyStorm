@@ -9,6 +9,7 @@
 - Anchor fallback: `harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001/fallback.pt`
 - Anchor opening: `harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip`
 - Failure case: `harness/failed_cases/fail_20260528_088_stage02_soda_caramel_closed_loop_anchor_regression.json`
+- Repair probe gate: `repair_probe_gate.md`
 
 本 probe 不再继续 supervised sample stacking，而是从此前还能保住 `cracked-star-jar` 300 秒 `0.3333` 胜率的 anchor-regularized SB3 checkpoint 出发，只在 `soda-creek` / `caramel-workshop` 上做 `1024` timestep closed-loop `late-route-recovery` 训练。训练期间使用 current-failure fallback best 加 stage 02 opening 作为 offline KL anchor，并用 `map_time_bucket_balance` 与 `opening/mid/late = 1.5x/1.25x/1.0x` 的 time-bucket multiplier 约束漂移。
 
@@ -41,6 +42,10 @@
 | `mid_60_to_180` mean KL | `0.431042` | `<= 0.35` |
 
 Full alignment decision: `behavior_clone_anchor_alignment_failed`.
+
+## Repair Probe Gate
+
+`validate_rl_repair_probe_gate.py` 汇总本次训练报告、anchor alignment、三组 window regression 和 300 秒 failure analysis 后，给出 `rl_repair_probe_gate_failed`。该 gate 记录 `16` 个 blockers 和 `1` 个 warning，确认此分支不适合继续加长训练。
 
 ## Deterministic High-pressure Results
 
@@ -91,3 +96,5 @@ Full alignment decision: `behavior_clone_anchor_alignment_failed`.
 - `window_regression_vs_seed63100_stage02.md`
 - `failure_analysis_300s.json`
 - `failure_analysis_300s.md`
+- `repair_probe_gate.json`
+- `repair_probe_gate.md`
