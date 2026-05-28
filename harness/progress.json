@@ -2468,6 +2468,11 @@
       "id": "rl_repair_probe_gate_validator",
       "summary": "新增 tools/validate_rl_repair_probe_gate.py 与单测，用于汇总训练报告、anchor alignment、window regression 和 failure analysis，阻止带有 anchor drift、window regression 或 candidate/release/acceptance 过度措辞的 repair probe 继续进入加长训练。该 gate 只允许 limited follow-up，不是 RL acceptance；已用 soda/caramel closed-loop anchor probe 真实产物验证会输出 rl_repair_probe_gate_failed。",
       "report": "tools/validate_rl_repair_probe_gate.py"
+    },
+    {
+      "id": "rl_mid_anchor_drift_sample_export",
+      "summary": "新增 tools/export_anchor_drift_samples.py 与单测，将 SB3 candidate 相对 behavior-clone anchor 的高 KL 样本导出为 JSONL/JSON/Markdown 诊断报告。已用 soda/caramel closed-loop anchor probe 导出 mid_60_to_180 样本：36426 条样本中筛出 2888 条 KL>=0.35 且 argmax 不一致的 drift rows，并保存 top 200；该报告只定位 mid-window anchor drift，不是 policy gate 或 acceptance evidence。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_samples.md"
     }
   ],
   "next_recommended": [
@@ -2494,6 +2499,10 @@
     {
       "id": "rl_policy_multimap_training_after_current_failure_trace_incremental_probe",
       "summary": "current-failure trace samples 不能直接替换上一版 best，0.5x 增量混入也未解除 blocker；随后将 current-failure fallback best 蒸馏成 SB3 PPO 并用 `late-win-conversion` closed-loop 续训也失败，opening-aware distillation 再探针虽修正 teacher 入口并提高动作熵，但 300 秒三图仍全 0.0，且相对 current best 丢掉 cracked-star-jar 300 秒 0.3333 胜率。下一步应转向 KL/behavior-clone anchor、per-map constrained repair 或显式 retention 保护；仍不得推进 RL acceptance。"
+    },
+    {
+      "id": "rl_policy_mid_anchor_drift_repair",
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出：top rows 显示 candidate 在高 KL 中反复偏离 anchor action 8，转向 action 4/5。下一步应先设计 handoff/mid-window anchor objective 或 online hard no-regression guard，再做任何更长 closed-loop PPO 训练；当前 RL acceptance 继续 blocked。"
     },
     {
       "id": "rl_policy_multimap_training",

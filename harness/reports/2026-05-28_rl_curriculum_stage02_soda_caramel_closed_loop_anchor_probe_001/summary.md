@@ -71,10 +71,22 @@ Full alignment decision: `behavior_clone_anchor_alignment_failed`.
 | `caramel-workshop` | `3` | opening `1`, late `2` | action `7` / `32.55%` |
 | `cracked-star-jar` | `3` | mid `1`, late `2` | action `7` / `44.02%` |
 
+## Anchor Drift Samples
+
+`export_anchor_drift_samples.py` 已把本 probe 相对 current-failure best + stage 02 opening anchor 的 `mid_60_to_180` 高漂移样本导出为诊断报告。该导出检查 `36426` 条离线样本，筛出 `2888` 条 `KL >= 0.35` 且 argmax 不一致的 mid-window 样本，并输出 KL 最高的 `200` 条样本。
+
+| Scope | Samples | Mean KL | Max KL | Disagreement |
+| --- | ---: | ---: | ---: | ---: |
+| matched `mid_60_to_180` | `2888` | `0.869489` | `3.513148` | `1.0` |
+| exported top samples | `200` | `2.228259` | `3.513148` | `1.0` |
+
+Top 200 中 `cracked-star-jar` 占 `128` 条、`soda-creek` 占 `40` 条、`caramel-workshop` 占 `32` 条；anchor action 主要集中在 action `8`，candidate action 主要集中在 action `4` / `5`。这批样本只能作为 mid-window anchor drift 的 repair diagnostics，不是 policy gate、候选接受或发布证据；任何基于它的修复仍必须重跑 deterministic high-pressure、no-regression 与 repair-probe gate。
+
 ## 判断
 
 - Closed-loop training with the existing anchor regularization path is functional, but this configuration still drifts too far from the current-failure best anchor.
 - The main new blocker is mid-window drift: `mid_60_to_180` mean KL is `0.431042`, and `soda-creek` 180 秒 win rate drops relative to the start model.
+- The exported drift samples show the actionable mismatch: mid-window high-KL rows are all argmax disagreements, with the top examples repeatedly flipping between anchor action `8` and candidate action `4` / `5`.
 - Do not continue by simply increasing PPO timesteps. The next repair needs a stricter mid-window anchor / handoff objective or an online hard no-regression guard before any longer closed-loop run.
 
 ## 输出文件
@@ -98,3 +110,6 @@ Full alignment decision: `behavior_clone_anchor_alignment_failed`.
 - `failure_analysis_300s.md`
 - `repair_probe_gate.json`
 - `repair_probe_gate.md`
+- `mid_anchor_drift_samples.jsonl`
+- `mid_anchor_drift_samples_report.json`
+- `mid_anchor_drift_samples.md`

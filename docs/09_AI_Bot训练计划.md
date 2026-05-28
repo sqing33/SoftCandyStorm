@@ -224,6 +224,10 @@ soda / caramel focused closed-loop anchor probe 说明现有离线 KL anchor 还
 
 为避免后续 RL repair probe 继续靠人工阅读分散报告判断是否能加长训练，`tools/validate_rl_repair_probe_gate.py` 已提供统一门禁：输入训练报告、anchor alignment、一个或多个 window regression 报告，以及可选 failure analysis，输出 `rl_repair_probe_gate_passed_for_limited_followup`、`rl_repair_probe_gate_failed` 或 `rl_repair_probe_gate_invalid`。该 gate 明确不是 acceptance；只要发现 anchor blockers、window regression blockers，或报告使用 `candidate` / `release` / `acceptance` 等过度措辞，就会拒绝。首个真实运行用于上述 soda / caramel closed-loop anchor probe，结果为 `rl_repair_probe_gate_failed`，记录 `16` 个 blockers 和 `1` 个 warning。
 
+为把上述 gate 暴露的 `mid_60_to_180` drift 从聚合指标拆成可审查样本，`tools/export_anchor_drift_samples.py` 已提供离线样本导出入口。它会在同一批 behavior-clone / trajectory 数据上加载 SB3 candidate 与 behavior-clone anchor，逐条输出 anchor / candidate action 分布、argmax、KL、top actions、地图、seed 和时间桶；支持 `--time-bucket`、`--map-id`、`--min-kl`、`--only-disagreement`、`--top` 与 `--include-observation`。该工具只产出 repair diagnostics，不能替代 anchor alignment、window no-regression、repair-probe gate 或 RL acceptance。
+
+soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条样本，在 `mid_60_to_180` 中筛出 `2888` 条 `KL >= 0.35` 且 argmax 不一致的样本，并导出 KL 最高的 `200` 条。Top 200 的 mean KL 为 `2.228259`、max KL 为 `3.513148`，全部为 argmax disagreement；其中 `cracked-star-jar` `128` 条、`soda-creek` `40` 条、`caramel-workshop` `32` 条，top examples 反复出现 anchor action `8` 与 candidate action `4` / `5` 的分歧。报告位于 `harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_samples.md`；下一步应把它作为 handoff / mid-window anchor objective 的定位材料，而不是继续增加 PPO timesteps。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
