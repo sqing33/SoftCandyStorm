@@ -8,7 +8,7 @@
 - Map filter: `['all']`
 - Minimum KL: `0.35`
 - Only disagreement: `True`
-- Include observation: `False`
+- Include observation: `True`
 
 ## Summary
 

@@ -228,6 +228,8 @@ soda / caramel focused closed-loop anchor probe 说明现有离线 KL anchor 还
 
 soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条样本，在 `mid_60_to_180` 中筛出 `2888` 条 `KL >= 0.35` 且 argmax 不一致的样本，并导出 KL 最高的 `200` 条。Top 200 的 mean KL 为 `2.228259`、max KL 为 `3.513148`，全部为 argmax disagreement；其中 `cracked-star-jar` `128` 条、`soda-creek` `40` 条、`caramel-workshop` `32` 条，top examples 反复出现 anchor action `8` 与 candidate action `4` / `5` 的分歧。报告位于 `harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_samples.md`；下一步应把它作为 handoff / mid-window anchor objective 的定位材料，而不是继续增加 PPO timesteps。
 
+`train_sb3.py` 的 anchor regularization 路径现在可以读取带 `observation` 的 `anchor_drift_sample` JSONL：普通 `train_behavior_clone.py` 数据入口默认仍会拒绝这类诊断样本，只有 `--anchor-dataset` 在 PPO anchor KL regularization 中会显式启用读取。使用方式是先用 `export_anchor_drift_samples.py --include-observation` 导出 top drift rows，再把该 JSONL 作为额外 `--anchor-dataset` 或单独 mid-window anchor dataset；训练报告会把它计入 `anchor_drift_sample_records` 和 `anchor_drift_diagnostic` sample source。本次已生成 `mid_anchor_drift_training_samples.jsonl`，包含 `200` 条带 observation 的 top drift rows，并用 loader 验证为 `observation_len = 145`、`action_count = 9`。该能力只是把高漂移样本纳入 KL 约束的工具入口，仍不能跳过 repair-probe gate 或 no-regression。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

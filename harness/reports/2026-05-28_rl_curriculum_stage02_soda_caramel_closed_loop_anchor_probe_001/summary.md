@@ -82,6 +82,8 @@ Full alignment decision: `behavior_clone_anchor_alignment_failed`.
 
 Top 200 中 `cracked-star-jar` 占 `128` 条、`soda-creek` 占 `40` 条、`caramel-workshop` 占 `32` 条；anchor action 主要集中在 action `8`，candidate action 主要集中在 action `4` / `5`。这批样本只能作为 mid-window anchor drift 的 repair diagnostics，不是 policy gate、候选接受或发布证据；任何基于它的修复仍必须重跑 deterministic high-pressure、no-regression 与 repair-probe gate。
 
+另有一份 `--include-observation` 版本输出为 `mid_anchor_drift_training_samples.jsonl`，同样包含 `200` 条 top drift rows，并已确认可由 `train_sb3.py` 的 anchor regularization 路径读取为 `anchor_drift_sample_records = 200`、`observation_len = 145`、`action_count = 9`。这份文件是后续 mid-window anchor KL repair 的可读输入，不是新增 policy 结果。
+
 ## 判断
 
 - Closed-loop training with the existing anchor regularization path is functional, but this configuration still drifts too far from the current-failure best anchor.
@@ -113,3 +115,6 @@ Top 200 中 `cracked-star-jar` 占 `128` 条、`soda-creek` 占 `40` 条、`cara
 - `mid_anchor_drift_samples.jsonl`
 - `mid_anchor_drift_samples_report.json`
 - `mid_anchor_drift_samples.md`
+- `mid_anchor_drift_training_samples.jsonl`
+- `mid_anchor_drift_training_samples_report.json`
+- `mid_anchor_drift_training_samples.md`

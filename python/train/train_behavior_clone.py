@@ -104,7 +104,7 @@ def dataset_paths(value):
     raise ValueError(f"dataset path must be a JSONL file or directory with JSONL files: {value}")
 
 
-def load_trajectory_dataset(path, limit=None):
+def load_trajectory_dataset(path, limit=None, include_anchor_drift_samples=False):
     observations = []
     actions = []
     sample_metadata = []
@@ -114,6 +114,7 @@ def load_trajectory_dataset(path, limit=None):
     upgrade_sample_records = 0
     edge_recovery_sample_records = 0
     risk_recovery_sample_records = 0
+    anchor_drift_sample_records = 0
     paths = dataset_paths(path)
 
     for dataset_path in paths:
@@ -146,6 +147,50 @@ def load_trajectory_dataset(path, limit=None):
                     continue
                 if record_type == "upgrade_sample":
                     upgrade_sample_records += 1
+                    continue
+                if record_type == "anchor_drift_sample":
+                    if not include_anchor_drift_samples:
+                        raise ValueError(
+                            "anchor_drift_sample records require "
+                            "include_anchor_drift_samples=True"
+                        )
+                    if record.get("sample_role") != "repair_diagnostics":
+                        raise ValueError(
+                            f"anchor drift sample must be repair_diagnostics in {dataset_path}:{line_number}"
+                        )
+                    observation = record.get("observation")
+                    action = record.get("anchor_action")
+                    if not isinstance(observation, list) or not observation:
+                        raise ValueError(
+                            f"anchor drift sample missing observation in {dataset_path}:{line_number}"
+                        )
+                    if not isinstance(action, int):
+                        raise ValueError(
+                            f"anchor drift sample missing integer anchor_action in {dataset_path}:{line_number}"
+                        )
+                    observations.append([float(value) for value in observation])
+                    actions.append(action)
+                    anchor_drift_sample_records += 1
+                    sample_metadata.append(
+                        {
+                            "path": str(dataset_path),
+                            "seed": record.get("seed"),
+                            "map_id": record.get("map_id"),
+                            "tick": int(
+                                record.get("tick", record.get("sample_index", 0)) or 0
+                            ),
+                            "time_seconds": float(record.get("time_seconds", 0.0)),
+                            "health_ratio": float(record.get("health_ratio", 1.0)),
+                            "level": int(record.get("level", 0)),
+                            "kills": int(record.get("kills", 0)),
+                            "sample_source": "anchor_drift_diagnostic",
+                            "anchor_action": int(record.get("anchor_action")),
+                            "candidate_action": record.get("candidate_action"),
+                            "dataset_action": record.get("dataset_action"),
+                            "kl_divergence": record.get("kl_divergence"),
+                            "argmax_agree": record.get("argmax_agree"),
+                        }
+                    )
                     continue
                 if record_type in {
                     "edge_recovery_supervision_sample",
@@ -233,7 +278,7 @@ def load_trajectory_dataset(path, limit=None):
     ]
     if metadata_action_counts:
         action_count = max(action_count, max(metadata_action_counts))
-    if edge_recovery_sample_records or risk_recovery_sample_records:
+    if edge_recovery_sample_records or risk_recovery_sample_records or anchor_drift_sample_records:
         action_count = max(action_count, DEFAULT_MOVEMENT_ACTION_COUNT)
 
     return {
@@ -247,6 +292,7 @@ def load_trajectory_dataset(path, limit=None):
         "upgrade_sample_records": upgrade_sample_records,
         "edge_recovery_sample_records": edge_recovery_sample_records,
         "risk_recovery_sample_records": risk_recovery_sample_records,
+        "anchor_drift_sample_records": anchor_drift_sample_records,
         "observation_len": observation_len,
         "action_count": action_count,
     }
@@ -361,6 +407,7 @@ def summarize_dataset(dataset):
         "upgrade_sample_records": dataset.get("upgrade_sample_records", 0),
         "edge_recovery_sample_records": dataset.get("edge_recovery_sample_records", 0),
         "risk_recovery_sample_records": dataset.get("risk_recovery_sample_records", 0),
+        "anchor_drift_sample_records": dataset.get("anchor_drift_sample_records", 0),
         "observation_len": dataset["observation_len"],
         "action_count": dataset["action_count"],
         "action_distribution": {

@@ -1403,7 +1403,11 @@ def prepare_anchor_regularization(
         raise ValueError("anchor regularization is currently supported only for ppo")
     import numpy as np
 
-    dataset = load_trajectory_dataset(anchor_datasets, limit=anchor_limit_samples)
+    dataset = load_trajectory_dataset(
+        anchor_datasets,
+        limit=anchor_limit_samples,
+        include_anchor_drift_samples=True,
+    )
     dataset, time_bucket_filter_report = filter_anchor_dataset_by_time_buckets(
         dataset,
         anchor_include_time_buckets,

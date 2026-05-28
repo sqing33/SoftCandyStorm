@@ -318,6 +318,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Map filter: `{report['filters']['maps']}`",
         f"- Minimum KL: `{report['filters']['min_kl']}`",
         f"- Only disagreement: `{report['filters']['only_disagreement']}`",
+        f"- Include observation: `{report['filters']['include_observation']}`",
         "",
         "## Summary",
         "",

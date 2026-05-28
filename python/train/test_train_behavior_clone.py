@@ -66,6 +66,62 @@ def tiny_dataset():
     }
 
 
+def test_load_trajectory_dataset_can_include_anchor_drift_samples(tmp_path):
+    path = tmp_path / "drift.jsonl"
+    rows = [
+        {
+            "record_type": "anchor_drift_sample",
+            "schema_version": 1,
+            "sample_role": "repair_diagnostics",
+            "sample_index": 7,
+            "map_id": "soda-creek",
+            "seed": 63101,
+            "time_seconds": 90.0,
+            "anchor_action": 8,
+            "candidate_action": 4,
+            "dataset_action": -1,
+            "argmax_agree": False,
+            "kl_divergence": 2.5,
+            "observation": [0.1, 0.2, 0.3],
+        },
+        {
+            "record_type": "anchor_drift_sample",
+            "schema_version": 1,
+            "sample_role": "repair_diagnostics",
+            "sample_index": 8,
+            "map_id": "soda-creek",
+            "seed": 63101,
+            "time_seconds": 91.0,
+            "anchor_action": 5,
+            "candidate_action": 4,
+            "dataset_action": -1,
+            "argmax_agree": False,
+            "kl_divergence": 1.7,
+            "observation": [0.2, 0.3, 0.4],
+        },
+    ]
+    path.write_text(
+        "\n".join(json.dumps(row) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="include_anchor_drift_samples"):
+        load_trajectory_dataset(path)
+
+    dataset = load_trajectory_dataset(path, include_anchor_drift_samples=True)
+    summary = summarize_dataset(dataset)
+
+    assert dataset["actions"] == [8, 5]
+    assert dataset["action_count"] == 9
+    assert dataset["anchor_drift_sample_records"] == 2
+    assert dataset["sample_metadata"][0]["sample_source"] == "anchor_drift_diagnostic"
+    assert dataset["sample_metadata"][0]["kl_divergence"] == 2.5
+    assert summary["anchor_drift_sample_records"] == 2
+    assert summary["sample_summary"]["sample_source_distribution"][
+        "anchor_drift_diagnostic"
+    ]["count"] == 2
+
+
 def args_for(tmp_path, *, architecture, context_frames=1, map_conditioning="none"):
     return SimpleNamespace(
         architecture=architecture,

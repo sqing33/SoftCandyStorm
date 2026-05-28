@@ -2473,6 +2473,11 @@
       "id": "rl_mid_anchor_drift_sample_export",
       "summary": "新增 tools/export_anchor_drift_samples.py 与单测，将 SB3 candidate 相对 behavior-clone anchor 的高 KL 样本导出为 JSONL/JSON/Markdown 诊断报告。已用 soda/caramel closed-loop anchor probe 导出 mid_60_to_180 样本：36426 条样本中筛出 2888 条 KL>=0.35 且 argmax 不一致的 drift rows，并保存 top 200；该报告只定位 mid-window anchor drift，不是 policy gate 或 acceptance evidence。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_samples.md"
+    },
+    {
+      "id": "rl_anchor_drift_samples_regularization_input",
+      "summary": "train_behavior_clone.py 的通用数据加载默认拒绝 anchor_drift_sample，train_sb3.py 的 PPO anchor regularization 路径则显式允许带 observation 的 drift diagnostics 作为 --anchor-dataset 输入。已生成 mid_anchor_drift_training_samples.jsonl，包含 200 条 mid_60_to_180 top drift rows，并验证可读取为 observation_len 145、action_count 9、anchor_drift_sample_records 200；该文件只用于后续 KL repair 约束，不是 policy gate。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.md"
     }
   ],
   "next_recommended": [
