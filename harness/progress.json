@@ -2313,6 +2313,11 @@
       "id": "rl_curriculum_stage02_soda_cracked_staged_opening_probe",
       "summary": "记录 stage 02 opening + soda/cracked retention fallback staged wrapper：相对 seed 63100 stage 02 baseline 的 60/180/300 秒同 seed no-regression 通过，300 秒 cracked-star-jar 胜率从 0.0 提升到 0.3333；但 soda-creek 和 caramel-workshop 300 秒仍为 0.0，记录 fail_20260528_071，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_cracked_staged_opening_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_staged_opening_fallback_trace",
+      "summary": "复跑 stage 02 opening + soda/cracked retention fallback 的 300 秒失败局 trace：8 条失败 trace、3745 个采样点中 2856 个为负 route_recovery，boundary_edge 占 2788 行；导出 1473 条 60-180 秒和 395 条 180-300 秒 route recovery repair samples，均通过 edge_recovery_samples_valid。该报告只提供 fallback repair training input，不是 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_staged_opening_fallback_trace_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2334,7 +2339,7 @@
     },
     {
       "id": "rl_policy_multimap_training_after_staged_opening_probe",
-      "summary": "stage 02 opening + soda/cracked retention fallback 已通过 seed 63100 同 seed no-regression，但 300 秒 soda-creek/caramel-workshop 仍为 0.0。下一步应把 staged opening 作为诊断分支，专门修 fallback 的 60-180 与 180-300 秒跨图恢复能力，并继续保持 RL acceptance blocked。"
+      "summary": "stage 02 opening + soda/cracked retention fallback 已通过 seed 63100 同 seed no-regression，但 300 秒 soda-creek/caramel-workshop 仍为 0.0；失败 trace 已定位为 boundary_edge 主导的 route_recovery 热点，并导出中窗/长窗 repair samples。下一步可以做低权重 fallback repair 消融，但必须继续保持 RL acceptance blocked。"
     },
     {
       "id": "rl_policy_multimap_training",
