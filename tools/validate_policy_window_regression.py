@@ -111,6 +111,32 @@ def collect_report_warnings(
         warnings.append(f"{report_name}/{label}: stochastic comparison is diagnostic only")
 
 
+def collect_context_errors(
+    label: str,
+    baseline_report: dict[str, Any],
+    candidate_report: dict[str, Any],
+    errors: list[str],
+) -> None:
+    fields = [
+        "seconds",
+        "seed_start",
+        "seeds",
+        "map_preset",
+        "action_selection",
+        "reward_profile",
+    ]
+    for field in fields:
+        baseline_value = baseline_report.get(field)
+        candidate_value = candidate_report.get(field)
+        if baseline_value is None and candidate_value is None:
+            continue
+        if baseline_value != candidate_value:
+            errors.append(
+                f"{label}: baseline {field} `{baseline_value}` does not match "
+                f"candidate {field} `{candidate_value}`"
+            )
+
+
 def compare_map_entry(
     *,
     window: str,
@@ -211,6 +237,7 @@ def build_report(
 
         collect_report_warnings(label, "baseline", baseline_report, warnings)
         collect_report_warnings(label, "candidate", candidate_report, warnings)
+        collect_context_errors(label, baseline_report, candidate_report, errors)
 
         baseline_maps = map_by_id(baseline_report)
         candidate_maps = map_by_id(candidate_report)
