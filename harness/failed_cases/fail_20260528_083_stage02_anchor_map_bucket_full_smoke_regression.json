@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_083",
+  "category": "rl_policy",
+  "content_id": "stage02-anchor-map-bucket-full-smoke",
+  "seed": "63100-63102",
+  "bot": "Stage02AnchorMapBucketFullSmoke",
+  "time_seconds": 300.0,
+  "symptom": "使用 full 36426 样本、map_time_bucket_balance、anchor weight 2.0、每 512 timestep 2 个 KL epoch 从 opening-aware distilled PPO 继续训练 1024 timesteps 后，60 秒为 soda/caramel/cracked = 0.6667/0.6667/1.0，180 秒为 0.6667/0.6667/0.6667，300 秒退为 0.0/0.0/0.0。相对 current-failure fallback best 有 8 个 no-regression blockers，并丢掉 cracked-star-jar 300 秒 0.3333 胜率，不能推进 RL acceptance。",
+  "root_cause": "全量 map/time-bucket 加权改善了 opening bucket mean KL，但没有让整体或 mid-window alignment 过阈值：overall mean KL 仍为 0.332669，argmax agreement 仍为 0.6977；opening argmax agreement 只有 0.5343，mid_60_to_180 mean KL 仍为 0.420859。更强全局 anchor KL 将策略推向新的 mid/late 动作分布，未能保护 cracked-star-jar 300 秒长局。",
+  "fix": "拒绝该 checkpoint，不进入 stage 03、rl_test_bot_candidate 或 RL acceptance。下一步不应继续提高全局 anchor weight；应拆分 phase-specific anchor objective，显式冻结或分离 opening policy，并对 mid/late windows 做单独 constrained repair 与 no-regression 检查。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_anchor_map_bucket_full_smoke_001；train_run.json 记录 full dataset map_time_bucket_balance 和 final_validation.mean_kl=0.330579 / argmax_agreement=0.692，anchor_alignment.json 记录 behavior_clone_anchor_alignment_failed，comparison_60s/180s/300s.json 记录 deterministic high-pressure 三窗口结果，window_regression_vs_opening_aware_probe.md 为 1 个 blocker，window_regression_vs_current_failure_best.md 为 8 个 blockers，window_regression_vs_seed63100_stage02.md 为 4 个 blockers，failure_analysis_300s.md 记录 9 个 300 秒失败 episode。"
+}

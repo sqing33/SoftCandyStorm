@@ -208,6 +208,8 @@ anchor KL 训练现支持 `--anchor-sample-weighting time_bucket_balance` 与 `-
 
 首个 anchor-regularized PPO smoke 从 opening-aware distilled PPO 重新训练 `1024` timesteps，并使用 `8192` 条 anchor 样本做每 `512` timestep 一次的 KL 约束。训练内 validation KL 降到 `0.265304`、argmax agreement 达到 `0.8462`，但全量 `36426` 样本 anchor alignment 仍失败：overall mean KL `0.346885`，argmax agreement `0.7044`。窗口对比相对上一轮 opening-aware PPO 只剩 `1` 个 no-regression blocker，但相对 current-failure fallback best 仍有 `7` 个 blockers，相对 seed63100 baseline 仍有 `4` 个 blockers；300 秒 `soda-creek` / `caramel-workshop` 仍为 `0.0` 胜率。该结果记录为 `fail_20260528_082`，说明 anchor 方向有改善信号但需要全量 / 分桶 / 更强约束。
 
+full-dataset + `map_time_bucket_balance` 的更强 anchor 探针也已失败。该 run 使用全量 `36426` 样本、`weight=2.0`、每 `512` timestep 做 `2` 个 KL epoch，opening bucket mean KL 从上一轮 `0.335834` 降到 `0.25152`，但 overall mean KL 仍为 `0.332669`、argmax agreement `0.6977`，mid `60-180s` mean KL 仍为 `0.420859`。60 / 180 / 300 秒结果为 `0.6667/0.6667/1.0`、`0.6667/0.6667/0.6667`、`0.0/0.0/0.0`，相对 current-failure fallback best 有 `8` 个 no-regression blockers，并丢掉 cracked-star-jar 300 秒 `0.3333` 胜率。记录 `fail_20260528_083`；下一步不应继续提高全局 anchor weight，应拆 phase-specific anchor、显式 opening freeze/wrapper 与 mid/late constrained repair。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
