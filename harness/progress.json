@@ -2378,6 +2378,11 @@
       "id": "rl_curriculum_stage02_current_failure_trace_incremental_probe",
       "summary": "保留上一版 path-weighted trace 数据底座，并以 0.5x 目录权重增量混入 772 条 current-failure trace samples 后训练 fallback：60 秒为 1.0/0.6667/1.0，180 秒为 0.6667/0.6667/1.0，但 300 秒仍为 0.3333/0.0/0.0。相对 seed63100 baseline 触发 caramel-workshop 300 秒平均存活 -0.4445s strict blocker，相对 previous best 丢掉 cracked-star-jar 300 秒 0.3333 胜率，记录 fail_20260528_079，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_trace_incremental_probe_001/summary.md"
+    },
+    {
+      "id": "rl_late_win_conversion_reward_profile_support",
+      "summary": "新增 Gym reward profile `late-win-conversion`，在 240 秒后 ramp up final-minute route recovery、重复动作惩罚和 victory/defeat terminal signal，用于 current-failure fallback best 后续 closed-loop win-conversion 探针；Python Gym wrapper 与 train_sb3 CLI 已同步接受该 profile，仍不能绕过 60/180/300 秒 deterministic high-pressure 与 no-regression 门禁。",
+      "report": "crates/game_harness/src/main.rs"
     }
   ],
   "next_recommended": [
@@ -2403,7 +2408,7 @@
     },
     {
       "id": "rl_policy_multimap_training_after_current_failure_trace_incremental_probe",
-      "summary": "current-failure trace samples 不能直接替换上一版 best，0.5x 增量混入也未解除 blocker：300 秒为 0.3333/0.0/0.0，对 seed63100 baseline 和 previous best 均有 window regression blockers。下一步应回到 current-failure fallback best 作为 retention anchor，只把 772 条样本保留为诊断/低权重候选，并优先尝试 closed-loop constrained repair 或 per-map late win-conversion objective。"
+      "summary": "current-failure trace samples 不能直接替换上一版 best，0.5x 增量混入也未解除 blocker：300 秒为 0.3333/0.0/0.0，对 seed63100 baseline 和 previous best 均有 window regression blockers。下一步应回到 current-failure fallback best 作为 retention anchor，只把 772 条样本保留为诊断/低权重候选，并优先用 `late-win-conversion` 或其他 closed-loop constrained repair 探针验证 per-map late win-conversion objective。"
     },
     {
       "id": "rl_policy_multimap_training",

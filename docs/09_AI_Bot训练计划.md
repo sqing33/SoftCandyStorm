@@ -168,7 +168,7 @@ v2 已覆盖：
 - `--train-map-selection cycle|random`：控制多地图 reset 轮换方式。
 - `--train-map-preset all-base-demo|high-pressure|stable-open`：使用常见 `base_demo` 地图集合。
 - `--train-seconds`：覆盖训练 episode 时长，独立于 `--eval-seconds`。
-- `--reward-profile standard|late-survival|long-run-retention|late-route-recovery`：选择 Rust `gym-bridge` 侧 reward shaping。`late-survival` 只作为 closed-loop 长局修复实验入口，会在 180 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并提高 300 秒存活终局奖励。`long-run-retention` 用于修复 late-survival 扩展训练暴露出的中窗 retention 回归，会从 60 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并放大重复动作惩罚，帮助观察 60-180 秒安全保持和动作多样性。`late-route-recovery` 从 120 秒后逐步放大路线恢复、低血量、危险区、Boss 压力和轻量重复动作惩罚，用于 180-300 秒 closed-loop 路线修复消融。它们都是训练实验入口，不是验收捷径，也不能替代 deterministic high-pressure 60 / 180 / 300 多图门禁。
+- `--reward-profile standard|late-survival|long-run-retention|late-route-recovery|late-win-conversion`：选择 Rust `gym-bridge` 侧 reward shaping。`late-survival` 只作为 closed-loop 长局修复实验入口，会在 180 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并提高 300 秒存活终局奖励。`long-run-retention` 用于修复 late-survival 扩展训练暴露出的中窗 retention 回归，会从 60 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并放大重复动作惩罚，帮助观察 60-180 秒安全保持和动作多样性。`late-route-recovery` 从 120 秒后逐步放大路线恢复、低血量、危险区、Boss 压力和轻量重复动作惩罚，用于 180-300 秒 closed-loop 路线修复消融。`late-win-conversion` 只在 240 秒后 ramp up，强化 final-minute route recovery、重复动作惩罚和 victory / defeat terminal signal，用于当前“能进 late 但不能把 300 秒窗口转成胜利”的探针。它们都是训练实验入口，不是验收捷径，也不能替代 deterministic high-pressure 60 / 180 / 300 多图门禁。
 - `--map-id`：在训练模式下指定训练后评估地图，避免 high-pressure 或 curriculum 实验仍默认用 `frosting-grassland` 做短局 gate。
 - `--model-in`：从已有 SB3 模型 warm start 继续训练，用于课程学习、失败策略修复和后续规则 Bot 轨迹蒸馏实验。
 
@@ -184,6 +184,12 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-survival
 
 ```bash
 python3 python/train/train_sb3.py --algorithm ppo --reward-profile long-run-retention --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
+```
+
+针对 late-window 存活已经有局部信号、但 240-300 秒无法转换为胜利的策略，可以用 `late-win-conversion` 做 final-minute closed-loop 探针：
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conversion --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
 ```
 
 Harness 还提供规则 Bot 轨迹导出入口：

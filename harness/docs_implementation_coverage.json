@@ -1066,6 +1066,11 @@
             "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_trace_incremental_probe_001/window_regression_vs_current_failure_best.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_trace_incremental_probe_001/failure_analysis_300s.md",
             "harness/failed_cases/fail_20260528_079_stage02_current_failure_trace_incremental_regression.json",
+            "crates/game_harness/src/main.rs",
+            "python/gym_env/soft_candy_env.py",
+            "python/gym_env/test_soft_candy_env.py",
+            "python/train/train_sb3.py",
+            "python/train/README.md",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/late_training.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/packaging.json",
@@ -1133,7 +1138,8 @@
             "current-failure fallback probe 使用上述 825 条样本后通过 seed63100 同 seed 60/180/300 no-regression，并显著提升三图 300 秒平均存活，但 soda-creek 与 caramel-workshop 300 秒胜率仍为 0.0，记录 fail_20260528_077，仍不能推进 RL acceptance。",
             "current-failure fallback failed-only trace 已导出 772 条更窄的 map/time-window route recovery samples，并通过 edge_recovery_samples_valid 与 behavior clone dry-run；这些样本只提供下一轮 repair input，不解除 RL acceptance blocker。",
             "current-failure trace fallback probe 对 seed63100 stage02 baseline no-regression 通过，但相对上一版 current-failure fallback best 回归并丢掉 cracked-star-jar 300 秒胜利，已记录 fail_20260528_078，说明更窄 trace samples 只能增量使用，不能直接替换上一版 best。",
-            "current-failure trace incremental probe 保留上一版 path-weighted trace 数据底座并以 0.5x 增量混入 772 条更窄样本，但 300 秒仍为 0.3333/0.0/0.0；对 seed63100 baseline 触发 caramel-workshop strict no-regression blocker，对 previous best 丢掉 cracked-star-jar 300 秒胜利，已记录 fail_20260528_079，说明简单增量混入也不能解除 RL acceptance blocker。"
+            "current-failure trace incremental probe 保留上一版 path-weighted trace 数据底座并以 0.5x 增量混入 772 条更窄样本，但 300 秒仍为 0.3333/0.0/0.0；对 seed63100 baseline 触发 caramel-workshop strict no-regression blocker，对 previous best 丢掉 cracked-star-jar 300 秒胜利，已记录 fail_20260528_079，说明简单增量混入也不能解除 RL acceptance blocker。",
+            "`late-win-conversion` reward profile 已作为 closed-loop 探针入口接入 Rust gym-bridge、Python Gym wrapper 和 train_sb3 CLI；它只提供 240 秒后 final-minute win-conversion 训练信号，仍必须经过固定窗口 high-pressure、no-regression、failure case 和 acceptance manifest 审查。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
