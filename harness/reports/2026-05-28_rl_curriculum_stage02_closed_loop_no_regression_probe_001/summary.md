@@ -6,11 +6,13 @@
 - Model: `ppo_closed_loop_no_regression_probe.zip`
 - Warm start: `harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip`
 - Failure case: `harness/failed_cases/fail_20260528_068_stage02_closed_loop_no_regression_probe_regression.json`
-- No-regression report: `window_regression_vs_stage02.md`
+- No-regression report: `window_regression_vs_seed63100_stage02.md`
 
 本实验从当前最佳 stage 02 PPO checkpoint 继续 closed-loop PPO 训练，使用 `late-route-recovery` reward profile、`2048` timesteps、训练 seed `62800-62802`，目标是验证回到 PPO 路线后是否能在不破坏 stage 02 短窗表现的前提下改善 300 秒长窗。
 
-结果：probe 被拒绝。候选相对 stage 02 baseline 触发 `14` 个 no-regression blockers，60 秒、180 秒和 300 秒窗口均出现胜率或平均存活回退；300 秒三图仍为 `0.0/0.0/0.0`，甚至把 stage 02 在 `cracked-star-jar` 的 300 秒 `0.3333` 胜率也回退到 `0.0`。该模型不能推进 stage 03、不能作为 RL acceptance evidence。
+结果：probe 被拒绝。补录 `seed_start 63100` stage 02 baseline 后，同 seed no-regression 触发 `4` 个 blockers，主要集中在 `soda-creek`：60 秒胜率和平均存活回退，180/300 秒平均存活回退。300 秒三图仍为 `0.0/0.0/0.0`，不能推进 stage 03、不能作为 RL acceptance evidence。
+
+> 注：旧的 `window_regression_vs_stage02.md` 使用 stage 02 `seed_start 62800` baseline 与本 probe 的 `63100` 结果做跨 seed 摘要比较，只保留为历史诊断；严格判断以 `window_regression_vs_seed63100_stage02.md` 为准。
 
 ## Deterministic High-pressure Results
 
@@ -24,9 +26,9 @@
 
 | Window | Maps regressed | Blockers | Dominant issue |
 | --- | --- | ---: | --- |
-| `60s` | `soda-creek`, `caramel-workshop` | `4` | opening win rate and survival regression |
-| `180s` | `soda-creek`, `caramel-workshop`, `cracked-star-jar` | `6` | mid-window win rate and survival regression |
-| `300s` | `soda-creek`, `caramel-workshop`, `cracked-star-jar` | `4` | long-window survival regression, cracked win regression |
+| `60s` | `soda-creek` | `2` | opening win rate and survival regression |
+| `180s` | `soda-creek` | `1` | mid-window survival regression |
+| `300s` | `soda-creek` | `1` | long-window survival regression |
 
 ## Failure Analysis
 
@@ -54,6 +56,8 @@
 - `comparison_300s.json`
 - `window_regression_vs_stage02.json`
 - `window_regression_vs_stage02.md`
+- `window_regression_vs_seed63100_stage02.json`
+- `window_regression_vs_seed63100_stage02.md`
 - `failure_analysis_60s.json`
 - `failure_analysis_60s.md`
 - `failure_analysis_180s.json`

@@ -5,8 +5,8 @@
   "seed": "63100-63102",
   "bot": "Stage02SodaCrackedRetentionProbe",
   "time_seconds": 300.0,
-  "symptom": "从 long-run-retention checkpoint 继续只训练 soda-creek 和 cracked-star-jar 后，cracked-star-jar 180 秒修到 1.0，caramel-workshop 未低于 baseline，但 soda-creek 60 秒回退到 0.6667 且 seed 63100 在 42.5997 秒 opening 死亡；300 秒三图仍全 0.0，相对 stage 02 baseline 仍有 6 个 no-regression blockers。",
-  "root_cause": "窄地图 continuation 能改善 cracked-star-jar 中窗，但缺少显式 opening replay retention；训练把 soda-creek seed 63100 的 opening 保留破坏掉，说明 map/window-specific long-run reward 仍会移动失败面。",
+  "symptom": "从 long-run-retention checkpoint 继续只训练 soda-creek 和 cracked-star-jar 后，同 seed no-regression 只剩 2 个 blockers，均为 soda-creek 60 秒 opening 回归：胜率回到 0.6667，seed 63100 在 42.5997 秒死亡；300 秒三图仍全 0.0，不能推进 stage 03 或 RL acceptance。",
+  "root_cause": "窄地图 continuation 能改善 cracked-star-jar 中窗和长窗存活，但缺少显式 opening replay retention；训练把 soda-creek seed 63100 的 opening 保留破坏掉，说明 map/window-specific long-run reward 仍会移动失败面。",
   "fix": "拒绝该 checkpoint。下一轮若继续 retention 路线，必须先加入 soda-creek seed 63100 opening replay retention 或从 stage 02 baseline 重新训练；不得从该 checkpoint 推进 stage 03、RL acceptance 或长局候选。",
-  "validation": "训练、60/180/300 秒 high-pressure 对比、window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_soda_cracked_retention_probe_001；window_regression_vs_stage02.md 记录 policy_window_regression_failed 和 6 个 blockers。"
+  "validation": "训练、60/180/300 秒 high-pressure 对比、同 seed window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_soda_cracked_retention_probe_001；window_regression_vs_seed63100_stage02.md 记录 policy_window_regression_failed 和 2 个 blockers。"
 }

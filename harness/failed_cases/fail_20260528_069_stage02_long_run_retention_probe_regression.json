@@ -5,8 +5,8 @@
   "seed": "63100-63102",
   "bot": "Stage02LongRunRetentionProbe",
   "time_seconds": 300.0,
-  "symptom": "从 stage 02 PPO checkpoint 使用 long-run-retention 继续训练后，60 秒三图全胜且无 baseline 回归，但 180 秒 soda-creek 平均存活回退 18.8349 秒、cracked-star-jar 胜率回退 0.3333；300 秒三图仍全 0.0，并且 cracked-star-jar 从 baseline 0.3333 回退到 0.0。",
-  "root_cause": "long-run-retention reward 能保护 opening 窗口并改善部分 caramel-workshop 长窗存活，但 4096 timestep 的混合 seed continuation 仍没有形成 soda-creek 和 cracked-star-jar 的 mid/late route recovery 约束；策略把失败从 opening 推迟到 mid/late，却未转化为 300 秒胜率。",
-  "fix": "拒绝该 checkpoint，不推进 stage 03 或 RL acceptance。下一轮应保留 retention objective，但加入 map/window-specific retention：针对 soda-creek 180/300 秒存活回退和 cracked-star-jar 180/300 秒胜率回退分别约束，继续使用 stage 02 PPO baseline 做 no-regression gate。",
-  "validation": "训练、60/180/300 秒 high-pressure 对比、window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001；window_regression_vs_stage02.md 记录 policy_window_regression_failed 和 6 个 blockers。"
+  "symptom": "从 stage 02 PPO checkpoint 使用 long-run-retention 继续训练后，seed 63100-63102 同 seed no-regression 只剩 1 个 blocker：cracked-star-jar 300 秒平均存活低于 baseline 13.7463 秒；但 300 秒三图胜率仍全 0.0，不能推进 stage 03 或 RL acceptance。",
+  "root_cause": "long-run-retention reward 能保护 opening 和 180 秒窗口，并改善 soda-creek/caramel-workshop 300 秒存活；但 4096 timestep 的混合 seed continuation 仍没有把 300 秒长窗存活转化为胜率，cracked-star-jar 长窗存活仍低于同 seed baseline。",
+  "fix": "拒绝该 checkpoint作为 acceptance 候选，但保留 long-run-retention 方向。下一轮应加入显式 opening/staged protection 或 fallback repair，并继续使用 seed-matched stage 02 baseline 做 no-regression gate。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、同 seed window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_long_run_retention_probe_001；window_regression_vs_seed63100_stage02.md 记录 policy_window_regression_failed 和 1 个 blocker。"
 }
