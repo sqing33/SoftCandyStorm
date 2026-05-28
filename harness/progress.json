@@ -2408,6 +2408,11 @@
       "id": "rl_opening_aware_anchor_alignment_probe",
       "summary": "用 behavior-clone anchor alignment 诊断 opening-aware late-win-conversion PPO：36426 个样本 overall mean KL 为 0.353364，高于 0.25 阈值；argmax agreement 为 0.6899，低于 0.75 阈值。opening_lt_60 argmax agreement 仅 0.4742，mid_60_to_180 mean KL 为 0.436179，说明 closed-loop PPO 仍偏离 anchor，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/summary.md"
+    },
+    {
+      "id": "rl_anchor_regularized_sb3_training_support",
+      "summary": "train_sb3.py 新增 PPO behavior-clone anchor KL regularization 训练入口：`--anchor-model` + `--anchor-dataset` 会把 closed-loop PPO 按 chunk 训练，并在每个 chunk 后用离线 anchor 概率目标做 KL 约束；支持 `--anchor-opening-model` 复用 SB3 opening + behavior-clone fallback anchor，训练报告记录 per-chunk validation KL、argmax agreement 和 final_validation。该能力只是 drift-constrained repair training support，不解除 RL acceptance blocker。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "next_recommended": [

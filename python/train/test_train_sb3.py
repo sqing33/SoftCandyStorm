@@ -16,6 +16,7 @@ from python.train.train_sb3 import (
     build_edge_recovery_sample,
     build_env,
     build_trace_step,
+    collect_anchor_regularization_targets,
     compact_action_score,
     consume_policy_adapter_decision,
     derived_edge_recovery_samples_path,
@@ -26,6 +27,7 @@ from python.train.train_sb3 import (
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
     should_record_trace_step,
+    validate_anchor_regularization_request,
     validate_eval_random_seed,
     write_edge_recovery_samples,
     write_episode_trace,
@@ -52,6 +54,27 @@ class DummyPolicy:
             "kind": "probability",
             "scores": [1.0 if index == self.action else 0.0 for index in range(9)],
         }
+
+
+class ContextAnchorPolicy:
+    def __init__(self):
+        self.reset_count = 0
+        self.map_ids = []
+        self.contexts = []
+
+    def reset(self):
+        self.reset_count += 1
+
+    def set_map_id(self, map_id):
+        self.map_ids.append(map_id)
+
+    def set_step_context(self, info):
+        self.contexts.append(dict(info))
+
+    def action_scores(self, observation):
+        if observation[0] > 0.5:
+            return {"kind": "probability", "scores": [0.1, 0.8, 0.1]}
+        return {"kind": "probability", "scores": [0.7, 0.2, 0.1]}
 
 
 def test_merge_algorithm_parameters_preserves_base_and_applies_overrides():
@@ -104,6 +127,60 @@ def test_validate_eval_random_seed_requires_stochastic_evaluation():
         validate_eval_random_seed(17, deterministic=True)
     with pytest.raises(ValueError, match="non-negative"):
         validate_eval_random_seed(-1, deterministic=False)
+
+
+def test_validate_anchor_regularization_requires_model_and_dataset_together():
+    assert not validate_anchor_regularization_request()
+    with pytest.raises(ValueError, match="--anchor-model"):
+        validate_anchor_regularization_request(anchor_model="anchor.pt")
+    with pytest.raises(ValueError, match="--anchor-model"):
+        validate_anchor_regularization_request(anchor_datasets=["samples.jsonl"])
+    assert validate_anchor_regularization_request(
+        anchor_model="anchor.pt",
+        anchor_datasets=["samples.jsonl"],
+        anchor_regularization_weight=0.5,
+        anchor_regularization_interval=128,
+        anchor_regularization_epochs=1,
+        anchor_regularization_batch_size=16,
+    )
+
+
+def test_collect_anchor_regularization_targets_sets_context_and_probabilities():
+    dataset = {
+        "action_count": 3,
+        "observations": [[0.1], [0.8]],
+        "actions": [0, 1],
+        "sample_metadata": [
+            {
+                "path": "samples.jsonl",
+                "seed": 1,
+                "map_id": "soda-creek",
+                "time_seconds": 1.0,
+            },
+            {
+                "path": "samples.jsonl",
+                "seed": 1,
+                "map_id": "soda-creek",
+                "time_seconds": 2.0,
+            },
+        ],
+    }
+    np = pytest.importorskip("numpy")
+    anchor = ContextAnchorPolicy()
+
+    observations, targets, report = collect_anchor_regularization_targets(
+        dataset,
+        anchor,
+        np,
+    )
+
+    assert observations.shape == (2, 1)
+    assert targets[0].tolist() == pytest.approx([0.7, 0.2, 0.1])
+    assert targets[1].tolist() == pytest.approx([0.1, 0.8, 0.1])
+    assert anchor.reset_count == 1
+    assert anchor.map_ids == ["soda-creek"]
+    assert [context["time_seconds"] for context in anchor.contexts] == [1.0, 2.0]
+    assert report["anchor_argmax_agreement_with_dataset_actions"] == 1.0
 
 
 def test_build_env_passes_reward_profile(monkeypatch):
@@ -264,6 +341,134 @@ def test_training_uses_upgrade_choice_model(monkeypatch, tmp_path):
     assert captured["evaluate_kwargs"]["upgrade_policy"] is upgrade_policy
     assert report["training"]["upgrade_choice_model"].endswith("ranker.pt")
     assert report["upgrade_policy"]["mode"] == "upgrade_choice_ranker"
+    assert captured["env_closed"] is True
+
+
+def test_training_can_apply_anchor_regularization(monkeypatch, tmp_path):
+    captured = {}
+
+    class DummyEnv:
+        def close(self):
+            captured["env_closed"] = True
+
+    class DummyModel:
+        def __init__(self, policy, env, verbose=0, **kwargs):
+            self.num_timesteps = 0
+
+        def learn(self, total_timesteps):
+            captured["plain_learn"] = total_timesteps
+
+        def save(self, path):
+            path.write_text("dummy model", encoding="utf-8")
+
+    def fake_evaluate_model(model, config, **kwargs):
+        return {
+            "action_selection": "deterministic",
+            "action_random_seed": None,
+            "map_id": "soda-creek",
+            "upgrade_policy": {"mode": "bridge_default_first_option"},
+            "summary": {
+                "episodes": 1,
+                "win_rate": 0.0,
+                "average_survival_seconds": 1.0,
+                "average_level": 1.0,
+                "average_kills": 1.0,
+                "average_reward": 0.0,
+                "damage_taken_average": 0.0,
+                "action_distribution": {
+                    str(index): {
+                        "count": 1 if index == 0 else 0,
+                        "ratio": 1.0 if index == 0 else 0.0,
+                    }
+                    for index in range(9)
+                },
+                "normalized_action_entropy": 1.0,
+                "reward_breakdown_average": {"terminal": 0.0, "total": 0.0},
+                "upgrade_policy_decision_count": 0,
+            },
+        }
+
+    def fake_prepare_anchor_regularization(config, algorithm, **kwargs):
+        captured["anchor_prepare_kwargs"] = kwargs
+        return {
+            "report": {
+                "mode": "behavior_clone_anchor_kl_regularization",
+                "anchor_model": str(kwargs["anchor_model"]),
+            }
+        }
+
+    def fake_anchor_learn(model, total_timesteps, anchor_regularization):
+        captured["anchor_learn_timesteps"] = total_timesteps
+        model.num_timesteps = total_timesteps
+        return {
+            **anchor_regularization["report"],
+            "status": "applied",
+            "final_validation": {"mean_kl": 0.123, "argmax_agreement": 0.9},
+        }
+
+    monkeypatch.setattr(train_sb3, "require_dependencies", lambda: {})
+    monkeypatch.setattr(train_sb3, "stable_baselines_model_classes", lambda: {"ppo": DummyModel})
+    monkeypatch.setattr(train_sb3, "build_env", lambda *args, **kwargs: DummyEnv())
+    monkeypatch.setattr(train_sb3, "evaluate_model", fake_evaluate_model)
+    monkeypatch.setattr(train_sb3, "dependency_status", lambda: {})
+    monkeypatch.setattr(
+        train_sb3,
+        "prepare_anchor_regularization",
+        fake_prepare_anchor_regularization,
+    )
+    monkeypatch.setattr(
+        train_sb3,
+        "learn_model_with_anchor_regularization",
+        fake_anchor_learn,
+    )
+
+    config = {
+        "phase": "test",
+        "environment": {
+            "seed": 12345,
+            "seconds": 300,
+            "tick_rate": 30,
+            "map_id": "soda-creek",
+            "observation_version": 2,
+            "observation_len": 145,
+            "content_dir": "content/base_demo",
+        },
+        "algorithms": {
+            "ppo": {
+                "enabled": True,
+                "policy": "MlpPolicy",
+                "total_timesteps": 32,
+                "n_steps": 16,
+            }
+        },
+        "outputs": {
+            "model_dir": str(tmp_path / "models"),
+            "report_dir": str(tmp_path / "reports"),
+            "metadata_file": "{algorithm}_metadata.json",
+        },
+        "evaluation": {
+            "episodes": 1,
+            "seconds": 1,
+            "seed_start": 1,
+        },
+    }
+
+    report = train_sb3.train(
+        config,
+        "ppo",
+        total_timesteps=32,
+        model_out=tmp_path / "model.zip",
+        report_dir_out=tmp_path / "reports",
+        anchor_model=tmp_path / "anchor.pt",
+        anchor_datasets=[tmp_path / "samples.jsonl"],
+        anchor_regularization_interval=16,
+    )
+
+    assert "plain_learn" not in captured
+    assert captured["anchor_learn_timesteps"] == 32
+    assert captured["anchor_prepare_kwargs"]["anchor_regularization_interval"] == 16
+    assert report["anchor_regularization"]["status"] == "applied"
+    assert report["training"]["anchor_regularization"]["final_validation"]["mean_kl"] == 0.123
     assert captured["env_closed"] is True
 
 

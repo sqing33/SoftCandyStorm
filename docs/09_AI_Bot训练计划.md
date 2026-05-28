@@ -202,6 +202,8 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conv
 
 首个 opening-aware PPO anchor alignment 报告显示，候选相对“SB3 stage 02 opening + current-failure fallback”anchor 的 overall mean KL 为 `0.353364`，高于诊断阈值 `0.25`，overall argmax agreement 为 `0.6899`，低于阈值 `0.75`。分桶看，`opening_lt_60` argmax agreement 只有 `0.4742`，`mid_60_to_180` mean KL 达到 `0.436179`。这解释了为什么该 checkpoint 动作熵更高但仍破坏 `soda-creek` 60 秒和多图 180 秒窗口；后续需要真正的 KL / behavior-clone anchor 训练约束，而不是只做无约束 PPO 续训。
 
+`train_sb3.py` 现在提供 closed-loop PPO 的 behavior-clone anchor KL regularization 入口。训练时传入 `--anchor-model` 和一个或多个 `--anchor-dataset` 后，脚本会把 PPO 训练切成若干 chunk，并在每个 chunk 后用离线 anchor 样本最小化当前 SB3 policy 相对 anchor 概率分布的 KL；`--anchor-opening-model` 可复用 SB3 opening + behavior-clone fallback 组合，避免 stage 02 续训再次丢掉 opening policy。训练报告会记录每个 chunk 的 validation KL、argmax agreement 和最终 `anchor_regularization.final_validation`。这只是漂移约束和修复训练工具，checkpoint 仍必须再跑 anchor alignment、60 / 180 / 300 秒 high-pressure、no-regression 和 RL acceptance。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

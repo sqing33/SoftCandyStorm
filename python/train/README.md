@@ -489,6 +489,27 @@ When the useful teacher is an evaluation wrapper with a stronger SB3 opening pol
 
 Use `compare_sb3_to_behavior_clone_anchor.py` after closed-loop PPO continuation when you need to measure how far a candidate drifted from a behavior-clone anchor. It reports KL divergence, argmax agreement, and per-map / per-time-bucket alignment over offline trajectory samples, and it can use the same `--opening-model <zip> --opening-seconds <seconds>` anchor wrapper. Passing thresholds in this report is only repair evidence; it does not replace high-pressure comparison or no-regression validation.
 
+Use `--anchor-model` with repeated `--anchor-dataset` during PPO training when a closed-loop continuation must stay close to a behavior-clone anchor. The trainer runs PPO in chunks, then applies offline KL regularization on the anchor samples before the next chunk. Add `--anchor-opening-model` when the anchor should dispatch to an SB3 opening checkpoint before falling back to the behavior clone:
+
+```bash
+uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py \
+  --algorithm ppo \
+  --model-in harness/reports/local_probe/ppo_warm_start.zip \
+  --reward-profile late-win-conversion \
+  --train-map-preset high-pressure \
+  --train-map-selection random \
+  --train-seconds 300 \
+  --timesteps 2048 \
+  --anchor-model harness/reports/local_anchor/fallback.pt \
+  --anchor-opening-model harness/reports/local_anchor/opening.zip \
+  --anchor-dataset harness/reports/local_anchor/anchor_samples \
+  --anchor-regularization-interval 512 \
+  --anchor-regularization-weight 1.0 \
+  --model-out harness/reports/local_probe/ppo_anchor_constrained.zip
+```
+
+The training report records `anchor_regularization.final_validation.mean_kl` and `argmax_agreement`, plus per-chunk validation metrics. This is a training constraint and drift diagnostic only; a checkpoint still needs `compare_sb3_to_behavior_clone_anchor.py`, fixed-window high-pressure comparisons, no-regression validation, failure-case review, and the RL acceptance manifest before it can become a test Bot candidate.
+
 The first full distillation + PPO warm-start used 21,726 phase-aligned samples and the action-change staged GRU teacher. Five distillation epochs reached 0.6916 validation argmax accuracy, then 2,048 PPO timesteps on high-pressure maps completed. The policy still failed: all three 60-second maps triggered action-distribution repair, and all three 300-second maps recorded 0% win rate with action 3 dominant ratio above 0.76. Treat this as a repair result for the current teacher/reward setup, not a reason to promote PPO.
 
 The first full target-entropy distillation used `--teacher-temperature 1.5 --uniform-target-mix 0.05`, raising target entropy to 1.186717. It improved the 60-second high-pressure comparison to 80% win rate on all three maps without triggering the compare script's action-bias repair, but the 300-second comparison still recorded 0% win rate on all three maps and shifted the long-run bias to action 6. Treat it as a short-window repair signal only.

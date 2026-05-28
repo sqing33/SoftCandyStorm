@@ -1,5 +1,6 @@
 import argparse
 import importlib.util
+import inspect
 import json
 import math
 import random
@@ -14,7 +15,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from python.gym_env import SoftCandyStormEnv
-from python.train.train_behavior_clone import load_behavior_clone_policy
+from python.train.train_behavior_clone import (
+    load_behavior_clone_policy,
+    load_trajectory_dataset,
+    summarize_dataset,
+)
 from python.train.train_upgrade_choice import load_upgrade_choice_policy
 
 
@@ -858,6 +863,59 @@ def validate_positive_seconds(value, flag_name):
     return value
 
 
+def validate_positive_int(value, flag_name):
+    if value is None:
+        return None
+    if value <= 0:
+        raise ValueError(f"{flag_name} must be greater than 0")
+    return value
+
+
+def validate_anchor_regularization_request(
+    *,
+    anchor_model=None,
+    anchor_datasets=None,
+    anchor_opening_seconds=60.0,
+    anchor_regularization_weight=1.0,
+    anchor_regularization_interval=2048,
+    anchor_regularization_epochs=1,
+    anchor_regularization_batch_size=256,
+    anchor_regularization_learning_rate=None,
+    anchor_limit_samples=None,
+    anchor_validation_split=0.2,
+):
+    has_anchor_model = anchor_model is not None
+    has_anchor_dataset = bool(anchor_datasets)
+    if has_anchor_model != has_anchor_dataset:
+        raise ValueError("--anchor-model and --anchor-dataset must be used together")
+    if not has_anchor_model:
+        return False
+    validate_positive_seconds(anchor_opening_seconds, "--anchor-opening-seconds")
+    validate_positive_int(
+        anchor_regularization_interval,
+        "--anchor-regularization-interval",
+    )
+    validate_positive_int(
+        anchor_regularization_epochs,
+        "--anchor-regularization-epochs",
+    )
+    validate_positive_int(
+        anchor_regularization_batch_size,
+        "--anchor-regularization-batch-size",
+    )
+    validate_positive_int(anchor_limit_samples, "--anchor-limit-samples")
+    if anchor_regularization_weight <= 0.0:
+        raise ValueError("--anchor-regularization-weight must be greater than 0")
+    if (
+        anchor_regularization_learning_rate is not None
+        and anchor_regularization_learning_rate <= 0.0
+    ):
+        raise ValueError("--anchor-regularization-learning-rate must be greater than 0")
+    if not (0.0 < anchor_validation_split < 1.0):
+        raise ValueError("--anchor-validation-split must be between 0 and 1")
+    return True
+
+
 def build_env(
     config,
     seed=None,
@@ -954,6 +1012,338 @@ def dry_run(
         env.close()
 
 
+def normalized_probability_scores(scores, action_count, np_module):
+    if len(scores) < action_count:
+        raise ValueError(
+            f"anchor policy returned {len(scores)} scores for {action_count} actions"
+        )
+    probabilities = np_module.asarray(scores[:action_count], dtype=np_module.float32)
+    probabilities = np_module.clip(probabilities, 0.0, 1.0)
+    total = float(probabilities.sum())
+    if total <= 0.0:
+        raise ValueError("anchor policy returned an empty probability distribution")
+    return probabilities / total
+
+
+def collect_anchor_regularization_targets(dataset, anchor_policy, np_module):
+    action_count = int(dataset["action_count"])
+    observations = np_module.asarray(dataset["observations"], dtype=np_module.float32)
+    targets = []
+    anchor_argmax_actions = []
+    dataset_argmax_matches = 0
+    active_episode = None
+    for observation, action, sample in zip(
+        dataset["observations"],
+        dataset["actions"],
+        dataset["sample_metadata"],
+    ):
+        episode_key = (sample.get("path"), sample.get("seed"), sample.get("map_id"))
+        if episode_key != active_episode:
+            reset = getattr(anchor_policy, "reset", None)
+            if callable(reset):
+                reset()
+            set_map_id = getattr(anchor_policy, "set_map_id", None)
+            if callable(set_map_id):
+                set_map_id(sample.get("map_id"))
+            active_episode = episode_key
+        set_step_context = getattr(anchor_policy, "set_step_context", None)
+        if callable(set_step_context):
+            set_step_context(
+                {
+                    "time_seconds": sample.get("time_seconds", 0.0),
+                    "map_id": sample.get("map_id"),
+                    "seed": sample.get("seed"),
+                }
+            )
+        action_scores = policy_action_scores(anchor_policy, observation)
+        if action_scores.get("kind") != "probability":
+            raise ValueError("anchor policy must expose probability action_scores")
+        probabilities = normalized_probability_scores(
+            action_scores.get("scores", []),
+            action_count,
+            np_module,
+        )
+        targets.append(probabilities)
+        anchor_action = int(probabilities.argmax())
+        anchor_argmax_actions.append(anchor_action)
+        if anchor_action == int(action):
+            dataset_argmax_matches += 1
+
+    return observations, np_module.asarray(targets, dtype=np_module.float32), {
+        "anchor_argmax_agreement_with_dataset_actions": round(
+            dataset_argmax_matches / max(1, len(dataset["actions"])),
+            4,
+        ),
+        "anchor_argmax_distribution": {
+            str(action): {
+                "count": anchor_argmax_actions.count(action),
+                "ratio": round(
+                    anchor_argmax_actions.count(action)
+                    / max(1, len(anchor_argmax_actions)),
+                    4,
+                ),
+            }
+            for action in range(action_count)
+        },
+    }
+
+
+def prepare_anchor_regularization(
+    config,
+    algorithm,
+    *,
+    anchor_model,
+    anchor_datasets,
+    anchor_opening_model=None,
+    anchor_opening_seconds=60.0,
+    anchor_regularization_weight=1.0,
+    anchor_regularization_interval=2048,
+    anchor_regularization_epochs=1,
+    anchor_regularization_batch_size=256,
+    anchor_regularization_learning_rate=None,
+    anchor_limit_samples=None,
+    anchor_validation_split=0.2,
+    anchor_seed=12345,
+):
+    if not validate_anchor_regularization_request(
+        anchor_model=anchor_model,
+        anchor_datasets=anchor_datasets,
+        anchor_opening_seconds=anchor_opening_seconds,
+        anchor_regularization_weight=anchor_regularization_weight,
+        anchor_regularization_interval=anchor_regularization_interval,
+        anchor_regularization_epochs=anchor_regularization_epochs,
+        anchor_regularization_batch_size=anchor_regularization_batch_size,
+        anchor_regularization_learning_rate=anchor_regularization_learning_rate,
+        anchor_limit_samples=anchor_limit_samples,
+        anchor_validation_split=anchor_validation_split,
+    ):
+        return None
+    if algorithm != "ppo":
+        raise ValueError("anchor regularization is currently supported only for ppo")
+    import numpy as np
+
+    dataset = load_trajectory_dataset(anchor_datasets, limit=anchor_limit_samples)
+    if len(dataset["actions"]) < 2:
+        raise ValueError("anchor regularization requires at least two samples")
+    observations, targets, target_report = collect_anchor_regularization_targets(
+        dataset,
+        load_behavior_clone_policy_with_optional_opening(
+            algorithm,
+            Path(anchor_model),
+            opening_model_path=(
+                Path(anchor_opening_model) if anchor_opening_model else None
+            ),
+            opening_seconds=anchor_opening_seconds,
+        ),
+        np,
+    )
+    if observations.shape[1] != int(config["environment"]["observation_len"]):
+        raise ValueError(
+            "anchor dataset observation length does not match rl_training_config observation_len"
+        )
+    return {
+        "observations": observations,
+        "targets": targets,
+        "weight": float(anchor_regularization_weight),
+        "interval_timesteps": int(anchor_regularization_interval),
+        "epochs": int(anchor_regularization_epochs),
+        "batch_size": int(anchor_regularization_batch_size),
+        "learning_rate": anchor_regularization_learning_rate,
+        "validation_split": float(anchor_validation_split),
+        "seed": int(anchor_seed),
+        "report": {
+            "mode": "behavior_clone_anchor_kl_regularization",
+            "anchor_model": str(anchor_model),
+            "anchor_opening_model": (
+                str(anchor_opening_model) if anchor_opening_model else None
+            ),
+            "anchor_opening_seconds": (
+                float(anchor_opening_seconds) if anchor_opening_model else None
+            ),
+            "datasets": [str(path) for path in anchor_datasets],
+            "limit_samples": anchor_limit_samples,
+            "dataset": summarize_dataset(dataset),
+            "target": target_report,
+            "regularization_weight": float(anchor_regularization_weight),
+            "interval_timesteps": int(anchor_regularization_interval),
+            "epochs_per_interval": int(anchor_regularization_epochs),
+            "batch_size": int(anchor_regularization_batch_size),
+            "learning_rate": anchor_regularization_learning_rate,
+            "validation_split": float(anchor_validation_split),
+            "seed": int(anchor_seed),
+            "limitations": [
+                "Anchor regularization is repair training evidence only.",
+                "It constrains closed-loop PPO drift on offline samples but does not replace high-pressure comparison, no-regression validation, or RL policy acceptance.",
+            ],
+        },
+    }
+
+
+def tensor_distribution_logits(model, observations, torch_module):
+    distribution = model.policy.get_distribution(observations)
+    torch_distribution = getattr(distribution, "distribution", None)
+    logits = getattr(torch_distribution, "logits", None)
+    if logits is None:
+        probabilities = getattr(torch_distribution, "probs", None)
+        if probabilities is None:
+            raise ValueError("SB3 policy distribution does not expose logits or probs")
+        logits = torch_module.log(probabilities.clamp_min(1e-8))
+    return logits
+
+
+def evaluate_anchor_regularization_batch(model, observations, targets, torch_module):
+    model.policy.set_training_mode(False)
+    with torch_module.no_grad():
+        logits = tensor_distribution_logits(model, observations, torch_module)
+        log_probs = torch_module.log_softmax(logits, dim=-1)
+        probabilities = torch_module.softmax(logits, dim=-1)
+        target_log_probs = torch_module.log(targets.clamp_min(1e-8))
+        kl_loss = (targets * (target_log_probs - log_probs)).sum(dim=1).mean()
+        cross_entropy = -(targets * log_probs).sum(dim=1).mean()
+        argmax_agreement = (
+            probabilities.argmax(dim=1) == targets.argmax(dim=1)
+        ).float().mean()
+        entropy = -(probabilities * log_probs).sum(dim=1).mean()
+    model.policy.set_training_mode(True)
+    return {
+        "mean_kl": round(float(kl_loss.item()), 6),
+        "cross_entropy": round(float(cross_entropy.item()), 6),
+        "argmax_agreement": round(float(argmax_agreement.item()), 4),
+        "policy_entropy_nats": round(float(entropy.item()), 6),
+    }
+
+
+def call_model_learn(model, total_timesteps, reset_num_timesteps=True):
+    signature = inspect.signature(model.learn)
+    if "reset_num_timesteps" in signature.parameters:
+        return model.learn(
+            total_timesteps=total_timesteps,
+            reset_num_timesteps=reset_num_timesteps,
+        )
+    return model.learn(total_timesteps=total_timesteps)
+
+
+def learn_model_with_anchor_regularization(model, total_timesteps, anchor_regularization):
+    import numpy as np
+    import torch
+    from torch.utils.data import DataLoader, TensorDataset
+
+    observations = anchor_regularization["observations"]
+    targets = anchor_regularization["targets"]
+    rng = np.random.default_rng(anchor_regularization["seed"])
+    indices = np.arange(len(observations))
+    rng.shuffle(indices)
+    validation_count = int(round(len(indices) * anchor_regularization["validation_split"]))
+    validation_count = min(max(validation_count, 1), max(1, len(indices) - 1))
+    validation_indices = indices[:validation_count]
+    train_indices = indices[validation_count:]
+    train_dataset = TensorDataset(
+        torch.from_numpy(observations[train_indices]),
+        torch.from_numpy(targets[train_indices]),
+    )
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=anchor_regularization["batch_size"],
+        shuffle=True,
+    )
+    validation_x = torch.from_numpy(observations[validation_indices])
+    validation_y = torch.from_numpy(targets[validation_indices])
+    learning_rate = anchor_regularization["learning_rate"]
+    if learning_rate is None:
+        learning_rate = 0.0003
+        lr_schedule = getattr(model, "lr_schedule", None)
+        if callable(lr_schedule):
+            try:
+                learning_rate = float(lr_schedule(1.0))
+            except (TypeError, ValueError):
+                learning_rate = 0.0003
+    optimizer = torch.optim.Adam(model.policy.parameters(), lr=float(learning_rate))
+
+    remaining = int(total_timesteps)
+    interval = int(anchor_regularization["interval_timesteps"])
+    chunks = []
+    reset_num_timesteps = True
+    while remaining > 0:
+        chunk_timesteps = min(interval, remaining)
+        call_model_learn(
+            model,
+            total_timesteps=chunk_timesteps,
+            reset_num_timesteps=reset_num_timesteps,
+        )
+        reset_num_timesteps = False
+        remaining -= chunk_timesteps
+        interval_history = []
+        for epoch in range(1, anchor_regularization["epochs"] + 1):
+            model.policy.set_training_mode(True)
+            total_loss = 0.0
+            total_seen = 0
+            total_correct = 0
+            for batch_x, batch_y in train_loader:
+                logits = tensor_distribution_logits(model, batch_x, torch)
+                log_probs = torch.log_softmax(logits, dim=-1)
+                kl_loss = (
+                    batch_y * (torch.log(batch_y.clamp_min(1e-8)) - log_probs)
+                ).sum(dim=1).mean()
+                loss = kl_loss * anchor_regularization["weight"]
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                total_loss += float(kl_loss.item()) * len(batch_y)
+                total_seen += len(batch_y)
+                total_correct += int(
+                    (logits.argmax(dim=1) == batch_y.argmax(dim=1)).sum().item()
+                )
+            validation_metrics = evaluate_anchor_regularization_batch(
+                model,
+                validation_x,
+                validation_y,
+                torch,
+            )
+            interval_history.append(
+                {
+                    "epoch": epoch,
+                    "train_mean_kl": round(total_loss / max(1, total_seen), 6),
+                    "train_argmax_agreement": round(
+                        total_correct / max(1, total_seen),
+                        4,
+                    ),
+                    "validation_mean_kl": validation_metrics["mean_kl"],
+                    "validation_argmax_agreement": validation_metrics[
+                        "argmax_agreement"
+                    ],
+                    "validation_policy_entropy_nats": validation_metrics[
+                        "policy_entropy_nats"
+                    ],
+                }
+            )
+        chunks.append(
+            {
+                "chunk_timesteps": chunk_timesteps,
+                "remaining_timesteps": remaining,
+                "num_timesteps_after_chunk": int(
+                    getattr(model, "num_timesteps", total_timesteps - remaining)
+                ),
+                "regularization_epochs": interval_history,
+            }
+        )
+
+    final_metrics = evaluate_anchor_regularization_batch(
+        model,
+        validation_x,
+        validation_y,
+        torch,
+    )
+    return {
+        **anchor_regularization["report"],
+        "status": "applied",
+        "train_samples": int(len(train_indices)),
+        "validation_samples": int(len(validation_indices)),
+        "effective_learning_rate": float(learning_rate),
+        "chunks": chunks,
+        "final_validation": final_metrics,
+    }
+
+
 def train(
     config,
     algorithm,
@@ -989,6 +1379,18 @@ def train(
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
     upgrade_choice_model=None,
+    anchor_model=None,
+    anchor_datasets=None,
+    anchor_opening_model=None,
+    anchor_opening_seconds=60.0,
+    anchor_regularization_weight=1.0,
+    anchor_regularization_interval=2048,
+    anchor_regularization_epochs=1,
+    anchor_regularization_batch_size=256,
+    anchor_regularization_learning_rate=None,
+    anchor_limit_samples=None,
+    anchor_validation_split=0.2,
+    anchor_seed=12345,
 ):
     require_dependencies()
     # Imports stay inside the real training path so dry-run remains dependency-light.
@@ -1049,6 +1451,24 @@ def train(
         warm_start_model,
         algorithm_overrides,
     )
+    anchor_regularization = prepare_anchor_regularization(
+        config,
+        algorithm,
+        anchor_model=Path(anchor_model) if anchor_model is not None else None,
+        anchor_datasets=anchor_datasets,
+        anchor_opening_model=(
+            Path(anchor_opening_model) if anchor_opening_model is not None else None
+        ),
+        anchor_opening_seconds=anchor_opening_seconds,
+        anchor_regularization_weight=anchor_regularization_weight,
+        anchor_regularization_interval=anchor_regularization_interval,
+        anchor_regularization_epochs=anchor_regularization_epochs,
+        anchor_regularization_batch_size=anchor_regularization_batch_size,
+        anchor_regularization_learning_rate=anchor_regularization_learning_rate,
+        anchor_limit_samples=anchor_limit_samples,
+        anchor_validation_split=anchor_validation_split,
+        anchor_seed=anchor_seed,
+    )
 
     try:
         if warm_start_model is not None:
@@ -1057,7 +1477,15 @@ def train(
             apply_loaded_model_overrides(model, algorithm_overrides)
         else:
             model = model_class(selected["policy"], env, verbose=1, **kwargs)
-        model.learn(total_timesteps=train_steps)
+        if anchor_regularization is not None:
+            anchor_regularization_report = learn_model_with_anchor_regularization(
+                model,
+                train_steps,
+                anchor_regularization,
+            )
+        else:
+            model.learn(total_timesteps=train_steps)
+            anchor_regularization_report = None
         actual_timesteps = int(getattr(model, "num_timesteps", train_steps))
         completed_at = datetime.now(timezone.utc).isoformat()
         model.save(model_path)
@@ -1138,6 +1566,7 @@ def train(
         "training_map_preset": train_map_preset,
         "training_seeds": train_seed_values,
         "training_seed_selection": train_seed_selection if train_seed_values else "single",
+        "anchor_regularization": anchor_regularization_report,
     }
     metadata_path = metadata_path_for(config, algorithm, model_out=model_out)
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
@@ -1179,9 +1608,11 @@ def train(
             "evaluation_policy": evaluation["action_selection"],
             "evaluation_action_random_seed": evaluation["action_random_seed"],
             "evaluation_map_id": evaluation["map_id"],
+            "anchor_regularization": anchor_regularization_report,
         },
         "evaluation": evaluation["summary"],
         "upgrade_policy": evaluation["upgrade_policy"],
+        "anchor_regularization": anchor_regularization_report,
         "known_exploits": known_exploit_notes["known_exploits"],
         "limitations": known_exploit_notes["limitations"],
         "gate_decision": gate_decision,
@@ -2831,6 +3262,31 @@ def main():
         default=None,
         help="Optional train_upgrade_choice.py checkpoint used to choose upgrade prompts during training, evaluation, and comparison.",
     )
+    parser.add_argument(
+        "--anchor-dataset",
+        action="append",
+        default=None,
+        help="Trajectory JSONL file or directory used for offline anchor KL regularization during training. Repeat to combine datasets.",
+    )
+    parser.add_argument(
+        "--anchor-model",
+        default=None,
+        help="Behavior-clone checkpoint used as the PPO anchor during offline KL regularization.",
+    )
+    parser.add_argument(
+        "--anchor-opening-model",
+        default=None,
+        help="Optional SB3 opening checkpoint used by the anchor before --anchor-opening-seconds.",
+    )
+    parser.add_argument("--anchor-opening-seconds", type=float, default=60.0)
+    parser.add_argument("--anchor-regularization-weight", type=float, default=1.0)
+    parser.add_argument("--anchor-regularization-interval", type=int, default=2048)
+    parser.add_argument("--anchor-regularization-epochs", type=int, default=1)
+    parser.add_argument("--anchor-regularization-batch-size", type=int, default=256)
+    parser.add_argument("--anchor-regularization-learning-rate", type=float, default=None)
+    parser.add_argument("--anchor-limit-samples", type=int, default=None)
+    parser.add_argument("--anchor-validation-split", type=float, default=0.2)
+    parser.add_argument("--anchor-seed", type=int, default=12345)
     parser.add_argument("--model-in", default=None)
     parser.add_argument("--model-out", default=None)
     parser.add_argument("--report-dir", default=None)
@@ -2983,6 +3439,18 @@ def main():
             args.opening_seconds,
             "--opening-seconds",
         )
+        anchor_regularization_requested = validate_anchor_regularization_request(
+            anchor_model=args.anchor_model,
+            anchor_datasets=args.anchor_dataset,
+            anchor_opening_seconds=args.anchor_opening_seconds,
+            anchor_regularization_weight=args.anchor_regularization_weight,
+            anchor_regularization_interval=args.anchor_regularization_interval,
+            anchor_regularization_epochs=args.anchor_regularization_epochs,
+            anchor_regularization_batch_size=args.anchor_regularization_batch_size,
+            anchor_regularization_learning_rate=args.anchor_regularization_learning_rate,
+            anchor_limit_samples=args.anchor_limit_samples,
+            anchor_validation_split=args.anchor_validation_split,
+        )
         train_maps, train_map_preset = resolve_train_maps(
             args.train_maps,
             args.train_map_preset,
@@ -3027,6 +3495,14 @@ def main():
         parser.error("--edge-recovery-filter requires --evaluate-model or --compare-rule-bots")
     if args.late_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--late-recovery-filter requires --evaluate-model or --compare-rule-bots")
+    if anchor_regularization_requested and (
+        args.dry_run or args.evaluate_model or args.compare_rule_bots
+    ):
+        parser.error("anchor regularization flags are only supported during training")
+    if anchor_regularization_requested and args.algorithm != "ppo":
+        parser.error("anchor regularization is currently supported only with --algorithm ppo")
+    if args.anchor_opening_model and not anchor_regularization_requested:
+        parser.error("--anchor-opening-model requires --anchor-model and --anchor-dataset")
     if args.edge_recovery_filter and args.late_recovery_filter:
         parser.error("--edge-recovery-filter and --late-recovery-filter cannot be combined")
     if args.edge_recovery_samples_out and not (
@@ -3256,6 +3732,22 @@ def main():
                 if args.upgrade_choice_model
                 else None
             ),
+            anchor_model=Path(args.anchor_model) if args.anchor_model else None,
+            anchor_datasets=args.anchor_dataset,
+            anchor_opening_model=(
+                Path(args.anchor_opening_model)
+                if args.anchor_opening_model
+                else None
+            ),
+            anchor_opening_seconds=args.anchor_opening_seconds,
+            anchor_regularization_weight=args.anchor_regularization_weight,
+            anchor_regularization_interval=args.anchor_regularization_interval,
+            anchor_regularization_epochs=args.anchor_regularization_epochs,
+            anchor_regularization_batch_size=args.anchor_regularization_batch_size,
+            anchor_regularization_learning_rate=args.anchor_regularization_learning_rate,
+            anchor_limit_samples=args.anchor_limit_samples,
+            anchor_validation_split=args.anchor_validation_split,
+            anchor_seed=args.anchor_seed,
         ),
     )
 
