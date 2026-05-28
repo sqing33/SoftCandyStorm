@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_073",
+  "category": "rl_policy",
+  "content_id": "stage02-staged-fallback-late-retention-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02OpeningLateRetentionFallbackProbe",
+  "time_seconds": 300.0,
+  "symptom": "加入真实 180-300 秒 late-survival trajectories 后，staged fallback 在 seed 63100-63102 的 60/180/300 秒同 seed no-regression 全部通过，cracked-star-jar 300 秒胜率保持 0.3333 且平均存活高于 baseline 9.0849 秒；但 300 秒 soda-creek 和 caramel-workshop 胜率仍为 0.0，总计 8 个失败 episode，不能推进 RL acceptance。",
+  "root_cause": "late-survival retention 修复了上一轮 behavior-clone fallback 对 cracked-star-jar 的回归，但 soda-creek 仍缺少 60-180 秒恢复能力，caramel-workshop 仍存在 1 个 opening failure 和 2 个 late failures；当前 fallback 仍未形成跨图长局稳定策略。",
+  "fix": "保留该 checkpoint 作为当前 staged fallback 诊断分支，但继续阻塞 stage 03 和 RL acceptance。下一步应针对 soda-creek mid-window recovery 与 caramel-workshop opening/late recovery 分别补约束，而不是把 no-regression passed 误当验收通过。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、同 seed window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001；window_regression_vs_seed63100_stage02.md 记录 policy_window_regression_passed，但 comparison_300s.json 仍为 needs_policy_repair。"
+}

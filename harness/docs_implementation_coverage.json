@@ -978,6 +978,14 @@
             "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_repair_probe_001/window_regression_vs_seed63100_stage02.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_repair_probe_001/failure_analysis_300s.md",
             "harness/failed_cases/fail_20260528_072_stage02_staged_fallback_repair_probe_regression.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/summary.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/fallback_training.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/comparison_60s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/comparison_180s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/comparison_300s.json",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/window_regression_vs_seed63100_stage02.md",
+            "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/failure_analysis_300s.md",
+            "harness/failed_cases/fail_20260528_073_stage02_staged_fallback_late_retention_longrun_gap.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/summary.md",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/late_training.json",
             "harness/reports/2026-05-27_rl_behavior_clone_late_risk_aux_staged_gru_context8_001/packaging.json",
@@ -1034,7 +1042,8 @@
             "soda/cracked 窄地图 retention probe 修住 cracked-star-jar 180 秒并提高 300 秒平均存活，但重新破坏 soda-creek seed 63100 opening；后续必须先做 explicit opening replay retention 或 staged opening protection，仍不能进入 stage 03 或 RL acceptance。",
             "stage 02 opening + soda/cracked retention fallback staged wrapper 已通过 seed 63100 同 seed 60/180/300 no-regression，并把 cracked-star-jar 300 秒提升到 0.3333；但 soda-creek 和 caramel-workshop 300 秒仍为 0.0，总计 8 个失败 episode，因此只能作为 fallback repair 诊断分支。",
             "staged opening fallback trace 已确认失败局 sampled rows 中 76.26% 为负 route_recovery，boundary_edge 是主压力标签，并导出 1473 条 60-180 秒与 395 条 180-300 秒 repair samples；两组样本均通过 edge_recovery_samples_valid，但只能作为 repair training input。",
-            "低权重 supervised fallback repair probe 保住了 60 秒同 seed no-regression，并把 window blockers 收到 cracked-star-jar 平均存活 2 项；但 300 秒三图仍全 0%，且 cracked-star-jar 300 秒胜率从上一轮 staged opening 的 0.3333 回退到 0.0，因此继续阻塞 stage 03 和 RL acceptance。"
+            "低权重 supervised fallback repair probe 保住了 60 秒同 seed no-regression，并把 window blockers 收到 cracked-star-jar 平均存活 2 项；但 300 秒三图仍全 0%，且 cracked-star-jar 300 秒胜率从上一轮 staged opening 的 0.3333 回退到 0.0，因此继续阻塞 stage 03 和 RL acceptance。",
+            "加入真实 late-survival trajectories 后，late-retention fallback probe 通过 seed 63100 同 seed 60/180/300 no-regression，并恢复 cracked-star-jar 300 秒 0.3333；但 soda-creek 与 caramel-workshop 300 秒仍为 0.0，因此只能作为下一轮 map-specific repair 分支。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

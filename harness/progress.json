@@ -2323,6 +2323,11 @@
       "id": "rl_curriculum_stage02_staged_fallback_repair_probe",
       "summary": "低权重混合 phase-aligned 规则轨迹与 staged fallback route-recovery samples 训练 behavior-clone fallback：60 秒同 seed no-regression 全保住，180/300 秒只剩 cracked-star-jar 平均存活 2 个 blockers，但 300 秒三图胜率仍全 0.0 且 cracked-star-jar 从上一轮 staged opening 的 0.3333 回退到 0.0；记录 fail_20260528_072，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_repair_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_staged_fallback_late_retention_probe",
+      "summary": "在 behavior-clone fallback 中加入真实 180-300 秒 late-survival trajectories，并将 edge repair rows 权重降到 0.25：60/180/300 秒同 seed no-regression 全部通过，cracked-star-jar 300 秒保持 0.3333 且平均存活高于 baseline；但 soda-creek 和 caramel-workshop 300 秒仍为 0.0，记录 fail_20260528_073，仍不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_late_retention_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2344,7 +2349,7 @@
     },
     {
       "id": "rl_policy_multimap_training_after_staged_opening_probe",
-      "summary": "stage 02 opening + soda/cracked retention fallback 已通过 seed 63100 同 seed no-regression，但 300 秒 soda-creek/caramel-workshop 仍为 0.0；低权重 supervised fallback repair 已验证会保住短窗但丢掉 cracked-star-jar 300 秒胜率。下一步不应简单加大 repair-sample 权重，应补 cracked-star-jar late retention 或回到 closed-loop PPO / reward constraint。"
+      "summary": "stage 02 opening + late-retention behavior-clone fallback 已通过 seed 63100 同 seed no-regression，并保住 cracked-star-jar 300 秒 0.3333；但 soda-creek/caramel-workshop 300 秒仍为 0.0。下一步应针对 soda-creek 60-180 recovery 和 caramel-workshop opening/late recovery 分别补约束，继续保持 RL acceptance blocked。"
     },
     {
       "id": "rl_policy_multimap_training",
