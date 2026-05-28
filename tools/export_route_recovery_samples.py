@@ -342,6 +342,10 @@ def build_report(
     max_seconds: float | None = None,
     phase_duration_seconds: float | None = None,
     min_health_ratio: float | None = None,
+    max_health_ratio: float | None = None,
+    min_low_health_risk: float | None = None,
+    min_hazard_pressure_risk: float | None = None,
+    min_boss_pressure_risk: float | None = None,
     original_actions: set[int] | None = None,
     map_ids: set[str] | None = None,
     max_samples: int | None = None,
@@ -355,6 +359,11 @@ def build_report(
     original_not_edge_count = 0
     original_action_filtered_count = 0
     low_health_filtered_count = 0
+    high_health_filtered_count = 0
+    pressure_filtered_count = 0
+    low_health_risk_filtered_count = 0
+    hazard_pressure_filtered_count = 0
+    boss_pressure_filtered_count = 0
     no_target_count = 0
     outside_time_window_count = 0
     map_filtered_trace_count = 0
@@ -393,6 +402,25 @@ def build_report(
             if edge_risk < min_boundary_edge_risk:
                 continue
             boundary_hotspot_count += 1
+            pressure_filter_failed = False
+            low_health_risk = as_number(diagnostics.get("low_health_risk")) or 0.0
+            hazard_pressure_risk = as_number(diagnostics.get("hazard_pressure_risk")) or 0.0
+            boss_pressure_risk = as_number(diagnostics.get("boss_pressure_risk")) or 0.0
+            if min_low_health_risk is not None and low_health_risk < min_low_health_risk:
+                low_health_risk_filtered_count += 1
+                pressure_filter_failed = True
+            if (
+                min_hazard_pressure_risk is not None
+                and hazard_pressure_risk < min_hazard_pressure_risk
+            ):
+                hazard_pressure_filtered_count += 1
+                pressure_filter_failed = True
+            if min_boss_pressure_risk is not None and boss_pressure_risk < min_boss_pressure_risk:
+                boss_pressure_filtered_count += 1
+                pressure_filter_failed = True
+            if pressure_filter_failed:
+                pressure_filtered_count += 1
+                continue
 
             observation = observation_values(step)
             if observation is None:
@@ -410,6 +438,13 @@ def build_report(
                 and health_ratio < min_health_ratio
             ):
                 low_health_filtered_count += 1
+                continue
+            if (
+                max_health_ratio is not None
+                and health_ratio is not None
+                and health_ratio > max_health_ratio
+            ):
+                high_health_filtered_count += 1
                 continue
 
             original_action = int(step.get("action", 0))
@@ -468,6 +503,11 @@ def build_report(
         "original_not_edge_count": original_not_edge_count,
         "original_action_filtered_count": original_action_filtered_count,
         "low_health_filtered_count": low_health_filtered_count,
+        "high_health_filtered_count": high_health_filtered_count,
+        "pressure_filtered_count": pressure_filtered_count,
+        "low_health_risk_filtered_count": low_health_risk_filtered_count,
+        "hazard_pressure_filtered_count": hazard_pressure_filtered_count,
+        "boss_pressure_filtered_count": boss_pressure_filtered_count,
         "no_target_count": no_target_count,
         "sample_count": len(samples),
         "samples_path": str(samples_out),
@@ -478,6 +518,10 @@ def build_report(
         "max_seconds": max_seconds,
         "phase_duration_seconds": phase_duration_seconds,
         "min_health_ratio": min_health_ratio,
+        "max_health_ratio": max_health_ratio,
+        "min_low_health_risk": min_low_health_risk,
+        "min_hazard_pressure_risk": min_hazard_pressure_risk,
+        "min_boss_pressure_risk": min_boss_pressure_risk,
         "original_actions": sorted(original_actions) if original_actions is not None else None,
         "map_ids": sorted(map_ids) if map_ids is not None else None,
         "map_distribution": count_map(sample.get("map_id") for sample in samples),
@@ -505,6 +549,11 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Map filtered traces: `{report['map_filtered_trace_count']}`",
         f"- Original action filtered rows: `{report['original_action_filtered_count']}`",
         f"- Low health filtered rows: `{report['low_health_filtered_count']}`",
+        f"- High health filtered rows: `{report['high_health_filtered_count']}`",
+        f"- Pressure filtered rows: `{report['pressure_filtered_count']}`",
+        f"  - Low health risk filtered rows: `{report['low_health_risk_filtered_count']}`",
+        f"  - Hazard pressure filtered rows: `{report['hazard_pressure_filtered_count']}`",
+        f"  - Boss pressure filtered rows: `{report['boss_pressure_filtered_count']}`",
         f"- Missing observation rows: `{report['missing_observation_count']}`",
         f"- Exported samples: `{report['sample_count']}`",
         f"- Samples: `{report['samples_path']}`",
@@ -550,6 +599,30 @@ def main() -> int:
         help="Skip samples whose normalized health observation is below this value.",
     )
     parser.add_argument(
+        "--max-health-ratio",
+        type=float,
+        default=None,
+        help="Skip samples whose normalized health observation is above this value.",
+    )
+    parser.add_argument(
+        "--min-low-health-risk",
+        type=float,
+        default=None,
+        help="Keep only rows whose trace diagnostics low_health_risk is at least this value.",
+    )
+    parser.add_argument(
+        "--min-hazard-pressure-risk",
+        type=float,
+        default=None,
+        help="Keep only rows whose trace diagnostics hazard_pressure_risk is at least this value.",
+    )
+    parser.add_argument(
+        "--min-boss-pressure-risk",
+        type=float,
+        default=None,
+        help="Keep only rows whose trace diagnostics boss_pressure_risk is at least this value.",
+    )
+    parser.add_argument(
         "--original-actions",
         default=None,
         help="Comma-separated original policy actions to export, for example `3` or `1,3,6`.",
@@ -576,6 +649,21 @@ def main() -> int:
         parser.error("--phase-duration-seconds must be greater than zero")
     if args.min_health_ratio is not None and not (0.0 <= args.min_health_ratio <= 1.0):
         parser.error("--min-health-ratio must be between 0 and 1")
+    if args.max_health_ratio is not None and not (0.0 <= args.max_health_ratio <= 1.0):
+        parser.error("--max-health-ratio must be between 0 and 1")
+    if (
+        args.min_health_ratio is not None
+        and args.max_health_ratio is not None
+        and args.max_health_ratio < args.min_health_ratio
+    ):
+        parser.error("--max-health-ratio must be greater than or equal to --min-health-ratio")
+    for label, value in [
+        ("--min-low-health-risk", args.min_low_health_risk),
+        ("--min-hazard-pressure-risk", args.min_hazard_pressure_risk),
+        ("--min-boss-pressure-risk", args.min_boss_pressure_risk),
+    ]:
+        if value is not None and not (0.0 <= value <= 1.0):
+            parser.error(f"{label} must be between 0 and 1")
     original_actions = None
     if args.original_actions:
         try:
@@ -612,6 +700,10 @@ def main() -> int:
         max_seconds=args.max_seconds,
         phase_duration_seconds=args.phase_duration_seconds,
         min_health_ratio=args.min_health_ratio,
+        max_health_ratio=args.max_health_ratio,
+        min_low_health_risk=args.min_low_health_risk,
+        min_hazard_pressure_risk=args.min_hazard_pressure_risk,
+        min_boss_pressure_risk=args.min_boss_pressure_risk,
         original_actions=original_actions,
         map_ids=map_ids,
         max_samples=args.max_samples,
