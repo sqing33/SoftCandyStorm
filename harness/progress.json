@@ -2338,6 +2338,11 @@
       "id": "rl_curriculum_stage02_map_specific_fallback_repair_probe",
       "summary": "低权重混入当前失败面的三包 map-specific route-recovery samples，并把 edge repair rows 权重从 0.25 提高到 0.35：cracked-star-jar 300 秒从 0.3333 提升到 0.6667，总失败从 8 降到 7；但 soda-creek 300 秒平均存活出现 0.0111 秒 strict no-regression blocker，且 soda/caramel 300 秒仍为 0.0，记录 fail_20260528_074，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_map_specific_fallback_repair_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_map_specific_fallback_w025_probe",
+      "summary": "将 map-specific fallback repair 的 edge repair rows 权重降回 0.25：soda-creek 300 秒平均存活高于 baseline 10.4806 秒，但 cracked-star-jar 180/300 秒平均存活触发 2 个 strict no-regression blockers，300 秒三图胜率全为 0.0；记录 fail_20260528_075，说明单一全局 edge 权重无法同时保住 cracked retention 与修复 soda/caramel。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_map_specific_fallback_w025_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2359,7 +2364,7 @@
     },
     {
       "id": "rl_policy_multimap_training_after_staged_opening_probe",
-      "summary": "stage 02 opening + late-retention behavior-clone fallback 已通过 seed 63100 同 seed no-regression，并保住 cracked-star-jar 300 秒 0.3333；混入 map-specific route recovery samples 的 0.35 权重 probe 虽把 cracked-star-jar 300 秒提升到 0.6667，但触发 soda-creek 300 秒 strict no-regression blocker 且 soda/caramel 300 秒仍为 0.0。下一步应降低或拆分 map-specific sample 权重，或回到 closed-loop constraint repair，继续保持 RL acceptance blocked。"
+      "summary": "stage 02 opening + late-retention behavior-clone fallback 已通过 seed 63100 同 seed no-regression，并保住 cracked-star-jar 300 秒 0.3333；混入 map-specific route recovery samples 的 0.35 权重 probe 虽把 cracked-star-jar 300 秒提升到 0.6667，但触发 soda-creek 300 秒 strict blocker；降回 0.25 又让 cracked-star-jar 180/300 秒回归。下一步应拆分 map/time-window 权重、增加 cracked retention anchors，或回到 closed-loop constraint repair，继续保持 RL acceptance blocked。"
     },
     {
       "id": "rl_policy_multimap_training",
