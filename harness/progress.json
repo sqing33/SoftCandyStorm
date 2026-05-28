@@ -2398,6 +2398,11 @@
       "id": "rl_curriculum_stage02_opening_aware_late_win_conversion_probe",
       "summary": "用 SB3 stage 02 opening policy + current-failure fallback teacher 做 opening-aware 蒸馏，再用 `late-win-conversion` 续训 2048 timesteps：60 秒为 0.6667/0.6667/1.0，180 秒为 0.3333/0.6667/0.6667，300 秒三图全 0.0。相对 current-failure fallback best 触发 8 个 no-regression blockers，相对 seed63100 baseline 触发 4 个 blockers，记录 fail_20260528_081，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_anchor_alignment_support",
+      "summary": "新增 compare_sb3_to_behavior_clone_anchor.py，用离线轨迹样本比较 SB3 candidate 与 behavior-clone anchor 的 KL divergence、argmax agreement、按地图和按时间窗漂移；支持 opening-model anchor wrapper、阈值 blockers 和单测，作为后续 KL / behavior-clone anchor 约束前的可审计诊断入口。",
+      "report": "python/train/compare_sb3_to_behavior_clone_anchor.py"
     }
   ],
   "next_recommended": [

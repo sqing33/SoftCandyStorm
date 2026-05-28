@@ -198,6 +198,8 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conv
 
 首个 opening-aware `late-win-conversion` 蒸馏探针确认该工具能正确记录 opening teacher，但 checkpoint 仍被拒绝：60 秒为 `0.6667/0.6667/1.0`，180 秒为 `0.3333/0.6667/0.6667`，300 秒三图仍为 `0.0/0.0/0.0`。相对 current-failure fallback best 触发 `8` 个 no-regression blockers，且丢掉 `cracked-star-jar` 300 秒 `0.3333` 胜率；相对 seed63100 baseline 仍有 `4` 个 blockers。该结果记录为 `fail_20260528_081`，说明 opening-aware distillation 只能修正 teacher 入口，不能替代 KL / behavior-clone anchor、per-map constrained repair 或显式 retention 保护。
 
+为把 KL / behavior-clone anchor 从口头建议变成可审计证据，`compare_sb3_to_behavior_clone_anchor.py` 已提供 SB3 candidate 对 behavior-clone anchor 的离线对齐诊断。它会在轨迹样本上逐步设置 `time_seconds` / `map_id` / `seed`，输出整体、按地图和按时间窗的 KL divergence、argmax agreement 与阈值 blockers；也支持同样的 `--opening-model` anchor wrapper。该报告只用于判断 closed-loop 续训是否偏离 anchor，不能替代 high-pressure 对比、window no-regression 或 RL acceptance。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
