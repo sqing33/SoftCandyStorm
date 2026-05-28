@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_087",
+  "category": "rl_policy",
+  "content_id": "stage02-handoff-splice-late-low-weight-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02HandoffSpliceLateLowWeightProbe",
+  "time_seconds": 300.0,
+  "symptom": "在 current-failure fallback best 数据底座上以 0.2x 低权重混入 handoff splice late trace 的 207 条 180-300 秒 route-recovery samples 后，60 秒保持 1.0/0.6667/1.0，180 秒为 0.6667/0.6667/0.6667，但 300 秒三图仍为 0.0/0.0/0.0。相对 current-failure fallback best 有 5 个 no-regression blockers，并丢掉 cracked-star-jar 300 秒 0.3333 胜率；相对 seed63100 stage 02 baseline 仍有 2 个 blockers。",
+  "root_cause": "late route-recovery samples 虽然能提供 boundary-edge 修复信号，但在 supervised fallback 中继续叠样本仍会改变 current-failure best 的 late retention。该分支在 300 秒窗口出现 9 个失败 episode，cracked-star-jar 180 秒和 300 秒 survival 均相对两个 baseline 回退，说明低权重样本不足以形成可靠 late win-conversion，反而破坏已知 best branch 的长局稳定性。",
+  "fix": "拒绝该 fallback 作为 policy candidate，不进入 stage 03、rl_test_bot_candidate 或 RL acceptance。停止把 handoff splice late samples 继续作为单纯 supervised sample stacking 路线推进；下一步应转向 closed-loop constrained repair 或 per-map late objective，并把 current-failure fallback best 的 cracked-star-jar 300 秒胜利作为硬 no-regression anchor。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_late_low_weight_probe_001；fallback_training.json 记录 36633 条样本和 0.2x handoff splice late path weight，comparison_60s/180s/300s.json 记录 deterministic high-pressure 三窗口结果，window_regression_vs_current_failure_best.md 为 5 个 blockers，window_regression_vs_seed63100_stage02.md 为 2 个 blockers，failure_analysis_300s.md 记录 9 个 300 秒失败 episode。"
+}

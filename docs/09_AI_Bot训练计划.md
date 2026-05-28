@@ -218,6 +218,8 @@ handoff splice wrapper 进一步证明 mid specialist 不能直接拼进候选�
 
 handoff splice late trace 进一步把失败面收窄到 late-window route recovery。复跑该 splice 的 `300s` high-pressure trace 得到 `9` 条失败局、`1686` 个 sampled rows，其中 negative `route_recovery` rows 为 `965`（`57.24%`），boundary-edge hotspots 为 `884`。`180-300s` late slice 导出 `207` 条有效 edge recovery samples，分布为 `soda-creek` `43`、`caramel-workshop` `61`、`cracked-star-jar` `103`；原始动作集中在 action `3` 和 `5`。这批样本只能作为下一轮低权重 repair input，不能作为 policy gate；若继续叠样本仍丢掉 `cracked-star-jar` 300 秒胜利，应转向 closed-loop constrained repair。
 
+handoff splice late low-weight fallback probe 证实单纯低权重叠样本仍不能解除 long-run blocker。该 run 沿用 current-failure fallback best 的训练底座，只以 `0.2x` 路径权重混入上述 `207` 条 late route-recovery samples；训练集变为 `36633` 条，edge recovery samples 为 `2900`，final validation accuracy 为 `0.7659`。60 秒保持 `1.0/0.6667/1.0`，180 秒为 `0.6667/0.6667/0.6667`，但 300 秒三图仍为 `0.0/0.0/0.0`。相对 current-failure fallback best 有 `5` 个 blockers，并丢掉 `cracked-star-jar` 300 秒 `0.3333` 胜率；相对 seed63100 stage 02 baseline 仍有 `2` 个 blockers。记录 `fail_20260528_087`，结论是 handoff splice late samples 只能保留为诊断素材，下一步应转向 closed-loop constrained repair 或 per-map late objective，并把 current best 作为硬 retention anchor。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

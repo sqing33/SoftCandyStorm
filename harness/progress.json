@@ -2453,6 +2453,11 @@
       "id": "rl_curriculum_stage02_handoff_splice_late_trace_samples",
       "summary": "复跑 handoff splice wrapper 的 300 秒失败局 trace：9 条失败 trace、1686 个 sampled rows、965 个 negative route_recovery rows，boundary-edge hotspots 884。180-300 秒 late slice 导出 207 条有效 edge recovery samples，分布为 soda 43、caramel 61、cracked 103。该批样本只是 repair input，不能作为 policy gate；下一步如继续 supervised fallback，必须用 current-failure best 作为硬 retention anchor 并重跑 seed 63100 60/180/300 秒 no-regression。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_late_trace_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_handoff_splice_late_low_weight_probe",
+      "summary": "沿用 current-failure fallback best 数据底座，只以 0.2x 低权重混入 handoff splice late trace 的 207 条 route-recovery samples。60 秒保持 1.0/0.6667/1.0，180 秒为 0.6667/0.6667/0.6667，但 300 秒仍为 0.0/0.0/0.0；相对 current best 有 5 个 blockers，并丢掉 cracked-star-jar 300 秒 0.3333 胜率，相对 seed63100 baseline 仍有 2 个 blockers。已记录 fail_20260528_087，不能推进 RL acceptance，下一步应停止 supervised sample stacking 路线并转向 closed-loop constrained repair 或 per-map late objective。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_late_low_weight_probe_001/summary.md"
     }
   ],
   "next_recommended": [
