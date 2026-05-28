@@ -2448,6 +2448,11 @@
       "id": "rl_curriculum_stage02_handoff_splice_wrapper_probe",
       "summary": "打包 staged fallback：current-failure best 负责 opening/late，current-failure trace incremental fallback 负责 60-180 秒，并用 stage 02 SB3 opening wrapper 覆盖前 60 秒。60 秒保持 1.0/0.6667/1.0，180 秒为 0.3333/0.6667/1.0，但 300 秒仍为 0.0/0.0/0.0，丢掉 current best 的 cracked-star-jar 300 秒 0.3333 胜率。相对 current best 有 4 个 blockers，相对 seed63100 baseline 有 1 个 strict blocker，已记录 fail_20260528_086，不能推进 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_wrapper_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_handoff_splice_late_trace_samples",
+      "summary": "复跑 handoff splice wrapper 的 300 秒失败局 trace：9 条失败 trace、1686 个 sampled rows、965 个 negative route_recovery rows，boundary-edge hotspots 884。180-300 秒 late slice 导出 207 条有效 edge recovery samples，分布为 soda 43、caramel 61、cracked 103。该批样本只是 repair input，不能作为 policy gate；下一步如继续 supervised fallback，必须用 current-failure best 作为硬 retention anchor 并重跑 seed 63100 60/180/300 秒 no-regression。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_late_trace_001/summary.md"
     }
   ],
   "next_recommended": [
