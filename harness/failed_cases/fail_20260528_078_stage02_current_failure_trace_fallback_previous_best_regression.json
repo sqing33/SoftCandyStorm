@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_078",
+  "category": "rl_policy",
+  "content_id": "stage02-current-failure-trace-fallback-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02CurrentFailureTraceFallbackProbe",
+  "time_seconds": 300.0,
+  "symptom": "用 current-failure trace 新导出的 772 条 route-recovery samples 替换上一轮 825 条 path-weighted trace samples 后，候选仍通过 seed63100 stage02 baseline 的 60/180/300 秒同 seed no-regression，但相对上一版 current-failure fallback best 出现回归：300 秒 cracked-star-jar 胜率从 0.3333 降到 0.0，soda-creek / caramel-workshop / cracked-star-jar 300 秒平均存活分别下降 18.2827 / 7.246 / 7.3324 秒，300 秒三图胜率全为 0.0。",
+  "root_cause": "更窄的 current-failure trace 样本改善了数据聚焦度，但替换旧样本包后削弱了上一版在 cracked-star-jar 300 秒胜利转换上的保留能力，同时没有解决 soda-creek 与 caramel-workshop 的长局转换问题。样本切片仍主要覆盖 boundary-edge route recovery，未形成稳定的 late-window win conversion。",
+  "fix": "不要推进该 checkpoint，也不要用它替代 current-failure fallback best。下一轮应保留上一版 best 作为基线，尝试增量混入 current-failure trace 样本、恢复 cracked-star-jar late retention 约束，或改为 closed-loop constrained repair，并继续同时检查 seed63100 baseline 与 previous-best regression。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、seed63100 baseline window regression、previous-best window regression 和 300 秒 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_trace_fallback_probe_001；window_regression_vs_seed63100_stage02.md 为 policy_window_regression_passed，但 window_regression_vs_current_failure_best.md 为 policy_window_regression_failed，comparison_300s.json 仍为 multimap_comparison_recorded_needs_policy_repair。"
+}

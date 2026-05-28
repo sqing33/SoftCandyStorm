@@ -2368,6 +2368,11 @@
       "id": "rl_curriculum_stage02_current_failure_trace_samples",
       "summary": "复跑 current-failure fallback 的 300 秒 failed-only trace 并写入 observation：8 条失败 trace、1369 个 sampled rows 中 926 个为 negative route_recovery；按 map/time-window 导出 soda opening 104、soda mid 163、soda late 50、caramel opening 102、caramel mid 163、caramel late 45、cracked mid 116、cracked late 29 条 repair samples，均通过 edge_recovery_samples_valid，合并 dry-run 读取 772 条 edge_recovery_supervision。该报告只提供更窄的下一轮 repair input，不是 policy gate。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_trace_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_current_failure_trace_fallback_probe",
+      "summary": "用 772 条 current-failure trace samples 替换上一轮 825 条 path-weighted trace samples 后训练 fallback：相对 seed63100 stage02 baseline 的 60/180/300 秒 no-regression 通过，但相对 current-failure fallback best 回归，cracked-star-jar 300 秒胜率从 0.3333 降到 0.0，三图 300 秒胜率全部为 0.0，记录 fail_20260528_078，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_trace_fallback_probe_001/summary.md"
     }
   ],
   "next_recommended": [
