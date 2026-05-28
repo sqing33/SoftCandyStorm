@@ -1,0 +1,56 @@
+{
+  "report_version": 1,
+  "source": "harness/telemetry/local/runtime_demo_input_after_codex_devtools_001.json",
+  "decision": "runtime_performance_capture_valid",
+  "thresholds": {
+    "min_average_fps": 45.0,
+    "min_worst_frame_fps": 10.0,
+    "max_slow_30fps_ratio": 0.1,
+    "max_enemy_count": 140,
+    "max_projectile_count": 220,
+    "max_active_effects": 96,
+    "duration_tolerance_seconds": 1.0
+  },
+  "summary": {
+    "kind": "runtime_playtest_capture",
+    "input_mode": "demo",
+    "simulation_speed": 8.0,
+    "frame_metrics": {
+      "frame_count": 661,
+      "total_frame_seconds": 11.597791,
+      "average_fps": 56.993614,
+      "worst_frame_fps": 10.0,
+      "slow_frame_count_45fps": 31,
+      "slow_frame_count_30fps": 9,
+      "slow_frame_ratio_30fps": 0.01361573373676248,
+      "status": "ok"
+    },
+    "samples": {
+      "sample_count": 91,
+      "max_visible_enemies": 5,
+      "max_visible_projectiles": 16,
+      "max_active_effects": 10
+    },
+    "final_metrics": {
+      "map_id": "frosting-grassland",
+      "target_duration_seconds": 90.0,
+      "duration_seconds": 90.0323,
+      "terminal": "victory",
+      "kills": 71,
+      "level": 4,
+      "max_enemy_count": 5,
+      "max_projectile_count": 18
+    },
+    "privacy": {
+      "local_capture_only": true,
+      "upload_transport": "not_implemented"
+    }
+  },
+  "errors": [],
+  "warnings": [],
+  "limitations": [
+    "This validates one local Runtime playtest capture only; it is not Steam Deck or broad hardware coverage.",
+    "Frame timing comes from Bevy runtime frame deltas and does not replace GPU profiling or memory growth checks.",
+    "Manual playtest readability, fun, death clarity, and content acceptance remain separate human gates."
+  ]
+}

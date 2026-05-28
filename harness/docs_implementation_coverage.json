@@ -1,6 +1,6 @@
 {
   "report_version": 1,
-  "updated_at": "2026-05-27",
+  "updated_at": "2026-05-28",
   "scope": "docs/00-19 implementation coverage",
   "summary": "Goal 模式下用于审计所有设计文档是否已经被当前仓库实现的覆盖账本。状态必须保守：缺少运行验证、真人试玩、最终素材或发布证据时，不得标为 complete。",
   "docs": [
@@ -75,6 +75,8 @@
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
             "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md",
             "harness/reports/2026-05-27_local_binary_launch_diagnostic_after_terminal_devtools_restart_001/summary.md",
+            "harness/reports/2026-05-28_local_binary_launch_diagnostic_after_codex_devtools_001/summary.md",
+            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md",
             "harness/reports/2026-05-27_workspace_tests_after_terminal_devtools_restart_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
@@ -91,7 +93,7 @@
             "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
           ],
           "gaps": [
-            "本机 Mach-O 启动已恢复，cargo test --workspace、60 秒 headless simulate、240 秒 Runtime demo capture、重启后的 600 秒 base_demo all Bot 矩阵、Replay 回归和 headless 性能预算均可运行；seed 53000-53019 曾发现 6 个中高技能 Bot 与 RouteBot 高于目标胜率区间，现已通过规则 Bot 策略校准修复：seed 52000-52019 和 seed 53000-53019 两个 20 seed 窗口均为 9 Bot 全部 pass，strict replay-batch 各 180/180 通过，headless 性能预算均 valid。",
+            "本机 Mach-O 启动已恢复，cargo test --workspace、60 秒 headless simulate、240 秒 Runtime demo capture、权限恢复后的 90 秒 Runtime demo-input capture、重启后的 600 秒 base_demo all Bot 矩阵、Replay 回归和 headless 性能预算均可运行；seed 53000-53019 曾发现 6 个中高技能 Bot 与 RouteBot 高于目标胜率区间，现已通过规则 Bot 策略校准修复：seed 52000-52019 和 seed 53000-53019 两个 20 seed 窗口均为 9 Bot 全部 pass，strict replay-batch 各 180/180 通过，headless 性能预算均 valid。",
             "仍需真实人工试玩确认玩法循环的可读性、节奏、受伤反馈和升级选择体验。"
           ],
           "blockers": []
@@ -319,10 +321,12 @@
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
             "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
-            "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md"
+            "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md",
+            "harness/reports/2026-05-28_local_binary_launch_diagnostic_after_codex_devtools_001/summary.md",
+            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md"
           ],
           "gaps": [
-            "本机二进制启动已恢复，cargo test --workspace 和当前会话 240 秒 Runtime demo capture 已通过；仍需刷新发布级 Runtime 性能、视觉和音频验证。",
+            "本机二进制启动已恢复，cargo test --workspace、当前会话 240 秒 Runtime demo capture 和权限恢复后的 90 秒 demo-input capture 已通过；仍需刷新发布级 Runtime 性能、视觉和音频验证。",
             "仍需更完整的 Runtime 视觉、音频和设置系统。"
           ],
           "blockers": []
@@ -376,11 +380,13 @@
             "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
             "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
-            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
+            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json",
+            "harness/reports/2026-05-28_local_binary_launch_diagnostic_after_codex_devtools_001/summary.md",
+            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md"
           ],
           "gaps": [
-            "本地二进制启动已恢复，game_harness --help、cargo test --workspace 和 60 秒 simulate 已在当前会话通过；Phase 4 full pack 的 20 seed Bot 策略校准矩阵、180 条 Replay 回归和 headless 性能预算均已通过，自动 Bot gate 已从 blocked 回到 pass。",
-            "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 Terminal DevTools 重启后诊断仍为 local_binary_launch_ok；base_demo 9 Bot x 20 seed x 600 秒矩阵曾暴露 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率高于目标，已作为 repair failure case 记录并通过规则 Bot 策略校准修复：seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，Replay 各 180/180，headless 性能预算 valid。",
+            "本地二进制启动已恢复，game_harness --help、cargo test --workspace、60 秒 simulate 和权限恢复后的 Runtime demo-input capture 已在当前会话通过；Phase 4 full pack 的 20 seed Bot 策略校准矩阵、180 条 Replay 回归和 headless 性能预算均已通过，自动 Bot gate 已从 blocked 回到 pass。",
+            "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 Codex Developer Tool 权限复测仍为 local_binary_launch_ok；base_demo 9 Bot x 20 seed x 600 秒矩阵曾暴露 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率高于目标，已作为 repair failure case 记录并通过规则 Bot 策略校准修复：seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，Replay 各 180/180，headless 性能预算 valid。",
             "Progress 账本已完成历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": []
@@ -1042,6 +1048,8 @@
             "tools/test_validate_runtime_performance_capture.py",
             "harness/telemetry/local/runtime_performance_smoke_2026-05-26_004.json",
             "harness/reports/2026-05-26_runtime_performance_capture_004/summary.md",
+            "harness/telemetry/local/runtime_demo_input_after_codex_devtools_001.json",
+            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md",
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_matrix_20seed_001/summary.md",
             "harness/reports/2026-05-27_phase4_full_pack_release_probe_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md",
@@ -1052,7 +1060,7 @@
             "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
           ],
           "gaps": [
-            "Phase 4 full pack 候选 headless simulation、multi-seed no-deadlock、Bot matrix、Replay 180/180、headless 性能预算、Runtime 10 秒本机性能 smoke 和 failure case 记录完整性都有当前证据；20 seed Bot gate 已从较小样本 pass、发布探针 blocked，修复为校准后 pass。",
+            "Phase 4 full pack 候选 headless simulation、multi-seed no-deadlock、Bot matrix、Replay 180/180、headless 性能预算、Runtime 10 秒本机性能 smoke、权限恢复后的 Runtime 90 秒 demo-input smoke 和 failure case 记录完整性都有当前证据；20 seed Bot gate 已从较小样本 pass、发布探针 blocked，修复为校准后 pass。",
             "Runtime 隐私设置、上传传输和平台路径策略已有可校验契约，人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板与审查包；但缺少真人填写并通过的人工隐私审查、平台路径审查、法律 / 合规审查、人工试玩、素材人工接受和剧情审校。",
             "人工证据缺口审计当前仍用于集中排队，不代表任何人工门禁通过。"
           ],
@@ -1512,10 +1520,11 @@
             "tools/audit_manual_evidence_gaps.py",
             "tools/test_audit_manual_evidence_gaps.py",
             "harness/reports/2026-05-26_manual_evidence_gap_audit_001/summary.md",
-            "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md"
+            "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md",
+            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md"
           ],
           "gaps": [
-            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包、基地 UI 人工审查模板和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根或显式 --platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F1 可显示素材 Runtime 候选 manifest 的待预览状态，F3 可显示剧情 / 图鉴 UI 候选 manifest 的安全状态，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；当前会话 Runtime demo capture 已验证 Runtime 能运行 240 秒、记录升级 / Boss / 伤害 / 结算 telemetry 并自动退出；但仍缺真实平台原生路径、真人平台路径审查通过、真人基地 UI 审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
+            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包、基地 UI 人工审查模板和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根或显式 --platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度和 F4 隐私设置视图，F1 可显示素材 Runtime 候选 manifest 的待预览状态，F3 可显示剧情 / 图鉴 UI 候选 manifest 的安全状态，F4 支持 7/8/9 显式切换上传同意项并在配置 --runtime-settings-file 时写回 JSON；当前会话 Runtime demo capture 已验证 Runtime 能运行 240 秒，权限恢复后的 90 秒 demo-input capture 已验证自动退出和性能报告，均能记录升级 / Boss / 伤害 / 结算 telemetry；但仍缺真实平台原生路径、真人平台路径审查通过、真人基地 UI 审查通过、完整基地 UI、章节目标链交互、可点击图鉴 UI、发布级导出 / 删除按钮和真实 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审、审校包、ui_candidate 晋级工具、UI 候选 manifest 门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审校记录、Runtime UI review 或 final human acceptance 并通过；Runtime 不读取或展示候选正文，也不把候选标记为 Runtime 集成或正式接受。",
             "素材候选已有人工审查草稿、审查包、asset_candidate 晋级工具、Runtime 候选 manifest 门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录、Runtime preview review、audio loudness review 或 final human acceptance 并通过；Runtime 不读取候选图片或音频，也不替换正式 Runtime 素材。",
             "accepted_content lockfile 当前为 blocked / empty，只记录暂无候选通过 9 局人工试玩、acceptance gate、内容 hash 复核和版本锁定；人工试玩接受证据包当前为 needs_evidence，严格校验为 manual_review_invalid，局外完整闭环仍缺少非空正式内容锁与真人接受证据。",
