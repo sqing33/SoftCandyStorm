@@ -4,6 +4,7 @@ from pathlib import Path
 
 from python.train import distill_behavior_clone_to_sb3 as distill_module
 from python.train.distill_behavior_clone_to_sb3 import (
+    build_distillation_sample_weights,
     collect_distillation_targets,
     load_distillation_dataset,
     mix_with_uniform,
@@ -145,3 +146,25 @@ def test_load_distillation_dataset_can_include_anchor_drift_samples(tmp_path):
     assert dataset["action_count"] == 9
     assert dataset["actions"] == [8]
     assert dataset["sample_metadata"][0]["sample_source"] == "anchor_drift_diagnostic"
+
+
+def test_build_distillation_sample_weights_matches_path_prefix():
+    dataset = {
+        "sample_metadata": [
+            {"path": "harness/reports/full_anchor/a.jsonl"},
+            {"path": "harness/reports/drift/mid_anchor_drift_training_samples.jsonl"},
+            {"path": "harness/reports/drift/other.jsonl"},
+        ],
+    }
+
+    weights, report = build_distillation_sample_weights(
+        dataset,
+        np.asarray([0, 1, 2]),
+        [{"path": "harness/reports/drift", "weight": 6.0}],
+        np,
+    )
+
+    assert weights.tolist() == pytest.approx([1.0, 6.0, 6.0])
+    assert report["mode"] == "sample_path_auxiliary"
+    assert report["sample_path_weights"]["weighted_sample_count"] == 2
+    assert report["sample_path_weights"]["entries"][0]["matched_train_samples"] == 2

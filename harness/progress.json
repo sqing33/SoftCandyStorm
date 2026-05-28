@@ -2513,6 +2513,11 @@
       "id": "rl_anchor_drift_sb3_distillation_input_support",
       "summary": "distill_behavior_clone_to_sb3.py 已增加 --include-anchor-drift-samples，可显式读取带 observation 的 anchor_drift_sample JSONL，用于 supervised SB3 re-alignment / distillation 初始化；默认仍拒绝 drift diagnostics，避免其被误用为普通 trajectory imitation 数据。该能力只是下一轮 repair initialization 工具，不是 policy gate。",
       "report": "python/train/distill_behavior_clone_to_sb3.py"
+    },
+    {
+      "id": "rl_sb3_distillation_sample_path_weighting",
+      "summary": "distill_behavior_clone_to_sb3.py 已支持 --sample-path-weight PATH=WEIGHT，可在 broad full-anchor + 小型 repair slice 混合数据中按 exact path 或 directory prefix 放大指定来源的 supervised loss，并在 report.sample_weights 中记录权重分布与命中样本数。该能力用于下一轮 supervised SB3 re-alignment 初始化，不是 policy gate。",
+      "report": "python/train/distill_behavior_clone_to_sb3.py"
     }
   ],
   "next_recommended": [

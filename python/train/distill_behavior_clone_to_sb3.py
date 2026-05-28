@@ -11,7 +11,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from python.train.train_behavior_clone import (
     load_trajectory_dataset,
+    parse_sample_path_weight_spec,
     summarize_dataset,
+    normalize_sample_path_weights,
+    sample_path_weight_for,
 )
 from python.train.train_sb3 import (
     algorithm_config,
@@ -233,6 +236,62 @@ def load_distillation_dataset(
     )
 
 
+def build_distillation_sample_weights(dataset, indices, sample_path_weights, np_module):
+    normalized_path_weights = normalize_sample_path_weights(sample_path_weights)
+    if not normalized_path_weights:
+        return None, {
+            "mode": "none",
+            "min": 1.0,
+            "max": 1.0,
+            "mean": 1.0,
+            "sample_path_weights": {
+                "enabled": False,
+                "weighted_sample_count": 0,
+                "weighted_sample_ratio": 0.0,
+                "entries": [],
+            },
+        }
+
+    path_weight_matches = {
+        item["path"]: {
+            "path": item["path"],
+            "weight": item["weight"],
+            "matched_train_samples": 0,
+        }
+        for item in normalized_path_weights
+    }
+    values = []
+    weighted_sample_count = 0
+    for index in indices:
+        sample = dataset["sample_metadata"][int(index)]
+        multiplier, matched_paths = sample_path_weight_for(
+            sample.get("path"),
+            normalized_path_weights,
+        )
+        if matched_paths:
+            weighted_sample_count += 1
+            for path in matched_paths:
+                path_weight_matches[path]["matched_train_samples"] += 1
+        values.append(multiplier)
+
+    weights = np_module.asarray(values, dtype=np_module.float32)
+    return weights, {
+        "mode": "sample_path_auxiliary",
+        "min": round(float(weights.min()), 6),
+        "max": round(float(weights.max()), 6),
+        "mean": round(float(weights.mean()), 6),
+        "sample_path_weights": {
+            "enabled": True,
+            "weighted_sample_count": int(weighted_sample_count),
+            "weighted_sample_ratio": round(
+                weighted_sample_count / max(1, len(indices)),
+                4,
+            ),
+            "entries": list(path_weight_matches.values()),
+        },
+    }
+
+
 def evaluate_supervised(model, observations, targets, torch_module):
     model.policy.set_training_mode(False)
     with torch_module.no_grad():
@@ -289,6 +348,12 @@ def distill(config, args):
     validation_count = min(max(validation_count, 1), max(1, len(indices) - 1))
     validation_indices = indices[:validation_count]
     train_indices = indices[validation_count:]
+    train_weights, sample_weight_report = build_distillation_sample_weights(
+        dataset,
+        train_indices,
+        args.sample_path_weights,
+        np,
+    )
 
     selected = algorithm_config(config, "ppo")
     ignored_keys = {"enabled", "policy", "total_timesteps"}
@@ -311,9 +376,15 @@ def distill(config, args):
             **algorithm_parameters,
         )
         optimizer = torch.optim.Adam(model.policy.parameters(), lr=args.learning_rate)
+        train_weight_tensor = (
+            torch.from_numpy(train_weights)
+            if train_weights is not None
+            else torch.ones(len(train_indices), dtype=torch.float32)
+        )
         train_dataset = TensorDataset(
             torch.from_numpy(observations[train_indices]),
             torch.from_numpy(targets[train_indices]),
+            train_weight_tensor,
         )
         train_loader = DataLoader(
             train_dataset,
@@ -326,27 +397,31 @@ def distill(config, args):
         for epoch in range(1, args.epochs + 1):
             model.policy.set_training_mode(True)
             total_loss = 0.0
-            total_seen = 0
-            total_correct = 0
-            for batch_x, batch_y in train_loader:
+            total_weight = 0.0
+            total_weighted_correct = 0.0
+            for batch_x, batch_y, batch_weight in train_loader:
                 logits = tensor_distribution_logits(model, batch_x, torch)
                 log_probs = torch.log_softmax(logits, dim=-1)
-                loss = -(batch_y * log_probs).sum(dim=1).mean()
+                per_sample_loss = -(batch_y * log_probs).sum(dim=1)
+                weight_sum = batch_weight.sum().clamp_min(1e-8)
+                loss = (per_sample_loss * batch_weight).sum() / weight_sum
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
-                total_loss += float(loss.item()) * len(batch_y)
-                total_seen += len(batch_y)
-                total_correct += int(
-                    (logits.argmax(dim=1) == batch_y.argmax(dim=1)).sum().item()
-                )
+                total_loss += float((per_sample_loss * batch_weight).sum().item())
+                total_weight += float(weight_sum.item())
+                batch_correct = (logits.argmax(dim=1) == batch_y.argmax(dim=1)).float()
+                total_weighted_correct += float((batch_correct * batch_weight).sum().item())
             validation_metrics = evaluate_supervised(model, validation_x, validation_y, torch)
             history.append(
                 {
                     "epoch": epoch,
-                    "train_loss": round(total_loss / max(1, total_seen), 6),
-                    "train_argmax_accuracy": round(total_correct / max(1, total_seen), 4),
+                    "train_loss": round(total_loss / max(1e-8, total_weight), 6),
+                    "train_argmax_accuracy": round(
+                        total_weighted_correct / max(1e-8, total_weight),
+                        4,
+                    ),
                     "validation_loss": validation_metrics["loss"],
                     "validation_argmax_accuracy": validation_metrics["argmax_accuracy"],
                     "validation_policy_entropy_nats": validation_metrics[
@@ -396,6 +471,7 @@ def distill(config, args):
             "started_at": started_at,
             "completed_at": completed_at,
         },
+        "sample_weights": sample_weight_report,
         "history": history,
         "final": history[-1] if history else {},
         "limitations": [
@@ -445,6 +521,14 @@ def main():
         "--include-anchor-drift-samples",
         action="store_true",
         help="Allow anchor_drift_sample JSONL rows exported with observations.",
+    )
+    parser.add_argument(
+        "--sample-path-weight",
+        dest="sample_path_weights",
+        action="append",
+        type=parse_sample_path_weight_spec,
+        default=[],
+        help="Multiply supervised loss for samples whose source path matches PATH=WEIGHT.",
     )
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=256)

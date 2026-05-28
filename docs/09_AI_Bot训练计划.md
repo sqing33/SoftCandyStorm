@@ -244,6 +244,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 `distill_behavior_clone_to_sb3.py` 现在也提供显式 `--include-anchor-drift-samples`，可把带 observation 的 `anchor_drift_sample` 行用于 supervised SB3 re-alignment / distillation 初始化。默认仍拒绝 drift diagnostics，避免它们绕过普通轨迹语义；该能力只是修复初始化入口，后续仍必须重新跑 anchor alignment、high-pressure no-regression、repair-probe gate 和 RL acceptance。
 
+`distill_behavior_clone_to_sb3.py` 也支持重复传入 `--sample-path-weight PATH=WEIGHT`，用于让 broad full-anchor 数据中的小型 repair slice（例如 top drift rows）在 supervised SB3 初始化里具备可审计权重。路径匹配语义与 behavior-clone 训练一致，报告会记录命中数量和权重分布；该能力仍只是初始化工具，不构成 policy gate。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
