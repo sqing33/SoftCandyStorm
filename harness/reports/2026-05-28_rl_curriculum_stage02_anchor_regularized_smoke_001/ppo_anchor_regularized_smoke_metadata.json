@@ -1,0 +1,314 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001/ppo_anchor_regularized_smoke.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "seed": 12345,
+  "content_dir": "content/base_demo",
+  "content_rules": "headless GameCore via game_harness gym-bridge",
+  "reward_config": "prototype reward in game_harness gym_reward",
+  "reward_profile": "late-win-conversion",
+  "upgrade_choice_model": null,
+  "warm_start_model": "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/ppo_distilled_opening_aware.zip",
+  "warm_start_metadata_path": "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/ppo_distilled_opening_aware_metadata.json",
+  "observation_version": 2,
+  "observation_len": 145,
+  "training_seconds": 300.0,
+  "algorithm_parameters": {
+    "learning_rate": 2e-05,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.02,
+    "clip_range": 0.2
+  },
+  "algorithm_parameters_source": "warm_start_metadata_with_overrides",
+  "evaluation_policy": "deterministic",
+  "evaluation_action_random_seed": null,
+  "evaluation_map_id": "soda-creek",
+  "started_at": "2026-05-28T06:10:58.754556+00:00",
+  "completed_at": "2026-05-28T06:11:03.261804+00:00",
+  "evaluation_path": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001/ppo_evaluation_report.json",
+  "known_exploits_path": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001/ppo_known_exploits.json",
+  "known_exploits": [],
+  "training_maps": [
+    "soda-creek",
+    "caramel-workshop",
+    "cracked-star-jar"
+  ],
+  "training_map_selection": "random",
+  "training_map_preset": "high-pressure",
+  "training_seeds": null,
+  "training_seed_selection": "single",
+  "anchor_regularization": {
+    "mode": "behavior_clone_anchor_kl_regularization",
+    "anchor_model": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001/fallback.pt",
+    "anchor_opening_model": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+    "anchor_opening_seconds": 60.0,
+    "datasets": [
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001",
+      "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_trace_001",
+      "harness/reports/2026-05-28_rl_curriculum_stage02_staged_opening_fallback_trace_001"
+    ],
+    "limit_samples": 8192,
+    "dataset": {
+      "paths": [
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/coward_caramel_workshop_seed62300_62303_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_caramel_workshop_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_cracked_star_jar_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_soda_creek_seed62302_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_cracked_star_jar_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_soda_creek_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/route_caramel_workshop_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/tank_caramel_workshop_seed62301_late_180_300.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+        "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl",
+        "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_trace_001/caramel_late_route_recovery_samples.jsonl",
+        "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_trace_001/caramel_opening_route_recovery_samples.jsonl",
+        "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_trace_001/cracked_mid_route_recovery_samples.jsonl",
+        "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_trace_001/soda_late_route_recovery_samples.jsonl",
+        "harness/reports/2026-05-28_rl_curriculum_stage02_path_weighted_trace_001/soda_mid_route_recovery_samples.jsonl",
+        "harness/reports/2026-05-28_rl_curriculum_stage02_staged_opening_fallback_trace_001/late_route_recovery_samples.jsonl",
+        "harness/reports/2026-05-28_rl_curriculum_stage02_staged_opening_fallback_trace_001/mid_route_recovery_samples.jsonl"
+      ],
+      "sample_count": 8192,
+      "episode_count": 21,
+      "skipped_upgrade_samples": 49,
+      "upgrade_sample_records": 0,
+      "edge_recovery_sample_records": 0,
+      "risk_recovery_sample_records": 0,
+      "observation_len": 145,
+      "action_count": 9,
+      "action_distribution": {
+        "0": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "1": {
+          "count": 1074,
+          "ratio": 0.1311
+        },
+        "2": {
+          "count": 944,
+          "ratio": 0.1152
+        },
+        "3": {
+          "count": 1147,
+          "ratio": 0.14
+        },
+        "4": {
+          "count": 920,
+          "ratio": 0.1123
+        },
+        "5": {
+          "count": 1058,
+          "ratio": 0.1292
+        },
+        "6": {
+          "count": 915,
+          "ratio": 0.1117
+        },
+        "7": {
+          "count": 1141,
+          "ratio": 0.1393
+        },
+        "8": {
+          "count": 993,
+          "ratio": 0.1212
+        }
+      },
+      "sample_summary": {
+        "time_seconds_min": 180.0095,
+        "time_seconds_max": 299.8484,
+        "health_ratio_min": 0.0004,
+        "health_ratio_average": 0.6679,
+        "map_distribution": {
+          "caramel-workshop": {
+            "count": 2562,
+            "ratio": 0.3127
+          },
+          "cracked-star-jar": {
+            "count": 3827,
+            "ratio": 0.4672
+          },
+          "soda-creek": {
+            "count": 1803,
+            "ratio": 0.2201
+          }
+        },
+        "sample_source_distribution": {
+          "trajectory": {
+            "count": 8192,
+            "ratio": 1.0
+          }
+        }
+      },
+      "metadata": [
+        {
+          "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/coward_caramel_workshop_seed62300_62303_late_180_300.jsonl",
+          "bot": "coward",
+          "map_id": "caramel-workshop",
+          "observation_version": 2,
+          "observation_len": 145,
+          "action_count": 9,
+          "sample_start_seconds": 180.0,
+          "sample_end_seconds": 300.0,
+          "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+        },
+        {
+          "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_caramel_workshop_late_180_300.jsonl",
+          "bot": "greedy",
+          "map_id": "caramel-workshop",
+          "observation_version": 2,
+          "observation_len": 145,
+          "action_count": 9,
+          "sample_start_seconds": 180.0,
+          "sample_end_seconds": 300.0,
+          "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+        },
+        {
+          "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_cracked_star_jar_late_180_300.jsonl",
+          "bot": "greedy",
+          "map_id": "cracked-star-jar",
+          "observation_version": 2,
+          "observation_len": 145,
+          "action_count": 9,
+          "sample_start_seconds": 180.0,
+          "sample_end_seconds": 300.0,
+          "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+        },
+        {
+          "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_soda_creek_seed62302_late_180_300.jsonl",
+          "bot": "greedy",
+          "map_id": "soda-creek",
+          "observation_version": 2,
+          "observation_len": 145,
+          "action_count": 9,
+          "sample_start_seconds": 180.0,
+          "sample_end_seconds": 300.0,
+          "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+        },
+        {
+          "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_cracked_star_jar_late_180_300.jsonl",
+          "bot": "kite",
+          "map_id": "cracked-star-jar",
+          "observation_version": 2,
+          "observation_len": 145,
+          "action_count": 9,
+          "sample_start_seconds": 180.0,
+          "sample_end_seconds": 300.0,
+          "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+        },
+        {
+          "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_soda_creek_late_180_300.jsonl",
+          "bot": "kite",
+          "map_id": "soda-creek",
+          "observation_version": 2,
+          "observation_len": 145,
+          "action_count": 9,
+          "sample_start_seconds": 180.0,
+          "sample_end_seconds": 300.0,
+          "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+        }
+      ]
+    },
+    "target": {
+      "anchor_argmax_agreement_with_dataset_actions": 0.7687,
+      "anchor_argmax_distribution": {
+        "0": {
+          "count": 4,
+          "ratio": 0.0005
+        },
+        "1": {
+          "count": 1143,
+          "ratio": 0.1395
+        },
+        "2": {
+          "count": 823,
+          "ratio": 0.1005
+        },
+        "3": {
+          "count": 1287,
+          "ratio": 0.1571
+        },
+        "4": {
+          "count": 807,
+          "ratio": 0.0985
+        },
+        "5": {
+          "count": 1147,
+          "ratio": 0.14
+        },
+        "6": {
+          "count": 899,
+          "ratio": 0.1097
+        },
+        "7": {
+          "count": 1108,
+          "ratio": 0.1353
+        },
+        "8": {
+          "count": 974,
+          "ratio": 0.1189
+        }
+      }
+    },
+    "regularization_weight": 1.0,
+    "interval_timesteps": 512,
+    "epochs_per_interval": 1,
+    "batch_size": 256,
+    "learning_rate": 2e-05,
+    "validation_split": 0.2,
+    "seed": 12345,
+    "limitations": [
+      "Anchor regularization is repair training evidence only.",
+      "It constrains closed-loop PPO drift on offline samples but does not replace high-pressure comparison, no-regression validation, or RL policy acceptance."
+    ],
+    "status": "applied",
+    "train_samples": 6554,
+    "validation_samples": 1638,
+    "effective_learning_rate": 2e-05,
+    "chunks": [
+      {
+        "chunk_timesteps": 512,
+        "remaining_timesteps": 512,
+        "num_timesteps_after_chunk": 512,
+        "regularization_epochs": [
+          {
+            "epoch": 1,
+            "train_mean_kl": 0.272781,
+            "train_argmax_agreement": 0.825,
+            "validation_mean_kl": 0.268785,
+            "validation_argmax_agreement": 0.8468,
+            "validation_policy_entropy_nats": 1.400772
+          }
+        ]
+      },
+      {
+        "chunk_timesteps": 512,
+        "remaining_timesteps": 0,
+        "num_timesteps_after_chunk": 1024,
+        "regularization_epochs": [
+          {
+            "epoch": 1,
+            "train_mean_kl": 0.270039,
+            "train_argmax_agreement": 0.83,
+            "validation_mean_kl": 0.265304,
+            "validation_argmax_agreement": 0.8462,
+            "validation_policy_entropy_nats": 1.395721
+          }
+        ]
+      }
+    ],
+    "final_validation": {
+      "mean_kl": 0.265304,
+      "cross_entropy": 1.046194,
+      "argmax_agreement": 0.8462,
+      "policy_entropy_nats": 1.395721
+    }
+  }
+}

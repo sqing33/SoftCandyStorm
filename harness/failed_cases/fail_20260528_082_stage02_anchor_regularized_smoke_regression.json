@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_082",
+  "category": "rl_policy",
+  "content_id": "stage02-anchor-regularized-ppo-smoke",
+  "seed": "63100-63102",
+  "bot": "Stage02AnchorRegularizedPpoSmoke",
+  "time_seconds": 300.0,
+  "symptom": "使用 behavior-clone anchor KL regularization 从 opening-aware distilled PPO 初始化继续训练 1024 timesteps 后，60 秒为 soda/caramel/cracked = 0.6667/0.6667/1.0，180 秒为 0.6667/0.6667/0.6667，300 秒为 0.0/0.0/0.3333。相对上一轮 opening-aware PPO 只剩 1 个 no-regression blocker，但相对 current-failure fallback best 仍有 7 个 blockers，相对 seed63100 stage02 baseline 仍有 4 个 blockers，不能推进 RL acceptance。",
+  "root_cause": "当前 anchor regularization 只使用 8192 条受限样本、每 512 timestep 做 1 个离线 KL epoch，能改善训练内 validation KL，却不足以让全量 36426 样本 anchor alignment 过阈值。全量 mean KL 仍为 0.346885，argmax agreement 仍为 0.7044；opening_lt_60 argmax agreement 只有 0.4388，mid_60_to_180 mean KL 为 0.421839，说明 policy 仍偏离 opening 与 mid-window anchor。",
+  "fix": "拒绝该 checkpoint，不进入 stage 03、rl_test_bot_candidate 或 RL acceptance。后续应尝试全量或分桶重采样 anchor regularization、更高 KL 权重、多 epoch anchor 约束、per-map/per-window constrained repair，或把 opening policy 显式冻结/分离，而不是只增加 PPO timesteps。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001；ppo_training_report.json 记录 anchor_regularization.final_validation.mean_kl=0.265304 和 argmax_agreement=0.8462，anchor_alignment.json 记录全量 behavior_clone_anchor_alignment_failed，comparison_60s/180s/300s.json 记录 deterministic high-pressure 三窗口结果，window_regression_vs_opening_aware_probe.md 为 1 个 blocker，window_regression_vs_current_failure_best.md 为 7 个 blockers，window_regression_vs_seed63100_stage02.md 为 4 个 blockers，failure_analysis_300s.md 记录 8 个 300 秒失败 episode。"
+}

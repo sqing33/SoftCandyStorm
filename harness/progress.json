@@ -2413,6 +2413,11 @@
       "id": "rl_anchor_regularized_sb3_training_support",
       "summary": "train_sb3.py 新增 PPO behavior-clone anchor KL regularization 训练入口：`--anchor-model` + `--anchor-dataset` 会把 closed-loop PPO 按 chunk 训练，并在每个 chunk 后用离线 anchor 概率目标做 KL 约束；支持 `--anchor-opening-model` 复用 SB3 opening + behavior-clone fallback anchor，训练报告记录 per-chunk validation KL、argmax agreement 和 final_validation。该能力只是 drift-constrained repair training support，不解除 RL acceptance blocker。",
       "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_curriculum_stage02_anchor_regularized_smoke",
+      "summary": "用新增 PPO anchor regularization 从 opening-aware distilled PPO 重新跑 1024 timestep smoke：训练内 anchor validation KL 为 0.265304、argmax agreement 为 0.8462，但全量 36426 样本 anchor alignment 仍失败，overall mean KL 0.346885、argmax agreement 0.7044。60/180/300 秒结果为 0.6667/0.6667/1.0、0.6667/0.6667/0.6667、0.0/0.0/0.3333；相对 opening-aware PPO 降到 1 个 blocker，但相对 current best 仍有 7 个 blockers，相对 seed63100 baseline 仍有 4 个 blockers，已记录 fail_20260528_082，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_anchor_regularized_smoke_001/summary.md"
     }
   ],
   "next_recommended": [
