@@ -1,0 +1,16 @@
+{
+  "case_id": "fail_20260528_090",
+  "category": "rl_training",
+  "content_id": "stage02-anchor-drift-start-alignment-precheck",
+  "seed": "48007,63100-63102",
+  "bot": "ppo_anchor_regularized_smoke_start_alignment_precheck",
+  "time_seconds": null,
+  "symptom": "Start-model anchor drift precheck failed on 200 mid_60_to_180 anchor_drift_sample rows: overall mean KL was 2.26528 above the 0.25 threshold, argmax agreement was 0.0 below the 0.85 threshold, and every map bucket exceeded the 0.25 mean KL threshold.",
+  "root_cause": "The ppo_anchor_regularized_smoke checkpoint is already far from the current-failure fallback anchor on the selected high-KL mid-window rows. The top-200 drift sample set is too narrow and too hard to use as the only immediate PPO repair objective from this start model.",
+  "fix": "Do not launch a longer guarded PPO continuation from this same start model using only the top-200 drift rows. Before the next continuation, mix these rows with broader opening, mid, and late anchor data, reduce PPO update pressure, or choose a closer start checkpoint while keeping the anchor validation guard enabled.",
+  "validation": "compare_sb3_to_behavior_clone_anchor.py was run with --include-anchor-drift-samples, max_mean_kl 0.25, min_argmax_agreement 0.85, and max_bucket_mean_kl 0.25. The report decision is behavior_clone_anchor_alignment_failed, so no fixed-window no-regression or policy acceptance gate was attempted from this precheck.",
+  "diagnostics": [
+    "harness/reports/2026-05-28_rl_anchor_drift_start_alignment_precheck_001/anchor_drift_alignment_precheck.json",
+    "harness/reports/2026-05-28_rl_anchor_drift_start_alignment_precheck_001/summary.md"
+  ]
+}

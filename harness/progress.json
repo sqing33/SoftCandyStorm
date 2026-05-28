@@ -2498,6 +2498,11 @@
       "id": "rl_anchor_drift_alignment_precheck_support",
       "summary": "compare_sb3_to_behavior_clone_anchor.py 已增加 --include-anchor-drift-samples，可显式读取带 observation 的 anchor_drift_sample JSONL，用于训练前比较 start model 与 behavior-clone anchor 在高 KL drift rows 上的对齐情况；默认仍拒绝 drift diagnostics，避免其被误用为普通 behavior-clone 数据。",
       "report": "python/train/compare_sb3_to_behavior_clone_anchor.py"
+    },
+    {
+      "id": "rl_anchor_drift_start_alignment_precheck",
+      "summary": "首个 start-model drift-row alignment precheck 使用 ppo_anchor_regularized_smoke.zip、current-failure fallback anchor 与 stage 02 opening wrapper，对 mid_anchor_drift_training_samples.jsonl 的 200 条 mid_60_to_180 drift rows 做训练前检查；overall mean KL 2.26528、argmax agreement 0.0，三图分桶均超过 0.25 mean KL 阈值，已记录 fail_20260528_090。因此不应直接从该 start model 用 top-200 drift rows 做更长 PPO。",
+      "report": "harness/reports/2026-05-28_rl_anchor_drift_start_alignment_precheck_001/summary.md"
     }
   ],
   "next_recommended": [

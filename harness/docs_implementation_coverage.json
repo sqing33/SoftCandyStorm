@@ -1184,6 +1184,9 @@
             "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/ppo_training_report.json",
             "harness/reports/2026-05-28_rl_curriculum_stage02_mid_anchor_guard_smoke_001/ppo_mid_anchor_guard_smoke_metadata.json",
             "harness/failed_cases/fail_20260528_089_stage02_mid_anchor_guard_smoke_anchor_guard.json",
+            "harness/reports/2026-05-28_rl_anchor_drift_start_alignment_precheck_001/summary.md",
+            "harness/reports/2026-05-28_rl_anchor_drift_start_alignment_precheck_001/anchor_drift_alignment_precheck.json",
+            "harness/failed_cases/fail_20260528_090_stage02_anchor_drift_start_alignment_precheck.json",
             "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/summary.md",
             "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/anchor_alignment.json",
             "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/summary.md",
@@ -1277,7 +1280,8 @@
             "validate_anchor_regularization_input.py 已对 mid_anchor_drift_training_samples.jsonl 跑真实 preflight，确认 200/200 条样本进入 mid_60_to_180 anchor target，map_time_bucket_balance 权重和 target argmax agreement 可审计；该报告不训练 PPO。",
             "train_sb3.py 已新增 anchor validation guard，可在 PPO anchor regularization 每个 chunk 后按 validation mean KL / argmax agreement 阈值停止后续续训，并在报告中记录 aborted_by_anchor_validation_guard；该 guard 只阻止 anchor drift 继续扩大，不替代 fixed-window no-regression 或 RL acceptance。",
             "首个 mid-anchor guarded PPO smoke 被 guard 拒绝：请求 512 timesteps，实际在 256 timestep 后停止，validation mean KL 2.310775、argmax agreement 0.0；已记录 fail_20260528_089，因此未继续跑 fixed-window no-regression。",
-            "compare_sb3_to_behavior_clone_anchor.py 已增加显式 --include-anchor-drift-samples，用于在训练前比较 start model 与 behavior-clone anchor 在 anchor_drift_sample 诊断行上的对齐情况；默认仍拒绝 drift diagnostics。"
+            "compare_sb3_to_behavior_clone_anchor.py 已增加显式 --include-anchor-drift-samples，用于在训练前比较 start model 与 behavior-clone anchor 在 anchor_drift_sample 诊断行上的对齐情况；默认仍拒绝 drift diagnostics。",
+            "首个 start-model drift-row alignment precheck 在 200 条 mid_60_to_180 drift rows 上失败：overall mean KL 2.26528、argmax agreement 0.0，三图分桶均超过阈值；已记录 fail_20260528_090，说明不能直接从该 start model 用 top-200 drift rows 做更长 PPO。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
