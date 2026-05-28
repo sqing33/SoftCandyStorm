@@ -2503,6 +2503,11 @@
       "id": "rl_anchor_drift_start_alignment_precheck",
       "summary": "首个 start-model drift-row alignment precheck 使用 ppo_anchor_regularized_smoke.zip、current-failure fallback anchor 与 stage 02 opening wrapper，对 mid_anchor_drift_training_samples.jsonl 的 200 条 mid_60_to_180 drift rows 做训练前检查；overall mean KL 2.26528、argmax agreement 0.0，三图分桶均超过 0.25 mean KL 阈值，已记录 fail_20260528_090。因此不应直接从该 start model 用 top-200 drift rows 做更长 PPO。",
       "report": "harness/reports/2026-05-28_rl_anchor_drift_start_alignment_precheck_001/summary.md"
+    },
+    {
+      "id": "rl_anchor_drift_start_candidate_sweep",
+      "summary": "已有 SB3 起点 sweep 比较了 7 个 checkpoint 在 200 条 mid_60_to_180 drift rows 上相对 current-failure fallback anchor 的对齐情况；最接近的 phase_specific_anchor_smoke 仍为 overall mean KL 2.14298、argmax agreement 0.0，其余候选也全部失败，已记录 fail_20260528_091。下一步不能只换旧 checkpoint 继续 PPO，应先做更宽 supervised re-alignment / distillation 或混合 full-anchor + drift rows。",
+      "report": "harness/reports/2026-05-28_rl_anchor_drift_start_candidate_sweep_001/summary.md"
     }
   ],
   "next_recommended": [

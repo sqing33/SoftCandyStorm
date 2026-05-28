@@ -240,6 +240,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 首个 start-model drift-row alignment precheck 使用上一版 `ppo_anchor_regularized_smoke.zip`、current-failure fallback anchor 与 stage 02 opening wrapper，对 `200` 条 `mid_60_to_180` drift rows 做训练前对齐检查。该预检失败：overall mean KL 为 `2.26528`，argmax agreement 为 `0.0`，三张图分桶 mean KL 均超过 `0.25` 阈值。已记录 `fail_20260528_090`；下一步不应从这个 start model 直接用 top-200 drift rows 做更长 PPO，而应混入更宽 anchor 数据、降低 PPO 更新压力，或寻找更接近的起点。
 
+已有 SB3 checkpoint 起点 sweep 也未找到合格替代。`phase_specific_anchor_smoke` 在这批 drift rows 上是最接近的现有起点，但 overall mean KL 仍为 `2.14298`、argmax agreement 仍为 `0.0`；`opening_aware_distilled`、`anchor_map_bucket_full_smoke`、`soda_caramel_closed_loop_anchor`、`anchor_regularized_smoke` 和 `stage02_late_180_to_300` 也全部失败。已记录 `fail_20260528_091`；下一步应增加更宽的 supervised SB3 re-alignment / distillation 或混合 full-anchor + drift rows，而不是只换一个旧 checkpoint 继续 PPO。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
