@@ -2458,6 +2458,11 @@
       "id": "rl_curriculum_stage02_handoff_splice_late_low_weight_probe",
       "summary": "沿用 current-failure fallback best 数据底座，只以 0.2x 低权重混入 handoff splice late trace 的 207 条 route-recovery samples。60 秒保持 1.0/0.6667/1.0，180 秒为 0.6667/0.6667/0.6667，但 300 秒仍为 0.0/0.0/0.0；相对 current best 有 5 个 blockers，并丢掉 cracked-star-jar 300 秒 0.3333 胜率，相对 seed63100 baseline 仍有 2 个 blockers。已记录 fail_20260528_087，不能推进 RL acceptance，下一步应停止 supervised sample stacking 路线并转向 closed-loop constrained repair 或 per-map late objective。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_handoff_splice_late_low_weight_probe_001/summary.md"
+    },
+    {
+      "id": "rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe",
+      "summary": "从 anchor-regularized smoke checkpoint 出发，只在 soda-creek/caramel-workshop 上做 1024 timestep late-route-recovery closed-loop 训练，并用 current-failure best + stage 02 opening 做 full 36426 样本 anchor。60 秒保持 1.0/0.6667/1.0，但 180 秒回落到 0.3333/0.6667/0.6667，300 秒仍为 0.0/0.0/0.0；全量 anchor alignment 失败，overall mean KL 0.34314、argmax agreement 0.6966，mid_60_to_180 mean KL 0.431042。已记录 fail_20260528_088，下一步应先解决 mid-window anchor drift 或增加 online hard no-regression guard。",
+      "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/summary.md"
     }
   ],
   "next_recommended": [

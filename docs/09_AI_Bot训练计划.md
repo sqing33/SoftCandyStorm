@@ -220,6 +220,8 @@ handoff splice late trace 进一步把失败面收窄到 late-window route recov
 
 handoff splice late low-weight fallback probe 证实单纯低权重叠样本仍不能解除 long-run blocker。该 run 沿用 current-failure fallback best 的训练底座，只以 `0.2x` 路径权重混入上述 `207` 条 late route-recovery samples；训练集变为 `36633` 条，edge recovery samples 为 `2900`，final validation accuracy 为 `0.7659`。60 秒保持 `1.0/0.6667/1.0`，180 秒为 `0.6667/0.6667/0.6667`，但 300 秒三图仍为 `0.0/0.0/0.0`。相对 current-failure fallback best 有 `5` 个 blockers，并丢掉 `cracked-star-jar` 300 秒 `0.3333` 胜率；相对 seed63100 stage 02 baseline 仍有 `2` 个 blockers。记录 `fail_20260528_087`，结论是 handoff splice late samples 只能保留为诊断素材，下一步应转向 closed-loop constrained repair 或 per-map late objective，并把 current best 作为硬 retention anchor。
 
+soda / caramel focused closed-loop anchor probe 说明现有离线 KL anchor 还不足以保护 handoff / mid retention。该 run 从 anchor-regularized smoke checkpoint 出发，只在 `soda-creek` 与 `caramel-workshop` 上做 `1024` timestep `late-route-recovery` 训练，并用 current-failure fallback best + stage 02 opening 作为 full `36426` 样本 anchor。训练内 final anchor validation mean KL 为 `0.340916`、argmax agreement 为 `0.6914`；全量 alignment 仍失败，overall mean KL `0.34314`，mid `60-180s` mean KL `0.431042`。opening wrapper 保护下，60 秒为 `1.0/0.6667/1.0`，但 180 秒回落到 `0.3333/0.6667/0.6667`，300 秒三图仍为 `0.0/0.0/0.0`，且 action `7` 重新主导失败局。记录 `fail_20260528_088`；下一步不应继续扩大 PPO timesteps，应先解决 mid-window anchor drift，或增加在线 hard no-regression guard。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

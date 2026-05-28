@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_088",
+  "category": "rl_policy",
+  "content_id": "stage02-soda-caramel-closed-loop-anchor-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02SodaCaramelClosedLoopAnchorProbe",
+  "time_seconds": 300.0,
+  "symptom": "从 anchor-regularized smoke checkpoint 出发，只在 soda-creek 与 caramel-workshop 上做 1024 timestep late-route-recovery closed-loop 训练，并用 current-failure fallback best + stage 02 opening 作为 anchor 后，60 秒保持 1.0/0.6667/1.0，但 180 秒变成 0.3333/0.6667/0.6667，300 秒仍为 0.0/0.0/0.0。相对起始 anchor-regularized smoke 有 5 个 no-regression blockers；相对 current-failure fallback best 有 6 个 blockers，并丢掉 cracked-star-jar 300 秒 0.3333 胜率。",
+  "root_cause": "该 closed-loop 约束仍无法控制 mid-window anchor drift。全量 36426 样本 anchor alignment 失败，overall mean_kl 为 0.34314，argmax agreement 为 0.6966；mid_60_to_180 mean_kl 达 0.431042，soda-creek mean_kl 为 0.369067。在线结果也显示 action 7 重新主导 300 秒三图失败，说明仅用离线 KL 约束和短步数 late-route-recovery 训练不足以保住 handoff/mid retention。",
+  "fix": "拒绝该 checkpoint 作为 policy candidate，不进入 stage 03、rl_test_bot_candidate 或 RL acceptance。下一步不应继续扩大 PPO timesteps；应先实现或使用更严格的 mid-window handoff anchor、online hard no-regression guard，或把 60-180 秒同 seed gate 作为训练中止条件，再做 closed-loop repair。",
+  "validation": "报告位于 harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001；ppo_training_report.json 记录 1024 timestep late-route-recovery 训练和 anchor regularization，anchor_alignment.json 记录 4 个 alignment blockers，comparison_60s/180s/300s.json 记录 deterministic high-pressure 三窗口结果，window_regression_vs_anchor_regularized_smoke.md 为 5 个 blockers，window_regression_vs_current_failure_best.md 为 6 个 blockers，window_regression_vs_seed63100_stage02.md 为 1 个 blocker，failure_analysis_300s.md 记录 9 个 300 秒失败 episode。"
+}
