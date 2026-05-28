@@ -200,6 +200,8 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conv
 
 为把 KL / behavior-clone anchor 从口头建议变成可审计证据，`compare_sb3_to_behavior_clone_anchor.py` 已提供 SB3 candidate 对 behavior-clone anchor 的离线对齐诊断。它会在轨迹样本上逐步设置 `time_seconds` / `map_id` / `seed`，输出整体、按地图和按时间窗的 KL divergence、argmax agreement 与阈值 blockers；也支持同样的 `--opening-model` anchor wrapper。该报告只用于判断 closed-loop 续训是否偏离 anchor，不能替代 high-pressure 对比、window no-regression 或 RL acceptance。
 
+首个 opening-aware PPO anchor alignment 报告显示，候选相对“SB3 stage 02 opening + current-failure fallback”anchor 的 overall mean KL 为 `0.353364`，高于诊断阈值 `0.25`，overall argmax agreement 为 `0.6899`，低于阈值 `0.75`。分桶看，`opening_lt_60` argmax agreement 只有 `0.4742`，`mid_60_to_180` mean KL 达到 `0.436179`。这解释了为什么该 checkpoint 动作熵更高但仍破坏 `soda-creek` 60 秒和多图 180 秒窗口；后续需要真正的 KL / behavior-clone anchor 训练约束，而不是只做无约束 PPO 续训。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

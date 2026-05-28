@@ -2403,6 +2403,11 @@
       "id": "rl_behavior_clone_anchor_alignment_support",
       "summary": "新增 compare_sb3_to_behavior_clone_anchor.py，用离线轨迹样本比较 SB3 candidate 与 behavior-clone anchor 的 KL divergence、argmax agreement、按地图和按时间窗漂移；支持 opening-model anchor wrapper、阈值 blockers 和单测，作为后续 KL / behavior-clone anchor 约束前的可审计诊断入口。",
       "report": "python/train/compare_sb3_to_behavior_clone_anchor.py"
+    },
+    {
+      "id": "rl_opening_aware_anchor_alignment_probe",
+      "summary": "用 behavior-clone anchor alignment 诊断 opening-aware late-win-conversion PPO：36426 个样本 overall mean KL 为 0.353364，高于 0.25 阈值；argmax agreement 为 0.6899，低于 0.75 阈值。opening_lt_60 argmax agreement 仅 0.4742，mid_60_to_180 mean KL 为 0.436179，说明 closed-loop PPO 仍偏离 anchor，不能推进 RL acceptance。",
+      "report": "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/summary.md"
     }
   ],
   "next_recommended": [

@@ -1086,6 +1086,8 @@
             "python/train/README.md",
             "python/train/compare_sb3_to_behavior_clone_anchor.py",
             "python/train/test_compare_sb3_to_behavior_clone_anchor.py",
+            "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/summary.md",
+            "harness/reports/2026-05-28_rl_opening_aware_anchor_alignment_001/anchor_alignment.json",
             "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/summary.md",
             "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/distill_run.json",
             "harness/reports/2026-05-28_rl_curriculum_stage02_opening_aware_late_win_conversion_probe_001/ppo_training_report.json",
@@ -1168,7 +1170,8 @@
             "late-win-conversion distilled probe 将 current-failure fallback best 蒸馏为 SB3 PPO 后做 2048 timestep closed-loop 续训，但 soda-creek 60 秒回落到 0.3333、180 秒回落到 0.0；相对 current best 和 seed63100 baseline 均触发 5 个 no-regression blockers，已记录 fail_20260528_080，说明 final-minute reward profile 不能单独替代 opening retention 或 staged protection。",
             "distill_behavior_clone_to_sb3.py 已支持 opening-aware teacher distillation：可通过 `--opening-model` / `--opening-seconds` 在 teacher_probs 蒸馏时按样本 time_seconds 复用 SB3 opening policy 和 behavior-clone fallback，避免再次把 staged opening teacher 错蒸馏成 fallback-only 目标；该能力仍只是下一轮 probe 的工具入口。",
             "opening-aware late-win-conversion probe 确认 opening teacher 能进入蒸馏报告，但 60 秒仍为 0.6667/0.6667/1.0，180 秒为 0.3333/0.6667/0.6667，300 秒三图全 0.0；相对 current best 有 8 个 no-regression blockers，相对 seed63100 baseline 有 4 个 blockers，已记录 fail_20260528_081，说明该路线仍不能解除 RL acceptance blocker。",
-            "compare_sb3_to_behavior_clone_anchor.py 已提供 KL / behavior-clone anchor alignment 诊断：可在离线轨迹样本上比较 SB3 candidate 与 behavior-clone anchor 的 KL、argmax agreement、按地图和按时间窗漂移，并支持 opening-model anchor wrapper；该能力只生成 repair diagnostic，不替代 high-pressure/no-regression/acceptance。"
+            "compare_sb3_to_behavior_clone_anchor.py 已提供 KL / behavior-clone anchor alignment 诊断：可在离线轨迹样本上比较 SB3 candidate 与 behavior-clone anchor 的 KL、argmax agreement、按地图和按时间窗漂移，并支持 opening-model anchor wrapper；该能力只生成 repair diagnostic，不替代 high-pressure/no-regression/acceptance。",
+            "opening-aware PPO anchor alignment 报告显示 overall mean KL 0.353364 超过 0.25，argmax agreement 0.6899 低于 0.75；opening_lt_60 argmax agreement 仅 0.4742，mid_60_to_180 mean KL 为 0.436179，说明该 closed-loop PPO 仍偏离 anchor，下一步需要真正的 KL / behavior-clone anchor 训练约束。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
