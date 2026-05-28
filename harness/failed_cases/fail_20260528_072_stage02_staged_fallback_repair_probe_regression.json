@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260528_072",
+  "category": "rl_policy",
+  "content_id": "stage02-staged-fallback-repair-probe",
+  "seed": "63100-63102",
+  "bot": "Stage02OpeningBehaviorCloneFallbackRepairProbe",
+  "time_seconds": 300.0,
+  "symptom": "低权重混合 phase-aligned 规则轨迹与 staged fallback route-recovery samples 训练 behavior-clone fallback 后，60 秒同 seed no-regression 全部通过，180/300 秒只剩 cracked-star-jar 平均存活 2 个 blockers；但 300 秒三图胜率仍全为 0.0，且 cracked-star-jar 从上一轮 staged opening probe 的 0.3333 回退到 0.0。",
+  "root_cause": "repair rows 只占 7.92% 且主要修正边界方向，能够降低动作塌缩并保留短窗，但 behavior-clone fallback 仍没有形成可持续的 180-300 秒跨图生存策略；cracked-star-jar 对 late fallback 替换尤其敏感。",
+  "fix": "拒绝该 fallback checkpoint。下一步不要直接放大同类 supervised fallback 权重，应优先补 cracked-star-jar late survival retention 或回到 closed-loop PPO / reward constraint，并继续使用 seed-matched stage 02 baseline 的 60/180/300 no-regression gate。",
+  "validation": "训练、60/180/300 秒 high-pressure 对比、同 seed window regression 和 failure analysis 记录在 harness/reports/2026-05-28_rl_curriculum_stage02_staged_fallback_repair_probe_001；window_regression_vs_seed63100_stage02.md 记录 policy_window_regression_failed 和 2 个 blockers。"
+}
