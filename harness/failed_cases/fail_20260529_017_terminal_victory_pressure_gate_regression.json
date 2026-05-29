@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260529_017",
+  "category": "rl",
+  "content_id": "terminal-victory-multimap-pressure-gate-w1-e30",
+  "seed": 63100,
+  "bot": "SB3PPOParentWithPressureGatedTerminalVictoryBranch",
+  "time_seconds": 300.0,
+  "symptom": "多图 victory terminal branch 加入 pressure / low-health 条件分派后，300 秒 high-pressure 三图仍为 0% 胜率；相对 parent 在 cracked-star-jar 300 秒平均生存下降 0.4668 秒，相对 e30 仍在 soda-creek 300 秒触发 action 1 ratio +0.216 blocker。",
+  "root_cause": "条件分派减少或改变 terminal branch 介入时机，但当前 terminal model 本身没有形成稳定 late conversion action separation；仅用 pressure >= 0.25 或 low_health_risk >= 0.4 作为切换条件，既不能修复 soda-creek 动作偏移，也会让 cracked-star-jar 的 parent preservation 变差。",
+  "fix": "不要继续只调 terminal-conversion 分派阈值；下一步应增加 branch usage instrumentation，或按地图和 late failure bucket 重做 terminal objective，并保留 parent/e30 required window regression。",
+  "validation": "60/180/300 秒 high-pressure comparison 已运行；window_regression_vs_parent 因 cracked-star-jar 300 秒平均生存下降 0.4668 秒失败；window_regression_vs_e30 因 soda-creek 300 秒 action 1 ratio 增加 0.216 失败；failure_analysis_300s 记录 9 个失败局；repair_probe_gate 为 rl_repair_probe_gate_failed。"
+}

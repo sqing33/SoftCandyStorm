@@ -2688,6 +2688,11 @@
       "id": "rl_sb3_terminal_victory_multimap_path_target_probe",
       "summary": "使用 1437 条 high-pressure 多图 victory terminal samples 做 dataset-action-target-path 覆写，并以 e30 mid-anchor parent 作为 terminal_conversion_branch base，在三图 210-240s 分派到新 terminal model。distillation action-distribution guard、drift alignment、full-anchor alignment 和 parent window regression 均通过；但 300 秒 high-pressure 三图仍为 0.0/0.0/0.0，并相对 e30 在 300s/soda-creek 触发 action 1 ratio +0.216 blocker。repair-probe gate 失败并记录 fail_20260529_016，不能推进 policy candidate、stage 03 或 RL acceptance。",
       "report": "harness/reports/2026-05-29_rl_sb3_terminal_victory_multimap_path_target_w1_e30_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_terminal_victory_pressure_gate_probe",
+      "summary": "对多图 victory terminal branch 增加 evaluation-only 条件分派：三图 210-240s terminal window 内需满足 combined_pressure >= 0.25 或 low_health_risk >= 0.4 才切到 terminal model。该探针未解除 300 秒 high-pressure 三图 0% 胜率；相对 parent 新增 cracked-star-jar 300 秒平均生存 -0.4668s blocker，相对 e30 仍有 soda-creek 300 秒 action 1 ratio +0.216 blocker。repair-probe gate 失败并记录 fail_20260529_017，说明不能继续只调分派阈值。",
+      "report": "harness/reports/2026-05-29_rl_sb3_terminal_victory_multimap_pressure_gate_w1_e30_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2717,7 +2722,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比、distillation action-distribution guard 复跑、online action-distribution delta 门禁、terminal_conversion_branch 调度入口、真实 e30-base / parent-base branch probe、胜利终局 trajectory sample filter smoke、dataset-action-target-path 监督目标覆写、多图 victory terminal samples 和多图 victory path target branch probe 均已完成。显式 branch 能限制在线动作分布漂移，路径级胜利样本 target 覆写能保住 full-anchor 与 parent no-regression，但 300 秒三图仍全 0；多图 w1 相对 e30 仍有 300s/soda-creek action 1 ratio +0.216 blocker。下一步不要继续单纯扩大 victory target 权重，应改做 pressure / low-health risk 条件化 dispatch 或 per-map terminal objective，并继续混合 parent/e30 retention anchors。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比、distillation action-distribution guard 复跑、online action-distribution delta 门禁、terminal_conversion_branch 调度入口、真实 e30-base / parent-base branch probe、胜利终局 trajectory sample filter smoke、dataset-action-target-path 监督目标覆写、多图 victory terminal samples、多图 victory path target branch probe 和 pressure / low-health 条件分派探针均已完成。显式 branch 能限制在线动作分布漂移，路径级胜利样本 target 覆写能保住 full-anchor 与 parent no-regression，但 300 秒三图仍全 0；多图 w1 相对 e30 仍有 300s/soda-creek action 1 ratio +0.216 blocker，条件分派还新增 cracked-star-jar parent survival -0.4668s blocker。下一步不要继续单纯扩大 victory target 权重或只调分派阈值，应改做 branch usage instrumentation、per-map terminal objective，或重新收集更接近失败状态的 conversion target。"
     },
     {
       "id": "rl_policy_multimap_training",
