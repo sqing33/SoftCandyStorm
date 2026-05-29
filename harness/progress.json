@@ -2673,6 +2673,11 @@
       "id": "rl_sb3_distillation_action_distribution_guard_finding",
       "summary": "supervised SB3 distillation 已具备离线 action-distribution guard 和可选 scope。terminal-window w10 复跑显示 all-scope 会误拦 anchor drift repair slice，而 overall,map_time_buckets scope 通过且未捕捉在线 60s/caramel dominant-action blocker；新增 online action-distribution delta 门禁后，e30 vs terminal-window w10 复跑记录 17 个 blockers，确认当前问题是在线策略分布漂移。显式 terminal_conversion_branch probe 进一步说明：限制 dispatch 能消除 e30 视角的在线分布漂移，但现有 terminal-window w10 model 仍不能完成 300 秒转换，parent-base repair gate 也因 cracked-star-jar 300 秒平均存活 -0.4779s 失败。下一步应重新训练真正的 terminal-conversion branch 或收集成功终局 conversion target，而不是继续离线 guard、单参数权重扫描或只调 dispatch 秒数。",
       "report": "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_terminal_victory_path_target_support",
+      "summary": "distill_behavior_clone_to_sb3.py 新增 --dataset-action-target-path，可在 teacher_probs 蒸馏中只对指定路径样本使用 dataset action one-hot target。全局 dataset_actions 与路径覆写 w20/w10 消融均被 anchor alignment 拒绝；w5 通过 drift/full-anchor alignment 和 parent no-regression，且覆写 358 条 cracked-star-jar 胜利终局样本，但 300 秒 high-pressure 三图仍全为 0.0，并相对 e30 触发 300s/soda-creek action 1 ratio +0.2234 online blocker。已记录 fail_20260529_015，不能推进 policy candidate、stage 03 或 RL acceptance。",
+      "report": "harness/reports/2026-05-29_rl_sb3_terminal_victory_path_target_w5_e30_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2702,7 +2707,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比、distillation action-distribution guard 复跑、online action-distribution delta 门禁、terminal_conversion_branch 调度入口、真实 e30-base / parent-base branch probe 和胜利终局 trajectory sample filter smoke 均已完成。显式 branch 能限制在线动作分布漂移，但 300 秒三图仍全 0，parent-base repair gate 仍因 cracked-star-jar 300 秒平均存活 -0.4779s 失败；胜利终局样本只提供下一轮训练正例输入，不解除 RL blocker。下一步不要继续单参数降权或只调 dispatch 秒数，应重新训练真正的 terminal-conversion branch，并把成功终局样本与 pressure / low-health conversion target、parent/e30 retention anchors 混合。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比、distillation action-distribution guard 复跑、online action-distribution delta 门禁、terminal_conversion_branch 调度入口、真实 e30-base / parent-base branch probe、胜利终局 trajectory sample filter smoke 和 dataset-action-target-path 监督目标覆写均已完成。显式 branch 能限制在线动作分布漂移，路径级胜利样本 target 覆写能保住 full-anchor 与 parent no-regression，但 300 秒三图仍全 0，w5 相对 e30 仍有 300s/soda-creek action 1 ratio +0.2234 blocker。下一步不要继续单参数降权或只调 dispatch 秒数，应扩大多图成功终局样本或构造 pressure / low-health conversion target，并继续混合 parent/e30 retention anchors。"
     },
     {
       "id": "rl_policy_multimap_training",

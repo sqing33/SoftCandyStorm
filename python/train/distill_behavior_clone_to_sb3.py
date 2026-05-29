@@ -177,6 +177,37 @@ def recovery_target_override_report(
     }
 
 
+def normalize_dataset_action_target_paths(values):
+    if not values:
+        return []
+    result = []
+    for value in values:
+        for item in str(value).split(","):
+            path = item.strip()
+            if path:
+                result.append({"path": path, "weight": 1.0})
+    return result
+
+
+def dataset_action_target_override_report(paths, uniform_mix):
+    normalized_paths = normalize_dataset_action_target_paths(paths)
+    return {
+        "enabled": bool(normalized_paths),
+        "mode": "dataset_actions_by_path" if normalized_paths else "none",
+        "paths": [item["path"] for item in normalized_paths],
+        "uniform_target_mix": uniform_mix,
+        "overridden_sample_count": 0,
+        "average_nonzero_actions": None,
+        "entries": [
+            {
+                "path": item["path"],
+                "matched_sample_count": 0,
+            }
+            for item in normalized_paths
+        ],
+    }
+
+
 def recovery_target_override_distribution(
     sample,
     action,
@@ -238,11 +269,15 @@ def collect_distillation_targets(
     recovery_target_max_seconds=None,
     recovery_soft_target_primary_mass=0.65,
     recovery_soft_target_top_k=3,
+    dataset_action_target_paths=None,
 ):
     action_count = int(dataset["action_count"])
     enabled_recovery_sources = set(recovery_target_sources or RECOVERY_SAMPLE_SOURCES)
     enabled_recovery_maps = (
         set(recovery_target_maps) if recovery_target_maps is not None else None
+    )
+    normalized_dataset_action_paths = normalize_dataset_action_target_paths(
+        dataset_action_target_paths
     )
     if target_mode == "dataset_actions":
         targets = [
@@ -269,6 +304,10 @@ def collect_distillation_targets(
                 enabled_recovery_maps,
                 recovery_target_min_seconds,
                 recovery_target_max_seconds,
+            ),
+            "dataset_action_target_override": dataset_action_target_override_report(
+                [],
+                uniform_target_mix,
             ),
             "target_entropy_nats": round(
                 sum(target_entropy(target, np_module) for target in targets)
@@ -301,6 +340,14 @@ def collect_distillation_targets(
         recovery_target_max_seconds,
     )
     override_nonzero_action_total = 0
+    dataset_action_override_report = dataset_action_target_override_report(
+        dataset_action_target_paths,
+        uniform_target_mix,
+    )
+    dataset_action_override_entries = {
+        item["path"]: item for item in dataset_action_override_report["entries"]
+    }
+    dataset_action_override_nonzero_action_total = 0
     for observation, action, sample in zip(
         dataset["observations"],
         dataset["actions"],
@@ -370,6 +417,24 @@ def collect_distillation_targets(
             else:
                 override_report["fallback_one_hot_count"] += 1
             override_nonzero_action_total += int((probabilities > 0.0).sum())
+        if normalized_dataset_action_paths:
+            _multiplier, matched_paths = sample_path_weight_for(
+                sample.get("path"),
+                normalized_dataset_action_paths,
+            )
+            if matched_paths:
+                probabilities = transform_target_probabilities(
+                    one_hot(action, action_count, np_module),
+                    1.0,
+                    uniform_target_mix,
+                    np_module,
+                )
+                dataset_action_override_report["overridden_sample_count"] += 1
+                dataset_action_override_nonzero_action_total += int(
+                    (probabilities > 0.0).sum()
+                )
+                for path in matched_paths:
+                    dataset_action_override_entries[path]["matched_sample_count"] += 1
         targets.append(probabilities)
         teacher_argmax = int(predicted_action)
         teacher_argmax_actions.append(teacher_argmax)
@@ -379,6 +444,12 @@ def collect_distillation_targets(
     if override_report["overridden_sample_count"]:
         override_report["average_nonzero_actions"] = round(
             override_nonzero_action_total / override_report["overridden_sample_count"],
+            4,
+        )
+    if dataset_action_override_report["overridden_sample_count"]:
+        dataset_action_override_report["average_nonzero_actions"] = round(
+            dataset_action_override_nonzero_action_total
+            / dataset_action_override_report["overridden_sample_count"],
             4,
         )
 
@@ -396,6 +467,7 @@ def collect_distillation_targets(
             uniform_target_mix,
         ),
         "recovery_target_override": override_report,
+        "dataset_action_target_override": dataset_action_override_report,
         "target_entropy_nats": round(
             sum(target_entropy(target, np_module) for target in targets)
             / max(1, len(targets)),
@@ -858,6 +930,7 @@ def distill(config, args):
         recovery_target_max_seconds=args.recovery_target_max_seconds,
         recovery_soft_target_primary_mass=args.recovery_soft_target_primary_mass,
         recovery_soft_target_top_k=args.recovery_soft_target_top_k,
+        dataset_action_target_paths=args.dataset_action_target_paths,
     )
     observations = np.asarray(dataset["observations"], dtype=np.float32)
     if observations.shape[1] != int(config["environment"]["observation_len"]):
@@ -1127,6 +1200,17 @@ def main():
         type=parse_sample_path_weight_spec,
         default=[],
         help="Multiply supervised loss for samples whose source path matches PATH=WEIGHT.",
+    )
+    parser.add_argument(
+        "--dataset-action-target-path",
+        dest="dataset_action_target_paths",
+        action="append",
+        default=[],
+        help=(
+            "Use dataset action labels as final targets for samples whose source "
+            "path matches PATH or a directory prefix while other samples keep "
+            "the selected target mode."
+        ),
     )
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=256)

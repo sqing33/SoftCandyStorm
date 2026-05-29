@@ -1,0 +1,89 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-29_rl_sb3_terminal_victory_dataset_actions_w20_e30_001/ppo_terminal_victory_dataset_actions_w20_e30.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "distillation_source": {
+    "mode": "dataset_actions",
+    "teacher_model": null,
+    "opening_model": null,
+    "opening_seconds": null,
+    "teacher_argmax_agreement": null,
+    "target_transform": {
+      "teacher_temperature": 1.0,
+      "uniform_target_mix": 0.0
+    },
+    "recovery_target_override": {
+      "mode": "not_applicable_global_dataset_actions",
+      "sources": [
+        "edge_recovery_supervision",
+        "risk_recovery_supervision"
+      ],
+      "maps": null,
+      "min_seconds": null,
+      "max_seconds": null,
+      "primary_mass": 0.65,
+      "top_k": 3,
+      "overridden_sample_count": 0,
+      "soft_sample_count": 0,
+      "fallback_one_hot_count": 0,
+      "source_scoped_out_sample_count": 0,
+      "map_scoped_out_sample_count": 0,
+      "time_scoped_out_sample_count": 0,
+      "average_nonzero_actions": null
+    },
+    "target_entropy_nats": 1e-06,
+    "target_argmax_distribution": {
+      "0": {
+        "count": 407,
+        "ratio": 0.011
+      },
+      "1": {
+        "count": 4679,
+        "ratio": 0.1261
+      },
+      "2": {
+        "count": 3875,
+        "ratio": 0.1044
+      },
+      "3": {
+        "count": 5664,
+        "ratio": 0.1526
+      },
+      "4": {
+        "count": 3953,
+        "ratio": 0.1065
+      },
+      "5": {
+        "count": 4888,
+        "ratio": 0.1317
+      },
+      "6": {
+        "count": 4109,
+        "ratio": 0.1107
+      },
+      "7": {
+        "count": 4717,
+        "ratio": 0.1271
+      },
+      "8": {
+        "count": 4813,
+        "ratio": 0.1297
+      }
+    }
+  },
+  "observation_version": 2,
+  "observation_len": 145,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.0,
+    "clip_range": 0.2
+  },
+  "started_at": "2026-05-29T09:25:35.729908+00:00",
+  "completed_at": "2026-05-29T09:25:43.532090+00:00"
+}

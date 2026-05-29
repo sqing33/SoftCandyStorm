@@ -324,6 +324,55 @@ def test_recovery_target_scope_limits_override_by_map_and_time(monkeypatch):
     assert override["source_scoped_out_sample_count"] == 1
 
 
+def test_dataset_action_target_path_overrides_teacher_targets(monkeypatch):
+    class FakeTeacher:
+        def reset(self):
+            pass
+
+        def predict(self, observation, deterministic=True):
+            return 0, None
+
+        def action_scores(self, observation):
+            return {"kind": "probability", "scores": [0.8, 0.1, 0.1]}
+
+    monkeypatch.setattr(
+        distill_module,
+        "load_behavior_clone_policy_with_optional_opening",
+        lambda *args, **kwargs: FakeTeacher(),
+    )
+    dataset = {
+        "action_count": 3,
+        "observations": [
+            np.asarray([0.0, 0.1], dtype=np.float32),
+            np.asarray([0.2, 0.3], dtype=np.float32),
+        ],
+        "actions": [1, 2],
+        "sample_metadata": [
+            {"path": "harness/reports/full_anchor/a.jsonl"},
+            {"path": "harness/reports/victory/terminal.jsonl"},
+        ],
+    }
+
+    targets, report = collect_distillation_targets(
+        dataset,
+        Path("fallback.pt"),
+        "teacher_probs",
+        1.0,
+        0.0,
+        np,
+        dataset_action_target_paths=["harness/reports/victory"],
+    )
+
+    assert targets[0].tolist() == pytest.approx([0.8, 0.1, 0.1])
+    assert targets[1].tolist() == pytest.approx([0.0, 0.0, 1.0])
+    override = report["dataset_action_target_override"]
+    assert override["enabled"] is True
+    assert override["paths"] == ["harness/reports/victory"]
+    assert override["overridden_sample_count"] == 1
+    assert override["entries"][0]["matched_sample_count"] == 1
+    assert override["average_nonzero_actions"] == 1.0
+
+
 def test_load_distillation_dataset_can_include_anchor_drift_samples(tmp_path):
     path = tmp_path / "drift.jsonl"
     path.write_text(

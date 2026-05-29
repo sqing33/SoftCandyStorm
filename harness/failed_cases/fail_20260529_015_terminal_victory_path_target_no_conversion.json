@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260529_015",
+  "category": "rl",
+  "content_id": "terminal-victory-path-target-w5-e30",
+  "seed": 63100,
+  "bot": "SB3PPOParentWithTerminalVictoryBranch",
+  "time_seconds": 300.0,
+  "symptom": "胜利终局样本路径覆写后的 terminal-conversion branch 保住 parent no-regression 和 full-anchor alignment，但 300 秒 high-pressure 三图仍为 0% 胜率，并相对 e30 在 soda-creek 300 秒触发 action 1 ratio +0.2234 在线动作分布 blocker。",
+  "root_cause": "仅用 358 条 cracked-star-jar 胜利终局样本以低权重覆写监督目标，可以提供局部 terminal-window action target，但不足以让分支形成稳定 300 秒转换策略；跨图 retention 仍依赖 parent，目标分支没有解决 soda-creek 和 caramel-workshop 长局失败。",
+  "fix": "保留 dataset-action-target-path 能力，但不要推进当前 w5 checkpoint；下一步应扩大成功终局样本覆盖到多图和更多 seed，或加入 pressure / low-health 条件化 conversion target，并继续要求 parent 与 e30 多基线 no-regression。",
+  "validation": "distillation action-distribution guard、anchor_drift_alignment 和 full_anchor_alignment 均通过；parent window regression 通过；e30 window regression 因 300s/soda-creek action 1 ratio 增加 0.2234 失败；comparison_parent_300s 显示 soda-creek/caramel-workshop/cracked-star-jar 胜率均为 0.0。"
+}
