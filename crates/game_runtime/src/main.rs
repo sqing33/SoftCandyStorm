@@ -563,6 +563,15 @@ struct RuntimeDataControlContext {
     privacy_settings: RuntimePrivacySettings,
 }
 
+struct RuntimeMetaPanelRenderContext<'a> {
+    privacy_settings: &'a RuntimePrivacySettings,
+    runtime_settings_file: Option<&'a Path>,
+    story_codex_ui_candidate: Option<&'a RuntimeStoryCodexUiCandidateManifest>,
+    asset_runtime_candidate: Option<&'a RuntimeAssetCandidateManifest>,
+    content: &'a ContentPack,
+    config: &'a RunConfig,
+}
+
 #[derive(Debug, Clone, Default, Serialize)]
 struct RuntimeEventCounts {
     enemy_spawned: u32,
@@ -1627,12 +1636,14 @@ fn update_hud(
             &state.meta_progress,
             state.last_meta_settlement.as_ref(),
             state.meta_panel_view,
-            &state.privacy_settings,
-            state.runtime_settings_file.as_deref(),
-            state.story_codex_ui_candidate.as_ref(),
-            state.asset_runtime_candidate.as_ref(),
-            &state.content,
-            &state.config,
+            RuntimeMetaPanelRenderContext {
+                privacy_settings: &state.privacy_settings,
+                runtime_settings_file: state.runtime_settings_file.as_deref(),
+                story_codex_ui_candidate: state.story_codex_ui_candidate.as_ref(),
+                asset_runtime_candidate: state.asset_runtime_candidate.as_ref(),
+                content: &state.content,
+                config: &state.config,
+            },
         );
     }
 }
@@ -1980,25 +1991,22 @@ fn render_meta_progress_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
     view: RuntimeMetaPanelView,
-    privacy_settings: &RuntimePrivacySettings,
-    runtime_settings_file: Option<&Path>,
-    story_codex_ui_candidate: Option<&RuntimeStoryCodexUiCandidateManifest>,
-    asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
-    content: &ContentPack,
-    config: &RunConfig,
+    context: RuntimeMetaPanelRenderContext<'_>,
 ) -> String {
     match view {
         RuntimeMetaPanelView::Overview => {
-            render_meta_overview_panel(progress, settlement, asset_runtime_candidate)
+            render_meta_overview_panel(progress, settlement, context.asset_runtime_candidate)
         }
         RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(progress, settlement),
         RuntimeMetaPanelView::Codex => {
-            render_meta_codex_panel(progress, settlement, story_codex_ui_candidate)
+            render_meta_codex_panel(progress, settlement, context.story_codex_ui_candidate)
         }
         RuntimeMetaPanelView::Settings => {
-            render_meta_settings_panel(privacy_settings, runtime_settings_file)
+            render_meta_settings_panel(context.privacy_settings, context.runtime_settings_file)
         }
-        RuntimeMetaPanelView::Loadout => render_meta_loadout_panel(progress, content, config),
+        RuntimeMetaPanelView::Loadout => {
+            render_meta_loadout_panel(progress, context.content, context.config)
+        }
     }
 }
 
@@ -3773,12 +3781,13 @@ mod tests {
         write_runtime_save_state, RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest,
         RuntimeAssetCandidateRules, RuntimeCaptureState, RuntimeCli, RuntimeDataControlAction,
         RuntimeDataControlContext, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeMetaPanelView,
-        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0,
-        RuntimeSound, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
-        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID,
-        DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT,
-        PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
+        RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeMetaPanelRenderContext,
+        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
+        RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
+        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind,
+        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
+        MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
+        PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
         RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use game_core::{
@@ -3786,6 +3795,24 @@ mod tests {
         MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode, Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
+
+    fn meta_panel_context<'a>(
+        privacy_settings: &'a RuntimePrivacySettings,
+        runtime_settings_file: Option<&'a std::path::Path>,
+        story_codex_ui_candidate: Option<&'a RuntimeStoryCodexUiCandidateManifest>,
+        asset_runtime_candidate: Option<&'a RuntimeAssetCandidateManifest>,
+        content: &'a ContentPack,
+        config: &'a RunConfig,
+    ) -> RuntimeMetaPanelRenderContext<'a> {
+        RuntimeMetaPanelRenderContext {
+            privacy_settings,
+            runtime_settings_file,
+            story_codex_ui_candidate,
+            asset_runtime_candidate,
+            content,
+            config,
+        }
+    }
 
     #[test]
     fn parses_runtime_cli_overrides() {
@@ -5156,12 +5183,14 @@ mod tests {
             &progress,
             Some(&report),
             RuntimeMetaPanelView::Overview,
-            &RuntimePrivacySettings::default(),
-            None,
-            None,
-            None,
-            &ContentPack::base_demo(),
-            &RunConfig::default(),
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+            ),
         );
 
         assert!(panel.contains("糖罐守护站"));
@@ -5194,12 +5223,14 @@ mod tests {
             &progress,
             Some(&report),
             RuntimeMetaPanelView::Chapters,
-            &RuntimePrivacySettings::default(),
-            None,
-            None,
-            None,
-            &ContentPack::base_demo(),
-            &RunConfig::default(),
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+            ),
         );
 
         assert!(panel.contains("章节目标"));
@@ -5232,12 +5263,14 @@ mod tests {
             &progress,
             Some(&report),
             RuntimeMetaPanelView::Codex,
-            &RuntimePrivacySettings::default(),
-            None,
-            None,
-            None,
-            &ContentPack::base_demo(),
-            &RunConfig::default(),
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+            ),
         );
 
         assert!(panel.contains("图鉴进度"));
@@ -5266,12 +5299,14 @@ mod tests {
             &MetaProgress::demo_start(),
             None,
             RuntimeMetaPanelView::Codex,
-            &RuntimePrivacySettings::default(),
-            None,
-            Some(&candidate),
-            None,
-            &ContentPack::base_demo(),
-            &RunConfig::default(),
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                Some(&candidate),
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+            ),
         );
 
         assert!(panel.contains("剧情/图鉴 UI 候选"));
@@ -5317,12 +5352,14 @@ mod tests {
             &MetaProgress::demo_start(),
             None,
             RuntimeMetaPanelView::Overview,
-            &RuntimePrivacySettings::default(),
-            None,
-            None,
-            Some(&candidate),
-            &ContentPack::base_demo(),
-            &RunConfig::default(),
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                Some(&candidate),
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+            ),
         );
 
         assert!(panel.contains("素材 Runtime 候选"));
@@ -5353,12 +5390,14 @@ mod tests {
             &progress,
             None,
             RuntimeMetaPanelView::Loadout,
-            &RuntimePrivacySettings::default(),
-            None,
-            None,
-            None,
-            &content,
-            &config,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &content,
+                &config,
+            ),
         );
 
         assert!(panel.contains("F5 巡逻"));
@@ -5382,12 +5421,14 @@ mod tests {
             &MetaProgress::demo_start(),
             None,
             RuntimeMetaPanelView::Settings,
-            &settings,
-            Some(settings_path.as_path()),
-            None,
-            None,
-            &ContentPack::base_demo(),
-            &RunConfig::default(),
+            meta_panel_context(
+                &settings,
+                Some(settings_path.as_path()),
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+            ),
         );
 
         assert!(panel.contains("隐私与本地数据"));
