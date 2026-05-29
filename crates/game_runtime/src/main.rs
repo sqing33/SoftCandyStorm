@@ -241,6 +241,7 @@ struct RuntimeState {
     runtime_settings_file: Option<PathBuf>,
     save_file: Option<PathBuf>,
     local_data_dirs: Vec<PathBuf>,
+    pending_data_delete_action: Option<RuntimeDataControlAction>,
     meta_panel_view: RuntimeMetaPanelView,
     base_ui_state: RuntimeBaseUiState,
     codex_selected_index: usize,
@@ -1008,6 +1009,7 @@ fn setup_runtime(
         runtime_settings_file: cli.runtime_settings_file.clone(),
         save_file: cli.save_file.clone(),
         local_data_dirs: cli.local_data_dirs.clone(),
+        pending_data_delete_action: None,
         meta_panel_view: runtime_meta_panel_view_from_key(&base_ui_state.selected_panel),
         base_ui_state,
         codex_selected_index: 0,
@@ -1029,6 +1031,7 @@ fn select_runtime_meta_panel(
 ) {
     state.meta_panel_view = view;
     state.base_ui_state.selected_panel = panel_key.to_string();
+    state.pending_data_delete_action = None;
     state.last_event = event.to_string();
     state.last_event_kind = RuntimeEventKind::System;
     if let Err(error) = persist_runtime_save_if_configured(state) {
@@ -1187,10 +1190,7 @@ fn step_game_core(
             state.pending_sounds.push(RuntimeSound::System);
         }
         if let Some(action) = runtime_data_control_action_from_keyboard(&keyboard) {
-            match run_runtime_data_control_action(
-                &RuntimeDataControlContext::from_state(&state),
-                action,
-            ) {
+            match run_runtime_data_control_action_from_state(&mut state, action) {
                 Ok(message) => {
                     state.last_event = message;
                     state.last_event_kind = RuntimeEventKind::System;
@@ -2574,7 +2574,7 @@ fn render_meta_settings_panel(
         .map(|path| format!("写回 {}", path.display()))
         .unwrap_or_else(|| "未配置设置文件，本次会话生效".to_string());
     format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
         on_off_label(settings.telemetry_upload_enabled),
         on_off_label(settings.raw_replay_upload_enabled),
         on_off_label(settings.crash_report_upload_enabled),
@@ -4064,6 +4064,44 @@ fn run_runtime_data_control_action(
     }
 }
 
+fn runtime_data_control_requires_confirmation(action: RuntimeDataControlAction) -> bool {
+    matches!(
+        action,
+        RuntimeDataControlAction::DeleteSave | RuntimeDataControlAction::DeleteLocalData
+    )
+}
+
+fn runtime_data_control_confirmation_message(action: RuntimeDataControlAction) -> &'static str {
+    match action {
+        RuntimeDataControlAction::DeleteSave => "confirm delete save: press X again",
+        RuntimeDataControlAction::DeleteLocalData => "confirm delete local data: press K again",
+        RuntimeDataControlAction::ExportSave | RuntimeDataControlAction::ExportLocalData => {
+            "no confirmation required"
+        }
+    }
+}
+
+fn run_runtime_data_control_action_from_state(
+    state: &mut RuntimeState,
+    action: RuntimeDataControlAction,
+) -> std::io::Result<String> {
+    if !runtime_data_control_requires_confirmation(action) {
+        state.pending_data_delete_action = None;
+        return run_runtime_data_control_action(
+            &RuntimeDataControlContext::from_state(state),
+            action,
+        );
+    }
+
+    if state.pending_data_delete_action != Some(action) {
+        state.pending_data_delete_action = Some(action);
+        return Ok(runtime_data_control_confirmation_message(action).to_string());
+    }
+
+    state.pending_data_delete_action = None;
+    run_runtime_data_control_action(&RuntimeDataControlContext::from_state(state), action)
+}
+
 fn relative_path_string(root: &Path, path: &Path) -> String {
     path.strip_prefix(root)
         .unwrap_or(path)
@@ -4392,12 +4430,13 @@ mod tests {
         make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
         persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
         resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
-        run_runtime_data_control_action, runtime_asset_root, runtime_can_upload,
-        runtime_character_starting_loadout, runtime_local_data_export_path,
-        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
-        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
+        runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
+        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
+        runtime_save_export_path, runtime_sprite_paths, runtime_unlocked_character_ids,
+        runtime_unlocked_map_ids, sounds_for_events, toggle_runtime_privacy_setting,
+        write_runtime_privacy_settings, write_runtime_save_state,
+        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexCategory,
         RuntimeDataControlAction, RuntimeDataControlContext, RuntimeEffectKind, RuntimeEventCounts,
@@ -4480,6 +4519,7 @@ mod tests {
             runtime_settings_file: cli.runtime_settings_file.clone(),
             save_file: cli.save_file.clone(),
             local_data_dirs: cli.local_data_dirs.clone(),
+            pending_data_delete_action: None,
             meta_panel_view: RuntimeMetaPanelView::Overview,
             base_ui_state: RuntimeBaseUiState::default(),
             codex_selected_index: 0,
@@ -5736,6 +5776,45 @@ mod tests {
     }
 
     #[test]
+    fn runtime_data_delete_action_requires_same_key_confirmation() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-f4-confirm-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let save_file = root.join("profile.json");
+        fs::write(&save_file, "{}\n").unwrap();
+
+        let mut state = runtime_state_for_tests();
+        state.platform_data_root = root.clone();
+        state.save_file = Some(save_file.clone());
+
+        let message = run_runtime_data_control_action_from_state(
+            &mut state,
+            RuntimeDataControlAction::DeleteSave,
+        )
+        .unwrap();
+        assert!(message.contains("press X again"));
+        assert!(save_file.exists());
+        assert_eq!(
+            state.pending_data_delete_action,
+            Some(RuntimeDataControlAction::DeleteSave)
+        );
+
+        let message = run_runtime_data_control_action_from_state(
+            &mut state,
+            RuntimeDataControlAction::DeleteSave,
+        )
+        .unwrap();
+        assert!(message.contains("deleted save"));
+        assert!(!save_file.exists());
+        assert_eq!(state.pending_data_delete_action, None);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
     fn builds_runtime_run_config_from_cli() {
         let cli = parse_runtime_cli([
             "--character-id".to_string(),
@@ -6327,6 +6406,7 @@ mod tests {
         assert!(panel.contains("X 删除存档"));
         assert!(panel.contains("L 导出本地数据"));
         assert!(panel.contains("K 删除本地数据"));
+        assert!(panel.contains("X/K 删除需要再次按同一键确认"));
         assert!(panel.contains("exports/"));
         assert!(panel.contains("runtime_settings.json"));
         assert!(panel.contains("not_implemented"));
