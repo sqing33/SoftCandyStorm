@@ -268,6 +268,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 handoff state distribution 诊断确认 split 失败不是因为 late branch 接不住陌生 parent 状态，而是当前 late branch 在 handoff 窗口几乎没有策略差异。该诊断复现 `cracked-star-jar` 180s split 的 3 个失败 trace，并在 `120s` 到 `240s` 的 `458` 个 observation 上同时计算 parent 与 late branch action score；overall base-to-late mean KL 只有 `0.000491`、argmax agreement 为 `0.9978`，post-split argmax agreement 为 `1.0`。已记录 `fail_20260529_007`；下一步应转向训练期 per-map constrained repair，或用 parent late-state trace 训练显式 action-separation / terminal-conversion 分支。
 
+首个 `cracked-star-jar` 单图训练期 constrained repair 仍未把 300 秒窗口转成胜利。该 probe 从 mid-anchor parent 出发，只在 `cracked-star-jar` 上做 `late-win-conversion` 小步 PPO，请求 `128`、实际 `256` timestep，并把 opening / mid anchor 权重设为 `2.0`、late 权重降到 `0.25`。训练期 guard、full-anchor alignment（mean KL `0.105798`、argmax agreement `0.8286`）、drift-row alignment（mean KL `0.019888`、argmax agreement `0.965`）、e30 / parent required window regression 和 repair-probe gate 均通过或仅给 limited-followup；但 standalone `cracked-star-jar` 300 秒评估仍是 `0.0` 胜率、平均存活 `220.1403s`，split-policy 300 秒三图仍为 `0.0/0.0/0.0`，handoff state distribution 的 mean KL 也只有 `0.000541` 且 argmax agreement `1.0`。已记录 `fail_20260529_008`；下一步不能继续单图小步 continuation，应直接基于 parent late-state trace 训练 action-separation / terminal-conversion 分支，并继续保留 e30 + parent 多基线 no-regression。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

@@ -2573,6 +2573,11 @@
       "id": "rl_sb3_e30_handoff_state_distribution",
       "summary": "新增 analyze_sb3_handoff_states.py 并复现 cracked-star-jar 180s split 的 3 个失败 trace；在 120-240 秒 458 个 handoff observation 上比较 parent 与 late branch，overall base-to-late mean KL 仅 0.000491、argmax agreement 0.9978，post-split argmax agreement 1.0。已记录 fail_20260529_007；当前 base/late pair 在 handoff window 几乎没有策略差异，不能继续只移动 split 秒数。",
       "report": "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_e30_cracked_late_constrained_probe",
+      "summary": "从 e30 mid-anchor parent 做 cracked-star-jar 单图 late-win-conversion constrained PPO：请求 128、实际 256 timestep，opening/mid anchor 权重 2.0、late 权重 0.25。训练期 guard、full-anchor alignment、drift-row alignment、e30/parent required window regression 和 repair-probe gate 均未触发 blocker；但 standalone cracked-star-jar 300 秒仍 0% 胜率，split-policy 300 秒三图仍为 0.0/0.0/0.0，handoff state distribution mean KL 0.000541、argmax agreement 1.0。已记录 fail_20260529_008；不能继续单图小步 continuation，应改为 parent late-state action-separation / terminal-conversion 分支。",
+      "report": "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/summary.md"
     }
   ],
   "next_recommended": [

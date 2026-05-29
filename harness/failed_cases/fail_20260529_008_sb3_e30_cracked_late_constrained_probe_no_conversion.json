@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260529_008",
+  "category": "rl_training",
+  "content_id": "sb3-e30-cracked-late-constrained-probe",
+  "seed": 63100,
+  "bot": "ppo_cracked_late_constrained_probe",
+  "time_seconds": 300.0,
+  "symptom": "A cracked-star-jar-only late-win-conversion PPO continuation preserved anchor alignment and passed e30/parent window no-regression, but still produced 0% 300s win rate on all three high-pressure maps. Standalone cracked-star-jar evaluation also remained 0% win rate with 220.1403s average survival, and split-policy 300s cracked-star-jar average survival stayed at 175.2584s.",
+  "root_cause": "The constrained per-map continuation did not create a materially different late-state action surface on inherited parent states. Handoff distribution over 458 observations from 120s to 240s showed mean base-to-candidate KL 0.000541 and argmax agreement 1.0, so the candidate mostly preserved parent behavior without learning terminal conversion.",
+  "fix": "Do not continue this exact single-map constrained continuation or keep tuning split thresholds. The next repair should train directly on parent late-state traces with explicit action-score separation and terminal-conversion objectives, while retaining required e30 and parent no-regression gates.",
+  "validation": "ppo_training_report.json recorded anchor_validation_guard_passed, full_anchor_alignment.json recorded mean KL 0.105798 and argmax agreement 0.8286, anchor_drift_alignment.json recorded mean KL 0.019888 and argmax agreement 0.965, both required window regression reports passed, repair_probe_gate.json returned limited follow-up only, and split_failure_analysis_300s.json still recorded 9 failures across all high-pressure maps.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/ppo_evaluation_report.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/full_anchor_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/anchor_drift_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_comparison_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_window_regression_vs_mid_anchor_parent.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/handoff_state_distribution.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/repair_probe_gate.json"
+  ]
+}

@@ -441,7 +441,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入和 validation_slices 均已建立；repair-probe gate 已支持 required multibaseline parent-preservation；30 epoch full-anchor + drift supervised re-alignment 已通过离线 anchor alignment，e30 guarded closed-loop probe 产生 cracked-star-jar 300 秒恢复信号但触发 caramel 180 秒动作分布回归，mid-anchor guarded probe 修住该回归并通过 limited-followup gate，但 300 秒三图仍全 0；mid-late follow-up 与 opening/mid retention + late probe 都相对 parent 或 e30 回归。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入和 validation_slices 均已建立；repair-probe gate 已支持 required multibaseline parent-preservation；30 epoch full-anchor + drift supervised re-alignment 已通过离线 anchor alignment，e30 guarded closed-loop probe 产生 cracked-star-jar 300 秒恢复信号但触发 caramel 180 秒动作分布回归，mid-anchor guarded probe 修住该回归并通过 limited-followup gate，但 300 秒三图仍全 0；mid-late follow-up、opening/mid retention + late probe 和 cracked-star-jar 单图 constrained probe 都未形成可接受的 300 秒转换。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -1297,9 +1297,21 @@
             "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/split_180_eval_300s.json",
             "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/handoff_state_distribution.json",
             "harness/failed_cases/fail_20260529_007_sb3_e30_handoff_state_no_policy_separation.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/summary.md",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/ppo_training_report.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/full_anchor_alignment.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/anchor_drift_alignment.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_comparison_300s.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_failure_analysis_300s.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_window_regression_vs_e30.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/split_window_regression_vs_mid_anchor_parent.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/handoff_state_distribution.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/repair_probe_gate.json",
+            "harness/failed_cases/fail_20260529_008_sb3_e30_cracked_late_constrained_probe_no_conversion.json",
             "harness/failed_cases/fail_20260529_003_sb3_e30_mid_late_balanced_followup_parent_regression.json"
           ],
           "gaps": [
+            "cracked-star-jar 单图训练期 constrained probe 保住了 anchor alignment 与 e30/parent no-regression，但 standalone 300 秒仍 0% 胜率，split-policy 300 秒三图仍全 0；handoff mean KL 0.000541、argmax agreement 1.0，说明单图小步 continuation 没有形成可用 late conversion 分支。",
             "handoff state distribution 诊断确认 parent 与 late branch 在 120-240 秒 split 状态上几乎没有 action-score separation；post-split argmax agreement 为 1.0，因此继续调整 split 秒数不足以修复 RL 300 秒转换。",
             "180s per-map late split 诊断也未恢复 300 秒胜率；当前证据说明只调 split 秒数不足以解决 parent-to-late handoff，需要检查 handoff state distribution 或训练期 per-map constrained repair。",
             "MapLateSplitPolicy 诊断入口已实现并跑完首个 per-map late split probe；当前 `240s` dispatch 保住 e30 / parent no-regression，但 300 秒仍为 `0.0/0.0/0.0`，且目标图 late failures 发生在 split 前，因此只能作为诊断失败证据，不能推进 RL acceptance。",
