@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex browsing, F4 data-control shortcuts and delete confirmation, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex keyboard and pointer browsing, F4 data-control shortcuts and delete confirmation, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -366,6 +366,7 @@
     "render_meta_chapter_panel",
     "render_meta_codex_panel",
     "runtime_codex_action_from_keyboard",
+    "runtime_codex_action_from_pointer",
     "apply_runtime_codex_action",
     "runtime_codex_entries",
     "runtime_codex_group",
@@ -473,6 +474,18 @@
       "target": "RuntimeCodexAction::ToggleDiscoveredOnly"
     },
     {
+      "key": "MouseButton::Left",
+      "target": "RuntimeCodexAction::NextEntry"
+    },
+    {
+      "key": "MouseButton::Right",
+      "target": "RuntimeCodexAction::PreviousEntry"
+    },
+    {
+      "key": "MouseButton::Middle",
+      "target": "RuntimeCodexAction::ToggleDiscoveredOnly"
+    },
+    {
       "key": "KeyCode::KeyQ",
       "target": "RuntimeChapterAction::Previous"
     },
@@ -498,8 +511,8 @@
     "后续章节目标待内容接受与平衡验证后开放",
     "图鉴浏览",
     "Q/E 切换分类",
-    "B/N 切换条目",
-    "V 切换仅已发现/全部",
+    "B/N 或鼠标左/右键切换条目",
+    "V 或鼠标中键切换过滤",
     "未发现条目",
     "继续巡逻、使用装备、击败敌人或解锁地图后显示说明",
     "巡逻准备",

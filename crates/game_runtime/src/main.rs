@@ -1044,6 +1044,7 @@ fn select_runtime_meta_panel(
 fn step_game_core(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
     mut state: ResMut<RuntimeState>,
 ) {
     state.capture.record_frame(time.delta_seconds());
@@ -1120,7 +1121,9 @@ fn step_game_core(
         }
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Codex {
-        if let Some(action) = runtime_codex_action_from_keyboard(&keyboard) {
+        if let Some(action) = runtime_codex_action_from_keyboard(&keyboard)
+            .or_else(|| runtime_codex_action_from_pointer(&mouse_buttons))
+        {
             apply_runtime_codex_action(&mut state, action);
             if let Err(error) = persist_runtime_save_if_configured(&state) {
                 state.last_event = format!("codex UI state save failed: {error}");
@@ -2423,7 +2426,7 @@ fn render_meta_codex_panel(
         },
         entries.len()
     ));
-    lines.push("Q/E 切换分类  B/N 切换条目  V 切换仅已发现/全部".to_string());
+    lines.push("Q/E 切换分类  B/N 或鼠标左/右键切换条目  V 或鼠标中键切换过滤".to_string());
     if let Some(entry) = selected_entry {
         let status = if entry.discovered {
             "已发现"
@@ -2493,6 +2496,20 @@ fn runtime_codex_action_from_keyboard(
     } else if keyboard.just_pressed(KeyCode::KeyN) {
         Some(RuntimeCodexAction::NextEntry)
     } else if keyboard.just_pressed(KeyCode::KeyV) {
+        Some(RuntimeCodexAction::ToggleDiscoveredOnly)
+    } else {
+        None
+    }
+}
+
+fn runtime_codex_action_from_pointer(
+    mouse_buttons: &ButtonInput<MouseButton>,
+) -> Option<RuntimeCodexAction> {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        Some(RuntimeCodexAction::NextEntry)
+    } else if mouse_buttons.just_pressed(MouseButton::Right) {
+        Some(RuntimeCodexAction::PreviousEntry)
+    } else if mouse_buttons.just_pressed(MouseButton::Middle) {
         Some(RuntimeCodexAction::ToggleDiscoveredOnly)
     } else {
         None
@@ -4432,24 +4449,25 @@ mod tests {
         resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
         runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
-        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
-        runtime_save_export_path, runtime_sprite_paths, runtime_unlocked_character_ids,
-        runtime_unlocked_map_ids, sounds_for_events, toggle_runtime_privacy_setting,
-        write_runtime_privacy_settings, write_runtime_save_state,
-        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        runtime_codex_action_from_pointer, runtime_local_data_export_path,
+        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
+        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
-        RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexCategory,
-        RuntimeDataControlAction, RuntimeDataControlContext, RuntimeEffectKind, RuntimeEventCounts,
-        RuntimeEventKind, RuntimeFrameMetricsReport, RuntimeFrameMetricsState,
-        RuntimeMetaPanelRenderContext, RuntimeMetaPanelView, RuntimePrivacyReport,
-        RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
-        RuntimeState, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
-        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID, DEFAULT_PLATFORM_DATA_ROOT,
-        DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS,
-        PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
-        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT, RUNTIME_SAVE_TIMESTAMP,
-        RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
+        RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
+        RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
+        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeFrameMetricsReport,
+        RuntimeFrameMetricsState, RuntimeMetaPanelRenderContext, RuntimeMetaPanelView,
+        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0,
+        RuntimeSound, RuntimeState, RuntimeStoryCodexUiCandidateManifest,
+        RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID,
+        DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
+        MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
+        PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
+        RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
+    use bevy::prelude::{ButtonInput, MouseButton};
     use game_core::{
         BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent,
         MetaProgress, MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode,
@@ -6203,10 +6221,40 @@ mod tests {
         assert!(panel.contains("图鉴浏览 仅已发现"));
         assert!(panel.contains("分类 敌人"));
         assert!(panel.contains("Q/E 切换分类"));
-        assert!(panel.contains("B/N 切换条目"));
+        assert!(panel.contains("B/N 或鼠标左/右键切换条目"));
+        assert!(panel.contains("V 或鼠标中键切换过滤"));
         assert!(panel.contains("蹦蹦软糖"));
         assert!(panel.contains("bouncy-gummy"));
         assert!(panel.contains("击败 3"));
+    }
+
+    #[test]
+    fn runtime_codex_pointer_input_maps_mouse_buttons() {
+        let mut left = ButtonInput::<MouseButton>::default();
+        left.press(MouseButton::Left);
+        assert_eq!(
+            runtime_codex_action_from_pointer(&left),
+            Some(RuntimeCodexAction::NextEntry)
+        );
+
+        let mut right = ButtonInput::<MouseButton>::default();
+        right.press(MouseButton::Right);
+        assert_eq!(
+            runtime_codex_action_from_pointer(&right),
+            Some(RuntimeCodexAction::PreviousEntry)
+        );
+
+        let mut middle = ButtonInput::<MouseButton>::default();
+        middle.press(MouseButton::Middle);
+        assert_eq!(
+            runtime_codex_action_from_pointer(&middle),
+            Some(RuntimeCodexAction::ToggleDiscoveredOnly)
+        );
+
+        assert_eq!(
+            runtime_codex_action_from_pointer(&ButtonInput::<MouseButton>::default()),
+            None
+        );
     }
 
     #[test]
