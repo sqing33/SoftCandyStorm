@@ -250,6 +250,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 首个 full-anchor + top drift rows `40x` supervised SB3 re-alignment 已被 anchor alignment 拒绝。该 probe 把 top drift rows overall mean KL 从旧起点的 `2.26528` 降到 `0.200915`，但 argmax agreement 只有 `0.785`，且 `soda-creek` / `caramel-workshop` 分桶仍超阈值；full-anchor 对齐更差，overall mean KL 为 `0.434754`、argmax agreement 为 `0.6385`。已记录 `fail_20260528_092`，因此不得从该 checkpoint 继续 guarded PPO 或 fixed-window no-regression。
 
+将同一 full-anchor + top drift rows `40x` supervised re-alignment 扩展到 `30` epochs 后，离线对齐明显改善：top drift rows overall mean KL 为 `0.017394`、argmax agreement 为 `0.985`，full-anchor overall mean KL 为 `0.105281`、argmax agreement 为 `0.8282`，两项 anchor alignment 均通过。但固定窗口 high-pressure 仍失败：60 秒 / 180 秒为 `0.3333/0.6667/0.6667` watch，300 秒三图胜率全为 `0.0`，gate 为 `multimap_comparison_recorded_needs_policy_repair`。已记录 `fail_20260528_093`；结论是 supervised re-alignment 能修离线 anchor underfit，但不能替代 300 秒 closed-loop long-run conversion repair，也不得进入 RL acceptance 或 policy candidate。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

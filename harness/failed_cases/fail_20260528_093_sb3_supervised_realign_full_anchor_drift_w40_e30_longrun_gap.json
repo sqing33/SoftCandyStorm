@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260528_093",
+  "category": "rl_training",
+  "content_id": "sb3-supervised-realign-full-anchor-drift-w40-e30",
+  "seed": 63100,
+  "bot": "ppo_supervised_realign_full_anchor_drift_w40_e30",
+  "time_seconds": 300.0,
+  "symptom": "A 30-epoch supervised SB3 PPO re-alignment on full-anchor data plus 40x weighted top drift rows passed both top-drift and full-anchor offline alignment, but still produced 0.0 win rate on soda-creek, caramel-workshop, and cracked-star-jar in the 300 second high-pressure fixed-window comparison.",
+  "root_cause": "Increasing distillation epochs fixed the previous underfit anchor-alignment failure, but the resulting MlpPolicy still lacks closed-loop long-run route recovery and win-conversion behavior. Offline behavior-clone anchor agreement did not guarantee survival under late-window pressure; 300 second failure analysis shows all 9 episodes ended with player_health_depleted, with each map still containing late_180_to_300 failures and action 5 as the dominant policy action.",
+  "fix": "Reject this checkpoint for guarded PPO, RL acceptance, and policy candidate use. Keep the 30-epoch distillation recipe as a better offline initialization, but require a separate long-run conversion repair that preserves full-anchor alignment while targeting 300 second per-map late failures with explicit no-regression checks.",
+  "validation": "distill_behavior_clone_to_sb3.py produced distillation_report.json with epochs=30 and validation_slices. compare_sb3_to_behavior_clone_anchor.py accepted both anchor_drift_alignment.json and full_anchor_alignment.json, but fixed-window high-pressure comparisons recorded 60s and 180s watch gates and a 300s multimap_comparison_recorded_needs_policy_repair gate. tools/analyze_rl_policy_failures.py summarized the 300s comparison into failure_analysis_300s.json and failure_analysis_300s.md.",
+  "diagnostics": [
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/summary.md",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/distillation_report.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/anchor_drift_alignment.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/full_anchor_alignment.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/comparison_60s.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/comparison_180s.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/comparison_300s.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/failure_analysis_300s.md"
+  ]
+}

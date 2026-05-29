@@ -1,0 +1,70 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/ppo_supervised_realign_full_anchor_drift_w40_e30.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "distillation_source": {
+    "mode": "teacher_probs",
+    "teacher_model": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001/fallback.pt",
+    "opening_model": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+    "opening_seconds": 60.0,
+    "teacher_argmax_agreement": 0.6872,
+    "target_transform": {
+      "teacher_temperature": 1.0,
+      "uniform_target_mix": 0.0
+    },
+    "target_entropy_nats": 0.997726,
+    "target_argmax_distribution": {
+      "0": {
+        "count": 347,
+        "ratio": 0.0095
+      },
+      "1": {
+        "count": 4532,
+        "ratio": 0.1237
+      },
+      "2": {
+        "count": 5291,
+        "ratio": 0.1445
+      },
+      "3": {
+        "count": 5453,
+        "ratio": 0.1489
+      },
+      "4": {
+        "count": 3961,
+        "ratio": 0.1081
+      },
+      "5": {
+        "count": 4672,
+        "ratio": 0.1276
+      },
+      "6": {
+        "count": 2693,
+        "ratio": 0.0735
+      },
+      "7": {
+        "count": 5671,
+        "ratio": 0.1548
+      },
+      "8": {
+        "count": 4006,
+        "ratio": 0.1094
+      }
+    }
+  },
+  "observation_version": 2,
+  "observation_len": 145,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.0,
+    "clip_range": 0.2
+  },
+  "started_at": "2026-05-28T11:00:52.274304+00:00",
+  "completed_at": "2026-05-28T11:00:59.404469+00:00"
+}

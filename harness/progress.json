@@ -2528,6 +2528,11 @@
       "id": "rl_sb3_distillation_validation_slice_metrics",
       "summary": "distill_behavior_clone_to_sb3.py 的 report 已增加 validation_slices，会按 sample_source 和每个 --sample-path-weight 命中路径拆分 validation loss、argmax accuracy 与 entropy，用于下一轮 drift 权重或 full-anchor pretrain/fine-tune 时审查局部修复是否破坏 broad anchor。",
       "report": "python/train/distill_behavior_clone_to_sb3.py"
+    },
+    {
+      "id": "rl_sb3_supervised_realign_full_anchor_drift_w40_e30",
+      "summary": "将 full-anchor + top drift rows 40x supervised SB3 re-alignment 从 5 epochs 扩展到 30 epochs 后，离线 anchor alignment 通过：top drift rows mean KL 0.017394、argmax agreement 0.985，full-anchor mean KL 0.105281、argmax agreement 0.8282。但 60/180 秒仍只是 watch，300 秒 high-pressure 三图胜率全为 0.0，gate 为 multimap_comparison_recorded_needs_policy_repair；已记录 fail_20260528_093，不能推进 guarded PPO、RL acceptance 或 policy candidate。",
+      "report": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2557,7 +2562,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出：top rows 显示 candidate 在高 KL 中反复偏离 anchor action 8，转向 action 4/5。下一步应先设计 handoff/mid-window anchor objective 或 online hard no-regression guard，再做任何更长 closed-loop PPO 训练；当前 RL acceptance 继续 blocked。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 已证明离线 anchor underfit 可以修复，但 300 秒 high-pressure 三图仍全 0 胜率。下一步应转向 long-run conversion repair：在 full-anchor alignment 作为硬 preflight 的前提下，针对 300 秒 per-map late failure 做 closed-loop objective 或 online hard no-regression guard；当前 RL acceptance 继续 blocked。"
     },
     {
       "id": "rl_policy_multimap_training",
