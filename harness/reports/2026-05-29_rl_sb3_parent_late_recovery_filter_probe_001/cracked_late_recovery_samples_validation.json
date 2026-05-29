@@ -1,0 +1,58 @@
+{
+  "report_version": 1,
+  "sources": [
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/late_recovery_samples/cracked-star-jar_edge_recovery_samples.jsonl"
+  ],
+  "decision": "risk_recovery_samples_valid",
+  "sample_count": 223,
+  "map_ids": [
+    "cracked-star-jar"
+  ],
+  "seeds": [
+    63101,
+    63102
+  ],
+  "time_range_seconds": {
+    "min": 180.0095,
+    "max": 284.1522
+  },
+  "original_action_distribution": {
+    "1": 25,
+    "2": 4,
+    "3": 28,
+    "4": 42,
+    "5": 20,
+    "6": 47,
+    "7": 12,
+    "8": 45
+  },
+  "target_action_distribution": {
+    "0": 7,
+    "1": 32,
+    "2": 5,
+    "3": 17,
+    "4": 49,
+    "5": 14,
+    "6": 19,
+    "7": 47,
+    "8": 33
+  },
+  "risk_reason_distribution": {
+    "toward_enemy_pressure": 98,
+    "wallward_edge": 74,
+    "toward_hazard": 66,
+    "toward_boss": 2
+  },
+  "target_risk_reason_distribution": {
+    "<none>": 210,
+    "toward_enemy_pressure": 7,
+    "idle_under_late_pressure": 6
+  },
+  "errors": [],
+  "warnings": [],
+  "limitations": [
+    "This validator checks sample structure and late-risk reason consistency only.",
+    "A valid result means samples may be used for repair training inputs, not RL policy acceptance.",
+    "Final policies still require deterministic high-pressure, multimap, failure-case, and acceptance checks."
+  ]
+}

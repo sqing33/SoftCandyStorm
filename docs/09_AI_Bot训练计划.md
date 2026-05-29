@@ -270,6 +270,8 @@ handoff state distribution 诊断确认 split 失败不是因为 late branch 接
 
 首个 `cracked-star-jar` 单图训练期 constrained repair 仍未把 300 秒窗口转成胜利。该 probe 从 mid-anchor parent 出发，只在 `cracked-star-jar` 上做 `late-win-conversion` 小步 PPO，请求 `128`、实际 `256` timestep，并把 opening / mid anchor 权重设为 `2.0`、late 权重降到 `0.25`。训练期 guard、full-anchor alignment（mean KL `0.105798`、argmax agreement `0.8286`）、drift-row alignment（mean KL `0.019888`、argmax agreement `0.965`）、e30 / parent required window regression 和 repair-probe gate 均通过或仅给 limited-followup；但 standalone `cracked-star-jar` 300 秒评估仍是 `0.0` 胜率、平均存活 `220.1403s`，split-policy 300 秒三图仍为 `0.0/0.0/0.0`，handoff state distribution 的 mean KL 也只有 `0.000541` 且 argmax agreement `1.0`。已记录 `fail_20260529_008`；下一步不能继续单图小步 continuation，应直接基于 parent late-state trace 训练 action-separation / terminal-conversion 分支，并继续保留 e30 + parent 多基线 no-regression。
 
+对 mid-anchor parent 追加 evaluation-only `late_recovery_filter` wrapper 后，`soda-creek` 300 秒出现 `0.3333` 局部胜率，但 `caramel-workshop` 与 `cracked-star-jar` 仍为 `0.0`，总体 gate 仍是 `multimap_comparison_recorded_needs_policy_repair`，failure analysis 记录 `8` 个失败局。该 wrapper 导出 `439` 条 `risk_recovery_supervision_sample`，三图合并校验为 `risk_recovery_samples_valid`，风险原因主要为 `wallward_edge`、`toward_enemy_pressure` 和 `toward_hazard`，但有 `1` 条 target risk score 警告。已记录 `fail_20260529_009`；该结果证明 parent late-state 存在可提取修复信号，但手写 adapter 不是 policy acceptance 证据，下一步应把样本转成真实 action-separation / terminal-conversion 训练输入，并保留 clean subset / 低权重消融与多基线回归门禁。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

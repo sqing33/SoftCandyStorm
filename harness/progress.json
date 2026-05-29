@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-05-28",
+  "updated_at": "2026-05-29",
   "phase": "goal-phase-2-runtime-prototype",
   "completed": [
     {
@@ -2578,6 +2578,11 @@
       "id": "rl_sb3_e30_cracked_late_constrained_probe",
       "summary": "从 e30 mid-anchor parent 做 cracked-star-jar 单图 late-win-conversion constrained PPO：请求 128、实际 256 timestep，opening/mid anchor 权重 2.0、late 权重 0.25。训练期 guard、full-anchor alignment、drift-row alignment、e30/parent required window regression 和 repair-probe gate 均未触发 blocker；但 standalone cracked-star-jar 300 秒仍 0% 胜率，split-policy 300 秒三图仍为 0.0/0.0/0.0，handoff state distribution mean KL 0.000541、argmax agreement 1.0。已记录 fail_20260529_008；不能继续单图小步 continuation，应改为 parent late-state action-separation / terminal-conversion 分支。",
       "report": "harness/reports/2026-05-29_rl_sb3_e30_cracked_late_constrained_probe_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_parent_late_recovery_filter_probe",
+      "summary": "对 e30 mid-anchor parent 套用 evaluation-only late_recovery_filter：300 秒 high-pressure 中 soda-creek 得到 0.3333 局部胜率，但 caramel-workshop 与 cracked-star-jar 仍为 0.0，failure analysis 仍有 8 个失败局；三图导出 439 条 risk_recovery_supervision_sample，并通过 risk_recovery_samples_valid 校验，仅保留 1 条 target risk score warning。已记录 fail_20260529_009；该 adapter 只能作为 parent late-state repair 样本来源，不能作为 policy candidate 或 RL acceptance 证据。",
+      "report": "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/summary.md"
     }
   ],
   "next_recommended": [

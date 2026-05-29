@@ -1,0 +1,59 @@
+{
+  "report_version": 1,
+  "sources": [
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/late_recovery_samples/soda-creek_edge_recovery_samples.jsonl"
+  ],
+  "decision": "risk_recovery_samples_valid",
+  "sample_count": 123,
+  "map_ids": [
+    "soda-creek"
+  ],
+  "seeds": [
+    63100,
+    63102
+  ],
+  "time_range_seconds": {
+    "min": 180.0095,
+    "max": 299.8817
+  },
+  "original_action_distribution": {
+    "1": 12,
+    "2": 3,
+    "3": 15,
+    "4": 15,
+    "5": 12,
+    "6": 29,
+    "7": 11,
+    "8": 26
+  },
+  "target_action_distribution": {
+    "0": 6,
+    "1": 6,
+    "2": 3,
+    "3": 17,
+    "4": 22,
+    "5": 34,
+    "6": 3,
+    "7": 12,
+    "8": 20
+  },
+  "risk_reason_distribution": {
+    "toward_enemy_pressure": 67,
+    "wallward_edge": 60,
+    "toward_boss": 2,
+    "toward_hazard": 1
+  },
+  "target_risk_reason_distribution": {
+    "<none>": 122,
+    "toward_boss": 1
+  },
+  "errors": [],
+  "warnings": [
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/late_recovery_samples/soda-creek_edge_recovery_samples.jsonl:113 seed 63102 map soda-creek: target risk score 0.239835 is worse than original 0.200243"
+  ],
+  "limitations": [
+    "This validator checks sample structure and late-risk reason consistency only.",
+    "A valid result means samples may be used for repair training inputs, not RL policy acceptance.",
+    "Final policies still require deterministic high-pressure, multimap, failure-case, and acceptance checks."
+  ]
+}

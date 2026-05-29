@@ -1,0 +1,24 @@
+{
+  "case_id": "fail_20260529_009",
+  "category": "rl_training",
+  "content_id": "sb3-parent-late-recovery-filter-probe",
+  "seed": "63100-63102",
+  "bot": "ppo_mid_anchor_parent_late_recovery_filter",
+  "time_seconds": 300.0,
+  "symptom": "Applying the deterministic late_recovery_filter wrapper to the mid-anchor parent produced a local 300s win signal on soda-creek, but caramel-workshop and cracked-star-jar remained at 0% win rate. The combined 300s high-pressure comparison still had average win rate 0.1111 and failure analysis recorded 8 failed episodes across all three maps.",
+  "root_cause": "The observed improvement comes from a hand-written diagnostic adapter that changes risky late-window actions after 180s. It exposes parent late-state repair opportunities and produces risk_recovery_supervision_sample rows, but it is not learned policy behavior and does not solve long-run terminal conversion on the harder maps.",
+  "fix": "Do not promote the adapter output as a policy candidate or RL acceptance evidence. Use the validated 439 risk recovery samples only as repair diagnostics, preferably with clean-subset or low-weight filtering, and train a real parent late-state action-separation or terminal-conversion branch under e30 and parent no-regression gates.",
+  "validation": "comparison_300s.json returned multimap_comparison_recorded_needs_policy_repair with soda-creek 0.3333, caramel-workshop 0.0, and cracked-star-jar 0.0 300s win rates. failure_analysis_300s.json recorded 8 failures. risk_recovery_samples_validation.json returned risk_recovery_samples_valid for 439 samples with 1 target-risk warning. python3 -m unittest tools/test_validate_risk_recovery_samples.py and python3 -m unittest tools/test_analyze_rl_policy_failures.py passed.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/failure_analysis_300s.md",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/risk_recovery_samples_validation.json",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/risk_recovery_samples_validation.md",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/late_recovery_samples/soda-creek_edge_recovery_samples.jsonl",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/late_recovery_samples/caramel-workshop_edge_recovery_samples.jsonl",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/late_recovery_samples/cracked-star-jar_edge_recovery_samples.jsonl",
+    "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/traces"
+  ]
+}
