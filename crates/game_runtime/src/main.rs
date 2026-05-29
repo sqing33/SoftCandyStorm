@@ -69,6 +69,8 @@ const CODEX_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CODEX_POINTER_CONTROL_ZONE_COUNT: usize = 5;
 const SETTINGS_POINTER_CONTROL_HEIGHT: f32 = 112.0;
 const SETTINGS_POINTER_CONTROL_ZONE_COUNT: usize = 7;
+const LOADOUT_POINTER_CONTROL_HEIGHT: f32 = 96.0;
+const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 2;
 
 fn main() {
     let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -367,6 +369,12 @@ enum RuntimeDataControlAction {
 enum RuntimeSettingsAction {
     ToggleUpload(RuntimeUploadKind),
     DataControl(RuntimeDataControlAction),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeLoadoutAction {
+    NextCharacter,
+    NextMap,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1156,30 +1164,28 @@ fn step_game_core(
         }
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Loadout {
-        if keyboard.just_pressed(KeyCode::KeyC) {
-            match select_next_runtime_character(&mut state) {
+        let pointer_action = primary_window.get_single().ok().and_then(|window| {
+            runtime_loadout_action_from_pointer(
+                &mouse_buttons,
+                window.cursor_position(),
+                Vec2::new(window.resolution.width(), window.resolution.height()),
+            )
+        });
+        if let Some(action) = runtime_loadout_action_from_keyboard(&keyboard).or(pointer_action) {
+            let result = match action {
+                RuntimeLoadoutAction::NextCharacter => select_next_runtime_character(&mut state)
+                    .map_err(|error| format!("character selection failed: {error}")),
+                RuntimeLoadoutAction::NextMap => select_next_runtime_map(&mut state)
+                    .map_err(|error| format!("map selection failed: {error}")),
+            };
+            match result {
                 Ok(message) => {
                     state.last_event = message;
                     state.last_event_kind = RuntimeEventKind::System;
                     state.pending_sounds.push(RuntimeSound::System);
                 }
-                Err(error) => {
-                    state.last_event = format!("character selection failed: {error}");
-                    state.last_event_kind = RuntimeEventKind::System;
-                    state.pending_sounds.push(RuntimeSound::Damage);
-                }
-            }
-            return;
-        }
-        if keyboard.just_pressed(KeyCode::KeyM) {
-            match select_next_runtime_map(&mut state) {
-                Ok(message) => {
+                Err(message) => {
                     state.last_event = message;
-                    state.last_event_kind = RuntimeEventKind::System;
-                    state.pending_sounds.push(RuntimeSound::System);
-                }
-                Err(error) => {
-                    state.last_event = format!("map selection failed: {error}");
                     state.last_event_kind = RuntimeEventKind::System;
                     state.pending_sounds.push(RuntimeSound::Damage);
                 }
@@ -1501,6 +1507,55 @@ fn runtime_settings_action_from_pointer_zone(
         _ => Some(RuntimeSettingsAction::DataControl(
             RuntimeDataControlAction::DeleteLocalData,
         )),
+    }
+}
+
+fn runtime_loadout_action_from_keyboard(
+    keyboard: &ButtonInput<KeyCode>,
+) -> Option<RuntimeLoadoutAction> {
+    if keyboard.just_pressed(KeyCode::KeyC) {
+        Some(RuntimeLoadoutAction::NextCharacter)
+    } else if keyboard.just_pressed(KeyCode::KeyM) {
+        Some(RuntimeLoadoutAction::NextMap)
+    } else {
+        None
+    }
+}
+
+fn runtime_loadout_action_from_pointer(
+    mouse_buttons: &ButtonInput<MouseButton>,
+    cursor_position: Option<Vec2>,
+    window_size: Vec2,
+) -> Option<RuntimeLoadoutAction> {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        runtime_loadout_action_from_pointer_zone(cursor_position?, window_size)
+    } else {
+        None
+    }
+}
+
+fn runtime_loadout_action_from_pointer_zone(
+    cursor_position: Vec2,
+    window_size: Vec2,
+) -> Option<RuntimeLoadoutAction> {
+    if window_size.x <= 0.0 || window_size.y <= 0.0 {
+        return None;
+    }
+    let panel_right = (window_size.x - META_PANEL_RIGHT_MARGIN).max(0.0);
+    let panel_left = (panel_right - META_PANEL_WIDTH).max(0.0);
+    let panel_width = (panel_right - panel_left).max(1.0);
+    let in_panel_x = cursor_position.x >= panel_left && cursor_position.x <= panel_right;
+    let in_control_y =
+        cursor_position.y >= 0.0 && cursor_position.y <= LOADOUT_POINTER_CONTROL_HEIGHT;
+    if !in_panel_x || !in_control_y {
+        return None;
+    }
+
+    let normalized_x = ((cursor_position.x - panel_left) / panel_width).clamp(0.0, 0.999);
+    let zone = (normalized_x * LOADOUT_POINTER_CONTROL_ZONE_COUNT as f32).floor() as usize;
+    match zone {
+        0 => Some(RuntimeLoadoutAction::NextCharacter),
+        _ => Some(RuntimeLoadoutAction::NextMap),
     }
 }
 
@@ -2782,7 +2837,7 @@ fn render_meta_loadout_panel(
         )
     };
     format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n巡逻准备\n角色 {} ({})\n地图 {} ({})\n{}\nC 切换已解锁角色  M 切换已解锁地图\n切换会重开当前巡逻并保留局外进度\n已解锁角色 {}\n已解锁地图 {}",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n巡逻准备\n角色 {} ({})\n地图 {} ({})\n{}\nC 切换已解锁角色  M 切换已解锁地图\n右下点击区: 角色  地图\n切换会重开当前巡逻并保留局外进度\n已解锁角色 {}\n已解锁地图 {}",
         character_label,
         config.character_id,
         map_label,
@@ -4614,25 +4669,27 @@ mod tests {
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
         runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
         runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
-        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_keyboard,
+        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
+        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
+        runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
+        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
         RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeFrameMetricsReport,
-        RuntimeFrameMetricsState, RuntimeMetaPanelRenderContext, RuntimeMetaPanelView,
-        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0,
-        RuntimeSettingsAction, RuntimeSound, RuntimeState, RuntimeStoryCodexUiCandidateManifest,
-        RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID,
-        DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
-        MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
-        PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
-        RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
+        RuntimeFrameMetricsState, RuntimeLoadoutAction, RuntimeMetaPanelRenderContext,
+        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
+        RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSettingsAction, RuntimeSound,
+        RuntimeState, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
+        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID, DEFAULT_PLATFORM_DATA_ROOT,
+        DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS,
+        PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
+        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT, RUNTIME_SAVE_TIMESTAMP,
+        RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use bevy::prelude::{
         ButtonInput, Gamepad, GamepadButton, GamepadButtonType, KeyCode, MouseButton, Vec2,
@@ -6700,6 +6757,69 @@ mod tests {
     }
 
     #[test]
+    fn runtime_loadout_keyboard_input_maps_selection_actions() {
+        let mut character = ButtonInput::<KeyCode>::default();
+        character.press(KeyCode::KeyC);
+        assert_eq!(
+            runtime_loadout_action_from_keyboard(&character),
+            Some(RuntimeLoadoutAction::NextCharacter)
+        );
+
+        let mut map = ButtonInput::<KeyCode>::default();
+        map.press(KeyCode::KeyM);
+        assert_eq!(
+            runtime_loadout_action_from_keyboard(&map),
+            Some(RuntimeLoadoutAction::NextMap)
+        );
+
+        assert_eq!(
+            runtime_loadout_action_from_keyboard(&ButtonInput::<KeyCode>::default()),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_loadout_pointer_input_maps_left_click_zone() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        let mut left = ButtonInput::<MouseButton>::default();
+        left.press(MouseButton::Left);
+        assert_eq!(
+            runtime_loadout_action_from_pointer(&left, Some(Vec2::new(900.0, 40.0)), window_size),
+            Some(RuntimeLoadoutAction::NextCharacter)
+        );
+
+        let mut right = ButtonInput::<MouseButton>::default();
+        right.press(MouseButton::Right);
+        assert_eq!(
+            runtime_loadout_action_from_pointer(&right, Some(Vec2::new(900.0, 40.0)), window_size),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_loadout_pointer_zone_maps_right_panel_segments() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        assert_eq!(
+            runtime_loadout_action_from_pointer_zone(Vec2::new(900.0, 40.0), window_size),
+            Some(RuntimeLoadoutAction::NextCharacter)
+        );
+        assert_eq!(
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1120.0, 40.0), window_size),
+            Some(RuntimeLoadoutAction::NextMap)
+        );
+        assert_eq!(
+            runtime_loadout_action_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
+            None
+        );
+        assert_eq!(
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1120.0, 140.0), window_size),
+            None
+        );
+    }
+
+    #[test]
     fn meta_panel_hides_locked_codex_detail_until_discovered() {
         let mut base_ui_state = RuntimeBaseUiState::default();
         base_ui_state.codex_view.selected_category =
@@ -6863,6 +6983,7 @@ mod tests {
         assert!(panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C 切换已解锁角色"));
         assert!(panel.contains("M 切换已解锁地图"));
+        assert!(panel.contains("右下点击区: 角色  地图"));
     }
 
     #[test]

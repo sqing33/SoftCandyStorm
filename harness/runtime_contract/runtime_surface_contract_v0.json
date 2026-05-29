@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts, pointer control-zone, and delete confirmation, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts, pointer control-zone, and delete confirmation, F5 loadout keyboard and pointer-zone selection, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -297,6 +297,14 @@
     },
     {
       "file": "runtime_main",
+      "name": "RuntimeLoadoutAction",
+      "required_variants": [
+        "NextCharacter",
+        "NextMap"
+      ]
+    },
+    {
+      "file": "runtime_main",
       "name": "RuntimeChapterAction",
       "required_variants": [
         "Previous",
@@ -390,6 +398,9 @@
     "runtime_unlocked_character_ids",
     "runtime_unlocked_map_ids",
     "next_runtime_selection_id",
+    "runtime_loadout_action_from_keyboard",
+    "runtime_loadout_action_from_pointer",
+    "runtime_loadout_action_from_pointer_zone",
     "select_next_runtime_character",
     "select_next_runtime_map",
     "privacy_toggle_from_keyboard",
@@ -466,6 +477,14 @@
     {
       "key": "KeyCode::KeyM",
       "target": "select_next_runtime_map"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeLoadoutAction::NextCharacter"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeLoadoutAction::NextMap"
     },
     {
       "key": "KeyCode::KeyQ",
@@ -581,6 +600,7 @@
     "巡逻准备",
     "C 切换已解锁角色",
     "M 切换已解锁地图",
+    "右下点击区: 角色  地图",
     "切换会重开当前巡逻并保留局外进度",
     "隐私与本地数据",
     "上传匿名遥测",
