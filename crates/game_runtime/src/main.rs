@@ -65,6 +65,10 @@ const PROJECTILE_SPRITE: &str = "prototype_topdown/sprites/projectile_rainbow_ca
 const MAP_TILE_SPRITE: &str = "prototype_topdown/sprites/map_frosting_grassland_tile_v001.png";
 const META_PANEL_WIDTH: f32 = 430.0;
 const META_PANEL_RIGHT_MARGIN: f32 = 14.0;
+const META_PANEL_TAB_CONTROL_HEIGHT: f32 = 64.0;
+const META_PANEL_TAB_CONTROL_ZONE_COUNT: usize = 5;
+const META_PANEL_HEADER: &str = "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻";
+const META_PANEL_TAB_CLICK_HINT: &str = "页签点击区: 概览  章节  图鉴  设置  巡逻";
 const OVERVIEW_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const OVERVIEW_POINTER_CONTROL_ZONE_COUNT: usize = 4;
 const CODEX_POINTER_CONTROL_HEIGHT: f32 = 96.0;
@@ -1066,6 +1070,16 @@ fn select_runtime_meta_panel(
     }
 }
 
+fn runtime_meta_panel_selection(view: RuntimeMetaPanelView) -> (&'static str, &'static str) {
+    match view {
+        RuntimeMetaPanelView::Overview => ("overview", "guardian station overview"),
+        RuntimeMetaPanelView::Chapters => ("chapters", "chapter goals view"),
+        RuntimeMetaPanelView::Codex => ("codex", "codex progress view"),
+        RuntimeMetaPanelView::Settings => ("settings", "privacy settings view"),
+        RuntimeMetaPanelView::Loadout => ("loadout", "patrol loadout view"),
+    }
+}
+
 fn step_game_core(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -1131,6 +1145,18 @@ fn step_game_core(
             "patrol loadout view",
         );
     }
+    let pointer_tab_view = primary_window.get_single().ok().and_then(|window| {
+        runtime_meta_panel_tab_view_from_pointer(
+            &mouse_buttons,
+            window.cursor_position(),
+            Vec2::new(window.resolution.width(), window.resolution.height()),
+        )
+    });
+    if let Some(view) = pointer_tab_view {
+        let (panel_key, event) = runtime_meta_panel_selection(view);
+        select_runtime_meta_panel(&mut state, view, panel_key, event);
+        return;
+    }
     if state.meta_panel_view == RuntimeMetaPanelView::Overview {
         let pointer_view = primary_window.get_single().ok().and_then(|window| {
             runtime_overview_view_from_pointer(
@@ -1140,13 +1166,7 @@ fn step_game_core(
             )
         });
         if let Some(view) = pointer_view {
-            let (panel_key, event) = match view {
-                RuntimeMetaPanelView::Overview => ("overview", "guardian station overview"),
-                RuntimeMetaPanelView::Chapters => ("chapters", "chapter goals view"),
-                RuntimeMetaPanelView::Codex => ("codex", "codex progress view"),
-                RuntimeMetaPanelView::Settings => ("settings", "privacy settings view"),
-                RuntimeMetaPanelView::Loadout => ("loadout", "patrol loadout view"),
-            };
+            let (panel_key, event) = runtime_meta_panel_selection(view);
             select_runtime_meta_panel(&mut state, view, panel_key, event);
             return;
         }
@@ -1494,6 +1514,46 @@ fn runtime_overview_view_from_pointer(
         runtime_overview_view_from_pointer_zone(cursor_position?, window_size)
     } else {
         None
+    }
+}
+
+fn runtime_meta_panel_tab_view_from_pointer(
+    mouse_buttons: &ButtonInput<MouseButton>,
+    cursor_position: Option<Vec2>,
+    window_size: Vec2,
+) -> Option<RuntimeMetaPanelView> {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        runtime_meta_panel_tab_view_from_pointer_zone(cursor_position?, window_size)
+    } else {
+        None
+    }
+}
+
+fn runtime_meta_panel_tab_view_from_pointer_zone(
+    cursor_position: Vec2,
+    window_size: Vec2,
+) -> Option<RuntimeMetaPanelView> {
+    if window_size.x <= 0.0 || window_size.y <= 0.0 {
+        return None;
+    }
+    let panel_right = (window_size.x - META_PANEL_RIGHT_MARGIN).max(0.0);
+    let panel_left = (panel_right - META_PANEL_WIDTH).max(0.0);
+    let panel_width = (panel_right - panel_left).max(1.0);
+    let control_bottom = (window_size.y - META_PANEL_TAB_CONTROL_HEIGHT).max(0.0);
+    let in_panel_x = cursor_position.x >= panel_left && cursor_position.x <= panel_right;
+    let in_control_y = cursor_position.y >= control_bottom && cursor_position.y <= window_size.y;
+    if !in_panel_x || !in_control_y {
+        return None;
+    }
+
+    let normalized_x = ((cursor_position.x - panel_left) / panel_width).clamp(0.0, 0.999);
+    let zone = (normalized_x * META_PANEL_TAB_CONTROL_ZONE_COUNT as f32).floor() as usize;
+    match zone {
+        0 => Some(RuntimeMetaPanelView::Overview),
+        1 => Some(RuntimeMetaPanelView::Chapters),
+        2 => Some(RuntimeMetaPanelView::Codex),
+        3 => Some(RuntimeMetaPanelView::Settings),
+        _ => Some(RuntimeMetaPanelView::Loadout),
     }
 }
 
@@ -2557,7 +2617,9 @@ fn render_meta_overview_panel(
     let maps = format_string_set(&progress.unlocks.maps, 3);
 
     let mut output = format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
+        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
+        META_PANEL_HEADER,
+        META_PANEL_TAB_CLICK_HINT,
         progress.resources.candy_crystal_shards,
         progress.resources.star_shards,
         progress.resources.storm_grains,
@@ -2601,7 +2663,10 @@ fn render_meta_chapter_panel(
     content: &ContentPack,
     base_ui_state: &RuntimeBaseUiState,
 ) -> String {
-    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻".to_string()];
+    let mut lines = vec![
+        META_PANEL_HEADER.to_string(),
+        META_PANEL_TAB_CLICK_HINT.to_string(),
+    ];
     lines.push("章节目标".to_string());
     let chapter_ids = runtime_chapter_ids(progress);
     let selected_id = runtime_selected_chapter_id(progress, base_ui_state)
@@ -2669,7 +2734,10 @@ fn render_meta_codex_panel(
     codex_view: &RuntimeBaseCodexViewState,
     selected_index: usize,
 ) -> String {
-    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻".to_string()];
+    let mut lines = vec![
+        META_PANEL_HEADER.to_string(),
+        META_PANEL_TAB_CLICK_HINT.to_string(),
+    ];
     lines.push("图鉴进度".to_string());
     for (label, discovered, total) in meta_codex_category_counts(progress) {
         lines.push(format!("{label}: {discovered}/{total} 已发现"));
@@ -2920,7 +2988,9 @@ fn render_meta_settings_panel(
         .map(|path| format!("写回 {}", path.display()))
         .unwrap_or_else(|| "未配置设置文件，本次会话生效".to_string());
     format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n右下七段点击区: 遥测 Replay 崩溃 导出存档 删除存档 导出本地 删除本地\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
+        "{}\n{}\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n右下七段点击区: 遥测 Replay 崩溃 导出存档 删除存档 导出本地 删除本地\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
+        META_PANEL_HEADER,
+        META_PANEL_TAB_CLICK_HINT,
         on_off_label(settings.telemetry_upload_enabled),
         on_off_label(settings.raw_replay_upload_enabled),
         on_off_label(settings.crash_report_upload_enabled),
@@ -2947,7 +3017,9 @@ fn render_meta_loadout_panel(
         )
     };
     format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n巡逻准备\n角色 {} ({})\n地图 {} ({})\n{}\nC 切换已解锁角色  M 切换已解锁地图\n右下点击区: 角色  地图\n切换会重开当前巡逻并保留局外进度\n已解锁角色 {}\n已解锁地图 {}",
+        "{}\n{}\n巡逻准备\n角色 {} ({})\n地图 {} ({})\n{}\nC 切换已解锁角色  M 切换已解锁地图\n右下点击区: 角色  地图\n切换会重开当前巡逻并保留局外进度\n已解锁角色 {}\n已解锁地图 {}",
+        META_PANEL_HEADER,
+        META_PANEL_TAB_CLICK_HINT,
         character_label,
         config.character_id,
         map_label,
@@ -4783,6 +4855,7 @@ mod tests {
         runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
         runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
         runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
         runtime_meta_panel_view_from_key, runtime_overview_view_from_pointer,
         runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
@@ -6220,6 +6293,67 @@ mod tests {
     }
 
     #[test]
+    fn runtime_meta_panel_tab_pointer_input_maps_left_click_zone() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        let mut left = ButtonInput::<MouseButton>::default();
+        left.press(MouseButton::Left);
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer(
+                &left,
+                Some(Vec2::new(1050.0, 700.0)),
+                window_size
+            ),
+            Some(RuntimeMetaPanelView::Codex)
+        );
+
+        let mut right = ButtonInput::<MouseButton>::default();
+        right.press(MouseButton::Right);
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer(
+                &right,
+                Some(Vec2::new(1050.0, 700.0)),
+                window_size
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_meta_panel_tab_pointer_zone_maps_header_segments() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer_zone(Vec2::new(880.0, 700.0), window_size),
+            Some(RuntimeMetaPanelView::Overview)
+        );
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer_zone(Vec2::new(965.0, 700.0), window_size),
+            Some(RuntimeMetaPanelView::Chapters)
+        );
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer_zone(Vec2::new(1050.0, 700.0), window_size),
+            Some(RuntimeMetaPanelView::Codex)
+        );
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer_zone(Vec2::new(1135.0, 700.0), window_size),
+            Some(RuntimeMetaPanelView::Settings)
+        );
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer_zone(Vec2::new(1220.0, 700.0), window_size),
+            Some(RuntimeMetaPanelView::Loadout)
+        );
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer_zone(Vec2::new(500.0, 700.0), window_size),
+            None
+        );
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_pointer_zone(Vec2::new(1050.0, 620.0), window_size),
+            None
+        );
+    }
+
+    #[test]
     fn runtime_overview_pointer_input_maps_left_click_zone() {
         let window_size = Vec2::new(1280.0, 720.0);
 
@@ -6520,6 +6654,7 @@ mod tests {
         assert!(panel.contains("局后结算"));
         assert!(panel.contains("collect-200-candy-crystals"));
         assert!(panel.contains("discovered:jar-keeper"));
+        assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
         assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
     }
 
@@ -6560,6 +6695,7 @@ mod tests {
         );
 
         assert!(panel.contains("章节目标"));
+        assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
         assert!(panel.contains("Q/E 切换章节"));
         assert!(panel.contains("G 巡逻已解锁章节"));
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
