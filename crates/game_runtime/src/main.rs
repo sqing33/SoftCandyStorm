@@ -1045,6 +1045,7 @@ fn step_game_core(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
+    gamepad_buttons: Res<ButtonInput<GamepadButton>>,
     mut state: ResMut<RuntimeState>,
 ) {
     state.capture.record_frame(time.delta_seconds());
@@ -1123,6 +1124,7 @@ fn step_game_core(
     if state.meta_panel_view == RuntimeMetaPanelView::Codex {
         if let Some(action) = runtime_codex_action_from_keyboard(&keyboard)
             .or_else(|| runtime_codex_action_from_pointer(&mouse_buttons))
+            .or_else(|| runtime_codex_action_from_gamepad(&gamepad_buttons))
         {
             apply_runtime_codex_action(&mut state, action);
             if let Err(error) = persist_runtime_save_if_configured(&state) {
@@ -2426,7 +2428,10 @@ fn render_meta_codex_panel(
         },
         entries.len()
     ));
-    lines.push("Q/E 切换分类  B/N 或鼠标左/右键切换条目  V 或鼠标中键切换过滤".to_string());
+    lines.push(
+        "Q/E 或手柄 LT/RT 切换分类  B/N、鼠标左/右键或十字键左/右切换条目  V、鼠标中键或手柄 Y 切换过滤"
+            .to_string(),
+    );
     if let Some(entry) = selected_entry {
         let status = if entry.discovered {
             "已发现"
@@ -2514,6 +2519,34 @@ fn runtime_codex_action_from_pointer(
     } else {
         None
     }
+}
+
+fn runtime_codex_action_from_gamepad(
+    gamepad_buttons: &ButtonInput<GamepadButton>,
+) -> Option<RuntimeCodexAction> {
+    if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::LeftTrigger]) {
+        Some(RuntimeCodexAction::PreviousCategory)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::RightTrigger])
+    {
+        Some(RuntimeCodexAction::NextCategory)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::DPadLeft]) {
+        Some(RuntimeCodexAction::PreviousEntry)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::DPadRight]) {
+        Some(RuntimeCodexAction::NextEntry)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::North]) {
+        Some(RuntimeCodexAction::ToggleDiscoveredOnly)
+    } else {
+        None
+    }
+}
+
+fn gamepad_button_type_just_pressed(
+    gamepad_buttons: &ButtonInput<GamepadButton>,
+    button_types: &[GamepadButtonType],
+) -> bool {
+    gamepad_buttons
+        .get_just_pressed()
+        .any(|button| button_types.contains(&button.button_type))
 }
 
 fn apply_runtime_codex_action(state: &mut RuntimeState, action: RuntimeCodexAction) {
@@ -4449,11 +4482,12 @@ mod tests {
         resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
         runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
-        runtime_codex_action_from_pointer, runtime_local_data_export_path,
-        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
-        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
+        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
+        runtime_save_export_path, runtime_sprite_paths, runtime_unlocked_character_ids,
+        runtime_unlocked_map_ids, sounds_for_events, toggle_runtime_privacy_setting,
+        write_runtime_privacy_settings, write_runtime_save_state,
+        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
@@ -4467,7 +4501,7 @@ mod tests {
         PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
         RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
-    use bevy::prelude::{ButtonInput, MouseButton};
+    use bevy::prelude::{ButtonInput, Gamepad, GamepadButton, GamepadButtonType, MouseButton};
     use game_core::{
         BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent,
         MetaProgress, MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode,
@@ -6220,12 +6254,57 @@ mod tests {
 
         assert!(panel.contains("图鉴浏览 仅已发现"));
         assert!(panel.contains("分类 敌人"));
-        assert!(panel.contains("Q/E 切换分类"));
-        assert!(panel.contains("B/N 或鼠标左/右键切换条目"));
-        assert!(panel.contains("V 或鼠标中键切换过滤"));
+        assert!(panel.contains("Q/E 或手柄 LT/RT 切换分类"));
+        assert!(panel.contains("B/N、鼠标左/右键或十字键左/右切换条目"));
+        assert!(panel.contains("V、鼠标中键或手柄 Y 切换过滤"));
         assert!(panel.contains("蹦蹦软糖"));
         assert!(panel.contains("bouncy-gummy"));
         assert!(panel.contains("击败 3"));
+    }
+
+    #[test]
+    fn runtime_codex_gamepad_input_maps_buttons() {
+        let gamepad = Gamepad::new(0);
+
+        let mut left_trigger = ButtonInput::<GamepadButton>::default();
+        left_trigger.press(GamepadButton::new(gamepad, GamepadButtonType::LeftTrigger));
+        assert_eq!(
+            runtime_codex_action_from_gamepad(&left_trigger),
+            Some(RuntimeCodexAction::PreviousCategory)
+        );
+
+        let mut right_trigger = ButtonInput::<GamepadButton>::default();
+        right_trigger.press(GamepadButton::new(gamepad, GamepadButtonType::RightTrigger));
+        assert_eq!(
+            runtime_codex_action_from_gamepad(&right_trigger),
+            Some(RuntimeCodexAction::NextCategory)
+        );
+
+        let mut dpad_left = ButtonInput::<GamepadButton>::default();
+        dpad_left.press(GamepadButton::new(gamepad, GamepadButtonType::DPadLeft));
+        assert_eq!(
+            runtime_codex_action_from_gamepad(&dpad_left),
+            Some(RuntimeCodexAction::PreviousEntry)
+        );
+
+        let mut dpad_right = ButtonInput::<GamepadButton>::default();
+        dpad_right.press(GamepadButton::new(gamepad, GamepadButtonType::DPadRight));
+        assert_eq!(
+            runtime_codex_action_from_gamepad(&dpad_right),
+            Some(RuntimeCodexAction::NextEntry)
+        );
+
+        let mut north = ButtonInput::<GamepadButton>::default();
+        north.press(GamepadButton::new(gamepad, GamepadButtonType::North));
+        assert_eq!(
+            runtime_codex_action_from_gamepad(&north),
+            Some(RuntimeCodexAction::ToggleDiscoveredOnly)
+        );
+
+        assert_eq!(
+            runtime_codex_action_from_gamepad(&ButtonInput::<GamepadButton>::default()),
+            None
+        );
     }
 
     #[test]

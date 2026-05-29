@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex keyboard and pointer browsing, F4 data-control shortcuts and delete confirmation, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex keyboard, pointer, and gamepad browsing, F4 data-control shortcuts and delete confirmation, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -367,6 +367,8 @@
     "render_meta_codex_panel",
     "runtime_codex_action_from_keyboard",
     "runtime_codex_action_from_pointer",
+    "runtime_codex_action_from_gamepad",
+    "gamepad_button_type_just_pressed",
     "apply_runtime_codex_action",
     "runtime_codex_entries",
     "runtime_codex_group",
@@ -486,6 +488,26 @@
       "target": "RuntimeCodexAction::ToggleDiscoveredOnly"
     },
     {
+      "key": "GamepadButtonType::LeftTrigger",
+      "target": "RuntimeCodexAction::PreviousCategory"
+    },
+    {
+      "key": "GamepadButtonType::RightTrigger",
+      "target": "RuntimeCodexAction::NextCategory"
+    },
+    {
+      "key": "GamepadButtonType::DPadLeft",
+      "target": "RuntimeCodexAction::PreviousEntry"
+    },
+    {
+      "key": "GamepadButtonType::DPadRight",
+      "target": "RuntimeCodexAction::NextEntry"
+    },
+    {
+      "key": "GamepadButtonType::North",
+      "target": "RuntimeCodexAction::ToggleDiscoveredOnly"
+    },
+    {
       "key": "KeyCode::KeyQ",
       "target": "RuntimeChapterAction::Previous"
     },
@@ -510,9 +532,9 @@
     "G 不会启动锁定章节",
     "后续章节目标待内容接受与平衡验证后开放",
     "图鉴浏览",
-    "Q/E 切换分类",
-    "B/N 或鼠标左/右键切换条目",
-    "V 或鼠标中键切换过滤",
+    "Q/E 或手柄 LT/RT 切换分类",
+    "B/N、鼠标左/右键或十字键左/右切换条目",
+    "V、鼠标中键或手柄 Y 切换过滤",
     "未发现条目",
     "继续巡逻、使用装备、击败敌人或解锁地图后显示说明",
     "巡逻准备",
