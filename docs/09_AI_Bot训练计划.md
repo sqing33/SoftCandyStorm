@@ -296,6 +296,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 真实 terminal-conversion branch probe 已完成并记录 `fail_20260529_014`。e30-base 版本只在 `cracked-star-jar 210-240s` 切到 terminal-window w10 model，能通过 e30 no-regression 和 online action-distribution delta，但 300 秒三图仍为 `0.0/0.0/0.0`，且相对 mid-anchor parent 有 `9` 个 preservation blockers。parent-base 版本保住了 60/180 秒 parent 表现，也通过相对 e30 的 no-regression，但 300 秒仍全为 `0.0`，并且 `cracked-star-jar 300s` 平均存活相对 parent 下降 `0.4779s`，repair gate 仍失败。结论是现有 terminal-window w10 model 缺少足够 terminal action separation / win conversion；后续不应继续只调 dispatch 秒数，而应重新训练真正的 terminal-conversion branch，或先导出成功终局状态并构造更明确的 pressure / low-health conversion target。
 
+为给真正 terminal-conversion branch 提供正例目标，新增 `tools/filter_bot_trajectory_samples.py`，可从规则 Bot trajectory JSONL 中按终局结果、地图、Bot、时间窗、血量和动作过滤 movement sample，并保留 metadata / episode / summary 行。首个 smoke 从 `harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001` 的 8 个 JSONL 中筛出 `cracked-star-jar` 胜利局 `210-240s` 的 `358` 条样本，覆盖 `2` 个 KiteBot 胜利 episode；`train_behavior_clone.py --dry-run` 判定 `dataset_validated_not_training_gate`，observation_len 为 `145`，late_low_health ratio 为 `0.581`，但诊断标记同动作持续率 `0.7612` 为 watch。报告位于 `harness/reports/2026-05-29_terminal_conversion_victory_sample_filter_smoke_001/summary.md`。这只是 terminal-conversion 训练输入，不是 learned branch、fixed-window gate、repair-probe gate 或 RL acceptance 证据；后续必须混入 parent / e30 retention anchors 和 risk / drift repair rows，再重新跑 full-anchor alignment、60 / 180 / 300 秒 high-pressure、online action-distribution delta 与多基线 no-regression。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

@@ -1,0 +1,56 @@
+{
+  "report_version": 1,
+  "decision": "bot_trajectory_samples_filtered",
+  "output_file": "harness/reports/2026-05-29_terminal_conversion_victory_sample_filter_smoke_001/cracked_victory_terminal_210_240.jsonl",
+  "source_files": [
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/coward_caramel_workshop_seed62300_62303_late_180_300.jsonl",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_caramel_workshop_late_180_300.jsonl",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_cracked_star_jar_late_180_300.jsonl",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_soda_creek_seed62302_late_180_300.jsonl",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_cracked_star_jar_late_180_300.jsonl",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_soda_creek_late_180_300.jsonl",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/route_caramel_workshop_late_180_300.jsonl",
+    "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/tank_caramel_workshop_seed62301_late_180_300.jsonl"
+  ],
+  "source_file_count": 8,
+  "source_sample_count": 12007,
+  "source_episode_count": 31,
+  "source_summary_count": 8,
+  "kept_sample_count": 358,
+  "kept_episode_count": 2,
+  "orphan_sample_count": 0,
+  "dropped_episode_count": 28,
+  "dropped_samples": {
+    "time_after_max": 719,
+    "time_before_min": 359
+  },
+  "map_counts": {
+    "cracked-star-jar": 2
+  },
+  "bot_counts": {
+    "kite": 2
+  },
+  "terminal_counts": {
+    "victory": 2
+  },
+  "filters": {
+    "terminal": "victory",
+    "map_ids": [
+      "cracked-star-jar"
+    ],
+    "bots": null,
+    "min_seconds": 210.0,
+    "max_seconds": 240.0,
+    "min_health_ratio": null,
+    "max_health_ratio": null,
+    "actions": null,
+    "max_samples_per_episode": null,
+    "max_total_samples": null
+  },
+  "errors": [],
+  "limitations": [
+    "This filter only preserves existing bot trajectory movement samples.",
+    "Victory-window samples are training input, not policy acceptance evidence.",
+    "Filtered samples still require behavior-clone or SB3 training plus fixed-window high-pressure gates."
+  ]
+}
