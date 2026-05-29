@@ -300,6 +300,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 `distill_behavior_clone_to_sb3.py` 已新增 `--dataset-action-target-path`，用于在 `target-mode teacher_probs` 下仅对匹配路径样本使用 dataset action one-hot target，其余样本继续保持 teacher probabilities；报告会写入 `target.dataset_action_target_override` 的路径、命中样本数和平均非零动作数。首轮 terminal victory target 消融显示：全局 `target-mode dataset_actions` 会让 full-anchor mean KL 升到 `0.405769`、opening mean KL 升到 `1.676031`，不可接受；路径覆写 `w20` 和 `w10` 分别因 full-anchor argmax agreement `0.7781`、`0.7973` 失败；`w5` 则通过 drift alignment、full-anchor alignment 和 parent window regression，`dataset_action_target_override.overridden_sample_count = 358`，但 300 秒 high-pressure 三图仍为 `0.0/0.0/0.0`，且相对 e30 在 `300s/soda-creek` 触发 action `1` ratio `+0.2234` online blocker。已记录 `fail_20260529_015`，报告位于 `harness/reports/2026-05-29_rl_sb3_terminal_victory_path_target_w5_e30_001/summary.md`；该能力可以保留为训练工具，但当前 checkpoint 不能推进为 policy candidate、stage 03 或 RL acceptance。下一步应扩大成功终局样本到多图 / 更多 seed，或加入 pressure / low-health conversion target，而不是继续只扫单一权重或 dispatch 秒数。
 
+多图 terminal victory target 已完成首轮扩展。复用同一过滤工具从 late-survival trajectory 源中抽取所有 high-pressure 地图的 victory episode，在 `210-240s` 保留 `1437` 条 movement samples、`8` 个 victory episode，覆盖 `soda-creek` `5` 局、`cracked-star-jar` `2` 局和 `caramel-workshop` `1` 局；behavior-clone dry-run 判定 `dataset_validated_not_training_gate`，observation_len 为 `145`，late_low_health ratio 为 `0.7543`。诊断仍标记 `high_action_persistence` 和 `map_sample_imbalance` 为 watch，尤其 `soda-creek` 样本占比 `0.6256`、`caramel-workshop` 只有 `1` 个 episode。报告位于 `harness/reports/2026-05-29_terminal_conversion_multimap_victory_samples_001/summary.md`。该数据集只是下一轮 terminal branch 训练输入，不是 model、fixed-window gate 或 acceptance 证据。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
