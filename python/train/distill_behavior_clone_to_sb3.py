@@ -84,10 +84,35 @@ RECOVERY_SAMPLE_SOURCES = {
     "risk_recovery_supervision",
 }
 
+RECOVERY_TARGET_SOURCE_ALIASES = {
+    "edge": "edge_recovery_supervision",
+    "risk": "risk_recovery_supervision",
+}
 
-def recovery_target_override_report(mode, primary_mass, top_k):
+
+def parse_recovery_target_sources(value):
+    if value is None:
+        return set(RECOVERY_SAMPLE_SOURCES)
+    sources = set()
+    for item in str(value).split(","):
+        key = item.strip()
+        if not key:
+            continue
+        if key not in RECOVERY_TARGET_SOURCE_ALIASES:
+            raise ValueError(
+                "--recovery-target-sources entries must be one of: "
+                + ", ".join(sorted(RECOVERY_TARGET_SOURCE_ALIASES))
+            )
+        sources.add(RECOVERY_TARGET_SOURCE_ALIASES[key])
+    if not sources:
+        raise ValueError("--recovery-target-sources must include at least one source")
+    return sources
+
+
+def recovery_target_override_report(mode, primary_mass, top_k, sources):
     return {
         "mode": mode,
+        "sources": sorted(sources),
         "primary_mass": round(float(primary_mass), 6),
         "top_k": int(top_k),
         "overridden_sample_count": 0,
@@ -104,9 +129,10 @@ def recovery_target_override_distribution(
     mode,
     primary_mass,
     top_k,
+    enabled_sources,
     np_module,
 ):
-    if sample.get("sample_source") not in RECOVERY_SAMPLE_SOURCES:
+    if sample.get("sample_source") not in enabled_sources:
         return None, False
     if mode == "teacher_probs":
         return None, False
@@ -138,10 +164,12 @@ def collect_distillation_targets(
     opening_model=None,
     opening_seconds=60.0,
     recovery_target_mode="teacher_probs",
+    recovery_target_sources=None,
     recovery_soft_target_primary_mass=0.65,
     recovery_soft_target_top_k=3,
 ):
     action_count = int(dataset["action_count"])
+    enabled_recovery_sources = set(recovery_target_sources or RECOVERY_SAMPLE_SOURCES)
     if target_mode == "dataset_actions":
         targets = [
             transform_target_probabilities(
@@ -163,6 +191,7 @@ def collect_distillation_targets(
                 "not_applicable_global_dataset_actions",
                 recovery_soft_target_primary_mass,
                 recovery_soft_target_top_k,
+                enabled_recovery_sources,
             ),
             "target_entropy_nats": round(
                 sum(target_entropy(target, np_module) for target in targets)
@@ -189,6 +218,7 @@ def collect_distillation_targets(
         recovery_target_mode,
         recovery_soft_target_primary_mass,
         recovery_soft_target_top_k,
+        enabled_recovery_sources,
     )
     override_nonzero_action_total = 0
     for observation, action, sample in zip(
@@ -236,6 +266,7 @@ def collect_distillation_targets(
             recovery_target_mode,
             recovery_soft_target_primary_mass,
             recovery_soft_target_top_k,
+            enabled_recovery_sources,
             np_module,
         )
         if override_distribution is not None:
@@ -526,6 +557,9 @@ def distill(config, args):
         opening_model=Path(args.opening_model) if args.opening_model else None,
         opening_seconds=args.opening_seconds,
         recovery_target_mode=args.recovery_target_mode,
+        recovery_target_sources=parse_recovery_target_sources(
+            args.recovery_target_sources
+        ),
         recovery_soft_target_primary_mass=args.recovery_soft_target_primary_mass,
         recovery_soft_target_top_k=args.recovery_soft_target_top_k,
     )
@@ -729,6 +763,14 @@ def main():
         ),
     )
     parser.add_argument(
+        "--recovery-target-sources",
+        default="edge,risk",
+        help=(
+            "Comma-separated recovery supervision sources to override: "
+            "edge, risk, or edge,risk."
+        ),
+    )
+    parser.add_argument(
         "--recovery-soft-target-primary-mass",
         type=float,
         default=0.65,
@@ -794,6 +836,10 @@ def main():
         parser.error("--teacher-temperature must be greater than zero")
     if not (0.0 <= args.uniform_target_mix <= 1.0):
         parser.error("--uniform-target-mix must be between 0 and 1")
+    try:
+        parse_recovery_target_sources(args.recovery_target_sources)
+    except ValueError as exc:
+        parser.error(str(exc))
     if not (0.0 < args.recovery_soft_target_primary_mass <= 1.0):
         parser.error("--recovery-soft-target-primary-mass must be in (0, 1]")
     if args.recovery_soft_target_top_k < 2:
