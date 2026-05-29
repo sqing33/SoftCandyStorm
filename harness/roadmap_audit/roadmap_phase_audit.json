@@ -59,15 +59,18 @@
         "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
         "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
         "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
-        "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
+        "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json",
+        "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/summary.md",
+        "harness/failed_cases/fail_20260529_020_current_high_pressure_smoke_gap.json"
       ],
       "gaps": [
         "本机 Mach-O 启动已恢复，cargo test --workspace 和 60 秒 headless simulate 已在当前会话重新通过；Terminal DevTools 重启后 cargo test --workspace 112/112 通过，base_demo 9 Bot x 5 seed x 600 秒矩阵、45/45 strict replay-batch 和 headless 性能预算均能运行。",
-        "同 seed 起点扩到 20 seed 后，CowardBot 回到目标区间，但 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 曾高于目标；该 repair failure case 已通过规则 Bot 策略校准修复，seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，strict replay-batch 各 180/180 通过，headless 性能预算 valid；仍需刷新 Gym high-pressure 对比证据。"
+        "同 seed 起点扩到 20 seed 后，CowardBot 回到目标区间，但 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 曾高于目标；该 repair failure case 已通过规则 Bot 策略校准修复，seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，strict replay-batch 各 180/180 通过，headless 性能预算 valid。",
+        "当前 Gym high-pressure 对比证据已刷新：e30 mid-anchor guarded checkpoint 在 seed 63200-63202 的 60/180/300 秒三窗口复查中，300 秒三图仍全 0.0 胜率，记录 fail_20260529_020；这证明 RL policy 仍是 repair blocker，不是 Phase 1 GameCore 或 headless Harness 可运行性的缺失。"
       ],
       "blockers": [],
       "next_actions": [
-        "继续刷新 Gym high-pressure 对比。"
+        "后续若 GameCore、Gym bridge 或当前 RL checkpoint 发生实质变化，再重跑 high-pressure 60/180/300 秒三窗口对比并记录新的 failure case 或解除依据。"
       ]
     },
     {
@@ -593,6 +596,11 @@
         "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_absolute_phase_staged_gru_context8_001/comparison_180s_3seed.json",
         "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_absolute_phase_staged_gru_context8_001/comparison_300s_3seed.json",
         "harness/reports/2026-05-27_rl_behavior_clone_late_survival_clean_teacher_absolute_phase_staged_gru_context8_001/failure_analysis_300s.md",
+        "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/summary.md",
+        "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/comparison_60s.json",
+        "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/comparison_180s.json",
+        "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/comparison_300s.json",
+        "harness/failed_cases/fail_20260529_020_current_high_pressure_smoke_gap.json",
         "python/train/create_staged_behavior_clone_policy.py",
         "python/train/train_behavior_clone.py",
         "python/train/test_train_behavior_clone.py",
@@ -618,7 +626,8 @@
         "真实规则 Bot 180-300 秒 late-window 轨迹已导出 12007 条并通过 behavior clone dry-run，样本全部来自 trajectory 且三图分布接近均衡；clean teacher-only 子集也已完成 dry-run、训练和 deterministic 60/180/300 秒多图对比，但 60 秒与 180 秒短窗回归且 300 秒三图全 0%，因此 clean late replacement 不能推进。",
         "clean teacher-only late replacement 暴露 horizon / retention 问题：staged policy 在短窗中也会进入 late 子策略，而 clean late 数据只覆盖 180-300 秒教师轨迹，导致 soda-creek 与 cracked-star-jar 出现 opening/mid 死亡；Phase 6 仍被 rl_policy_multimap_generalization_gap 阻塞。",
         "no-phase 消融去掉 time-phase-conditioning 后 validation_accuracy 升到 0.7331，但 deterministic 60 秒仍为 80%/100%/60%，300 秒三图仍全 0%；这证明短窗回归不是 phase one-hot 单点问题，而是 clean teacher-only late replacement 缺少 horizon safety / retention。",
-        "staged behavior clone 已支持 --phase-duration-seconds，可用固定 300 秒 horizon 和 Gym time_seconds 做绝对阶段分发；旧 staged checkpoint 仍保持 normalized observation 分发。clean teacher 候选 absolute-time 重新打包后 60 秒仍为 70%/100%/80%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%，说明分段机制修复不能替代 retention 或 long-run objective。"
+        "staged behavior clone 已支持 --phase-duration-seconds，可用固定 300 秒 horizon 和 Gym time_seconds 做绝对阶段分发；旧 staged checkpoint 仍保持 normalized observation 分发。clean teacher 候选 absolute-time 重新打包后 60 秒仍为 70%/100%/80%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%，说明分段机制修复不能替代 retention 或 long-run objective。",
+        "当前 high-pressure 固定窗口复查再次确认 RL blocker：e30 mid-anchor guarded checkpoint 在 seed 63200-63202 中 60 秒为 0.6667/1.0/1.0，180 秒为 0.3333/1.0/0.6667，300 秒为 0.0/0.0/0.0。该证据刷新了当前失败面，但不允许进入 stage 03、RL 测试 Bot 或 acceptance。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
