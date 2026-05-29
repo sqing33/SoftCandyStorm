@@ -254,6 +254,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 从 e30 checkpoint 做 `512` timestep `late-win-conversion` guarded closed-loop probe 后，训练期 anchor guard 与离线 full-anchor alignment 仍通过，60 秒 / 180 秒提升到 `0.6667/0.6667/1.0`，300 秒 `cracked-star-jar` 恢复到 `0.3333` 胜率；但 `soda-creek` 与 `caramel-workshop` 300 秒仍为 `0.0`，且相对 e30 的 no-regression 检查发现 `caramel-workshop` 180 秒 dominant action ratio 增加 `0.265`。已记录 `fail_20260529_001`，repair-probe gate 为 `rl_repair_probe_gate_failed`；下一步不能直接加长同配置，应先保护 `caramel-workshop` 180 秒动作分布并保留 300 秒三图门禁。
 
+缩短到 `256` timestep、降低学习率并提高 mid-window anchor 权重后，e30 mid-anchor guarded probe 通过训练期 anchor guard、top drift rows / full-anchor alignment 和相对 e30 的 60 / 180 / 300 秒 no-regression；`caramel-workshop` 180 秒 dominant action ratio 只从 `0.2646` 增至 `0.2871`，repair-probe gate 为 `rl_repair_probe_gate_passed_for_limited_followup`。但 300 秒 high-pressure 三图胜率仍全部为 `0.0`，且上一轮 `cracked-star-jar` 300 秒 `0.3333` 的恢复信号消失。已记录 `fail_20260529_002`；该 checkpoint 只能作为有限后续探索起点，不能进入 RL acceptance 或 policy candidate。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
