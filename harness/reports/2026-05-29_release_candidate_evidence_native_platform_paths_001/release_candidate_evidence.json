@@ -1,0 +1,131 @@
+{
+  "report_version": 1,
+  "source": "harness/release/current_local_rc_evidence.json",
+  "repo_root": ".",
+  "candidate_id": "current-local-2026-05-26",
+  "release_stage": "prototype-local",
+  "decision": "release_candidate_not_ready",
+  "required_gate_count": 17,
+  "provided_gate_count": 17,
+  "missing_gates": [],
+  "errors": [],
+  "warnings": [],
+  "blockers": [
+    "content_frozen: gate status is `waiting`",
+    "performance: gate status is `waiting`",
+    "manual_playtest: gate status is `waiting`",
+    "asset_manual_review: gate status is `waiting`",
+    "story_codex_review: gate status is `waiting`",
+    "telemetry_privacy: gate status is `waiting`",
+    "release_package: gate status is `waiting`"
+  ],
+  "gates": [
+    {
+      "id": "content_frozen",
+      "status": "waiting",
+      "synthetic": false,
+      "evidence_count": 2
+    },
+    {
+      "id": "compile",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 2
+    },
+    {
+      "id": "unit_tests",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 1
+    },
+    {
+      "id": "headless_simulation",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 5
+    },
+    {
+      "id": "multi_seed_no_deadlock",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 4
+    },
+    {
+      "id": "content_schema",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 2
+    },
+    {
+      "id": "static_budget",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 3
+    },
+    {
+      "id": "bot_matrix",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 2
+    },
+    {
+      "id": "replay_regression",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 4
+    },
+    {
+      "id": "performance",
+      "status": "waiting",
+      "synthetic": false,
+      "evidence_count": 5
+    },
+    {
+      "id": "manual_playtest",
+      "status": "waiting",
+      "synthetic": false,
+      "evidence_count": 5
+    },
+    {
+      "id": "asset_provenance",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 1
+    },
+    {
+      "id": "asset_manual_review",
+      "status": "waiting",
+      "synthetic": false,
+      "evidence_count": 6
+    },
+    {
+      "id": "story_codex_review",
+      "status": "waiting",
+      "synthetic": false,
+      "evidence_count": 4
+    },
+    {
+      "id": "telemetry_privacy",
+      "status": "waiting",
+      "synthetic": false,
+      "evidence_count": 24
+    },
+    {
+      "id": "failure_case_review",
+      "status": "pass",
+      "synthetic": false,
+      "evidence_count": 6
+    },
+    {
+      "id": "release_package",
+      "status": "waiting",
+      "synthetic": false,
+      "evidence_count": 4
+    }
+  ],
+  "limitations": [
+    "This validator checks release evidence completeness only; it does not run compile, tests, harness, replay, performance, or manual playtests.",
+    "Historical smoke reports are only acceptable when they directly cover the current release candidate and are marked non-synthetic.",
+    "A ready decision requires every required gate to be present, passing, and backed by existing evidence paths."
+  ]
+}

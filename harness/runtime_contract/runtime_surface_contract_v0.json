@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, global F1-F5 pointer-zone tab navigation, F1 overview pointer-zone tab navigation, F2 chapter keyboard and pointer-zone navigation, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts, pointer control-zone, and delete confirmation, F5 loadout keyboard and pointer-zone selection, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, default and native platform data roots, global F1-F5 pointer-zone tab navigation, F1 overview pointer-zone tab navigation, F2 chapter keyboard and pointer-zone navigation, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts, pointer control-zone, and delete confirmation, F5 loadout keyboard and pointer-zone selection, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -347,6 +347,8 @@
     "runtime_privacy_notice",
     "export_runtime_local_data",
     "delete_runtime_local_data",
+    "runtime_native_platform_data_root",
+    "runtime_native_platform_data_root_for_env",
     "resolve_runtime_platform_paths",
     "load_runtime_meta_progress",
     "load_runtime_save_state",
@@ -416,6 +418,7 @@
   ],
   "required_cli_flags": [
     "--platform-data-root",
+    "--native-platform-data-root",
     "--character-id",
     "--runtime-settings-file",
     "--local-data-dir",
@@ -671,6 +674,8 @@
     "delete requires at least one explicit --local-data-dir",
     "delete save requires --save-file",
     "platform_user_data/soft-candy-storm",
+    "Soft Candy Storm",
+    "soft-candy-storm",
     "saves",
     "settings",
     "telemetry",
@@ -718,7 +723,7 @@
   "known_gaps": [
     "source_shape_only_no_rust_compile",
     "no_bevy_runtime_smoke",
-    "no_platform_path_runtime_resolution",
+    "no_manual_platform_path_review",
     "no_manual_playtest_or_privacy_review"
   ]
 }

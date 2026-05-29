@@ -23,7 +23,7 @@ REQUIRED_SAFETY_FLAGS = {
 REQUIRED_KNOWN_GAPS = {
     "source_shape_only_no_rust_compile",
     "no_bevy_runtime_smoke",
-    "no_platform_path_runtime_resolution",
+    "no_manual_platform_path_review",
     "no_manual_playtest_or_privacy_review",
 }
 
@@ -388,7 +388,7 @@ def build_report(contract_path: Path, repo_root: Path) -> dict[str, Any]:
         "key_bindings": binding_reports,
         "limitations": [
             "This validator checks Rust source shape only; it does not compile or execute Bevy Runtime.",
-            "It cannot prove keyboard behavior, rendered UI, platform path resolution, save migration, or upload transport behavior.",
+            "It cannot prove keyboard behavior, rendered UI, manual platform path approval, save migration, or upload transport behavior.",
             "Runtime smoke, platform path review, and manual playtest remain required before docs/16 and docs/18 can be marked complete.",
         ],
     }

@@ -285,11 +285,12 @@ harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/summar
 Runtime 当前实现状态：
 
 - `--platform-data-root <path>` 会把默认存档、Runtime 设置、本地遥测、Replay 和崩溃报告目录绑定到同一逻辑平台数据根；默认逻辑根为 `platform_user_data/soft-candy-storm`，并按 `saves`、`settings`、`telemetry`、`replay`、`crash-reports` 五个子目录拆分。
+- `--native-platform-data-root` 会显式把同一组默认路径绑定到系统原生数据目录：macOS 为 `~/Library/Application Support/Soft Candy Storm`，Windows 为 `%APPDATA%/Soft Candy Storm`，Linux / Unix 为 `${XDG_DATA_HOME:-~/.local/share}/soft-candy-storm`。
 - `--runtime-settings-file <path>` 可读取 `telemetry_upload_enabled`、`raw_replay_upload_enabled`、`crash_report_upload_enabled`，默认全部关闭。
 - `--print-privacy-notice` 可输出本地优先、默认关闭、明确同意、删除 / 导出、禁止个人身份信息和 90 天保留主题。
 - `--export-local-data <path>` 可导出本地遥测 / replay JSON 文件内容，并附带当前隐私设置。
 - `--delete-local-data` 可删除显式传入的本地遥测 / replay 目录内容；为了避免误删开发证据，未传 `--local-data-dir` 时会拒绝执行。
-- Runtime 已有 `F4` 隐私设置页，可显式切换三个上传同意项并在配置了 `--runtime-settings-file` 时写回 JSON，也可用 `E/X/L/K` 触发当前 Runtime 配置下的存档导出、存档删除、本地数据导出和本地数据删除；人工隐私审查已有模板、审查包和完整性校验器，但尚未由真人填写通过。源码层已有逻辑平台路径默认绑定，但真实平台原生目录解析、法律审查、上传传输、发布级导出 / 删除按钮验证仍未完成，因此 Release Candidate 仍不得标为通过。
+- Runtime 已有 `F4` 隐私设置页，可显式切换三个上传同意项并在配置了 `--runtime-settings-file` 时写回 JSON，也可用 `E/X/L/K` 触发当前 Runtime 配置下的存档导出、存档删除、本地数据导出和本地数据删除；人工隐私审查已有模板、审查包和完整性校验器，但尚未由真人填写通过。源码层已有逻辑平台路径默认绑定和显式原生平台目录解析入口，但法律审查、上传传输、人工平台路径审查、发布级导出 / 删除按钮验证仍未完成，因此 Release Candidate 仍不得标为通过。
 
 当前校验命令：
 
@@ -353,7 +354,7 @@ python3 harness/runtime_contract/validate_runtime_surface_contract.py \
   --markdown harness/reports/2026-05-26_runtime_surface_contract_001/summary.md
 ```
 
-该契约会检查 `game_runtime` 源码中是否仍保留 `--platform-data-root`、`--character-id`、`--runtime-settings-file`、`--export-local-data`、`--delete-local-data`、`--print-privacy-notice`、`--save-file`、`--export-save`、`--delete-save`，以及 F1/F2/F3/F4/F5 局外面板、C/M 角色 / 地图选择、7/8/9 上传同意切换、`platform_user_data/soft-candy-storm` 逻辑目录和 `not_implemented` 上传传输提示。当前结论为 `runtime_surface_contract_valid`，但它只证明源码形状，不证明键盘行为、渲染 UI、真实平台原生路径、人工平台审查或上传传输行为。
+该契约会检查 `game_runtime` 源码中是否仍保留 `--platform-data-root`、`--native-platform-data-root`、`--character-id`、`--runtime-settings-file`、`--export-local-data`、`--delete-local-data`、`--print-privacy-notice`、`--save-file`、`--export-save`、`--delete-save`，以及 F1/F2/F3/F4/F5 局外面板、C/M 角色 / 地图选择、7/8/9 上传同意切换、`platform_user_data/soft-candy-storm` 逻辑目录、`Soft Candy Storm` / `soft-candy-storm` 原生平台目录片段和 `not_implemented` 上传传输提示。当前结论为 `runtime_surface_contract_valid`，但它只证明源码形状，不证明键盘行为、渲染 UI、人工平台路径审查通过、平台云存档或上传传输行为。
 
 ## 本地存档与数据控制
 
@@ -404,7 +405,7 @@ python3 tools/validate_manual_platform_path_review.py \
   --markdown harness/reports/2026-05-26_manual_platform_path_review_template_001/summary.md
 ```
 
-该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值；v1 还要求 `migration_history` 与 `base_ui_state`，平台路径策略还要求存档、设置、遥测、Replay 和崩溃报告使用逻辑平台目录并禁止宿主绝对路径。Runtime 源码现在已把默认路径绑定到同一逻辑平台数据根，并继续要求删除本地数据时显式传入 `--local-data-dir`、删除存档时显式传入 `--save-file`。人工平台路径审查包只汇总策略、存档契约、逻辑存储根、禁止片段和 TODO 检查项；模板当前结论仍为 `manual_platform_path_review_invalid`，真人填写并通过前不能作为发布证据。当前报告不代表 Runtime 已完成真实平台原生目录解析、运行级迁移样本、设置页人工验证、平台隐私文本或上传链路。
+该校验只证明本地存档模板具备删除 / 导出控制和隐私默认值；v1 还要求 `migration_history` 与 `base_ui_state`，平台路径策略还要求存档、设置、遥测、Replay 和崩溃报告使用逻辑平台目录并禁止宿主绝对路径。Runtime 源码现在已把默认路径绑定到同一逻辑平台数据根，并可通过 `--native-platform-data-root` 显式切换到系统原生数据目录；删除本地数据时仍必须显式传入 `--local-data-dir`，删除存档时仍必须显式传入 `--save-file`。人工平台路径审查包只汇总策略、存档契约、逻辑存储根、禁止片段和 TODO 检查项；模板当前结论仍为 `manual_platform_path_review_invalid`，真人填写并通过前不能作为发布证据。当前报告不代表运行级迁移样本、设置页人工验证、平台隐私文本、云存档或上传链路已经通过。
 
 未来存档升级必须继续遵守这些本地优先和 opt-in 规则。当前迁移计划可用以下命令校验：
 

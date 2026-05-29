@@ -919,12 +919,12 @@
     },
     {
       "id": "runtime_local_data_controls_smoke",
-      "summary": "增加 Runtime 本地数据控制 smoke runner，实际执行 game_runtime prelaunch CLI，验证隐私说明默认本地、save-state-v1 存档导出、隐式删除拒绝、显式存档删除、本地 telemetry/replay/crash 数据导出和显式目录删除；当前报告为 runtime_local_data_controls_smoke_valid，但不替代真实平台路径、发布级 UI、人工隐私 / 平台 / 法律审查或 RC 通过。",
+      "summary": "增加 Runtime 本地数据控制 smoke runner，实际执行 game_runtime prelaunch CLI，验证隐私说明默认本地、save-state-v1 存档导出、隐式删除拒绝、显式存档删除、本地 telemetry/replay/crash 数据导出和显式目录删除；当前报告为 runtime_local_data_controls_smoke_valid，但不替代发布级 UI、人工隐私 / 平台 / 法律审查或 RC 通过。",
       "report": "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/summary.md"
     },
     {
       "id": "runtime_f4_local_data_controls",
-      "summary": "Runtime F4 隐私设置页增加 E/X/L/K 键盘入口，分别触发存档导出、存档删除、本地 telemetry/replay/crash 数据导出和本地数据删除；cargo test -p game_runtime 59 项通过，Runtime surface 契约已刷新为 runtime_surface_contract_valid。该证据不替代发布级 UI 按钮、真实平台原生路径、人工隐私 / 平台 / 法律审查或 RC 通过。",
+      "summary": "Runtime F4 隐私设置页增加 E/X/L/K 键盘入口，分别触发存档导出、存档删除、本地 telemetry/replay/crash 数据导出和本地数据删除；cargo test -p game_runtime 59 项通过，Runtime surface 契约已刷新为 runtime_surface_contract_valid。该证据不替代发布级 UI 按钮、人工隐私 / 平台 / 法律审查或 RC 通过。",
       "report": "harness/reports/2026-05-29_runtime_f4_local_data_controls_001/summary.md"
     },
     {
@@ -1004,7 +1004,7 @@
     },
     {
       "id": "runtime_platform_data_root_source_path",
-      "summary": "Runtime 源码默认把存档、隐私设置、本地遥测、Replay 和崩溃报告绑定到 platform_user_data/soft-candy-storm 逻辑平台数据根，并支持 --platform-data-root 重新绑定；删除本地数据仍要求显式 --local-data-dir，删除存档仍要求显式 --save-file。该证据只证明源码形状，不代表真实平台原生路径、人工平台路径审查或 Runtime smoke 已通过。",
+      "summary": "Runtime 源码默认把存档、隐私设置、本地遥测、Replay 和崩溃报告绑定到 platform_user_data/soft-candy-storm 逻辑平台数据根，并支持 --platform-data-root 重新绑定；删除本地数据仍要求显式 --local-data-dir，删除存档仍要求显式 --save-file。该早期证据只证明逻辑路径源码形状；后续已补 --native-platform-data-root，但人工平台路径审查仍未通过。",
       "report": "harness/reports/2026-05-26_runtime_surface_contract_platform_paths_001/summary.md"
     },
     {
@@ -1621,7 +1621,7 @@
     },
     {
       "id": "runtime_privacy_local_data_controls",
-      "summary": "Runtime 已具备 CLI 级本地隐私和数据控制，补上 F4 设置页 7/8/9 上传同意切换、E/X/L/K 存档与本地数据控制入口、JSON 持久化，并在源码默认绑定 platform_user_data/soft-candy-storm 逻辑平台数据根；上传传输、发布级导出 / 删除按钮、真实平台原生路径和人工隐私 / 平台审查仍未完成。",
+      "summary": "Runtime 已具备 CLI 级本地隐私和数据控制，补上 F4 设置页 7/8/9 上传同意切换、E/X/L/K 存档与本地数据控制入口、JSON 持久化，并在源码默认绑定 platform_user_data/soft-candy-storm 逻辑平台数据根；上传传输、发布级导出 / 删除按钮和人工隐私 / 平台审查仍未完成。",
       "report": "harness/reports/2026-05-29_runtime_f4_local_data_controls_001/summary.md"
     },
     {
@@ -2803,6 +2803,11 @@
       "id": "runtime_demo_input_10min_capture",
       "summary": "Runtime 已完成一次 600 秒 demo-input 技术 capture：糖霜草地 seed 12345 以 simulation-speed 30 自动跑到 600.01 秒 victory，平均 FPS 58.65，30 FPS 以下慢帧占比 0.23%，最大敌人数 14，最大 projectile 数 75，隐私上传项保持默认关闭且上传传输层仍为 not_implemented。该证据只证明本机 Runtime 技术运行和性能 capture，不替代真人 10 分钟试玩、完整视觉基地 UI、真实鼠标 / 手柄审查或发布级多硬件性能覆盖。",
       "report": "harness/reports/2026-05-29_runtime_demo_input_10min_001/summary.md"
+    },
+    {
+      "id": "runtime_native_platform_paths",
+      "summary": "Runtime 新增 --native-platform-data-root 显式入口，可把默认存档、Runtime 设置、本地遥测、Replay 和崩溃报告目录绑定到系统原生数据目录：macOS 使用 ~/Library/Application Support/Soft Candy Storm，Windows 使用 %APPDATA%/Soft Candy Storm，Linux / Unix 使用 ${XDG_DATA_HOME:-~/.local/share}/soft-candy-storm；cargo fmt --check 和 game_runtime 87 个单测通过。该能力不替代人工平台路径审查、平台隐私文本、云存档策略或发布包审查。",
+      "report": "harness/reports/2026-05-29_runtime_native_platform_paths_001/summary.md"
     }
   ],
   "next_recommended": [

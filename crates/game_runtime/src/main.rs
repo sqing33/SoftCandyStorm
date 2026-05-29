@@ -12,7 +12,7 @@ use game_core::{
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
-    fs,
+    env, fs,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -20,6 +20,8 @@ use std::{
 const DEFAULT_CONTENT_DIR: &str = "content/base_demo";
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const DEFAULT_PLATFORM_DATA_ROOT: &str = "platform_user_data/soft-candy-storm";
+const NATIVE_PLATFORM_APP_DIR_MACOS: &str = "Soft Candy Storm";
+const NATIVE_PLATFORM_APP_DIR_UNIX: &str = "soft-candy-storm";
 const PLATFORM_SAVE_ROOT: &str = "saves";
 const PLATFORM_SETTINGS_ROOT: &str = "settings";
 const PLATFORM_TELEMETRY_ROOT: &str = "telemetry";
@@ -3539,6 +3541,36 @@ fn next_runtime_selection_id(ids: &[String], current_id: &str) -> Option<String>
     Some(ids[next_index].clone())
 }
 
+fn runtime_native_platform_data_root() -> Option<PathBuf> {
+    runtime_native_platform_data_root_for_env(
+        env::consts::OS,
+        env::var_os("HOME").map(PathBuf::from),
+        env::var_os("XDG_DATA_HOME").map(PathBuf::from),
+        env::var_os("APPDATA").map(PathBuf::from),
+    )
+}
+
+fn runtime_native_platform_data_root_for_env(
+    os: &str,
+    home: Option<PathBuf>,
+    xdg_data_home: Option<PathBuf>,
+    appdata: Option<PathBuf>,
+) -> Option<PathBuf> {
+    match os {
+        "macos" => home.map(|path| {
+            path.join("Library")
+                .join("Application Support")
+                .join(NATIVE_PLATFORM_APP_DIR_MACOS)
+        }),
+        "windows" => appdata
+            .or_else(|| home.map(|path| path.join("AppData").join("Roaming")))
+            .map(|path| path.join(NATIVE_PLATFORM_APP_DIR_MACOS)),
+        _ => xdg_data_home
+            .or_else(|| home.map(|path| path.join(".local").join("share")))
+            .map(|path| path.join(NATIVE_PLATFORM_APP_DIR_UNIX)),
+    }
+}
+
 fn resolve_runtime_platform_paths(data_root: impl Into<PathBuf>) -> RuntimePlatformPaths {
     RuntimePlatformPaths::from_data_root(data_root.into())
 }
@@ -3580,6 +3612,18 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "--native-platform-data-root" => {
+                if let Some(native_root) = runtime_native_platform_data_root() {
+                    let platform_paths = resolve_runtime_platform_paths(native_root);
+                    let local_data_dirs = platform_paths.local_data_dirs();
+                    cli.platform_data_root = platform_paths.data_root.clone();
+                    cli.runtime_settings_file = Some(platform_paths.runtime_settings_file);
+                    cli.save_file = Some(platform_paths.save_file);
+                    cli.explicit_save_file = false;
+                    cli.local_data_dirs = local_data_dirs;
+                    cli.explicit_local_data_dirs.clear();
+                }
+            }
             "--platform-data-root" => {
                 if let Some(value) = args.next() {
                     let platform_paths = resolve_runtime_platform_paths(value);
@@ -4856,13 +4900,13 @@ mod tests {
         runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
         runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
         runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
-        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
+        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
@@ -5425,6 +5469,45 @@ mod tests {
     }
 
     #[test]
+    fn runtime_native_platform_data_root_uses_os_data_dirs() {
+        assert_eq!(
+            runtime_native_platform_data_root_for_env(
+                "macos",
+                Some(PathBuf::from("/Users/player")),
+                None,
+                None,
+            ),
+            Some(PathBuf::from(
+                "/Users/player/Library/Application Support/Soft Candy Storm"
+            ))
+        );
+        assert_eq!(
+            runtime_native_platform_data_root_for_env(
+                "windows",
+                Some(PathBuf::from("C:/Users/player")),
+                Some(PathBuf::from("/xdg")),
+                Some(PathBuf::from("C:/Users/player/AppData/Roaming")),
+            ),
+            Some(PathBuf::from(
+                "C:/Users/player/AppData/Roaming/Soft Candy Storm"
+            ))
+        );
+        assert_eq!(
+            runtime_native_platform_data_root_for_env(
+                "linux",
+                Some(PathBuf::from("/home/player")),
+                Some(PathBuf::from("/home/player/.local/share")),
+                None,
+            ),
+            Some(PathBuf::from("/home/player/.local/share/soft-candy-storm"))
+        );
+        assert_eq!(
+            runtime_native_platform_data_root_for_env("linux", None, None, None),
+            None
+        );
+    }
+
+    #[test]
     fn runtime_cli_defaults_use_platform_data_roots() {
         let cli = RuntimeCli::default();
 
@@ -5457,6 +5540,36 @@ mod tests {
         assert!(cli
             .local_data_dirs
             .contains(&PathBuf::from(DEFAULT_PLATFORM_DATA_ROOT).join(PLATFORM_CRASH_REPORT_ROOT)));
+    }
+
+    #[test]
+    fn runtime_native_platform_data_root_cli_rebinds_default_paths_when_available() {
+        let Some(native_root) = super::runtime_native_platform_data_root() else {
+            return;
+        };
+        let cli = parse_runtime_cli(["--native-platform-data-root".to_string()]);
+
+        assert_eq!(cli.platform_data_root, native_root);
+        assert_eq!(
+            cli.save_file,
+            Some(cli.platform_data_root.join("saves").join("profile.json"))
+        );
+        assert_eq!(
+            cli.runtime_settings_file,
+            Some(
+                cli.platform_data_root
+                    .join("settings")
+                    .join("runtime_privacy_settings.json")
+            )
+        );
+        assert_eq!(
+            cli.local_data_dirs,
+            vec![
+                cli.platform_data_root.join("telemetry"),
+                cli.platform_data_root.join("replay"),
+                cli.platform_data_root.join("crash-reports"),
+            ]
+        );
     }
 
     #[test]
