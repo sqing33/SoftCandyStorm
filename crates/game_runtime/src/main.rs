@@ -71,6 +71,8 @@ const SETTINGS_POINTER_CONTROL_HEIGHT: f32 = 112.0;
 const SETTINGS_POINTER_CONTROL_ZONE_COUNT: usize = 7;
 const LOADOUT_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 2;
+const CHAPTER_POINTER_CONTROL_HEIGHT: f32 = 96.0;
+const CHAPTER_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 
 fn main() {
     let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -1128,7 +1130,14 @@ fn step_game_core(
         );
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Chapters {
-        if let Some(action) = runtime_chapter_action_from_keyboard(&keyboard) {
+        let pointer_action = primary_window.get_single().ok().and_then(|window| {
+            runtime_chapter_action_from_pointer(
+                &mouse_buttons,
+                window.cursor_position(),
+                Vec2::new(window.resolution.width(), window.resolution.height()),
+            )
+        });
+        if let Some(action) = runtime_chapter_action_from_keyboard(&keyboard).or(pointer_action) {
             match apply_runtime_chapter_action(&mut state, action) {
                 Ok(message) => {
                     state.last_event = message;
@@ -2308,6 +2317,44 @@ fn runtime_chapter_action_from_keyboard(
     }
 }
 
+fn runtime_chapter_action_from_pointer(
+    mouse_buttons: &ButtonInput<MouseButton>,
+    cursor_position: Option<Vec2>,
+    window_size: Vec2,
+) -> Option<RuntimeChapterAction> {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        runtime_chapter_action_from_pointer_zone(cursor_position?, window_size)
+    } else {
+        None
+    }
+}
+
+fn runtime_chapter_action_from_pointer_zone(
+    cursor_position: Vec2,
+    window_size: Vec2,
+) -> Option<RuntimeChapterAction> {
+    if window_size.x <= 0.0 || window_size.y <= 0.0 {
+        return None;
+    }
+    let panel_right = (window_size.x - META_PANEL_RIGHT_MARGIN).max(0.0);
+    let panel_left = (panel_right - META_PANEL_WIDTH).max(0.0);
+    let panel_width = (panel_right - panel_left).max(1.0);
+    let in_panel_x = cursor_position.x >= panel_left && cursor_position.x <= panel_right;
+    let in_control_y =
+        cursor_position.y >= 0.0 && cursor_position.y <= CHAPTER_POINTER_CONTROL_HEIGHT;
+    if !in_panel_x || !in_control_y {
+        return None;
+    }
+
+    let normalized_x = ((cursor_position.x - panel_left) / panel_width).clamp(0.0, 0.999);
+    let zone = (normalized_x * CHAPTER_POINTER_CONTROL_ZONE_COUNT as f32).floor() as usize;
+    match zone {
+        0 => Some(RuntimeChapterAction::Previous),
+        1 => Some(RuntimeChapterAction::Next),
+        _ => Some(RuntimeChapterAction::StartSelectedChapter),
+    }
+}
+
 fn apply_runtime_chapter_action(
     state: &mut RuntimeState,
     action: RuntimeChapterAction,
@@ -2511,6 +2558,7 @@ fn render_meta_chapter_panel(
         },
         chapter_ids.len()
     ));
+    lines.push("右下点击区: 上章  下章  巡逻".to_string());
     if let Some(chapter) = progress.chapters.get(&selected_id) {
         let status = if chapter.unlocked {
             "已解锁"
@@ -4667,16 +4715,18 @@ mod tests {
         persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
         resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
-        runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
-        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_keyboard,
-        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
-        runtime_save_export_path, runtime_settings_action_from_keyboard,
-        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
-        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        runtime_asset_root, runtime_can_upload, runtime_chapter_action_from_keyboard,
+        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
+        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
+        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
+        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
+        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
+        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
@@ -6138,6 +6188,80 @@ mod tests {
     }
 
     #[test]
+    fn runtime_chapter_keyboard_input_maps_navigation_actions() {
+        let mut previous = ButtonInput::<KeyCode>::default();
+        previous.press(KeyCode::KeyQ);
+        assert_eq!(
+            runtime_chapter_action_from_keyboard(&previous),
+            Some(RuntimeChapterAction::Previous)
+        );
+
+        let mut next = ButtonInput::<KeyCode>::default();
+        next.press(KeyCode::KeyE);
+        assert_eq!(
+            runtime_chapter_action_from_keyboard(&next),
+            Some(RuntimeChapterAction::Next)
+        );
+
+        let mut start = ButtonInput::<KeyCode>::default();
+        start.press(KeyCode::KeyG);
+        assert_eq!(
+            runtime_chapter_action_from_keyboard(&start),
+            Some(RuntimeChapterAction::StartSelectedChapter)
+        );
+
+        assert_eq!(
+            runtime_chapter_action_from_keyboard(&ButtonInput::<KeyCode>::default()),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_chapter_pointer_input_maps_left_click_zone() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        let mut left = ButtonInput::<MouseButton>::default();
+        left.press(MouseButton::Left);
+        assert_eq!(
+            runtime_chapter_action_from_pointer(&left, Some(Vec2::new(1000.0, 40.0)), window_size),
+            Some(RuntimeChapterAction::Next)
+        );
+
+        let mut right = ButtonInput::<MouseButton>::default();
+        right.press(MouseButton::Right);
+        assert_eq!(
+            runtime_chapter_action_from_pointer(&right, Some(Vec2::new(1000.0, 40.0)), window_size),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_chapter_pointer_zone_maps_right_panel_segments() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        assert_eq!(
+            runtime_chapter_action_from_pointer_zone(Vec2::new(880.0, 40.0), window_size),
+            Some(RuntimeChapterAction::Previous)
+        );
+        assert_eq!(
+            runtime_chapter_action_from_pointer_zone(Vec2::new(1000.0, 40.0), window_size),
+            Some(RuntimeChapterAction::Next)
+        );
+        assert_eq!(
+            runtime_chapter_action_from_pointer_zone(Vec2::new(1200.0, 40.0), window_size),
+            Some(RuntimeChapterAction::StartSelectedChapter)
+        );
+        assert_eq!(
+            runtime_chapter_action_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
+            None
+        );
+        assert_eq!(
+            runtime_chapter_action_from_pointer_zone(Vec2::new(1000.0, 140.0), window_size),
+            None
+        );
+    }
+
+    #[test]
     fn low_health_changes_player_tint() {
         assert_ne!(player_tint(100.0, 100.0), player_tint(20.0, 100.0));
     }
@@ -6325,6 +6449,7 @@ mod tests {
         assert!(panel.contains("章节目标"));
         assert!(panel.contains("Q/E 切换章节"));
         assert!(panel.contains("G 巡逻已解锁章节"));
+        assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
         assert!(panel.contains("frosting-grassland"));
         assert!(panel.contains("survive-10-minutes"));
         assert!(panel.contains("本局完成"));
