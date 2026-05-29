@@ -292,6 +292,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 `validate_policy_window_regression.py` 已补上 baseline/candidate online action-distribution delta 专门门禁：在 60 / 180 / 300 秒 fixed-window comparison 中读取每张图的完整 `policy.summary.action_distribution`，除原有 win rate、平均存活、dominant ratio 外，还可用单动作 ratio 增幅、完整分布 L1 delta 和 normalized entropy drop 阻断在线分布漂移。用 e30 checkpoint 对 terminal-window `w10` 复跑后，该门禁记录 `17` 个 blockers，其中 `60s/caramel-workshop` 同时触发 dominant ratio `+0.2268`、action `7` ratio `+0.2421`、L1 delta `0.7526` 和 entropy delta `-0.2752`。这确认当前 blocker 是在线策略分布漂移，不应再依赖离线 validation guard 或继续单参数降权。
 
+`train_sb3.py` 现在提供显式 terminal-conversion branch 评估入口：`--terminal-conversion-model` / `--terminal-conversion-maps` / `--terminal-conversion-min-seconds` / `--terminal-conversion-max-seconds` 可把独立 terminal model 限定到目标地图和终局窗口，`--terminal-conversion-min-pressure` 与 `--terminal-conversion-min-low-health-risk` 可进一步要求 online diagnostics 命中压力或低血量风险后才切换。该 wrapper 是后续 terminal-conversion probe 的调度工具，不是 policy gate；任何真实 checkpoint 仍必须继续跑 full-anchor alignment、三窗 high-pressure、e30 + parent no-regression、online action-distribution delta、failure analysis 和 repair-probe gate。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

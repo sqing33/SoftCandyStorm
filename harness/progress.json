@@ -1183,6 +1183,11 @@
       "report": "harness/reports/2026-05-29_rl_policy_online_action_distribution_delta_gate_001/summary.md"
     },
     {
+      "id": "rl_terminal_conversion_branch_support",
+      "summary": "train_sb3.py 新增 terminal_conversion_branch 评估 wrapper 和 CLI：--terminal-conversion-model / maps / min/max seconds 可把独立 terminal model 限定到目标地图与终局窗口，--terminal-conversion-min-pressure 和 --terminal-conversion-min-low-health-risk 可要求 online diagnostics 命中压力或低血量风险后才切换。单测覆盖目标地图、时间窗、压力、低血量和 compare 参数转发；该入口只是显式 terminal-conversion probe 调度工具，不是 policy gate。",
+      "report": "harness/reports/2026-05-29_rl_terminal_conversion_branch_support_001/summary.md"
+    },
+    {
       "id": "rl_sb3_risk_recovery_source_filter_weight_sweep",
       "summary": "source-filtered risk recovery distillation sweep 已完成：distill_behavior_clone_to_sb3.py 可保留 retention / edge rows 的 teacher_probs，只对 clean parent late-state risk_recovery_supervision rows 用 top_k_scores 覆写。w10/w7/w5 均通过 drift 与 full-anchor alignment，但 repair-probe gate 全部失败；w10 仅恢复 cracked-star-jar 300 秒 0.3333 胜率并触发 14 个多基线 blockers，w7/w5 降到 3/4 个 blockers 但 300 秒三图仍全 0.0。已记录 fail_20260529_010，不能作为 policy candidate、stage 03 或 RL acceptance 证据。",
       "report": "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filter_weight_sweep_001/summary.md"
@@ -2656,8 +2661,8 @@
     },
     {
       "id": "rl_sb3_distillation_action_distribution_guard_finding",
-      "summary": "supervised SB3 distillation 已具备离线 action-distribution guard 和可选 scope。terminal-window w10 复跑显示 all-scope 会误拦 anchor drift repair slice，而 overall,map_time_buckets scope 通过且未捕捉在线 60s/caramel dominant-action blocker；新增 online action-distribution delta 门禁后，e30 vs terminal-window w10 复跑记录 17 个 blockers，确认当前问题是在线策略分布漂移。下一步应改走显式 terminal-conversion branch，而不是继续依赖离线 guard 或单参数权重扫描。",
-      "report": "harness/reports/2026-05-29_rl_policy_online_action_distribution_delta_gate_001/summary.md"
+      "summary": "supervised SB3 distillation 已具备离线 action-distribution guard 和可选 scope。terminal-window w10 复跑显示 all-scope 会误拦 anchor drift repair slice，而 overall,map_time_buckets scope 通过且未捕捉在线 60s/caramel dominant-action blocker；新增 online action-distribution delta 门禁后，e30 vs terminal-window w10 复跑记录 17 个 blockers，确认当前问题是在线策略分布漂移。train_sb3.py 已补显式 terminal_conversion_branch 调度入口；下一步应运行真实 terminal-conversion probe，而不是继续依赖离线 guard 或单参数权重扫描。",
+      "report": "harness/reports/2026-05-29_rl_terminal_conversion_branch_support_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2687,7 +2692,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比、distillation action-distribution guard 复跑和 online action-distribution delta 门禁均已完成。w10 terminal-window 只剩 2 个旧 online blockers 但 300 秒三图全 0；新增 delta 门禁进一步记录 17 个动作分布 blockers，说明离线 guard 和单参数降权都不能解除在线分布漂移。下一步不要继续单参数降权，应改走显式 terminal-conversion branch，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比、distillation action-distribution guard 复跑、online action-distribution delta 门禁和 terminal_conversion_branch 调度入口均已完成。w10 terminal-window 只剩 2 个旧 online blockers 但 300 秒三图全 0；新增 delta 门禁进一步记录 17 个动作分布 blockers，说明离线 guard 和单参数降权都不能解除在线分布漂移。下一步不要继续单参数降权，应运行真实显式 terminal-conversion probe，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
     },
     {
       "id": "rl_policy_multimap_training",

@@ -354,6 +354,131 @@ class MapLateSplitPolicy:
         }
 
 
+class TerminalConversionBranchPolicy:
+    policy_kind = "terminal_conversion_branch"
+
+    def __init__(
+        self,
+        base_model,
+        terminal_model,
+        target_maps,
+        min_seconds,
+        max_seconds,
+        min_pressure,
+        min_low_health_risk,
+        base_model_path,
+        terminal_model_path,
+    ):
+        if not target_maps:
+            raise ValueError("target_maps must include at least one map id")
+        if min_seconds < 0.0:
+            raise ValueError("min_seconds must be non-negative")
+        if max_seconds is not None and max_seconds <= min_seconds:
+            raise ValueError("max_seconds must be greater than min_seconds")
+        if not (0.0 <= min_pressure <= 1.0):
+            raise ValueError("min_pressure must be between 0 and 1")
+        if not (0.0 <= min_low_health_risk <= 1.0):
+            raise ValueError("min_low_health_risk must be between 0 and 1")
+        self.base_model = base_model
+        self.terminal_model = terminal_model
+        self.target_maps = frozenset(str(map_id) for map_id in target_maps)
+        self.min_seconds = float(min_seconds)
+        self.max_seconds = float(max_seconds) if max_seconds is not None else None
+        self.min_pressure = float(min_pressure)
+        self.min_low_health_risk = float(min_low_health_risk)
+        self.base_model_path = str(base_model_path)
+        self.terminal_model_path = str(terminal_model_path)
+        self._map_id = None
+        self._time_seconds = 0.0
+        self._pressure_context = terminal_pressure_context({})
+
+    def reset(self):
+        self._time_seconds = 0.0
+        self._pressure_context = terminal_pressure_context({})
+        for model in (self.base_model, self.terminal_model):
+            reset = getattr(model, "reset", None)
+            if callable(reset):
+                reset()
+
+    def set_map_id(self, map_id):
+        self._map_id = map_id
+        for model in (self.base_model, self.terminal_model):
+            set_map_id = getattr(model, "set_map_id", None)
+            if callable(set_map_id):
+                set_map_id(map_id)
+
+    def set_step_context(self, info):
+        info = info or {}
+        self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+        if info.get("map_id") is not None:
+            self._map_id = info.get("map_id")
+        self._pressure_context = terminal_pressure_context(info.get("diagnostics", {}))
+        for model in (self.base_model, self.terminal_model):
+            set_step_context = getattr(model, "set_step_context", None)
+            if callable(set_step_context):
+                set_step_context(info)
+
+    def should_use_terminal_model(self):
+        if self._map_id not in self.target_maps:
+            return False
+        if self._time_seconds < self.min_seconds:
+            return False
+        if self.max_seconds is not None and self._time_seconds > self.max_seconds:
+            return False
+        if self.min_pressure <= 0.0 and self.min_low_health_risk <= 0.0:
+            return True
+        pressure = self._pressure_context
+        return (
+            (
+                self.min_pressure > 0.0
+                and pressure["combined_pressure"] >= self.min_pressure
+            )
+            or (
+                self.min_low_health_risk > 0.0
+                and pressure["low_health_risk"] >= self.min_low_health_risk
+            )
+        )
+
+    def active_model(self):
+        if self.should_use_terminal_model():
+            return self.terminal_model
+        return self.base_model
+
+    def predict(self, observation, deterministic=True):
+        return self.active_model().predict(observation, deterministic=deterministic)
+
+    def set_random_seed(self, seed):
+        for model in (self.base_model, self.terminal_model):
+            set_random_seed = getattr(model, "set_random_seed", None)
+            if callable(set_random_seed):
+                set_random_seed(seed)
+
+    def action_scores(self, observation):
+        return policy_action_scores(self.active_model(), observation)
+
+    def opening_policy_report(self):
+        return opening_policy_report(self.base_model)
+
+    def policy_adapter_report(self):
+        return {
+            "mode": "terminal_conversion_branch",
+            "target_maps": sorted(self.target_maps),
+            "min_seconds": self.min_seconds,
+            "max_seconds": self.max_seconds,
+            "min_pressure": self.min_pressure,
+            "min_low_health_risk": self.min_low_health_risk,
+            "base_model_path": self.base_model_path,
+            "terminal_model_path": self.terminal_model_path,
+            "base_policy_kind": getattr(self.base_model, "policy_kind", "sb3"),
+            "terminal_policy_kind": getattr(self.terminal_model, "policy_kind", "sb3"),
+            "limitations": [
+                "This wrapper is for explicit terminal-conversion diagnostics only.",
+                "It routes to the terminal branch only within configured map/time/pressure conditions.",
+                "It is not policy acceptance evidence and still requires multi-baseline no-regression gates.",
+            ],
+        }
+
+
 class EdgeRecoveryFilterPolicy:
     policy_kind = "edge_recovery_filter"
 
@@ -780,6 +905,22 @@ def as_float(value):
 
 def clamp_float(value, minimum, maximum):
     return min(max(float(value), minimum), maximum)
+
+
+def terminal_pressure_context(diagnostics):
+    diagnostics = diagnostics or {}
+    hazard_pressure = as_float(diagnostics.get("hazard_pressure_risk")) or 0.0
+    boss_pressure = as_float(diagnostics.get("boss_pressure_risk")) or 0.0
+    enemy_pressure = as_float(diagnostics.get("enemy_pressure_risk")) or 0.0
+    low_health = as_float(diagnostics.get("low_health_risk")) or 0.0
+    combined = max(hazard_pressure, boss_pressure, enemy_pressure)
+    return {
+        "hazard_pressure_risk": clamp_float(hazard_pressure, 0.0, 1.0),
+        "boss_pressure_risk": clamp_float(boss_pressure, 0.0, 1.0),
+        "enemy_pressure_risk": clamp_float(enemy_pressure, 0.0, 1.0),
+        "low_health_risk": clamp_float(low_health, 0.0, 1.0),
+        "combined_pressure": clamp_float(combined, 0.0, 1.0),
+    }
 
 
 def action_vector_alignment(action_index, vector):
@@ -2195,6 +2336,33 @@ def wrap_map_late_split_policy(
     )
 
 
+def wrap_terminal_conversion_branch_policy(
+    policy,
+    model_class,
+    terminal_conversion_model_path=None,
+    terminal_conversion_maps=None,
+    terminal_conversion_min_seconds=210.0,
+    terminal_conversion_max_seconds=240.0,
+    terminal_conversion_min_pressure=0.0,
+    terminal_conversion_min_low_health_risk=0.0,
+    base_model_path=None,
+):
+    if terminal_conversion_model_path is None:
+        return policy
+    terminal_model = model_class.load(terminal_conversion_model_path)
+    return TerminalConversionBranchPolicy(
+        policy,
+        terminal_model,
+        terminal_conversion_maps,
+        terminal_conversion_min_seconds,
+        terminal_conversion_max_seconds,
+        terminal_conversion_min_pressure,
+        terminal_conversion_min_low_health_risk,
+        base_model_path or "base_policy",
+        terminal_conversion_model_path,
+    )
+
+
 def evaluate_saved_policy(
     config,
     algorithm,
@@ -2204,6 +2372,12 @@ def evaluate_saved_policy(
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
+    terminal_conversion_model_path=None,
+    terminal_conversion_maps=None,
+    terminal_conversion_min_seconds=210.0,
+    terminal_conversion_max_seconds=240.0,
+    terminal_conversion_min_pressure=0.0,
+    terminal_conversion_min_low_health_risk=0.0,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -2245,6 +2419,17 @@ def evaluate_saved_policy(
         late_split_model_path=late_split_model_path,
         late_split_seconds=late_split_seconds,
         late_split_maps=late_split_maps,
+        base_model_path=fallback_model_path,
+    )
+    model = wrap_terminal_conversion_branch_policy(
+        model,
+        model_class,
+        terminal_conversion_model_path=terminal_conversion_model_path,
+        terminal_conversion_maps=terminal_conversion_maps,
+        terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+        terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+        terminal_conversion_min_pressure=terminal_conversion_min_pressure,
+        terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
         base_model_path=fallback_model_path,
     )
     model = wrap_recovery_filter_for_eval(
@@ -2290,6 +2475,12 @@ def evaluate_policy_model(
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
+    terminal_conversion_model_path=None,
+    terminal_conversion_maps=None,
+    terminal_conversion_min_seconds=210.0,
+    terminal_conversion_max_seconds=240.0,
+    terminal_conversion_min_pressure=0.0,
+    terminal_conversion_min_low_health_risk=0.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -2329,6 +2520,12 @@ def evaluate_policy_model(
             late_split_model_path=late_split_model_path,
             late_split_seconds=late_split_seconds,
             late_split_maps=late_split_maps,
+            terminal_conversion_model_path=terminal_conversion_model_path,
+            terminal_conversion_maps=terminal_conversion_maps,
+            terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+            terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+            terminal_conversion_min_pressure=terminal_conversion_min_pressure,
+            terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
             seed_start=seed_start,
@@ -2361,6 +2558,12 @@ def evaluate_policy_model(
         late_split_model_path=late_split_model_path,
         late_split_seconds=late_split_seconds,
         late_split_maps=late_split_maps,
+        terminal_conversion_model_path=terminal_conversion_model_path,
+        terminal_conversion_maps=terminal_conversion_maps,
+        terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+        terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+        terminal_conversion_min_pressure=terminal_conversion_min_pressure,
+        terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
         eval_episodes=eval_episodes,
         eval_seconds=eval_seconds,
         seed_start=seed_start,
@@ -2395,6 +2598,12 @@ def evaluate_behavior_clone_policy(
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
+    terminal_conversion_model_path=None,
+    terminal_conversion_maps=None,
+    terminal_conversion_min_seconds=210.0,
+    terminal_conversion_max_seconds=240.0,
+    terminal_conversion_min_pressure=0.0,
+    terminal_conversion_min_low_health_risk=0.0,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -2435,6 +2644,19 @@ def evaluate_behavior_clone_policy(
             late_split_maps=late_split_maps,
             base_model_path=model_path,
         )
+    if terminal_conversion_model_path is not None:
+        model_class = stable_baselines_model_classes()[algorithm]
+        policy = wrap_terminal_conversion_branch_policy(
+            policy,
+            model_class,
+            terminal_conversion_model_path=terminal_conversion_model_path,
+            terminal_conversion_maps=terminal_conversion_maps,
+            terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+            terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+            terminal_conversion_min_pressure=terminal_conversion_min_pressure,
+            terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+            base_model_path=model_path,
+        )
     policy = wrap_recovery_filter_for_eval(
         policy,
         edge_recovery_filter=edge_recovery_filter,
@@ -2464,7 +2686,9 @@ def evaluate_behavior_clone_policy(
         trace_include_observation=trace_include_observation,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
-    if late_split_model_path is not None:
+    if terminal_conversion_model_path is not None:
+        evaluation["policy_kind"] = "terminal_conversion_branch"
+    elif late_split_model_path is not None:
         evaluation["policy_kind"] = "map_late_split"
     else:
         evaluation["policy_kind"] = (
@@ -3345,6 +3569,12 @@ def compare_policy_to_rule_bots(
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
+    terminal_conversion_model_path=None,
+    terminal_conversion_maps=None,
+    terminal_conversion_min_seconds=210.0,
+    terminal_conversion_max_seconds=240.0,
+    terminal_conversion_min_pressure=0.0,
+    terminal_conversion_min_low_health_risk=0.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3384,6 +3614,12 @@ def compare_policy_to_rule_bots(
         late_split_model_path=late_split_model_path,
         late_split_seconds=late_split_seconds,
         late_split_maps=late_split_maps,
+        terminal_conversion_model_path=terminal_conversion_model_path,
+        terminal_conversion_maps=terminal_conversion_maps,
+        terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+        terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+        terminal_conversion_min_pressure=terminal_conversion_min_pressure,
+        terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
         behavior_clone_model=behavior_clone_model,
         eval_episodes=episodes,
         eval_seconds=seconds,
@@ -3458,6 +3694,12 @@ def compare_policy_to_rule_bots_across_maps(
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
+    terminal_conversion_model_path=None,
+    terminal_conversion_maps=None,
+    terminal_conversion_min_seconds=210.0,
+    terminal_conversion_max_seconds=240.0,
+    terminal_conversion_min_pressure=0.0,
+    terminal_conversion_min_low_health_risk=0.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3493,6 +3735,12 @@ def compare_policy_to_rule_bots_across_maps(
             late_split_model_path=late_split_model_path,
             late_split_seconds=late_split_seconds,
             late_split_maps=late_split_maps,
+            terminal_conversion_model_path=terminal_conversion_model_path,
+            terminal_conversion_maps=terminal_conversion_maps,
+            terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+            terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+            terminal_conversion_min_pressure=terminal_conversion_min_pressure,
+            terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
             behavior_clone_model=behavior_clone_model,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
@@ -3860,6 +4108,40 @@ def main():
         help="Comma-separated map ids where --late-split-model may replace the base policy.",
     )
     parser.add_argument(
+        "--terminal-conversion-model",
+        default=None,
+        help="Optional SB3 zip used as an explicit terminal-conversion branch during evaluation/comparison.",
+    )
+    parser.add_argument(
+        "--terminal-conversion-maps",
+        default=None,
+        help="Comma-separated map ids where --terminal-conversion-model may replace the base policy.",
+    )
+    parser.add_argument(
+        "--terminal-conversion-min-seconds",
+        type=float,
+        default=210.0,
+        help="Earliest time for the terminal-conversion branch.",
+    )
+    parser.add_argument(
+        "--terminal-conversion-max-seconds",
+        type=float,
+        default=240.0,
+        help="Latest time for the terminal-conversion branch.",
+    )
+    parser.add_argument(
+        "--terminal-conversion-min-pressure",
+        type=float,
+        default=0.0,
+        help="Minimum online hazard/boss/enemy pressure required before terminal branch dispatch.",
+    )
+    parser.add_argument(
+        "--terminal-conversion-min-low-health-risk",
+        type=float,
+        default=0.0,
+        help="Minimum low-health risk required before terminal branch dispatch.",
+    )
+    parser.add_argument(
         "--behavior-clone-model",
         default=None,
         help="Evaluate or compare a train_behavior_clone.py checkpoint instead of an SB3 zip.",
@@ -4085,6 +4367,15 @@ def main():
             "--late-split-seconds",
         )
         late_split_maps = parse_map_list(args.late_split_maps)
+        terminal_conversion_min_seconds = validate_positive_seconds(
+            args.terminal_conversion_min_seconds,
+            "--terminal-conversion-min-seconds",
+        )
+        terminal_conversion_max_seconds = validate_positive_seconds(
+            args.terminal_conversion_max_seconds,
+            "--terminal-conversion-max-seconds",
+        )
+        terminal_conversion_maps = parse_map_list(args.terminal_conversion_maps)
         anchor_include_time_buckets = parse_anchor_time_bucket_list(
             args.anchor_include_time_buckets,
         )
@@ -4123,6 +4414,18 @@ def main():
             args.eval_random_seed,
             deterministic=not args.eval_stochastic,
         )
+        if terminal_conversion_max_seconds <= terminal_conversion_min_seconds:
+            raise ValueError(
+                "--terminal-conversion-max-seconds must be greater than "
+                "--terminal-conversion-min-seconds"
+            )
+        for name in (
+            "terminal_conversion_min_pressure",
+            "terminal_conversion_min_low_health_risk",
+        ):
+            value = getattr(args, name)
+            if not (0.0 <= value <= 1.0):
+                raise ValueError(f"--{name.replace('_', '-')} must be between 0 and 1")
         if args.edge_recovery_distance < 0.0:
             raise ValueError("--edge-recovery-distance must be non-negative")
         if args.late_recovery_min_seconds < 0.0:
@@ -4154,6 +4457,14 @@ def main():
         parser.error("--late-split-model requires --late-split-maps")
     if args.late_split_maps and not args.late_split_model:
         parser.error("--late-split-maps requires --late-split-model")
+    if args.terminal_conversion_model and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--terminal-conversion-model requires --evaluate-model or --compare-rule-bots")
+    if args.terminal_conversion_model and terminal_conversion_maps is None:
+        parser.error("--terminal-conversion-model requires --terminal-conversion-maps")
+    if args.terminal_conversion_maps and not args.terminal_conversion_model:
+        parser.error("--terminal-conversion-maps requires --terminal-conversion-model")
+    if args.terminal_conversion_model and args.late_split_model:
+        parser.error("--terminal-conversion-model cannot be combined with --late-split-model")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
@@ -4235,6 +4546,16 @@ def main():
                 ),
                 late_split_seconds=late_split_seconds,
                 late_split_maps=late_split_maps,
+                terminal_conversion_model_path=(
+                    Path(args.terminal_conversion_model)
+                    if args.terminal_conversion_model
+                    else None
+                ),
+                terminal_conversion_maps=terminal_conversion_maps,
+                terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+                terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+                terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
+                terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
@@ -4293,6 +4614,16 @@ def main():
                     ),
                     late_split_seconds=late_split_seconds,
                     late_split_maps=late_split_maps,
+                    terminal_conversion_model_path=(
+                        Path(args.terminal_conversion_model)
+                        if args.terminal_conversion_model
+                        else None
+                    ),
+                    terminal_conversion_maps=terminal_conversion_maps,
+                    terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+                    terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+                    terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
+                    terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
                     behavior_clone_model=(
                         Path(args.behavior_clone_model)
                         if args.behavior_clone_model
@@ -4347,6 +4678,16 @@ def main():
                 ),
                 late_split_seconds=late_split_seconds,
                 late_split_maps=late_split_maps,
+                terminal_conversion_model_path=(
+                    Path(args.terminal_conversion_model)
+                    if args.terminal_conversion_model
+                    else None
+                ),
+                terminal_conversion_maps=terminal_conversion_maps,
+                terminal_conversion_min_seconds=terminal_conversion_min_seconds,
+                terminal_conversion_max_seconds=terminal_conversion_max_seconds,
+                terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
+                terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model

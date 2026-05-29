@@ -10,6 +10,7 @@ from python.train.train_sb3 import (
     LateRecoveryFilterPolicy,
     MapLateSplitPolicy,
     StagedOpeningPolicy,
+    TerminalConversionBranchPolicy,
     action_pushes_into_edge,
     algorithm_parameters_source_label,
     algorithm_overrides_from_args,
@@ -1121,6 +1122,113 @@ def test_map_late_split_policy_rejects_empty_target_maps():
         )
 
 
+def test_terminal_conversion_branch_switches_on_target_window_and_pressure():
+    base = DummyPolicy(1)
+    terminal = DummyPolicy(6)
+    policy = TerminalConversionBranchPolicy(
+        base,
+        terminal,
+        ["cracked-star-jar"],
+        210.0,
+        240.0,
+        0.25,
+        0.5,
+        "base.zip",
+        "terminal.zip",
+    )
+
+    policy.reset()
+    policy.set_random_seed(888)
+    policy.set_map_id("soda-creek")
+    policy.set_step_context(
+        {
+            "map_id": "soda-creek",
+            "time_seconds": 220.0,
+            "diagnostics": {"enemy_pressure_risk": 0.9},
+        }
+    )
+    non_target_action, _ = policy.predict(None)
+    policy.set_map_id("cracked-star-jar")
+    policy.set_step_context(
+        {
+            "map_id": "cracked-star-jar",
+            "time_seconds": 209.9,
+            "diagnostics": {"enemy_pressure_risk": 0.9},
+        }
+    )
+    early_action, _ = policy.predict(None)
+    policy.set_step_context(
+        {
+            "map_id": "cracked-star-jar",
+            "time_seconds": 220.0,
+            "diagnostics": {"enemy_pressure_risk": 0.1},
+        }
+    )
+    low_pressure_action, _ = policy.predict(None)
+    policy.set_step_context(
+        {
+            "map_id": "cracked-star-jar",
+            "time_seconds": 220.0,
+            "diagnostics": {"enemy_pressure_risk": 0.3},
+        }
+    )
+    terminal_action, _ = policy.predict(None)
+    terminal_scores = policy.action_scores(None)
+    policy.set_step_context(
+        {
+            "map_id": "cracked-star-jar",
+            "time_seconds": 240.1,
+            "diagnostics": {"enemy_pressure_risk": 0.9},
+        }
+    )
+    after_window_action, _ = policy.predict(None)
+
+    assert base.reset_count == 1
+    assert terminal.reset_count == 1
+    assert base.random_seed == 888
+    assert terminal.random_seed == 888
+    assert non_target_action == 1
+    assert early_action == 1
+    assert low_pressure_action == 1
+    assert terminal_action == 6
+    assert terminal_scores["scores"][6] == 1.0
+    assert after_window_action == 1
+    report = policy.policy_adapter_report()
+    assert report["mode"] == "terminal_conversion_branch"
+    assert report["target_maps"] == ["cracked-star-jar"]
+    assert report["min_seconds"] == 210.0
+
+
+def test_terminal_conversion_branch_can_switch_on_low_health_risk():
+    policy = TerminalConversionBranchPolicy(
+        DummyPolicy(1),
+        DummyPolicy(6),
+        ["cracked-star-jar"],
+        210.0,
+        240.0,
+        0.8,
+        0.4,
+        "base.zip",
+        "terminal.zip",
+    )
+
+    policy.set_map_id("cracked-star-jar")
+    policy.set_step_context(
+        {
+            "map_id": "cracked-star-jar",
+            "time_seconds": 220.0,
+            "diagnostics": {
+                "enemy_pressure_risk": 0.1,
+                "low_health_risk": 0.5,
+            },
+        }
+    )
+
+    action, _ = policy.predict(None)
+
+    assert action == 6
+
+
 def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch):
     captured = {}
 
@@ -1230,6 +1338,64 @@ def test_compare_policy_to_rule_bots_forwards_late_split_options(monkeypatch):
     assert captured["late_split_seconds"] == 240.0
     assert captured["late_split_maps"] == ["cracked-star-jar"]
     assert report["policy_adapter"]["mode"] == "map_late_split"
+
+
+def test_compare_policy_to_rule_bots_forwards_terminal_conversion_options(monkeypatch):
+    captured = {}
+
+    def fake_evaluate_policy_model(config, algorithm, **kwargs):
+        captured.update(kwargs)
+        return {
+            "policy_kind": "terminal_conversion_branch",
+            "opening_policy": None,
+            "policy_adapter": {"mode": "terminal_conversion_branch"},
+            "edge_recovery_samples": None,
+            "upgrade_policy": None,
+            "action_selection": "deterministic",
+            "summary": {
+                "episodes": 1,
+                "win_rate": 1.0,
+                "average_kills": 5.0,
+                "dominant_action_ratio": 0.1,
+                "normalized_action_entropy": 1.0,
+            },
+        }
+
+    monkeypatch.setattr(train_sb3, "evaluate_policy_model", fake_evaluate_policy_model)
+    monkeypatch.setattr(
+        train_sb3,
+        "run_rule_bot_matrix",
+        lambda config, bots, seed_start, episodes, seconds, map_id: {
+            "stdout": {"bots": []},
+            "command": ["game_harness", "matrix"],
+            "stderr": "",
+        },
+    )
+
+    report = train_sb3.compare_policy_to_rule_bots(
+        {
+            "phase": "test",
+            "evaluation": {"episodes": 1, "seconds": 5, "seed_start": 10},
+            "environment": {"tick_rate": 30},
+            "models": {"ppo": "unused.zip"},
+            "outputs": {"model_dir": "python/train/models"},
+        },
+        "ppo",
+        terminal_conversion_model_path="terminal.zip",
+        terminal_conversion_maps=["cracked-star-jar"],
+        terminal_conversion_min_seconds=210.0,
+        terminal_conversion_max_seconds=240.0,
+        terminal_conversion_min_pressure=0.25,
+        terminal_conversion_min_low_health_risk=0.4,
+    )
+
+    assert captured["terminal_conversion_model_path"] == "terminal.zip"
+    assert captured["terminal_conversion_maps"] == ["cracked-star-jar"]
+    assert captured["terminal_conversion_min_seconds"] == 210.0
+    assert captured["terminal_conversion_max_seconds"] == 240.0
+    assert captured["terminal_conversion_min_pressure"] == 0.25
+    assert captured["terminal_conversion_min_low_health_risk"] == 0.4
+    assert report["policy_adapter"]["mode"] == "terminal_conversion_branch"
 
 
 def test_evaluation_gate_flags_deterministic_action_collapse():
