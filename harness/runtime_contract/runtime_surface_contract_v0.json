@@ -12,6 +12,7 @@
       "file": "runtime_main",
       "name": "RuntimeCli",
       "required_fields": [
+        "character_id",
         "platform_data_root",
         "runtime_settings_file",
         "local_data_dirs",
@@ -249,7 +250,8 @@
         "Overview",
         "Chapters",
         "Codex",
-        "Settings"
+        "Settings",
+        "Loadout"
       ]
     },
     {
@@ -305,12 +307,20 @@
     "render_meta_chapter_panel",
     "render_meta_codex_panel",
     "render_meta_settings_panel",
+    "render_meta_loadout_panel",
+    "runtime_character_starting_loadout",
+    "runtime_unlocked_character_ids",
+    "runtime_unlocked_map_ids",
+    "next_runtime_selection_id",
+    "select_next_runtime_character",
+    "select_next_runtime_map",
     "privacy_toggle_from_keyboard",
     "toggle_runtime_privacy_setting",
     "runtime_can_upload"
   ],
   "required_cli_flags": [
     "--platform-data-root",
+    "--character-id",
     "--runtime-settings-file",
     "--local-data-dir",
     "--export-local-data",
@@ -340,6 +350,10 @@
       "target": "RuntimeMetaPanelView::Settings"
     },
     {
+      "key": "KeyCode::F5",
+      "target": "RuntimeMetaPanelView::Loadout"
+    },
+    {
       "key": "KeyCode::Digit7",
       "target": "RuntimeUploadKind::Telemetry"
     },
@@ -366,6 +380,14 @@
     {
       "key": "KeyCode::KeyK",
       "target": "RuntimeDataControlAction::DeleteLocalData"
+    },
+    {
+      "key": "KeyCode::KeyC",
+      "target": "select_next_runtime_character"
+    },
+    {
+      "key": "KeyCode::KeyM",
+      "target": "select_next_runtime_map"
     }
   ],
   "required_source_fragments": [
@@ -373,6 +395,11 @@
     "F2 章节",
     "F3 图鉴",
     "F4 设置",
+    "F5 巡逻",
+    "巡逻准备",
+    "C 切换已解锁角色",
+    "M 切换已解锁地图",
+    "切换会重开当前巡逻并保留局外进度",
     "隐私与本地数据",
     "上传匿名遥测",
     "上传原始 Replay",

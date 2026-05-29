@@ -137,6 +137,7 @@ struct RuntimeCli {
     accepted_lock_file: Option<PathBuf>,
     accepted_content_id: Option<String>,
     content_pack_ids: Vec<String>,
+    character_id: String,
     seed: u64,
     map_id: String,
     seconds: f32,
@@ -171,6 +172,7 @@ impl Default for RuntimeCli {
             accepted_lock_file: None,
             accepted_content_id: None,
             content_pack_ids: vec!["base-demo".to_string()],
+            character_id: "jar-keeper".to_string(),
             seed: 12_345,
             map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
@@ -283,6 +285,7 @@ enum RuntimeMetaPanelView {
     Chapters,
     Codex,
     Settings,
+    Loadout,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -790,7 +793,7 @@ fn setup_runtime(
             cli.content_dir.display()
         )
     });
-    let config = run_config_from_cli(&cli);
+    let config = run_config_from_cli(&cli, &content);
     let core = GameCore::reset_with_content(config.clone(), content.clone())
         .expect("runtime content must pass the same GameCore validation as headless runs");
     let latest_snapshot = core.snapshot();
@@ -944,6 +947,43 @@ fn step_game_core(
         state.meta_panel_view = RuntimeMetaPanelView::Settings;
         state.last_event = "privacy settings view".to_string();
         state.last_event_kind = RuntimeEventKind::System;
+    }
+    if keyboard.just_pressed(KeyCode::F5) {
+        state.meta_panel_view = RuntimeMetaPanelView::Loadout;
+        state.last_event = "patrol loadout view".to_string();
+        state.last_event_kind = RuntimeEventKind::System;
+    }
+    if state.meta_panel_view == RuntimeMetaPanelView::Loadout {
+        if keyboard.just_pressed(KeyCode::KeyC) {
+            match select_next_runtime_character(&mut state) {
+                Ok(message) => {
+                    state.last_event = message;
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::System);
+                }
+                Err(error) => {
+                    state.last_event = format!("character selection failed: {error}");
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::Damage);
+                }
+            }
+            return;
+        }
+        if keyboard.just_pressed(KeyCode::KeyM) {
+            match select_next_runtime_map(&mut state) {
+                Ok(message) => {
+                    state.last_event = message;
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::System);
+                }
+                Err(error) => {
+                    state.last_event = format!("map selection failed: {error}");
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::Damage);
+                }
+            }
+            return;
+        }
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Settings {
         if let Some(kind) = privacy_toggle_from_keyboard(&keyboard) {
@@ -1520,7 +1560,7 @@ fn update_hud(
         let mode = if state.paused { "Paused" } else { "Playing" };
         let map_style = map_visual_style(&snapshot.map.map_id);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F4 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -1591,6 +1631,8 @@ fn update_hud(
             state.runtime_settings_file.as_deref(),
             state.story_codex_ui_candidate.as_ref(),
             state.asset_runtime_candidate.as_ref(),
+            &state.content,
+            &state.config,
         );
     }
 }
@@ -1879,6 +1921,37 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.settled_run_number = None;
 }
 
+fn select_next_runtime_character(state: &mut RuntimeState) -> std::io::Result<String> {
+    let candidates = runtime_unlocked_character_ids(&state.meta_progress, &state.content);
+    let next_id =
+        next_runtime_selection_id(&candidates, &state.config.character_id).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "no unlocked Runtime characters available",
+            )
+        })?;
+    state.config.character_id = next_id.clone();
+    state.config.starting_loadout = runtime_character_starting_loadout(&state.content, &next_id);
+    reset_runtime_run(state);
+    let label = runtime_character_label(&state.content, &next_id);
+    Ok(format!("selected character {label} ({next_id})"))
+}
+
+fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> {
+    let candidates = runtime_unlocked_map_ids(&state.meta_progress, &state.content);
+    let next_id =
+        next_runtime_selection_id(&candidates, &state.config.map_id).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "no unlocked Runtime maps available",
+            )
+        })?;
+    state.config.map_id = next_id.clone();
+    reset_runtime_run(state);
+    let label = runtime_map_label(&state.content, &next_id);
+    Ok(format!("selected map {label} ({next_id})"))
+}
+
 fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
     if state.settled_run_number == Some(state.run_number) {
         return;
@@ -1911,6 +1984,8 @@ fn render_meta_progress_panel(
     runtime_settings_file: Option<&Path>,
     story_codex_ui_candidate: Option<&RuntimeStoryCodexUiCandidateManifest>,
     asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
+    content: &ContentPack,
+    config: &RunConfig,
 ) -> String {
     match view {
         RuntimeMetaPanelView::Overview => {
@@ -1923,6 +1998,7 @@ fn render_meta_progress_panel(
         RuntimeMetaPanelView::Settings => {
             render_meta_settings_panel(privacy_settings, runtime_settings_file)
         }
+        RuntimeMetaPanelView::Loadout => render_meta_loadout_panel(progress, content, config),
     }
 }
 
@@ -1937,7 +2013,7 @@ fn render_meta_overview_panel(
     let maps = format_string_set(&progress.unlocks.maps, 3);
 
     let mut output = format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
         progress.resources.candy_crystal_shards,
         progress.resources.star_shards,
         progress.resources.storm_grains,
@@ -1978,7 +2054,7 @@ fn render_meta_chapter_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
 ) -> String {
-    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置".to_string()];
+    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻".to_string()];
     lines.push("章节目标".to_string());
     for chapter in progress.chapters.values().take(4) {
         lines.push(format!(
@@ -2012,7 +2088,7 @@ fn render_meta_codex_panel(
     settlement: Option<&MetaSettlementReport>,
     story_codex_ui_candidate: Option<&RuntimeStoryCodexUiCandidateManifest>,
 ) -> String {
-    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置".to_string()];
+    let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻".to_string()];
     lines.push("图鉴进度".to_string());
     for (label, discovered, total) in meta_codex_category_counts(progress) {
         lines.push(format!("{label}: {discovered}/{total} 已发现"));
@@ -2054,12 +2130,85 @@ fn render_meta_settings_panel(
         .map(|path| format!("写回 {}", path.display()))
         .unwrap_or_else(|| "未配置设置文件，本次会话生效".to_string());
     format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
         on_off_label(settings.telemetry_upload_enabled),
         on_off_label(settings.raw_replay_upload_enabled),
         on_off_label(settings.crash_report_upload_enabled),
         persistence,
     )
+}
+
+fn render_meta_loadout_panel(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    config: &RunConfig,
+) -> String {
+    let character_label = runtime_character_label(content, &config.character_id);
+    let map_label = runtime_map_label(content, &config.map_id);
+    let loadout = if config.starting_loadout.weapons.is_empty()
+        && config.starting_loadout.passives.is_empty()
+    {
+        "使用角色默认初始装备".to_string()
+    } else {
+        format!(
+            "武器 {}  被动 {}",
+            format_string_slice(&config.starting_loadout.weapons, 3),
+            format_string_slice(&config.starting_loadout.passives, 3),
+        )
+    };
+    format!(
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n巡逻准备\n角色 {} ({})\n地图 {} ({})\n{}\nC 切换已解锁角色  M 切换已解锁地图\n切换会重开当前巡逻并保留局外进度\n已解锁角色 {}\n已解锁地图 {}",
+        character_label,
+        config.character_id,
+        map_label,
+        config.map_id,
+        loadout,
+        format_runtime_unlocked_labels(
+            &runtime_unlocked_character_ids(progress, content),
+            |id| runtime_character_label(content, id),
+            4,
+        ),
+        format_runtime_unlocked_labels(
+            &runtime_unlocked_map_ids(progress, content),
+            |id| runtime_map_label(content, id),
+            4,
+        ),
+    )
+}
+
+fn runtime_character_label(content: &ContentPack, character_id: &str) -> String {
+    content
+        .characters
+        .get(character_id)
+        .map(|character| character.name.clone())
+        .unwrap_or_else(|| "未知角色".to_string())
+}
+
+fn runtime_map_label(content: &ContentPack, map_id: &str) -> String {
+    content
+        .maps
+        .get(map_id)
+        .map(|map| map.name.clone())
+        .unwrap_or_else(|| map_visual_style(map_id).display_name.to_string())
+}
+
+fn format_runtime_unlocked_labels(
+    ids: &[String],
+    label_for_id: impl Fn(&str) -> String,
+    limit: usize,
+) -> String {
+    if ids.is_empty() {
+        return "无".to_string();
+    }
+    let mut labels = ids
+        .iter()
+        .take(limit)
+        .map(|id| format!("{}({})", label_for_id(id), id))
+        .collect::<Vec<_>>();
+    if ids.len() > limit {
+        labels.push(format!("还有 {} 项", ids.len() - limit));
+    }
+    labels.join(", ")
 }
 
 fn meta_codex_discovered_count(progress: &MetaProgress) -> usize {
@@ -2308,21 +2457,62 @@ fn make_tone_wav(frequency_hz: f32, seconds: f32, amplitude: f32) -> Vec<u8> {
     bytes
 }
 
-fn run_config_from_cli(cli: &RuntimeCli) -> RunConfig {
+fn run_config_from_cli(cli: &RuntimeCli, content: &ContentPack) -> RunConfig {
     RunConfig {
         seed: cli.seed,
         map_id: cli.map_id.clone(),
-        character_id: "jar-keeper".to_string(),
-        starting_loadout: StartingLoadout {
-            weapons: vec!["rainbow-candy-shot".to_string()],
-            passives: Vec::new(),
-        },
+        character_id: cli.character_id.clone(),
+        starting_loadout: runtime_character_starting_loadout(content, &cli.character_id),
         difficulty: Difficulty::Normal,
         duration_seconds: cli.seconds,
         ruleset_version: "prototype-v0".to_string(),
         content_pack_ids: cli.content_pack_ids.clone(),
         tick_rate: cli.tick_rate,
     }
+}
+
+fn runtime_character_starting_loadout(
+    content: &ContentPack,
+    character_id: &str,
+) -> StartingLoadout {
+    content
+        .characters
+        .get(character_id)
+        .map(|character| StartingLoadout {
+            weapons: character.initial_loadout.weapons.clone(),
+            passives: character.initial_loadout.passives.clone(),
+        })
+        .unwrap_or_default()
+}
+
+fn runtime_unlocked_character_ids(progress: &MetaProgress, content: &ContentPack) -> Vec<String> {
+    content
+        .characters
+        .keys()
+        .filter(|id| progress.unlocks.characters.contains(*id))
+        .cloned()
+        .collect()
+}
+
+fn runtime_unlocked_map_ids(progress: &MetaProgress, content: &ContentPack) -> Vec<String> {
+    content
+        .maps
+        .keys()
+        .filter(|id| progress.unlocks.maps.contains(*id))
+        .cloned()
+        .collect()
+}
+
+fn next_runtime_selection_id(ids: &[String], current_id: &str) -> Option<String> {
+    if ids.is_empty() {
+        return None;
+    }
+    let next_index = ids
+        .iter()
+        .position(|id| id == current_id)
+        .map(|index| (index + 1) % ids.len())
+        .unwrap_or(0);
+    Some(ids[next_index].clone())
 }
 
 fn resolve_runtime_platform_paths(data_root: impl Into<PathBuf>) -> RuntimePlatformPaths {
@@ -2391,6 +2581,11 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--accepted-content-id" => {
                 if let Some(value) = args.next() {
                     cli.accepted_content_id = Some(value);
+                }
+            }
+            "--character-id" => {
+                if let Some(value) = args.next() {
+                    cli.character_id = value;
                 }
             }
             "--seed" => {
@@ -3568,25 +3763,26 @@ mod tests {
         demo_upgrade_choice, effects_for_events, event_kind_for_events, export_runtime_local_data,
         load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
         load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        render_meta_progress_panel, resolve_runtime_content_selection,
+        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
-        runtime_asset_root, runtime_can_upload, runtime_local_data_export_path,
-        runtime_privacy_notice, runtime_save_export_path, runtime_sprite_paths, sounds_for_events,
-        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
-        RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules,
-        RuntimeCaptureState, RuntimeCli, RuntimeDataControlAction, RuntimeDataControlContext,
-        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeFrameMetricsReport,
-        RuntimeFrameMetricsState, RuntimeMetaPanelView, RuntimePrivacyReport,
-        RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
-        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind,
-        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
-        MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
-        PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
+        runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
+        runtime_local_data_export_path, runtime_privacy_notice, runtime_save_export_path,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
+        write_runtime_save_state, RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest,
+        RuntimeAssetCandidateRules, RuntimeCaptureState, RuntimeCli, RuntimeDataControlAction,
+        RuntimeDataControlContext, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
+        RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeMetaPanelView,
+        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0,
+        RuntimeSound, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
+        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID,
+        DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT,
+        PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
         RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use game_core::{
-        BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
+        BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
         MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode, Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
@@ -3596,6 +3792,8 @@ mod tests {
         let cli = parse_runtime_cli([
             "--content-dir".to_string(),
             "content/custom".to_string(),
+            "--character-id".to_string(),
+            "bubble-courier".to_string(),
             "--seed".to_string(),
             "9".to_string(),
             "--map-id".to_string(),
@@ -3611,6 +3809,7 @@ mod tests {
         ]);
 
         assert_eq!(cli.content_dir, PathBuf::from("content/custom"));
+        assert_eq!(cli.character_id, "bubble-courier");
         assert_eq!(cli.seed, 9);
         assert_eq!(cli.map_id, "soda-creek");
         assert_eq!(cli.seconds, 120.0);
@@ -4781,16 +4980,49 @@ mod tests {
     #[test]
     fn builds_runtime_run_config_from_cli() {
         let cli = parse_runtime_cli([
+            "--character-id".to_string(),
+            "bubble-courier".to_string(),
             "--seed".to_string(),
             "77".to_string(),
             "--map-id".to_string(),
             "jelly-platform".to_string(),
         ]);
-        let config = run_config_from_cli(&cli);
+        let content = ContentPack::base_demo();
+        let config = run_config_from_cli(&cli, &content);
 
         assert_eq!(config.seed, 77);
         assert_eq!(config.map_id, "jelly-platform");
-        assert_eq!(config.starting_loadout.weapons, ["rainbow-candy-shot"]);
+        assert_eq!(config.character_id, "bubble-courier");
+        assert_eq!(config.starting_loadout.weapons, ["soda-bubble-pop"]);
+    }
+
+    #[test]
+    fn runtime_selection_helpers_only_cycle_unlocked_content() {
+        let mut progress = MetaProgress::demo_start();
+        progress
+            .unlocks
+            .characters
+            .insert("bubble-courier".to_string());
+        progress.unlocks.maps.insert("soda-creek".to_string());
+        let content = ContentPack::base_demo();
+
+        let characters = runtime_unlocked_character_ids(&progress, &content);
+        let maps = runtime_unlocked_map_ids(&progress, &content);
+
+        assert_eq!(characters, ["bubble-courier", "jar-keeper"]);
+        assert_eq!(
+            next_runtime_selection_id(&characters, "jar-keeper"),
+            Some("bubble-courier".to_string())
+        );
+        assert_eq!(maps, ["frosting-grassland", "soda-creek"]);
+        assert_eq!(
+            next_runtime_selection_id(&maps, "frosting-grassland"),
+            Some("soda-creek".to_string())
+        );
+        assert_eq!(
+            runtime_character_starting_loadout(&content, "bubble-courier").weapons,
+            ["soda-bubble-pop"]
+        );
     }
 
     #[test]
@@ -4928,6 +5160,8 @@ mod tests {
             None,
             None,
             None,
+            &ContentPack::base_demo(),
+            &RunConfig::default(),
         );
 
         assert!(panel.contains("糖罐守护站"));
@@ -4964,6 +5198,8 @@ mod tests {
             None,
             None,
             None,
+            &ContentPack::base_demo(),
+            &RunConfig::default(),
         );
 
         assert!(panel.contains("章节目标"));
@@ -5000,6 +5236,8 @@ mod tests {
             None,
             None,
             None,
+            &ContentPack::base_demo(),
+            &RunConfig::default(),
         );
 
         assert!(panel.contains("图鉴进度"));
@@ -5032,6 +5270,8 @@ mod tests {
             None,
             Some(&candidate),
             None,
+            &ContentPack::base_demo(),
+            &RunConfig::default(),
         );
 
         assert!(panel.contains("剧情/图鉴 UI 候选"));
@@ -5081,6 +5321,8 @@ mod tests {
             None,
             None,
             Some(&candidate),
+            &ContentPack::base_demo(),
+            &RunConfig::default(),
         );
 
         assert!(panel.contains("素材 Runtime 候选"));
@@ -5090,6 +5332,42 @@ mod tests {
         assert!(panel.contains("image:1"));
         assert!(panel.contains("状态 asset_candidate 待预览"));
         assert!(panel.contains("不替换正式 Runtime 素材"));
+    }
+
+    #[test]
+    fn meta_panel_renders_loadout_selection_view() {
+        let mut progress = MetaProgress::demo_start();
+        progress
+            .unlocks
+            .characters
+            .insert("bubble-courier".to_string());
+        progress.unlocks.maps.insert("soda-creek".to_string());
+        let content = ContentPack::base_demo();
+        let config = RunConfig {
+            character_id: "bubble-courier".to_string(),
+            map_id: "soda-creek".to_string(),
+            starting_loadout: runtime_character_starting_loadout(&content, "bubble-courier"),
+            ..RunConfig::default()
+        };
+        let panel = render_meta_progress_panel(
+            &progress,
+            None,
+            RuntimeMetaPanelView::Loadout,
+            &RuntimePrivacySettings::default(),
+            None,
+            None,
+            None,
+            &content,
+            &config,
+        );
+
+        assert!(panel.contains("F5 巡逻"));
+        assert!(panel.contains("巡逻准备"));
+        assert!(panel.contains("泡泡邮差"));
+        assert!(panel.contains("汽水溪谷"));
+        assert!(panel.contains("soda-bubble-pop"));
+        assert!(panel.contains("C 切换已解锁角色"));
+        assert!(panel.contains("M 切换已解锁地图"));
     }
 
     #[test]
@@ -5108,6 +5386,8 @@ mod tests {
             Some(settings_path.as_path()),
             None,
             None,
+            &ContentPack::base_demo(),
+            &RunConfig::default(),
         );
 
         assert!(panel.contains("隐私与本地数据"));

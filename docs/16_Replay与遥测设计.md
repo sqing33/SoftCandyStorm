@@ -353,7 +353,7 @@ python3 harness/runtime_contract/validate_runtime_surface_contract.py \
   --markdown harness/reports/2026-05-26_runtime_surface_contract_001/summary.md
 ```
 
-该契约会检查 `game_runtime` 源码中是否仍保留 `--platform-data-root`、`--runtime-settings-file`、`--export-local-data`、`--delete-local-data`、`--print-privacy-notice`、`--save-file`、`--export-save`、`--delete-save`，以及 F1/F2/F3/F4 局外面板、7/8/9 上传同意切换、`platform_user_data/soft-candy-storm` 逻辑目录和 `not_implemented` 上传传输提示。当前结论为 `runtime_surface_contract_valid`，但它只证明源码形状，不证明键盘行为、渲染 UI、真实平台原生路径、人工平台审查或上传传输行为。
+该契约会检查 `game_runtime` 源码中是否仍保留 `--platform-data-root`、`--character-id`、`--runtime-settings-file`、`--export-local-data`、`--delete-local-data`、`--print-privacy-notice`、`--save-file`、`--export-save`、`--delete-save`，以及 F1/F2/F3/F4/F5 局外面板、C/M 角色 / 地图选择、7/8/9 上传同意切换、`platform_user_data/soft-candy-storm` 逻辑目录和 `not_implemented` 上传传输提示。当前结论为 `runtime_surface_contract_valid`，但它只证明源码形状，不证明键盘行为、渲染 UI、真实平台原生路径、人工平台审查或上传传输行为。
 
 ## 本地存档与数据控制
 
