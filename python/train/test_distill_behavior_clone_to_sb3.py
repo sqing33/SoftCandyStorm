@@ -12,6 +12,7 @@ from python.train.distill_behavior_clone_to_sb3 import (
     load_distillation_dataset,
     mix_with_uniform,
     parse_action_distribution_guard_scope,
+    parse_dataset_action_target_maps,
     parse_recovery_target_maps,
     parse_recovery_target_sources,
     soften_probabilities,
@@ -371,6 +372,68 @@ def test_dataset_action_target_path_overrides_teacher_targets(monkeypatch):
     assert override["overridden_sample_count"] == 1
     assert override["entries"][0]["matched_sample_count"] == 1
     assert override["average_nonzero_actions"] == 1.0
+
+
+def test_dataset_action_target_path_can_be_scoped_to_maps(monkeypatch):
+    class FakeTeacher:
+        def reset(self):
+            pass
+
+        def predict(self, observation, deterministic=True):
+            return 0, None
+
+        def action_scores(self, observation):
+            return {"kind": "probability", "scores": [0.8, 0.1, 0.1]}
+
+    monkeypatch.setattr(
+        distill_module,
+        "load_behavior_clone_policy_with_optional_opening",
+        lambda *args, **kwargs: FakeTeacher(),
+    )
+    dataset = {
+        "action_count": 3,
+        "observations": [
+            np.asarray([0.0, 0.1], dtype=np.float32),
+            np.asarray([0.2, 0.3], dtype=np.float32),
+            np.asarray([0.4, 0.5], dtype=np.float32),
+        ],
+        "actions": [1, 2, 1],
+        "sample_metadata": [
+            {
+                "path": "harness/reports/victory/terminal.jsonl",
+                "map_id": "soda-creek",
+            },
+            {
+                "path": "harness/reports/victory/terminal.jsonl",
+                "map_id": "caramel-workshop",
+            },
+            {
+                "path": "harness/reports/full_anchor/a.jsonl",
+                "map_id": "soda-creek",
+            },
+        ],
+    }
+
+    targets, report = collect_distillation_targets(
+        dataset,
+        Path("fallback.pt"),
+        "teacher_probs",
+        1.0,
+        0.0,
+        np,
+        dataset_action_target_paths=["harness/reports/victory"],
+        dataset_action_target_maps=parse_dataset_action_target_maps("soda-creek"),
+    )
+
+    assert targets[0].tolist() == pytest.approx([0.0, 1.0, 0.0])
+    assert targets[1].tolist() == pytest.approx([0.8, 0.1, 0.1])
+    assert targets[2].tolist() == pytest.approx([0.8, 0.1, 0.1])
+    override = report["dataset_action_target_override"]
+    assert override["maps"] == ["soda-creek"]
+    assert override["overridden_sample_count"] == 1
+    assert override["map_scoped_out_sample_count"] == 1
+    assert override["entries"][0]["matched_sample_count"] == 1
+    assert override["entries"][0]["map_scoped_out_sample_count"] == 1
 
 
 def test_load_distillation_dataset_can_include_anchor_drift_samples(tmp_path):

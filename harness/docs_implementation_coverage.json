@@ -441,7 +441,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、distillation action-distribution guard / scope、online action-distribution delta no-regression gate、terminal-conversion branch 调度入口、terminal branch usage instrumentation 与真实 usage comparison、胜利终局 trajectory sample filter、多图 victory terminal samples、dataset-action-target-path 监督目标覆写、多图 victory path target branch probe、pressure / low-health 条件分派探针、recovery target map/time scope filter、clean risk map/time subset filter、scoped risk distillation、terminal-window scoped distillation 和 terminal-window weight ablation 均已建立；但 terminal-window / victory target distillation 仍未通过 300 秒 high-pressure。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、distillation action-distribution guard / scope、online action-distribution delta no-regression gate、terminal-conversion branch 调度入口、terminal branch usage instrumentation 与真实 usage comparison、dataset-action-target map scope、胜利终局 trajectory sample filter、多图 victory terminal samples、dataset-action-target-path 监督目标覆写、多图 victory path target branch probe、pressure / low-health 条件分派探针、recovery target map/time scope filter、clean risk map/time subset filter、scoped risk distillation、terminal-window scoped distillation 和 terminal-window weight ablation 均已建立；但 terminal-window / victory target distillation 仍未通过 300 秒 high-pressure。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -1447,6 +1447,7 @@
             "harness/reports/2026-05-29_rl_terminal_branch_usage_real_report_001/summary.md",
             "harness/reports/2026-05-29_rl_terminal_branch_usage_real_report_001/comparison_300s.json",
             "harness/failed_cases/fail_20260529_018_terminal_branch_usage_no_conversion.json",
+            "harness/reports/2026-05-29_rl_dataset_action_target_map_scope_001/summary.md",
             "python/train/README.md",
             "python/train/distill_behavior_clone_to_sb3.py",
             "python/train/test_distill_behavior_clone_to_sb3.py",
@@ -1463,6 +1464,7 @@
             "pressure / low-health 条件分派探针没有解除多图 victory terminal branch 的 300 秒失败：三图仍为 0.0/0.0/0.0，相对 parent 新增 cracked-star-jar 300 秒平均生存 -0.4668s blocker，相对 e30 仍有 soda-creek action 1 ratio +0.216 blocker。已记录 fail_20260529_017；下一步不应继续只调分派阈值，应增加 branch usage instrumentation 或重做 per-map terminal objective。",
             "terminal branch usage instrumentation 已把 base / terminal 实际决策次数、terminal_ratio、按地图和按时间桶统计写入 policy_adapter.usage；这只解决诊断可观测性，不改变当前 RL acceptance blocked 结论。",
             "真实 terminal branch usage comparison 确认 usage_scope=multimap_aggregate，44904 次决策中 terminal 分支介入 2996 次，late_180_to_300 桶内 terminal_ratio 为 0.3247；但 300 秒三图胜率仍为 0.0/0.0/0.0。已记录 fail_20260529_018；失败原因已从“分支可能没被调用”收窄为 terminal model 没有形成可用胜利转换动作序列。",
+            "dataset-action-target map scope 已能把同一个多图 victory terminal JSONL 的 hard target 覆写限制到指定地图，为 per-map terminal objective 提供训练入口；但尚未训练新 per-map branch，也没有 300 秒转换收益、no-regression 或 repair-probe gate 证据。",
             "parent late-recovery clean subset 已保留 424/439 条样本并通过 dry-run，但该批样本 map distribution 偏向 cracked-star-jar，late_low_health coverage 为 0；它只证明训练输入可用，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
             "parent late-recovery filter diagnostic 只通过手写 adapter 在 soda-creek 产生 0.3333 局部胜率，caramel-workshop 与 cracked-star-jar 仍为 0.0；439 条 risk_recovery_supervision_sample 已通过结构和风险原因校验，但只能作为 repair training input，不能作为 learned policy、stage 03 或 RL acceptance 证据。",
             "cracked-star-jar 单图训练期 constrained probe 保住了 anchor alignment 与 e30/parent no-regression，但 standalone 300 秒仍 0% 胜率，split-policy 300 秒三图仍全 0；handoff mean KL 0.000541、argmax agreement 1.0，说明单图小步 continuation 没有形成可用 late conversion 分支。",

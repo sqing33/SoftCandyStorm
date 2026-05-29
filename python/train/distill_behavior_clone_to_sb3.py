@@ -119,11 +119,19 @@ def parse_recovery_target_sources(value):
 
 
 def parse_recovery_target_maps(value):
+    return parse_map_filter(value, "--recovery-target-maps")
+
+
+def parse_dataset_action_target_maps(value):
+    return parse_map_filter(value, "--dataset-action-target-maps")
+
+
+def parse_map_filter(value, flag_name):
     if value is None:
         return None
     maps = {item.strip() for item in str(value).split(",") if item.strip()}
     if not maps:
-        raise ValueError("--recovery-target-maps must include at least one map id")
+        raise ValueError(f"{flag_name} must include at least one map id")
     return maps
 
 
@@ -189,19 +197,22 @@ def normalize_dataset_action_target_paths(values):
     return result
 
 
-def dataset_action_target_override_report(paths, uniform_mix):
+def dataset_action_target_override_report(paths, uniform_mix, maps=None):
     normalized_paths = normalize_dataset_action_target_paths(paths)
     return {
         "enabled": bool(normalized_paths),
         "mode": "dataset_actions_by_path" if normalized_paths else "none",
         "paths": [item["path"] for item in normalized_paths],
+        "maps": sorted(maps) if maps is not None else None,
         "uniform_target_mix": uniform_mix,
         "overridden_sample_count": 0,
+        "map_scoped_out_sample_count": 0,
         "average_nonzero_actions": None,
         "entries": [
             {
                 "path": item["path"],
                 "matched_sample_count": 0,
+                "map_scoped_out_sample_count": 0,
             }
             for item in normalized_paths
         ],
@@ -270,6 +281,7 @@ def collect_distillation_targets(
     recovery_soft_target_primary_mass=0.65,
     recovery_soft_target_top_k=3,
     dataset_action_target_paths=None,
+    dataset_action_target_maps=None,
 ):
     action_count = int(dataset["action_count"])
     enabled_recovery_sources = set(recovery_target_sources or RECOVERY_SAMPLE_SOURCES)
@@ -278,6 +290,11 @@ def collect_distillation_targets(
     )
     normalized_dataset_action_paths = normalize_dataset_action_target_paths(
         dataset_action_target_paths
+    )
+    enabled_dataset_action_maps = (
+        set(dataset_action_target_maps)
+        if dataset_action_target_maps is not None
+        else None
     )
     if target_mode == "dataset_actions":
         targets = [
@@ -308,6 +325,7 @@ def collect_distillation_targets(
             "dataset_action_target_override": dataset_action_target_override_report(
                 [],
                 uniform_target_mix,
+                None,
             ),
             "target_entropy_nats": round(
                 sum(target_entropy(target, np_module) for target in targets)
@@ -343,6 +361,7 @@ def collect_distillation_targets(
     dataset_action_override_report = dataset_action_target_override_report(
         dataset_action_target_paths,
         uniform_target_mix,
+        enabled_dataset_action_maps,
     )
     dataset_action_override_entries = {
         item["path"]: item for item in dataset_action_override_report["entries"]
@@ -423,18 +442,30 @@ def collect_distillation_targets(
                 normalized_dataset_action_paths,
             )
             if matched_paths:
-                probabilities = transform_target_probabilities(
-                    one_hot(action, action_count, np_module),
-                    1.0,
-                    uniform_target_mix,
-                    np_module,
-                )
-                dataset_action_override_report["overridden_sample_count"] += 1
-                dataset_action_override_nonzero_action_total += int(
-                    (probabilities > 0.0).sum()
-                )
-                for path in matched_paths:
-                    dataset_action_override_entries[path]["matched_sample_count"] += 1
+                if (
+                    enabled_dataset_action_maps is not None
+                    and str(sample.get("map_id")) not in enabled_dataset_action_maps
+                ):
+                    dataset_action_override_report["map_scoped_out_sample_count"] += 1
+                    for path in matched_paths:
+                        dataset_action_override_entries[path][
+                            "map_scoped_out_sample_count"
+                        ] += 1
+                else:
+                    probabilities = transform_target_probabilities(
+                        one_hot(action, action_count, np_module),
+                        1.0,
+                        uniform_target_mix,
+                        np_module,
+                    )
+                    dataset_action_override_report["overridden_sample_count"] += 1
+                    dataset_action_override_nonzero_action_total += int(
+                        (probabilities > 0.0).sum()
+                    )
+                    for path in matched_paths:
+                        dataset_action_override_entries[path][
+                            "matched_sample_count"
+                        ] += 1
         targets.append(probabilities)
         teacher_argmax = int(predicted_action)
         teacher_argmax_actions.append(teacher_argmax)
@@ -931,6 +962,9 @@ def distill(config, args):
         recovery_soft_target_primary_mass=args.recovery_soft_target_primary_mass,
         recovery_soft_target_top_k=args.recovery_soft_target_top_k,
         dataset_action_target_paths=args.dataset_action_target_paths,
+        dataset_action_target_maps=parse_dataset_action_target_maps(
+            args.dataset_action_target_maps
+        ),
     )
     observations = np.asarray(dataset["observations"], dtype=np.float32)
     if observations.shape[1] != int(config["environment"]["observation_len"]):
@@ -1212,6 +1246,14 @@ def main():
             "the selected target mode."
         ),
     )
+    parser.add_argument(
+        "--dataset-action-target-maps",
+        default=None,
+        help=(
+            "Optional comma-separated map ids where --dataset-action-target-path "
+            "overrides may apply. Other path-matched samples keep the selected target mode."
+        ),
+    )
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--learning-rate", type=float, default=0.0003)
@@ -1290,6 +1332,10 @@ def main():
         parser.error(str(exc))
     try:
         parse_recovery_target_maps(args.recovery_target_maps)
+    except ValueError as exc:
+        parser.error(str(exc))
+    try:
+        parse_dataset_action_target_maps(args.dataset_action_target_maps)
     except ValueError as exc:
         parser.error(str(exc))
     if (
