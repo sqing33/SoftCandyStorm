@@ -1,9 +1,9 @@
 {
   "template_version": 1,
   "candidate_id": "current-local-2026-05-26",
-  "generated_at": "2026-05-27",
+  "generated_at": "2026-05-29",
   "release_stage": "prototype-local",
-  "summary": "当前本地工作区的 Release Candidate 证据清单。本地新生成 Mach-O 二进制启动已恢复，Phase 4 full pack 经过 Bot 策略校准后完成 9 Bot x 20 seed x 600 秒发布探针：Bot matrix 全部通过、Replay 180/180 通过、headless 性能预算 valid；本清单仍用于记录 not-ready 状态，因为内容冻结、人工审查、Runtime 发布级性能和发布包门禁尚未全部通过。",
+  "summary": "当前本地工作区的 Release Candidate 证据清单。本地新生成 Mach-O 二进制启动已恢复，Phase 4 full pack 经过 Bot 策略校准后完成 9 Bot x 20 seed x 600 秒发布探针：Bot matrix 全部通过、Replay 180/180 通过、headless 性能预算 valid；Runtime 本地数据控制 smoke 已验证隐私说明、存档导出 / 显式删除和本地 telemetry/replay/crash 数据导出 / 显式删除。本清单仍用于记录 not-ready 状态，因为内容冻结、人工审查、Runtime 发布级性能和发布包门禁尚未全部通过。",
   "gates": [
     {
       "id": "content_frozen",
@@ -166,7 +166,7 @@
     {
       "id": "telemetry_privacy",
       "status": "waiting",
-      "summary": "遥测隐私策略模板、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和最终接受证据包均已准备，Runtime 已有 CLI 级隐私说明、本地导出、显式目录删除、F4 设置页和上传同意项 JSON 持久化；Runtime 网络上传实现、发布级导出 / 删除按钮、Runtime 平台路径实现、真人隐私审查、真人平台路径审查和真人法律 / 合规审查尚未完成。",
+      "summary": "遥测隐私策略模板、Runtime 隐私设置契约、上传传输契约、平台路径策略、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和最终接受证据包均已准备；Runtime 本地数据控制 smoke 已实际执行 CLI，验证隐私说明默认本地、save-state-v1 存档导出、隐式删除拒绝、显式存档删除、本地 telemetry/replay/crash 数据导出和显式目录删除；Runtime 也已有 F4 设置页和上传同意项 JSON 持久化。Runtime 网络上传实现、发布级导出 / 删除按钮、真实平台原生路径、真人隐私审查、真人平台路径审查和真人法律 / 合规审查尚未完成。",
       "evidence_paths": [
         "harness/reports/2026-05-26_telemetry_privacy_policy_001/summary.md",
         "harness/reports/2026-05-26_runtime_privacy_settings_contract_001/summary.md",
@@ -185,7 +185,11 @@
         "harness/telemetry_privacy/validate_manual_legal_review.py",
         "harness/reports/2026-05-26_manual_legal_review_template_001/summary.md",
         "harness/telemetry_privacy/create_telemetry_privacy_acceptance_review_packet.py",
-        "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/summary.md"
+        "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/summary.md",
+        "tools/run_runtime_local_data_smoke.py",
+        "tools/test_run_runtime_local_data_smoke.py",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/summary.md",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/runtime_local_data_smoke.json"
       ],
       "synthetic": false
     },
