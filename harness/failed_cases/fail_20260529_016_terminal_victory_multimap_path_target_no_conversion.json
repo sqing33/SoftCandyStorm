@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260529_016",
+  "category": "rl",
+  "content_id": "terminal-victory-multimap-path-target-w1-e30",
+  "seed": 63100,
+  "bot": "SB3PPOParentWithMultimapTerminalVictoryBranch",
+  "time_seconds": 300.0,
+  "symptom": "多图胜利终局样本路径覆写后的 terminal-conversion branch 通过 drift/full-anchor alignment 和 parent no-regression，但 300 秒 high-pressure 三图仍为 0% 胜率，并相对 e30 在 soda-creek 300 秒触发 action 1 ratio +0.216 在线动作分布 blocker。",
+  "root_cause": "1437 条 high-pressure 多图胜利终局样本能提供更广的 terminal-window one-hot action target，但 1x 权重和纯时间窗分派仍不足以形成稳定 300 秒转换策略；分支没有按 pressure / low-health risk 或 per-map late failure bucket 区分状态，soda-creek 与 caramel-workshop 长局失败仍未解除。",
+  "fix": "保留多图 victory target 数据集作为 repair input，但不要推进当前 w1 checkpoint；下一步应把 terminal branch 分派条件与 pressure / low-health risk 绑定，或拆 per-map terminal objective，并继续要求 parent 与 e30 多基线 no-regression。",
+  "validation": "distillation action-distribution guard、anchor_drift_alignment 和 full_anchor_alignment 均通过；parent window regression 通过；e30 window regression 因 300s/soda-creek action 1 ratio 增加 0.216 失败；comparison_parent_300s 显示 soda-creek/caramel-workshop/cracked-star-jar 胜率均为 0.0；repair_probe_gate 为 rl_repair_probe_gate_failed。"
+}
