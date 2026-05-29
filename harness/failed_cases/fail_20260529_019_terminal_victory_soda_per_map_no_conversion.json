@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260529_019",
+  "category": "rl",
+  "content_id": "terminal-victory-soda-path-target-w1-e30",
+  "seed": 63100,
+  "bot": "SB3PPOParentWithSodaPerMapTerminalVictoryBranch",
+  "time_seconds": 300.0,
+  "symptom": "只对 soda-creek victory terminal rows 启用 dataset-action hard target 后，离线 action-distribution guard、mid-anchor alignment 和 full-anchor alignment 均通过，但 300 秒 high-pressure 三图胜率仍为 0.0/0.0/0.0；相对 e30，300s/soda-creek 平均存活下降 2.256 秒，repair-probe gate 失败。",
+  "root_cause": "per-map hard target 正确收窄到 899 条 soda victory rows，但 terminal branch 在 300 秒闭环中只介入 167 次，说明 210-240 秒固定窗口与真实失败态覆盖仍不匹配；当前 soda terminal model 没有学习到能在失败前状态中稳定转换胜利的动作序列。",
+  "fix": "不要继续在同一 soda 210-240 秒 victory rows 上单纯调权重；下一步应收集更接近 soda 180-300 秒失败前状态的 conversion target，或把 terminal dispatch 改成由低血量/边界/敌压失败态触发，并继续保留 e30 no-regression 与 repair-probe gate。",
+  "validation": "已生成 distillation_report、anchor_drift_alignment、full_anchor_alignment、60/180/300 秒 comparison、window_regression_vs_e30、failure_analysis_300s 和 repair_probe_gate；window_regression_vs_e30 因 300s/soda-creek average_survival_seconds -2.256s 失败，repair_probe_gate 为 rl_repair_probe_gate_failed。"
+}

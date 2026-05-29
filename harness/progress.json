@@ -2708,6 +2708,11 @@
       "id": "rl_dataset_action_target_map_scope",
       "summary": "distill_behavior_clone_to_sb3.py 新增 --dataset-action-target-maps，可把 --dataset-action-target-path 的 dataset-action hard target 覆写限制到指定地图；同一路径下非目标地图样本保留 teacher/recovery target，并在 dataset_action_target_override.map_scoped_out_sample_count 中计数。单测覆盖多图 JSONL 下只对 soda-creek 应用 hard target，py_compile 通过，test_distill_behavior_clone_to_sb3.py 16 passed。该能力为 per-map terminal objective 训练入口，不是 policy acceptance 证据。",
       "report": "harness/reports/2026-05-29_rl_dataset_action_target_map_scope_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_terminal_victory_soda_path_target_probe",
+      "summary": "使用 --dataset-action-target-maps soda-creek 训练 per-map terminal branch：899 条 soda victory rows 被 hard target 覆写，538 条同路径非 soda rows 被 map-scoped out；offline action-distribution guard、mid-anchor alignment 和 full-anchor alignment 均通过。但三图 300 秒 high-pressure 仍为 0.0/0.0/0.0，terminal 分支整体只介入 167/43518 次决策，且相对 e30 在 300s/soda-creek 平均存活下降 2.256 秒。repair-probe gate 失败并记录 fail_20260529_019；下一步不应继续只调同一 soda victory rows 权重，应收集更接近失败前状态的 conversion target 或改用失败态触发 dispatch。",
+      "report": "harness/reports/2026-05-29_rl_sb3_terminal_victory_soda_path_target_w1_e30_001/summary.md"
     }
   ],
   "next_recommended": [
