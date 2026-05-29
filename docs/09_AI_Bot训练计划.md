@@ -278,6 +278,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 为支持上述 map / phase scoped objective，`distill_behavior_clone_to_sb3.py` 已新增 `--recovery-target-maps`、`--recovery-target-min-seconds` 和 `--recovery-target-max-seconds`，用于把 recovery target override 限定到指定地图和时间窗。首个 scope filter smoke 只在 `cracked-star-jar` 的 `180-300s` `risk_recovery_supervision` rows 上启用 `top_k_scores`：覆写 `210` 条 soft target，按地图保留 `214` 条其他 risk rows，按 source 保留 `2693` 条 edge recovery rows，`fallback_one_hot_count = 0`。该 smoke 只验证训练输入和报告字段，不是 policy gate；下一步仍需基于该作用域运行完整 distillation、anchor alignment、60 / 180 / 300 秒 high-pressure 和 e30 + parent no-regression。
 
+`tools/filter_risk_recovery_samples.py` 也已支持 `--map-id`、`--min-seconds` 和 `--max-seconds`，可从 clean risk recovery rows 中导出真正的 map / phase scoped 子集。首个 cracked late scope 导出从 `424` 条 clean parent risk rows 中保留 `210` 条 `cracked-star-jar` `180-300s` 样本，按地图剔除 `214` 条 `soda-creek` / `caramel-workshop` 样本，并再次通过 `risk_recovery_samples_valid`；后续 scoped distillation 应使用该子集作为加权 repair input，避免非目标地图 risk rows 继续被全局权重放大。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

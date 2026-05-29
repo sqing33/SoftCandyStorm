@@ -86,6 +86,34 @@ class RiskRecoverySampleFilterTests(unittest.TestCase):
         self.assertEqual(report["decision"], "risk_recovery_clean_samples_unavailable")
         self.assertEqual(report["drop_reasons"]["worse_target_risk_score"], 1)
 
+    def test_can_filter_clean_samples_by_map_and_time_window(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "samples.jsonl"
+            out = root / "clean.jsonl"
+            keep = sample_payload(map_id="cracked-star-jar", time_seconds=210.0)
+            wrong_map = sample_payload(map_id="soda-creek", time_seconds=210.0)
+            wrong_time = sample_payload(map_id="cracked-star-jar", time_seconds=310.0)
+            write_jsonl(source, [keep, wrong_map, wrong_time])
+
+            report = build_filter_report(
+                [source],
+                out=out,
+                map_filter={"cracked-star-jar"},
+                min_seconds=180.0,
+                max_seconds=300.0,
+            )
+            rows = [json.loads(line) for line in out.read_text().splitlines()]
+
+        self.assertEqual(report["decision"], "risk_recovery_clean_samples_exported")
+        self.assertEqual(report["kept_sample_count"], 1)
+        self.assertEqual(report["drop_reasons"]["map_filter"], 1)
+        self.assertEqual(report["drop_reasons"]["time_window"], 1)
+        self.assertEqual(report["filter"]["map_filter"], ["cracked-star-jar"])
+        self.assertEqual(report["filter"]["min_seconds"], 180.0)
+        self.assertEqual(report["filter"]["max_seconds"], 300.0)
+        self.assertEqual(rows[0]["map_id"], "cracked-star-jar")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -33,6 +33,15 @@ def normalize_paths(paths: Path | Iterable[Path]) -> list[Path]:
     return [Path(path) for path in paths]
 
 
+def parse_csv_filter(value: str | None) -> set[str] | None:
+    if value is None:
+        return None
+    items = {item.strip() for item in value.split(",") if item.strip()}
+    if not items:
+        raise ValueError("filter must include at least one value")
+    return items
+
+
 def sample_risk_metrics(sample: dict[str, Any]) -> dict[str, Any]:
     decision = sample.get("adapter_decision") if isinstance(sample.get("adapter_decision"), dict) else {}
     diagnostics = sample.get("diagnostics") if isinstance(sample.get("diagnostics"), dict) else {}
@@ -78,6 +87,9 @@ def build_filter_report(
     allow_worse_target_risk: bool = False,
     target_risk_tolerance: float = 1e-6,
     max_target_risk_score: float | None = None,
+    map_filter: set[str] | None = None,
+    min_seconds: float | None = None,
+    max_seconds: float | None = None,
 ) -> dict[str, Any]:
     sample_paths = normalize_paths(paths)
     samples = load_samples(sample_paths)
@@ -86,6 +98,8 @@ def build_filter_report(
     target_risk_count = 0
     worse_target_risk_count = 0
     max_target_risk_count = 0
+    map_filtered_count = 0
+    time_filtered_count = 0
     warning_count = 0
     drop_examples: list[dict[str, Any]] = []
 
@@ -103,6 +117,45 @@ def build_filter_report(
                         "source": sample.get("_source_path"),
                         "line": sample.get("_source_line"),
                         "errors": errors[:3],
+                    }
+                )
+            continue
+
+        if map_filter is not None and str(sample.get("map_id")) not in map_filter:
+            map_filtered_count += 1
+            if len(drop_examples) < 10:
+                drop_examples.append(
+                    {
+                        "reason": "map_filter",
+                        "source": sample.get("_source_path"),
+                        "line": sample.get("_source_line"),
+                        "map_id": sample.get("map_id"),
+                    }
+                )
+            continue
+
+        time_seconds = as_number(sample.get("time_seconds")) or 0.0
+        if min_seconds is not None and time_seconds < min_seconds:
+            time_filtered_count += 1
+            if len(drop_examples) < 10:
+                drop_examples.append(
+                    {
+                        "reason": "time_window",
+                        "source": sample.get("_source_path"),
+                        "line": sample.get("_source_line"),
+                        "time_seconds": time_seconds,
+                    }
+                )
+            continue
+        if max_seconds is not None and time_seconds >= max_seconds:
+            time_filtered_count += 1
+            if len(drop_examples) < 10:
+                drop_examples.append(
+                    {
+                        "reason": "time_window",
+                        "source": sample.get("_source_path"),
+                        "line": sample.get("_source_line"),
+                        "time_seconds": time_seconds,
                     }
                 )
             continue
@@ -176,6 +229,8 @@ def build_filter_report(
             "target_risk_reasons": target_risk_count,
             "worse_target_risk_score": worse_target_risk_count,
             "above_max_target_risk_score": max_target_risk_count,
+            "map_filter": map_filtered_count,
+            "time_window": time_filtered_count,
         },
         "source_warning_count": warning_count,
         "filter": {
@@ -183,6 +238,9 @@ def build_filter_report(
             "allow_worse_target_risk": allow_worse_target_risk,
             "target_risk_tolerance": target_risk_tolerance,
             "max_target_risk_score": max_target_risk_score,
+            "map_filter": sorted(map_filter) if map_filter is not None else None,
+            "min_seconds": min_seconds,
+            "max_seconds": max_seconds,
         },
         "kept_original_action_distribution": summarize_distribution(kept, "original_action"),
         "kept_target_action_distribution": summarize_distribution(kept, "target_action"),
@@ -258,11 +316,42 @@ def main() -> int:
         default=None,
         help="Optional maximum continuous target risk score to keep.",
     )
+    parser.add_argument(
+        "--map-id",
+        default=None,
+        help="Optional comma-separated map ids to keep after clean-risk filtering.",
+    )
+    parser.add_argument(
+        "--min-seconds",
+        type=float,
+        default=None,
+        help="Optional inclusive lower time bound to keep.",
+    )
+    parser.add_argument(
+        "--max-seconds",
+        type=float,
+        default=None,
+        help="Optional exclusive upper time bound to keep.",
+    )
     args = parser.parse_args()
     if args.target_risk_tolerance < 0.0:
         parser.error("--target-risk-tolerance must be non-negative")
     if args.max_target_risk_score is not None and args.max_target_risk_score < 0.0:
         parser.error("--max-target-risk-score must be non-negative")
+    try:
+        map_filter = parse_csv_filter(args.map_id)
+    except ValueError as exc:
+        parser.error(f"--map-id {exc}")
+    if args.min_seconds is not None and args.min_seconds < 0.0:
+        parser.error("--min-seconds must be non-negative")
+    if args.max_seconds is not None and args.max_seconds <= 0.0:
+        parser.error("--max-seconds must be greater than zero")
+    if (
+        args.min_seconds is not None
+        and args.max_seconds is not None
+        and args.max_seconds <= args.min_seconds
+    ):
+        parser.error("--max-seconds must be greater than --min-seconds")
 
     report = build_filter_report(
         args.samples,
@@ -271,6 +360,9 @@ def main() -> int:
         allow_worse_target_risk=args.allow_worse_target_risk,
         target_risk_tolerance=args.target_risk_tolerance,
         max_target_risk_score=args.max_target_risk_score,
+        map_filter=map_filter,
+        min_seconds=args.min_seconds,
+        max_seconds=args.max_seconds,
     )
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)

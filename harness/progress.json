@@ -1176,6 +1176,11 @@
       "id": "rl_sb3_recovery_target_scope_filter_support",
       "summary": "distill_behavior_clone_to_sb3.py 新增 recovery target override 作用域过滤：--recovery-target-maps、--recovery-target-min-seconds 和 --recovery-target-max-seconds 可将 top_k_scores / dataset_actions 覆写限定到指定地图与时间窗，其他 recovery / retention rows 保持 base teacher target。首个 cracked-star-jar 180-300s smoke 覆写 210 条 risk rows，按地图保留 214 条其他 risk rows，按 source 保留 2693 条 edge rows，fallback_one_hot_count 为 0；该 smoke 只是训练输入路径证据，不是 policy gate。",
       "report": "harness/reports/2026-05-29_rl_sb3_recovery_target_scope_filter_smoke_001/summary.md"
+    },
+    {
+      "id": "rl_risk_recovery_map_time_scope_filter",
+      "summary": "tools/filter_risk_recovery_samples.py 新增 --map-id / --min-seconds / --max-seconds，可在 clean risk recovery 样本基础上继续导出 map/time scoped repair subset。首个 cracked-star-jar 180-300s 导出从 424 条 clean parent risk rows 中保留 210 条，按地图剔除 214 条，并通过 risk_recovery_samples_valid；该子集用于后续 scoped distillation，避免非目标地图 risk rows 被全局权重放大。",
+      "report": "harness/reports/2026-05-29_rl_sb3_risk_recovery_cracked_late_scope_samples_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2632,7 +2637,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。后续 e30 guarded、mid-anchor parent、multi-baseline follow-up、per-map split、handoff distribution、cracked 单图 constrained probe 与 parent late-recovery filter 依次确认：shared PPO continuation、单纯移动 split 秒数和单图小步 continuation 都不能形成 300 秒多图转换。source-filtered risk recovery distillation sweep 进一步证明 clean parent late-state risk rows 有局部信号，w10 恢复 cracked-star-jar 300 秒 0.3333 但触发 14 个 e30/parent blockers，w7/w5 虽减少 blockers 但 300 秒三图仍全 0。recovery target override 现已支持按地图 / 时间窗过滤，首个 cracked-star-jar 180-300s smoke 只覆写 210 条目标 risk rows 并保留其他地图 risk rows。下一步应基于该 scope filter 跑完整 scoped distillation，再执行 full-anchor alignment、e30 + parent required no-regression、60/180/300 high-pressure、failure analysis 和 repair gate。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。source-filtered risk recovery distillation sweep 证明 clean parent late-state risk rows 有局部信号但全局权重会转移失败面；recovery target override 现已支持按地图 / 时间窗过滤，clean risk filter 也已导出 cracked-star-jar 180-300s 的 210 条有效子集。下一步应使用该 scoped subset 跑完整 distillation，并继续执行 full-anchor alignment、e30 + parent required no-regression、60/180/300 high-pressure、failure analysis 和 repair gate。"
     },
     {
       "id": "rl_policy_multimap_training",
