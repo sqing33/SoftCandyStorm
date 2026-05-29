@@ -126,6 +126,74 @@ def test_collect_targets_passes_opening_teacher_context(monkeypatch):
     assert report["teacher_argmax_agreement"] == 1.0
 
 
+def test_collect_targets_overrides_recovery_samples_with_top_k_scores(monkeypatch):
+    class FakeTeacher:
+        def reset(self):
+            pass
+
+        def set_map_id(self, map_id):
+            pass
+
+        def set_step_context(self, info):
+            pass
+
+        def predict(self, observation, deterministic=True):
+            return 0, None
+
+        def action_scores(self, observation):
+            return {"kind": "probability", "scores": [0.9, 0.05, 0.05]}
+
+    monkeypatch.setattr(
+        distill_module,
+        "load_behavior_clone_policy_with_optional_opening",
+        lambda *args, **kwargs: FakeTeacher(),
+    )
+    dataset = {
+        "action_count": 3,
+        "observations": [
+            np.asarray([0.0, 0.1], dtype=np.float32),
+            np.asarray([0.2, 0.3], dtype=np.float32),
+        ],
+        "actions": [1, 2],
+        "sample_metadata": [
+            {"path": "episode_a", "seed": 1, "map_id": "soda-creek", "time_seconds": 30.0},
+            {
+                "path": "risk.jsonl",
+                "seed": 2,
+                "map_id": "soda-creek",
+                "time_seconds": 210.0,
+                "sample_source": "risk_recovery_supervision",
+                "action_scores": {
+                    "top_actions": [
+                        {"action": 0, "score": 3.0},
+                        {"action": 1, "score": 1.0},
+                    ]
+                },
+            },
+        ],
+    }
+
+    targets, report = collect_distillation_targets(
+        dataset,
+        Path("fallback.pt"),
+        "teacher_probs",
+        1.0,
+        0.0,
+        np,
+        recovery_target_mode="top_k_scores",
+        recovery_soft_target_primary_mass=0.7,
+        recovery_soft_target_top_k=3,
+    )
+
+    assert targets[0].tolist() == pytest.approx([0.9, 0.05, 0.05])
+    assert targets[1].tolist() == pytest.approx([0.225, 0.075, 0.7])
+    assert report["recovery_target_override"]["mode"] == "top_k_scores"
+    assert report["recovery_target_override"]["overridden_sample_count"] == 1
+    assert report["recovery_target_override"]["soft_sample_count"] == 1
+    assert report["recovery_target_override"]["fallback_one_hot_count"] == 0
+    assert report["recovery_target_override"]["average_nonzero_actions"] == 3.0
+
+
 def test_load_distillation_dataset_can_include_anchor_drift_samples(tmp_path):
     path = tmp_path / "drift.jsonl"
     path.write_text(

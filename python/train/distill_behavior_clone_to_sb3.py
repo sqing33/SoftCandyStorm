@@ -12,6 +12,7 @@ if str(REPO_ROOT) not in sys.path:
 from python.train.train_behavior_clone import (
     load_trajectory_dataset,
     parse_sample_path_weight_spec,
+    recovery_top_k_distribution,
     summarize_dataset,
     normalize_sample_path_weights,
     sample_path_weight_for,
@@ -78,6 +79,54 @@ def target_transform_report(temperature, uniform_mix):
     }
 
 
+RECOVERY_SAMPLE_SOURCES = {
+    "edge_recovery_supervision",
+    "risk_recovery_supervision",
+}
+
+
+def recovery_target_override_report(mode, primary_mass, top_k):
+    return {
+        "mode": mode,
+        "primary_mass": round(float(primary_mass), 6),
+        "top_k": int(top_k),
+        "overridden_sample_count": 0,
+        "soft_sample_count": 0,
+        "fallback_one_hot_count": 0,
+        "average_nonzero_actions": None,
+    }
+
+
+def recovery_target_override_distribution(
+    sample,
+    action,
+    action_count,
+    mode,
+    primary_mass,
+    top_k,
+    np_module,
+):
+    if sample.get("sample_source") not in RECOVERY_SAMPLE_SOURCES:
+        return None, False
+    if mode == "teacher_probs":
+        return None, False
+    if mode == "dataset_actions":
+        return one_hot(action, action_count, np_module), False
+    if mode == "top_k_scores":
+        distribution = recovery_top_k_distribution(
+            sample,
+            action,
+            action_count,
+            primary_mass,
+            top_k,
+            np_module,
+        )
+        if distribution is not None:
+            return distribution, True
+        return one_hot(action, action_count, np_module), False
+    raise ValueError(f"unsupported recovery target mode: {mode}")
+
+
 def collect_distillation_targets(
     dataset,
     teacher_model,
@@ -88,6 +137,9 @@ def collect_distillation_targets(
     opening_algorithm="ppo",
     opening_model=None,
     opening_seconds=60.0,
+    recovery_target_mode="teacher_probs",
+    recovery_soft_target_primary_mass=0.65,
+    recovery_soft_target_top_k=3,
 ):
     action_count = int(dataset["action_count"])
     if target_mode == "dataset_actions":
@@ -107,6 +159,11 @@ def collect_distillation_targets(
             "opening_seconds": None,
             "teacher_argmax_agreement": None,
             "target_transform": target_transform_report(1.0, uniform_target_mix),
+            "recovery_target_override": recovery_target_override_report(
+                "not_applicable_global_dataset_actions",
+                recovery_soft_target_primary_mass,
+                recovery_soft_target_top_k,
+            ),
             "target_entropy_nats": round(
                 sum(target_entropy(target, np_module) for target in targets)
                 / max(1, len(targets)),
@@ -128,6 +185,12 @@ def collect_distillation_targets(
     teacher_argmax_actions = []
     agreement_count = 0
     active_episode = None
+    override_report = recovery_target_override_report(
+        recovery_target_mode,
+        recovery_soft_target_primary_mass,
+        recovery_soft_target_top_k,
+    )
+    override_nonzero_action_total = 0
     for observation, action, sample in zip(
         dataset["observations"],
         dataset["actions"],
@@ -166,11 +229,34 @@ def collect_distillation_targets(
             uniform_target_mix,
             np_module,
         )
+        override_distribution, used_soft_target = recovery_target_override_distribution(
+            sample,
+            action,
+            action_count,
+            recovery_target_mode,
+            recovery_soft_target_primary_mass,
+            recovery_soft_target_top_k,
+            np_module,
+        )
+        if override_distribution is not None:
+            probabilities = override_distribution
+            override_report["overridden_sample_count"] += 1
+            if used_soft_target:
+                override_report["soft_sample_count"] += 1
+            else:
+                override_report["fallback_one_hot_count"] += 1
+            override_nonzero_action_total += int((probabilities > 0.0).sum())
         targets.append(probabilities)
         teacher_argmax = int(predicted_action)
         teacher_argmax_actions.append(teacher_argmax)
         if teacher_argmax == int(action):
             agreement_count += 1
+
+    if override_report["overridden_sample_count"]:
+        override_report["average_nonzero_actions"] = round(
+            override_nonzero_action_total / override_report["overridden_sample_count"],
+            4,
+        )
 
     return np_module.asarray(targets, dtype=np_module.float32), {
         "mode": target_mode,
@@ -185,6 +271,7 @@ def collect_distillation_targets(
             teacher_temperature,
             uniform_target_mix,
         ),
+        "recovery_target_override": override_report,
         "target_entropy_nats": round(
             sum(target_entropy(target, np_module) for target in targets)
             / max(1, len(targets)),
@@ -438,6 +525,9 @@ def distill(config, args):
         opening_algorithm=args.opening_algorithm,
         opening_model=Path(args.opening_model) if args.opening_model else None,
         opening_seconds=args.opening_seconds,
+        recovery_target_mode=args.recovery_target_mode,
+        recovery_soft_target_primary_mass=args.recovery_soft_target_primary_mass,
+        recovery_soft_target_top_k=args.recovery_soft_target_top_k,
     )
     observations = np.asarray(dataset["observations"], dtype=np.float32)
     if observations.shape[1] != int(config["environment"]["observation_len"]):
@@ -629,6 +719,27 @@ def main():
         choices=["teacher_probs", "dataset_actions"],
         default="teacher_probs",
     )
+    parser.add_argument(
+        "--recovery-target-mode",
+        choices=["teacher_probs", "dataset_actions", "top_k_scores"],
+        default="teacher_probs",
+        help=(
+            "Override edge/risk recovery supervision rows while keeping regular "
+            "retention samples on the selected target mode."
+        ),
+    )
+    parser.add_argument(
+        "--recovery-soft-target-primary-mass",
+        type=float,
+        default=0.65,
+        help="Primary target action mass when --recovery-target-mode=top_k_scores.",
+    )
+    parser.add_argument(
+        "--recovery-soft-target-top-k",
+        type=int,
+        default=3,
+        help="Maximum recovery actions kept when --recovery-target-mode=top_k_scores.",
+    )
     parser.add_argument("--limit-samples", type=int, default=None)
     parser.add_argument(
         "--include-anchor-drift-samples",
@@ -683,6 +794,10 @@ def main():
         parser.error("--teacher-temperature must be greater than zero")
     if not (0.0 <= args.uniform_target_mix <= 1.0):
         parser.error("--uniform-target-mix must be between 0 and 1")
+    if not (0.0 < args.recovery_soft_target_primary_mass <= 1.0):
+        parser.error("--recovery-soft-target-primary-mass must be in (0, 1]")
+    if args.recovery_soft_target_top_k < 2:
+        parser.error("--recovery-soft-target-top-k must be at least 2")
     if not (0.0 < args.validation_split < 1.0):
         parser.error("--validation-split must be between 0 and 1")
     if args.env_seconds is not None and args.env_seconds <= 0.0:
