@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260529_013",
+  "category": "rl_training",
+  "content_id": "sb3-cracked-terminal-window-risk-distill-w7-e30",
+  "seed": "63100-63102",
+  "bot": "ppo_cracked_terminal_window_risk_distill_w7_e30",
+  "time_seconds": 300.0,
+  "symptom": "Lowering cracked-star-jar 210-240s terminal-window risk sample weight from 10x to 7x preserved offline anchor alignment but worsened high-pressure retention. The repair gate failed with 6 blockers, including soda-creek 180s and 300s survival regressions, while 300s high-pressure remained 0.0/0.0/0.0.",
+  "root_cause": "The lower terminal-window weight reduced the repair signal without removing the caramel-workshop 60s dominant-action blocker. It also shifted soda-creek behavior back toward earlier deaths, showing that simple scalar weight reduction is not a reliable way to balance terminal conversion against opening/mid retention.",
+  "fix": "Reject the w7 checkpoint. Keep w10 as the better terminal-window diagnostic input, and do not continue a simple descending weight sweep unless paired with an action-distribution guard or a separate terminal-conversion branch.",
+  "validation": "anchor_drift_alignment.json passed with mean KL 0.01972 and argmax agreement 0.98; full_anchor_alignment.json passed with mean KL 0.10967 and argmax agreement 0.8222. comparison_300s.json remained 0.0/0.0/0.0 with soda-creek average survival 93.0391s. window_regression_vs_e30.json and window_regression_vs_parent.json each failed with 3 blockers, and repair_probe_gate.json failed with 6 blockers.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/distillation_report.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/anchor_drift_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/full_anchor_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/comparison_60s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/comparison_180s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/window_regression_vs_parent.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/repair_probe_gate.json"
+  ]
+}

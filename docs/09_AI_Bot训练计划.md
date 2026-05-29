@@ -284,6 +284,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 继续把 scoped subset 收窄到 `cracked-star-jar` `210-240s` 后，训练输入只保留 `121` 条 terminal-window risk rows，主要 risk reasons 为 `toward_enemy_pressure` `56`、`toward_hazard` `56`、`wallward_edge` `22`。该 run 的 drift-row alignment mean KL 为 `0.021656`、argmax agreement `0.975`，full-anchor alignment mean KL 降到 `0.113096`、argmax agreement `0.8204`；60 / 180 秒平均胜率均提升到 `0.7778`，且 e30 / parent required no-regression 各只剩 `60s/caramel-workshop` dominant action ratio 一个 blocker。但 300 秒三图仍为 `0.0/0.0/0.0`，repair gate 仍失败并记录 `2` 个 blockers。已记录 `fail_20260529_012`；该子集是目前较好的 scoped repair input，但不能作为继续加长或 acceptance 依据，下一步应加入 action-distribution guard、降低 scoped weight 或设计显式 terminal-conversion branch。
 
+降低同一 terminal-window subset 的权重到 `7x` 并没有解除 blocker，反而让 `soda-creek` 保留明显回归。`w7` 的 drift-row alignment mean KL 为 `0.01972`、argmax agreement `0.98`，full-anchor mean KL 为 `0.10967`、argmax agreement `0.8222`，离线指标略优于 `w10`；但 180 秒 `soda-creek` 胜率回到 `0.3333`，300 秒 `soda-creek` 平均存活降到 `93.0391s`，repair gate blockers 从 `2` 增至 `6`，且 `60s/caramel-workshop` dominant action ratio 仍超阈值。已记录 `fail_20260529_013`；下一步不要继续做简单降权扫描，应先加 action-distribution guard 或拆出显式 terminal-conversion branch。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
