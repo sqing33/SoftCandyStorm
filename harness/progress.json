@@ -2823,6 +2823,11 @@
       "id": "rl_current_high_pressure_smoke_recheck",
       "summary": "复跑当前 e30 mid-anchor guarded checkpoint 的 deterministic high-pressure 60/180/300 秒三窗口 smoke：seed 63200-63202 下 60 秒为 0.6667/1.0/1.0，180 秒为 0.3333/1.0/0.6667，300 秒三图仍全 0.0；已记录 fail_20260529_020。该证据只刷新当前 RL blocker，不是 RL acceptance、stage 03 或 policy candidate。",
       "report": "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/summary.md"
+    },
+    {
+      "id": "gamecore_determinism_snapshot_contract",
+      "summary": "刷新 GameCore 固定 seed 与 snapshot 语义证据：cargo test 定向通过 same_seed_produces_same_metrics，以及 projectile、hazard、nearest boss snapshot 三个观察面测试；同批重跑 v0 GameCore API source-shape 契约校验和契约校验器单测。该证据不替代 Replay 长局回归、Runtime 人工可读性或 Gym high-pressure 策略通过。",
+      "report": "harness/reports/2026-05-29_gamecore_determinism_snapshot_contract_001/summary.md"
     }
   ],
   "next_recommended": [

@@ -391,6 +391,15 @@ python3 tools/validate_gamecore_api_contract.py \
 
 当前报告结论为 `gamecore_api_contract_valid`。这只证明公开接口形状没有偏离 v0 契约，不能替代编译、固定 seed 语义、Replay 回归、Runtime 集成或 Gym smoke。
 
+当前 GameCore 固定 seed 与 snapshot 语义也有独立 smoke 报告：
+
+```bash
+cargo test -p game_core same_seed_produces_same_metrics -- --nocapture
+cargo test -p game_core snapshot -- --nocapture
+```
+
+报告位于 `harness/reports/2026-05-29_gamecore_determinism_snapshot_contract_001/summary.md`，结论为 `gamecore_determinism_snapshot_contract_valid`：同 seed metrics 复现测试通过，snapshot 相关测试覆盖 active projectiles、active hazards 和多 Boss 时最近 Boss 暴露；同批还重跑了 v0 API 契约校验与单测。该证据证明 GameCore 固定 seed / snapshot 关键语义已有定向自动检查，但仍不替代长局 Replay 回归、Runtime 人工可读性、Gym high-pressure 策略门禁或发布级性能验证。
+
 当前 Gym / Runtime 运行级烟测也有独立报告：
 
 ```bash
@@ -411,4 +420,4 @@ python3 tools/run_runtime_gym_current_smoke.py \
 
 - `RunMetrics` 已把 `damage_taken_by_source`、`boss_damage` 和 `boss_kill_times` 固化进 v0 source-shape 契约；当前已可用 Harness / Replay / Gym smoke 做运行级抽查，但指标语义仍需要长局矩阵和 failure case 继续验证。
 - `PlayerSnapshot` 已把 `status_effects` 固化为稳定字段，并以 `StatusEffectSnapshot` 暴露当前移动减速等效果；Runtime 可读性和 Gym observation 语义仍需要后续验证。
-- 本机二进制启动已恢复，`cargo test`、`game_harness replay-batch`、短局 Gym bridge smoke 与 Runtime demo capture 已能运行；仍需刷新 high-pressure Gym 对比、长局策略评估和人工可读性验证。
+- 本机二进制启动已恢复，`cargo test`、`game_harness replay-batch`、短局 Gym bridge smoke 与 Runtime demo capture 已能运行；当前 high-pressure Gym 对比也已刷新但仍为 policy repair，因此仍需长局策略修复、Replay 语义回归持续复查和人工可读性验证。

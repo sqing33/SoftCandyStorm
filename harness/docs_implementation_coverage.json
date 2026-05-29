@@ -1880,7 +1880,7 @@
       "doc_id": "14",
       "doc_path": "docs/14_GameCore接口规格.md",
       "status": "partial",
-      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，v0 公共接口 source-shape 契约已覆盖 PlayerSnapshot.status_effects、StatusEffectSnapshot、RunMetrics per-source 受击来源和 Boss 指标；当前会话已通过 workspace test、600 秒 base_demo 矩阵和 45/45 Replay 回归，并补齐 jump、orbit_player、ranged_spit、shielded 敌人行为压力。",
+      "summary": "GameCore reset/step/snapshot/events/replay/Gym bridge 已有实现痕迹，v0 公共接口 source-shape 契约已覆盖 PlayerSnapshot.status_effects、StatusEffectSnapshot、RunMetrics per-source 受击来源和 Boss 指标；当前会话已通过 workspace test、600 秒 base_demo 矩阵、45/45 Replay 回归、GameCore 固定 seed metrics 复现单测和 snapshot 语义定向单测，并补齐 jump、orbit_player、ranged_spit、shielded 敌人行为压力。",
       "coverage": [
         {
           "id": "gamecore-runtime-harness-api",
@@ -1907,11 +1907,14 @@
             "tools/run_runtime_gym_current_smoke.py",
             "tools/test_run_runtime_gym_current_smoke.py",
             "harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md",
-            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json"
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json",
+            "harness/reports/2026-05-29_gamecore_determinism_snapshot_contract_001/summary.md",
+            "harness/reports/2026-05-29_gamecore_determinism_snapshot_contract_001/gamecore_api_contract.json",
+            "harness/reports/2026-05-29_gamecore_determinism_snapshot_contract_001/gamecore_api_contract.md"
           ],
           "gaps": [
-            "cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace 已在当前会话通过；Terminal DevTools 重启后 cargo test --workspace 再次 112/112 通过，base_demo 600 秒 all Bot 矩阵可写出 metrics 和 representative replays，20 seed 的 180/180 strict replay-batch 通过；本次 Gym bridge 短局 smoke 记录 observation_len 145、action_count 9，并与 120 秒 Runtime demo capture 一起通过 current smoke。仍需刷新 Gym high-pressure 对比。",
-            "source-shape 契约不能证明固定 seed 语义、Replay 兼容性、Runtime 集成或 Gym bridge 行为。",
+            "cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace 已在当前会话通过；Terminal DevTools 重启后 cargo test --workspace 再次 112/112 通过，base_demo 600 秒 all Bot 矩阵可写出 metrics 和 representative replays，20 seed 的 180/180 strict replay-batch 通过；本次 Gym bridge 短局 smoke 记录 observation_len 145、action_count 9，并与 120 秒 Runtime demo capture 一起通过 current smoke；当前 high-pressure Gym 对比也已刷新，但结论仍为 policy repair。",
+            "source-shape 契约不能单独证明运行语义；当前已补充同 seed metrics 复现、projectile / hazard / nearest boss snapshot 定向单测和 v0 contract 复跑报告，但 Replay 长局兼容、Runtime 人工可读性和 Gym high-pressure 策略通过仍需持续验证。",
             "RunMetrics per-source / Boss 指标与 PlayerSnapshot status_effects 已进入 v0 契约，但真实指标语义、Runtime 可读性和 Gym observation 映射仍需运行级验证。"
           ],
           "blockers": []
