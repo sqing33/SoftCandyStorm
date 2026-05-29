@@ -1186,6 +1186,11 @@
       "id": "rl_sb3_cracked_late_scoped_risk_distill",
       "summary": "使用 cracked-star-jar 180-300s 的 210 条 clean risk recovery scoped subset 进行 30 epoch SB3 distillation，risk rows 10x、mid-anchor drift rows 40x。drift 与 full-anchor alignment 均通过，但 300 秒 high-pressure 仍为 0.0/0.0/0.0；相对 e30 no-regression 有 2 个 blockers，相对 parent 有 6 个 blockers，repair-probe gate 失败并记录 8 个 blockers。已记录 fail_20260529_011，不能作为 policy candidate、stage 03 或 RL acceptance 证据。",
       "report": "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_cracked_terminal_window_risk_distill",
+      "summary": "将 cracked-star-jar clean risk recovery subset 收窄到 210-240s terminal window，保留 121 条样本并通过 risk_recovery_samples_valid；随后以 risk rows 10x、mid-anchor drift rows 40x 跑 30 epoch SB3 distillation。drift/full-anchor alignment 通过，60/180 秒平均胜率提升到 0.7778，required multibaseline gate 只剩 2 个 60s/caramel-workshop dominant-action blockers；但 300 秒 high-pressure 仍为 0.0/0.0/0.0。已记录 fail_20260529_012，不能作为 policy candidate 或 RL acceptance 证据。",
+      "report": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2618,6 +2623,11 @@
       "id": "rl_sb3_cracked_late_scoped_risk_distill_finding",
       "summary": "map/phase scoped risk recovery distillation 比全局 source-filtered w10 明显减少回归：repair gate blockers 从 14 降到 8，且 e30 no-regression 只剩 2 个 blockers；但 shared PPO 仍无法把 cracked-star-jar late survival 信号转成 300 秒胜利，并且相对 parent 仍破坏 soda-creek 60/180 秒保留。下一步不能继续简单提高 scoped risk weight，应拆 terminal-conversion branch 或更窄 late-state subset，并把 parent-preservation 作为硬门禁。",
       "report": "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_cracked_terminal_window_risk_distill_finding",
+      "summary": "cracked-star-jar 210-240s terminal-window risk subset 是比 180-300s 全窗更干净的 repair input：full-anchor mean KL 降到 0.113096，repair gate blockers 从 8 降到 2，e30/parent no-regression 除 caramel 60s dominant-action ratio 外全部通过。但 300 秒三图仍全 0，说明监督式 top-k risk rows 不足以完成 terminal conversion；下一步应处理 action concentration 或引入显式 terminal-conversion branch，而不是继续堆权重。",
+      "report": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2647,7 +2657,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本、full-anchor supervised re-alignment、source-filtered risk recovery sweep、recovery target map/time scope filter 和 clean risk scoped subset 均已完成。首个 cracked-star-jar 180-300s scoped risk distillation 通过 drift/full-anchor alignment，但 300 秒三图仍全 0，且相对 e30/parent required no-regression 仍失败。下一步不要继续提高 scoped risk weight，应尝试更窄 late-state / low-health / boss-pressure subset 或显式 terminal-conversion branch，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter 和 clean risk scoped subsets 均已完成。cracked-star-jar 210-240s terminal-window scoped distill 是当前较好输入：drift/full-anchor alignment 通过，repair gate blockers 降到 2，但 300 秒三图仍全 0。下一步不要继续简单提高 scoped risk weight，应优先处理 60s/caramel dominant-action concentration，尝试 action-distribution guard、降低 scoped weight，或设计显式 terminal-conversion branch，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
     },
     {
       "id": "rl_policy_multimap_training",

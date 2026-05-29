@@ -282,6 +282,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 首个完整 scoped risk distillation 已完成但仍被拒绝。该 run 只把 `cracked-star-jar` `180-300s` 的 `210` 条 clean risk rows 以 `10x` 权重加入，并继续用 `40x` mid-anchor drift rows 保护离线对齐；drift-row alignment mean KL 为 `0.020786`、argmax agreement `0.97`，full-anchor alignment mean KL 为 `0.125045`、argmax agreement `0.8121`，均通过阈值。但 300 秒 high-pressure 仍为 `0.0/0.0/0.0`，`cracked-star-jar` 平均存活虽升到 `224.5857s` 也没有转成胜利；required multibaseline gate 仍失败，vs e30 有 `2` 个 blockers，vs parent 有 `6` 个 blockers，主要集中在 `soda-creek` 60/180 秒保留和 `cracked-star-jar` dominant action ratio。已记录 `fail_20260529_011`；下一步不能继续简单提高 scoped risk weight，应进一步拆出 terminal-conversion branch 或更窄 late-state subset，并把 `soda-creek` opening / mid 与 parent preservation 作为硬门禁。
 
+继续把 scoped subset 收窄到 `cracked-star-jar` `210-240s` 后，训练输入只保留 `121` 条 terminal-window risk rows，主要 risk reasons 为 `toward_enemy_pressure` `56`、`toward_hazard` `56`、`wallward_edge` `22`。该 run 的 drift-row alignment mean KL 为 `0.021656`、argmax agreement `0.975`，full-anchor alignment mean KL 降到 `0.113096`、argmax agreement `0.8204`；60 / 180 秒平均胜率均提升到 `0.7778`，且 e30 / parent required no-regression 各只剩 `60s/caramel-workshop` dominant action ratio 一个 blocker。但 300 秒三图仍为 `0.0/0.0/0.0`，repair gate 仍失败并记录 `2` 个 blockers。已记录 `fail_20260529_012`；该子集是目前较好的 scoped repair input，但不能作为继续加长或 acceptance 依据，下一步应加入 action-distribution guard、降低 scoped weight 或设计显式 terminal-conversion branch。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
