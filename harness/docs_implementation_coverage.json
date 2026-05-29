@@ -441,7 +441,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入和 validation_slices 均已建立；repair-probe gate 已支持 required multibaseline parent-preservation；30 epoch full-anchor + drift supervised re-alignment 已通过离线 anchor alignment，e30 guarded closed-loop probe 产生 cracked-star-jar 300 秒恢复信号但触发 caramel 180 秒动作分布回归，mid-anchor guarded probe 修住该回归并通过 limited-followup gate，但 300 秒三图仍全 0；mid-late follow-up 相对 parent 回归。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入和 validation_slices 均已建立；repair-probe gate 已支持 required multibaseline parent-preservation；30 epoch full-anchor + drift supervised re-alignment 已通过离线 anchor alignment，e30 guarded closed-loop probe 产生 cracked-star-jar 300 秒恢复信号但触发 caramel 180 秒动作分布回归，mid-anchor guarded probe 修住该回归并通过 limited-followup gate，但 300 秒三图仍全 0；mid-late follow-up 与 opening/mid retention + late probe 都相对 parent 或 e30 回归。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -1270,6 +1270,13 @@
             "harness/reports/2026-05-29_rl_sb3_e30_mid_late_balanced_followup_probe_001/repair_probe_gate.json",
             "harness/reports/2026-05-29_rl_sb3_e30_mid_late_balanced_followup_probe_001/repair_probe_gate_required_multibaseline.json",
             "harness/reports/2026-05-29_rl_sb3_e30_mid_late_balanced_followup_probe_001/repair_probe_gate_required_multibaseline.md",
+            "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/summary.md",
+            "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/full_anchor_alignment.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/comparison_300s.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/window_regression_vs_e30.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/window_regression_vs_mid_anchor_parent.json",
+            "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/repair_probe_gate.json",
+            "harness/failed_cases/fail_20260529_004_sb3_e30_opening_mid_retention_late_probe_regression.json",
             "harness/failed_cases/fail_20260529_003_sb3_e30_mid_late_balanced_followup_parent_regression.json"
           ],
           "gaps": [
@@ -1338,7 +1345,8 @@
             "30 epoch full-anchor + top drift rows 40x supervised SB3 re-alignment 已通过 top drift rows 与 full-anchor 离线 alignment，但 fixed-window high-pressure 300 秒三图胜率仍为 0.0，已记录 fail_20260528_093；下一步必须做 long-run conversion repair 和 no-regression gate，不能把离线 anchor alignment 通过误当成 RL acceptance。",
             "e30 late-win-conversion guarded closed-loop probe 通过训练期 anchor guard 和离线 full-anchor alignment，并让 cracked-star-jar 300 秒恢复到 0.3333；但 soda-creek/caramel-workshop 300 秒仍为 0.0，且相对 e30 的 no-regression 因 caramel-workshop 180 秒 dominant action ratio +0.265 失败，已记录 fail_20260529_001；下一步不能直接加长同配置。",
             "e30 mid-anchor guarded closed-loop probe 通过训练期 anchor guard、离线 full-anchor alignment 和相对 e30 的 60/180/300 秒 no-regression，caramel-workshop 180 秒 dominant action ratio delta 降到 +0.0225，repair-probe gate 为 limited follow-up；但 300 秒三图仍全 0 且丢失 cracked-star-jar 300 秒恢复信号，已记录 fail_20260529_002，只能作为下一轮受限探索起点。",
-            "从 mid-anchor parent 提高 late_180_to_300 anchor 权重的 follow-up 虽通过训练期 anchor guard 和相对 e30 no-regression，但相对 parent 触发 soda-creek 180 秒平均存活 -6.857s 与 caramel-workshop 300 秒平均存活 -5.19s 两个 blocker，repair-probe gate 失败，已记录 fail_20260529_003；validate_rl_repair_probe_gate.py 已支持 --required-window-regression e30=... / parent=... 并用该 follow-up 真实产物生成 required multibaseline gate，下一步必须使用 parent-preservation 多基线门禁。"
+            "从 mid-anchor parent 提高 late_180_to_300 anchor 权重的 follow-up 虽通过训练期 anchor guard 和相对 e30 no-regression，但相对 parent 触发 soda-creek 180 秒平均存活 -6.857s 与 caramel-workshop 300 秒平均存活 -5.19s 两个 blocker，repair-probe gate 失败，已记录 fail_20260529_003；validate_rl_repair_probe_gate.py 已支持 --required-window-regression e30=... / parent=... 并用该 follow-up 真实产物生成 required multibaseline gate，下一步必须使用 parent-preservation 多基线门禁。",
+            "opening/mid retention + late conversion 小步 probe 证明降低 late anchor 能恢复 cracked-star-jar 300 秒 0.6667 胜率，但 required multibaseline gate 同时抓到 e30 与 parent 回归：caramel-workshop 180 秒 dominant action ratio、soda-creek 300 秒平均存活、parent cracked-star-jar 60 秒胜率均触发 blocker，已记录 fail_20260529_004；下一步应转向 per-map late conversion 或 split-policy 约束。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

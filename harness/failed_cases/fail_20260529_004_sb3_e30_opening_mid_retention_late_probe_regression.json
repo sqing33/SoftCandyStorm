@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260529_004",
+  "category": "rl_training",
+  "content_id": "sb3-e30-opening-mid-retention-late-probe",
+  "seed": 63100,
+  "bot": "ppo_e30_opening_mid_retention_late_probe",
+  "time_seconds": 300.0,
+  "symptom": "A short 256 actual timestep probe from the e30 mid-anchor guarded parent strengthened opening and mid anchor weights while lowering the late anchor weight. It restored cracked-star-jar 300s win rate to 0.6667, but failed required multibaseline no-regression: against e30 it regressed caramel-workshop 180s dominant action ratio by 0.2638 and soda-creek 300s average survival by 24.3608s; against the parent it also regressed cracked-star-jar 60s win rate by 0.3333.",
+  "root_cause": "Lowering the late anchor weight allowed a final-minute cracked-star-jar conversion signal, but the same continuation shifted the policy distribution enough to damage parent retention and soda long-run survival. Opening and mid anchor weighting alone did not isolate final-minute conversion from early-window and map-specific stability.",
+  "fix": "Do not continue from this checkpoint. Future probes should preserve the required multibaseline gate, avoid trading cracked-star-jar late conversion for soda/caramel regressions, and consider per-map or split-policy late conversion experiments instead of a single shared PPO continuation.",
+  "validation": "train_sb3.py produced ppo_training_report.json with anchor validation guard passed. compare_sb3_to_behavior_clone_anchor.py accepted both drift-row and full-anchor alignment. comparison_300s.json recorded cracked-star-jar policy_win_rate 0.6667 but soda-creek and caramel-workshop remained 0.0. validate_policy_window_regression.py failed against both e30 and the mid-anchor parent, and validate_rl_repair_probe_gate.py returned rl_repair_probe_gate_failed with five blockers.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/anchor_drift_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/full_anchor_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/window_regression_vs_mid_anchor_parent.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/repair_probe_gate.json"
+  ]
+}

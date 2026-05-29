@@ -260,6 +260,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。
 
+用 required multibaseline gate 约束后，从 mid-anchor parent 重新做 opening/mid retention + late conversion 小步 probe：训练期 anchor guard、drift-row alignment 和 full-anchor alignment 均通过，且 `cracked-star-jar` 300 秒胜率恢复到 `0.6667`。但该 checkpoint 相对 e30 与 parent 都回归：`caramel-workshop` 180 秒 dominant action ratio 分别增加 `0.2638` / `0.2413`，`soda-creek` 300 秒平均存活分别下降 `24.3608s` / `27.2947s`，且相对 parent 的 `cracked-star-jar` 60 秒胜率下降 `0.3333`。已记录 `fail_20260529_004`；该结果证明 final-minute conversion 有信号，但必须走 per-map 或 split-policy 约束，不能用单一 shared PPO continuation 换取局部恢复。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
