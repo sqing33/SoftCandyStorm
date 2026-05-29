@@ -1,0 +1,76 @@
+{
+  "report_version": 1,
+  "decision": "rl_repair_probe_gate_failed",
+  "gate_decision": "rl_repair_probe_gate_failed",
+  "training_report": {
+    "path": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/distillation_report.json",
+    "loaded": true,
+    "status": "trained",
+    "gate_decision": "sb3_distillation_smoke_only_not_policy_gate",
+    "model_path": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/ppo_cracked_terminal_window_risk_distill_w10_e30.zip",
+    "reward_profile": null
+  },
+  "anchor_alignment": {
+    "path": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/full_anchor_alignment.json",
+    "loaded": true,
+    "decision": "behavior_clone_anchor_alignment_within_thresholds",
+    "overall": {
+      "sample_count": 36626,
+      "mean_kl": 0.113096,
+      "max_kl": 2.467796,
+      "argmax_agreement": 0.8204,
+      "anchor_entropy_nats": 0.965292,
+      "candidate_entropy_nats": 1.191643
+    },
+    "blocker_count": 0
+  },
+  "window_regression_requirement": "required_labeled_baselines",
+  "required_window_regression_labels": [
+    "e30",
+    "parent"
+  ],
+  "window_regressions": [
+    {
+      "label": "e30",
+      "path": "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/window_regression_vs_e30.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_window_regression_passed",
+      "blocker_count": 0,
+      "error_count": 0
+    },
+    {
+      "label": "parent",
+      "path": "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/window_regression_vs_parent.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_window_regression_failed",
+      "blocker_count": 1,
+      "error_count": 0
+    }
+  ],
+  "failure_analysis": {
+    "path": "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/failure_analysis_300s.json",
+    "loaded": true,
+    "decision": "rl_policy_failure_analysis_recorded",
+    "gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+    "total_failures": 9,
+    "repair_maps": [
+      "soda-creek",
+      "caramel-workshop",
+      "cracked-star-jar"
+    ]
+  },
+  "errors": [],
+  "blockers": [
+    "parent/window_regression_vs_parent: 300s/cracked-star-jar: average_survival_seconds dropped 0.4779s beyond allowed 0.0s"
+  ],
+  "warnings": [
+    "failure_analysis: remaining failures mean this can only be limited repair evidence"
+  ],
+  "limitations": [
+    "This gate is for RL repair probes only; it is not policy acceptance.",
+    "Passing means a limited follow-up run may be considered, not that the policy is a candidate.",
+    "Release, playtest, and RL acceptance require their separate manifests and manual gates."
+  ]
+}

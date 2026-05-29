@@ -294,6 +294,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 `train_sb3.py` 现在提供显式 terminal-conversion branch 评估入口：`--terminal-conversion-model` / `--terminal-conversion-maps` / `--terminal-conversion-min-seconds` / `--terminal-conversion-max-seconds` 可把独立 terminal model 限定到目标地图和终局窗口，`--terminal-conversion-min-pressure` 与 `--terminal-conversion-min-low-health-risk` 可进一步要求 online diagnostics 命中压力或低血量风险后才切换。该 wrapper 是后续 terminal-conversion probe 的调度工具，不是 policy gate；任何真实 checkpoint 仍必须继续跑 full-anchor alignment、三窗 high-pressure、e30 + parent no-regression、online action-distribution delta、failure analysis 和 repair-probe gate。
 
+真实 terminal-conversion branch probe 已完成并记录 `fail_20260529_014`。e30-base 版本只在 `cracked-star-jar 210-240s` 切到 terminal-window w10 model，能通过 e30 no-regression 和 online action-distribution delta，但 300 秒三图仍为 `0.0/0.0/0.0`，且相对 mid-anchor parent 有 `9` 个 preservation blockers。parent-base 版本保住了 60/180 秒 parent 表现，也通过相对 e30 的 no-regression，但 300 秒仍全为 `0.0`，并且 `cracked-star-jar 300s` 平均存活相对 parent 下降 `0.4779s`，repair gate 仍失败。结论是现有 terminal-window w10 model 缺少足够 terminal action separation / win conversion；后续不应继续只调 dispatch 秒数，而应重新训练真正的 terminal-conversion branch，或先导出成功终局状态并构造更明确的 pressure / low-health conversion target。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

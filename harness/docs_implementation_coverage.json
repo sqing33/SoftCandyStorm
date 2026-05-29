@@ -1394,6 +1394,11 @@
             "harness/reports/2026-05-29_rl_policy_online_action_distribution_delta_gate_001/window_regression_action_delta_vs_e30.json",
             "harness/reports/2026-05-29_rl_policy_online_action_distribution_delta_gate_001/window_regression_action_delta_vs_e30.md",
             "harness/reports/2026-05-29_rl_terminal_conversion_branch_support_001/summary.md",
+            "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/summary.md",
+            "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/repair_probe_gate.json",
+            "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/summary.md",
+            "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/repair_probe_gate.json",
+            "harness/failed_cases/fail_20260529_014_terminal_conversion_branch_no_conversion.json",
             "python/train/distill_behavior_clone_to_sb3.py",
             "python/train/test_distill_behavior_clone_to_sb3.py",
             "python/train/train_sb3.py",
@@ -1483,7 +1488,7 @@
             "terminal-window scoped risk weight 从 10x 降到 7x 后，离线 alignment 仍通过但 soda-creek 180/300 秒回归，repair gate blockers 从 2 增至 6，并记录 fail_20260529_013；该结果说明不能继续简单降权，应改用 action-distribution guard 或显式 terminal-conversion branch。",
             "distillation action-distribution guard 已实现并通过单测，可阻止 dominant action ratio 或 argmax entropy 异常的 supervised SB3 checkpoint 继续进入 probe；但 terminal-window w10 复跑显示 all-scope 会误拦 anchor drift repair slice，而 overall,map_time_buckets scope 通过且无法复现在线 60s/caramel dominant-action blocker，因此它不能解除 300 秒 high-pressure 或替代 online fixed-window no-regression。",
             "online action-distribution delta no-regression gate 已能在 fixed-window comparison 中比较单动作 ratio 增幅、动作分布 L1 delta 和 normalized entropy drop；e30 vs terminal-window w10 真实复跑记录 17 个 blockers，确认当前问题是在线分布漂移。",
-            "train_sb3.py 已提供显式 terminal_conversion_branch 调度入口，可按地图、终局时间窗、online pressure 与 low-health risk 切换独立 terminal model；但尚未运行真实 terminal-conversion probe，也没有解除 300 秒 high-pressure blocker。下一步应基于该入口产出 checkpoint / wrapper 复跑，并继续使用 full-anchor alignment、三窗 high-pressure、e30 + parent no-regression、online action-distribution delta、failure analysis 和 repair gate。"
+            "train_sb3.py 已提供显式 terminal_conversion_branch 调度入口，可按地图、终局时间窗、online pressure 与 low-health risk 切换独立 terminal model；真实 e30-base 和 parent-base branch probe 均已完成。e30-base 通过 e30 no-regression 与 online action-distribution delta，但 300 秒三图仍全 0 且相对 parent 有 9 个 blockers；parent-base 保住 60/180 秒 parent 表现，但 300 秒仍全 0，并让 cracked-star-jar 300 秒平均存活相对 parent 下降 0.4779s。已记录 fail_20260529_014；下一步需要重新训练真正的 terminal-conversion branch 或构造更明确的 terminal conversion target。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

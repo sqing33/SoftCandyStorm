@@ -1,0 +1,32 @@
+{
+  "case_id": "fail_20260529_014",
+  "category": "rl_training",
+  "content_id": "terminal-conversion-branch-probe",
+  "seed": "63100-63102",
+  "bot": "terminal_conversion_branch",
+  "time_seconds": 300.0,
+  "symptom": "Explicit terminal-conversion branch dispatch was tested with both e30-base and mid-anchor-parent base models, routing cracked-star-jar 210-240s to the terminal-window w10 model. The e30-base branch passed e30 no-regression and online action-distribution delta but still recorded 0.0/0.0/0.0 win rate at 300s and failed parent preservation with 9 blockers. The parent-base branch preserved 60/180s behavior but still recorded 0.0/0.0/0.0 at 300s and dropped cracked-star-jar 300s average survival by 0.4779s relative to parent.",
+  "root_cause": "The terminal-window w10 model does not provide enough action separation or closed-loop win conversion when used as a narrow 210-240s branch. Restricting dispatch removes global action-distribution drift, but it also leaves the underlying 300s long-run route recovery gap unresolved and slightly hurts the target map under the stronger parent base.",
+  "fix": "Reject both explicit branch probes as policy evidence. Do not continue adjusting only dispatch seconds for the same terminal model. The next repair should train a true terminal-conversion branch or collect successful terminal-state trajectories with pressure/low-health context, then rerun e30 and parent no-regression, online action-distribution delta, 60/180/300s high-pressure, failure analysis, and repair gate.",
+  "validation": "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/window_regression_vs_e30.json passed and window_regression_action_delta_vs_e30.json passed, but comparison_300s.json remained 0.0/0.0/0.0 and repair_probe_gate.json failed with 9 parent blockers. harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/window_regression_vs_e30.json passed, window_regression_vs_parent.json failed with one cracked-star-jar 300s average-survival blocker, comparison_300s.json remained 0.0/0.0/0.0, and repair_probe_gate.json failed.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/summary.md",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/window_regression_vs_parent.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/window_regression_action_delta_vs_e30.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_branch_probe_001/repair_probe_gate.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/summary.md",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/window_regression_vs_parent.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/window_regression_action_delta_vs_parent.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_terminal_conversion_parent_branch_probe_001/repair_probe_gate.json"
+  ]
+}
