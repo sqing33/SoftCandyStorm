@@ -2743,6 +2743,11 @@
       "id": "rl_sb3_terminal_victory_soda_path_target_probe",
       "summary": "使用 --dataset-action-target-maps soda-creek 训练 per-map terminal branch：899 条 soda victory rows 被 hard target 覆写，538 条同路径非 soda rows 被 map-scoped out；offline action-distribution guard、mid-anchor alignment 和 full-anchor alignment 均通过。但三图 300 秒 high-pressure 仍为 0.0/0.0/0.0，terminal 分支整体只介入 167/43518 次决策，且相对 e30 在 300s/soda-creek 平均存活下降 2.256 秒。repair-probe gate 失败并记录 fail_20260529_019；下一步不应继续只调同一 soda victory rows 权重，应收集更接近失败前状态的 conversion target 或改用失败态触发 dispatch。",
       "report": "harness/reports/2026-05-29_rl_sb3_terminal_victory_soda_path_target_w1_e30_001/summary.md"
+    },
+    {
+      "id": "runtime_codex_browsing",
+      "summary": "Runtime F3 图鉴页新增可浏览条目区域：Q/E 切换角色、武器、被动、敌人、Boss、地图、进化和事件分类，B/N 切换条目，V 切换仅已发现 / 全部条目；未发现条目会隐藏名称和说明，已发现条目只读取当前内容包与 MetaProgress，不读取 generated story/codex candidate 正文；F3 分类/过滤和 F1-F5 面板选择写回 save-state-v1 base_ui_state，启动时会恢复最近面板并对未知值回退到 F1 概览。",
+      "report": "harness/reports/2026-05-29_runtime_codex_browsing_001/summary.md"
     }
   ],
   "next_recommended": [

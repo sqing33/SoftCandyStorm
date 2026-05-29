@@ -36,7 +36,7 @@ class RuntimeSurfaceContractValidatorTests(unittest.TestCase):
 
         self.assertEqual(report["decision"], "runtime_surface_contract_valid")
         self.assertEqual(report["errors"], [])
-        self.assertEqual(report["key_binding_count"], 14)
+        self.assertEqual(report["key_binding_count"], 19)
 
     def test_missing_cli_flag_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

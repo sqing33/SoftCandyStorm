@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, F4 data-control shortcuts, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex browsing, F4 data-control shortcuts, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -240,6 +240,20 @@
         "requires_audio_loudness_review",
         "requires_final_human_acceptance"
       ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeCodexEntryView",
+      "required_fields": [
+        "id",
+        "name",
+        "description",
+        "discovered",
+        "first_seen_run",
+        "seen_count",
+        "defeated_count",
+        "used_count"
+      ]
     }
   ],
   "required_enums": [
@@ -272,6 +286,31 @@
         "ExportLocalData",
         "DeleteLocalData"
       ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeCodexAction",
+      "required_variants": [
+        "PreviousCategory",
+        "NextCategory",
+        "PreviousEntry",
+        "NextEntry",
+        "ToggleDiscoveredOnly"
+      ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeCodexCategory",
+      "required_variants": [
+        "Characters",
+        "Weapons",
+        "Passives",
+        "Enemies",
+        "Bosses",
+        "Maps",
+        "Evolutions",
+        "Events"
+      ]
     }
   ],
   "required_functions": [
@@ -292,6 +331,7 @@
     "build_runtime_save_state",
     "write_runtime_save_state_from_v1",
     "write_runtime_save_state",
+    "write_runtime_save_state_with_base_ui",
     "export_runtime_save",
     "delete_runtime_save",
     "runtime_save_export_path",
@@ -302,10 +342,16 @@
     "validate_runtime_story_codex_ui_candidate_manifest",
     "load_runtime_asset_candidate_manifest",
     "validate_runtime_asset_candidate_manifest",
+    "runtime_meta_panel_view_from_key",
+    "select_runtime_meta_panel",
     "render_meta_progress_panel",
     "render_meta_overview_panel",
     "render_meta_chapter_panel",
     "render_meta_codex_panel",
+    "runtime_codex_action_from_keyboard",
+    "apply_runtime_codex_action",
+    "runtime_codex_entries",
+    "runtime_codex_group",
     "render_meta_settings_panel",
     "render_meta_loadout_panel",
     "runtime_character_starting_loadout",
@@ -388,6 +434,26 @@
     {
       "key": "KeyCode::KeyM",
       "target": "select_next_runtime_map"
+    },
+    {
+      "key": "KeyCode::KeyQ",
+      "target": "RuntimeCodexAction::PreviousCategory"
+    },
+    {
+      "key": "KeyCode::KeyE",
+      "target": "RuntimeCodexAction::NextCategory"
+    },
+    {
+      "key": "KeyCode::KeyB",
+      "target": "RuntimeCodexAction::PreviousEntry"
+    },
+    {
+      "key": "KeyCode::KeyN",
+      "target": "RuntimeCodexAction::NextEntry"
+    },
+    {
+      "key": "KeyCode::KeyV",
+      "target": "RuntimeCodexAction::ToggleDiscoveredOnly"
     }
   ],
   "required_source_fragments": [
@@ -396,6 +462,12 @@
     "F3 图鉴",
     "F4 设置",
     "F5 巡逻",
+    "图鉴浏览",
+    "Q/E 切换分类",
+    "B/N 切换条目",
+    "V 切换仅已发现/全部",
+    "未发现条目",
+    "继续巡逻、使用装备、击败敌人或解锁地图后显示说明",
     "巡逻准备",
     "C 切换已解锁角色",
     "M 切换已解锁地图",

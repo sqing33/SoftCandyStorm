@@ -10,6 +10,7 @@ use game_core::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
     sync::Arc,
@@ -241,6 +242,8 @@ struct RuntimeState {
     save_file: Option<PathBuf>,
     local_data_dirs: Vec<PathBuf>,
     meta_panel_view: RuntimeMetaPanelView,
+    base_ui_state: RuntimeBaseUiState,
+    codex_selected_index: usize,
     meta_progress: MetaProgress,
     story_codex_ui_candidate: Option<RuntimeStoryCodexUiCandidateManifest>,
     asset_runtime_candidate: Option<RuntimeAssetCandidateManifest>,
@@ -286,6 +289,16 @@ enum RuntimeMetaPanelView {
     Codex,
     Settings,
     Loadout,
+}
+
+fn runtime_meta_panel_view_from_key(key: &str) -> RuntimeMetaPanelView {
+    match key {
+        "chapters" => RuntimeMetaPanelView::Chapters,
+        "codex" => RuntimeMetaPanelView::Codex,
+        "settings" => RuntimeMetaPanelView::Settings,
+        "loadout" => RuntimeMetaPanelView::Loadout,
+        _ => RuntimeMetaPanelView::Overview,
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -340,6 +353,86 @@ enum RuntimeDataControlAction {
     DeleteSave,
     ExportLocalData,
     DeleteLocalData,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeCodexAction {
+    PreviousCategory,
+    NextCategory,
+    PreviousEntry,
+    NextEntry,
+    ToggleDiscoveredOnly,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeCodexCategory {
+    Characters,
+    Weapons,
+    Passives,
+    Enemies,
+    Bosses,
+    Maps,
+    Evolutions,
+    Events,
+}
+
+impl RuntimeCodexCategory {
+    const ALL: [Self; 8] = [
+        Self::Characters,
+        Self::Weapons,
+        Self::Passives,
+        Self::Enemies,
+        Self::Bosses,
+        Self::Maps,
+        Self::Evolutions,
+        Self::Events,
+    ];
+
+    fn key(self) -> &'static str {
+        match self {
+            Self::Characters => "characters",
+            Self::Weapons => "weapons",
+            Self::Passives => "passives",
+            Self::Enemies => "enemies",
+            Self::Bosses => "bosses",
+            Self::Maps => "maps",
+            Self::Evolutions => "evolutions",
+            Self::Events => "events",
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Characters => "角色",
+            Self::Weapons => "武器",
+            Self::Passives => "被动",
+            Self::Enemies => "敌人",
+            Self::Bosses => "Boss",
+            Self::Maps => "地图",
+            Self::Evolutions => "进化",
+            Self::Events => "事件",
+        }
+    }
+
+    fn from_key(key: &str) -> Self {
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|category| category.key() == key)
+            .unwrap_or(Self::Characters)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RuntimeCodexEntryView {
+    id: String,
+    name: String,
+    description: String,
+    discovered: bool,
+    first_seen_run: Option<String>,
+    seen_count: u32,
+    defeated_count: u32,
+    used_count: u32,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -570,6 +663,8 @@ struct RuntimeMetaPanelRenderContext<'a> {
     asset_runtime_candidate: Option<&'a RuntimeAssetCandidateManifest>,
     content: &'a ContentPack,
     config: &'a RunConfig,
+    base_ui_state: &'a RuntimeBaseUiState,
+    codex_selected_index: usize,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -780,8 +875,8 @@ fn setup_runtime(
                 .unwrap_or_else(|| "defaults".to_string())
         )
     });
-    let meta_progress =
-        load_runtime_meta_progress(&cli, &privacy_settings).unwrap_or_else(|error| {
+    let runtime_save_state =
+        load_runtime_save_state(&cli, &privacy_settings).unwrap_or_else(|error| {
             panic!(
                 "failed to load runtime save from `{}`: {error}",
                 cli.save_file
@@ -790,6 +885,8 @@ fn setup_runtime(
                     .unwrap_or_else(|| "demo defaults".to_string())
             )
         });
+    let meta_progress = runtime_save_state.meta_progress.clone();
+    let base_ui_state = runtime_save_state.base_ui_state.clone();
     let story_codex_ui_candidate = load_runtime_story_codex_ui_candidate_manifest(&cli)
         .unwrap_or_else(|error| {
             panic!("failed to load story/codex UI candidate manifest: {error}")
@@ -904,7 +1001,9 @@ fn setup_runtime(
         runtime_settings_file: cli.runtime_settings_file.clone(),
         save_file: cli.save_file.clone(),
         local_data_dirs: cli.local_data_dirs.clone(),
-        meta_panel_view: RuntimeMetaPanelView::Overview,
+        meta_panel_view: runtime_meta_panel_view_from_key(&base_ui_state.selected_panel),
+        base_ui_state,
+        codex_selected_index: 0,
         meta_progress,
         story_codex_ui_candidate,
         asset_runtime_candidate,
@@ -913,6 +1012,23 @@ fn setup_runtime(
     });
     commands.insert_resource(create_runtime_sounds(&mut audio_sources));
     commands.insert_resource(load_runtime_sprites(&asset_server));
+}
+
+fn select_runtime_meta_panel(
+    state: &mut RuntimeState,
+    view: RuntimeMetaPanelView,
+    panel_key: &'static str,
+    event: &'static str,
+) {
+    state.meta_panel_view = view;
+    state.base_ui_state.selected_panel = panel_key.to_string();
+    state.last_event = event.to_string();
+    state.last_event_kind = RuntimeEventKind::System;
+    if let Err(error) = persist_runtime_save_if_configured(state) {
+        state.last_event = format!("base UI state save failed: {error}");
+        state.last_event_kind = RuntimeEventKind::System;
+        state.pending_sounds.push(RuntimeSound::System);
+    }
 }
 
 fn step_game_core(
@@ -938,29 +1054,54 @@ fn step_game_core(
         return;
     }
     if keyboard.just_pressed(KeyCode::F1) {
-        state.meta_panel_view = RuntimeMetaPanelView::Overview;
-        state.last_event = "guardian station overview".to_string();
-        state.last_event_kind = RuntimeEventKind::System;
+        select_runtime_meta_panel(
+            &mut state,
+            RuntimeMetaPanelView::Overview,
+            "overview",
+            "guardian station overview",
+        );
     }
     if keyboard.just_pressed(KeyCode::F2) {
-        state.meta_panel_view = RuntimeMetaPanelView::Chapters;
-        state.last_event = "chapter goals view".to_string();
-        state.last_event_kind = RuntimeEventKind::System;
+        select_runtime_meta_panel(
+            &mut state,
+            RuntimeMetaPanelView::Chapters,
+            "chapters",
+            "chapter goals view",
+        );
     }
     if keyboard.just_pressed(KeyCode::F3) {
-        state.meta_panel_view = RuntimeMetaPanelView::Codex;
-        state.last_event = "codex progress view".to_string();
-        state.last_event_kind = RuntimeEventKind::System;
+        select_runtime_meta_panel(
+            &mut state,
+            RuntimeMetaPanelView::Codex,
+            "codex",
+            "codex progress view",
+        );
     }
     if keyboard.just_pressed(KeyCode::F4) {
-        state.meta_panel_view = RuntimeMetaPanelView::Settings;
-        state.last_event = "privacy settings view".to_string();
-        state.last_event_kind = RuntimeEventKind::System;
+        select_runtime_meta_panel(
+            &mut state,
+            RuntimeMetaPanelView::Settings,
+            "settings",
+            "privacy settings view",
+        );
     }
     if keyboard.just_pressed(KeyCode::F5) {
-        state.meta_panel_view = RuntimeMetaPanelView::Loadout;
-        state.last_event = "patrol loadout view".to_string();
-        state.last_event_kind = RuntimeEventKind::System;
+        select_runtime_meta_panel(
+            &mut state,
+            RuntimeMetaPanelView::Loadout,
+            "loadout",
+            "patrol loadout view",
+        );
+    }
+    if state.meta_panel_view == RuntimeMetaPanelView::Codex {
+        if let Some(action) = runtime_codex_action_from_keyboard(&keyboard) {
+            apply_runtime_codex_action(&mut state, action);
+            if let Err(error) = persist_runtime_save_if_configured(&state) {
+                state.last_event = format!("codex UI state save failed: {error}");
+                state.last_event_kind = RuntimeEventKind::System;
+                state.pending_sounds.push(RuntimeSound::System);
+            }
+        }
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Loadout {
         if keyboard.just_pressed(KeyCode::KeyC) {
@@ -1643,6 +1784,8 @@ fn update_hud(
                 asset_runtime_candidate: state.asset_runtime_candidate.as_ref(),
                 content: &state.content,
                 config: &state.config,
+                base_ui_state: &state.base_ui_state,
+                codex_selected_index: state.codex_selected_index,
             },
         );
     }
@@ -1943,7 +2086,9 @@ fn select_next_runtime_character(state: &mut RuntimeState) -> std::io::Result<St
         })?;
     state.config.character_id = next_id.clone();
     state.config.starting_loadout = runtime_character_starting_loadout(&state.content, &next_id);
+    state.base_ui_state.last_selected_character_id = next_id.clone();
     reset_runtime_run(state);
+    persist_runtime_save_if_configured(state)?;
     let label = runtime_character_label(&state.content, &next_id);
     Ok(format!("selected character {label} ({next_id})"))
 }
@@ -1958,7 +2103,10 @@ fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> 
             )
         })?;
     state.config.map_id = next_id.clone();
+    state.base_ui_state.last_selected_map_id = next_id.clone();
+    state.base_ui_state.last_selected_chapter_id = next_id.clone();
     reset_runtime_run(state);
+    persist_runtime_save_if_configured(state)?;
     let label = runtime_map_label(&state.content, &next_id);
     Ok(format!("selected map {label} ({next_id})"))
 }
@@ -1998,9 +2146,14 @@ fn render_meta_progress_panel(
             render_meta_overview_panel(progress, settlement, context.asset_runtime_candidate)
         }
         RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(progress, settlement),
-        RuntimeMetaPanelView::Codex => {
-            render_meta_codex_panel(progress, settlement, context.story_codex_ui_candidate)
-        }
+        RuntimeMetaPanelView::Codex => render_meta_codex_panel(
+            progress,
+            settlement,
+            context.story_codex_ui_candidate,
+            context.content,
+            &context.base_ui_state.codex_view,
+            context.codex_selected_index,
+        ),
         RuntimeMetaPanelView::Settings => {
             render_meta_settings_panel(context.privacy_settings, context.runtime_settings_file)
         }
@@ -2095,11 +2248,62 @@ fn render_meta_codex_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
     story_codex_ui_candidate: Option<&RuntimeStoryCodexUiCandidateManifest>,
+    content: &ContentPack,
+    codex_view: &RuntimeBaseCodexViewState,
+    selected_index: usize,
 ) -> String {
     let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻".to_string()];
     lines.push("图鉴进度".to_string());
     for (label, discovered, total) in meta_codex_category_counts(progress) {
         lines.push(format!("{label}: {discovered}/{total} 已发现"));
+    }
+    let category = RuntimeCodexCategory::from_key(&codex_view.selected_category);
+    let entries = runtime_codex_entries(progress, content, category, codex_view.discovered_only);
+    let selected_entry = entries.get(selected_index.min(entries.len().saturating_sub(1)));
+    let display_mode = if codex_view.discovered_only {
+        "仅已发现"
+    } else {
+        "全部条目"
+    };
+    lines.push(format!(
+        "\n图鉴浏览 {}  分类 {}  条目 {}/{}",
+        display_mode,
+        category.label(),
+        if entries.is_empty() {
+            0
+        } else {
+            selected_index.min(entries.len() - 1) + 1
+        },
+        entries.len()
+    ));
+    lines.push("Q/E 切换分类  B/N 切换条目  V 切换仅已发现/全部".to_string());
+    if let Some(entry) = selected_entry {
+        let status = if entry.discovered {
+            "已发现"
+        } else {
+            "未发现"
+        };
+        let title = if entry.discovered {
+            entry.name.clone()
+        } else {
+            "未发现条目".to_string()
+        };
+        let detail = if entry.discovered {
+            entry.description.clone()
+        } else {
+            "继续巡逻、使用装备、击败敌人或解锁地图后显示说明。".to_string()
+        };
+        lines.push(format!("{} ({})  {}", title, entry.id, status));
+        lines.push(detail);
+        lines.push(format!(
+            "首次 {}  见过 {}  击败 {}  使用 {}",
+            entry.first_seen_run.as_deref().unwrap_or("尚未记录"),
+            entry.seen_count,
+            entry.defeated_count,
+            entry.used_count,
+        ));
+    } else {
+        lines.push("当前过滤条件下没有图鉴条目；按 V 查看全部条目。".to_string());
     }
     let highlights = meta_codex_recent_discoveries(progress, 5);
     lines.push(format!("\n已发现 {}", format_string_slice(&highlights, 5)));
@@ -2128,6 +2332,91 @@ fn render_meta_codex_panel(
         lines.push("\n剧情/图鉴 UI 候选: 未加载".to_string());
     }
     lines.join("\n")
+}
+
+fn runtime_codex_action_from_keyboard(
+    keyboard: &ButtonInput<KeyCode>,
+) -> Option<RuntimeCodexAction> {
+    if keyboard.just_pressed(KeyCode::KeyQ) {
+        Some(RuntimeCodexAction::PreviousCategory)
+    } else if keyboard.just_pressed(KeyCode::KeyE) {
+        Some(RuntimeCodexAction::NextCategory)
+    } else if keyboard.just_pressed(KeyCode::KeyB) {
+        Some(RuntimeCodexAction::PreviousEntry)
+    } else if keyboard.just_pressed(KeyCode::KeyN) {
+        Some(RuntimeCodexAction::NextEntry)
+    } else if keyboard.just_pressed(KeyCode::KeyV) {
+        Some(RuntimeCodexAction::ToggleDiscoveredOnly)
+    } else {
+        None
+    }
+}
+
+fn apply_runtime_codex_action(state: &mut RuntimeState, action: RuntimeCodexAction) {
+    let current_category =
+        RuntimeCodexCategory::from_key(&state.base_ui_state.codex_view.selected_category);
+    match action {
+        RuntimeCodexAction::PreviousCategory | RuntimeCodexAction::NextCategory => {
+            let current_index = RuntimeCodexCategory::ALL
+                .iter()
+                .position(|category| *category == current_category)
+                .unwrap_or(0);
+            let next_index = match action {
+                RuntimeCodexAction::PreviousCategory => {
+                    if current_index == 0 {
+                        RuntimeCodexCategory::ALL.len() - 1
+                    } else {
+                        current_index - 1
+                    }
+                }
+                RuntimeCodexAction::NextCategory => {
+                    (current_index + 1) % RuntimeCodexCategory::ALL.len()
+                }
+                _ => unreachable!(),
+            };
+            let next_category = RuntimeCodexCategory::ALL[next_index];
+            state.base_ui_state.codex_view.selected_category = next_category.key().to_string();
+            state.codex_selected_index = 0;
+            state.last_event = format!("codex category {}", next_category.label());
+        }
+        RuntimeCodexAction::PreviousEntry | RuntimeCodexAction::NextEntry => {
+            let entry_count = runtime_codex_entries(
+                &state.meta_progress,
+                &state.content,
+                current_category,
+                state.base_ui_state.codex_view.discovered_only,
+            )
+            .len();
+            if entry_count > 0 {
+                state.codex_selected_index = match action {
+                    RuntimeCodexAction::PreviousEntry => {
+                        if state.codex_selected_index == 0 {
+                            entry_count - 1
+                        } else {
+                            state.codex_selected_index - 1
+                        }
+                    }
+                    RuntimeCodexAction::NextEntry => (state.codex_selected_index + 1) % entry_count,
+                    _ => unreachable!(),
+                };
+            } else {
+                state.codex_selected_index = 0;
+            }
+            state.last_event = format!("codex entry {}", state.codex_selected_index + 1);
+        }
+        RuntimeCodexAction::ToggleDiscoveredOnly => {
+            state.base_ui_state.codex_view.discovered_only =
+                !state.base_ui_state.codex_view.discovered_only;
+            state.codex_selected_index = 0;
+            state.last_event = if state.base_ui_state.codex_view.discovered_only {
+                "codex filter discovered only".to_string()
+            } else {
+                "codex filter all entries".to_string()
+            };
+        }
+    }
+    state.last_event_kind = RuntimeEventKind::System;
+    state.pending_sounds.push(RuntimeSound::System);
 }
 
 fn render_meta_settings_panel(
@@ -2305,6 +2594,109 @@ fn meta_codex_recent_discoveries(progress: &MetaProgress, limit: usize) -> Vec<S
         }
     }
     items.into_iter().take(limit).collect()
+}
+
+fn runtime_codex_entries(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    category: RuntimeCodexCategory,
+    discovered_only: bool,
+) -> Vec<RuntimeCodexEntryView> {
+    let mut definitions = BTreeMap::<String, (String, String)>::new();
+    match category {
+        RuntimeCodexCategory::Characters => {
+            for (id, item) in &content.characters {
+                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+            }
+        }
+        RuntimeCodexCategory::Weapons => {
+            for (id, item) in &content.weapons {
+                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+            }
+        }
+        RuntimeCodexCategory::Passives => {
+            for (id, item) in &content.passives {
+                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+            }
+        }
+        RuntimeCodexCategory::Enemies => {
+            for (id, item) in &content.enemies {
+                definitions.insert(
+                    id.clone(),
+                    (item.common.name.clone(), item.common.description.clone()),
+                );
+            }
+        }
+        RuntimeCodexCategory::Bosses => {
+            for (id, item) in &content.bosses {
+                definitions.insert(
+                    id.clone(),
+                    (item.common.name.clone(), item.common.description.clone()),
+                );
+            }
+        }
+        RuntimeCodexCategory::Maps => {
+            for (id, item) in &content.maps {
+                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+            }
+        }
+        RuntimeCodexCategory::Evolutions => {
+            for (id, item) in &content.evolutions {
+                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+            }
+        }
+        RuntimeCodexCategory::Events => {
+            for (id, item) in &content.events {
+                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+            }
+        }
+    }
+
+    let codex_group = runtime_codex_group(progress, category);
+    for id in codex_group.keys() {
+        definitions
+            .entry(id.clone())
+            .or_insert_with(|| (id.clone(), "当前内容包没有这个图鉴条目的说明。".to_string()));
+    }
+
+    definitions
+        .into_iter()
+        .filter_map(|(id, (name, description))| {
+            let codex_entry = codex_group.get(&id);
+            let discovered = codex_entry.is_some_and(|entry| entry.discovered);
+            if discovered_only && !discovered {
+                return None;
+            }
+            let default_entry = MetaCodexEntry::default();
+            let entry = codex_entry.unwrap_or(&default_entry);
+            Some(RuntimeCodexEntryView {
+                id,
+                name,
+                description,
+                discovered,
+                first_seen_run: entry.first_seen_run.clone(),
+                seen_count: entry.seen_count,
+                defeated_count: entry.defeated_count,
+                used_count: entry.used_count,
+            })
+        })
+        .collect()
+}
+
+fn runtime_codex_group(
+    progress: &MetaProgress,
+    category: RuntimeCodexCategory,
+) -> &BTreeMap<String, MetaCodexEntry> {
+    match category {
+        RuntimeCodexCategory::Characters => &progress.codex.characters,
+        RuntimeCodexCategory::Weapons => &progress.codex.weapons,
+        RuntimeCodexCategory::Passives => &progress.codex.passives,
+        RuntimeCodexCategory::Enemies => &progress.codex.enemies,
+        RuntimeCodexCategory::Bosses => &progress.codex.bosses,
+        RuntimeCodexCategory::Maps => &progress.codex.maps,
+        RuntimeCodexCategory::Evolutions => &progress.codex.evolutions,
+        RuntimeCodexCategory::Events => &progress.codex.events,
+    }
 }
 
 fn meta_completed_goal_count(progress: &MetaProgress) -> usize {
@@ -2793,6 +3185,7 @@ fn persist_runtime_privacy_settings_if_configured(state: &RuntimeState) -> std::
     )
 }
 
+#[allow(dead_code)]
 fn load_runtime_meta_progress(
     cli: &RuntimeCli,
     privacy_settings: &RuntimePrivacySettings,
@@ -3116,6 +3509,16 @@ fn write_runtime_save_state(
     privacy_settings: &RuntimePrivacySettings,
     progress: &MetaProgress,
 ) -> std::io::Result<()> {
+    write_runtime_save_state_with_base_ui(path, cli, privacy_settings, progress, None)
+}
+
+fn write_runtime_save_state_with_base_ui(
+    path: &Path,
+    cli: &RuntimeCli,
+    privacy_settings: &RuntimePrivacySettings,
+    progress: &MetaProgress,
+    base_ui_state: Option<&RuntimeBaseUiState>,
+) -> std::io::Result<()> {
     let mut save = build_runtime_save_state(cli, privacy_settings, progress);
     if path.exists() {
         let existing = read_runtime_save_state(path)?;
@@ -3129,6 +3532,9 @@ fn write_runtime_save_state(
         save.migration_history = existing.state.migration_history;
         save.base_ui_state = existing.state.base_ui_state;
     }
+    if let Some(base_ui_state) = base_ui_state {
+        save.base_ui_state = base_ui_state.clone();
+    }
     write_runtime_save_state_from_v1(path, &save)
 }
 
@@ -3140,7 +3546,13 @@ fn persist_runtime_save_if_configured(state: &RuntimeState) -> std::io::Result<(
         content_pack_ids: state.content_pack_ids.clone(),
         ..RuntimeCli::default()
     };
-    write_runtime_save_state(path, &cli, &state.privacy_settings, &state.meta_progress)
+    write_runtime_save_state_with_base_ui(
+        path,
+        &cli,
+        &state.privacy_settings,
+        &state.meta_progress,
+        Some(&state.base_ui_state),
+    )
 }
 
 fn export_runtime_save(
@@ -3775,11 +4187,13 @@ mod tests {
         player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
         runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
-        runtime_local_data_export_path, runtime_privacy_notice, runtime_save_export_path,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
-        write_runtime_save_state, RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest,
-        RuntimeAssetCandidateRules, RuntimeCaptureState, RuntimeCli, RuntimeDataControlAction,
+        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
+        runtime_save_export_path, runtime_sprite_paths, runtime_unlocked_character_ids,
+        runtime_unlocked_map_ids, sounds_for_events, toggle_runtime_privacy_setting,
+        write_runtime_privacy_settings, write_runtime_save_state,
+        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
+        RuntimeCaptureState, RuntimeCli, RuntimeCodexCategory, RuntimeDataControlAction,
         RuntimeDataControlContext, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
         RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeMetaPanelRenderContext,
         RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
@@ -3796,6 +4210,7 @@ mod tests {
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
 
+    #[allow(clippy::too_many_arguments)]
     fn meta_panel_context<'a>(
         privacy_settings: &'a RuntimePrivacySettings,
         runtime_settings_file: Option<&'a std::path::Path>,
@@ -3803,6 +4218,8 @@ mod tests {
         asset_runtime_candidate: Option<&'a RuntimeAssetCandidateManifest>,
         content: &'a ContentPack,
         config: &'a RunConfig,
+        base_ui_state: &'a RuntimeBaseUiState,
+        codex_selected_index: usize,
     ) -> RuntimeMetaPanelRenderContext<'a> {
         RuntimeMetaPanelRenderContext {
             privacy_settings,
@@ -3811,6 +4228,8 @@ mod tests {
             asset_runtime_candidate,
             content,
             config,
+            base_ui_state,
+            codex_selected_index,
         }
     }
 
@@ -3844,6 +4263,22 @@ mod tests {
         assert!(cli.demo_input);
         assert_eq!(cli.simulation_speed, 4.0);
         assert!(cli.auto_exit_after_report);
+    }
+
+    #[test]
+    fn runtime_meta_panel_view_restores_from_base_ui_key() {
+        assert_eq!(
+            runtime_meta_panel_view_from_key("codex"),
+            RuntimeMetaPanelView::Codex
+        );
+        assert_eq!(
+            runtime_meta_panel_view_from_key("loadout"),
+            RuntimeMetaPanelView::Loadout
+        );
+        assert_eq!(
+            runtime_meta_panel_view_from_key("unknown"),
+            RuntimeMetaPanelView::Overview
+        );
     }
 
     #[test]
@@ -4738,6 +5173,44 @@ mod tests {
     }
 
     #[test]
+    fn runtime_save_can_persist_base_codex_ui_state() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-base-ui-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        let mut base_ui_state = RuntimeBaseUiState {
+            selected_panel: "codex".to_string(),
+            ..RuntimeBaseUiState::default()
+        };
+        base_ui_state.codex_view.selected_category = "enemies".to_string();
+        base_ui_state.codex_view.discovered_only = false;
+
+        write_runtime_save_state_with_base_ui(
+            &save_file,
+            &RuntimeCli::default(),
+            &RuntimePrivacySettings::default(),
+            &MetaProgress::demo_start(),
+            Some(&base_ui_state),
+        )
+        .unwrap();
+        let save_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&save_file).unwrap()).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(save_json["base_ui_state"]["selected_panel"], "codex");
+        assert_eq!(
+            save_json["base_ui_state"]["codex_view"]["selected_category"],
+            "enemies"
+        );
+        assert_eq!(
+            save_json["base_ui_state"]["codex_view"]["discovered_only"],
+            false
+        );
+    }
+
+    #[test]
     fn runtime_save_migrates_v0_to_v1_and_keeps_progress() {
         let root = std::env::temp_dir().join(format!(
             "soft-candy-runtime-save-migrate-test-{}",
@@ -5190,6 +5663,8 @@ mod tests {
                 None,
                 &ContentPack::base_demo(),
                 &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
             ),
         );
 
@@ -5230,6 +5705,8 @@ mod tests {
                 None,
                 &ContentPack::base_demo(),
                 &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
             ),
         );
 
@@ -5270,6 +5747,8 @@ mod tests {
                 None,
                 &ContentPack::base_demo(),
                 &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
             ),
         );
 
@@ -5277,6 +5756,86 @@ mod tests {
         assert!(panel.contains("角色: 1/1 已发现"));
         assert!(panel.contains("character:jar-keeper"));
         assert!(panel.contains("本局更新"));
+    }
+
+    #[test]
+    fn meta_panel_renders_browseable_codex_entry_details() {
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 120.0,
+            victory: false,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 3,
+            level: 2,
+            xp_collected: 12.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
+            passives_used: Default::default(),
+            enemies_defeated: BTreeMap::from([("bouncy-gummy".to_string(), 3)]),
+            bosses_defeated: Default::default(),
+        };
+        progress.apply_run_summary(&summary);
+        let mut base_ui_state = RuntimeBaseUiState::default();
+        base_ui_state.codex_view.selected_category =
+            RuntimeCodexCategory::Enemies.key().to_string();
+        base_ui_state.codex_view.discovered_only = true;
+
+        let panel = render_meta_progress_panel(
+            &progress,
+            None,
+            RuntimeMetaPanelView::Codex,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &base_ui_state,
+                0,
+            ),
+        );
+
+        assert!(panel.contains("图鉴浏览 仅已发现"));
+        assert!(panel.contains("分类 敌人"));
+        assert!(panel.contains("Q/E 切换分类"));
+        assert!(panel.contains("B/N 切换条目"));
+        assert!(panel.contains("蹦蹦软糖"));
+        assert!(panel.contains("bouncy-gummy"));
+        assert!(panel.contains("击败 3"));
+    }
+
+    #[test]
+    fn meta_panel_hides_locked_codex_detail_until_discovered() {
+        let mut base_ui_state = RuntimeBaseUiState::default();
+        base_ui_state.codex_view.selected_category =
+            RuntimeCodexCategory::Enemies.key().to_string();
+        base_ui_state.codex_view.discovered_only = false;
+
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Codex,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &base_ui_state,
+                0,
+            ),
+        );
+
+        assert!(panel.contains("图鉴浏览 全部条目"));
+        assert!(panel.contains("未发现条目"));
+        assert!(panel.contains("bouncy-gummy"));
+        assert!(panel.contains("继续巡逻、使用装备、击败敌人或解锁地图后显示说明"));
+        assert!(!panel.contains("蹦蹦软糖"));
     }
 
     #[test]
@@ -5306,6 +5865,8 @@ mod tests {
                 None,
                 &ContentPack::base_demo(),
                 &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
             ),
         );
 
@@ -5359,6 +5920,8 @@ mod tests {
                 Some(&candidate),
                 &ContentPack::base_demo(),
                 &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
             ),
         );
 
@@ -5397,6 +5960,8 @@ mod tests {
                 None,
                 &content,
                 &config,
+                &RuntimeBaseUiState::default(),
+                0,
             ),
         );
 
@@ -5428,6 +5993,8 @@ mod tests {
                 None,
                 &ContentPack::base_demo(),
                 &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
             ),
         );
 
