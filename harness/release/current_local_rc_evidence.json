@@ -3,7 +3,7 @@
   "candidate_id": "current-local-2026-05-26",
   "generated_at": "2026-05-29",
   "release_stage": "prototype-local",
-  "summary": "当前本地工作区的 Release Candidate 证据清单。本地新生成 Mach-O 二进制启动已恢复，Phase 4 full pack 经过 Bot 策略校准后完成 9 Bot x 20 seed x 600 秒发布探针：Bot matrix 全部通过、Replay 180/180 通过、headless 性能预算 valid；Runtime 本地数据控制 smoke 已验证隐私说明、存档导出 / 显式删除和本地 telemetry/replay/crash 数据导出 / 显式删除。本清单仍用于记录 not-ready 状态，因为内容冻结、人工审查、Runtime 发布级性能和发布包门禁尚未全部通过。",
+  "summary": "当前本地工作区的 Release Candidate 证据清单。本地新生成 Mach-O 二进制启动已恢复，Phase 4 full pack 经过 Bot 策略校准后完成 9 Bot x 20 seed x 600 秒发布探针：Bot matrix 全部通过、Replay 180/180 通过、headless 性能预算 valid；Runtime 本地数据控制 smoke 已验证隐私说明、存档导出 / 显式删除和本地 telemetry/replay/crash 数据导出 / 显式删除；Runtime / Gym current smoke 已刷新 120 秒本机 demo-input capture 和短局 Gym bridge 技术证据。本清单仍用于记录 not-ready 状态，因为内容冻结、人工审查、Runtime 发布级性能和发布包门禁尚未全部通过。",
   "gates": [
     {
       "id": "content_frozen",
@@ -105,13 +105,15 @@
     {
       "id": "performance",
       "status": "waiting",
-      "summary": "Bot 策略校准后的 9 Bot x 20 seed x 600 秒 headless 性能预算校验已通过，最大敌人数 75/140 且无 warning；release Runtime 10 秒本机 smoke capture 平均 48.31 FPS 且实体/投射物上限通过。60 FPS 目标、大规模怪潮 45 FPS、GPU、内存增长和 Steam Deck 仍未覆盖，因此 release performance gate 保持 waiting。",
+      "summary": "Bot 策略校准后的 9 Bot x 20 seed x 600 秒 headless 性能预算校验已通过，最大敌人数 75/140 且无 warning；Runtime / Gym current smoke 已在本机跑通 120 秒 demo-input capture，平均 FPS 58.71、30 FPS 以下慢帧占比 0.58%、最大可见敌人 6、最大可见投射物 7，并验证隐私上传默认关闭。60 FPS 目标、大规模怪潮 45 FPS、GPU profiling、内存增长和 Steam Deck 仍未覆盖，因此 release performance gate 保持 waiting。",
       "evidence_paths": [
         "harness/reports/2026-05-26_post_recovery_matrix_smoke_001/summary.md",
         "harness/reports/2026-05-26_harness_performance_budget_phase4_full_pack_001/summary.md",
         "harness/reports/2026-05-27_harness_performance_budget_phase4_full_pack_20seed_001/summary.md",
         "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md",
-        "harness/reports/2026-05-26_runtime_performance_capture_004/summary.md"
+        "harness/reports/2026-05-26_runtime_performance_capture_004/summary.md",
+        "harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md",
+        "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_performance_capture.json"
       ],
       "synthetic": false
     },

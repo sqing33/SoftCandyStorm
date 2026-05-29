@@ -1,0 +1,116 @@
+{
+  "report_version": 1,
+  "decision": "runtime_gym_current_smoke_valid",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "artifacts": {
+    "runtime_capture": "harness/telemetry/local/runtime_gym_current_smoke_001.json",
+    "runtime_validation_report": "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_performance_capture.json"
+  },
+  "gym_smoke": {
+    "status": "ok",
+    "steps": 61,
+    "terminated": true,
+    "truncated": false,
+    "time_seconds": 2.0333328,
+    "observation_len": 145,
+    "action_count": 9,
+    "total_reward": 0.9763
+  },
+  "runtime_validation": {
+    "decision": "runtime_performance_capture_valid",
+    "input_mode": "demo",
+    "simulation_speed": 30.0,
+    "average_fps": 58.71495,
+    "worst_frame_fps": 10.0,
+    "slow_frame_count_30fps": 3,
+    "frame_count": 521,
+    "sample_count": 25,
+    "max_visible_enemies": 6,
+    "max_visible_projectiles": 7,
+    "terminal": "victory",
+    "duration_seconds": 120.031845,
+    "target_duration_seconds": 120.0,
+    "local_capture_only": true,
+    "upload_transport": "not_implemented"
+  },
+  "commands": [
+    {
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "python/gym_env/smoke_test.py"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout_tail": "{\"status\": \"ok\", \"steps\": 61, \"terminated\": true, \"truncated\": false, \"time_seconds\": 2.0333328, \"observation_len\": 145, \"action_count\": 9, \"total_reward\": 0.9763}\n",
+      "stderr_tail": ""
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--content-dir",
+        "content/base_demo",
+        "--seed",
+        "12345",
+        "--seconds",
+        "120.0",
+        "--demo-input",
+        "--simulation-speed",
+        "30.0",
+        "--playtest-report",
+        "/Users/chongqing/Codes/软糖风暴/harness/telemetry/local/runtime_gym_current_smoke_001.json",
+        "--player-skill",
+        "demo-bot",
+        "--capture-interval",
+        "5.0",
+        "--auto-exit-after-report"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout_tail": "",
+      "stderr_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.95s\n     Running `target/debug/game_runtime --content-dir content/base_demo --seed 12345 --seconds 120.0 --demo-input --simulation-speed 30.0 --playtest-report '/Users/chongqing/Codes/软糖风暴/harness/telemetry/local/runtime_gym_current_smoke_001.json' --player-skill demo-bot --capture-interval 5.0 --auto-exit-after-report`\n"
+    }
+  ],
+  "checks": [
+    {
+      "id": "gym_bridge_smoke",
+      "status": "pass",
+      "summary": "Python Gym wrapper completed the smoke episode through game_harness gym-bridge."
+    },
+    {
+      "id": "gym_observation_shape",
+      "status": "pass",
+      "summary": "Gym smoke reported a positive observation length."
+    },
+    {
+      "id": "gym_action_space",
+      "status": "pass",
+      "summary": "Gym smoke reported the expected 9-direction discrete action space."
+    },
+    {
+      "id": "runtime_capture_command",
+      "status": "pass",
+      "summary": "game_runtime demo-input capture command completed and wrote the capture JSON."
+    },
+    {
+      "id": "runtime_performance_capture",
+      "status": "pass",
+      "summary": "Runtime capture passed local performance, sample, terminal, and entity-count validation."
+    },
+    {
+      "id": "runtime_privacy_defaults",
+      "status": "pass",
+      "summary": "Runtime capture kept local-only privacy defaults with no upload transport enabled."
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "This smoke is one local technical run; it is not a human playtest.",
+    "Runtime frame metrics come from Bevy frame deltas and do not replace GPU profiling or memory growth checks.",
+    "The Gym bridge smoke is a short wrapper/shape check, not RL policy acceptance or high-pressure training evidence.",
+    "Manual readability, fun, device input review, platform privacy review, and release gates remain separate blockers."
+  ]
+}

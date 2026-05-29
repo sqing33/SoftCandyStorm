@@ -2813,6 +2813,11 @@
       "id": "runtime_save_migration_smoke",
       "summary": "新增 Runtime v0 到 v1 存档迁移 smoke：工具写入带资源、章节解锁和完成目标的 save-state-v0 样本，实际执行 game_runtime --save-file <v0> --export-save <v1>，验证原存档和导出文件均成为 save-state-v1，migration_history 为 completed，并保留局外进度、隐私默认值、本地数据控制和 base_ui_state。该证据不替代历史真实用户存档批量迁移、人工平台路径审查、云存档策略或发布候选验收。",
       "report": "harness/reports/2026-05-29_runtime_save_migration_smoke_001/summary.md"
+    },
+    {
+      "id": "runtime_gym_current_smoke",
+      "summary": "新增 Runtime / Gym current smoke 工具：先运行 python/gym_env/smoke_test.py 验证 game_harness gym-bridge 的 145 维 observation 和 9 动作空间，再运行 120 秒 game_runtime --demo-input capture 并调用 runtime performance validator；本次本机报告为 valid，Runtime average FPS 58.71、terminal victory、隐私上传默认关闭。该证据不替代真人试玩、high-pressure Gym 对比、RL acceptance、多硬件性能或发布级 GPU / 内存审查。",
+      "report": "harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md"
     }
   ],
   "next_recommended": [

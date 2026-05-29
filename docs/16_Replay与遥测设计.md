@@ -186,6 +186,22 @@ cargo run -p game_runtime -- --local-data-dir harness/telemetry/local/manual-smo
 
 默认导出数据目录为 `harness/telemetry/local/` 和 `harness/replay/`，也可以重复传入 `--local-data-dir <path>` 指定额外本地数据目录。导出会读取配置目录并写成 JSON；删除必须显式传入至少一个 `--local-data-dir`，且只移除这些显式目录中的文件和空子目录。Runtime 仍没有网络上传传输层，试玩 capture 报告只会写入当前隐私设置摘要。
 
+当前 Runtime / Gym 运行级 smoke 可用同一工具刷新：
+
+```bash
+python3 tools/run_runtime_gym_current_smoke.py \
+  --repo-root . \
+  --runtime-capture harness/telemetry/local/runtime_gym_current_smoke_001.json \
+  --report harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json \
+  --markdown harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md \
+  --seconds 120 \
+  --seed 12345 \
+  --simulation-speed 30 \
+  --capture-interval 5
+```
+
+当前报告结论为 `runtime_gym_current_smoke_valid`：Gym wrapper 经由 `game_harness gym-bridge` 完成 2 秒短局 smoke，Runtime 使用 `--demo-input` 生成 120 秒本地 capture，随后由 `tools/validate_runtime_performance_capture.py` 校验 frame metrics、samples、terminal、实体数量和隐私默认值。该报告只证明本机 Runtime capture 与 Gym bridge 技术链路当前可运行，不能替代真人试玩、Steam Deck / 多硬件性能、内存增长分析、真实鼠标 / 手柄输入审查或发布级隐私验收。
+
 Runtime 局外面板提供 `F4` 隐私与本地数据设置页：
 
 - `7`：切换上传匿名遥测。

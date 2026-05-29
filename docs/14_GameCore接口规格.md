@@ -391,8 +391,24 @@ python3 tools/validate_gamecore_api_contract.py \
 
 当前报告结论为 `gamecore_api_contract_valid`。这只证明公开接口形状没有偏离 v0 契约，不能替代编译、固定 seed 语义、Replay 回归、Runtime 集成或 Gym smoke。
 
+当前 Gym / Runtime 运行级烟测也有独立报告：
+
+```bash
+python3 tools/run_runtime_gym_current_smoke.py \
+  --repo-root . \
+  --runtime-capture harness/telemetry/local/runtime_gym_current_smoke_001.json \
+  --report harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json \
+  --markdown harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md \
+  --seconds 120 \
+  --seed 12345 \
+  --simulation-speed 30 \
+  --capture-interval 5
+```
+
+该报告结论为 `runtime_gym_current_smoke_valid`：Python Gym wrapper 通过 `game_harness gym-bridge` 完成短局 smoke，当前 observation 长度为 `145`、动作数为 `9`；Runtime 使用 `--demo-input` 在糖霜草地 seed `12345` 跑到 `120.03` 秒 victory，并通过本地 capture 性能、样本、实体数量和隐私默认值校验。该证据只证明当前桥接和 Runtime capture 技术链路可用，不能替代 high-pressure Gym 对比、RL policy acceptance、真人试玩或发布级多硬件性能。
+
 当前 v0 已知缺口：
 
-- `RunMetrics` 已把 `damage_taken_by_source`、`boss_damage` 和 `boss_kill_times` 固化进 v0 source-shape 契约，但指标语义仍需要恢复二进制后用 Harness / Replay 验证。
+- `RunMetrics` 已把 `damage_taken_by_source`、`boss_damage` 和 `boss_kill_times` 固化进 v0 source-shape 契约；当前已可用 Harness / Replay / Gym smoke 做运行级抽查，但指标语义仍需要长局矩阵和 failure case 继续验证。
 - `PlayerSnapshot` 已把 `status_effects` 固化为稳定字段，并以 `StatusEffectSnapshot` 暴露当前移动减速等效果；Runtime 可读性和 Gym observation 语义仍需要后续验证。
-- 本机二进制启动恢复前，无法用 `cargo test`、`game_harness replay-batch` 或 Gym bridge smoke 证明接口语义完整。
+- 本机二进制启动已恢复，`cargo test`、`game_harness replay-batch`、短局 Gym bridge smoke 与 Runtime demo capture 已能运行；仍需刷新 high-pressure Gym 对比、长局策略评估和人工可读性验证。

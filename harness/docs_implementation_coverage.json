@@ -331,10 +331,15 @@
             "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
             "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md",
             "harness/reports/2026-05-28_local_binary_launch_diagnostic_after_codex_devtools_001/summary.md",
-            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md"
+            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md",
+            "tools/run_runtime_gym_current_smoke.py",
+            "tools/test_run_runtime_gym_current_smoke.py",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_performance_capture.json"
           ],
           "gaps": [
-            "本机二进制启动已恢复，cargo test --workspace、当前会话 240 秒 Runtime demo capture 和权限恢复后的 90 秒 demo-input capture 已通过；仍需刷新发布级 Runtime 性能、视觉和音频验证。",
+            "本机二进制启动已恢复，cargo test --workspace、当前会话 240 秒 Runtime demo capture、权限恢复后的 90 秒 demo-input capture，以及本次 120 秒 Runtime / Gym current smoke 均已通过；仍需刷新发布级 Runtime 性能、视觉和音频验证。",
             "仍需更完整的 Runtime 视觉、音频和设置系统。"
           ],
           "blockers": []
@@ -1892,10 +1897,14 @@
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
-            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md"
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
+            "tools/run_runtime_gym_current_smoke.py",
+            "tools/test_run_runtime_gym_current_smoke.py",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json"
           ],
           "gaps": [
-            "cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace 已在当前会话通过；Terminal DevTools 重启后 cargo test --workspace 再次 112/112 通过，base_demo 600 秒 all Bot 矩阵可写出 metrics 和 representative replays，20 seed 的 180/180 strict replay-batch 通过；仍需刷新 Gym high-pressure smoke。",
+            "cargo fmt --check、cargo clippy --workspace --all-targets、cargo test --workspace 已在当前会话通过；Terminal DevTools 重启后 cargo test --workspace 再次 112/112 通过，base_demo 600 秒 all Bot 矩阵可写出 metrics 和 representative replays，20 seed 的 180/180 strict replay-batch 通过；本次 Gym bridge 短局 smoke 记录 observation_len 145、action_count 9，并与 120 秒 Runtime demo capture 一起通过 current smoke。仍需刷新 Gym high-pressure 对比。",
             "source-shape 契约不能证明固定 seed 语义、Replay 兼容性、Runtime 集成或 Gym bridge 行为。",
             "RunMetrics per-source / Boss 指标与 PlayerSnapshot status_effects 已进入 v0 契约，但真实指标语义、Runtime 可读性和 Gym observation 映射仍需运行级验证。"
           ],
@@ -2059,10 +2068,16 @@
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
             "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_replay_regression_001/summary.md",
-            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md"
+            "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_seed53000_20seed_001/summary.md",
+            "tools/run_runtime_gym_current_smoke.py",
+            "tools/test_run_runtime_gym_current_smoke.py",
+            "harness/telemetry/local/runtime_gym_current_smoke_001.json",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json",
+            "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_performance_capture.json"
           ],
           "gaps": [
-            "当前恢复会话已重跑 base_demo 600 秒 all Bot representative replay-batch，20 seed 的 180/180 strict 回归通过；仍需重跑最新 Runtime capture 并刷新 Gym / Runtime 运行级证据。",
+            "当前恢复会话已重跑 base_demo 600 秒 all Bot representative replay-batch，20 seed 的 180/180 strict 回归通过；本次 Runtime / Gym current smoke 已刷新短局 Gym bridge 与 120 秒 Runtime demo-input capture 运行级证据。仍需真人试玩、发布级多硬件性能、内存增长分析和 high-pressure Gym 对比。",
             "隐私策略、Runtime 设置页契约、上传传输契约、Runtime surface 源码形状契约、v0/v1 存档契约、平台路径策略、存档迁移计划、人工隐私审查包、人工平台路径审查包和人工法律 / 合规审查包已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；当前 Runtime 本地数据控制 smoke 已实际执行 prelaunch CLI，验证 --platform-data-root 绑定逻辑数据根、--export-save 生成 save-state-v1、隐式删除被拒绝、显式 --save-file / --local-data-dir 删除生效；Runtime save migration smoke 已实际执行 prelaunch CLI，验证一个 save-state-v0 样本可迁移并导出为 save-state-v1；新增 --native-platform-data-root 可显式绑定 macOS、Windows、Linux / Unix 原生数据目录，并由 game_runtime 单测和 Runtime surface 契约记录；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，E/L 可导出当前 Runtime 配置下的存档或本地数据，X/K 需要同一按键二次确认才执行删除；右下七段点击区复用同一套 action，从左到右映射匿名遥测、raw replay、崩溃报告、导出存档、删除存档、导出本地数据和删除本地数据，删除段仍走同一确认机制；切换面板、切换隐私项或执行其他数据操作会取消确认态，并在配置 --runtime-settings-file 时写回 JSON。但真人填写的人工隐私审查、人工平台路径审查、法律 / 合规审查、发布级视觉导出 / 删除按钮、真实鼠标设备审查、历史真实用户存档批量迁移和 Runtime 网络上传实现仍未完成。"
           ],
           "blockers": []
