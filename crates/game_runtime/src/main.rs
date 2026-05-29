@@ -65,6 +65,8 @@ const PROJECTILE_SPRITE: &str = "prototype_topdown/sprites/projectile_rainbow_ca
 const MAP_TILE_SPRITE: &str = "prototype_topdown/sprites/map_frosting_grassland_tile_v001.png";
 const META_PANEL_WIDTH: f32 = 430.0;
 const META_PANEL_RIGHT_MARGIN: f32 = 14.0;
+const OVERVIEW_POINTER_CONTROL_HEIGHT: f32 = 96.0;
+const OVERVIEW_POINTER_CONTROL_ZONE_COUNT: usize = 4;
 const CODEX_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CODEX_POINTER_CONTROL_ZONE_COUNT: usize = 5;
 const SETTINGS_POINTER_CONTROL_HEIGHT: f32 = 112.0;
@@ -1129,6 +1131,26 @@ fn step_game_core(
             "patrol loadout view",
         );
     }
+    if state.meta_panel_view == RuntimeMetaPanelView::Overview {
+        let pointer_view = primary_window.get_single().ok().and_then(|window| {
+            runtime_overview_view_from_pointer(
+                &mouse_buttons,
+                window.cursor_position(),
+                Vec2::new(window.resolution.width(), window.resolution.height()),
+            )
+        });
+        if let Some(view) = pointer_view {
+            let (panel_key, event) = match view {
+                RuntimeMetaPanelView::Overview => ("overview", "guardian station overview"),
+                RuntimeMetaPanelView::Chapters => ("chapters", "chapter goals view"),
+                RuntimeMetaPanelView::Codex => ("codex", "codex progress view"),
+                RuntimeMetaPanelView::Settings => ("settings", "privacy settings view"),
+                RuntimeMetaPanelView::Loadout => ("loadout", "patrol loadout view"),
+            };
+            select_runtime_meta_panel(&mut state, view, panel_key, event);
+            return;
+        }
+    }
     if state.meta_panel_view == RuntimeMetaPanelView::Chapters {
         let pointer_action = primary_window.get_single().ok().and_then(|window| {
             runtime_chapter_action_from_pointer(
@@ -1461,6 +1483,45 @@ fn runtime_settings_action_from_keyboard(
             runtime_data_control_action_from_keyboard(keyboard)
                 .map(RuntimeSettingsAction::DataControl)
         })
+}
+
+fn runtime_overview_view_from_pointer(
+    mouse_buttons: &ButtonInput<MouseButton>,
+    cursor_position: Option<Vec2>,
+    window_size: Vec2,
+) -> Option<RuntimeMetaPanelView> {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        runtime_overview_view_from_pointer_zone(cursor_position?, window_size)
+    } else {
+        None
+    }
+}
+
+fn runtime_overview_view_from_pointer_zone(
+    cursor_position: Vec2,
+    window_size: Vec2,
+) -> Option<RuntimeMetaPanelView> {
+    if window_size.x <= 0.0 || window_size.y <= 0.0 {
+        return None;
+    }
+    let panel_right = (window_size.x - META_PANEL_RIGHT_MARGIN).max(0.0);
+    let panel_left = (panel_right - META_PANEL_WIDTH).max(0.0);
+    let panel_width = (panel_right - panel_left).max(1.0);
+    let in_panel_x = cursor_position.x >= panel_left && cursor_position.x <= panel_right;
+    let in_control_y =
+        cursor_position.y >= 0.0 && cursor_position.y <= OVERVIEW_POINTER_CONTROL_HEIGHT;
+    if !in_panel_x || !in_control_y {
+        return None;
+    }
+
+    let normalized_x = ((cursor_position.x - panel_left) / panel_width).clamp(0.0, 0.999);
+    let zone = (normalized_x * OVERVIEW_POINTER_CONTROL_ZONE_COUNT as f32).floor() as usize;
+    match zone {
+        0 => Some(RuntimeMetaPanelView::Chapters),
+        1 => Some(RuntimeMetaPanelView::Codex),
+        2 => Some(RuntimeMetaPanelView::Settings),
+        _ => Some(RuntimeMetaPanelView::Loadout),
+    }
 }
 
 fn runtime_settings_action_from_pointer(
@@ -2529,6 +2590,7 @@ fn render_meta_overview_panel(
             format_asset_candidate_type_counts(candidate),
         ));
     }
+    output.push_str("\n\n右下点击区: 章节  图鉴  设置  巡逻");
 
     output
 }
@@ -4721,7 +4783,8 @@ mod tests {
         runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
         runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
         runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
+        runtime_meta_panel_view_from_key, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
@@ -6157,6 +6220,55 @@ mod tests {
     }
 
     #[test]
+    fn runtime_overview_pointer_input_maps_left_click_zone() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        let mut left = ButtonInput::<MouseButton>::default();
+        left.press(MouseButton::Left);
+        assert_eq!(
+            runtime_overview_view_from_pointer(&left, Some(Vec2::new(990.0, 40.0)), window_size),
+            Some(RuntimeMetaPanelView::Codex)
+        );
+
+        let mut right = ButtonInput::<MouseButton>::default();
+        right.press(MouseButton::Right);
+        assert_eq!(
+            runtime_overview_view_from_pointer(&right, Some(Vec2::new(990.0, 40.0)), window_size),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_overview_pointer_zone_maps_right_panel_segments() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        assert_eq!(
+            runtime_overview_view_from_pointer_zone(Vec2::new(880.0, 40.0), window_size),
+            Some(RuntimeMetaPanelView::Chapters)
+        );
+        assert_eq!(
+            runtime_overview_view_from_pointer_zone(Vec2::new(990.0, 40.0), window_size),
+            Some(RuntimeMetaPanelView::Codex)
+        );
+        assert_eq!(
+            runtime_overview_view_from_pointer_zone(Vec2::new(1100.0, 40.0), window_size),
+            Some(RuntimeMetaPanelView::Settings)
+        );
+        assert_eq!(
+            runtime_overview_view_from_pointer_zone(Vec2::new(1220.0, 40.0), window_size),
+            Some(RuntimeMetaPanelView::Loadout)
+        );
+        assert_eq!(
+            runtime_overview_view_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
+            None
+        );
+        assert_eq!(
+            runtime_overview_view_from_pointer_zone(Vec2::new(990.0, 140.0), window_size),
+            None
+        );
+    }
+
+    #[test]
     fn runtime_chapter_action_starts_only_unlocked_chapters() {
         let mut state = runtime_state_for_tests();
 
@@ -6408,6 +6520,7 @@ mod tests {
         assert!(panel.contains("局后结算"));
         assert!(panel.contains("collect-200-candy-crystals"));
         assert!(panel.contains("discovered:jar-keeper"));
+        assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
     }
 
     #[test]

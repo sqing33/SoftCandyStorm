@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, F2 chapter keyboard and pointer-zone navigation, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts, pointer control-zone, and delete confirmation, F5 loadout keyboard and pointer-zone selection, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, F1 overview pointer-zone tab navigation, F2 chapter keyboard and pointer-zone navigation, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts, pointer control-zone, and delete confirmation, F5 loadout keyboard and pointer-zone selection, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -375,6 +375,8 @@
     "validate_runtime_asset_candidate_manifest",
     "runtime_meta_panel_view_from_key",
     "select_runtime_meta_panel",
+    "runtime_overview_view_from_pointer",
+    "runtime_overview_view_from_pointer_zone",
     "runtime_chapter_action_from_keyboard",
     "runtime_chapter_action_from_pointer",
     "runtime_chapter_action_from_pointer_zone",
@@ -442,6 +444,22 @@
     },
     {
       "key": "KeyCode::F5",
+      "target": "RuntimeMetaPanelView::Loadout"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeMetaPanelView::Chapters"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeMetaPanelView::Codex"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeMetaPanelView::Settings"
+    },
+    {
+      "key": "MouseButton::Left",
       "target": "RuntimeMetaPanelView::Loadout"
     },
     {
@@ -599,6 +617,7 @@
     "F3 图鉴",
     "F4 设置",
     "F5 巡逻",
+    "右下点击区: 章节  图鉴  设置  巡逻",
     "Q/E 切换章节",
     "G 巡逻已解锁章节",
     "右下点击区: 上章  下章  巡逻",
