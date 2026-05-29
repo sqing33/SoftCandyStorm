@@ -265,6 +265,95 @@ class StagedOpeningPolicy:
         }
 
 
+class MapLateSplitPolicy:
+    policy_kind = "map_late_split"
+
+    def __init__(
+        self,
+        base_model,
+        late_model,
+        split_seconds,
+        target_maps,
+        base_model_path,
+        late_model_path,
+    ):
+        if split_seconds <= 0.0:
+            raise ValueError("split_seconds must be greater than 0")
+        if not target_maps:
+            raise ValueError("target_maps must include at least one map id")
+        self.base_model = base_model
+        self.late_model = late_model
+        self.split_seconds = float(split_seconds)
+        self.target_maps = frozenset(str(map_id) for map_id in target_maps)
+        self.base_model_path = str(base_model_path)
+        self.late_model_path = str(late_model_path)
+        self._map_id = None
+        self._time_seconds = 0.0
+
+    def reset(self):
+        self._time_seconds = 0.0
+        for model in (self.base_model, self.late_model):
+            reset = getattr(model, "reset", None)
+            if callable(reset):
+                reset()
+
+    def set_map_id(self, map_id):
+        self._map_id = map_id
+        for model in (self.base_model, self.late_model):
+            set_map_id = getattr(model, "set_map_id", None)
+            if callable(set_map_id):
+                set_map_id(map_id)
+
+    def set_step_context(self, info):
+        info = info or {}
+        self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+        if info.get("map_id") is not None:
+            self._map_id = info.get("map_id")
+        for model in (self.base_model, self.late_model):
+            set_step_context = getattr(model, "set_step_context", None)
+            if callable(set_step_context):
+                set_step_context(info)
+
+    def active_model(self):
+        if (
+            self._map_id in self.target_maps
+            and self._time_seconds >= self.split_seconds
+        ):
+            return self.late_model
+        return self.base_model
+
+    def predict(self, observation, deterministic=True):
+        return self.active_model().predict(observation, deterministic=deterministic)
+
+    def set_random_seed(self, seed):
+        for model in (self.base_model, self.late_model):
+            set_random_seed = getattr(model, "set_random_seed", None)
+            if callable(set_random_seed):
+                set_random_seed(seed)
+
+    def action_scores(self, observation):
+        return policy_action_scores(self.active_model(), observation)
+
+    def opening_policy_report(self):
+        return opening_policy_report(self.base_model)
+
+    def policy_adapter_report(self):
+        return {
+            "mode": "map_late_split",
+            "target_maps": sorted(self.target_maps),
+            "split_seconds": self.split_seconds,
+            "base_model_path": self.base_model_path,
+            "late_model_path": self.late_model_path,
+            "base_policy_kind": getattr(self.base_model, "policy_kind", "sb3"),
+            "late_policy_kind": getattr(self.late_model, "policy_kind", "sb3"),
+            "limitations": [
+                "This wrapper is for evaluation/comparison diagnostics only.",
+                "It splices policies by map and time and is not trained-policy acceptance evidence.",
+                "Any candidate using this signal still requires multi-baseline no-regression gates.",
+            ],
+        }
+
+
 class EdgeRecoveryFilterPolicy:
     policy_kind = "edge_recovery_filter"
 
@@ -2085,12 +2174,36 @@ def load_model_metadata(model_path):
     return metadata_path, json.loads(metadata_path.read_text(encoding="utf-8"))
 
 
+def wrap_map_late_split_policy(
+    policy,
+    model_class,
+    late_split_model_path=None,
+    late_split_seconds=240.0,
+    late_split_maps=None,
+    base_model_path=None,
+):
+    if late_split_model_path is None:
+        return policy
+    late_model = model_class.load(late_split_model_path)
+    return MapLateSplitPolicy(
+        policy,
+        late_model,
+        late_split_seconds,
+        late_split_maps,
+        base_model_path or "base_policy",
+        late_split_model_path,
+    )
+
+
 def evaluate_saved_policy(
     config,
     algorithm,
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    late_split_model_path=None,
+    late_split_seconds=240.0,
+    late_split_maps=None,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -2126,6 +2239,14 @@ def evaluate_saved_policy(
             opening_model_path,
             fallback_model_path,
         )
+    model = wrap_map_late_split_policy(
+        model,
+        model_class,
+        late_split_model_path=late_split_model_path,
+        late_split_seconds=late_split_seconds,
+        late_split_maps=late_split_maps,
+        base_model_path=fallback_model_path,
+    )
     model = wrap_recovery_filter_for_eval(
         model,
         edge_recovery_filter=edge_recovery_filter,
@@ -2166,6 +2287,9 @@ def evaluate_policy_model(
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    late_split_model_path=None,
+    late_split_seconds=240.0,
+    late_split_maps=None,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -2202,6 +2326,9 @@ def evaluate_policy_model(
             behavior_clone_model,
             opening_model_path=opening_model_path,
             opening_seconds=opening_seconds,
+            late_split_model_path=late_split_model_path,
+            late_split_seconds=late_split_seconds,
+            late_split_maps=late_split_maps,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
             seed_start=seed_start,
@@ -2231,6 +2358,9 @@ def evaluate_policy_model(
         model_path=model_path,
         opening_model_path=opening_model_path,
         opening_seconds=opening_seconds,
+        late_split_model_path=late_split_model_path,
+        late_split_seconds=late_split_seconds,
+        late_split_maps=late_split_maps,
         eval_episodes=eval_episodes,
         eval_seconds=eval_seconds,
         seed_start=seed_start,
@@ -2262,6 +2392,9 @@ def evaluate_behavior_clone_policy(
     model_path,
     opening_model_path=None,
     opening_seconds=60.0,
+    late_split_model_path=None,
+    late_split_seconds=240.0,
+    late_split_maps=None,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -2292,6 +2425,16 @@ def evaluate_behavior_clone_policy(
         opening_model_path=opening_model_path,
         opening_seconds=opening_seconds,
     )
+    if late_split_model_path is not None:
+        model_class = stable_baselines_model_classes()[algorithm]
+        policy = wrap_map_late_split_policy(
+            policy,
+            model_class,
+            late_split_model_path=late_split_model_path,
+            late_split_seconds=late_split_seconds,
+            late_split_maps=late_split_maps,
+            base_model_path=model_path,
+        )
     policy = wrap_recovery_filter_for_eval(
         policy,
         edge_recovery_filter=edge_recovery_filter,
@@ -2321,11 +2464,14 @@ def evaluate_behavior_clone_policy(
         trace_include_observation=trace_include_observation,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
-    evaluation["policy_kind"] = (
-        "staged_sb3_opening_behavior_clone"
-        if opening_model_path is not None
-        else "behavior_clone"
-    )
+    if late_split_model_path is not None:
+        evaluation["policy_kind"] = "map_late_split"
+    else:
+        evaluation["policy_kind"] = (
+            "staged_sb3_opening_behavior_clone"
+            if opening_model_path is not None
+            else "behavior_clone"
+        )
     evaluation["algorithm"] = "behavior_clone"
     evaluation["model_path"] = str(model_path)
     evaluation["limitations"] = [
@@ -3196,6 +3342,9 @@ def compare_policy_to_rule_bots(
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    late_split_model_path=None,
+    late_split_seconds=240.0,
+    late_split_maps=None,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3232,6 +3381,9 @@ def compare_policy_to_rule_bots(
         model_path=model_path,
         opening_model_path=opening_model_path,
         opening_seconds=opening_seconds,
+        late_split_model_path=late_split_model_path,
+        late_split_seconds=late_split_seconds,
+        late_split_maps=late_split_maps,
         behavior_clone_model=behavior_clone_model,
         eval_episodes=episodes,
         eval_seconds=seconds,
@@ -3303,6 +3455,9 @@ def compare_policy_to_rule_bots_across_maps(
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    late_split_model_path=None,
+    late_split_seconds=240.0,
+    late_split_maps=None,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3335,6 +3490,9 @@ def compare_policy_to_rule_bots_across_maps(
             model_path=model_path,
             opening_model_path=opening_model_path,
             opening_seconds=opening_seconds,
+            late_split_model_path=late_split_model_path,
+            late_split_seconds=late_split_seconds,
+            late_split_maps=late_split_maps,
             behavior_clone_model=behavior_clone_model,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
@@ -3686,6 +3844,22 @@ def main():
         help="Duration for --opening-model before falling back to --model.",
     )
     parser.add_argument(
+        "--late-split-model",
+        default=None,
+        help="Optional SB3 zip used after --late-split-seconds on --late-split-maps during evaluation/comparison.",
+    )
+    parser.add_argument(
+        "--late-split-seconds",
+        type=float,
+        default=240.0,
+        help="Time threshold for --late-split-model on target maps.",
+    )
+    parser.add_argument(
+        "--late-split-maps",
+        default=None,
+        help="Comma-separated map ids where --late-split-model may replace the base policy.",
+    )
+    parser.add_argument(
         "--behavior-clone-model",
         default=None,
         help="Evaluate or compare a train_behavior_clone.py checkpoint instead of an SB3 zip.",
@@ -3906,6 +4080,11 @@ def main():
             args.opening_seconds,
             "--opening-seconds",
         )
+        late_split_seconds = validate_positive_seconds(
+            args.late_split_seconds,
+            "--late-split-seconds",
+        )
+        late_split_maps = parse_map_list(args.late_split_maps)
         anchor_include_time_buckets = parse_anchor_time_bucket_list(
             args.anchor_include_time_buckets,
         )
@@ -3969,6 +4148,12 @@ def main():
         parser.error("--behavior-clone-model cannot be combined with --model")
     if args.opening_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--opening-model requires --evaluate-model or --compare-rule-bots")
+    if args.late_split_model and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--late-split-model requires --evaluate-model or --compare-rule-bots")
+    if args.late_split_model and late_split_maps is None:
+        parser.error("--late-split-model requires --late-split-maps")
+    if args.late_split_maps and not args.late_split_model:
+        parser.error("--late-split-maps requires --late-split-model")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
@@ -4043,6 +4228,13 @@ def main():
                     else None
                 ),
                 opening_seconds=opening_seconds,
+                late_split_model_path=(
+                    Path(args.late_split_model)
+                    if args.late_split_model
+                    else None
+                ),
+                late_split_seconds=late_split_seconds,
+                late_split_maps=late_split_maps,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
@@ -4094,6 +4286,13 @@ def main():
                         else None
                     ),
                     opening_seconds=opening_seconds,
+                    late_split_model_path=(
+                        Path(args.late_split_model)
+                        if args.late_split_model
+                        else None
+                    ),
+                    late_split_seconds=late_split_seconds,
+                    late_split_maps=late_split_maps,
                     behavior_clone_model=(
                         Path(args.behavior_clone_model)
                         if args.behavior_clone_model
@@ -4141,6 +4340,13 @@ def main():
                     else None
                 ),
                 opening_seconds=opening_seconds,
+                late_split_model_path=(
+                    Path(args.late_split_model)
+                    if args.late_split_model
+                    else None
+                ),
+                late_split_seconds=late_split_seconds,
+                late_split_maps=late_split_maps,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model

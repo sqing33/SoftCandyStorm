@@ -8,6 +8,7 @@ import python.train.train_sb3 as train_sb3
 from python.train.train_sb3 import (
     EdgeRecoveryFilterPolicy,
     LateRecoveryFilterPolicy,
+    MapLateSplitPolicy,
     StagedOpeningPolicy,
     action_pushes_into_edge,
     algorithm_parameters_source_label,
@@ -46,6 +47,7 @@ class DummyPolicy:
         self.reset_count = 0
         self.map_id = None
         self.contexts = []
+        self.random_seed = None
 
     def reset(self):
         self.reset_count += 1
@@ -55,6 +57,9 @@ class DummyPolicy:
 
     def set_step_context(self, info):
         self.contexts.append(dict(info))
+
+    def set_random_seed(self, seed):
+        self.random_seed = seed
 
     def predict(self, observation, deterministic=True):
         return self.action, None
@@ -1055,6 +1060,67 @@ def test_staged_opening_policy_switches_after_opening_seconds():
     assert policy.opening_policy_report()["mode"] == "staged_sb3_opening"
 
 
+def test_map_late_split_policy_switches_only_on_target_map_late_window():
+    base = DummyPolicy(1)
+    late = DummyPolicy(5)
+    policy = MapLateSplitPolicy(
+        base,
+        late,
+        240.0,
+        ["cracked-star-jar"],
+        "base.zip",
+        "late.zip",
+    )
+
+    policy.reset()
+    policy.set_random_seed(777)
+    policy.set_map_id("soda-creek")
+    policy.set_step_context({"map_id": "soda-creek", "time_seconds": 260.0})
+    non_target_action, _ = policy.predict(None)
+    policy.set_map_id("cracked-star-jar")
+    policy.set_step_context({"map_id": "cracked-star-jar", "time_seconds": 239.9})
+    early_target_action, _ = policy.predict(None)
+    policy.set_step_context({"map_id": "cracked-star-jar", "time_seconds": 240.0})
+    late_target_action, _ = policy.predict(None)
+    late_scores = policy.action_scores(None)
+
+    assert base.reset_count == 1
+    assert late.reset_count == 1
+    assert base.random_seed == 777
+    assert late.random_seed == 777
+    assert base.map_id == "cracked-star-jar"
+    assert late.map_id == "cracked-star-jar"
+    assert [context["time_seconds"] for context in base.contexts] == [
+        260.0,
+        239.9,
+        240.0,
+    ]
+    assert [context["time_seconds"] for context in late.contexts] == [
+        260.0,
+        239.9,
+        240.0,
+    ]
+    assert non_target_action == 1
+    assert early_target_action == 1
+    assert late_target_action == 5
+    assert late_scores["scores"][5] == 1.0
+    assert policy.opening_policy_report()["mode"] == "single_policy"
+    assert policy.policy_adapter_report()["mode"] == "map_late_split"
+    assert policy.policy_adapter_report()["target_maps"] == ["cracked-star-jar"]
+
+
+def test_map_late_split_policy_rejects_empty_target_maps():
+    with pytest.raises(ValueError, match="target_maps"):
+        MapLateSplitPolicy(
+            DummyPolicy(1),
+            DummyPolicy(5),
+            240.0,
+            [],
+            "base.zip",
+            "late.zip",
+        )
+
+
 def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch):
     captured = {}
 
@@ -1112,6 +1178,58 @@ def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch)
     assert captured["late_recovery_low_health_threshold"] == 0.4
     assert captured["late_recovery_toward_dot_threshold"] == 0.25
     assert report["policy_adapter"]["mode"] == "late_recovery_filter"
+
+
+def test_compare_policy_to_rule_bots_forwards_late_split_options(monkeypatch):
+    captured = {}
+
+    def fake_evaluate_policy_model(config, algorithm, **kwargs):
+        captured.update(kwargs)
+        return {
+            "policy_kind": "map_late_split",
+            "opening_policy": None,
+            "policy_adapter": {"mode": "map_late_split"},
+            "edge_recovery_samples": None,
+            "upgrade_policy": None,
+            "action_selection": "deterministic",
+            "summary": {
+                "episodes": 1,
+                "win_rate": 1.0,
+                "average_kills": 5.0,
+                "dominant_action_ratio": 0.1,
+                "normalized_action_entropy": 1.0,
+            },
+        }
+
+    monkeypatch.setattr(train_sb3, "evaluate_policy_model", fake_evaluate_policy_model)
+    monkeypatch.setattr(
+        train_sb3,
+        "run_rule_bot_matrix",
+        lambda config, bots, seed_start, episodes, seconds, map_id: {
+            "stdout": {"bots": []},
+            "command": ["game_harness", "matrix"],
+            "stderr": "",
+        },
+    )
+
+    report = train_sb3.compare_policy_to_rule_bots(
+        {
+            "phase": "test",
+            "evaluation": {"episodes": 1, "seconds": 5, "seed_start": 10},
+            "environment": {"tick_rate": 30},
+            "models": {"ppo": "unused.zip"},
+            "outputs": {"model_dir": "python/train/models"},
+        },
+        "ppo",
+        late_split_model_path="late.zip",
+        late_split_seconds=240.0,
+        late_split_maps=["cracked-star-jar"],
+    )
+
+    assert captured["late_split_model_path"] == "late.zip"
+    assert captured["late_split_seconds"] == 240.0
+    assert captured["late_split_maps"] == ["cracked-star-jar"]
+    assert report["policy_adapter"]["mode"] == "map_late_split"
 
 
 def test_evaluation_gate_flags_deterministic_action_collapse():
