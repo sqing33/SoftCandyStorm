@@ -1197,6 +1197,15 @@ def test_terminal_conversion_branch_switches_on_target_window_and_pressure():
     assert report["mode"] == "terminal_conversion_branch"
     assert report["target_maps"] == ["cracked-star-jar"]
     assert report["min_seconds"] == 210.0
+    usage = report["usage"]
+    assert usage["total_decisions"] == 5
+    assert usage["base_decisions"] == 4
+    assert usage["terminal_decisions"] == 1
+    assert usage["terminal_ratio"] == 0.2
+    assert usage["by_map"]["cracked-star-jar"]["total_decisions"] == 4
+    assert usage["by_map"]["cracked-star-jar"]["terminal_decisions"] == 1
+    assert usage["by_map"]["soda-creek"]["terminal_decisions"] == 0
+    assert usage["by_time_bucket"]["late_180_to_300"]["terminal_decisions"] == 1
 
 
 def test_terminal_conversion_branch_can_switch_on_low_health_risk():
@@ -1227,6 +1236,77 @@ def test_terminal_conversion_branch_can_switch_on_low_health_risk():
     action, _ = policy.predict(None)
 
     assert action == 6
+
+
+def test_multimap_policy_adapter_report_aggregates_terminal_usage():
+    adapter_a = {
+        "mode": "terminal_conversion_branch",
+        "target_maps": ["soda-creek", "cracked-star-jar"],
+        "usage": {
+            "total_decisions": 10,
+            "base_decisions": 7,
+            "terminal_decisions": 3,
+            "terminal_ratio": 0.3,
+            "by_map": {
+                "soda-creek": {
+                    "total_decisions": 10,
+                    "base_decisions": 7,
+                    "terminal_decisions": 3,
+                    "terminal_ratio": 0.3,
+                }
+            },
+            "by_time_bucket": {
+                "late_180_to_300": {
+                    "total_decisions": 10,
+                    "base_decisions": 7,
+                    "terminal_decisions": 3,
+                    "terminal_ratio": 0.3,
+                }
+            },
+        },
+    }
+    adapter_b = {
+        "mode": "terminal_conversion_branch",
+        "target_maps": ["soda-creek", "cracked-star-jar"],
+        "usage": {
+            "total_decisions": 5,
+            "base_decisions": 5,
+            "terminal_decisions": 0,
+            "terminal_ratio": 0.0,
+            "by_map": {
+                "cracked-star-jar": {
+                    "total_decisions": 5,
+                    "base_decisions": 5,
+                    "terminal_decisions": 0,
+                    "terminal_ratio": 0.0,
+                }
+            },
+            "by_time_bucket": {
+                "late_180_to_300": {
+                    "total_decisions": 5,
+                    "base_decisions": 5,
+                    "terminal_decisions": 0,
+                    "terminal_ratio": 0.0,
+                }
+            },
+        },
+    }
+
+    report = train_sb3.summarize_multimap_policy_adapter(
+        [{"policy_adapter": adapter_a}, {"policy_adapter": adapter_b}]
+    )
+
+    assert report["usage_scope"] == "multimap_aggregate"
+    assert report["usage"]["total_decisions"] == 15
+    assert report["usage"]["base_decisions"] == 12
+    assert report["usage"]["terminal_decisions"] == 3
+    assert report["usage"]["terminal_ratio"] == 0.2
+    assert report["usage"]["by_map"]["soda-creek"]["terminal_decisions"] == 3
+    assert report["usage"]["by_map"]["cracked-star-jar"]["base_decisions"] == 5
+    assert (
+        report["usage"]["by_time_bucket"]["late_180_to_300"]["total_decisions"]
+        == 15
+    )
 
 
 def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch):

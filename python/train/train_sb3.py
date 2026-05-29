@@ -391,6 +391,7 @@ class TerminalConversionBranchPolicy:
         self._map_id = None
         self._time_seconds = 0.0
         self._pressure_context = terminal_pressure_context({})
+        self._usage_stats = new_terminal_branch_usage_stats()
 
     def reset(self):
         self._time_seconds = 0.0
@@ -445,7 +446,15 @@ class TerminalConversionBranchPolicy:
         return self.base_model
 
     def predict(self, observation, deterministic=True):
-        return self.active_model().predict(observation, deterministic=deterministic)
+        use_terminal = self.should_use_terminal_model()
+        record_terminal_branch_usage(
+            self._usage_stats,
+            self._map_id,
+            self._time_seconds,
+            use_terminal,
+        )
+        model = self.terminal_model if use_terminal else self.base_model
+        return model.predict(observation, deterministic=deterministic)
 
     def set_random_seed(self, seed):
         for model in (self.base_model, self.terminal_model):
@@ -471,6 +480,7 @@ class TerminalConversionBranchPolicy:
             "terminal_model_path": self.terminal_model_path,
             "base_policy_kind": getattr(self.base_model, "policy_kind", "sb3"),
             "terminal_policy_kind": getattr(self.terminal_model, "policy_kind", "sb3"),
+            "usage": terminal_branch_usage_report(self._usage_stats),
             "limitations": [
                 "This wrapper is for explicit terminal-conversion diagnostics only.",
                 "It routes to the terminal branch only within configured map/time/pressure conditions.",
@@ -921,6 +931,90 @@ def terminal_pressure_context(diagnostics):
         "low_health_risk": clamp_float(low_health, 0.0, 1.0),
         "combined_pressure": clamp_float(combined, 0.0, 1.0),
     }
+
+
+def new_terminal_branch_usage_stats():
+    return {
+        "total_decisions": 0,
+        "base_decisions": 0,
+        "terminal_decisions": 0,
+        "by_map": {},
+        "by_time_bucket": {},
+    }
+
+
+def record_terminal_branch_usage(stats, map_id, time_seconds, use_terminal):
+    map_key = str(map_id or "unknown")
+    bucket_key = anchor_time_bucket_label(time_seconds)
+    terminal_delta = 1 if use_terminal else 0
+    base_delta = 0 if use_terminal else 1
+    stats["total_decisions"] += 1
+    stats["terminal_decisions"] += terminal_delta
+    stats["base_decisions"] += base_delta
+    for group_name, key in (("by_map", map_key), ("by_time_bucket", bucket_key)):
+        group = stats[group_name].setdefault(
+            key,
+            {
+                "total_decisions": 0,
+                "base_decisions": 0,
+                "terminal_decisions": 0,
+            },
+        )
+        group["total_decisions"] += 1
+        group["terminal_decisions"] += terminal_delta
+        group["base_decisions"] += base_delta
+
+
+def terminal_usage_bucket_report(bucket):
+    total = int(bucket.get("total_decisions", 0))
+    terminal = int(bucket.get("terminal_decisions", 0))
+    base = int(bucket.get("base_decisions", 0))
+    return {
+        "total_decisions": total,
+        "base_decisions": base,
+        "terminal_decisions": terminal,
+        "terminal_ratio": round(terminal / total, 4) if total else 0.0,
+    }
+
+
+def terminal_branch_usage_report(stats):
+    report = terminal_usage_bucket_report(stats)
+    report["by_map"] = {
+        key: terminal_usage_bucket_report(value)
+        for key, value in sorted(stats.get("by_map", {}).items())
+    }
+    report["by_time_bucket"] = {
+        key: terminal_usage_bucket_report(value)
+        for key, value in sorted(stats.get("by_time_bucket", {}).items())
+    }
+    return report
+
+
+def merge_terminal_branch_usage_reports(reports):
+    stats = new_terminal_branch_usage_stats()
+    for report in reports:
+        stats["total_decisions"] += int(report.get("total_decisions", 0) or 0)
+        stats["base_decisions"] += int(report.get("base_decisions", 0) or 0)
+        stats["terminal_decisions"] += int(report.get("terminal_decisions", 0) or 0)
+        for group_name in ("by_map", "by_time_bucket"):
+            source_group = report.get(group_name, {})
+            if not isinstance(source_group, dict):
+                continue
+            for key, value in source_group.items():
+                target = stats[group_name].setdefault(
+                    key,
+                    {
+                        "total_decisions": 0,
+                        "base_decisions": 0,
+                        "terminal_decisions": 0,
+                    },
+                )
+                target["total_decisions"] += int(value.get("total_decisions", 0) or 0)
+                target["base_decisions"] += int(value.get("base_decisions", 0) or 0)
+                target["terminal_decisions"] += int(
+                    value.get("terminal_decisions", 0) or 0
+                )
+    return terminal_branch_usage_report(stats)
 
 
 def action_vector_alignment(action_index, vector):
@@ -3785,7 +3879,7 @@ def compare_policy_to_rule_bots_across_maps(
         ),
         "policy_kind": comparisons[0].get("policy_kind") if comparisons else None,
         "opening_policy": comparisons[0].get("opening_policy") if comparisons else None,
-        "policy_adapter": comparisons[0].get("policy_adapter") if comparisons else None,
+        "policy_adapter": summarize_multimap_policy_adapter(comparisons),
         "edge_recovery_samples": [
             comparison.get("edge_recovery_samples")
             for comparison in comparisons
@@ -3877,6 +3971,31 @@ def summarize_multimap_comparison(comparisons):
             or row["policy_win_rate"] <= 0.0
         ],
     }
+
+
+def summarize_multimap_policy_adapter(comparisons):
+    if not comparisons:
+        return None
+    first = comparisons[0].get("policy_adapter")
+    if not isinstance(first, dict):
+        return first
+    adapters = [comparison.get("policy_adapter") for comparison in comparisons]
+    if not all(isinstance(adapter, dict) for adapter in adapters):
+        return first
+    mode = first.get("mode")
+    if any(adapter.get("mode") != mode for adapter in adapters):
+        return first
+    usage_reports = [
+        adapter.get("usage")
+        for adapter in adapters
+        if isinstance(adapter.get("usage"), dict)
+    ]
+    if not usage_reports:
+        return first
+    report = dict(first)
+    report["usage"] = merge_terminal_branch_usage_reports(usage_reports)
+    report["usage_scope"] = "multimap_aggregate"
+    return report
 
 
 def multimap_comparison_findings(comparisons):

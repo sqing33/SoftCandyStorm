@@ -2693,6 +2693,11 @@
       "id": "rl_sb3_terminal_victory_pressure_gate_probe",
       "summary": "对多图 victory terminal branch 增加 evaluation-only 条件分派：三图 210-240s terminal window 内需满足 combined_pressure >= 0.25 或 low_health_risk >= 0.4 才切到 terminal model。该探针未解除 300 秒 high-pressure 三图 0% 胜率；相对 parent 新增 cracked-star-jar 300 秒平均生存 -0.4668s blocker，相对 e30 仍有 soda-creek 300 秒 action 1 ratio +0.216 blocker。repair-probe gate 失败并记录 fail_20260529_017，说明不能继续只调分派阈值。",
       "report": "harness/reports/2026-05-29_rl_sb3_terminal_victory_multimap_pressure_gate_w1_e30_001/summary.md"
+    },
+    {
+      "id": "rl_terminal_branch_usage_instrumentation",
+      "summary": "TerminalConversionBranchPolicy 现在在 policy_adapter.usage 中记录 base / terminal 实际决策次数、terminal_ratio、按地图和按时间桶的分支使用情况；多地图 comparison 顶层会聚合 usage_scope=multimap_aggregate，避免误读第一张图的分支用量。单测覆盖 pressure-gated 分支统计和多图 usage 聚合，train_sb3.py/test_train_sb3.py py_compile 通过，test_train_sb3.py 51 passed。该能力只用于 branch diagnostics，不能替代 no-regression 或 repair-probe gate。",
+      "report": "harness/reports/2026-05-29_rl_terminal_branch_usage_instrumentation_001/summary.md"
     }
   ],
   "next_recommended": [
