@@ -90,4 +90,16 @@ python3 tools/validate_save_migration_plan.py \
   --allow-planned
 ```
 
-当前计划报告 `save_migration_plan_planned`。它要求迁移保留隐私默认值、本地数据控制、图鉴进度、章节进度、完成局数和最佳存活时间，并在 v1 中新增 `migration_history` 和基地 UI 状态字段。它只是契约和 blocker 记录；Runtime 迁移代码已有源码路径，但运行级迁移样本、人工平台路径审查和云存档策略仍需后续实现。
+当前计划报告 `save_migration_plan_planned`。它要求迁移保留隐私默认值、本地数据控制、图鉴进度、章节进度、完成局数和最佳存活时间，并在 v1 中新增 `migration_history` 和基地 UI 状态字段。它只是契约和 blocker 记录；Runtime 迁移代码已有源码路径，当前 smoke 已覆盖一个本地 v0 样本迁移，但人工平台路径审查、历史真实用户存档批量迁移和云存档策略仍需后续实现。
+
+Runtime 迁移 smoke 位于：
+
+```bash
+python3 tools/run_runtime_save_migration_smoke.py \
+  --repo-root . \
+  --work-dir /private/tmp/soft-candy-runtime-save-migration-smoke-001 \
+  --report harness/reports/2026-05-29_runtime_save_migration_smoke_001/runtime_save_migration_smoke.json \
+  --markdown harness/reports/2026-05-29_runtime_save_migration_smoke_001/summary.md
+```
+
+当前报告结论为 `runtime_save_migration_smoke_valid`。它实际执行 `game_runtime --save-file <v0> --export-save <v1>`，验证原存档被改写为 `save-state-v1`、导出文件也是 `save-state-v1`、`migration_history` 记录 `completed`，并保留局外资源、解锁、章节、完成局数、最佳存活时间、隐私默认值和本地数据控制。它不替代人工平台路径审查、云存档策略或发布候选验收。

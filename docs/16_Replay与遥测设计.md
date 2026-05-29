@@ -418,4 +418,4 @@ python3 tools/validate_save_migration_plan.py \
   --allow-planned
 ```
 
-该计划要求迁移不得默认开启上传型遥测、raw replay 上传或崩溃报告上传，并要求局外进度、图鉴、章节和本地数据控制被保留。当前结论只是 `save_migration_plan_planned`，v1 目标模板已可校验，但 Runtime 迁移仍未实现。
+该计划要求迁移不得默认开启上传型遥测、raw replay 上传或崩溃报告上传，并要求局外进度、图鉴、章节和本地数据控制被保留。当前结论只是 `save_migration_plan_planned`，v1 目标模板已可校验；Runtime 迁移源码路径和一个本地 v0 样本 smoke 已通过，但历史真实用户存档批量迁移、人工平台路径审查和云存档策略仍未完成。

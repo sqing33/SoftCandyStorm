@@ -2808,6 +2808,11 @@
       "id": "runtime_native_platform_paths",
       "summary": "Runtime 新增 --native-platform-data-root 显式入口，可把默认存档、Runtime 设置、本地遥测、Replay 和崩溃报告目录绑定到系统原生数据目录：macOS 使用 ~/Library/Application Support/Soft Candy Storm，Windows 使用 %APPDATA%/Soft Candy Storm，Linux / Unix 使用 ${XDG_DATA_HOME:-~/.local/share}/soft-candy-storm；cargo fmt --check 和 game_runtime 87 个单测通过。该能力不替代人工平台路径审查、平台隐私文本、云存档策略或发布包审查。",
       "report": "harness/reports/2026-05-29_runtime_native_platform_paths_001/summary.md"
+    },
+    {
+      "id": "runtime_save_migration_smoke",
+      "summary": "新增 Runtime v0 到 v1 存档迁移 smoke：工具写入带资源、章节解锁和完成目标的 save-state-v0 样本，实际执行 game_runtime --save-file <v0> --export-save <v1>，验证原存档和导出文件均成为 save-state-v1，migration_history 为 completed，并保留局外进度、隐私默认值、本地数据控制和 base_ui_state。该证据不替代历史真实用户存档批量迁移、人工平台路径审查、云存档策略或发布候选验收。",
+      "report": "harness/reports/2026-05-29_runtime_save_migration_smoke_001/summary.md"
     }
   ],
   "next_recommended": [

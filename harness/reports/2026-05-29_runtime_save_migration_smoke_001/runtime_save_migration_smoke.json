@@ -1,0 +1,73 @@
+{
+  "report_version": 1,
+  "decision": "runtime_save_migration_smoke_valid",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "work_dir": "/private/tmp/soft-candy-runtime-save-migration-smoke-001",
+  "template": "harness/save_contract/save_state_v0_template.json",
+  "artifacts": {
+    "source_v0_save": "/private/tmp/soft-candy-runtime-save-migration-smoke-001/profile_v0.json",
+    "exported_v1_save": "/private/tmp/soft-candy-runtime-save-migration-smoke-001/profile_export_v1.json"
+  },
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--save-file",
+        "/private/tmp/soft-candy-runtime-save-migration-smoke-001/profile_v0.json",
+        "--export-save",
+        "/private/tmp/soft-candy-runtime-save-migration-smoke-001/profile_export_v1.json"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout": "/private/tmp/soft-candy-runtime-save-migration-smoke-001/profile_export_v1.json\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.74s\n     Running `target/debug/game_runtime --save-file /private/tmp/soft-candy-runtime-save-migration-smoke-001/profile_v0.json --export-save /private/tmp/soft-candy-runtime-save-migration-smoke-001/profile_export_v1.json`\n"
+    }
+  ],
+  "checks": [
+    {
+      "id": "runtime_command_migrates_v0",
+      "status": "pass",
+      "summary": "Runtime prelaunch export command completed and printed the export path."
+    },
+    {
+      "id": "save_file_rewritten_to_v1",
+      "status": "pass",
+      "summary": "Original save file was rewritten from save-state-v0 to save-state-v1."
+    },
+    {
+      "id": "export_file_written_as_v1",
+      "status": "pass",
+      "summary": "Exported save file uses save-state-v1."
+    },
+    {
+      "id": "migration_history_completed",
+      "status": "pass",
+      "summary": "Migrated and exported saves record one completed save-state-v0-to-v1 migration entry."
+    },
+    {
+      "id": "meta_progress_preserved",
+      "status": "pass",
+      "summary": "Resources, unlocks, chapters, completed runs, and best survival are preserved."
+    },
+    {
+      "id": "privacy_and_data_controls_preserved",
+      "status": "pass",
+      "summary": "Privacy defaults and local-only data controls remain preserved after migration."
+    },
+    {
+      "id": "base_ui_state_initialized",
+      "status": "pass",
+      "summary": "save-state-v1 base_ui_state is initialized for Runtime meta panel persistence."
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "This smoke executes Runtime prelaunch CLI actions only; it does not open the Bevy window.",
+    "It validates one seeded save-state-v0 migration sample, not every historical save.",
+    "It does not replace manual platform path review, cloud save policy, or release candidate approval."
+  ]
+}
