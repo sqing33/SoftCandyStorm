@@ -2,10 +2,10 @@
   "manifest_version": 1,
   "package_id": "current-local-package-2026-05-26",
   "candidate_id": "current-local-2026-05-26",
-  "created_at": "2026-05-26",
+  "created_at": "2026-05-29",
   "release_stage": "prototype-local",
   "package_status": "blocked",
-  "summary": "当前本地工作区的发布包清单。Release Candidate 仍未就绪，当前不能生成有效发布包；本地二进制启动、headless、Bot 矩阵、Replay 和本机 Runtime performance smoke 已有当前证据，但内容冻结、人工审查、发布级性能和最终打包 smoke 仍未通过。",
+  "summary": "当前本地工作区的发布包清单。Release Candidate 仍未就绪，当前不能生成有效发布包；本地二进制启动、headless、Bot 矩阵、Replay、本机 Runtime performance smoke 和 Runtime 本地数据控制 smoke 已有当前证据，但内容冻结、人工审查、发布级性能、发布级隐私 / 平台路径 UI 和最终打包 smoke 仍未通过。",
   "candidate_evidence": "harness/release/current_local_rc_evidence.json",
   "package_items": [],
   "checks": [
@@ -15,18 +15,21 @@
       "summary": "Runtime/Harness 本地二进制已可启动，但 Release Candidate 仍未就绪，因此尚未创建正式发布包。",
       "evidence_paths": [
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_retry_003/summary.md",
-        "harness/reports/2026-05-27_release_candidate_evidence_current_local_005/summary.md"
+        "harness/reports/2026-05-27_release_candidate_evidence_current_local_005/summary.md",
+        "harness/reports/2026-05-29_release_candidate_evidence_runtime_local_data_smoke_001/summary.md"
       ],
       "synthetic": false
     },
     {
       "id": "final_smoke",
       "status": "waiting",
-      "summary": "恢复后 Rust/Harness/Gym 冒烟、Phase 4 full pack 自动门禁和本机 Runtime performance smoke 已有当前证据，但最终 smoke 必须针对真实发布包运行，当前没有发布包。",
+      "summary": "恢复后 Rust/Harness/Gym 冒烟、Phase 4 full pack 自动门禁、本机 Runtime performance smoke 和 Runtime 本地数据控制 smoke 已有当前证据，但最终 smoke 必须针对真实发布包运行，当前没有发布包。",
       "evidence_paths": [
         "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
         "harness/reports/2026-05-27_release_candidate_evidence_current_local_005/summary.md",
-        "harness/reports/2026-05-26_runtime_performance_capture_004/summary.md"
+        "harness/reports/2026-05-26_runtime_performance_capture_004/summary.md",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/summary.md",
+        "harness/reports/2026-05-29_release_candidate_evidence_runtime_local_data_smoke_001/summary.md"
       ],
       "synthetic": false
     }
@@ -35,7 +38,7 @@
     "release_candidate_not_ready"
   ],
   "next_actions": [
-    "先完成内容冻结、发布级性能、人工审查、隐私/素材/剧情接受证据和 Release Candidate 剩余 waiting gate。",
+    "先完成内容冻结、发布级性能、人工审查、隐私/素材/剧情接受证据、发布级导出 / 删除 UI 和 Release Candidate 剩余 waiting gate。",
     "完成真实 9 局人工试玩接受后，用 game_harness lock-accepted-content 生成非空 accepted content lockfile，并用 tools/validate_accepted_content_lockfile.py 复核。",
     "Release Candidate 全部门禁通过后生成 runtime bundle、release archive、checksum manifest、release notes、content lockfile 和 asset manifest。",
     "对最终发布包运行 final smoke 并将证据写回该清单。"
