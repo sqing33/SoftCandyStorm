@@ -1,0 +1,12 @@
+{
+  "case_id": "fail_20260529_018",
+  "category": "rl",
+  "content_id": "terminal-branch-usage-real-report",
+  "seed": 63100,
+  "bot": "SB3PPOParentWithTerminalVictoryBranch",
+  "time_seconds": 300.0,
+  "symptom": "新增 terminal branch usage instrumentation 后复跑三图 300 秒 high-pressure comparison，policy_adapter.usage 显示 terminal 分支实际介入 2996/44904 次决策，late_180_to_300 桶内 terminal_ratio 为 0.3247，但 soda-creek、caramel-workshop、cracked-star-jar 300 秒胜率仍全部为 0.0。",
+  "root_cause": "terminal branch 已被正确分派到 210-240 秒窗口，说明失败不是分支未调用造成；当前 victory terminal model 即使在 late bucket 内介入，也没有学习到能把高压失败态转换为胜利的稳定动作序列，且其训练目标仍过于泛化，未按地图和真实失败前状态区分。",
+  "fix": "停止只调 dispatch 阈值或继续扩大同一 victory target 权重；下一步应实现 per-map terminal objective，或重新收集更接近 180-300 秒失败前状态的 conversion target，并继续使用 parent/e30 fixed-window no-regression 与 repair-probe gate。",
+  "validation": "已生成 harness/reports/2026-05-29_rl_terminal_branch_usage_real_report_001/comparison_300s.json；顶层 usage_scope 为 multimap_aggregate，三图 usage 聚合正确，但 gate_decision 仍为 multimap_comparison_recorded_needs_policy_repair。"
+}
