@@ -1,0 +1,175 @@
+{
+  "report_version": 1,
+  "decision": "runtime_local_data_controls_smoke_valid",
+  "repo_root": "/Users/chongqing/Codes/软糖风暴",
+  "work_dir": "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work",
+  "platform_data_root": "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm",
+  "artifacts": {
+    "save_export": "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/profile_export.json",
+    "local_data_export": "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/local_data_export.json"
+  },
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--platform-data-root",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm",
+        "--print-privacy-notice"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout": "《软糖风暴》隐私说明\n遥测、Replay 和崩溃报告默认只保存在本机，用于平衡、崩溃分析和玩法改进。\n上传匿名遥测：关闭；上传原始 Replay 输入：关闭；上传崩溃报告：关闭。\n上传功能必须由玩家明确开启，raw replay 需要单独同意；当前 Runtime 没有网络上传传输层。\n本地数据可以导出为 JSON，也可以删除。数据不应包含个人身份信息、IP 地址、文件路径或自由文本输入；默认保留 90 天。\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.73s\n     Running `target/debug/game_runtime --platform-data-root harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm --print-privacy-notice`\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--platform-data-root",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm",
+        "--export-save",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/profile_export.json"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout": "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/profile_export.json\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.99s\n     Running `target/debug/game_runtime --platform-data-root harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm --export-save harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/profile_export.json`\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--platform-data-root",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm",
+        "--delete-save"
+      ],
+      "expected_returncode": 2,
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.48s\n     Running `target/debug/game_runtime --platform-data-root harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm --delete-save`\nruntime privacy/data action failed: failed to delete save: delete save requires --save-file\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--save-file",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/saves/profile.json",
+        "--delete-save"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout": "deleted save harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/saves/profile.json\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.26s\n     Running `target/debug/game_runtime --save-file harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/saves/profile.json --delete-save`\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--platform-data-root",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm",
+        "--export-local-data",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/local_data_export.json"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout": "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/local_data_export.json\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.18s\n     Running `target/debug/game_runtime --platform-data-root harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm --export-local-data harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/artifacts/local_data_export.json`\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--platform-data-root",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm",
+        "--delete-local-data"
+      ],
+      "expected_returncode": 2,
+      "returncode": 2,
+      "stdout": "",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.16s\n     Running `target/debug/game_runtime --platform-data-root harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm --delete-local-data`\nruntime privacy/data action failed: failed to delete local data: delete requires at least one explicit --local-data-dir\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "game_runtime",
+        "--",
+        "--local-data-dir",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/telemetry",
+        "--local-data-dir",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/replay",
+        "--local-data-dir",
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/crash-reports",
+        "--delete-local-data"
+      ],
+      "expected_returncode": 0,
+      "returncode": 0,
+      "stdout": "deleted 3 local files and 0 empty directories\n",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.96s\n     Running `target/debug/game_runtime --local-data-dir harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/telemetry --local-data-dir harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/replay --local-data-dir harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/work/platform_user_data/soft-candy-storm/crash-reports --delete-local-data`\n"
+    }
+  ],
+  "checks": [
+    {
+      "id": "privacy_notice_defaults_local",
+      "status": "pass",
+      "summary": "Privacy notice prints local-only defaults, explicit opt-in language, and no upload transport."
+    },
+    {
+      "id": "save_export_created_v1",
+      "status": "pass",
+      "summary": "Save export creates a save-state-v1 profile with local-only default data controls."
+    },
+    {
+      "id": "save_delete_requires_explicit_save_file",
+      "status": "pass",
+      "summary": "Save deletion through platform data root is rejected unless --save-file is explicit."
+    },
+    {
+      "id": "save_delete_removes_explicit_file",
+      "status": "pass",
+      "summary": "Explicit --save-file deletion removes only the selected profile file."
+    },
+    {
+      "id": "local_data_export_includes_configured_platform_dirs",
+      "status": "pass",
+      "summary": "Local data export includes telemetry, replay, and crash-report files from the platform data root."
+    },
+    {
+      "id": "local_data_delete_requires_explicit_dirs",
+      "status": "pass",
+      "summary": "Local data deletion is rejected when only --platform-data-root provided implicit directories."
+    },
+    {
+      "id": "local_data_delete_removes_explicit_dirs",
+      "status": "pass",
+      "summary": "Local data deletion clears files under every explicit --local-data-dir while preserving the root dirs."
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "This smoke executes Runtime prelaunch CLI actions only; it does not open the Bevy window.",
+    "It validates local JSON export/delete behavior, not native OS platform data resolution.",
+    "It does not replace manual privacy review, manual platform path review, legal review, or release candidate approval.",
+    "Upload transport remains intentionally not implemented for this prototype."
+  ]
+}
