@@ -1,0 +1,22 @@
+{
+  "case_id": "fail_20260529_005",
+  "category": "rl_diagnostic",
+  "content_id": "sb3-e30-map-late-split-probe",
+  "seed": 63100,
+  "bot": "map_late_split:mid_anchor_parent_to_opening_mid_retention_late_probe",
+  "time_seconds": 300.0,
+  "symptom": "Evaluation-only split policy used the e30 mid-anchor guarded parent as the base model and switched to the rejected opening/mid retention + late branch on cracked-star-jar after 240s. Required window regressions against both e30 and parent passed, but the 300s high-pressure comparison still recorded 0.0 win rate on soda-creek, caramel-workshop, and cracked-star-jar.",
+  "root_cause": "The split preserved the already-failing parent instead of converting late wins. On cracked-star-jar, the two late failure seeds ended at 230.5203s and 237.9885s, before the 240s dispatch threshold, so the late branch could not intervene. The run also retained one opening failure per map, showing that a final-minute split alone cannot fix opening retention or pre-240s route debt.",
+  "fix": "Do not promote this split combination as repair evidence or policy acceptance. Keep MapLateSplitPolicy as a diagnostic tool, but if the split direction continues, test earlier per-map dispatch such as 180s or failure-bucket-specific routing while preserving required e30 and parent window-regression reports.",
+  "validation": "train_sb3.py generated comparison_60s.json, comparison_180s.json, and comparison_300s.json under harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001. analyze_rl_policy_failures.py recorded 9 failures in failure_analysis_300s.json. validate_policy_window_regression.py passed against both e30 and the mid-anchor parent, and validate_rl_repair_probe_gate.py returned rl_repair_probe_gate_passed_for_limited_followup with a warning that remaining failures limit the evidence. summary.md rejects the run because 300s high-pressure remains 0.0/0.0/0.0.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/window_regression_vs_mid_anchor_parent.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/repair_probe_gate.json"
+  ]
+}

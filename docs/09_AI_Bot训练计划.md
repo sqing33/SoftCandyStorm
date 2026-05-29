@@ -262,6 +262,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 用 required multibaseline gate 约束后，从 mid-anchor parent 重新做 opening/mid retention + late conversion 小步 probe：训练期 anchor guard、drift-row alignment 和 full-anchor alignment 均通过，且 `cracked-star-jar` 300 秒胜率恢复到 `0.6667`。但该 checkpoint 相对 e30 与 parent 都回归：`caramel-workshop` 180 秒 dominant action ratio 分别增加 `0.2638` / `0.2413`，`soda-creek` 300 秒平均存活分别下降 `24.3608s` / `27.2947s`，且相对 parent 的 `cracked-star-jar` 60 秒胜率下降 `0.3333`。已记录 `fail_20260529_004`；该结果证明 final-minute conversion 有信号，但必须走 per-map 或 split-policy 约束，不能用单一 shared PPO continuation 换取局部恢复。
 
+首个 per-map late split diagnostic 已验证工具入口但拒绝当前组合。该 run 使用 mid-anchor parent 作为 base，只在 `cracked-star-jar` 的 `240s` 后切到 opening/mid retention + late branch；相对 e30 和 parent 的 required window regression 均通过，repair-probe gate 也只给出 limited-followup。但 300 秒 high-pressure 仍为 `0.0/0.0/0.0`，failure analysis 记录 9 个失败局，且 `cracked-star-jar` 两个 late failure 分别死在 `230.5203s` 和 `237.9885s`，早于 `240s` split 阈值。已记录 `fail_20260529_005`；结论是 split-policy 可以继续用于诊断，但当前 `240s` dispatch 只是保留 already-failing parent，不能作为 repair 或 acceptance 证据。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

@@ -2558,6 +2558,11 @@
       "id": "rl_sb3_e30_opening_mid_retention_late_probe",
       "summary": "从 e30 mid-anchor guarded probe parent 做 opening/mid retention + late conversion 小步 probe：请求 128、实际 256 timestep，opening/mid anchor 权重 2.0，late 权重 0.75。anchor guard、drift-row alignment 和 full-anchor alignment 通过，cracked-star-jar 300 秒胜率恢复到 0.6667；但 required multibaseline repair gate 失败：相对 e30 有 caramel 180 秒 dominant action ratio +0.2638 与 soda 300 秒平均存活 -24.3608s，相对 parent 还有 caramel 180 秒 +0.2413、soda 300 秒 -27.2947s、cracked 60 秒胜率 -0.3333。已记录 fail_20260529_004，不能从该 checkpoint 继续。",
       "report": "harness/reports/2026-05-29_rl_sb3_e30_opening_mid_retention_late_probe_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_e30_map_late_split_probe",
+      "summary": "实现并验证 evaluation-only MapLateSplitPolicy 后，用 mid-anchor parent 作为 base，只在 cracked-star-jar 的 240s 后切到 rejected late branch。相对 e30 和 parent 的 required window regression 均通过，repair-probe gate 为 limited-followup；但 300 秒 high-pressure 仍为 0.0/0.0/0.0，failure_analysis_300s 记录 9 个失败局，其中 cracked-star-jar 两个 late failure 死在 240s split 前。已记录 fail_20260529_005；当前 split 组合不能作为 repair 或 RL acceptance 证据。",
+      "report": "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2587,7 +2592,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。512 timestep e30 late-win-conversion probe 恢复 cracked-star-jar 300 秒 0.3333 但触发 caramel-workshop 180 秒动作分布回归；256 timestep mid-anchor probe 则压住该回归并通过 repair-probe gate limited-followup，但 300 秒三图仍全 0 且丢失 cracked-star-jar 恢复信号。从该 parent 提高 late anchor 权重的 follow-up 又相对 parent 触发 soda 180 秒和 caramel 300 秒平均存活回归；降低 late anchor、强化 opening/mid retention 的小步 probe 虽恢复 cracked 300 秒 0.6667，却触发 e30 与 parent 多基线回归。下一步应转向 per-map late conversion 或 split-policy 约束，不能继续 shared PPO continuation；当前 RL acceptance 继续 blocked。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。512 timestep e30 late-win-conversion probe 恢复 cracked-star-jar 300 秒 0.3333 但触发 caramel-workshop 180 秒动作分布回归；256 timestep mid-anchor probe 则压住该回归并通过 repair-probe gate limited-followup，但 300 秒三图仍全 0 且丢失 cracked-star-jar 恢复信号。从该 parent 提高 late anchor 权重的 follow-up 又相对 parent 触发 soda 180 秒和 caramel 300 秒平均存活回归；降低 late anchor、强化 opening/mid retention 的小步 probe 虽恢复 cracked 300 秒 0.6667，却触发 e30 与 parent 多基线回归。首个 240s per-map late split diagnostic 保住多基线 no-regression 但 300 秒仍为 0.0/0.0/0.0，说明 split dispatch 需要更早或按失败桶设计，不能继续 shared PPO continuation；当前 RL acceptance 继续 blocked。"
     },
     {
       "id": "rl_policy_multimap_training",
