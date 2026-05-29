@@ -266,6 +266,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 把同一 per-map split 提前到 `180s` 后仍未恢复 300 秒转换。该 run 继续通过 e30 / parent required window regression 和 limited-followup repair gate，但 300 秒仍为 `0.0/0.0/0.0`，`cracked-star-jar` 平均存活只从 `175.125s` 微增到 `175.2584s`，两个 late death 仍在 `230.5203s` 和 `238.3886s` 发生。已记录 `fail_20260529_006`；下一步不应继续只调 split 秒数，而应检查 parent-to-late handoff state distribution，或做训练期 per-map constrained repair。
 
+handoff state distribution 诊断确认 split 失败不是因为 late branch 接不住陌生 parent 状态，而是当前 late branch 在 handoff 窗口几乎没有策略差异。该诊断复现 `cracked-star-jar` 180s split 的 3 个失败 trace，并在 `120s` 到 `240s` 的 `458` 个 observation 上同时计算 parent 与 late branch action score；overall base-to-late mean KL 只有 `0.000491`、argmax agreement 为 `0.9978`，post-split argmax agreement 为 `1.0`。已记录 `fail_20260529_007`；下一步应转向训练期 per-map constrained repair，或用 parent late-state trace 训练显式 action-separation / terminal-conversion 分支。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

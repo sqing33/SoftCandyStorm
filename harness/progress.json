@@ -2568,6 +2568,11 @@
       "id": "rl_sb3_e30_map_late_split_180s_probe",
       "summary": "把同一 MapLateSplitPolicy dispatch 从 240s 提前到 180s 后，短中窗保持不变，required window regression 继续通过；但 300 秒 high-pressure 仍为 0.0/0.0/0.0，cracked-star-jar 平均存活只微增到 175.2584s，late deaths 仍发生在 230.5203s 和 238.3886s。已记录 fail_20260529_006；不能继续只调 split 秒数。",
       "report": "harness/reports/2026-05-29_rl_sb3_e30_map_late_split_180s_probe_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_e30_handoff_state_distribution",
+      "summary": "新增 analyze_sb3_handoff_states.py 并复现 cracked-star-jar 180s split 的 3 个失败 trace；在 120-240 秒 458 个 handoff observation 上比较 parent 与 late branch，overall base-to-late mean KL 仅 0.000491、argmax agreement 0.9978，post-split argmax agreement 1.0。已记录 fail_20260529_007；当前 base/late pair 在 handoff window 几乎没有策略差异，不能继续只移动 split 秒数。",
+      "report": "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2597,7 +2602,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。512 timestep e30 late-win-conversion probe 恢复 cracked-star-jar 300 秒 0.3333 但触发 caramel-workshop 180 秒动作分布回归；256 timestep mid-anchor probe 则压住该回归并通过 repair-probe gate limited-followup，但 300 秒三图仍全 0 且丢失 cracked-star-jar 恢复信号。从该 parent 提高 late anchor 权重的 follow-up 又相对 parent 触发 soda 180 秒和 caramel 300 秒平均存活回归；降低 late anchor、强化 opening/mid retention 的小步 probe 虽恢复 cracked 300 秒 0.6667，却触发 e30 与 parent 多基线回归。240s per-map late split 保住多基线 no-regression 但 300 秒仍全 0；提前到 180s 也只让 cracked-star-jar 平均存活微增到 175.2584s。下一步应检查 parent-to-late handoff state distribution 或做训练期 per-map constrained repair，不能继续 shared PPO continuation；当前 RL acceptance 继续 blocked。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。512 timestep e30 late-win-conversion probe 恢复 cracked-star-jar 300 秒 0.3333 但触发 caramel-workshop 180 秒动作分布回归；256 timestep mid-anchor probe 则压住该回归并通过 repair-probe gate limited-followup，但 300 秒三图仍全 0 且丢失 cracked-star-jar 恢复信号。从该 parent 提高 late anchor 权重的 follow-up 又相对 parent 触发 soda 180 秒和 caramel 300 秒平均存活回归；降低 late anchor、强化 opening/mid retention 的小步 probe 虽恢复 cracked 300 秒 0.6667，却触发 e30 与 parent 多基线回归。240s per-map late split 保住多基线 no-regression 但 300 秒仍全 0；提前到 180s 也只让 cracked-star-jar 平均存活微增到 175.2584s。handoff state distribution 进一步确认 parent 与 late branch 在 120-240 秒 handoff 状态上几乎无差异，post-split argmax agreement 为 1.0。下一步应做训练期 per-map constrained repair，或用 parent late-state trace 训练显式 action-separation / terminal-conversion 分支；不能继续 shared PPO continuation 或单纯移动 split 秒数，当前 RL acceptance 继续 blocked。"
     },
     {
       "id": "rl_policy_multimap_training",

@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260529_007",
+  "category": "rl_diagnostic",
+  "content_id": "sb3-e30-handoff-state-distribution",
+  "seed": 63100,
+  "bot": "handoff_state_distribution:mid_anchor_parent_vs_opening_mid_retention_late_probe",
+  "time_seconds": 300.0,
+  "symptom": "A focused cracked-star-jar 180s split trace reproduced the 0% 300s win rate. Comparing parent and late branch action scores on 458 sampled handoff observations from 120s to 240s showed almost no policy separation: overall mean base-to-late KL was 0.000491, overall argmax agreement was 0.9978, and post-split argmax agreement was 1.0.",
+  "root_cause": "The rejected late branch does not provide a materially different action surface on inherited parent handoff states. The earlier cracked-star-jar standalone recovery signal likely depends on whole-trajectory opening/mid distribution changes rather than a late-only behavior that can be spliced into the mid-anchor parent at 180s.",
+  "fix": "Do not keep tuning only the split threshold for this base/late pair. Future work should use training-time per-map constrained repair, or train a branch directly on parent late-state traces with explicit action-score separation and terminal conversion objectives while preserving e30 and parent no-regression gates.",
+  "validation": "train_sb3.py reran cracked-star-jar 180s split policy for 3 failed 300s episodes with observation traces in harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/split_180_traces. analyze_sb3_handoff_states.py generated handoff_state_distribution.json and summary.md, confirming mean KL 0.000491 and post-split argmax agreement 1.0.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/split_180_eval_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/handoff_state_distribution.json",
+    "harness/reports/2026-05-29_rl_sb3_e30_handoff_state_distribution_001/handoff_state_distribution.md"
+  ]
+}
