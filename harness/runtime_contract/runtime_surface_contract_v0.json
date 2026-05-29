@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts and delete confirmation, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, F3 codex keyboard, pointer control-zone, and gamepad browsing, F4 data-control shortcuts, pointer control-zone, and delete confirmation, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -289,6 +289,14 @@
     },
     {
       "file": "runtime_main",
+      "name": "RuntimeSettingsAction",
+      "required_variants": [
+        "ToggleUpload",
+        "DataControl"
+      ]
+    },
+    {
+      "file": "runtime_main",
       "name": "RuntimeChapterAction",
       "required_variants": [
         "Previous",
@@ -350,6 +358,9 @@
     "runtime_data_control_action_from_keyboard",
     "runtime_data_control_requires_confirmation",
     "runtime_data_control_confirmation_message",
+    "runtime_settings_action_from_keyboard",
+    "runtime_settings_action_from_pointer",
+    "runtime_settings_action_from_pointer_zone",
     "load_runtime_story_codex_ui_candidate_manifest",
     "validate_runtime_story_codex_ui_candidate_manifest",
     "load_runtime_asset_candidate_manifest",
@@ -489,6 +500,34 @@
       "target": "RuntimeCodexAction::ToggleDiscoveredOnly"
     },
     {
+      "key": "MouseButton::Left",
+      "target": "RuntimeUploadKind::Telemetry"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeUploadKind::RawReplay"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeUploadKind::CrashReport"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeDataControlAction::ExportSave"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeDataControlAction::DeleteSave"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeDataControlAction::ExportLocalData"
+    },
+    {
+      "key": "MouseButton::Left",
+      "target": "RuntimeDataControlAction::DeleteLocalData"
+    },
+    {
       "key": "GamepadButtonType::LeftTrigger",
       "target": "RuntimeCodexAction::PreviousCategory"
     },
@@ -549,6 +588,7 @@
     "上传崩溃报告",
     "E 导出存档",
     "X 删除存档",
+    "右下七段点击区: 遥测 Replay 崩溃 导出存档 删除存档 导出本地 删除本地",
     "X/K 删除需要再次按同一键确认",
     "confirm delete save: press X again",
     "confirm delete local data: press K again",

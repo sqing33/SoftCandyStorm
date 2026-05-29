@@ -67,6 +67,8 @@ const META_PANEL_WIDTH: f32 = 430.0;
 const META_PANEL_RIGHT_MARGIN: f32 = 14.0;
 const CODEX_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CODEX_POINTER_CONTROL_ZONE_COUNT: usize = 5;
+const SETTINGS_POINTER_CONTROL_HEIGHT: f32 = 112.0;
+const SETTINGS_POINTER_CONTROL_ZONE_COUNT: usize = 7;
 
 fn main() {
     let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -359,6 +361,12 @@ enum RuntimeDataControlAction {
     DeleteSave,
     ExportLocalData,
     DeleteLocalData,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeSettingsAction {
+    ToggleUpload(RuntimeUploadKind),
+    DataControl(RuntimeDataControlAction),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1180,44 +1188,56 @@ fn step_game_core(
         }
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Settings {
-        if let Some(kind) = privacy_toggle_from_keyboard(&keyboard) {
-            let enabled = toggle_runtime_privacy_setting(&mut state.privacy_settings, kind);
-            let persistence = match persist_runtime_privacy_settings_if_configured(&state) {
-                Ok(true) => "saved",
-                Ok(false) => "session only",
-                Err(error) => {
-                    state.last_event = format!("privacy settings save failed: {error}");
+        let pointer_action = primary_window.get_single().ok().and_then(|window| {
+            runtime_settings_action_from_pointer(
+                &mouse_buttons,
+                window.cursor_position(),
+                Vec2::new(window.resolution.width(), window.resolution.height()),
+            )
+        });
+        if let Some(action) = runtime_settings_action_from_keyboard(&keyboard).or(pointer_action) {
+            match action {
+                RuntimeSettingsAction::ToggleUpload(kind) => {
+                    state.pending_data_delete_action = None;
+                    let enabled = toggle_runtime_privacy_setting(&mut state.privacy_settings, kind);
+                    let persistence = match persist_runtime_privacy_settings_if_configured(&state) {
+                        Ok(true) => "saved",
+                        Ok(false) => "session only",
+                        Err(error) => {
+                            state.last_event = format!("privacy settings save failed: {error}");
+                            state.last_event_kind = RuntimeEventKind::System;
+                            state.pending_sounds.push(RuntimeSound::System);
+                            return;
+                        }
+                    };
+                    if let Err(error) = persist_runtime_save_if_configured(&state) {
+                        state.last_event =
+                            format!("privacy settings {persistence}, save sync failed: {error}");
+                        state.last_event_kind = RuntimeEventKind::System;
+                        state.pending_sounds.push(RuntimeSound::System);
+                        return;
+                    }
+                    state.last_event = format!(
+                        "{} {} ({persistence})",
+                        runtime_upload_kind_label(kind),
+                        if enabled { "enabled" } else { "disabled" }
+                    );
                     state.last_event_kind = RuntimeEventKind::System;
                     state.pending_sounds.push(RuntimeSound::System);
-                    return;
                 }
-            };
-            if let Err(error) = persist_runtime_save_if_configured(&state) {
-                state.last_event =
-                    format!("privacy settings {persistence}, save sync failed: {error}");
-                state.last_event_kind = RuntimeEventKind::System;
-                state.pending_sounds.push(RuntimeSound::System);
-                return;
-            }
-            state.last_event = format!(
-                "{} {} ({persistence})",
-                runtime_upload_kind_label(kind),
-                if enabled { "enabled" } else { "disabled" }
-            );
-            state.last_event_kind = RuntimeEventKind::System;
-            state.pending_sounds.push(RuntimeSound::System);
-        }
-        if let Some(action) = runtime_data_control_action_from_keyboard(&keyboard) {
-            match run_runtime_data_control_action_from_state(&mut state, action) {
-                Ok(message) => {
-                    state.last_event = message;
-                    state.last_event_kind = RuntimeEventKind::System;
-                    state.pending_sounds.push(RuntimeSound::System);
-                }
-                Err(error) => {
-                    state.last_event = format!("local data action failed: {error}");
-                    state.last_event_kind = RuntimeEventKind::System;
-                    state.pending_sounds.push(RuntimeSound::Damage);
+                RuntimeSettingsAction::DataControl(action) => {
+                    match run_runtime_data_control_action_from_state(&mut state, action) {
+                        Ok(message) => {
+                            state.last_event = message;
+                            state.last_event_kind = RuntimeEventKind::System;
+                            state.pending_sounds.push(RuntimeSound::System);
+                        }
+                        Err(error) => {
+                            state.last_event = format!("local data action failed: {error}");
+                            state.last_event_kind = RuntimeEventKind::System;
+                            state.pending_sounds.push(RuntimeSound::Damage);
+                        }
+                    }
                 }
             }
         }
@@ -1414,6 +1434,73 @@ fn runtime_data_control_action_from_keyboard(
         Some(RuntimeDataControlAction::DeleteLocalData)
     } else {
         None
+    }
+}
+
+fn runtime_settings_action_from_keyboard(
+    keyboard: &ButtonInput<KeyCode>,
+) -> Option<RuntimeSettingsAction> {
+    privacy_toggle_from_keyboard(keyboard)
+        .map(RuntimeSettingsAction::ToggleUpload)
+        .or_else(|| {
+            runtime_data_control_action_from_keyboard(keyboard)
+                .map(RuntimeSettingsAction::DataControl)
+        })
+}
+
+fn runtime_settings_action_from_pointer(
+    mouse_buttons: &ButtonInput<MouseButton>,
+    cursor_position: Option<Vec2>,
+    window_size: Vec2,
+) -> Option<RuntimeSettingsAction> {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        runtime_settings_action_from_pointer_zone(cursor_position?, window_size)
+    } else {
+        None
+    }
+}
+
+fn runtime_settings_action_from_pointer_zone(
+    cursor_position: Vec2,
+    window_size: Vec2,
+) -> Option<RuntimeSettingsAction> {
+    if window_size.x <= 0.0 || window_size.y <= 0.0 {
+        return None;
+    }
+    let panel_right = (window_size.x - META_PANEL_RIGHT_MARGIN).max(0.0);
+    let panel_left = (panel_right - META_PANEL_WIDTH).max(0.0);
+    let panel_width = (panel_right - panel_left).max(1.0);
+    let in_panel_x = cursor_position.x >= panel_left && cursor_position.x <= panel_right;
+    let in_control_y =
+        cursor_position.y >= 0.0 && cursor_position.y <= SETTINGS_POINTER_CONTROL_HEIGHT;
+    if !in_panel_x || !in_control_y {
+        return None;
+    }
+
+    let normalized_x = ((cursor_position.x - panel_left) / panel_width).clamp(0.0, 0.999);
+    let zone = (normalized_x * SETTINGS_POINTER_CONTROL_ZONE_COUNT as f32).floor() as usize;
+    match zone {
+        0 => Some(RuntimeSettingsAction::ToggleUpload(
+            RuntimeUploadKind::Telemetry,
+        )),
+        1 => Some(RuntimeSettingsAction::ToggleUpload(
+            RuntimeUploadKind::RawReplay,
+        )),
+        2 => Some(RuntimeSettingsAction::ToggleUpload(
+            RuntimeUploadKind::CrashReport,
+        )),
+        3 => Some(RuntimeSettingsAction::DataControl(
+            RuntimeDataControlAction::ExportSave,
+        )),
+        4 => Some(RuntimeSettingsAction::DataControl(
+            RuntimeDataControlAction::DeleteSave,
+        )),
+        5 => Some(RuntimeSettingsAction::DataControl(
+            RuntimeDataControlAction::ExportLocalData,
+        )),
+        _ => Some(RuntimeSettingsAction::DataControl(
+            RuntimeDataControlAction::DeleteLocalData,
+        )),
     }
 }
 
@@ -2668,7 +2755,7 @@ fn render_meta_settings_panel(
         .map(|path| format!("写回 {}", path.display()))
         .unwrap_or_else(|| "未配置设置文件，本次会话生效".to_string());
     format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n右下七段点击区: 遥测 Replay 崩溃 导出存档 删除存档 导出本地 删除本地\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
         on_off_label(settings.telemetry_upload_enabled),
         on_off_label(settings.raw_replay_upload_enabled),
         on_off_label(settings.crash_report_upload_enabled),
@@ -4529,16 +4616,18 @@ mod tests {
         runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
         runtime_codex_action_from_pointer_zone, runtime_local_data_export_path,
         runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
-        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
+        toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
+        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
         RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeFrameMetricsReport,
         RuntimeFrameMetricsState, RuntimeMetaPanelRenderContext, RuntimeMetaPanelView,
         RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0,
-        RuntimeSound, RuntimeState, RuntimeStoryCodexUiCandidateManifest,
+        RuntimeSettingsAction, RuntimeSound, RuntimeState, RuntimeStoryCodexUiCandidateManifest,
         RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID,
         DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
         MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
@@ -4546,7 +4635,7 @@ mod tests {
         RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use bevy::prelude::{
-        ButtonInput, Gamepad, GamepadButton, GamepadButtonType, MouseButton, Vec2,
+        ButtonInput, Gamepad, GamepadButton, GamepadButtonType, KeyCode, MouseButton, Vec2,
     };
     use game_core::{
         BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent,
@@ -6421,6 +6510,193 @@ mod tests {
             runtime_codex_action_from_pointer_zone(Vec2::new(1110.0, 140.0), window_size),
             None
         );
+    }
+
+    #[test]
+    fn runtime_settings_keyboard_input_maps_privacy_and_data_controls() {
+        let mut telemetry = ButtonInput::<KeyCode>::default();
+        telemetry.press(KeyCode::Digit7);
+        assert_eq!(
+            runtime_settings_action_from_keyboard(&telemetry),
+            Some(RuntimeSettingsAction::ToggleUpload(
+                RuntimeUploadKind::Telemetry
+            ))
+        );
+
+        let mut raw_replay = ButtonInput::<KeyCode>::default();
+        raw_replay.press(KeyCode::Digit8);
+        assert_eq!(
+            runtime_settings_action_from_keyboard(&raw_replay),
+            Some(RuntimeSettingsAction::ToggleUpload(
+                RuntimeUploadKind::RawReplay
+            ))
+        );
+
+        let mut crash_report = ButtonInput::<KeyCode>::default();
+        crash_report.press(KeyCode::Digit9);
+        assert_eq!(
+            runtime_settings_action_from_keyboard(&crash_report),
+            Some(RuntimeSettingsAction::ToggleUpload(
+                RuntimeUploadKind::CrashReport
+            ))
+        );
+
+        let mut export_save = ButtonInput::<KeyCode>::default();
+        export_save.press(KeyCode::KeyE);
+        assert_eq!(
+            runtime_settings_action_from_keyboard(&export_save),
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::ExportSave
+            ))
+        );
+
+        let mut delete_local_data = ButtonInput::<KeyCode>::default();
+        delete_local_data.press(KeyCode::KeyK);
+        assert_eq!(
+            runtime_settings_action_from_keyboard(&delete_local_data),
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::DeleteLocalData
+            ))
+        );
+
+        assert_eq!(
+            runtime_settings_action_from_keyboard(&ButtonInput::<KeyCode>::default()),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_settings_pointer_input_maps_left_click_zone() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        let mut left = ButtonInput::<MouseButton>::default();
+        left.press(MouseButton::Left);
+        assert_eq!(
+            runtime_settings_action_from_pointer(&left, Some(Vec2::new(1040.0, 40.0)), window_size),
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::ExportSave
+            ))
+        );
+
+        let mut right = ButtonInput::<MouseButton>::default();
+        right.press(MouseButton::Right);
+        assert_eq!(
+            runtime_settings_action_from_pointer(
+                &right,
+                Some(Vec2::new(1040.0, 40.0)),
+                window_size
+            ),
+            None
+        );
+
+        assert_eq!(
+            runtime_settings_action_from_pointer(
+                &ButtonInput::<MouseButton>::default(),
+                Some(Vec2::new(1040.0, 40.0)),
+                window_size
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_settings_pointer_zone_maps_right_panel_segments() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(850.0, 40.0), window_size),
+            Some(RuntimeSettingsAction::ToggleUpload(
+                RuntimeUploadKind::Telemetry
+            ))
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(920.0, 40.0), window_size),
+            Some(RuntimeSettingsAction::ToggleUpload(
+                RuntimeUploadKind::RawReplay
+            ))
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(980.0, 40.0), window_size),
+            Some(RuntimeSettingsAction::ToggleUpload(
+                RuntimeUploadKind::CrashReport
+            ))
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(1040.0, 40.0), window_size),
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::ExportSave
+            ))
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(1105.0, 40.0), window_size),
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::DeleteSave
+            ))
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(1165.0, 40.0), window_size),
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::ExportLocalData
+            ))
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(1230.0, 40.0), window_size),
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::DeleteLocalData
+            ))
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
+            None
+        );
+        assert_eq!(
+            runtime_settings_action_from_pointer_zone(Vec2::new(1040.0, 150.0), window_size),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_settings_pointer_delete_action_uses_same_confirmation_path() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-f4-pointer-confirm-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let save_file = root.join("profile.json");
+        fs::write(&save_file, "{}\n").unwrap();
+
+        let mut state = runtime_state_for_tests();
+        state.platform_data_root = root.clone();
+        state.save_file = Some(save_file.clone());
+        let window_size = Vec2::new(1280.0, 720.0);
+        let action =
+            runtime_settings_action_from_pointer_zone(Vec2::new(1105.0, 40.0), window_size);
+
+        assert_eq!(
+            action,
+            Some(RuntimeSettingsAction::DataControl(
+                RuntimeDataControlAction::DeleteSave
+            ))
+        );
+        let RuntimeSettingsAction::DataControl(data_action) = action.unwrap() else {
+            panic!("delete save pointer zone must map to a data control action");
+        };
+
+        let message = run_runtime_data_control_action_from_state(&mut state, data_action).unwrap();
+        assert!(message.contains("press X again"));
+        assert!(save_file.exists());
+        assert_eq!(
+            state.pending_data_delete_action,
+            Some(RuntimeDataControlAction::DeleteSave)
+        );
+
+        let message = run_runtime_data_control_action_from_state(&mut state, data_action).unwrap();
+        assert!(message.contains("deleted save"));
+        assert!(!save_file.exists());
+        assert_eq!(state.pending_data_delete_action, None);
+
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
