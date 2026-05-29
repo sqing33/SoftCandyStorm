@@ -1,0 +1,24 @@
+{
+  "case_id": "fail_20260529_001",
+  "category": "rl_training",
+  "content_id": "sb3-e30-late-win-conversion-guarded-probe",
+  "seed": 63100,
+  "bot": "ppo_e30_late_win_conversion_guarded_probe",
+  "time_seconds": 300.0,
+  "symptom": "A 512 timestep late-win-conversion continuation from the e30 supervised SB3 re-alignment passed anchor validation guard and offline anchor alignment, improved 60s/180s windows, and restored cracked-star-jar 300s win rate to 0.3333, but soda-creek and caramel-workshop 300s win rates remained 0.0. The repair probe gate failed because caramel-workshop 180s dominant action ratio increased by 0.265 against the e30 baseline.",
+  "root_cause": "The e30 checkpoint is a stable anchor-aligned initialization, but a small final-minute closed-loop continuation still shifts action distribution enough to trigger a mid-window caramel-workshop no-regression blocker while failing to solve soda-creek and caramel-workshop long-run conversion. The remaining 300s failures span opening, mid, and late windows, so the problem is not isolated to a late-only objective.",
+  "fix": "Do not extend this exact configuration. Before another longer closed-loop run, add explicit no-regression protection for caramel-workshop 180s action distribution and keep full-anchor alignment plus 60/180/300 fixed-window checks as hard gates.",
+  "validation": "train_sb3.py produced ppo_training_report.json with final anchor validation mean KL 0.109673 and argmax agreement 0.8224, passing the configured anchor validation guard. compare_sb3_to_behavior_clone_anchor.py accepted both anchor_drift_alignment.json and full_anchor_alignment.json. Fixed-window comparisons improved 60s/180s and cracked-star-jar 300s, but comparison_300s.json still reported multimap_comparison_recorded_needs_policy_repair. validate_policy_window_regression.py rejected the branch against e30 due to the caramel-workshop 180s dominant action ratio increase, and validate_rl_repair_probe_gate.py returned rl_repair_probe_gate_failed.",
+  "diagnostics": [
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/summary.md",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/anchor_drift_alignment.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/full_anchor_alignment.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/repair_probe_gate.json"
+  ]
+}

@@ -2533,6 +2533,11 @@
       "id": "rl_sb3_supervised_realign_full_anchor_drift_w40_e30",
       "summary": "将 full-anchor + top drift rows 40x supervised SB3 re-alignment 从 5 epochs 扩展到 30 epochs 后，离线 anchor alignment 通过：top drift rows mean KL 0.017394、argmax agreement 0.985，full-anchor mean KL 0.105281、argmax agreement 0.8282。但 60/180 秒仍只是 watch，300 秒 high-pressure 三图胜率全为 0.0，gate 为 multimap_comparison_recorded_needs_policy_repair；已记录 fail_20260528_093，不能推进 guarded PPO、RL acceptance 或 policy candidate。",
       "report": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_e30_late_win_conversion_guarded_probe",
+      "summary": "从 e30 supervised re-alignment checkpoint 做 512 timestep late-win-conversion guarded closed-loop probe：anchor validation guard 通过，full-anchor alignment mean KL 0.106657、argmax agreement 0.8273；60/180 秒提升到 0.6667/0.6667/1.0，300 秒 cracked-star-jar 恢复到 0.3333，但 soda-creek 与 caramel-workshop 300 秒仍为 0.0。对 e30 的 no-regression 因 caramel-workshop 180 秒 dominant action ratio +0.265 失败，repair-probe gate 为 rl_repair_probe_gate_failed；已记录 fail_20260529_001，不能直接加长同配置。",
+      "report": "harness/reports/2026-05-28_rl_sb3_e30_late_win_conversion_guarded_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2562,7 +2567,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 已证明离线 anchor underfit 可以修复，但 300 秒 high-pressure 三图仍全 0 胜率。下一步应转向 long-run conversion repair：在 full-anchor alignment 作为硬 preflight 的前提下，针对 300 秒 per-map late failure 做 closed-loop objective 或 online hard no-regression guard；当前 RL acceptance 继续 blocked。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复，e30 late-win-conversion guarded probe 也证明该起点可承受小步 closed-loop 续训并恢复 cracked-star-jar 300 秒 0.3333，但 soda/caramel 300 秒仍为 0 且 caramel-workshop 180 秒动作分布回归。下一步应先保护 caramel-workshop 180 秒 dominant action ratio，再做 long-run conversion repair；当前 RL acceptance 继续 blocked。"
     },
     {
       "id": "rl_policy_multimap_training",
