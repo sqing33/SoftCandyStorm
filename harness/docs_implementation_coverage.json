@@ -441,7 +441,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入和 validation_slices 均已建立；repair-probe gate 已支持 required multibaseline parent-preservation；30 epoch full-anchor + drift supervised re-alignment 已通过离线 anchor alignment，e30 guarded closed-loop probe 产生 cracked-star-jar 300 秒恢复信号但触发 caramel 180 秒动作分布回归，mid-anchor guarded probe 修住该回归并通过 limited-followup gate，但 300 秒三图仍全 0；mid-late follow-up、opening/mid retention + late probe、cracked-star-jar 单图 constrained probe、parent late-recovery filter 和 source-filtered risk recovery weight sweep 都未形成可接受的 300 秒转换。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices 和 recovery target map/time scope filter 均已建立；repair-probe gate 已支持 required multibaseline parent-preservation；30 epoch full-anchor + drift supervised re-alignment 已通过离线 anchor alignment，但后续多轮 closed-loop / split / scoped risk 探针仍未形成可接受的 300 秒转换。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -1339,7 +1339,10 @@
             "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w5_e30_001/comparison_300s.json",
             "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w5_e30_001/repair_probe_gate.json",
             "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filter_weight_sweep_001/summary.md",
-            "harness/failed_cases/fail_20260529_010_sb3_risk_recovery_source_filter_weight_sweep.json"
+            "harness/failed_cases/fail_20260529_010_sb3_risk_recovery_source_filter_weight_sweep.json",
+            "harness/reports/2026-05-29_rl_sb3_recovery_target_scope_filter_smoke_001/summary.md",
+            "harness/reports/2026-05-29_rl_sb3_recovery_target_scope_filter_smoke_001/distillation_report.json",
+            "harness/reports/2026-05-29_rl_sb3_recovery_target_scope_filter_smoke_001/ppo_recovery_target_scope_filter_cracked_smoke_metadata.json"
           ],
           "gaps": [
             "parent late-recovery clean subset 已保留 424/439 条样本并通过 dry-run，但该批样本 map distribution 偏向 cracked-star-jar，late_low_health coverage 为 0；它只证明训练输入可用，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
@@ -1415,7 +1418,8 @@
             "e30 mid-anchor guarded closed-loop probe 通过训练期 anchor guard、离线 full-anchor alignment 和相对 e30 的 60/180/300 秒 no-regression，caramel-workshop 180 秒 dominant action ratio delta 降到 +0.0225，repair-probe gate 为 limited follow-up；但 300 秒三图仍全 0 且丢失 cracked-star-jar 300 秒恢复信号，已记录 fail_20260529_002，只能作为下一轮受限探索起点。",
             "从 mid-anchor parent 提高 late_180_to_300 anchor 权重的 follow-up 虽通过训练期 anchor guard 和相对 e30 no-regression，但相对 parent 触发 soda-creek 180 秒平均存活 -6.857s 与 caramel-workshop 300 秒平均存活 -5.19s 两个 blocker，repair-probe gate 失败，已记录 fail_20260529_003；validate_rl_repair_probe_gate.py 已支持 --required-window-regression e30=... / parent=... 并用该 follow-up 真实产物生成 required multibaseline gate，下一步必须使用 parent-preservation 多基线门禁。",
             "opening/mid retention + late conversion 小步 probe 证明降低 late anchor 能恢复 cracked-star-jar 300 秒 0.6667 胜率，但 required multibaseline gate 同时抓到 e30 与 parent 回归：caramel-workshop 180 秒 dominant action ratio、soda-creek 300 秒平均存活、parent cracked-star-jar 60 秒胜率均触发 blocker，已记录 fail_20260529_004；下一步应转向 per-map late conversion 或 split-policy 约束。",
-            "source-filtered risk recovery distillation sweep 证明 clean parent late-state risk rows 可作为 learned branch 输入，并且只覆写 risk_recovery_supervision source 时能保持 full-anchor alignment；但 w10 仅恢复 cracked-star-jar 300 秒 0.3333 胜率并触发 14 个 e30/parent 多基线 blockers，w7/w5 降低 blocker 数后 300 秒三图仍为 0.0/0.0/0.0。已记录 fail_20260529_010，下一步不能继续提高全局 risk sample weight，应改为 map/phase-scoped action-separation / terminal-conversion，同时保护 soda-creek opening/mid 与 caramel-workshop 180 秒。"
+            "source-filtered risk recovery distillation sweep 证明 clean parent late-state risk rows 可作为 learned branch 输入，并且只覆写 risk_recovery_supervision source 时能保持 full-anchor alignment；但 w10 仅恢复 cracked-star-jar 300 秒 0.3333 胜率并触发 14 个 e30/parent 多基线 blockers，w7/w5 降低 blocker 数后 300 秒三图仍为 0.0/0.0/0.0。已记录 fail_20260529_010，下一步不能继续提高全局 risk sample weight，应改为 map/phase-scoped action-separation / terminal-conversion，同时保护 soda-creek opening/mid 与 caramel-workshop 180 秒。",
+            "recovery target override 已支持按地图与时间窗限定作用域，并用 cracked-star-jar 180-300s smoke 验证只覆写 210 条目标 risk rows、保留 214 条其他地图 risk rows 和 2693 条 edge rows；但该 smoke 只训练 1 epoch 且未运行 full-anchor alignment、固定窗口 high-pressure、e30/parent no-regression 或 repair gate，因此仍不能作为 policy candidate 或 RL acceptance 证据。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

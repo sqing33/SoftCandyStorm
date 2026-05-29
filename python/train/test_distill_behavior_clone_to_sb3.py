@@ -9,6 +9,7 @@ from python.train.distill_behavior_clone_to_sb3 import (
     collect_distillation_targets,
     load_distillation_dataset,
     mix_with_uniform,
+    parse_recovery_target_maps,
     parse_recovery_target_sources,
     soften_probabilities,
     transform_target_probabilities,
@@ -241,6 +242,83 @@ def test_recovery_target_sources_can_limit_override_to_risk_samples(monkeypatch)
         "risk_recovery_supervision"
     ]
     assert report["recovery_target_override"]["overridden_sample_count"] == 1
+
+
+def test_recovery_target_scope_limits_override_by_map_and_time(monkeypatch):
+    class FakeTeacher:
+        def reset(self):
+            pass
+
+        def predict(self, observation, deterministic=True):
+            return 0, None
+
+        def action_scores(self, observation):
+            return {"kind": "probability", "scores": [0.8, 0.1, 0.1]}
+
+    monkeypatch.setattr(
+        distill_module,
+        "load_behavior_clone_policy_with_optional_opening",
+        lambda *args, **kwargs: FakeTeacher(),
+    )
+    dataset = {
+        "action_count": 3,
+        "observations": [
+            np.asarray([0.0, 0.1], dtype=np.float32),
+            np.asarray([0.2, 0.3], dtype=np.float32),
+            np.asarray([0.4, 0.5], dtype=np.float32),
+            np.asarray([0.6, 0.7], dtype=np.float32),
+        ],
+        "actions": [1, 2, 1, 2],
+        "sample_metadata": [
+            {
+                "sample_source": "risk_recovery_supervision",
+                "map_id": "cracked-star-jar",
+                "time_seconds": 210.0,
+            },
+            {
+                "sample_source": "risk_recovery_supervision",
+                "map_id": "soda-creek",
+                "time_seconds": 210.0,
+            },
+            {
+                "sample_source": "risk_recovery_supervision",
+                "map_id": "cracked-star-jar",
+                "time_seconds": 120.0,
+            },
+            {
+                "sample_source": "edge_recovery_supervision",
+                "map_id": "cracked-star-jar",
+                "time_seconds": 210.0,
+            },
+        ],
+    }
+
+    targets, report = collect_distillation_targets(
+        dataset,
+        Path("fallback.pt"),
+        "teacher_probs",
+        1.0,
+        0.0,
+        np,
+        recovery_target_mode="dataset_actions",
+        recovery_target_sources=parse_recovery_target_sources("risk"),
+        recovery_target_maps=parse_recovery_target_maps("cracked-star-jar"),
+        recovery_target_min_seconds=180.0,
+        recovery_target_max_seconds=300.0,
+    )
+
+    assert targets[0].tolist() == pytest.approx([0.0, 1.0, 0.0])
+    assert targets[1].tolist() == pytest.approx([0.8, 0.1, 0.1])
+    assert targets[2].tolist() == pytest.approx([0.8, 0.1, 0.1])
+    assert targets[3].tolist() == pytest.approx([0.8, 0.1, 0.1])
+    override = report["recovery_target_override"]
+    assert override["maps"] == ["cracked-star-jar"]
+    assert override["min_seconds"] == 180.0
+    assert override["max_seconds"] == 300.0
+    assert override["overridden_sample_count"] == 1
+    assert override["map_scoped_out_sample_count"] == 1
+    assert override["time_scoped_out_sample_count"] == 1
+    assert override["source_scoped_out_sample_count"] == 1
 
 
 def test_load_distillation_dataset_can_include_anchor_drift_samples(tmp_path):

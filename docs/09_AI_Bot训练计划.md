@@ -276,6 +276,8 @@ parent late recovery 样本已先做 clean subset 预检：`439` 条中保留 `4
 
 source-filtered risk recovery distillation sweep 已确认 learned branch 入口可用但当前权重扫描全部拒绝推进。`distill_behavior_clone_to_sb3.py` 可保留普通 retention / edge recovery rows 的 `teacher_probs` 目标，只对 clean parent late-state `risk_recovery_supervision` rows 使用 `top_k_scores` soft target 覆写；`risk` source filter 下 `w10` / `w7` / `w5` 都通过 drift 与 full-anchor alignment，其中 `w10` 让 `cracked-star-jar` 300 秒恢复到 `0.3333` 胜率，但 repair gate 因 e30 与 parent 多基线回归失败并记录 `14` 个 blockers。`w7` 和 `w5` 分别降到 `3` / `4` 个 blockers，但 300 秒三图都回到 `0.0/0.0/0.0`。已记录 `fail_20260529_010`；下一步不应继续提高全局 risk sample weight，而应按地图 / 阶段拆目标，显式保护 `soda-creek` opening / mid 和 `caramel-workshop` 180 秒，只把 clean risk rows 用在匹配失败地图与 late window 的 action-separation / terminal-conversion 训练输入上。
 
+为支持上述 map / phase scoped objective，`distill_behavior_clone_to_sb3.py` 已新增 `--recovery-target-maps`、`--recovery-target-min-seconds` 和 `--recovery-target-max-seconds`，用于把 recovery target override 限定到指定地图和时间窗。首个 scope filter smoke 只在 `cracked-star-jar` 的 `180-300s` `risk_recovery_supervision` rows 上启用 `top_k_scores`：覆写 `210` 条 soft target，按地图保留 `214` 条其他 risk rows，按 source 保留 `2693` 条 edge recovery rows，`fallback_one_hot_count = 0`。该 smoke 只验证训练输入和报告字段，不是 policy gate；下一步仍需基于该作用域运行完整 distillation、anchor alignment、60 / 180 / 300 秒 high-pressure 和 e30 + parent no-regression。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

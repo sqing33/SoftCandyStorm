@@ -109,15 +109,38 @@ def parse_recovery_target_sources(value):
     return sources
 
 
-def recovery_target_override_report(mode, primary_mass, top_k, sources):
+def parse_recovery_target_maps(value):
+    if value is None:
+        return None
+    maps = {item.strip() for item in str(value).split(",") if item.strip()}
+    if not maps:
+        raise ValueError("--recovery-target-maps must include at least one map id")
+    return maps
+
+
+def recovery_target_override_report(
+    mode,
+    primary_mass,
+    top_k,
+    sources,
+    maps=None,
+    min_seconds=None,
+    max_seconds=None,
+):
     return {
         "mode": mode,
         "sources": sorted(sources),
+        "maps": sorted(maps) if maps is not None else None,
+        "min_seconds": min_seconds,
+        "max_seconds": max_seconds,
         "primary_mass": round(float(primary_mass), 6),
         "top_k": int(top_k),
         "overridden_sample_count": 0,
         "soft_sample_count": 0,
         "fallback_one_hot_count": 0,
+        "source_scoped_out_sample_count": 0,
+        "map_scoped_out_sample_count": 0,
+        "time_scoped_out_sample_count": 0,
         "average_nonzero_actions": None,
     }
 
@@ -130,14 +153,27 @@ def recovery_target_override_distribution(
     primary_mass,
     top_k,
     enabled_sources,
+    enabled_maps,
+    min_seconds,
+    max_seconds,
     np_module,
 ):
-    if sample.get("sample_source") not in enabled_sources:
-        return None, False
+    sample_source = sample.get("sample_source")
+    if sample_source not in RECOVERY_SAMPLE_SOURCES:
+        return None, False, "not_recovery"
+    if sample_source not in enabled_sources:
+        return None, False, "source"
+    if enabled_maps is not None and str(sample.get("map_id")) not in enabled_maps:
+        return None, False, "map"
+    time_seconds = float(sample.get("time_seconds", 0.0))
+    if min_seconds is not None and time_seconds < min_seconds:
+        return None, False, "time"
+    if max_seconds is not None and time_seconds >= max_seconds:
+        return None, False, "time"
     if mode == "teacher_probs":
-        return None, False
+        return None, False, "teacher_probs"
     if mode == "dataset_actions":
-        return one_hot(action, action_count, np_module), False
+        return one_hot(action, action_count, np_module), False, "matched"
     if mode == "top_k_scores":
         distribution = recovery_top_k_distribution(
             sample,
@@ -148,8 +184,8 @@ def recovery_target_override_distribution(
             np_module,
         )
         if distribution is not None:
-            return distribution, True
-        return one_hot(action, action_count, np_module), False
+            return distribution, True, "matched"
+        return one_hot(action, action_count, np_module), False, "matched"
     raise ValueError(f"unsupported recovery target mode: {mode}")
 
 
@@ -165,11 +201,17 @@ def collect_distillation_targets(
     opening_seconds=60.0,
     recovery_target_mode="teacher_probs",
     recovery_target_sources=None,
+    recovery_target_maps=None,
+    recovery_target_min_seconds=None,
+    recovery_target_max_seconds=None,
     recovery_soft_target_primary_mass=0.65,
     recovery_soft_target_top_k=3,
 ):
     action_count = int(dataset["action_count"])
     enabled_recovery_sources = set(recovery_target_sources or RECOVERY_SAMPLE_SOURCES)
+    enabled_recovery_maps = (
+        set(recovery_target_maps) if recovery_target_maps is not None else None
+    )
     if target_mode == "dataset_actions":
         targets = [
             transform_target_probabilities(
@@ -192,6 +234,9 @@ def collect_distillation_targets(
                 recovery_soft_target_primary_mass,
                 recovery_soft_target_top_k,
                 enabled_recovery_sources,
+                enabled_recovery_maps,
+                recovery_target_min_seconds,
+                recovery_target_max_seconds,
             ),
             "target_entropy_nats": round(
                 sum(target_entropy(target, np_module) for target in targets)
@@ -219,6 +264,9 @@ def collect_distillation_targets(
         recovery_soft_target_primary_mass,
         recovery_soft_target_top_k,
         enabled_recovery_sources,
+        enabled_recovery_maps,
+        recovery_target_min_seconds,
+        recovery_target_max_seconds,
     )
     override_nonzero_action_total = 0
     for observation, action, sample in zip(
@@ -259,7 +307,11 @@ def collect_distillation_targets(
             uniform_target_mix,
             np_module,
         )
-        override_distribution, used_soft_target = recovery_target_override_distribution(
+        (
+            override_distribution,
+            used_soft_target,
+            override_scope,
+        ) = recovery_target_override_distribution(
             sample,
             action,
             action_count,
@@ -267,8 +319,17 @@ def collect_distillation_targets(
             recovery_soft_target_primary_mass,
             recovery_soft_target_top_k,
             enabled_recovery_sources,
+            enabled_recovery_maps,
+            recovery_target_min_seconds,
+            recovery_target_max_seconds,
             np_module,
         )
+        if override_scope == "source":
+            override_report["source_scoped_out_sample_count"] += 1
+        elif override_scope == "map":
+            override_report["map_scoped_out_sample_count"] += 1
+        elif override_scope == "time":
+            override_report["time_scoped_out_sample_count"] += 1
         if override_distribution is not None:
             probabilities = override_distribution
             override_report["overridden_sample_count"] += 1
@@ -560,6 +621,9 @@ def distill(config, args):
         recovery_target_sources=parse_recovery_target_sources(
             args.recovery_target_sources
         ),
+        recovery_target_maps=parse_recovery_target_maps(args.recovery_target_maps),
+        recovery_target_min_seconds=args.recovery_target_min_seconds,
+        recovery_target_max_seconds=args.recovery_target_max_seconds,
         recovery_soft_target_primary_mass=args.recovery_soft_target_primary_mass,
         recovery_soft_target_top_k=args.recovery_soft_target_top_k,
     )
@@ -771,6 +835,26 @@ def main():
         ),
     )
     parser.add_argument(
+        "--recovery-target-maps",
+        default=None,
+        help=(
+            "Optional comma-separated map ids where recovery target overrides may apply. "
+            "Other recovery samples keep the base teacher target."
+        ),
+    )
+    parser.add_argument(
+        "--recovery-target-min-seconds",
+        type=float,
+        default=None,
+        help="Optional inclusive lower time bound for recovery target overrides.",
+    )
+    parser.add_argument(
+        "--recovery-target-max-seconds",
+        type=float,
+        default=None,
+        help="Optional exclusive upper time bound for recovery target overrides.",
+    )
+    parser.add_argument(
         "--recovery-soft-target-primary-mass",
         type=float,
         default=0.65,
@@ -840,6 +924,28 @@ def main():
         parse_recovery_target_sources(args.recovery_target_sources)
     except ValueError as exc:
         parser.error(str(exc))
+    try:
+        parse_recovery_target_maps(args.recovery_target_maps)
+    except ValueError as exc:
+        parser.error(str(exc))
+    if (
+        args.recovery_target_min_seconds is not None
+        and args.recovery_target_min_seconds < 0.0
+    ):
+        parser.error("--recovery-target-min-seconds must be non-negative")
+    if (
+        args.recovery_target_max_seconds is not None
+        and args.recovery_target_max_seconds <= 0.0
+    ):
+        parser.error("--recovery-target-max-seconds must be greater than zero")
+    if (
+        args.recovery_target_min_seconds is not None
+        and args.recovery_target_max_seconds is not None
+        and args.recovery_target_max_seconds <= args.recovery_target_min_seconds
+    ):
+        parser.error(
+            "--recovery-target-max-seconds must be greater than --recovery-target-min-seconds"
+        )
     if not (0.0 < args.recovery_soft_target_primary_mass <= 1.0):
         parser.error("--recovery-soft-target-primary-mass must be in (0, 1]")
     if args.recovery_soft_target_top_k < 2:
