@@ -2470,6 +2470,11 @@
       "report": "tools/validate_rl_repair_probe_gate.py"
     },
     {
+      "id": "rl_repair_probe_multibaseline_gate",
+      "summary": "validate_rl_repair_probe_gate.py 已支持 --required-window-regression LABEL=PATH，用于把原始 baseline 与 limited-followup parent-preservation 都声明为硬门禁输入。已用 e30 mid-late balanced follow-up 真实产物复跑 required multibaseline gate：e30 regression 通过，但 parent regression 以 soda-creek 180 秒平均存活 -6.857s、caramel-workshop 300 秒平均存活 -5.19s 阻断，decision 仍为 rl_repair_probe_gate_failed。",
+      "report": "harness/reports/2026-05-29_rl_sb3_e30_mid_late_balanced_followup_probe_001/repair_probe_gate_required_multibaseline.md"
+    },
+    {
       "id": "rl_mid_anchor_drift_sample_export",
       "summary": "新增 tools/export_anchor_drift_samples.py 与单测，将 SB3 candidate 相对 behavior-clone anchor 的高 KL 样本导出为 JSONL/JSON/Markdown 诊断报告。已用 soda/caramel closed-loop anchor probe 导出 mid_60_to_180 样本：36426 条样本中筛出 2888 条 KL>=0.35 且 argmax 不一致的 drift rows，并保存 top 200；该报告只定位 mid-window anchor drift，不是 policy gate 或 acceptance evidence。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_samples.md"

@@ -121,6 +121,73 @@ class RlRepairProbeGateTests(unittest.TestCase):
         self.assertEqual(report["decision"], "rl_repair_probe_gate_failed")
         self.assertTrue(any("survival dropped" in blocker for blocker in report["blockers"]))
 
+    def test_required_multibaseline_regressions_are_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            e30_regression = root / "e30_regression.json"
+            parent_regression = root / "parent_regression.json"
+            write_json(training, training_payload())
+            write_json(e30_regression, regression_payload())
+            write_json(parent_regression, regression_payload())
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[],
+                required_window_regressions=[
+                    ("e30", e30_regression),
+                    ("parent", parent_regression),
+                ],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_passed_for_limited_followup")
+        self.assertEqual(report["window_regression_requirement"], "required_labeled_baselines")
+        self.assertEqual(report["required_window_regression_labels"], ["e30", "parent"])
+        self.assertTrue(all(item["required"] for item in report["window_regressions"]))
+
+    def test_required_parent_regression_blocker_fails_with_label(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            e30_regression = root / "e30_regression.json"
+            parent_regression = root / "parent_regression.json"
+            write_json(training, training_payload())
+            write_json(e30_regression, regression_payload())
+            write_json(parent_regression, regression_payload(blockers=["300/caramel: survival dropped"]))
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[],
+                required_window_regressions=[
+                    ("e30", e30_regression),
+                    ("parent", parent_regression),
+                ],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_failed")
+        self.assertTrue(
+            any("parent" in blocker and "survival dropped" in blocker for blocker in report["blockers"])
+        )
+
+    def test_duplicate_window_regression_labels_are_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            first = root / "first.json"
+            second = root / "second.json"
+            write_json(training, training_payload())
+            write_json(first, regression_payload())
+            write_json(second, regression_payload())
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[("baseline", first)],
+                required_window_regressions=[("baseline", second)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_invalid")
+        self.assertTrue(any("duplicate label" in error for error in report["errors"]))
+
     def test_forbidden_candidate_wording_is_invalid(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

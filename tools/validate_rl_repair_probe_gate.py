@@ -10,6 +10,7 @@ stop and be recorded as a failure case.
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import json
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,13 @@ FORBIDDEN_DECISION_TOKENS = {
     "release",
     "rl_test_bot_candidate",
 }
+
+
+@dataclass(frozen=True)
+class WindowRegressionInput:
+    label: str
+    path: Path
+    required: bool = False
 
 
 def load_json_object(path: Path) -> dict[str, Any]:
@@ -41,6 +49,26 @@ def decision_uses_forbidden_token(value: Any) -> bool:
 
 def report_label(path: Path) -> str:
     return path.name.removesuffix(".json")
+
+
+def parse_optional_window_regression(value: str) -> tuple[str | None, Path]:
+    if "=" not in value:
+        return None, Path(value)
+    label, path_text = value.split("=", 1)
+    label = label.strip()
+    path_text = path_text.strip()
+    if not label:
+        raise argparse.ArgumentTypeError("window regression label must be non-empty")
+    if not path_text:
+        raise argparse.ArgumentTypeError("window regression path must be non-empty")
+    return label, Path(path_text)
+
+
+def parse_required_window_regression(value: str) -> tuple[str, Path]:
+    label, path = parse_optional_window_regression(value)
+    if label is None:
+        raise argparse.ArgumentTypeError("required window regression must use LABEL=PATH")
+    return label, path
 
 
 def collect_gate_wording_errors(label: str, report: dict[str, Any], errors: list[str]) -> None:
@@ -101,31 +129,51 @@ def summarize_anchor_alignment(
 
 
 def summarize_window_regression(
-    paths: list[Path],
+    window_inputs: list[WindowRegressionInput],
     errors: list[str],
     blockers: list[str],
 ) -> list[dict[str, Any]]:
     summaries: list[dict[str, Any]] = []
-    for path in paths:
-        label = report_label(path)
+    for window_input in window_inputs:
+        path = window_input.path
+        path_label = report_label(path)
+        display_label = (
+            path_label
+            if window_input.label == path_label
+            else f"{window_input.label}/{path_label}"
+        )
         try:
             report = load_json_object(path)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
-            errors.append(f"{label}: unable to load {path}: {exc}")
-            summaries.append({"path": str(path), "loaded": False})
+            errors.append(f"{display_label}: unable to load {path}: {exc}")
+            summaries.append(
+                {
+                    "label": window_input.label,
+                    "path": str(path),
+                    "required": window_input.required,
+                    "loaded": False,
+                }
+            )
             continue
 
-        collect_gate_wording_errors(label, report, errors)
+        collect_gate_wording_errors(display_label, report, errors)
         decision = report.get("decision")
         report_blockers = [str(item) for item in report.get("blockers", [])]
         report_errors = [str(item) for item in report.get("errors", [])]
         if decision == "policy_window_regression_invalid":
-            errors.extend(f"{label}: {item}" for item in report_errors or ["invalid regression report"])
+            errors.extend(
+                f"{display_label}: {item}" for item in report_errors or ["invalid regression report"]
+            )
         if decision == "policy_window_regression_failed":
-            blockers.extend(f"{label}: {item}" for item in report_blockers or ["window regression failed"])
+            blockers.extend(
+                f"{display_label}: {item}"
+                for item in report_blockers or ["window regression failed"]
+            )
         summaries.append(
             {
+                "label": window_input.label,
                 "path": str(path),
+                "required": window_input.required,
                 "loaded": True,
                 "decision": decision,
                 "blocker_count": len(report_blockers),
@@ -155,10 +203,54 @@ def summarize_failure_analysis(path: Path | None, errors: list[str]) -> dict[str
     }
 
 
+def normalize_window_regression_inputs(
+    window_regressions: list[Path | tuple[str, Path] | WindowRegressionInput],
+    required_window_regressions: list[tuple[str, Path]] | dict[str, Path] | None,
+    errors: list[str],
+) -> list[WindowRegressionInput]:
+    inputs: list[WindowRegressionInput] = []
+    seen_labels: dict[str, Path] = {}
+
+    def add_input(label: str, path: Path, *, required: bool) -> None:
+        if not label:
+            errors.append(f"window_regression: label for {path} must be non-empty")
+            return
+        existing = seen_labels.get(label)
+        if existing is not None:
+            errors.append(
+                "window_regression: duplicate label "
+                f"`{label}` for {existing} and {path}"
+            )
+            return
+        seen_labels[label] = path
+        inputs.append(WindowRegressionInput(label=label, path=path, required=required))
+
+    for item in window_regressions:
+        if isinstance(item, WindowRegressionInput):
+            add_input(item.label, item.path, required=item.required)
+        elif isinstance(item, tuple):
+            label, path = item
+            add_input(label, path, required=False)
+        else:
+            add_input(report_label(item), item, required=False)
+
+    if isinstance(required_window_regressions, dict):
+        required_items = list(required_window_regressions.items())
+    else:
+        required_items = required_window_regressions or []
+    for label, path in required_items:
+        add_input(label, path, required=True)
+
+    if not inputs:
+        errors.append("window_regression: at least one window regression report is required")
+    return inputs
+
+
 def build_report(
     *,
     training_report: Path,
-    window_regressions: list[Path],
+    window_regressions: list[Path | tuple[str, Path] | WindowRegressionInput],
+    required_window_regressions: list[tuple[str, Path]] | dict[str, Path] | None = None,
     anchor_alignment: Path | None = None,
     failure_analysis: Path | None = None,
 ) -> dict[str, Any]:
@@ -168,7 +260,12 @@ def build_report(
 
     training_summary = summarize_training_report(training_report, errors, warnings)
     anchor_summary = summarize_anchor_alignment(anchor_alignment, errors, blockers)
-    regression_summaries = summarize_window_regression(window_regressions, errors, blockers)
+    regression_inputs = normalize_window_regression_inputs(
+        window_regressions,
+        required_window_regressions,
+        errors,
+    )
+    regression_summaries = summarize_window_regression(regression_inputs, errors, blockers)
     failure_summary = summarize_failure_analysis(failure_analysis, errors)
 
     if failure_summary is not None and failure_summary.get("total_failures"):
@@ -189,6 +286,14 @@ def build_report(
         "gate_decision": decision,
         "training_report": training_summary,
         "anchor_alignment": anchor_summary,
+        "window_regression_requirement": (
+            "required_labeled_baselines"
+            if any(item.required for item in regression_inputs)
+            else "provided_reports_only"
+        ),
+        "required_window_regression_labels": [
+            item.label for item in regression_inputs if item.required
+        ],
         "window_regressions": regression_summaries,
         "failure_analysis": failure_summary,
         "errors": errors,
@@ -218,7 +323,10 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
     if report.get("anchor_alignment"):
         lines.append(f"- Anchor alignment: `{report['anchor_alignment'].get('path')}`")
     for item in report["window_regressions"]:
-        lines.append(f"- Window regression: `{item.get('path')}`")
+        required = "required" if item.get("required") else "provided"
+        lines.append(
+            f"- Window regression ({required}, `{item.get('label')}`): `{item.get('path')}`"
+        )
     if report.get("failure_analysis"):
         lines.append(f"- Failure analysis: `{report['failure_analysis'].get('path')}`")
     if report["errors"]:
@@ -239,17 +347,36 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate an RL repair probe evidence bundle.")
     parser.add_argument("--training-report", type=Path, required=True)
-    parser.add_argument("--window-regression", type=Path, action="append", required=True)
+    parser.add_argument(
+        "--window-regression",
+        type=parse_optional_window_regression,
+        action="append",
+        default=[],
+        help="Window regression report as PATH or LABEL=PATH.",
+    )
+    parser.add_argument(
+        "--required-window-regression",
+        type=parse_required_window_regression,
+        action="append",
+        default=[],
+        help="Required baseline-preservation report as LABEL=PATH.",
+    )
     parser.add_argument("--anchor-alignment", type=Path, default=None)
     parser.add_argument("--failure-analysis", type=Path, default=None)
     parser.add_argument("--report", type=Path, default=None)
     parser.add_argument("--markdown", type=Path, default=None)
     parser.add_argument("--allow-fail", action="store_true")
     args = parser.parse_args()
+    if not args.window_regression and not args.required_window_regression:
+        parser.error("at least one --window-regression or --required-window-regression is required")
 
     report = build_report(
         training_report=args.training_report,
-        window_regressions=args.window_regression,
+        window_regressions=[
+            (label or report_label(path), path)
+            for label, path in args.window_regression
+        ],
+        required_window_regressions=args.required_window_regression,
         anchor_alignment=args.anchor_alignment,
         failure_analysis=args.failure_analysis,
     )
