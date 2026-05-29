@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260529_020",
+  "category": "rl_training",
+  "content_id": "current-high-pressure-smoke",
+  "seed": 63200,
+  "bot": "ppo_e30_mid_anchor_guarded_probe",
+  "time_seconds": 300.0,
+  "symptom": "A fresh deterministic high-pressure smoke recheck of ppo_e30_mid_anchor_guarded_probe over seeds 63200-63202 recorded 60s win rates of 0.6667/1.0/1.0, 180s win rates of 0.3333/1.0/0.6667, and 300s win rates of 0.0/0.0/0.0 on soda-creek, caramel-workshop, and cracked-star-jar.",
+  "root_cause": "The mid-anchor guarded checkpoint still lacks reliable opening retention on soda-creek and does not convert late-window survival into 300s victories on any high-pressure map. This confirms the prior long-run blocker on a new seed window rather than clearing it.",
+  "fix": "Do not promote the checkpoint. Treat this run as refreshed diagnostic evidence only. Future probes should preserve 60/180s retention, add per-map or split-policy conversion objectives, and use fixed-window high-pressure plus multi-baseline no-regression before any longer continuation.",
+  "validation": "train_sb3.py --compare-rule-bots --compare-map-preset high-pressure produced comparison_60s.json, comparison_180s.json, and comparison_300s.json under harness/reports/2026-05-29_rl_current_high_pressure_smoke_001. The 300s report returned multimap_comparison_recorded_needs_policy_repair with zero_policy_win_rate findings on all three high-pressure maps.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/summary.md",
+    "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/comparison_60s.json",
+    "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/comparison_180s.json",
+    "harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/comparison_300s.json"
+  ]
+}
