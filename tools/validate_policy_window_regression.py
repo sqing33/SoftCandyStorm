@@ -84,6 +84,24 @@ def map_by_id(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return result
 
 
+def policy_summary_by_map(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    if isinstance(report.get("map_id"), str):
+        policy = report.get("policy")
+        summary = policy.get("summary") if isinstance(policy, dict) else None
+        if isinstance(summary, dict):
+            result[report["map_id"]] = summary
+    for item in report.get("maps", []):
+        if not isinstance(item, dict):
+            continue
+        map_id = item.get("map_id")
+        policy = item.get("policy")
+        summary = policy.get("summary") if isinstance(policy, dict) else None
+        if isinstance(map_id, str) and map_id and isinstance(summary, dict):
+            result[map_id] = summary
+    return result
+
+
 def dominant_ratio(entry: dict[str, Any]) -> float | None:
     dominant = entry.get("policy_dominant_action")
     if not isinstance(dominant, dict):
@@ -91,10 +109,162 @@ def dominant_ratio(entry: dict[str, Any]) -> float | None:
     return as_number(dominant.get("ratio"))
 
 
+def normalized_entropy(
+    entry: dict[str, Any],
+    policy_summary: dict[str, Any] | None,
+) -> float | None:
+    if isinstance(policy_summary, dict):
+        value = as_number(policy_summary.get("normalized_action_entropy"))
+        if value is not None:
+            return value
+    return as_number(entry.get("policy_normalized_action_entropy"))
+
+
+def normalize_action_distribution(value: Any) -> dict[str, float] | None:
+    if not isinstance(value, dict):
+        return None
+    result: dict[str, float] = {}
+    for action, payload in value.items():
+        if not isinstance(payload, dict):
+            continue
+        ratio = as_number(payload.get("ratio"))
+        if ratio is not None:
+            result[str(action)] = ratio
+    return result
+
+
+def action_sort_key(value: str) -> tuple[int, int | str]:
+    try:
+        return (0, int(value))
+    except ValueError:
+        return (1, value)
+
+
 def metric_delta(candidate: float | None, baseline: float | None) -> float | None:
     if candidate is None or baseline is None:
         return None
     return round(candidate - baseline, 6)
+
+
+def action_distribution_delta_report(
+    *,
+    baseline_summary: dict[str, Any] | None,
+    candidate_summary: dict[str, Any] | None,
+    baseline_entry: dict[str, Any],
+    candidate_entry: dict[str, Any],
+    max_action_ratio_increase: float | None,
+    max_action_distribution_l1_delta: float | None,
+    max_normalized_entropy_drop: float | None,
+) -> tuple[dict[str, Any], list[str]]:
+    enabled = any(
+        value is not None
+        for value in (
+            max_action_ratio_increase,
+            max_action_distribution_l1_delta,
+            max_normalized_entropy_drop,
+        )
+    )
+    if not enabled:
+        return {"enabled": False}, []
+
+    blockers: list[str] = []
+    baseline_entropy = normalized_entropy(baseline_entry, baseline_summary)
+    candidate_entropy = normalized_entropy(candidate_entry, candidate_summary)
+    entropy_delta = metric_delta(candidate_entropy, baseline_entropy)
+
+    baseline_distribution = normalize_action_distribution(
+        baseline_summary.get("action_distribution")
+        if isinstance(baseline_summary, dict)
+        else None
+    )
+    candidate_distribution = normalize_action_distribution(
+        candidate_summary.get("action_distribution")
+        if isinstance(candidate_summary, dict)
+        else None
+    )
+
+    action_ratio_deltas: dict[str, float] | None = None
+    l1_delta: float | None = None
+    max_increase: dict[str, Any] | None = None
+    max_decrease: dict[str, Any] | None = None
+    needs_distribution = (
+        max_action_ratio_increase is not None
+        or max_action_distribution_l1_delta is not None
+    )
+    if needs_distribution and (
+        baseline_distribution is None or candidate_distribution is None
+    ):
+        blockers.append("missing policy action_distribution")
+    elif baseline_distribution is not None and candidate_distribution is not None:
+        action_ratio_deltas = {}
+        actions = sorted(
+            set(baseline_distribution) | set(candidate_distribution),
+            key=action_sort_key,
+        )
+        abs_total = 0.0
+        for action in actions:
+            delta = metric_delta(
+                candidate_distribution.get(action, 0.0),
+                baseline_distribution.get(action, 0.0),
+            )
+            action_ratio_deltas[action] = delta
+            abs_total += abs(delta)
+        l1_delta = round(abs_total, 6)
+        if action_ratio_deltas:
+            increase_action, increase_delta = max(
+                action_ratio_deltas.items(), key=lambda item: item[1]
+            )
+            decrease_action, decrease_delta = min(
+                action_ratio_deltas.items(), key=lambda item: item[1]
+            )
+            max_increase = {
+                "action": increase_action,
+                "delta": increase_delta,
+                "baseline_ratio": baseline_distribution.get(increase_action, 0.0),
+                "candidate_ratio": candidate_distribution.get(increase_action, 0.0),
+            }
+            max_decrease = {
+                "action": decrease_action,
+                "delta": decrease_delta,
+                "baseline_ratio": baseline_distribution.get(decrease_action, 0.0),
+                "candidate_ratio": candidate_distribution.get(decrease_action, 0.0),
+            }
+            if (
+                max_action_ratio_increase is not None
+                and increase_delta > max_action_ratio_increase
+            ):
+                blockers.append(
+                    f"action {increase_action} ratio increased {increase_delta} "
+                    f"beyond allowed {max_action_ratio_increase}"
+                )
+        if (
+            max_action_distribution_l1_delta is not None
+            and l1_delta > max_action_distribution_l1_delta
+        ):
+            blockers.append(
+                "action_distribution_l1_delta "
+                f"{l1_delta} beyond allowed {max_action_distribution_l1_delta}"
+            )
+
+    if max_normalized_entropy_drop is not None:
+        if entropy_delta is None:
+            blockers.append("missing normalized action entropy")
+        elif entropy_delta < -max_normalized_entropy_drop:
+            blockers.append(
+                "normalized_action_entropy dropped "
+                f"{round(abs(entropy_delta), 6)} beyond allowed {max_normalized_entropy_drop}"
+            )
+
+    return {
+        "enabled": True,
+        "baseline_normalized_action_entropy": baseline_entropy,
+        "candidate_normalized_action_entropy": candidate_entropy,
+        "normalized_action_entropy_delta": entropy_delta,
+        "action_ratio_deltas": action_ratio_deltas,
+        "action_distribution_l1_delta": l1_delta,
+        "max_action_ratio_increase": max_increase,
+        "max_action_ratio_decrease": max_decrease,
+    }, blockers
 
 
 def collect_report_warnings(
@@ -143,9 +313,14 @@ def compare_map_entry(
     map_id: str,
     baseline: dict[str, Any],
     candidate: dict[str, Any],
+    baseline_policy_summary: dict[str, Any] | None,
+    candidate_policy_summary: dict[str, Any] | None,
     min_win_rate_delta: float,
     max_survival_drop_seconds: float,
     max_dominant_ratio_increase: float | None,
+    max_action_ratio_increase: float | None,
+    max_action_distribution_l1_delta: float | None,
+    max_normalized_entropy_drop: float | None,
 ) -> dict[str, Any]:
     baseline_win = as_number(baseline.get("policy_win_rate"))
     candidate_win = as_number(candidate.get("policy_win_rate"))
@@ -182,6 +357,17 @@ def compare_map_entry(
                 f"{dominant_delta} beyond allowed {max_dominant_ratio_increase}"
             )
 
+    action_delta, action_blockers = action_distribution_delta_report(
+        baseline_summary=baseline_policy_summary,
+        candidate_summary=candidate_policy_summary,
+        baseline_entry=baseline,
+        candidate_entry=candidate,
+        max_action_ratio_increase=max_action_ratio_increase,
+        max_action_distribution_l1_delta=max_action_distribution_l1_delta,
+        max_normalized_entropy_drop=max_normalized_entropy_drop,
+    )
+    blockers.extend(action_blockers)
+
     return {
         "window": window,
         "map_id": map_id,
@@ -200,6 +386,7 @@ def compare_map_entry(
             "policy_average_survival_seconds": survival_delta,
             "policy_dominant_action_ratio": dominant_delta,
         },
+        "action_distribution_delta": action_delta,
         "status": "pass" if not blockers else "regression",
         "blockers": blockers,
     }
@@ -212,6 +399,9 @@ def build_report(
     min_win_rate_delta: float = 0.0,
     max_survival_drop_seconds: float = 0.0,
     max_dominant_ratio_increase: float | None = None,
+    max_action_ratio_increase: float | None = None,
+    max_action_distribution_l1_delta: float | None = None,
+    max_normalized_entropy_drop: float | None = None,
 ) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -241,6 +431,8 @@ def build_report(
 
         baseline_maps = map_by_id(baseline_report)
         candidate_maps = map_by_id(candidate_report)
+        baseline_policy_summaries = policy_summary_by_map(baseline_report)
+        candidate_policy_summaries = policy_summary_by_map(candidate_report)
         if not baseline_maps:
             errors.append(f"{label}: baseline summary maps are missing")
         if not candidate_maps:
@@ -256,9 +448,14 @@ def build_report(
                 map_id=map_id,
                 baseline=baseline_maps[map_id],
                 candidate=candidate_maps[map_id],
+                baseline_policy_summary=baseline_policy_summaries.get(map_id),
+                candidate_policy_summary=candidate_policy_summaries.get(map_id),
                 min_win_rate_delta=min_win_rate_delta,
                 max_survival_drop_seconds=max_survival_drop_seconds,
                 max_dominant_ratio_increase=max_dominant_ratio_increase,
+                max_action_ratio_increase=max_action_ratio_increase,
+                max_action_distribution_l1_delta=max_action_distribution_l1_delta,
+                max_normalized_entropy_drop=max_normalized_entropy_drop,
             )
             for map_id in sorted(set(baseline_maps) & set(candidate_maps))
         ]
@@ -296,6 +493,9 @@ def build_report(
             "min_win_rate_delta": min_win_rate_delta,
             "max_survival_drop_seconds": max_survival_drop_seconds,
             "max_dominant_ratio_increase": max_dominant_ratio_increase,
+            "max_action_ratio_increase": max_action_ratio_increase,
+            "max_action_distribution_l1_delta": max_action_distribution_l1_delta,
+            "max_normalized_entropy_drop": max_normalized_entropy_drop,
         },
         "errors": errors,
         "warnings": warnings,
@@ -320,19 +520,26 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         "",
         "## Window Results",
         "",
-        "| Window | Map | Win Δ | Survival Δ | Dominant Ratio Δ | Status |",
-        "|---|---|---:|---:|---:|---|",
+        "| Window | Map | Win Δ | Survival Δ | Dominant Ratio Δ | Action L1 Δ | Max Action Ratio Δ | Entropy Δ | Status |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---|",
     ]
     for window in report["windows"]:
         for item in window["map_results"]:
             deltas = item["deltas"]
+            action_delta = item.get("action_distribution_delta", {})
+            action_l1 = action_delta.get("action_distribution_l1_delta")
+            max_action = action_delta.get("max_action_ratio_increase") or {}
+            entropy_delta = action_delta.get("normalized_action_entropy_delta")
             lines.append(
-                "| `{window}` | `{map_id}` | `{win}` | `{survival}` | `{dominant}` | `{status}` |".format(
+                "| `{window}` | `{map_id}` | `{win}` | `{survival}` | `{dominant}` | `{action_l1}` | `{action}` | `{entropy}` | `{status}` |".format(
                     window=window["label"],
                     map_id=item["map_id"],
                     win=deltas.get("policy_win_rate"),
                     survival=deltas.get("policy_average_survival_seconds"),
                     dominant=deltas.get("policy_dominant_action_ratio"),
+                    action_l1=action_l1,
+                    action=max_action.get("delta"),
+                    entropy=entropy_delta,
                     status=item["status"],
                 )
             )
@@ -358,6 +565,9 @@ def main() -> int:
     parser.add_argument("--min-win-rate-delta", type=float, default=0.0)
     parser.add_argument("--max-survival-drop-seconds", type=float, default=0.0)
     parser.add_argument("--max-dominant-ratio-increase", type=float, default=None)
+    parser.add_argument("--max-action-ratio-increase", type=float, default=None)
+    parser.add_argument("--max-action-distribution-l1-delta", type=float, default=None)
+    parser.add_argument("--max-normalized-entropy-drop", type=float, default=None)
     parser.add_argument("--report", type=Path, default=None)
     parser.add_argument("--markdown", type=Path, default=None)
     parser.add_argument("--allow-regression", action="store_true")
@@ -367,6 +577,15 @@ def main() -> int:
         parser.error("--max-survival-drop-seconds must be non-negative")
     if args.max_dominant_ratio_increase is not None and args.max_dominant_ratio_increase < 0.0:
         parser.error("--max-dominant-ratio-increase must be non-negative")
+    if args.max_action_ratio_increase is not None and args.max_action_ratio_increase < 0.0:
+        parser.error("--max-action-ratio-increase must be non-negative")
+    if (
+        args.max_action_distribution_l1_delta is not None
+        and args.max_action_distribution_l1_delta < 0.0
+    ):
+        parser.error("--max-action-distribution-l1-delta must be non-negative")
+    if args.max_normalized_entropy_drop is not None and args.max_normalized_entropy_drop < 0.0:
+        parser.error("--max-normalized-entropy-drop must be non-negative")
 
     try:
         baseline_windows = window_map(args.baseline_window)
@@ -380,6 +599,9 @@ def main() -> int:
         min_win_rate_delta=args.min_win_rate_delta,
         max_survival_drop_seconds=args.max_survival_drop_seconds,
         max_dominant_ratio_increase=args.max_dominant_ratio_increase,
+        max_action_ratio_increase=args.max_action_ratio_increase,
+        max_action_distribution_l1_delta=args.max_action_distribution_l1_delta,
+        max_normalized_entropy_drop=args.max_normalized_entropy_drop,
     )
     if args.report is not None:
         args.report.parent.mkdir(parents=True, exist_ok=True)

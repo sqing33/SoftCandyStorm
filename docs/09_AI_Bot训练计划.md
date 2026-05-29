@@ -290,6 +290,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 将 action-distribution guard 应用回 terminal-window `w10` 后，结论进一步收窄：全作用域 guard 会被 `anchor_drift_diagnostic` / 对应 sample path 的 `36` 条 validation rows 拦下，dominant action `8` ratio 为 `0.8889`、normalized argmax entropy 为 `0.1872`，但这是刻意集中的 top drift 修复切片，不是在线 `caramel-workshop` 60 秒 blocker。新增 `--action-distribution-guard-scope` 后，只检查 `overall,map_time_buckets` 的 guard 通过：`caramel-workshop::opening_lt_60` 离线 dominant action ratio 为 `0.3167`、normalized argmax entropy 为 `0.7524`。因此离线 map/time action-distribution guard 可作为蒸馏证据闸门，但不能替代 online fixed-window no-regression；下一步应转向显式 terminal-conversion branch，或补充 baseline/candidate online action-distribution delta 专门门禁。
 
+`validate_policy_window_regression.py` 已补上 baseline/candidate online action-distribution delta 专门门禁：在 60 / 180 / 300 秒 fixed-window comparison 中读取每张图的完整 `policy.summary.action_distribution`，除原有 win rate、平均存活、dominant ratio 外，还可用单动作 ratio 增幅、完整分布 L1 delta 和 normalized entropy drop 阻断在线分布漂移。用 e30 checkpoint 对 terminal-window `w10` 复跑后，该门禁记录 `17` 个 blockers，其中 `60s/caramel-workshop` 同时触发 dominant ratio `+0.2268`、action `7` ratio `+0.2421`、L1 delta `0.7526` 和 entropy delta `-0.2752`。这确认当前 blocker 是在线策略分布漂移，不应再依赖离线 validation guard 或继续单参数降权。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

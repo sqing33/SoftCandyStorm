@@ -1,0 +1,632 @@
+{
+  "report_version": 1,
+  "decision": "policy_window_regression_failed",
+  "gate_decision": "policy_window_regression_failed",
+  "baseline_window_count": 3,
+  "candidate_window_count": 3,
+  "criteria": {
+    "min_win_rate_delta": 0.0,
+    "max_survival_drop_seconds": 5.0,
+    "max_dominant_ratio_increase": 0.2,
+    "max_action_ratio_increase": 0.2,
+    "max_action_distribution_l1_delta": 0.45,
+    "max_normalized_entropy_drop": 0.15
+  },
+  "errors": [],
+  "warnings": [],
+  "blockers": [
+    "180s/caramel-workshop: action 5 ratio increased 0.2137 beyond allowed 0.2",
+    "180s/caramel-workshop: action_distribution_l1_delta 0.7067 beyond allowed 0.45",
+    "180s/cracked-star-jar: action_distribution_l1_delta 0.4741 beyond allowed 0.45",
+    "300s/caramel-workshop: action_distribution_l1_delta 0.5721 beyond allowed 0.45",
+    "300s/cracked-star-jar: action_distribution_l1_delta 0.7 beyond allowed 0.45",
+    "300s/soda-creek: action 1 ratio increased 0.3047 beyond allowed 0.2",
+    "300s/soda-creek: action_distribution_l1_delta 0.7617 beyond allowed 0.45",
+    "300s/soda-creek: normalized_action_entropy dropped 0.1548 beyond allowed 0.15",
+    "60s/caramel-workshop: dominant_action_ratio increased 0.2268 beyond allowed 0.2",
+    "60s/caramel-workshop: action 7 ratio increased 0.2421 beyond allowed 0.2",
+    "60s/caramel-workshop: action_distribution_l1_delta 0.7526 beyond allowed 0.45",
+    "60s/caramel-workshop: normalized_action_entropy dropped 0.2752 beyond allowed 0.15",
+    "60s/cracked-star-jar: action 7 ratio increased 0.2588 beyond allowed 0.2",
+    "60s/cracked-star-jar: action_distribution_l1_delta 0.7808 beyond allowed 0.45",
+    "60s/cracked-star-jar: normalized_action_entropy dropped 0.1575 beyond allowed 0.15",
+    "60s/soda-creek: action 1 ratio increased 0.3702 beyond allowed 0.2",
+    "60s/soda-creek: action_distribution_l1_delta 0.8214 beyond allowed 0.45"
+  ],
+  "windows": [
+    {
+      "label": "180s",
+      "baseline_path": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/comparison_180s.json",
+      "candidate_path": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/comparison_180s.json",
+      "baseline_seconds": 180.0,
+      "candidate_seconds": 180.0,
+      "baseline_gate_decision": "multimap_comparison_recorded_watch",
+      "candidate_gate_decision": "multimap_comparison_recorded_not_balance_gate",
+      "map_results": [
+        {
+          "window": "180s",
+          "map_id": "caramel-workshop",
+          "baseline": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 129.3174,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 3079,
+              "ratio": 0.2646
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 129.3174,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 4103,
+              "ratio": 0.3526
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.0,
+            "policy_dominant_action_ratio": 0.088
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.8553,
+            "candidate_normalized_action_entropy": 0.7483,
+            "normalized_action_entropy_delta": -0.107,
+            "action_ratio_deltas": {
+              "0": 0.0001,
+              "1": 0.0841,
+              "2": 0.0543,
+              "3": -0.1395,
+              "4": -0.0085,
+              "5": 0.2137,
+              "6": 0.0011,
+              "7": -0.1349,
+              "8": -0.0705
+            },
+            "action_distribution_l1_delta": 0.7067,
+            "max_action_ratio_increase": {
+              "action": "5",
+              "delta": 0.2137,
+              "baseline_ratio": 0.1389,
+              "candidate_ratio": 0.3526
+            },
+            "max_action_ratio_decrease": {
+              "action": "3",
+              "delta": -0.1395,
+              "baseline_ratio": 0.1675,
+              "candidate_ratio": 0.028
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action 5 ratio increased 0.2137 beyond allowed 0.2",
+            "action_distribution_l1_delta 0.7067 beyond allowed 0.45"
+          ]
+        },
+        {
+          "window": "180s",
+          "map_id": "cracked-star-jar",
+          "baseline": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 135.8395,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 3200,
+              "ratio": 0.2618
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 1.0,
+            "policy_average_survival_seconds": 180.0095,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 4145,
+              "ratio": 0.2559
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.3333,
+            "policy_average_survival_seconds": 44.17,
+            "policy_dominant_action_ratio": -0.0059
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7987,
+            "candidate_normalized_action_entropy": 0.7814,
+            "normalized_action_entropy_delta": -0.0173,
+            "action_ratio_deltas": {
+              "0": 0.0001,
+              "1": -0.0059,
+              "2": -0.0982,
+              "3": 0.1536,
+              "4": -0.0379,
+              "5": -0.0414,
+              "6": -0.0012,
+              "7": 0.0834,
+              "8": -0.0524
+            },
+            "action_distribution_l1_delta": 0.4741,
+            "max_action_ratio_increase": {
+              "action": "3",
+              "delta": 0.1536,
+              "baseline_ratio": 0.0439,
+              "candidate_ratio": 0.1975
+            },
+            "max_action_ratio_decrease": {
+              "action": "2",
+              "delta": -0.0982,
+              "baseline_ratio": 0.2041,
+              "candidate_ratio": 0.1059
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action_distribution_l1_delta 0.4741 beyond allowed 0.45"
+          ]
+        },
+        {
+          "window": "180s",
+          "map_id": "soda-creek",
+          "baseline": {
+            "policy_win_rate": 0.3333,
+            "policy_average_survival_seconds": 89.9585,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 1636,
+              "ratio": 0.2021
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 128.1619,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 3073,
+              "ratio": 0.2664
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.3334,
+            "policy_average_survival_seconds": 38.2034,
+            "policy_dominant_action_ratio": 0.0643
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.8714,
+            "candidate_normalized_action_entropy": 0.8018,
+            "normalized_action_entropy_delta": -0.0696,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": 0.1377,
+              "2": -0.018,
+              "3": -0.0427,
+              "4": -0.0587,
+              "5": 0.0248,
+              "6": 0.0347,
+              "7": 0.0257,
+              "8": -0.1035
+            },
+            "action_distribution_l1_delta": 0.4458,
+            "max_action_ratio_increase": {
+              "action": "1",
+              "delta": 0.1377,
+              "baseline_ratio": 0.1287,
+              "candidate_ratio": 0.2664
+            },
+            "max_action_ratio_decrease": {
+              "action": "8",
+              "delta": -0.1035,
+              "baseline_ratio": 0.1089,
+              "candidate_ratio": 0.0054
+            }
+          },
+          "status": "pass",
+          "blockers": []
+        }
+      ]
+    },
+    {
+      "label": "300s",
+      "baseline_path": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/comparison_300s.json",
+      "candidate_path": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/comparison_300s.json",
+      "baseline_seconds": 300.0,
+      "candidate_seconds": 300.0,
+      "baseline_gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+      "candidate_gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+      "map_results": [
+        {
+          "window": "300s",
+          "map_id": "caramel-workshop",
+          "baseline": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 151.8889,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 6007,
+              "ratio": 0.4395
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 161.8799,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 5353,
+              "ratio": 0.3674
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 9.991,
+            "policy_dominant_action_ratio": -0.0721
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7323,
+            "candidate_normalized_action_entropy": 0.7519,
+            "normalized_action_entropy_delta": 0.0196,
+            "action_ratio_deltas": {
+              "0": 0.0001,
+              "1": 0.0062,
+              "2": 0.0397,
+              "3": 0.0493,
+              "4": -0.0396,
+              "5": -0.2432,
+              "6": -0.0033,
+              "7": 0.1847,
+              "8": 0.006
+            },
+            "action_distribution_l1_delta": 0.5721,
+            "max_action_ratio_increase": {
+              "action": "7",
+              "delta": 0.1847,
+              "baseline_ratio": 0.1827,
+              "candidate_ratio": 0.3674
+            },
+            "max_action_ratio_decrease": {
+              "action": "5",
+              "delta": -0.2432,
+              "baseline_ratio": 0.4395,
+              "candidate_ratio": 0.1963
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action_distribution_l1_delta 0.5721 beyond allowed 0.45"
+          ]
+        },
+        {
+          "window": "300s",
+          "map_id": "cracked-star-jar",
+          "baseline": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 170.4247,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 5757,
+              "ratio": 0.3754
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 226.475,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 4776,
+              "ratio": 0.2343
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 56.0503,
+            "policy_dominant_action_ratio": -0.1411
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7232,
+            "candidate_normalized_action_entropy": 0.7972,
+            "normalized_action_entropy_delta": 0.074,
+            "action_ratio_deltas": {
+              "0": -0.0001,
+              "1": -0.0759,
+              "2": 0.0495,
+              "3": 0.1596,
+              "4": -0.0319,
+              "5": -0.2214,
+              "6": -0.0001,
+              "7": 0.1408,
+              "8": -0.0207
+            },
+            "action_distribution_l1_delta": 0.7,
+            "max_action_ratio_increase": {
+              "action": "3",
+              "delta": 0.1596,
+              "baseline_ratio": 0.0377,
+              "candidate_ratio": 0.1973
+            },
+            "max_action_ratio_decrease": {
+              "action": "5",
+              "delta": -0.2214,
+              "baseline_ratio": 0.3754,
+              "candidate_ratio": 0.154
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action_distribution_l1_delta 0.7 beyond allowed 0.45"
+          ]
+        },
+        {
+          "window": "300s",
+          "map_id": "soda-creek",
+          "baseline": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 149.3442,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 3341,
+              "ratio": 0.2486
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 155.1454,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 6080,
+              "ratio": 0.4355
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 5.8012,
+            "policy_dominant_action_ratio": 0.1869
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.8128,
+            "candidate_normalized_action_entropy": 0.658,
+            "normalized_action_entropy_delta": -0.1548,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": 0.3047,
+              "2": 0.0455,
+              "3": -0.1907,
+              "4": -0.0216,
+              "5": 0.0307,
+              "6": 0.0,
+              "7": -0.1436,
+              "8": -0.0249
+            },
+            "action_distribution_l1_delta": 0.7617,
+            "max_action_ratio_increase": {
+              "action": "1",
+              "delta": 0.3047,
+              "baseline_ratio": 0.1308,
+              "candidate_ratio": 0.4355
+            },
+            "max_action_ratio_decrease": {
+              "action": "3",
+              "delta": -0.1907,
+              "baseline_ratio": 0.2315,
+              "candidate_ratio": 0.0408
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action 1 ratio increased 0.3047 beyond allowed 0.2",
+            "action_distribution_l1_delta 0.7617 beyond allowed 0.45",
+            "normalized_action_entropy dropped 0.1548 beyond allowed 0.15"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "60s",
+      "baseline_path": "harness/reports/2026-05-28_rl_sb3_supervised_realign_full_anchor_drift_w40_e30_001/comparison_60s.json",
+      "candidate_path": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w10_e30_001/comparison_60s.json",
+      "baseline_seconds": 60.0,
+      "candidate_seconds": 60.0,
+      "baseline_gate_decision": "multimap_comparison_recorded_watch",
+      "candidate_gate_decision": "multimap_comparison_recorded_not_balance_gate",
+      "map_results": [
+        {
+          "window": "60s",
+          "map_id": "caramel-workshop",
+          "baseline": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 49.3329,
+            "policy_dominant_action": {
+              "action": "2",
+              "count": 1193,
+              "ratio": 0.2687
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 49.3329,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2200,
+              "ratio": 0.4955
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.0,
+            "policy_dominant_action_ratio": 0.2268
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7089,
+            "candidate_normalized_action_entropy": 0.4337,
+            "normalized_action_entropy_delta": -0.2752,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": 0.0,
+              "2": 0.1342,
+              "3": -0.0063,
+              "4": -0.1475,
+              "5": -0.1477,
+              "6": 0.0,
+              "7": 0.2421,
+              "8": -0.0748
+            },
+            "action_distribution_l1_delta": 0.7526,
+            "max_action_ratio_increase": {
+              "action": "7",
+              "delta": 0.2421,
+              "baseline_ratio": 0.2534,
+              "candidate_ratio": 0.4955
+            },
+            "max_action_ratio_decrease": {
+              "action": "5",
+              "delta": -0.1477,
+              "baseline_ratio": 0.2484,
+              "candidate_ratio": 0.1007
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "dominant_action_ratio increased 0.2268 beyond allowed 0.2",
+            "action 7 ratio increased 0.2421 beyond allowed 0.2",
+            "action_distribution_l1_delta 0.7526 beyond allowed 0.45",
+            "normalized_action_entropy dropped 0.2752 beyond allowed 0.15"
+          ]
+        },
+        {
+          "window": "60s",
+          "map_id": "cracked-star-jar",
+          "baseline": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 55.855,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 2038,
+              "ratio": 0.4054
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 1.0,
+            "policy_average_survival_seconds": 60.0328,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2213,
+              "ratio": 0.4096
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.3333,
+            "policy_average_survival_seconds": 4.1778,
+            "policy_dominant_action_ratio": 0.0042
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7169,
+            "candidate_normalized_action_entropy": 0.5594,
+            "normalized_action_entropy_delta": -0.1575,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": -0.1345,
+              "2": 0.1165,
+              "3": -0.0615,
+              "4": -0.0246,
+              "5": -0.1698,
+              "6": 0.0,
+              "7": 0.2588,
+              "8": 0.0151
+            },
+            "action_distribution_l1_delta": 0.7808,
+            "max_action_ratio_increase": {
+              "action": "7",
+              "delta": 0.2588,
+              "baseline_ratio": 0.1508,
+              "candidate_ratio": 0.4096
+            },
+            "max_action_ratio_decrease": {
+              "action": "5",
+              "delta": -0.1698,
+              "baseline_ratio": 0.4054,
+              "candidate_ratio": 0.2356
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action 7 ratio increased 0.2588 beyond allowed 0.2",
+            "action_distribution_l1_delta 0.7808 beyond allowed 0.45",
+            "normalized_action_entropy dropped 0.1575 beyond allowed 0.15"
+          ]
+        },
+        {
+          "window": "60s",
+          "map_id": "soda-creek",
+          "baseline": {
+            "policy_win_rate": 0.3333,
+            "policy_average_survival_seconds": 39.8886,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 1505,
+              "ratio": 0.4192
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 48.1774,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 1605,
+              "ratio": 0.3702
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.3334,
+            "policy_average_survival_seconds": 8.2888,
+            "policy_dominant_action_ratio": -0.049
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.6148,
+            "candidate_normalized_action_entropy": 0.6032,
+            "normalized_action_entropy_delta": -0.0116,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": 0.3702,
+              "2": 0.0405,
+              "3": -0.0302,
+              "4": -0.0175,
+              "5": -0.2504,
+              "6": 0.0,
+              "7": -0.0824,
+              "8": -0.0302
+            },
+            "action_distribution_l1_delta": 0.8214,
+            "max_action_ratio_increase": {
+              "action": "1",
+              "delta": 0.3702,
+              "baseline_ratio": 0.0,
+              "candidate_ratio": 0.3702
+            },
+            "max_action_ratio_decrease": {
+              "action": "5",
+              "delta": -0.2504,
+              "baseline_ratio": 0.4192,
+              "candidate_ratio": 0.1688
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action 1 ratio increased 0.3702 beyond allowed 0.2",
+            "action_distribution_l1_delta 0.8214 beyond allowed 0.45"
+          ]
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "This validator checks no-regression against supplied comparison reports only.",
+    "A passing no-regression result is repair evidence, not RL policy acceptance.",
+    "Final policies still require deterministic high-pressure, failure-case, and acceptance manifest review."
+  ]
+}

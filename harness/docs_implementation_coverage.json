@@ -441,7 +441,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、distillation action-distribution guard / scope、recovery target map/time scope filter、clean risk map/time subset filter、scoped risk distillation、terminal-window scoped distillation 和 terminal-window weight ablation 均已建立；但 terminal-window distillation 仍未通过 300 秒 high-pressure。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、distillation action-distribution guard / scope、online action-distribution delta no-regression gate、recovery target map/time scope filter、clean risk map/time subset filter、scoped risk distillation、terminal-window scoped distillation 和 terminal-window weight ablation 均已建立；但 terminal-window distillation 仍未通过 300 秒 high-pressure。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -1390,8 +1390,13 @@
             "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_guarded_distill_w10_e30_001/distillation_report.json",
             "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_maptime_guard_w10_e30_001/summary.md",
             "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_maptime_guard_w10_e30_001/distillation_report.json",
+            "harness/reports/2026-05-29_rl_policy_online_action_distribution_delta_gate_001/summary.md",
+            "harness/reports/2026-05-29_rl_policy_online_action_distribution_delta_gate_001/window_regression_action_delta_vs_e30.json",
+            "harness/reports/2026-05-29_rl_policy_online_action_distribution_delta_gate_001/window_regression_action_delta_vs_e30.md",
             "python/train/distill_behavior_clone_to_sb3.py",
-            "python/train/test_distill_behavior_clone_to_sb3.py"
+            "python/train/test_distill_behavior_clone_to_sb3.py",
+            "tools/validate_policy_window_regression.py",
+            "tools/test_validate_policy_window_regression.py"
           ],
           "gaps": [
             "parent late-recovery clean subset 已保留 424/439 条样本并通过 dry-run，但该批样本 map distribution 偏向 cracked-star-jar，late_low_health coverage 为 0；它只证明训练输入可用，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
@@ -1473,7 +1478,8 @@
             "首个完整 scoped risk distillation 只对 cracked-star-jar 180-300s 的 210 条 clean risk rows 做 10x repair，并保留 40x mid-anchor drift rows；drift/full-anchor alignment 均通过，但 300 秒 high-pressure 仍为 0.0/0.0/0.0。相对 e30 有 2 个 blockers、相对 parent 有 6 个 blockers，repair-probe gate 失败并记录 fail_20260529_011；下一步不能继续简单提高 scoped risk weight，应拆 terminal-conversion branch 或更窄 late-state subset，同时硬保护 soda-creek opening/mid 与 parent preservation。",
             "cracked-star-jar 210-240s terminal-window scoped distill 将 clean risk rows 收窄到 121 条，并把 repair-probe blockers 降到 2；但 300 秒 high-pressure 仍为 0.0/0.0/0.0，且 remaining blockers 指向 60s/caramel-workshop dominant action ratio。已记录 fail_20260529_012；下一步需要把 action-distribution guard 应用到该分支，或改走显式 terminal-conversion branch，不能把该 checkpoint 作为 policy candidate 或 RL acceptance 证据。",
             "terminal-window scoped risk weight 从 10x 降到 7x 后，离线 alignment 仍通过但 soda-creek 180/300 秒回归，repair gate blockers 从 2 增至 6，并记录 fail_20260529_013；该结果说明不能继续简单降权，应改用 action-distribution guard 或显式 terminal-conversion branch。",
-            "distillation action-distribution guard 已实现并通过单测，可阻止 dominant action ratio 或 argmax entropy 异常的 supervised SB3 checkpoint 继续进入 probe；但 terminal-window w10 复跑显示 all-scope 会误拦 anchor drift repair slice，而 overall,map_time_buckets scope 通过且无法复现在线 60s/caramel dominant-action blocker，因此它不能解除 300 秒 high-pressure 或替代 online fixed-window no-regression。"
+            "distillation action-distribution guard 已实现并通过单测，可阻止 dominant action ratio 或 argmax entropy 异常的 supervised SB3 checkpoint 继续进入 probe；但 terminal-window w10 复跑显示 all-scope 会误拦 anchor drift repair slice，而 overall,map_time_buckets scope 通过且无法复现在线 60s/caramel dominant-action blocker，因此它不能解除 300 秒 high-pressure 或替代 online fixed-window no-regression。",
+            "online action-distribution delta no-regression gate 已能在 fixed-window comparison 中比较单动作 ratio 增幅、动作分布 L1 delta 和 normalized entropy drop；e30 vs terminal-window w10 真实复跑记录 17 个 blockers，确认当前问题是在线分布漂移。下一步应转向显式 terminal-conversion branch，而不是继续离线 guard 或单参数权重扫描。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
