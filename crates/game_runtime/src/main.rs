@@ -2,6 +2,7 @@ use bevy::{
     asset::AssetPlugin,
     audio::{AudioBundle, AudioSource, PlaybackSettings, Volume},
     prelude::*,
+    window::PrimaryWindow,
 };
 use game_core::{
     ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaCodexEntry, MetaProgress,
@@ -62,6 +63,10 @@ const BOSS_MIXER_SPRITE: &str = "prototype_topdown/sprites/boss_runaway_sugar_mi
 const PICKUP_CRYSTAL_SPRITE: &str = "prototype_topdown/sprites/pickup_candy_crystal_v001.png";
 const PROJECTILE_SPRITE: &str = "prototype_topdown/sprites/projectile_rainbow_candy_shot_v001.png";
 const MAP_TILE_SPRITE: &str = "prototype_topdown/sprites/map_frosting_grassland_tile_v001.png";
+const META_PANEL_WIDTH: f32 = 430.0;
+const META_PANEL_RIGHT_MARGIN: f32 = 14.0;
+const CODEX_POINTER_CONTROL_HEIGHT: f32 = 96.0;
+const CODEX_POINTER_CONTROL_ZONE_COUNT: usize = 5;
 
 fn main() {
     let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -1046,6 +1051,7 @@ fn step_game_core(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     gamepad_buttons: Res<ButtonInput<GamepadButton>>,
+    primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<RuntimeState>,
 ) {
     state.capture.record_frame(time.delta_seconds());
@@ -1122,8 +1128,15 @@ fn step_game_core(
         }
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Codex {
+        let pointer_action = primary_window.get_single().ok().and_then(|window| {
+            runtime_codex_action_from_pointer(
+                &mouse_buttons,
+                window.cursor_position(),
+                Vec2::new(window.resolution.width(), window.resolution.height()),
+            )
+        });
         if let Some(action) = runtime_codex_action_from_keyboard(&keyboard)
-            .or_else(|| runtime_codex_action_from_pointer(&mouse_buttons))
+            .or(pointer_action)
             .or_else(|| runtime_codex_action_from_gamepad(&gamepad_buttons))
         {
             apply_runtime_codex_action(&mut state, action);
@@ -2429,9 +2442,10 @@ fn render_meta_codex_panel(
         entries.len()
     ));
     lines.push(
-        "Q/E 或手柄 LT/RT 切换分类  B/N、鼠标左/右键或十字键左/右切换条目  V、鼠标中键或手柄 Y 切换过滤"
+        "Q/E 或手柄 LT/RT 切换分类  B/N、右下点击区或十字键左/右切换条目  V、鼠标中键或手柄 Y 切换过滤"
             .to_string(),
     );
+    lines.push("右下点击区: <类  类>  <条目  条目>  过滤".to_string());
     if let Some(entry) = selected_entry {
         let status = if entry.discovered {
             "已发现"
@@ -2509,15 +2523,45 @@ fn runtime_codex_action_from_keyboard(
 
 fn runtime_codex_action_from_pointer(
     mouse_buttons: &ButtonInput<MouseButton>,
+    cursor_position: Option<Vec2>,
+    window_size: Vec2,
 ) -> Option<RuntimeCodexAction> {
-    if mouse_buttons.just_pressed(MouseButton::Left) {
-        Some(RuntimeCodexAction::NextEntry)
-    } else if mouse_buttons.just_pressed(MouseButton::Right) {
+    if mouse_buttons.just_pressed(MouseButton::Right) {
         Some(RuntimeCodexAction::PreviousEntry)
     } else if mouse_buttons.just_pressed(MouseButton::Middle) {
         Some(RuntimeCodexAction::ToggleDiscoveredOnly)
+    } else if mouse_buttons.just_pressed(MouseButton::Left) {
+        runtime_codex_action_from_pointer_zone(cursor_position?, window_size)
     } else {
         None
+    }
+}
+
+fn runtime_codex_action_from_pointer_zone(
+    cursor_position: Vec2,
+    window_size: Vec2,
+) -> Option<RuntimeCodexAction> {
+    if window_size.x <= 0.0 || window_size.y <= 0.0 {
+        return None;
+    }
+    let panel_right = (window_size.x - META_PANEL_RIGHT_MARGIN).max(0.0);
+    let panel_left = (panel_right - META_PANEL_WIDTH).max(0.0);
+    let panel_width = (panel_right - panel_left).max(1.0);
+    let in_panel_x = cursor_position.x >= panel_left && cursor_position.x <= panel_right;
+    let in_control_y =
+        cursor_position.y >= 0.0 && cursor_position.y <= CODEX_POINTER_CONTROL_HEIGHT;
+    if !in_panel_x || !in_control_y {
+        return None;
+    }
+
+    let normalized_x = ((cursor_position.x - panel_left) / panel_width).clamp(0.0, 0.999);
+    let zone = (normalized_x * CODEX_POINTER_CONTROL_ZONE_COUNT as f32).floor() as usize;
+    match zone {
+        0 => Some(RuntimeCodexAction::PreviousCategory),
+        1 => Some(RuntimeCodexAction::NextCategory),
+        2 => Some(RuntimeCodexAction::PreviousEntry),
+        3 => Some(RuntimeCodexAction::NextEntry),
+        _ => Some(RuntimeCodexAction::ToggleDiscoveredOnly),
     }
 }
 
@@ -4483,11 +4527,11 @@ mod tests {
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
         runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
         runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
-        runtime_save_export_path, runtime_sprite_paths, runtime_unlocked_character_ids,
-        runtime_unlocked_map_ids, sounds_for_events, toggle_runtime_privacy_setting,
-        write_runtime_privacy_settings, write_runtime_save_state,
-        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        runtime_codex_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
+        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
@@ -4501,7 +4545,9 @@ mod tests {
         PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
         RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
-    use bevy::prelude::{ButtonInput, Gamepad, GamepadButton, GamepadButtonType, MouseButton};
+    use bevy::prelude::{
+        ButtonInput, Gamepad, GamepadButton, GamepadButtonType, MouseButton, Vec2,
+    };
     use game_core::{
         BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent,
         MetaProgress, MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode,
@@ -6255,8 +6301,9 @@ mod tests {
         assert!(panel.contains("图鉴浏览 仅已发现"));
         assert!(panel.contains("分类 敌人"));
         assert!(panel.contains("Q/E 或手柄 LT/RT 切换分类"));
-        assert!(panel.contains("B/N、鼠标左/右键或十字键左/右切换条目"));
+        assert!(panel.contains("B/N、右下点击区或十字键左/右切换条目"));
         assert!(panel.contains("V、鼠标中键或手柄 Y 切换过滤"));
+        assert!(panel.contains("右下点击区: <类  类>  <条目  条目>  过滤"));
         assert!(panel.contains("蹦蹦软糖"));
         assert!(panel.contains("bouncy-gummy"));
         assert!(panel.contains("击败 3"));
@@ -6309,29 +6356,69 @@ mod tests {
 
     #[test]
     fn runtime_codex_pointer_input_maps_mouse_buttons() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
         let mut left = ButtonInput::<MouseButton>::default();
         left.press(MouseButton::Left);
         assert_eq!(
-            runtime_codex_action_from_pointer(&left),
+            runtime_codex_action_from_pointer(&left, Some(Vec2::new(1110.0, 40.0)), window_size),
             Some(RuntimeCodexAction::NextEntry)
         );
 
         let mut right = ButtonInput::<MouseButton>::default();
         right.press(MouseButton::Right);
         assert_eq!(
-            runtime_codex_action_from_pointer(&right),
+            runtime_codex_action_from_pointer(&right, None, window_size),
             Some(RuntimeCodexAction::PreviousEntry)
         );
 
         let mut middle = ButtonInput::<MouseButton>::default();
         middle.press(MouseButton::Middle);
         assert_eq!(
-            runtime_codex_action_from_pointer(&middle),
+            runtime_codex_action_from_pointer(&middle, None, window_size),
             Some(RuntimeCodexAction::ToggleDiscoveredOnly)
         );
 
         assert_eq!(
-            runtime_codex_action_from_pointer(&ButtonInput::<MouseButton>::default()),
+            runtime_codex_action_from_pointer(
+                &ButtonInput::<MouseButton>::default(),
+                None,
+                window_size
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn runtime_codex_pointer_zone_maps_right_panel_segments() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        assert_eq!(
+            runtime_codex_action_from_pointer_zone(Vec2::new(850.0, 40.0), window_size),
+            Some(RuntimeCodexAction::PreviousCategory)
+        );
+        assert_eq!(
+            runtime_codex_action_from_pointer_zone(Vec2::new(930.0, 40.0), window_size),
+            Some(RuntimeCodexAction::NextCategory)
+        );
+        assert_eq!(
+            runtime_codex_action_from_pointer_zone(Vec2::new(1020.0, 40.0), window_size),
+            Some(RuntimeCodexAction::PreviousEntry)
+        );
+        assert_eq!(
+            runtime_codex_action_from_pointer_zone(Vec2::new(1110.0, 40.0), window_size),
+            Some(RuntimeCodexAction::NextEntry)
+        );
+        assert_eq!(
+            runtime_codex_action_from_pointer_zone(Vec2::new(1200.0, 40.0), window_size),
+            Some(RuntimeCodexAction::ToggleDiscoveredOnly)
+        );
+        assert_eq!(
+            runtime_codex_action_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
+            None
+        );
+        assert_eq!(
+            runtime_codex_action_from_pointer_zone(Vec2::new(1110.0, 140.0), window_size),
             None
         );
     }

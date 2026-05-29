@@ -1,0 +1,98 @@
+{
+  "report_version": 1,
+  "decision": "runtime_codex_click_zone_valid",
+  "scope": "game_runtime F3 codex right-bottom segmented pointer control zone",
+  "implemented": [
+    "Runtime F3 codex mouse-left input now requires the cursor to be inside the right-bottom segmented control zone instead of advancing the codex entry from any window position",
+    "The five horizontal control-zone segments map left-to-right to previous category, next category, previous entry, next entry, and discovered-only filter toggle",
+    "Mouse right button remains a previous-entry shortcut and mouse middle button remains a discovered-only filter shortcut",
+    "The pointer-zone helper uses the Runtime meta panel width, right margin, and bottom control height to keep the clickable area aligned with the existing right-side station panel",
+    "The F3 helper text exposes the right-bottom control zone without loading generated story/codex candidate text",
+    "The Runtime surface contract now records the pointer-zone source-shape alongside keyboard, pointer shortcut, and gamepad bindings"
+  ],
+  "evidence": [
+    {
+      "kind": "unit_test",
+      "command": "cargo test -p game_runtime",
+      "result": "pending",
+      "passed_tests": 71
+    },
+    {
+      "kind": "workspace_test",
+      "command": "cargo test --workspace",
+      "result": "passed",
+      "passed_tests": 136
+    },
+    {
+      "kind": "clippy",
+      "command": "cargo clippy --workspace --all-targets",
+      "result": "passed"
+    },
+    {
+      "kind": "format",
+      "command": "cargo fmt --check",
+      "result": "passed"
+    },
+    {
+      "kind": "source_shape_contract",
+      "command": "python3 harness/runtime_contract/validate_runtime_surface_contract.py harness/runtime_contract/runtime_surface_contract_v0.json --repo-root . --report harness/reports/2026-05-29_runtime_surface_contract_codex_click_zone_001/runtime_surface_contract.json --markdown harness/reports/2026-05-29_runtime_surface_contract_codex_click_zone_001/summary.md",
+      "result": "runtime_surface_contract_valid"
+    },
+    {
+      "kind": "base_ui_manual_review_template",
+      "command": "python3 tools/validate_base_ui_manual_review.py harness/save_contract/base_ui_manual_review_template.json --repo-root . --report harness/reports/2026-05-29_base_ui_manual_review_template_codex_click_zone_001/base_ui_manual_review.json --markdown harness/reports/2026-05-29_base_ui_manual_review_template_codex_click_zone_001/summary.md",
+      "result": "base_ui_manual_review_invalid_expected_template"
+    },
+    {
+      "kind": "validator_regression_test",
+      "command": "python3 harness/runtime_contract/test_validate_runtime_surface_contract.py",
+      "result": "passed",
+      "passed_tests": 6
+    },
+    {
+      "kind": "validator_regression_test",
+      "command": "python3 tools/test_validate_base_ui_manual_review.py",
+      "result": "passed",
+      "passed_tests": 7
+    },
+    {
+      "kind": "ledger_validation",
+      "command": "python3 tools/validate_docs_implementation_coverage.py harness/docs_implementation_coverage.json --repo-root . --allow-incomplete",
+      "result": "docs_implementation_incomplete_expected"
+    },
+    {
+      "kind": "validator_regression_test",
+      "command": "python3 tools/test_validate_docs_implementation_coverage.py",
+      "result": "passed",
+      "passed_tests": 5
+    },
+    {
+      "kind": "ledger_validation",
+      "command": "python3 tools/validate_progress_reports.py harness/progress.json --repo-root .",
+      "result": "progress_reports_valid"
+    },
+    {
+      "kind": "validator_regression_test",
+      "command": "python3 tools/test_validate_progress_reports.py",
+      "result": "passed",
+      "passed_tests": 6
+    },
+    {
+      "kind": "ledger_validation",
+      "command": "python3 tools/validate_goal_evidence_consistency.py --repo-root .",
+      "result": "goal_evidence_consistent"
+    },
+    {
+      "kind": "validator_regression_test",
+      "command": "python3 tools/test_validate_goal_evidence_consistency.py",
+      "result": "passed",
+      "passed_tests": 5
+    }
+  ],
+  "limitations": [
+    "This is a text-panel segmented pointer control zone, not a complete visual button layout.",
+    "It is covered by source-shape and unit tests, not by a real physical mouse or touchscreen manual review.",
+    "It reads accepted runtime content pack metadata and MetaProgress only; it does not load generated story/codex candidate text.",
+    "It does not replace human story review, Runtime UI review, final human acceptance, manual base UI review, Bevy smoke, or release readiness."
+  ]
+}
