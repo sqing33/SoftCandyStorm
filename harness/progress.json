@@ -1166,6 +1166,11 @@
       "id": "rl_policy_window_regression_validator",
       "summary": "新增 validate_policy_window_regression.py 和单测，用固定 60/180/300 窗口逐图比较 candidate 与 baseline 的 win rate、平均存活和 dominant action ratio；用 stage 02 PPO 作为 baseline 审查 sample-only 与 mixed late repair probes，分别记录 11 个和 10 个 no-regression blockers。该工具只证明回归/无回归，不是 RL acceptance。",
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_late_mixed_repair_probe_001/window_regression_vs_stage02.md"
+    },
+    {
+      "id": "rl_sb3_risk_recovery_source_filter_weight_sweep",
+      "summary": "source-filtered risk recovery distillation sweep 已完成：distill_behavior_clone_to_sb3.py 可保留 retention / edge rows 的 teacher_probs，只对 clean parent late-state risk_recovery_supervision rows 用 top_k_scores 覆写。w10/w7/w5 均通过 drift 与 full-anchor alignment，但 repair-probe gate 全部失败；w10 仅恢复 cracked-star-jar 300 秒 0.3333 胜率并触发 14 个多基线 blockers，w7/w5 降到 3/4 个 blockers 但 300 秒三图仍全 0.0。已记录 fail_20260529_010，不能作为 policy candidate、stage 03 或 RL acceptance 证据。",
+      "report": "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filter_weight_sweep_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2588,6 +2593,11 @@
       "id": "rl_sb3_parent_late_recovery_clean_samples",
       "summary": "对 parent late-recovery filter 的 439 条 risk recovery samples 做 clean subset：保留 424 条，剔除 14 条 target residual risk 与 1 条 worse target risk score；clean subset 通过 risk_recovery_samples_valid，并用 train_behavior_clone.py dry-run 验证 424 条样本可按 late phase、180-300s window、risk_recovery_sample_weight 0.5 和 top_k_scores soft target 进入训练管线。dry-run 仍标记 map sample imbalance 与 late_low_health coverage 0，因此只能作为 action-separation / terminal-conversion 训练输入预检。",
       "report": "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_clean_samples_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_risk_recovery_source_filter_weight_sweep_finding",
+      "summary": "source-filtered risk recovery learned branch 证明 clean parent late-state risk rows 有局部 terminal-conversion 信号，但全局 risk sample weight 会在地图和阶段间转移失败面：w10 让 cracked-star-jar 300 秒到 0.3333，却破坏 soda-creek / caramel-workshop retention；w7/w5 保留更多 retention 但失去所有 300 秒胜利。下一步必须做 map/phase-scoped objective，显式保护 soda-creek opening/mid 与 caramel-workshop 180 秒，只对匹配 late failure bucket 的 clean risk rows 施加 action-separation / terminal-conversion。",
+      "report": "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filter_weight_sweep_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2617,7 +2627,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。512 timestep e30 late-win-conversion probe 恢复 cracked-star-jar 300 秒 0.3333 但触发 caramel-workshop 180 秒动作分布回归；256 timestep mid-anchor probe 则压住该回归并通过 repair-probe gate limited-followup，但 300 秒三图仍全 0 且丢失 cracked-star-jar 恢复信号。从该 parent 提高 late anchor 权重的 follow-up 又相对 parent 触发 soda 180 秒和 caramel 300 秒平均存活回归；降低 late anchor、强化 opening/mid retention 的小步 probe 虽恢复 cracked 300 秒 0.6667，却触发 e30 与 parent 多基线回归。240s per-map late split 保住多基线 no-regression 但 300 秒仍全 0；提前到 180s 也只让 cracked-star-jar 平均存活微增到 175.2584s。handoff state distribution 进一步确认 parent 与 late branch 在 120-240 秒 handoff 状态上几乎无差异，post-split argmax agreement 为 1.0。下一步应做训练期 per-map constrained repair，或用 parent late-state trace 训练显式 action-separation / terminal-conversion 分支；不能继续 shared PPO continuation 或单纯移动 split 秒数，当前 RL acceptance 继续 blocked。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。后续 e30 guarded、mid-anchor parent、multi-baseline follow-up、per-map split、handoff distribution、cracked 单图 constrained probe 与 parent late-recovery filter 依次确认：shared PPO continuation、单纯移动 split 秒数和单图小步 continuation 都不能形成 300 秒多图转换。source-filtered risk recovery distillation sweep 进一步证明 clean parent late-state risk rows 有局部信号，w10 恢复 cracked-star-jar 300 秒 0.3333 但触发 14 个 e30/parent blockers，w7/w5 虽减少 blockers 但 300 秒三图仍全 0。下一步应做 map/phase-scoped action-separation / terminal-conversion objective，显式保护 soda-creek opening/mid 与 caramel-workshop 180 秒，并继续保持 e30 + parent required no-regression、60/180/300 high-pressure、failure analysis 和 repair gate。"
     },
     {
       "id": "rl_policy_multimap_training",

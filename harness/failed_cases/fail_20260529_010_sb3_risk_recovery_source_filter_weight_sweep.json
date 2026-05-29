@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260529_010",
+  "category": "rl_training",
+  "content_id": "sb3-risk-recovery-source-filter-weight-sweep",
+  "seed": "63100-63102",
+  "bot": "ppo_risk_recovery_source_filtered_w5_w7_w10",
+  "time_seconds": 300.0,
+  "symptom": "Source-filtered SB3 distillation could learn from 424 clean parent late-state risk recovery samples while preserving offline anchor alignment, but no tested risk weight produced an acceptable 300s high-pressure policy. w10 restored a cracked-star-jar 300s win rate of 0.3333 but caused severe e30 and parent window regressions; w7 and w5 reduced regressions but returned to 0.0/0.0/0.0 300s win rates.",
+  "root_cause": "The clean risk rows expose useful late action-separation signal, but applying them as a global supervised distillation weight shifts shared policy behavior across maps and phases. Higher weights create local cracked-star-jar conversion at the cost of soda-creek and caramel-workshop retention, while lower weights are too weak to create terminal conversion.",
+  "fix": "Reject all sweep candidates as policy candidates. Keep the source-filtered distillation tooling, but move the next repair to map/phase-scoped objectives that preserve soda-creek opening/mid and caramel-workshop 180s behavior while applying clean risk rows only to matching late failure states.",
+  "validation": "w10 source-filtered distillation passed drift and full-anchor alignment, but comparison_300s.json was 0.0/0.0/0.3333 and repair_probe_gate.json failed with 14 blockers. w7 and w5 passed drift/full-anchor alignment and reduced blockers to 3 and 4 respectively, but both comparison_300s.json reports remained 0.0/0.0/0.0. failure_analysis_300s.json recorded 8 failures for w10 and 9 failures for w7/w5.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filter_weight_sweep_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w10_e30_001/distillation_report.json",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w10_e30_001/full_anchor_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w10_e30_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w10_e30_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w10_e30_001/window_regression_vs_parent.json",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w10_e30_001/repair_probe_gate.json",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w7_e30_001/repair_probe_gate.json",
+    "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filtered_w5_e30_001/repair_probe_gate.json"
+  ]
+}

@@ -1,0 +1,625 @@
+{
+  "status": "trained",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-29_rl_sb3_risk_recovery_override_w10_e30_001/ppo_risk_recovery_override_w10_e30.zip",
+  "metadata_path": "harness/reports/2026-05-29_rl_sb3_risk_recovery_override_w10_e30_001/ppo_risk_recovery_override_w10_e30_metadata.json",
+  "gate_decision": "sb3_distillation_smoke_only_not_policy_gate",
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true,
+    "torch": true
+  },
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/coward_caramel_workshop_seed62300_62303_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_caramel_workshop_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_cracked_star_jar_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_soda_creek_seed62302_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_cracked_star_jar_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_soda_creek_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/route_caramel_workshop_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/tank_caramel_workshop_seed62301_late_180_300.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+      "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl",
+      "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.jsonl",
+      "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_clean_samples_001/risk_recovery_samples_clean.jsonl"
+    ],
+    "sample_count": 34357,
+    "episode_count": 61,
+    "skipped_upgrade_samples": 346,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 0,
+    "risk_recovery_sample_records": 424,
+    "anchor_drift_sample_records": 200,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 10,
+        "ratio": 0.0003
+      },
+      "1": {
+        "count": 4464,
+        "ratio": 0.1299
+      },
+      "2": {
+        "count": 3765,
+        "ratio": 0.1096
+      },
+      "3": {
+        "count": 5470,
+        "ratio": 0.1592
+      },
+      "4": {
+        "count": 3627,
+        "ratio": 0.1056
+      },
+      "5": {
+        "count": 4500,
+        "ratio": 0.131
+      },
+      "6": {
+        "count": 3765,
+        "ratio": 0.1096
+      },
+      "7": {
+        "count": 4544,
+        "ratio": 0.1323
+      },
+      "8": {
+        "count": 4212,
+        "ratio": 0.1226
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 0.0,
+      "time_seconds_max": 299.8817,
+      "health_ratio_min": 0.0004,
+      "health_ratio_average": 0.7967,
+      "map_distribution": {
+        "caramel-workshop": {
+          "count": 11235,
+          "ratio": 0.327
+        },
+        "cracked-star-jar": {
+          "count": 11968,
+          "ratio": 0.3483
+        },
+        "soda-creek": {
+          "count": 11154,
+          "ratio": 0.3246
+        }
+      },
+      "sample_source_distribution": {
+        "anchor_drift_diagnostic": {
+          "count": 200,
+          "ratio": 0.0058
+        },
+        "risk_recovery_supervision": {
+          "count": 424,
+          "ratio": 0.0123
+        },
+        "trajectory": {
+          "count": 33733,
+          "ratio": 0.9818
+        }
+      }
+    },
+    "metadata": [
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/coward_caramel_workshop_seed62300_62303_late_180_300.jsonl",
+        "bot": "coward",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_caramel_workshop_late_180_300.jsonl",
+        "bot": "greedy",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_cracked_star_jar_late_180_300.jsonl",
+        "bot": "greedy",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/greedy_soda_creek_seed62302_late_180_300.jsonl",
+        "bot": "greedy",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_cracked_star_jar_late_180_300.jsonl",
+        "bot": "kite",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/kite_soda_creek_late_180_300.jsonl",
+        "bot": "kite",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/route_caramel_workshop_late_180_300.jsonl",
+        "bot": "route",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_late_survival_trajectory_001/tank_caramel_workshop_seed62301_late_180_300.jsonl",
+        "bot": "tank",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 180.0,
+        "sample_end_seconds": 300.0,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_caramel_workshop.jsonl",
+        "bot": "kite",
+        "map_id": "caramel-workshop",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_cracked_star_jar.jsonl",
+        "bot": "kite",
+        "map_id": "cracked-star-jar",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      },
+      {
+        "path": "harness/reports/2026-05-27_rl_rule_bot_trajectory_phase_aligned_001/kite_soda_creek.jsonl",
+        "bot": "kite",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 0.0,
+        "sample_end_seconds": null,
+        "content_hash": "fnv1a64:4ad1c52ac3f1285b"
+      }
+    ]
+  },
+  "target": {
+    "mode": "teacher_probs",
+    "teacher_model": "harness/reports/2026-05-28_rl_curriculum_stage02_current_failure_fallback_probe_001/fallback.pt",
+    "opening_model": "harness/reports/2026-05-28_rl_late_survival_contrast_pressure_curriculum_plan_001/stages/stage_02_late_180_to_300/stage_02_late_180_to_300.zip",
+    "opening_seconds": 60.0,
+    "teacher_argmax_agreement": 0.7077,
+    "target_transform": {
+      "teacher_temperature": 1.0,
+      "uniform_target_mix": 0.0
+    },
+    "recovery_target_override": {
+      "mode": "top_k_scores",
+      "primary_mass": 0.65,
+      "top_k": 3,
+      "overridden_sample_count": 424,
+      "soft_sample_count": 424,
+      "fallback_one_hot_count": 0,
+      "average_nonzero_actions": 2.4906
+    },
+    "target_entropy_nats": 0.953647,
+    "target_argmax_distribution": {
+      "0": {
+        "count": 2,
+        "ratio": 0.0001
+      },
+      "1": {
+        "count": 4479,
+        "ratio": 0.1304
+      },
+      "2": {
+        "count": 5160,
+        "ratio": 0.1502
+      },
+      "3": {
+        "count": 4895,
+        "ratio": 0.1425
+      },
+      "4": {
+        "count": 3827,
+        "ratio": 0.1114
+      },
+      "5": {
+        "count": 4078,
+        "ratio": 0.1187
+      },
+      "6": {
+        "count": 2709,
+        "ratio": 0.0788
+      },
+      "7": {
+        "count": 5591,
+        "ratio": 0.1627
+      },
+      "8": {
+        "count": 3616,
+        "ratio": 0.1052
+      }
+    }
+  },
+  "training": {
+    "epochs": 30,
+    "batch_size": 512,
+    "learning_rate": 0.0003,
+    "teacher_temperature": 1.0,
+    "uniform_target_mix": 0.0,
+    "seed": 12345,
+    "train_samples": 27486,
+    "validation_samples": 6871,
+    "started_at": "2026-05-29T07:40:57.201116+00:00",
+    "completed_at": "2026-05-29T07:41:01.800010+00:00"
+  },
+  "sample_weights": {
+    "mode": "sample_path_auxiliary",
+    "min": 1.0,
+    "max": 40.0,
+    "mean": 1.324274,
+    "sample_path_weights": {
+      "enabled": true,
+      "weighted_sample_count": 497,
+      "weighted_sample_ratio": 0.0181,
+      "entries": [
+        {
+          "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.jsonl",
+          "weight": 40.0,
+          "matched_train_samples": 148
+        },
+        {
+          "path": "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_clean_samples_001/risk_recovery_samples_clean.jsonl",
+          "weight": 10.0,
+          "matched_train_samples": 349
+        }
+      ]
+    }
+  },
+  "validation_slices": {
+    "sample_sources": {
+      "anchor_drift_diagnostic": {
+        "sample_count": 52,
+        "loss": 1.470323,
+        "argmax_accuracy": 0.8846,
+        "policy_entropy_nats": 1.47276
+      },
+      "risk_recovery_supervision": {
+        "sample_count": 75,
+        "loss": 1.735746,
+        "argmax_accuracy": 0.48,
+        "policy_entropy_nats": 1.473184
+      },
+      "trajectory": {
+        "sample_count": 6744,
+        "loss": 1.107571,
+        "argmax_accuracy": 0.8032,
+        "policy_entropy_nats": 1.212201
+      }
+    },
+    "sample_path_weights": {
+      "enabled": true,
+      "entries": [
+        {
+          "path": "harness/reports/2026-05-28_rl_curriculum_stage02_soda_caramel_closed_loop_anchor_probe_001/mid_anchor_drift_training_samples.jsonl",
+          "weight": 40.0,
+          "sample_count": 52,
+          "loss": 1.470323,
+          "argmax_accuracy": 0.8846,
+          "policy_entropy_nats": 1.47276
+        },
+        {
+          "path": "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_clean_samples_001/risk_recovery_samples_clean.jsonl",
+          "weight": 10.0,
+          "sample_count": 75,
+          "loss": 1.735746,
+          "argmax_accuracy": 0.48,
+          "policy_entropy_nats": 1.473184
+        }
+      ]
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.132432,
+      "train_argmax_accuracy": 0.2466,
+      "validation_loss": 2.097904,
+      "validation_argmax_accuracy": 0.1106,
+      "validation_policy_entropy_nats": 2.164606
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.991058,
+      "train_argmax_accuracy": 0.325,
+      "validation_loss": 1.922788,
+      "validation_argmax_accuracy": 0.4272,
+      "validation_policy_entropy_nats": 2.127072
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.813297,
+      "train_argmax_accuracy": 0.4271,
+      "validation_loss": 1.702359,
+      "validation_argmax_accuracy": 0.5108,
+      "validation_policy_entropy_nats": 2.002027
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.668246,
+      "train_argmax_accuracy": 0.5278,
+      "validation_loss": 1.551069,
+      "validation_argmax_accuracy": 0.5656,
+      "validation_policy_entropy_nats": 1.863495
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.57391,
+      "train_argmax_accuracy": 0.5841,
+      "validation_loss": 1.444044,
+      "validation_argmax_accuracy": 0.6126,
+      "validation_policy_entropy_nats": 1.747006
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.510446,
+      "train_argmax_accuracy": 0.6185,
+      "validation_loss": 1.375762,
+      "validation_argmax_accuracy": 0.645,
+      "validation_policy_entropy_nats": 1.661837
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.467386,
+      "train_argmax_accuracy": 0.6406,
+      "validation_loss": 1.326162,
+      "validation_argmax_accuracy": 0.6706,
+      "validation_policy_entropy_nats": 1.58893
+    },
+    {
+      "epoch": 8,
+      "train_loss": 1.434572,
+      "train_argmax_accuracy": 0.6572,
+      "validation_loss": 1.299024,
+      "validation_argmax_accuracy": 0.6829,
+      "validation_policy_entropy_nats": 1.540489
+    },
+    {
+      "epoch": 9,
+      "train_loss": 1.409484,
+      "train_argmax_accuracy": 0.6669,
+      "validation_loss": 1.273797,
+      "validation_argmax_accuracy": 0.6993,
+      "validation_policy_entropy_nats": 1.494558
+    },
+    {
+      "epoch": 10,
+      "train_loss": 1.388732,
+      "train_argmax_accuracy": 0.676,
+      "validation_loss": 1.257266,
+      "validation_argmax_accuracy": 0.706,
+      "validation_policy_entropy_nats": 1.460638
+    },
+    {
+      "epoch": 11,
+      "train_loss": 1.372183,
+      "train_argmax_accuracy": 0.6854,
+      "validation_loss": 1.241293,
+      "validation_argmax_accuracy": 0.7194,
+      "validation_policy_entropy_nats": 1.430309
+    },
+    {
+      "epoch": 12,
+      "train_loss": 1.357963,
+      "train_argmax_accuracy": 0.6996,
+      "validation_loss": 1.229088,
+      "validation_argmax_accuracy": 0.7259,
+      "validation_policy_entropy_nats": 1.405304
+    },
+    {
+      "epoch": 13,
+      "train_loss": 1.345909,
+      "train_argmax_accuracy": 0.7067,
+      "validation_loss": 1.218795,
+      "validation_argmax_accuracy": 0.7309,
+      "validation_policy_entropy_nats": 1.381462
+    },
+    {
+      "epoch": 14,
+      "train_loss": 1.335132,
+      "train_argmax_accuracy": 0.7124,
+      "validation_loss": 1.20753,
+      "validation_argmax_accuracy": 0.7382,
+      "validation_policy_entropy_nats": 1.359312
+    },
+    {
+      "epoch": 15,
+      "train_loss": 1.326072,
+      "train_argmax_accuracy": 0.7175,
+      "validation_loss": 1.199778,
+      "validation_argmax_accuracy": 0.7455,
+      "validation_policy_entropy_nats": 1.348092
+    },
+    {
+      "epoch": 16,
+      "train_loss": 1.317084,
+      "train_argmax_accuracy": 0.7274,
+      "validation_loss": 1.192659,
+      "validation_argmax_accuracy": 0.7504,
+      "validation_policy_entropy_nats": 1.332003
+    },
+    {
+      "epoch": 17,
+      "train_loss": 1.308611,
+      "train_argmax_accuracy": 0.7287,
+      "validation_loss": 1.185689,
+      "validation_argmax_accuracy": 0.7516,
+      "validation_policy_entropy_nats": 1.319577
+    },
+    {
+      "epoch": 18,
+      "train_loss": 1.301107,
+      "train_argmax_accuracy": 0.7362,
+      "validation_loss": 1.178189,
+      "validation_argmax_accuracy": 0.7604,
+      "validation_policy_entropy_nats": 1.309353
+    },
+    {
+      "epoch": 19,
+      "train_loss": 1.293823,
+      "train_argmax_accuracy": 0.7405,
+      "validation_loss": 1.171028,
+      "validation_argmax_accuracy": 0.7636,
+      "validation_policy_entropy_nats": 1.297514
+    },
+    {
+      "epoch": 20,
+      "train_loss": 1.286886,
+      "train_argmax_accuracy": 0.7465,
+      "validation_loss": 1.165283,
+      "validation_argmax_accuracy": 0.7671,
+      "validation_policy_entropy_nats": 1.288046
+    },
+    {
+      "epoch": 21,
+      "train_loss": 1.280614,
+      "train_argmax_accuracy": 0.7524,
+      "validation_loss": 1.159383,
+      "validation_argmax_accuracy": 0.7727,
+      "validation_policy_entropy_nats": 1.277213
+    },
+    {
+      "epoch": 22,
+      "train_loss": 1.273978,
+      "train_argmax_accuracy": 0.7543,
+      "validation_loss": 1.154435,
+      "validation_argmax_accuracy": 0.7766,
+      "validation_policy_entropy_nats": 1.273497
+    },
+    {
+      "epoch": 23,
+      "train_loss": 1.268232,
+      "train_argmax_accuracy": 0.758,
+      "validation_loss": 1.148488,
+      "validation_argmax_accuracy": 0.7802,
+      "validation_policy_entropy_nats": 1.263916
+    },
+    {
+      "epoch": 24,
+      "train_loss": 1.262133,
+      "train_argmax_accuracy": 0.7617,
+      "validation_loss": 1.143986,
+      "validation_argmax_accuracy": 0.7842,
+      "validation_policy_entropy_nats": 1.255403
+    },
+    {
+      "epoch": 25,
+      "train_loss": 1.256606,
+      "train_argmax_accuracy": 0.7641,
+      "validation_loss": 1.139331,
+      "validation_argmax_accuracy": 0.7852,
+      "validation_policy_entropy_nats": 1.247097
+    },
+    {
+      "epoch": 26,
+      "train_loss": 1.251441,
+      "train_argmax_accuracy": 0.7681,
+      "validation_loss": 1.135162,
+      "validation_argmax_accuracy": 0.7882,
+      "validation_policy_entropy_nats": 1.243421
+    },
+    {
+      "epoch": 27,
+      "train_loss": 1.246043,
+      "train_argmax_accuracy": 0.7718,
+      "validation_loss": 1.129671,
+      "validation_argmax_accuracy": 0.792,
+      "validation_policy_entropy_nats": 1.23362
+    },
+    {
+      "epoch": 28,
+      "train_loss": 1.241215,
+      "train_argmax_accuracy": 0.7714,
+      "validation_loss": 1.125899,
+      "validation_argmax_accuracy": 0.7952,
+      "validation_policy_entropy_nats": 1.231463
+    },
+    {
+      "epoch": 29,
+      "train_loss": 1.236471,
+      "train_argmax_accuracy": 0.7748,
+      "validation_loss": 1.121585,
+      "validation_argmax_accuracy": 0.7987,
+      "validation_policy_entropy_nats": 1.223531
+    },
+    {
+      "epoch": 30,
+      "train_loss": 1.231853,
+      "train_argmax_accuracy": 0.7799,
+      "validation_loss": 1.117173,
+      "validation_argmax_accuracy": 0.8003,
+      "validation_policy_entropy_nats": 1.217021
+    }
+  ],
+  "final": {
+    "epoch": 30,
+    "train_loss": 1.231853,
+    "train_argmax_accuracy": 0.7799,
+    "validation_loss": 1.117173,
+    "validation_argmax_accuracy": 0.8003,
+    "validation_policy_entropy_nats": 1.217021
+  },
+  "limitations": [
+    "This script distills supervised targets into a PPO MlpPolicy initialization; it does not run PPO environment optimization.",
+    "A distilled model must still pass high-pressure comparison and RL policy acceptance before it can become an RL test Bot candidate."
+  ]
+}
