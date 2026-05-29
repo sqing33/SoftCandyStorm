@@ -389,7 +389,7 @@ def build_report(contract_path: Path, repo_root: Path) -> dict[str, Any]:
         "limitations": [
             "This validator checks Rust source shape only; it does not compile or execute Bevy Runtime.",
             "It cannot prove keyboard behavior, rendered UI, platform path resolution, save migration, or upload transport behavior.",
-            "Recovering local binary launch remains required before Runtime smoke and manual playtest can prove docs/16 and docs/18 complete.",
+            "Runtime smoke, platform path review, and manual playtest remain required before docs/16 and docs/18 can be marked complete.",
         ],
     }
 

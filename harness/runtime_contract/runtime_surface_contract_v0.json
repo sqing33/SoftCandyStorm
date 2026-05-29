@@ -3,7 +3,7 @@
   "contract_id": "runtime-surface-v0",
   "ruleset_version": "prototype-v0",
   "status": "source_shape_contract",
-  "summary": "Runtime v0 surface contract for local data controls, save controls, meta panel tabs, privacy settings, and upload consent placeholders.",
+  "summary": "Runtime v0 surface contract for local data controls, save controls, F4 data-control shortcuts, meta panel tabs, privacy settings, and upload consent placeholders.",
   "source_files": {
     "runtime_main": "crates/game_runtime/src/main.rs"
   },
@@ -172,6 +172,18 @@
     },
     {
       "file": "runtime_main",
+      "name": "RuntimeDataControlContext",
+      "required_fields": [
+        "platform_data_root",
+        "runtime_settings_file",
+        "save_file",
+        "local_data_dirs",
+        "content_pack_ids",
+        "privacy_settings"
+      ]
+    },
+    {
+      "file": "runtime_main",
       "name": "RuntimeStoryCodexUiCandidateManifest",
       "required_fields": [
         "manifest_contract_id",
@@ -248,6 +260,16 @@
         "RawReplay",
         "CrashReport"
       ]
+    },
+    {
+      "file": "runtime_main",
+      "name": "RuntimeDataControlAction",
+      "required_variants": [
+        "ExportSave",
+        "DeleteSave",
+        "ExportLocalData",
+        "DeleteLocalData"
+      ]
     }
   ],
   "required_functions": [
@@ -270,6 +292,10 @@
     "write_runtime_save_state",
     "export_runtime_save",
     "delete_runtime_save",
+    "runtime_save_export_path",
+    "runtime_local_data_export_path",
+    "run_runtime_data_control_action",
+    "runtime_data_control_action_from_keyboard",
     "load_runtime_story_codex_ui_candidate_manifest",
     "validate_runtime_story_codex_ui_candidate_manifest",
     "load_runtime_asset_candidate_manifest",
@@ -324,6 +350,22 @@
     {
       "key": "KeyCode::Digit9",
       "target": "RuntimeUploadKind::CrashReport"
+    },
+    {
+      "key": "KeyCode::KeyE",
+      "target": "RuntimeDataControlAction::ExportSave"
+    },
+    {
+      "key": "KeyCode::KeyX",
+      "target": "RuntimeDataControlAction::DeleteSave"
+    },
+    {
+      "key": "KeyCode::KeyL",
+      "target": "RuntimeDataControlAction::ExportLocalData"
+    },
+    {
+      "key": "KeyCode::KeyK",
+      "target": "RuntimeDataControlAction::DeleteLocalData"
     }
   ],
   "required_source_fragments": [
@@ -335,7 +377,12 @@
     "上传匿名遥测",
     "上传原始 Replay",
     "上传崩溃报告",
-    "本地导出/删除仍通过 CLI 执行",
+    "E 导出存档",
+    "X 删除存档",
+    "L 导出本地数据",
+    "K 删除本地数据",
+    "导出写入平台数据根 exports/",
+    "删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录",
     "上传传输层: not_implemented",
     "默认只保存在本机",
     "明确开启",

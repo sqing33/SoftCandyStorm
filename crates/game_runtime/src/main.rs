@@ -23,10 +23,13 @@ const PLATFORM_SETTINGS_ROOT: &str = "settings";
 const PLATFORM_TELEMETRY_ROOT: &str = "telemetry";
 const PLATFORM_REPLAY_ROOT: &str = "replay";
 const PLATFORM_CRASH_REPORT_ROOT: &str = "crash-reports";
+const PLATFORM_EXPORT_ROOT: &str = "exports";
 const DEFAULT_SAVE_ID: &str = "local-demo-profile";
 const DEFAULT_PROFILE_ID: &str = "local-player";
 const RUNTIME_SETTINGS_FILE_NAME: &str = "runtime_privacy_settings.json";
 const RUNTIME_SAVE_FILE_NAME: &str = "profile.json";
+const RUNTIME_SAVE_EXPORT_FILE_NAME: &str = "profile_export.json";
+const RUNTIME_LOCAL_DATA_EXPORT_FILE_NAME: &str = "local_data_export.json";
 const RUNTIME_SAVE_V0_CONTRACT_ID: &str = "save-state-v0";
 const RUNTIME_SAVE_V1_CONTRACT_ID: &str = "save-state-v1";
 const RUNTIME_SAVE_V0_SCHEMA_VERSION: u32 = 1;
@@ -231,8 +234,10 @@ struct RuntimeState {
     paused: bool,
     run_number: u32,
     privacy_settings: RuntimePrivacySettings,
+    platform_data_root: PathBuf,
     runtime_settings_file: Option<PathBuf>,
     save_file: Option<PathBuf>,
+    local_data_dirs: Vec<PathBuf>,
     meta_panel_view: RuntimeMetaPanelView,
     meta_progress: MetaProgress,
     story_codex_ui_candidate: Option<RuntimeStoryCodexUiCandidateManifest>,
@@ -324,6 +329,14 @@ enum RuntimeUploadKind {
     Telemetry,
     RawReplay,
     CrashReport,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeDataControlAction {
+    ExportSave,
+    DeleteSave,
+    ExportLocalData,
+    DeleteLocalData,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -535,6 +548,16 @@ struct RuntimeLocalDataDeleteReport {
     deleted_dirs: usize,
     skipped_missing_roots: Vec<String>,
     local_data_dirs: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+struct RuntimeDataControlContext {
+    platform_data_root: PathBuf,
+    runtime_settings_file: Option<PathBuf>,
+    save_file: Option<PathBuf>,
+    local_data_dirs: Vec<PathBuf>,
+    content_pack_ids: Vec<String>,
+    privacy_settings: RuntimePrivacySettings,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -865,8 +888,10 @@ fn setup_runtime(
         paused: false,
         run_number: 1,
         privacy_settings,
+        platform_data_root: cli.platform_data_root.clone(),
         runtime_settings_file: cli.runtime_settings_file.clone(),
         save_file: cli.save_file.clone(),
+        local_data_dirs: cli.local_data_dirs.clone(),
         meta_panel_view: RuntimeMetaPanelView::Overview,
         meta_progress,
         story_codex_ui_candidate,
@@ -947,6 +972,23 @@ fn step_game_core(
             );
             state.last_event_kind = RuntimeEventKind::System;
             state.pending_sounds.push(RuntimeSound::System);
+        }
+        if let Some(action) = runtime_data_control_action_from_keyboard(&keyboard) {
+            match run_runtime_data_control_action(
+                &RuntimeDataControlContext::from_state(&state),
+                action,
+            ) {
+                Ok(message) => {
+                    state.last_event = message;
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::System);
+                }
+                Err(error) => {
+                    state.last_event = format!("local data action failed: {error}");
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::Damage);
+                }
+            }
         }
     }
 
@@ -1123,6 +1165,22 @@ fn privacy_toggle_from_keyboard(keyboard: &ButtonInput<KeyCode>) -> Option<Runti
         Some(RuntimeUploadKind::RawReplay)
     } else if keyboard.just_pressed(KeyCode::Digit9) {
         Some(RuntimeUploadKind::CrashReport)
+    } else {
+        None
+    }
+}
+
+fn runtime_data_control_action_from_keyboard(
+    keyboard: &ButtonInput<KeyCode>,
+) -> Option<RuntimeDataControlAction> {
+    if keyboard.just_pressed(KeyCode::KeyE) {
+        Some(RuntimeDataControlAction::ExportSave)
+    } else if keyboard.just_pressed(KeyCode::KeyX) {
+        Some(RuntimeDataControlAction::DeleteSave)
+    } else if keyboard.just_pressed(KeyCode::KeyL) {
+        Some(RuntimeDataControlAction::ExportLocalData)
+    } else if keyboard.just_pressed(KeyCode::KeyK) {
+        Some(RuntimeDataControlAction::DeleteLocalData)
     } else {
         None
     }
@@ -1996,7 +2054,7 @@ fn render_meta_settings_panel(
         .map(|path| format!("写回 {}", path.display()))
         .unwrap_or_else(|| "未配置设置文件，本次会话生效".to_string());
     format!(
-        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\n本地导出/删除仍通过 CLI 执行\n上传传输层: not_implemented",
+        "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
         on_off_label(settings.telemetry_upload_enabled),
         on_off_label(settings.raw_replay_upload_enabled),
         on_off_label(settings.crash_report_upload_enabled),
@@ -3101,6 +3159,90 @@ fn delete_runtime_local_data_root(
     Ok(())
 }
 
+fn runtime_save_export_path(platform_data_root: &Path) -> PathBuf {
+    platform_data_root
+        .join(PLATFORM_EXPORT_ROOT)
+        .join(RUNTIME_SAVE_EXPORT_FILE_NAME)
+}
+
+fn runtime_local_data_export_path(platform_data_root: &Path) -> PathBuf {
+    platform_data_root
+        .join(PLATFORM_EXPORT_ROOT)
+        .join(RUNTIME_LOCAL_DATA_EXPORT_FILE_NAME)
+}
+
+impl RuntimeDataControlContext {
+    fn from_state(state: &RuntimeState) -> Self {
+        Self {
+            platform_data_root: state.platform_data_root.clone(),
+            runtime_settings_file: state.runtime_settings_file.clone(),
+            save_file: state.save_file.clone(),
+            local_data_dirs: state.local_data_dirs.clone(),
+            content_pack_ids: state.content_pack_ids.clone(),
+            privacy_settings: state.privacy_settings.clone(),
+        }
+    }
+
+    fn cli(&self, explicit_save_file: bool, explicit_local_data_dirs: bool) -> RuntimeCli {
+        RuntimeCli {
+            platform_data_root: self.platform_data_root.clone(),
+            runtime_settings_file: self.runtime_settings_file.clone(),
+            save_file: self.save_file.clone(),
+            explicit_save_file,
+            local_data_dirs: self.local_data_dirs.clone(),
+            explicit_local_data_dirs: if explicit_local_data_dirs {
+                self.local_data_dirs.clone()
+            } else {
+                Vec::new()
+            },
+            content_pack_ids: self.content_pack_ids.clone(),
+            ..RuntimeCli::default()
+        }
+    }
+}
+
+fn run_runtime_data_control_action(
+    context: &RuntimeDataControlContext,
+    action: RuntimeDataControlAction,
+) -> std::io::Result<String> {
+    match action {
+        RuntimeDataControlAction::ExportSave => {
+            let output_path = runtime_save_export_path(&context.platform_data_root);
+            export_runtime_save(
+                &context.cli(false, false),
+                &context.privacy_settings,
+                &output_path,
+            )?;
+            Ok(format!("exported save {}", output_path.display()))
+        }
+        RuntimeDataControlAction::DeleteSave => {
+            let save_file = context
+                .save_file
+                .as_ref()
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| "<missing>".to_string());
+            delete_runtime_save(&context.cli(true, false))?;
+            Ok(format!("deleted save {save_file}"))
+        }
+        RuntimeDataControlAction::ExportLocalData => {
+            let output_path = runtime_local_data_export_path(&context.platform_data_root);
+            export_runtime_local_data(
+                &context.cli(false, false),
+                &context.privacy_settings,
+                &output_path,
+            )?;
+            Ok(format!("exported local data {}", output_path.display()))
+        }
+        RuntimeDataControlAction::DeleteLocalData => {
+            let report = delete_runtime_local_data(&context.cli(false, true))?;
+            Ok(format!(
+                "deleted local data {} files {} dirs",
+                report.deleted_files, report.deleted_dirs
+            ))
+        }
+    }
+}
+
 fn relative_path_string(root: &Path, path: &Path) -> String {
     path.strip_prefix(root)
         .unwrap_or(path)
@@ -3428,17 +3570,19 @@ mod tests {
         load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
         parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
         render_meta_progress_panel, resolve_runtime_content_selection,
-        resolve_runtime_platform_paths, run_config_from_cli, runtime_asset_root,
-        runtime_can_upload, runtime_privacy_notice, runtime_sprite_paths, sounds_for_events,
+        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
+        runtime_asset_root, runtime_can_upload, runtime_local_data_export_path,
+        runtime_privacy_notice, runtime_save_export_path, runtime_sprite_paths, sounds_for_events,
         toggle_runtime_privacy_setting, write_runtime_privacy_settings, write_runtime_save_state,
         RuntimeAssetCandidateItem, RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules,
-        RuntimeCaptureState, RuntimeCli, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeMetaPanelView,
-        RuntimePrivacyReport, RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0,
-        RuntimeSound, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
-        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID,
-        DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT,
-        PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
+        RuntimeCaptureState, RuntimeCli, RuntimeDataControlAction, RuntimeDataControlContext,
+        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeFrameMetricsReport,
+        RuntimeFrameMetricsState, RuntimeMetaPanelView, RuntimePrivacyReport,
+        RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
+        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind,
+        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
+        MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
+        PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
         RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use game_core::{
@@ -4245,6 +4389,66 @@ mod tests {
     }
 
     #[test]
+    fn runtime_data_control_action_exports_and_deletes_local_data() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-f4-local-data-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let platform_root = root.join("platform");
+        let telemetry_dir = platform_root.join(PLATFORM_TELEMETRY_ROOT);
+        let replay_dir = platform_root.join(PLATFORM_REPLAY_ROOT);
+        let crash_dir = platform_root.join(PLATFORM_CRASH_REPORT_ROOT);
+        fs::create_dir_all(&telemetry_dir).unwrap();
+        fs::create_dir_all(&replay_dir).unwrap();
+        fs::create_dir_all(&crash_dir).unwrap();
+        fs::write(telemetry_dir.join("session.json"), "{\"telemetry\":true}\n").unwrap();
+        fs::write(replay_dir.join("run.json"), "{\"replay\":true}\n").unwrap();
+        fs::write(crash_dir.join("crash.json"), "{\"crash\":true}\n").unwrap();
+
+        let context = RuntimeDataControlContext {
+            platform_data_root: platform_root.clone(),
+            runtime_settings_file: Some(
+                platform_root
+                    .join(PLATFORM_SETTINGS_ROOT)
+                    .join("settings.json"),
+            ),
+            save_file: Some(platform_root.join(PLATFORM_SAVE_ROOT).join("profile.json")),
+            local_data_dirs: vec![telemetry_dir.clone(), replay_dir.clone(), crash_dir.clone()],
+            content_pack_ids: vec!["base-demo".to_string()],
+            privacy_settings: RuntimePrivacySettings::default(),
+        };
+
+        let message =
+            run_runtime_data_control_action(&context, RuntimeDataControlAction::ExportLocalData)
+                .unwrap();
+        let export_path = runtime_local_data_export_path(&platform_root);
+        let export_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&export_path).unwrap()).unwrap();
+
+        assert!(message.contains("exported local data"));
+        assert_eq!(export_json["kind"], "runtime_local_data_export");
+        assert_eq!(export_json["files"].as_array().unwrap().len(), 3);
+        assert!(export_json["files"].as_array().unwrap().iter().any(|file| {
+            file["root"] == telemetry_dir.display().to_string()
+                && file["relative_path"] == "session.json"
+        }));
+
+        let message =
+            run_runtime_data_control_action(&context, RuntimeDataControlAction::DeleteLocalData)
+                .unwrap();
+
+        assert!(message.contains("deleted local data 3 files"));
+        assert!(!telemetry_dir.join("session.json").exists());
+        assert!(!replay_dir.join("run.json").exists());
+        assert!(!crash_dir.join("crash.json").exists());
+        assert!(telemetry_dir.exists());
+        assert!(replay_dir.exists());
+        assert!(crash_dir.exists());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
     fn load_runtime_meta_progress_creates_default_save() {
         let root = std::env::temp_dir().join(format!(
             "soft-candy-runtime-save-create-test-{}",
@@ -4523,6 +4727,54 @@ mod tests {
 
         assert!(!save_file.exists());
         assert!(other_file.exists());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn runtime_data_control_action_exports_and_deletes_save() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-f4-save-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let platform_root = root.join("platform");
+        let save_file = platform_root.join(PLATFORM_SAVE_ROOT).join("profile.json");
+        let context = RuntimeDataControlContext {
+            platform_data_root: platform_root.clone(),
+            runtime_settings_file: Some(
+                platform_root
+                    .join(PLATFORM_SETTINGS_ROOT)
+                    .join("settings.json"),
+            ),
+            save_file: Some(save_file.clone()),
+            local_data_dirs: vec![
+                platform_root.join(PLATFORM_TELEMETRY_ROOT),
+                platform_root.join(PLATFORM_REPLAY_ROOT),
+                platform_root.join(PLATFORM_CRASH_REPORT_ROOT),
+            ],
+            content_pack_ids: vec!["base-demo".to_string(), "runtime-f4-smoke".to_string()],
+            privacy_settings: RuntimePrivacySettings::default(),
+        };
+
+        let message =
+            run_runtime_data_control_action(&context, RuntimeDataControlAction::ExportSave)
+                .unwrap();
+        let export_path = runtime_save_export_path(&platform_root);
+        let export_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&export_path).unwrap()).unwrap();
+
+        assert!(message.contains("exported save"));
+        assert!(save_file.exists());
+        assert_eq!(export_json["contract_id"], "save-state-v1");
+        assert_eq!(export_json["content_pack_ids"].as_array().unwrap().len(), 2);
+
+        let message =
+            run_runtime_data_control_action(&context, RuntimeDataControlAction::DeleteSave)
+                .unwrap();
+
+        assert!(message.contains("deleted save"));
+        assert!(!save_file.exists());
+        assert!(export_path.exists());
         let _ = fs::remove_dir_all(&root);
     }
 
@@ -4861,6 +5113,11 @@ mod tests {
         assert!(panel.contains("隐私与本地数据"));
         assert!(panel.contains("上传匿名遥测: 已开启"));
         assert!(panel.contains("上传原始 Replay: 关闭"));
+        assert!(panel.contains("E 导出存档"));
+        assert!(panel.contains("X 删除存档"));
+        assert!(panel.contains("L 导出本地数据"));
+        assert!(panel.contains("K 删除本地数据"));
+        assert!(panel.contains("exports/"));
         assert!(panel.contains("runtime_settings.json"));
         assert!(panel.contains("not_implemented"));
     }
