@@ -1181,6 +1181,11 @@
       "id": "rl_risk_recovery_map_time_scope_filter",
       "summary": "tools/filter_risk_recovery_samples.py 新增 --map-id / --min-seconds / --max-seconds，可在 clean risk recovery 样本基础上继续导出 map/time scoped repair subset。首个 cracked-star-jar 180-300s 导出从 424 条 clean parent risk rows 中保留 210 条，按地图剔除 214 条，并通过 risk_recovery_samples_valid；该子集用于后续 scoped distillation，避免非目标地图 risk rows 被全局权重放大。",
       "report": "harness/reports/2026-05-29_rl_sb3_risk_recovery_cracked_late_scope_samples_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_cracked_late_scoped_risk_distill",
+      "summary": "使用 cracked-star-jar 180-300s 的 210 条 clean risk recovery scoped subset 进行 30 epoch SB3 distillation，risk rows 10x、mid-anchor drift rows 40x。drift 与 full-anchor alignment 均通过，但 300 秒 high-pressure 仍为 0.0/0.0/0.0；相对 e30 no-regression 有 2 个 blockers，相对 parent 有 6 个 blockers，repair-probe gate 失败并记录 8 个 blockers。已记录 fail_20260529_011，不能作为 policy candidate、stage 03 或 RL acceptance 证据。",
+      "report": "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2608,6 +2613,11 @@
       "id": "rl_sb3_risk_recovery_source_filter_weight_sweep_finding",
       "summary": "source-filtered risk recovery learned branch 证明 clean parent late-state risk rows 有局部 terminal-conversion 信号，但全局 risk sample weight 会在地图和阶段间转移失败面：w10 让 cracked-star-jar 300 秒到 0.3333，却破坏 soda-creek / caramel-workshop retention；w7/w5 保留更多 retention 但失去所有 300 秒胜利。下一步必须做 map/phase-scoped objective，显式保护 soda-creek opening/mid 与 caramel-workshop 180 秒，只对匹配 late failure bucket 的 clean risk rows 施加 action-separation / terminal-conversion。",
       "report": "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filter_weight_sweep_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_cracked_late_scoped_risk_distill_finding",
+      "summary": "map/phase scoped risk recovery distillation 比全局 source-filtered w10 明显减少回归：repair gate blockers 从 14 降到 8，且 e30 no-regression 只剩 2 个 blockers；但 shared PPO 仍无法把 cracked-star-jar late survival 信号转成 300 秒胜利，并且相对 parent 仍破坏 soda-creek 60/180 秒保留。下一步不能继续简单提高 scoped risk weight，应拆 terminal-conversion branch 或更窄 late-state subset，并把 parent-preservation 作为硬门禁。",
+      "report": "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2637,7 +2647,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本已导出；30 epoch full-anchor + drift supervised SB3 re-alignment 证明离线 anchor underfit 可以修复。source-filtered risk recovery distillation sweep 证明 clean parent late-state risk rows 有局部信号但全局权重会转移失败面；recovery target override 现已支持按地图 / 时间窗过滤，clean risk filter 也已导出 cracked-star-jar 180-300s 的 210 条有效子集。下一步应使用该 scoped subset 跑完整 distillation，并继续执行 full-anchor alignment、e30 + parent required no-regression、60/180/300 high-pressure、failure analysis 和 repair gate。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift 样本、full-anchor supervised re-alignment、source-filtered risk recovery sweep、recovery target map/time scope filter 和 clean risk scoped subset 均已完成。首个 cracked-star-jar 180-300s scoped risk distillation 通过 drift/full-anchor alignment，但 300 秒三图仍全 0，且相对 e30/parent required no-regression 仍失败。下一步不要继续提高 scoped risk weight，应尝试更窄 late-state / low-health / boss-pressure subset 或显式 terminal-conversion branch，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
     },
     {
       "id": "rl_policy_multimap_training",

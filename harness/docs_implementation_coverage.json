@@ -441,7 +441,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、recovery target map/time scope filter 和 clean risk map/time subset filter 均已建立；但 scoped subset 尚未通过完整 high-pressure / no-regression 策略评估。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、recovery target map/time scope filter、clean risk map/time subset filter 和 scoped risk distillation 评估均已建立；但 scoped distillation 仍未通过 300 秒 high-pressure / e30+parent no-regression。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -1345,7 +1345,19 @@
             "harness/reports/2026-05-29_rl_sb3_recovery_target_scope_filter_smoke_001/ppo_recovery_target_scope_filter_cracked_smoke_metadata.json",
             "harness/reports/2026-05-29_rl_sb3_risk_recovery_cracked_late_scope_samples_001/summary.md",
             "harness/reports/2026-05-29_rl_sb3_risk_recovery_cracked_late_scope_samples_001/filter_report.json",
-            "harness/reports/2026-05-29_rl_sb3_risk_recovery_cracked_late_scope_samples_001/risk_recovery_samples_cracked_late.jsonl"
+            "harness/reports/2026-05-29_rl_sb3_risk_recovery_cracked_late_scope_samples_001/risk_recovery_samples_cracked_late.jsonl",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/summary.md",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/distillation_report.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/anchor_drift_alignment.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/full_anchor_alignment.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/comparison_60s.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/comparison_180s.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/comparison_300s.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/failure_analysis_300s.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/window_regression_vs_e30.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/window_regression_vs_parent.json",
+            "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/repair_probe_gate.json",
+            "harness/failed_cases/fail_20260529_011_sb3_cracked_late_scoped_risk_distill_regression.json"
           ],
           "gaps": [
             "parent late-recovery clean subset 已保留 424/439 条样本并通过 dry-run，但该批样本 map distribution 偏向 cracked-star-jar，late_low_health coverage 为 0；它只证明训练输入可用，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
@@ -1423,7 +1435,8 @@
             "opening/mid retention + late conversion 小步 probe 证明降低 late anchor 能恢复 cracked-star-jar 300 秒 0.6667 胜率，但 required multibaseline gate 同时抓到 e30 与 parent 回归：caramel-workshop 180 秒 dominant action ratio、soda-creek 300 秒平均存活、parent cracked-star-jar 60 秒胜率均触发 blocker，已记录 fail_20260529_004；下一步应转向 per-map late conversion 或 split-policy 约束。",
             "source-filtered risk recovery distillation sweep 证明 clean parent late-state risk rows 可作为 learned branch 输入，并且只覆写 risk_recovery_supervision source 时能保持 full-anchor alignment；但 w10 仅恢复 cracked-star-jar 300 秒 0.3333 胜率并触发 14 个 e30/parent 多基线 blockers，w7/w5 降低 blocker 数后 300 秒三图仍为 0.0/0.0/0.0。已记录 fail_20260529_010，下一步不能继续提高全局 risk sample weight，应改为 map/phase-scoped action-separation / terminal-conversion，同时保护 soda-creek opening/mid 与 caramel-workshop 180 秒。",
             "recovery target override 已支持按地图与时间窗限定作用域，并用 cracked-star-jar 180-300s smoke 验证只覆写 210 条目标 risk rows、保留 214 条其他地图 risk rows 和 2693 条 edge rows；但该 smoke 只训练 1 epoch 且未运行 full-anchor alignment、固定窗口 high-pressure、e30/parent no-regression 或 repair gate，因此仍不能作为 policy candidate 或 RL acceptance 证据。",
-            "clean risk recovery map/time subset filter 已导出 cracked-star-jar 180-300s 的 210 条有效样本，并剔除 214 条非目标地图样本；但该子集仍只是 adapter-derived repair training input，尚未完成 scoped distillation、anchor alignment、fixed-window high-pressure、e30/parent no-regression 或 repair gate。"
+            "clean risk recovery map/time subset filter 已导出 cracked-star-jar 180-300s 的 210 条有效样本，并剔除 214 条非目标地图样本；但该子集仍只是 adapter-derived repair training input，尚未完成 scoped distillation、anchor alignment、fixed-window high-pressure、e30/parent no-regression 或 repair gate。",
+            "首个完整 scoped risk distillation 只对 cracked-star-jar 180-300s 的 210 条 clean risk rows 做 10x repair，并保留 40x mid-anchor drift rows；drift/full-anchor alignment 均通过，但 300 秒 high-pressure 仍为 0.0/0.0/0.0。相对 e30 有 2 个 blockers、相对 parent 有 6 个 blockers，repair-probe gate 失败并记录 fail_20260529_011；下一步不能继续简单提高 scoped risk weight，应拆 terminal-conversion branch 或更窄 late-state subset，同时硬保护 soda-creek opening/mid 与 parent preservation。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260529_011",
+  "category": "rl_training",
+  "content_id": "sb3-cracked-late-scoped-risk-distill-w10-e30",
+  "seed": "63100-63102",
+  "bot": "ppo_cracked_late_scoped_risk_distill_w10_e30",
+  "time_seconds": 300.0,
+  "symptom": "Map/phase scoped SB3 risk recovery distillation preserved offline anchor alignment and reduced the global source-filtered w10 regression surface, but 300s high-pressure remained 0.0/0.0/0.0 and repair-probe gate still failed with 8 blockers. The candidate improved cracked-star-jar average 300s survival to 224.5857s, but did not convert any 300s wins and regressed soda-creek opening/mid retention versus the parent baseline.",
+  "root_cause": "The cracked-star-jar 180-300s clean risk subset provides useful late action-separation signal, but applying it to the shared PPO policy still shifts adjacent opening/mid behavior and increases dominant-action concentration. The objective is scoped by sample source, map, and time, but the policy parameters are still global, so the late repair signal is not isolated enough to protect soda-creek early windows or parent-preserved behavior.",
+  "fix": "Reject this checkpoint as a policy candidate. Do not simply raise scoped risk weight. Keep the scoped sample and distillation tooling, but move the next probe to narrower late-state subsets or an explicit terminal-conversion branch while hard-preserving soda-creek 60s/180s and the parent multi-baseline no-regression gate.",
+  "validation": "distillation_report.json recorded 210 overridden cracked-star-jar 180-300s risk rows with fallback_one_hot_count 0. anchor_drift_alignment.json passed with mean KL 0.020786 and argmax agreement 0.97; full_anchor_alignment.json passed with mean KL 0.125045 and argmax agreement 0.8121. comparison_300s.json remained multimap_comparison_recorded_needs_policy_repair with 0.0 win rate on all three maps. window_regression_vs_e30.json failed with 2 blockers, window_regression_vs_parent.json failed with 6 blockers, and repair_probe_gate.json failed with 8 blockers.",
+  "diagnostics": [
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/summary.md",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/distillation_report.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/anchor_drift_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/full_anchor_alignment.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/comparison_60s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/comparison_180s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/comparison_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/failure_analysis_300s.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/window_regression_vs_e30.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/window_regression_vs_parent.json",
+    "harness/reports/2026-05-29_rl_sb3_cracked_late_scoped_risk_distill_w10_e30_001/repair_probe_gate.json"
+  ]
+}

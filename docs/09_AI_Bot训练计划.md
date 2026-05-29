@@ -280,6 +280,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 `tools/filter_risk_recovery_samples.py` 也已支持 `--map-id`、`--min-seconds` 和 `--max-seconds`，可从 clean risk recovery rows 中导出真正的 map / phase scoped 子集。首个 cracked late scope 导出从 `424` 条 clean parent risk rows 中保留 `210` 条 `cracked-star-jar` `180-300s` 样本，按地图剔除 `214` 条 `soda-creek` / `caramel-workshop` 样本，并再次通过 `risk_recovery_samples_valid`；后续 scoped distillation 应使用该子集作为加权 repair input，避免非目标地图 risk rows 继续被全局权重放大。
 
+首个完整 scoped risk distillation 已完成但仍被拒绝。该 run 只把 `cracked-star-jar` `180-300s` 的 `210` 条 clean risk rows 以 `10x` 权重加入，并继续用 `40x` mid-anchor drift rows 保护离线对齐；drift-row alignment mean KL 为 `0.020786`、argmax agreement `0.97`，full-anchor alignment mean KL 为 `0.125045`、argmax agreement `0.8121`，均通过阈值。但 300 秒 high-pressure 仍为 `0.0/0.0/0.0`，`cracked-star-jar` 平均存活虽升到 `224.5857s` 也没有转成胜利；required multibaseline gate 仍失败，vs e30 有 `2` 个 blockers，vs parent 有 `6` 个 blockers，主要集中在 `soda-creek` 60/180 秒保留和 `cracked-star-jar` dominant action ratio。已记录 `fail_20260529_011`；下一步不能继续简单提高 scoped risk weight，应进一步拆出 terminal-conversion branch 或更窄 late-state subset，并把 `soda-creek` opening / mid 与 parent preservation 作为硬门禁。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
