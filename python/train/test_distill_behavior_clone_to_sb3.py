@@ -11,6 +11,7 @@ from python.train.distill_behavior_clone_to_sb3 import (
     evaluate_action_distribution_guard,
     load_distillation_dataset,
     mix_with_uniform,
+    parse_action_distribution_guard_scope,
     parse_recovery_target_maps,
     parse_recovery_target_sources,
     soften_probabilities,
@@ -408,7 +409,7 @@ def test_build_distillation_validation_slice_groups_tracks_sources_and_paths():
 def test_action_distribution_guard_blocks_dominant_validation_slices():
     validation_slices = {
         "overall": {
-            "sample_count": 12,
+            "sample_count": 30,
             "dominant_policy_argmax_action": {
                 "action": "3",
                 "count": 10,
@@ -486,3 +487,63 @@ def test_action_distribution_guard_ignores_small_slices_and_can_pass():
 
     assert report["decision"] == "action_distribution_guard_passed"
     assert report["checked_slice_count"] == 1
+
+
+def test_action_distribution_guard_scope_can_focus_map_time_buckets():
+    validation_slices = {
+        "overall": {
+            "sample_count": 30,
+            "dominant_policy_argmax_action": {
+                "action": "1",
+                "count": 5,
+                "ratio": 0.4167,
+            },
+            "normalized_policy_argmax_action_entropy": 0.85,
+        },
+        "sample_sources": {
+            "anchor_drift_diagnostic": {
+                "sample_count": 36,
+                "dominant_policy_argmax_action": {
+                    "action": "8",
+                    "count": 32,
+                    "ratio": 0.8889,
+                },
+                "normalized_policy_argmax_action_entropy": 0.1872,
+            }
+        },
+        "sample_path_weights": {"entries": []},
+        "map_time_buckets": {
+            "caramel-workshop::opening_lt_60": {
+                "sample_count": 401,
+                "dominant_policy_argmax_action": {
+                    "action": "2",
+                    "count": 127,
+                    "ratio": 0.3167,
+                },
+                "normalized_policy_argmax_action_entropy": 0.7524,
+            }
+        },
+    }
+
+    report = evaluate_action_distribution_guard(
+        validation_slices,
+        action_distribution_guard_config(
+            max_dominant_ratio=0.45,
+            min_normalized_entropy=0.55,
+            min_sample_count=24,
+            scope=["overall", "map_time_buckets"],
+        ),
+    )
+
+    assert report["decision"] == "action_distribution_guard_passed"
+    assert report["checked_slice_count"] == 2
+    assert all("anchor_drift" not in item["label"] for item in report["slices"])
+
+
+def test_parse_action_distribution_guard_scope_rejects_unknown_scope():
+    assert parse_action_distribution_guard_scope("overall,map_time_buckets") == [
+        "overall",
+        "map_time_buckets",
+    ]
+    with pytest.raises(ValueError, match="unknown scope"):
+        parse_action_distribution_guard_scope("overall,bad")

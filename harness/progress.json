@@ -1169,8 +1169,13 @@
     },
     {
       "id": "rl_sb3_distillation_action_distribution_guard_support",
-      "summary": "distill_behavior_clone_to_sb3.py 新增 supervised distillation action-distribution guard：validation_slices 现在覆盖 overall、sample_source、sample_path_weight 和 map_id::time_bucket，并记录预测 argmax 动作分布、dominant ratio 与 normalized argmax entropy；配置 dominant-ratio / entropy 阈值后，可把动作过度集中的 checkpoint 标为 guard failed。单测已覆盖分桶、阻塞和小样本忽略逻辑。",
+      "summary": "distill_behavior_clone_to_sb3.py 新增 supervised distillation action-distribution guard：validation_slices 现在覆盖 overall、sample_source、sample_path_weight 和 map_id::time_bucket，并记录预测 argmax 动作分布、dominant ratio 与 normalized argmax entropy；配置 dominant-ratio / entropy 阈值后，可把动作过度集中的 checkpoint 标为 guard failed。新增 --action-distribution-guard-scope 后可限定检查作用域，避免把刻意集中的辅助 repair slice 误当作硬 blocker。单测已覆盖分桶、阻塞、小样本忽略和 scope 过滤逻辑。",
       "report": "harness/reports/2026-05-29_rl_sb3_distillation_action_distribution_guard_support_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_cracked_terminal_window_action_guard_probe",
+      "summary": "将 action-distribution guard 应用到 terminal-window w10 distillation：全作用域 guard 被 anchor_drift_diagnostic 小切片拦截，说明默认 all-scope 对故意集中的 repair rows 过严；使用 overall,map_time_buckets scope 后 guard 通过，caramel-workshop::opening_lt_60 离线 dominant ratio 为 0.3167、normalized argmax entropy 为 0.7524。该结果证明离线 map/time action-distribution guard 不能复现在线 60s/caramel dominant-action blocker，后续仍需 online no-regression 或显式 terminal-conversion branch。",
+      "report": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_maptime_guard_w10_e30_001/summary.md"
     },
     {
       "id": "rl_sb3_risk_recovery_source_filter_weight_sweep",
@@ -2646,8 +2651,8 @@
     },
     {
       "id": "rl_sb3_distillation_action_distribution_guard_finding",
-      "summary": "supervised SB3 distillation 已具备离线 action-distribution guard，可在 overall、sample source、weighted path 与 map/time bucket 上阻止 dominant action ratio 或 argmax entropy 明显异常的 checkpoint 继续进入长窗 probe。该 guard 修复的是证据链缺口，尚未产生新的 terminal-window policy 结果；下一步应把它应用到 terminal-window repair 分支或改走显式 terminal-conversion branch。",
-      "report": "harness/reports/2026-05-29_rl_sb3_distillation_action_distribution_guard_support_001/summary.md"
+      "summary": "supervised SB3 distillation 已具备离线 action-distribution guard 和可选 scope。terminal-window w10 复跑显示 all-scope 会误拦 anchor drift repair slice，而 overall,map_time_buckets scope 通过且未捕捉在线 60s/caramel dominant-action blocker；因此该 guard 适合作为离线动作塌缩证据闸门，但不能替代 online fixed-window no-regression。下一步应改走显式 terminal-conversion branch，或实现 baseline/candidate online action-distribution delta 专门门禁。",
+      "report": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_maptime_guard_w10_e30_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2677,7 +2682,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比和 distillation action-distribution guard 均已完成。w10 terminal-window 只剩 2 个 blockers 但 300 秒三图全 0；w7 简单降权让 soda-creek 180/300 秒回归并增至 6 个 blockers。下一步不要继续单参数降权，应把 action-distribution guard 应用到 terminal-window 分支，或改走显式 terminal-conversion branch，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比和 distillation action-distribution guard 复跑均已完成。w10 terminal-window 只剩 2 个 online blockers 但 300 秒三图全 0；w7 简单降权让 soda-creek 180/300 秒回归并增至 6 个 blockers；map/time 离线 action-distribution guard 对 w10 通过，不能替代 online no-regression。下一步不要继续单参数降权，应改走显式 terminal-conversion branch，或实现 baseline/candidate online action-distribution delta 专门门禁，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
     },
     {
       "id": "rl_policy_multimap_training",

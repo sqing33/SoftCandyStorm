@@ -288,6 +288,8 @@ source-filtered risk recovery distillation sweep 已确认 learned branch 入口
 
 降低同一 terminal-window subset 的权重到 `7x` 并没有解除 blocker，反而让 `soda-creek` 保留明显回归。`w7` 的 drift-row alignment mean KL 为 `0.01972`、argmax agreement `0.98`，full-anchor mean KL 为 `0.10967`、argmax agreement `0.8222`，离线指标略优于 `w10`；但 180 秒 `soda-creek` 胜率回到 `0.3333`，300 秒 `soda-creek` 平均存活降到 `93.0391s`，repair gate blockers 从 `2` 增至 `6`，且 `60s/caramel-workshop` dominant action ratio 仍超阈值。已记录 `fail_20260529_013`；下一步不要继续做简单降权扫描，应先加 action-distribution guard 或拆出显式 terminal-conversion branch。
 
+将 action-distribution guard 应用回 terminal-window `w10` 后，结论进一步收窄：全作用域 guard 会被 `anchor_drift_diagnostic` / 对应 sample path 的 `36` 条 validation rows 拦下，dominant action `8` ratio 为 `0.8889`、normalized argmax entropy 为 `0.1872`，但这是刻意集中的 top drift 修复切片，不是在线 `caramel-workshop` 60 秒 blocker。新增 `--action-distribution-guard-scope` 后，只检查 `overall,map_time_buckets` 的 guard 通过：`caramel-workshop::opening_lt_60` 离线 dominant action ratio 为 `0.3167`、normalized argmax entropy 为 `0.7524`。因此离线 map/time action-distribution guard 可作为蒸馏证据闸门，但不能替代 online fixed-window no-regression；下一步应转向显式 terminal-conversion branch，或补充 baseline/candidate online action-distribution delta 专门门禁。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash

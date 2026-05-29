@@ -18,8 +18,11 @@
 - `--action-distribution-guard-max-dominant-ratio`
 - `--action-distribution-guard-min-normalized-entropy`
 - `--action-distribution-guard-min-sample-count`
+- `--action-distribution-guard-scope`
 
 当任意满足最小样本数的 slice 超过 dominant action ratio 或低于 normalized entropy 阈值时，distillation report 会写入 `action_distribution_guard_failed`，并把 `gate_decision` 标为 `sb3_distillation_action_distribution_guard_failed_not_policy_gate`。
+
+`--action-distribution-guard-scope` 可限定检查 `overall`、`sample_sources`、`sample_path_weights`、`map_time_buckets` 中的部分分桶，用于避免把刻意集中的辅助 repair slice 误当作硬 blocker。
 
 ## 验证
 
@@ -30,6 +33,8 @@ env UV_CACHE_DIR=/private/tmp/soft-candy-uv-cache PYTHONPYCACHEPREFIX=/private/t
 ```
 
 结果：`12 passed`。
+
+scope 支持补充后再次运行同一测试文件，结果为 `14 passed`。
 
 ## 限制
 

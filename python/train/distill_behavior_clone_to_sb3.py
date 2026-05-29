@@ -91,6 +91,13 @@ RECOVERY_TARGET_SOURCE_ALIASES = {
     "risk": "risk_recovery_supervision",
 }
 
+ACTION_DISTRIBUTION_GUARD_SCOPES = {
+    "overall",
+    "sample_sources",
+    "sample_path_weights",
+    "map_time_buckets",
+}
+
 
 def parse_recovery_target_sources(value):
     if value is None:
@@ -118,6 +125,29 @@ def parse_recovery_target_maps(value):
     if not maps:
         raise ValueError("--recovery-target-maps must include at least one map id")
     return maps
+
+
+def parse_action_distribution_guard_scope(value):
+    if value is None:
+        return [
+            "overall",
+            "sample_sources",
+            "sample_path_weights",
+            "map_time_buckets",
+        ]
+    if isinstance(value, str):
+        scopes = [item.strip() for item in value.split(",") if item.strip()]
+    else:
+        scopes = [str(item).strip() for item in value if str(item).strip()]
+    if not scopes:
+        raise ValueError("--action-distribution-guard-scope must include a scope")
+    unknown = sorted(set(scopes) - ACTION_DISTRIBUTION_GUARD_SCOPES)
+    if unknown:
+        raise ValueError(
+            "--action-distribution-guard-scope contains unknown scope(s): "
+            + ", ".join(unknown)
+        )
+    return list(dict.fromkeys(scopes))
 
 
 def recovery_target_override_report(
@@ -686,23 +716,20 @@ def action_distribution_guard_config(
     max_dominant_ratio=None,
     min_normalized_entropy=None,
     min_sample_count=1,
+    scope=None,
 ):
     enabled = validate_action_distribution_guard_thresholds(
         max_dominant_ratio=max_dominant_ratio,
         min_normalized_entropy=min_normalized_entropy,
         min_sample_count=min_sample_count,
     )
+    parsed_scope = parse_action_distribution_guard_scope(scope)
     return {
         "enabled": enabled,
         "max_dominant_ratio": max_dominant_ratio,
         "min_normalized_entropy": min_normalized_entropy,
         "min_sample_count": int(min_sample_count),
-        "scope": [
-            "overall",
-            "sample_sources",
-            "sample_path_weights",
-            "map_time_buckets",
-        ],
+        "scope": parsed_scope,
         "notes": [
             "This guard checks offline validation argmax action concentration after supervised SB3 distillation.",
             "It blocks limited follow-up evidence only; deterministic high-pressure and no-regression gates are still required.",
@@ -710,20 +737,24 @@ def action_distribution_guard_config(
     }
 
 
-def iter_action_distribution_guard_slices(validation_slices):
+def iter_action_distribution_guard_slices(validation_slices, scope):
+    enabled_scope = set(scope)
     overall = validation_slices.get("overall")
-    if isinstance(overall, dict):
+    if "overall" in enabled_scope and isinstance(overall, dict):
         yield "overall", overall
-    for source, metrics in validation_slices.get("sample_sources", {}).items():
-        if isinstance(metrics, dict):
-            yield f"sample_source:{source}", metrics
-    path_section = validation_slices.get("sample_path_weights", {})
-    for entry in path_section.get("entries", []):
-        if isinstance(entry, dict):
-            yield f"sample_path_weight:{entry.get('path')}", entry
-    for label, metrics in validation_slices.get("map_time_buckets", {}).items():
-        if isinstance(metrics, dict):
-            yield f"map_time_bucket:{label}", metrics
+    if "sample_sources" in enabled_scope:
+        for source, metrics in validation_slices.get("sample_sources", {}).items():
+            if isinstance(metrics, dict):
+                yield f"sample_source:{source}", metrics
+    if "sample_path_weights" in enabled_scope:
+        path_section = validation_slices.get("sample_path_weights", {})
+        for entry in path_section.get("entries", []):
+            if isinstance(entry, dict):
+                yield f"sample_path_weight:{entry.get('path')}", entry
+    if "map_time_buckets" in enabled_scope:
+        for label, metrics in validation_slices.get("map_time_buckets", {}).items():
+            if isinstance(metrics, dict):
+                yield f"map_time_bucket:{label}", metrics
 
 
 def evaluate_action_distribution_guard(validation_slices, guard_config):
@@ -741,7 +772,8 @@ def evaluate_action_distribution_guard(validation_slices, guard_config):
     min_sample_count = int(guard_config.get("min_sample_count") or 1)
     max_dominant_ratio = guard_config.get("max_dominant_ratio")
     min_normalized_entropy = guard_config.get("min_normalized_entropy")
-    for label, metrics in iter_action_distribution_guard_slices(validation_slices):
+    scope = parse_action_distribution_guard_scope(guard_config.get("scope"))
+    for label, metrics in iter_action_distribution_guard_slices(validation_slices, scope):
         sample_count = int(metrics.get("sample_count") or 0)
         if sample_count < min_sample_count:
             continue
@@ -940,6 +972,7 @@ def distill(config, args):
             max_dominant_ratio=args.action_distribution_guard_max_dominant_ratio,
             min_normalized_entropy=args.action_distribution_guard_min_normalized_entropy,
             min_sample_count=args.action_distribution_guard_min_sample_count,
+            scope=args.action_distribution_guard_scope,
         ),
     )
     gate_decision = (
@@ -1135,6 +1168,14 @@ def main():
         default=16,
         help="Minimum validation slice sample count before action-distribution guard thresholds apply.",
     )
+    parser.add_argument(
+        "--action-distribution-guard-scope",
+        default=None,
+        help=(
+            "Comma-separated validation slice scopes to check: overall, "
+            "sample_sources, sample_path_weights, map_time_buckets. Defaults to all."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument("--env-seconds", type=float, default=None)
     parser.add_argument("--model-out", required=True)
@@ -1197,6 +1238,10 @@ def main():
             min_normalized_entropy=args.action_distribution_guard_min_normalized_entropy,
             min_sample_count=args.action_distribution_guard_min_sample_count,
         )
+    except ValueError as exc:
+        parser.error(str(exc))
+    try:
+        parse_action_distribution_guard_scope(args.action_distribution_guard_scope)
     except ValueError as exc:
         parser.error(str(exc))
     if args.env_seconds is not None and args.env_seconds <= 0.0:
