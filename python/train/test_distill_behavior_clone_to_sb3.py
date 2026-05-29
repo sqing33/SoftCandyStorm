@@ -4,9 +4,11 @@ from pathlib import Path
 
 from python.train import distill_behavior_clone_to_sb3 as distill_module
 from python.train.distill_behavior_clone_to_sb3 import (
+    action_distribution_guard_config,
     build_distillation_sample_weights,
     build_distillation_validation_slice_groups,
     collect_distillation_targets,
+    evaluate_action_distribution_guard,
     load_distillation_dataset,
     mix_with_uniform,
     parse_recovery_target_maps,
@@ -371,14 +373,20 @@ def test_build_distillation_validation_slice_groups_tracks_sources_and_paths():
         "sample_metadata": [
             {
                 "path": "harness/reports/full_anchor/a.jsonl",
+                "map_id": "soda-creek",
+                "time_seconds": 30.0,
             },
             {
                 "path": "harness/reports/drift/mid_anchor_drift_training_samples.jsonl",
                 "sample_source": "anchor_drift_diagnostic",
+                "map_id": "caramel-workshop",
+                "time_seconds": 90.0,
             },
             {
                 "path": "harness/reports/drift/other.jsonl",
                 "sample_source": "anchor_drift_diagnostic",
+                "map_id": "caramel-workshop",
+                "time_seconds": 210.0,
             },
         ],
     }
@@ -391,4 +399,90 @@ def test_build_distillation_validation_slice_groups_tracks_sources_and_paths():
 
     assert groups["sample_sources"]["trajectory"] == [0]
     assert groups["sample_sources"]["anchor_drift_diagnostic"] == [1, 2]
+    assert groups["map_time_buckets"]["soda-creek::opening_lt_60"] == [0]
+    assert groups["map_time_buckets"]["caramel-workshop::mid_60_to_180"] == [1]
+    assert groups["map_time_buckets"]["caramel-workshop::late_180_to_300"] == [2]
     assert groups["sample_path_weights"][0]["indices"] == [1, 2]
+
+
+def test_action_distribution_guard_blocks_dominant_validation_slices():
+    validation_slices = {
+        "overall": {
+            "sample_count": 12,
+            "dominant_policy_argmax_action": {
+                "action": "3",
+                "count": 10,
+                "ratio": 0.8333,
+            },
+            "normalized_policy_argmax_action_entropy": 0.25,
+        },
+        "sample_sources": {},
+        "sample_path_weights": {"entries": []},
+        "map_time_buckets": {
+            "caramel-workshop::opening_lt_60": {
+                "sample_count": 12,
+                "dominant_policy_argmax_action": {
+                    "action": "3",
+                    "count": 10,
+                    "ratio": 0.8333,
+                },
+                "normalized_policy_argmax_action_entropy": 0.25,
+            }
+        },
+    }
+
+    report = evaluate_action_distribution_guard(
+        validation_slices,
+        action_distribution_guard_config(
+            max_dominant_ratio=0.7,
+            min_normalized_entropy=0.35,
+            min_sample_count=8,
+        ),
+    )
+
+    assert report["decision"] == "action_distribution_guard_failed"
+    assert report["checked_slice_count"] == 2
+    assert any("overall" in blocker for blocker in report["blockers"])
+    assert any(
+        "caramel-workshop::opening_lt_60" in blocker
+        for blocker in report["blockers"]
+    )
+
+
+def test_action_distribution_guard_ignores_small_slices_and_can_pass():
+    validation_slices = {
+        "overall": {
+            "sample_count": 12,
+            "dominant_policy_argmax_action": {
+                "action": "1",
+                "count": 6,
+                "ratio": 0.5,
+            },
+            "normalized_policy_argmax_action_entropy": 0.9,
+        },
+        "sample_sources": {},
+        "sample_path_weights": {"entries": []},
+        "map_time_buckets": {
+            "tiny-map::opening_lt_60": {
+                "sample_count": 2,
+                "dominant_policy_argmax_action": {
+                    "action": "1",
+                    "count": 2,
+                    "ratio": 1.0,
+                },
+                "normalized_policy_argmax_action_entropy": 0.0,
+            }
+        },
+    }
+
+    report = evaluate_action_distribution_guard(
+        validation_slices,
+        action_distribution_guard_config(
+            max_dominant_ratio=0.7,
+            min_normalized_entropy=0.35,
+            min_sample_count=8,
+        ),
+    )
+
+    assert report["decision"] == "action_distribution_guard_passed"
+    assert report["checked_slice_count"] == 1

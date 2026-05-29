@@ -1168,6 +1168,11 @@
       "report": "harness/reports/2026-05-28_rl_curriculum_stage02_late_mixed_repair_probe_001/window_regression_vs_stage02.md"
     },
     {
+      "id": "rl_sb3_distillation_action_distribution_guard_support",
+      "summary": "distill_behavior_clone_to_sb3.py 新增 supervised distillation action-distribution guard：validation_slices 现在覆盖 overall、sample_source、sample_path_weight 和 map_id::time_bucket，并记录预测 argmax 动作分布、dominant ratio 与 normalized argmax entropy；配置 dominant-ratio / entropy 阈值后，可把动作过度集中的 checkpoint 标为 guard failed。单测已覆盖分桶、阻塞和小样本忽略逻辑。",
+      "report": "harness/reports/2026-05-29_rl_sb3_distillation_action_distribution_guard_support_001/summary.md"
+    },
+    {
       "id": "rl_sb3_risk_recovery_source_filter_weight_sweep",
       "summary": "source-filtered risk recovery distillation sweep 已完成：distill_behavior_clone_to_sb3.py 可保留 retention / edge rows 的 teacher_probs，只对 clean parent late-state risk_recovery_supervision rows 用 top_k_scores 覆写。w10/w7/w5 均通过 drift 与 full-anchor alignment，但 repair-probe gate 全部失败；w10 仅恢复 cracked-star-jar 300 秒 0.3333 胜率并触发 14 个多基线 blockers，w7/w5 降到 3/4 个 blockers 但 300 秒三图仍全 0.0。已记录 fail_20260529_010，不能作为 policy candidate、stage 03 或 RL acceptance 证据。",
       "report": "harness/reports/2026-05-29_rl_sb3_risk_recovery_source_filter_weight_sweep_001/summary.md"
@@ -2638,6 +2643,11 @@
       "id": "rl_sb3_cracked_terminal_window_weight_reduction_finding",
       "summary": "terminal-window scoped risk weight 从 10x 降到 7x 后，离线 KL 更低但在线表现更差：soda-creek 180/300 秒回归，repair gate blockers 从 2 增到 6，且 caramel 60 秒 dominant-action blocker 仍未消失。这说明当前问题不是单纯权重过高，而是缺少 action-distribution guard 或 terminal-conversion 目标隔离。",
       "report": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_distillation_action_distribution_guard_finding",
+      "summary": "supervised SB3 distillation 已具备离线 action-distribution guard，可在 overall、sample source、weighted path 与 map/time bucket 上阻止 dominant action ratio 或 argmax entropy 明显异常的 checkpoint 继续进入长窗 probe。该 guard 修复的是证据链缺口，尚未产生新的 terminal-window policy 结果；下一步应把它应用到 terminal-window repair 分支或改走显式 terminal-conversion branch。",
+      "report": "harness/reports/2026-05-29_rl_sb3_distillation_action_distribution_guard_support_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2667,7 +2677,7 @@
     },
     {
       "id": "rl_policy_mid_anchor_drift_repair",
-      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets 和 terminal-window w10/w7 对比均已完成。w10 terminal-window 只剩 2 个 blockers 但 300 秒三图全 0；w7 简单降权让 soda-creek 180/300 秒回归并增至 6 个 blockers。下一步不要继续单参数降权，应实现 action-distribution guard 或显式 terminal-conversion branch，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
+      "summary": "soda/caramel closed-loop anchor probe 的 repair gate 已失败，mid_60_to_180 anchor drift、source-filtered risk recovery sweep、recovery target map/time scope filter、clean risk scoped subsets、terminal-window w10/w7 对比和 distillation action-distribution guard 均已完成。w10 terminal-window 只剩 2 个 blockers 但 300 秒三图全 0；w7 简单降权让 soda-creek 180/300 秒回归并增至 6 个 blockers。下一步不要继续单参数降权，应把 action-distribution guard 应用到 terminal-window 分支，或改走显式 terminal-conversion branch，并继续执行 full-anchor alignment、60/180/300 high-pressure、failure analysis、e30 + parent no-regression 和 repair gate。"
     },
     {
       "id": "rl_policy_multimap_training",

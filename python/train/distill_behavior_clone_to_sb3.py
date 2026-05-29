@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import random
 import sys
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ from python.train.train_behavior_clone import (
 )
 from python.train.train_sb3 import (
     algorithm_config,
+    anchor_time_bucket_label,
     build_env,
     dependency_status,
     load_behavior_clone_policy_with_optional_opening,
@@ -390,6 +392,38 @@ def action_distribution(actions, action_count):
     }
 
 
+def dominant_action(distribution):
+    action, value = max(
+        distribution.items(),
+        key=lambda item: item[1]["ratio"],
+        default=(None, None),
+    )
+    if action is None:
+        return None
+    return {
+        "action": action,
+        "count": value["count"],
+        "ratio": value["ratio"],
+    }
+
+
+def action_entropy_bits(distribution):
+    entropy = 0.0
+    for value in distribution.values():
+        ratio = value["ratio"]
+        if ratio > 0.0:
+            entropy -= ratio * math.log2(ratio)
+    return round(entropy, 4)
+
+
+def normalized_action_entropy(distribution):
+    action_count = max(1, len(distribution))
+    max_entropy = math.log2(action_count) if action_count > 1 else 1.0
+    if max_entropy <= 0.0:
+        return 0.0
+    return round(action_entropy_bits(distribution) / max_entropy, 4)
+
+
 def tensor_distribution_logits(model, observations, torch_module):
     distribution = model.policy.get_distribution(observations)
     torch_distribution = getattr(distribution, "distribution", None)
@@ -481,11 +515,22 @@ def evaluate_supervised(model, observations, targets, torch_module):
         labels = targets.argmax(dim=1)
         accuracy = (predictions == labels).float().mean()
         entropy = -(torch_module.softmax(logits, dim=-1) * log_probs).sum(dim=1).mean()
+        predicted_actions = [int(action) for action in predictions.cpu().tolist()]
     model.policy.set_training_mode(True)
+    prediction_distribution = action_distribution(
+        predicted_actions,
+        int(targets.shape[1]),
+    )
     return {
         "loss": round(float(loss.item()), 6),
         "argmax_accuracy": round(float(accuracy.item()), 4),
         "policy_entropy_nats": round(float(entropy.item()), 6),
+        "policy_argmax_action_distribution": prediction_distribution,
+        "dominant_policy_argmax_action": dominant_action(prediction_distribution),
+        "policy_argmax_action_entropy_bits": action_entropy_bits(prediction_distribution),
+        "normalized_policy_argmax_action_entropy": normalized_action_entropy(
+            prediction_distribution
+        ),
     }
 
 
@@ -497,6 +542,13 @@ def build_distillation_validation_slice_groups(dataset, indices, sample_path_wei
         sample = sample_metadata[index]
         source = sample.get("sample_source") or "trajectory"
         source_groups.setdefault(source, []).append(index)
+
+    map_time_groups = {}
+    for index in validation_indices:
+        sample = sample_metadata[index]
+        map_id = str(sample.get("map_id") or "unknown_map")
+        bucket = anchor_time_bucket_label(sample.get("time_seconds", 0.0))
+        map_time_groups.setdefault(f"{map_id}::{bucket}", []).append(index)
 
     normalized_path_weights = normalize_sample_path_weights(sample_path_weights)
     path_groups = [
@@ -520,6 +572,7 @@ def build_distillation_validation_slice_groups(dataset, indices, sample_path_wei
 
     return {
         "sample_sources": source_groups,
+        "map_time_buckets": map_time_groups,
         "sample_path_weights": path_groups,
     }
 
@@ -562,6 +615,13 @@ def evaluate_distillation_validation_slices(
         sample_path_weights,
     )
     return {
+        "overall": evaluate_supervised_indices(
+            model,
+            observations,
+            targets,
+            validation_indices,
+            torch_module,
+        ),
         "sample_sources": {
             source: evaluate_supervised_indices(
                 model,
@@ -571,6 +631,16 @@ def evaluate_distillation_validation_slices(
                 torch_module,
             )
             for source, indices in sorted(groups["sample_sources"].items())
+        },
+        "map_time_buckets": {
+            label: evaluate_supervised_indices(
+                model,
+                observations,
+                targets,
+                indices,
+                torch_module,
+            )
+            for label, indices in sorted(groups["map_time_buckets"].items())
         },
         "sample_path_weights": {
             "enabled": bool(groups["sample_path_weights"]),
@@ -589,6 +659,136 @@ def evaluate_distillation_validation_slices(
                 for item in groups["sample_path_weights"]
             ],
         },
+    }
+
+
+def validate_action_distribution_guard_thresholds(
+    max_dominant_ratio=None,
+    min_normalized_entropy=None,
+    min_sample_count=1,
+):
+    if max_dominant_ratio is not None and not (0.0 <= max_dominant_ratio <= 1.0):
+        raise ValueError(
+            "--action-distribution-guard-max-dominant-ratio must be between 0 and 1"
+        )
+    if min_normalized_entropy is not None and not (
+        0.0 <= min_normalized_entropy <= 1.0
+    ):
+        raise ValueError(
+            "--action-distribution-guard-min-normalized-entropy must be between 0 and 1"
+        )
+    if min_sample_count <= 0:
+        raise ValueError("--action-distribution-guard-min-sample-count must be positive")
+    return max_dominant_ratio is not None or min_normalized_entropy is not None
+
+
+def action_distribution_guard_config(
+    max_dominant_ratio=None,
+    min_normalized_entropy=None,
+    min_sample_count=1,
+):
+    enabled = validate_action_distribution_guard_thresholds(
+        max_dominant_ratio=max_dominant_ratio,
+        min_normalized_entropy=min_normalized_entropy,
+        min_sample_count=min_sample_count,
+    )
+    return {
+        "enabled": enabled,
+        "max_dominant_ratio": max_dominant_ratio,
+        "min_normalized_entropy": min_normalized_entropy,
+        "min_sample_count": int(min_sample_count),
+        "scope": [
+            "overall",
+            "sample_sources",
+            "sample_path_weights",
+            "map_time_buckets",
+        ],
+        "notes": [
+            "This guard checks offline validation argmax action concentration after supervised SB3 distillation.",
+            "It blocks limited follow-up evidence only; deterministic high-pressure and no-regression gates are still required.",
+        ],
+    }
+
+
+def iter_action_distribution_guard_slices(validation_slices):
+    overall = validation_slices.get("overall")
+    if isinstance(overall, dict):
+        yield "overall", overall
+    for source, metrics in validation_slices.get("sample_sources", {}).items():
+        if isinstance(metrics, dict):
+            yield f"sample_source:{source}", metrics
+    path_section = validation_slices.get("sample_path_weights", {})
+    for entry in path_section.get("entries", []):
+        if isinstance(entry, dict):
+            yield f"sample_path_weight:{entry.get('path')}", entry
+    for label, metrics in validation_slices.get("map_time_buckets", {}).items():
+        if isinstance(metrics, dict):
+            yield f"map_time_bucket:{label}", metrics
+
+
+def evaluate_action_distribution_guard(validation_slices, guard_config):
+    if not guard_config.get("enabled"):
+        return {
+            "decision": "action_distribution_guard_not_configured",
+            "config": guard_config,
+            "checked_slice_count": 0,
+            "blockers": [],
+            "slices": [],
+        }
+
+    blockers = []
+    checked_slices = []
+    min_sample_count = int(guard_config.get("min_sample_count") or 1)
+    max_dominant_ratio = guard_config.get("max_dominant_ratio")
+    min_normalized_entropy = guard_config.get("min_normalized_entropy")
+    for label, metrics in iter_action_distribution_guard_slices(validation_slices):
+        sample_count = int(metrics.get("sample_count") or 0)
+        if sample_count < min_sample_count:
+            continue
+        dominant = metrics.get("dominant_policy_argmax_action")
+        dominant_ratio = dominant.get("ratio") if isinstance(dominant, dict) else None
+        normalized_entropy = metrics.get("normalized_policy_argmax_action_entropy")
+        slice_blockers = []
+        if max_dominant_ratio is not None:
+            if dominant_ratio is None:
+                slice_blockers.append("missing dominant policy argmax ratio")
+            elif dominant_ratio > max_dominant_ratio:
+                slice_blockers.append(
+                    "dominant_policy_argmax_action_ratio "
+                    f"{dominant_ratio} above max {max_dominant_ratio}"
+                )
+        if min_normalized_entropy is not None:
+            if normalized_entropy is None:
+                slice_blockers.append("missing normalized policy argmax action entropy")
+            elif normalized_entropy < min_normalized_entropy:
+                slice_blockers.append(
+                    "normalized_policy_argmax_action_entropy "
+                    f"{normalized_entropy} below min {min_normalized_entropy}"
+                )
+        if slice_blockers:
+            blockers.extend(f"{label}: {item}" for item in slice_blockers)
+        checked_slices.append(
+            {
+                "label": label,
+                "sample_count": sample_count,
+                "dominant_policy_argmax_action": dominant,
+                "normalized_policy_argmax_action_entropy": normalized_entropy,
+                "status": "blocked" if slice_blockers else "pass",
+                "blockers": slice_blockers,
+            }
+        )
+
+    decision = (
+        "action_distribution_guard_failed"
+        if blockers
+        else "action_distribution_guard_passed"
+    )
+    return {
+        "decision": decision,
+        "config": guard_config,
+        "checked_slice_count": len(checked_slices),
+        "blockers": blockers,
+        "slices": checked_slices,
     }
 
 
@@ -734,6 +934,20 @@ def distill(config, args):
     finally:
         env.close()
 
+    action_distribution_guard = evaluate_action_distribution_guard(
+        validation_slices,
+        action_distribution_guard_config(
+            max_dominant_ratio=args.action_distribution_guard_max_dominant_ratio,
+            min_normalized_entropy=args.action_distribution_guard_min_normalized_entropy,
+            min_sample_count=args.action_distribution_guard_min_sample_count,
+        ),
+    )
+    gate_decision = (
+        "sb3_distillation_action_distribution_guard_failed_not_policy_gate"
+        if action_distribution_guard["decision"] == "action_distribution_guard_failed"
+        else "sb3_distillation_smoke_only_not_policy_gate"
+    )
+
     metadata_path = model_path.with_name(f"{model_path.stem}_metadata.json")
     metadata = {
         "model_version": 1,
@@ -755,7 +969,7 @@ def distill(config, args):
         "algorithm": "ppo",
         "model_path": str(model_path),
         "metadata_path": str(metadata_path),
-        "gate_decision": "sb3_distillation_smoke_only_not_policy_gate",
+        "gate_decision": gate_decision,
         "dependency_status": dependency_status(),
         "dataset": summarize_dataset(dataset),
         "target": target_report,
@@ -773,6 +987,7 @@ def distill(config, args):
         },
         "sample_weights": sample_weight_report,
         "validation_slices": validation_slices,
+        "action_distribution_guard": action_distribution_guard,
         "history": history,
         "final": history[-1] if history else {},
         "limitations": [
@@ -896,6 +1111,30 @@ def main():
         help="Mix target probabilities with a uniform distribution to raise entropy.",
     )
     parser.add_argument("--validation-split", type=float, default=0.2)
+    parser.add_argument(
+        "--action-distribution-guard-max-dominant-ratio",
+        type=float,
+        default=None,
+        help=(
+            "Mark the distillation report as guard-failed when any checked "
+            "validation slice exceeds this predicted argmax action ratio."
+        ),
+    )
+    parser.add_argument(
+        "--action-distribution-guard-min-normalized-entropy",
+        type=float,
+        default=None,
+        help=(
+            "Mark the distillation report as guard-failed when any checked "
+            "validation slice falls below this normalized predicted argmax entropy."
+        ),
+    )
+    parser.add_argument(
+        "--action-distribution-guard-min-sample-count",
+        type=int,
+        default=16,
+        help="Minimum validation slice sample count before action-distribution guard thresholds apply.",
+    )
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument("--env-seconds", type=float, default=None)
     parser.add_argument("--model-out", required=True)
@@ -952,6 +1191,14 @@ def main():
         parser.error("--recovery-soft-target-top-k must be at least 2")
     if not (0.0 < args.validation_split < 1.0):
         parser.error("--validation-split must be between 0 and 1")
+    try:
+        validate_action_distribution_guard_thresholds(
+            max_dominant_ratio=args.action_distribution_guard_max_dominant_ratio,
+            min_normalized_entropy=args.action_distribution_guard_min_normalized_entropy,
+            min_sample_count=args.action_distribution_guard_min_sample_count,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.env_seconds is not None and args.env_seconds <= 0.0:
         parser.error("--env-seconds must be greater than zero")
 
