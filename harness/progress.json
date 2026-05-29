@@ -2583,6 +2583,11 @@
       "id": "rl_sb3_parent_late_recovery_filter_probe",
       "summary": "对 e30 mid-anchor parent 套用 evaluation-only late_recovery_filter：300 秒 high-pressure 中 soda-creek 得到 0.3333 局部胜率，但 caramel-workshop 与 cracked-star-jar 仍为 0.0，failure analysis 仍有 8 个失败局；三图导出 439 条 risk_recovery_supervision_sample，并通过 risk_recovery_samples_valid 校验，仅保留 1 条 target risk score warning。已记录 fail_20260529_009；该 adapter 只能作为 parent late-state repair 样本来源，不能作为 policy candidate 或 RL acceptance 证据。",
       "report": "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_filter_probe_001/summary.md"
+    },
+    {
+      "id": "rl_sb3_parent_late_recovery_clean_samples",
+      "summary": "对 parent late-recovery filter 的 439 条 risk recovery samples 做 clean subset：保留 424 条，剔除 14 条 target residual risk 与 1 条 worse target risk score；clean subset 通过 risk_recovery_samples_valid，并用 train_behavior_clone.py dry-run 验证 424 条样本可按 late phase、180-300s window、risk_recovery_sample_weight 0.5 和 top_k_scores soft target 进入训练管线。dry-run 仍标记 map sample imbalance 与 late_low_health coverage 0，因此只能作为 action-separation / terminal-conversion 训练输入预检。",
+      "report": "harness/reports/2026-05-29_rl_sb3_parent_late_recovery_clean_samples_001/summary.md"
     }
   ],
   "next_recommended": [

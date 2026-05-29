@@ -272,6 +272,8 @@ handoff state distribution 诊断确认 split 失败不是因为 late branch 接
 
 对 mid-anchor parent 追加 evaluation-only `late_recovery_filter` wrapper 后，`soda-creek` 300 秒出现 `0.3333` 局部胜率，但 `caramel-workshop` 与 `cracked-star-jar` 仍为 `0.0`，总体 gate 仍是 `multimap_comparison_recorded_needs_policy_repair`，failure analysis 记录 `8` 个失败局。该 wrapper 导出 `439` 条 `risk_recovery_supervision_sample`，三图合并校验为 `risk_recovery_samples_valid`，风险原因主要为 `wallward_edge`、`toward_enemy_pressure` 和 `toward_hazard`，但有 `1` 条 target risk score 警告。已记录 `fail_20260529_009`；该结果证明 parent late-state 存在可提取修复信号，但手写 adapter 不是 policy acceptance 证据，下一步应把样本转成真实 action-separation / terminal-conversion 训练输入，并保留 clean subset / 低权重消融与多基线回归门禁。
 
+parent late recovery 样本已先做 clean subset 预检：`439` 条中保留 `424` 条，剔除 `14` 条 target 仍有风险原因和 `1` 条 target risk score 更差的样本；clean subset 再次通过 `risk_recovery_samples_valid`。行为克隆 dry-run 确认这 `424` 条样本能以 `risk_recovery_sample_weight = 0.5`、`late` phase filter、`180-300s` time window 和 `top_k_scores` soft target 进入训练管线，`fallback_one_hot_count = 0`。但 dry-run 同时标记 map sample imbalance，且 `late_low_health` coverage 为 `0`；因此下一步训练必须混入 parent / e30 retention anchors，并用多基线 no-regression 审查，而不能只用 clean adapter rows 训练。
+
 Harness 还提供规则 Bot 轨迹导出入口：
 
 ```bash
