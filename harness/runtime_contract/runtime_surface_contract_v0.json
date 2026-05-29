@@ -289,6 +289,15 @@
     },
     {
       "file": "runtime_main",
+      "name": "RuntimeChapterAction",
+      "required_variants": [
+        "Previous",
+        "Next",
+        "StartSelectedChapter"
+      ]
+    },
+    {
+      "file": "runtime_main",
       "name": "RuntimeCodexAction",
       "required_variants": [
         "PreviousCategory",
@@ -344,6 +353,11 @@
     "validate_runtime_asset_candidate_manifest",
     "runtime_meta_panel_view_from_key",
     "select_runtime_meta_panel",
+    "runtime_chapter_action_from_keyboard",
+    "apply_runtime_chapter_action",
+    "runtime_chapter_ids",
+    "runtime_selected_chapter_id",
+    "runtime_chapter_goal_lines",
     "render_meta_progress_panel",
     "render_meta_overview_panel",
     "render_meta_chapter_panel",
@@ -454,6 +468,18 @@
     {
       "key": "KeyCode::KeyV",
       "target": "RuntimeCodexAction::ToggleDiscoveredOnly"
+    },
+    {
+      "key": "KeyCode::KeyQ",
+      "target": "RuntimeChapterAction::Previous"
+    },
+    {
+      "key": "KeyCode::KeyE",
+      "target": "RuntimeChapterAction::Next"
+    },
+    {
+      "key": "KeyCode::KeyG",
+      "target": "RuntimeChapterAction::StartSelectedChapter"
     }
   ],
   "required_source_fragments": [
@@ -462,6 +488,11 @@
     "F3 图鉴",
     "F4 设置",
     "F5 巡逻",
+    "Q/E 切换章节",
+    "G 巡逻已解锁章节",
+    "G 会使用该章节地图重开当前巡逻并保留局外进度",
+    "G 不会启动锁定章节",
+    "后续章节目标待内容接受与平衡验证后开放",
     "图鉴浏览",
     "Q/E 切换分类",
     "B/N 切换条目",

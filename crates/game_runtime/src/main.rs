@@ -356,6 +356,13 @@ enum RuntimeDataControlAction {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RuntimeChapterAction {
+    Previous,
+    Next,
+    StartSelectedChapter,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RuntimeCodexAction {
     PreviousCategory,
     NextCategory,
@@ -1092,6 +1099,22 @@ fn step_game_core(
             "loadout",
             "patrol loadout view",
         );
+    }
+    if state.meta_panel_view == RuntimeMetaPanelView::Chapters {
+        if let Some(action) = runtime_chapter_action_from_keyboard(&keyboard) {
+            match apply_runtime_chapter_action(&mut state, action) {
+                Ok(message) => {
+                    state.last_event = message;
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::System);
+                }
+                Err(error) => {
+                    state.last_event = format!("chapter selection failed: {error}");
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::Damage);
+                }
+            }
+        }
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Codex {
         if let Some(action) = runtime_codex_action_from_keyboard(&keyboard) {
@@ -2111,6 +2134,96 @@ fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> 
     Ok(format!("selected map {label} ({next_id})"))
 }
 
+fn runtime_chapter_action_from_keyboard(
+    keyboard: &ButtonInput<KeyCode>,
+) -> Option<RuntimeChapterAction> {
+    if keyboard.just_pressed(KeyCode::KeyQ) {
+        Some(RuntimeChapterAction::Previous)
+    } else if keyboard.just_pressed(KeyCode::KeyE) {
+        Some(RuntimeChapterAction::Next)
+    } else if keyboard.just_pressed(KeyCode::KeyG) {
+        Some(RuntimeChapterAction::StartSelectedChapter)
+    } else {
+        None
+    }
+}
+
+fn apply_runtime_chapter_action(
+    state: &mut RuntimeState,
+    action: RuntimeChapterAction,
+) -> std::io::Result<String> {
+    match action {
+        RuntimeChapterAction::Previous | RuntimeChapterAction::Next => {
+            let candidates = runtime_chapter_ids(&state.meta_progress);
+            let current = runtime_selected_chapter_id(&state.meta_progress, &state.base_ui_state)
+                .unwrap_or_default();
+            let current_index = candidates
+                .iter()
+                .position(|chapter_id| chapter_id == &current)
+                .unwrap_or(0);
+            let next_index = match action {
+                RuntimeChapterAction::Previous => {
+                    if current_index == 0 {
+                        candidates.len().saturating_sub(1)
+                    } else {
+                        current_index - 1
+                    }
+                }
+                RuntimeChapterAction::Next => {
+                    if candidates.is_empty() {
+                        0
+                    } else {
+                        (current_index + 1) % candidates.len()
+                    }
+                }
+                _ => unreachable!(),
+            };
+            let Some(next_id) = candidates.get(next_index).cloned() else {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "no Runtime chapters available",
+                ));
+            };
+            state.base_ui_state.last_selected_chapter_id = next_id.clone();
+            persist_runtime_save_if_configured(state)?;
+            Ok(format!("selected chapter {next_id}"))
+        }
+        RuntimeChapterAction::StartSelectedChapter => {
+            let selected_id =
+                runtime_selected_chapter_id(&state.meta_progress, &state.base_ui_state)
+                    .ok_or_else(|| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidInput,
+                            "no Runtime chapter selected",
+                        )
+                    })?;
+            let chapter = state
+                .meta_progress
+                .chapters
+                .get(&selected_id)
+                .ok_or_else(|| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "selected Runtime chapter is missing",
+                    )
+                })?;
+            if !chapter.unlocked {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "selected Runtime chapter is locked",
+                ));
+            }
+            state.config.map_id = chapter.map_id.clone();
+            state.base_ui_state.last_selected_map_id = chapter.map_id.clone();
+            state.base_ui_state.last_selected_chapter_id = chapter.chapter_id.clone();
+            reset_runtime_run(state);
+            persist_runtime_save_if_configured(state)?;
+            let label = runtime_map_label(&state.content, &state.config.map_id);
+            Ok(format!("started chapter {selected_id} on {label}"))
+        }
+    }
+}
+
 fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
     if state.settled_run_number == Some(state.run_number) {
         return;
@@ -2145,7 +2258,9 @@ fn render_meta_progress_panel(
         RuntimeMetaPanelView::Overview => {
             render_meta_overview_panel(progress, settlement, context.asset_runtime_candidate)
         }
-        RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(progress, settlement),
+        RuntimeMetaPanelView::Chapters => {
+            render_meta_chapter_panel(progress, settlement, context.content, context.base_ui_state)
+        }
         RuntimeMetaPanelView::Codex => render_meta_codex_panel(
             progress,
             settlement,
@@ -2214,24 +2329,56 @@ fn render_meta_overview_panel(
 fn render_meta_chapter_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
+    content: &ContentPack,
+    base_ui_state: &RuntimeBaseUiState,
 ) -> String {
     let mut lines = vec!["糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻".to_string()];
     lines.push("章节目标".to_string());
-    for chapter in progress.chapters.values().take(4) {
+    let chapter_ids = runtime_chapter_ids(progress);
+    let selected_id = runtime_selected_chapter_id(progress, base_ui_state)
+        .or_else(|| chapter_ids.first().cloned())
+        .unwrap_or_else(|| DEFAULT_MAP_ID.to_string());
+    let selected_index = chapter_ids
+        .iter()
+        .position(|chapter_id| chapter_id == &selected_id)
+        .unwrap_or(0);
+    lines.push(format!(
+        "Q/E 切换章节  G 巡逻已解锁章节  当前 {}/{}",
+        if chapter_ids.is_empty() {
+            0
+        } else {
+            selected_index + 1
+        },
+        chapter_ids.len()
+    ));
+    if let Some(chapter) = progress.chapters.get(&selected_id) {
+        let status = if chapter.unlocked {
+            "已解锁"
+        } else {
+            "未解锁"
+        };
         lines.push(format!(
-            "{} [{}]  {}",
+            "{} ({})  {}",
+            chapter_label(content, &chapter.chapter_id),
             chapter.chapter_id,
-            if chapter.unlocked {
-                "已解锁"
-            } else {
-                "未解锁"
-            },
-            format_string_set(&chapter.completed_goals, 3),
+            status
         ));
-        lines.push(format!("地图 {}  Boss {}", chapter.map_id, chapter.boss_id));
-    }
-    if progress.chapters.len() > 4 {
-        lines.push(format!("还有 {} 个章节未显示", progress.chapters.len() - 4));
+        lines.push(format!(
+            "地图 {} ({})  Boss {} ({})",
+            runtime_map_label(content, &chapter.map_id),
+            chapter.map_id,
+            runtime_boss_label(content, &chapter.boss_id),
+            chapter.boss_id,
+        ));
+        let goal_lines = runtime_chapter_goal_lines(&chapter.chapter_id, &chapter.completed_goals);
+        lines.push(format!("目标\n{}", goal_lines.join("\n")));
+        if chapter.unlocked {
+            lines.push("G 会使用该章节地图重开当前巡逻并保留局外进度".to_string());
+        } else {
+            lines.push("该章节仍锁定；完成前序章节目标后开放，G 不会启动锁定章节".to_string());
+        }
+    } else {
+        lines.push("当前没有章节进度记录".to_string());
     }
     if let Some(report) = settlement {
         lines.push(format!(
@@ -2487,6 +2634,65 @@ fn runtime_map_label(content: &ContentPack, map_id: &str) -> String {
         .get(map_id)
         .map(|map| map.name.clone())
         .unwrap_or_else(|| map_visual_style(map_id).display_name.to_string())
+}
+
+fn runtime_boss_label(content: &ContentPack, boss_id: &str) -> String {
+    content
+        .bosses
+        .get(boss_id)
+        .map(|boss| boss.common.name.clone())
+        .unwrap_or_else(|| "未知 Boss".to_string())
+}
+
+fn chapter_label(content: &ContentPack, chapter_id: &str) -> String {
+    runtime_map_label(content, chapter_id)
+}
+
+fn runtime_chapter_ids(progress: &MetaProgress) -> Vec<String> {
+    progress.chapters.keys().cloned().collect()
+}
+
+fn runtime_selected_chapter_id(
+    progress: &MetaProgress,
+    base_ui_state: &RuntimeBaseUiState,
+) -> Option<String> {
+    if progress
+        .chapters
+        .contains_key(&base_ui_state.last_selected_chapter_id)
+    {
+        Some(base_ui_state.last_selected_chapter_id.clone())
+    } else {
+        progress.chapters.keys().next().cloned()
+    }
+}
+
+fn runtime_chapter_goal_lines(
+    chapter_id: &str,
+    completed_goals: &std::collections::BTreeSet<String>,
+) -> Vec<String> {
+    let goals = match chapter_id {
+        "frosting-grassland" => vec![
+            ("survive-10-minutes", "标准巡逻坚持 10 分钟"),
+            ("defeat-runaway-sugar-mixer", "击败暴走搅糖机"),
+            ("collect-200-candy-crystals", "收集 200 糖晶经验"),
+            ("rainbow-candy-shot-level-5", "把彩虹糖弹升到 5 级"),
+        ],
+        _ => vec![(
+            "future-chapter-goals",
+            "后续章节目标待内容接受与平衡验证后开放",
+        )],
+    };
+    goals
+        .into_iter()
+        .map(|(goal_id, label)| {
+            let status = if completed_goals.contains(goal_id) {
+                "[x]"
+            } else {
+                "[ ]"
+            };
+            format!("{status} {goal_id} - {label}")
+        })
+        .collect()
 }
 
 fn format_runtime_unlocked_labels(
@@ -4179,34 +4385,36 @@ fn write_runtime_playtest_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        collect_runtime_local_data_files, delete_runtime_local_data, demo_movement,
-        demo_upgrade_choice, effects_for_events, event_kind_for_events, export_runtime_local_data,
-        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
-        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
-        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
-        runtime_asset_root, runtime_can_upload, runtime_character_starting_loadout,
-        runtime_local_data_export_path, runtime_meta_panel_view_from_key, runtime_privacy_notice,
-        runtime_save_export_path, runtime_sprite_paths, runtime_unlocked_character_ids,
-        runtime_unlocked_map_ids, sounds_for_events, toggle_runtime_privacy_setting,
-        write_runtime_privacy_settings, write_runtime_save_state,
-        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
+        demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
+        export_runtime_local_data, load_runtime_asset_candidate_manifest,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
+        persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
+        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
+        run_runtime_data_control_action, runtime_asset_root, runtime_can_upload,
+        runtime_character_starting_loadout, runtime_local_data_export_path,
+        runtime_meta_panel_view_from_key, runtime_privacy_notice, runtime_save_export_path,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
+        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
-        RuntimeCaptureState, RuntimeCli, RuntimeCodexCategory, RuntimeDataControlAction,
-        RuntimeDataControlContext, RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind,
-        RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeMetaPanelRenderContext,
-        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
-        RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
-        RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind,
-        DEFAULT_CONTENT_DIR, DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
-        MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
-        PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
-        RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
+        RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexCategory,
+        RuntimeDataControlAction, RuntimeDataControlContext, RuntimeEffectKind, RuntimeEventCounts,
+        RuntimeEventKind, RuntimeFrameMetricsReport, RuntimeFrameMetricsState,
+        RuntimeMetaPanelRenderContext, RuntimeMetaPanelView, RuntimePrivacyReport,
+        RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSound,
+        RuntimeState, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
+        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID, DEFAULT_PLATFORM_DATA_ROOT,
+        DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS,
+        PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
+        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT, RUNTIME_SAVE_TIMESTAMP,
+        RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use game_core::{
-        BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, GameCore, GameEvent, MetaProgress,
-        MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode, Vec2 as CoreVec2,
+        BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent,
+        MetaProgress, MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode,
+        Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
 
@@ -4230,6 +4438,56 @@ mod tests {
             config,
             base_ui_state,
             codex_selected_index,
+        }
+    }
+
+    fn runtime_state_for_tests() -> RuntimeState {
+        let cli = RuntimeCli {
+            runtime_settings_file: None,
+            save_file: None,
+            local_data_dirs: Vec::new(),
+            ..RuntimeCli::default()
+        };
+        let content = ContentPack::base_demo();
+        let config = run_config_from_cli(&cli, &content);
+        let core = GameCore::reset_with_content(config.clone(), content.clone())
+            .expect("base demo content should initialize Runtime tests");
+        let latest_snapshot = core.snapshot();
+        let dt = FixedDt::from_tick_rate(config.tick_rate);
+        let dt_seconds = dt.seconds();
+        RuntimeState {
+            content,
+            content_dir: cli.content_dir.clone(),
+            content_pack_ids: cli.content_pack_ids.clone(),
+            config,
+            core,
+            dt,
+            dt_seconds,
+            accumulator: 0.0,
+            latest_snapshot,
+            last_event: "run started".to_string(),
+            last_event_kind: RuntimeEventKind::System,
+            pending_sounds: Vec::new(),
+            effects: Vec::new(),
+            capture: RuntimeCaptureState::from_cli(&cli),
+            demo_input: cli.demo_input,
+            simulation_speed: cli.simulation_speed,
+            auto_exit_after_report: cli.auto_exit_after_report,
+            paused: false,
+            run_number: 1,
+            privacy_settings: RuntimePrivacySettings::default(),
+            platform_data_root: cli.platform_data_root.clone(),
+            runtime_settings_file: cli.runtime_settings_file.clone(),
+            save_file: cli.save_file.clone(),
+            local_data_dirs: cli.local_data_dirs.clone(),
+            meta_panel_view: RuntimeMetaPanelView::Overview,
+            base_ui_state: RuntimeBaseUiState::default(),
+            codex_selected_index: 0,
+            meta_progress: MetaProgress::demo_start(),
+            story_codex_ui_candidate: None,
+            asset_runtime_candidate: None,
+            last_meta_settlement: None,
+            settled_run_number: None,
         }
     }
 
@@ -5526,6 +5784,37 @@ mod tests {
     }
 
     #[test]
+    fn runtime_chapter_action_starts_only_unlocked_chapters() {
+        let mut state = runtime_state_for_tests();
+
+        state.base_ui_state.last_selected_chapter_id = "soda-creek".to_string();
+        let locked_error =
+            apply_runtime_chapter_action(&mut state, RuntimeChapterAction::StartSelectedChapter)
+                .unwrap_err();
+
+        assert_eq!(locked_error.kind(), std::io::ErrorKind::PermissionDenied);
+        assert_eq!(state.config.map_id, DEFAULT_MAP_ID);
+        assert_eq!(state.run_number, 1);
+
+        state.base_ui_state.last_selected_chapter_id = "frosting-grassland".to_string();
+        let message =
+            apply_runtime_chapter_action(&mut state, RuntimeChapterAction::StartSelectedChapter)
+                .unwrap();
+
+        assert!(message.contains("started chapter frosting-grassland"));
+        assert_eq!(state.config.map_id, "frosting-grassland");
+        assert_eq!(
+            state.base_ui_state.last_selected_map_id,
+            "frosting-grassland"
+        );
+        assert_eq!(
+            state.base_ui_state.last_selected_chapter_id,
+            "frosting-grassland"
+        );
+        assert_eq!(state.run_number, 2);
+    }
+
+    #[test]
     fn low_health_changes_player_tint() {
         assert_ne!(player_tint(100.0, 100.0), player_tint(20.0, 100.0));
     }
@@ -5711,9 +6000,42 @@ mod tests {
         );
 
         assert!(panel.contains("章节目标"));
+        assert!(panel.contains("Q/E 切换章节"));
+        assert!(panel.contains("G 巡逻已解锁章节"));
         assert!(panel.contains("frosting-grassland"));
         assert!(panel.contains("survive-10-minutes"));
         assert!(panel.contains("本局完成"));
+    }
+
+    #[test]
+    fn meta_panel_renders_locked_chapter_selection_detail() {
+        let base_ui_state = RuntimeBaseUiState {
+            last_selected_chapter_id: "soda-creek".to_string(),
+            last_selected_map_id: "soda-creek".to_string(),
+            ..RuntimeBaseUiState::default()
+        };
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Chapters,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &base_ui_state,
+                0,
+            ),
+        );
+
+        assert!(panel.contains("汽水溪谷"));
+        assert!(panel.contains("soda-creek"));
+        assert!(panel.contains("汽水喷泉龙"));
+        assert!(panel.contains("未解锁"));
+        assert!(panel.contains("future-chapter-goals"));
+        assert!(panel.contains("G 不会启动锁定章节"));
     }
 
     #[test]
