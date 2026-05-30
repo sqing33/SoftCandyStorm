@@ -1331,6 +1331,11 @@
       "id": "rl_stage01_seed63402_guard_retention_probe",
       "summary": "执行 seed 63402 guard + retention PPO 小步 probe：从 e30 mid-anchor guarded parent 继续 256 timestep，使用 49 条 opening anchor 样本、anchor weight 0.5、10 个 KL epoch 与 lr 0.0005；anchor validation guard 失败（KL 2.155758、argmax agreement 0.6），soda-creek:63402 target preflight 也失败（37.4998 秒 defeat，action 7 ratio 0.0）。已记录 fail_20260530_008，未运行完整 60/180/300 秒矩阵。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_prefailure_trace_compare",
+      "summary": "生成 seed 63402 pre-failure trace compare：对齐 parent、seed-replay candidate、guard-retention probe 三组 traces，确认目标 seed 三者都在 37.2664-37.4998 秒死亡，均缺 action 3/7、多 action 4/5；新 probe 的目标 seed action 5 为 70.18%、action 7 为 0.0%。已导出 48 条 31.9999-37.3331 秒高压 sampled states，全部 action 5，并通过 behavior clone dry-run；该数据是反例/覆写目标设计输入，不是模仿训练目标。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2958,6 +2963,11 @@
       "id": "rl_stage01_seed63402_guard_retention_probe",
       "summary": "执行 seed 63402 guard + retention PPO 小步 probe：从 e30 mid-anchor guarded parent 继续 256 timestep，使用 49 条 opening anchor 样本、anchor weight 0.5、10 个 KL epoch 与 lr 0.0005；anchor validation guard 失败（KL 2.155758、argmax agreement 0.6），soda-creek:63402 target preflight 也失败（37.4998 秒 defeat，action 7 ratio 0.0）。已记录 fail_20260530_008，未运行完整 60/180/300 秒矩阵。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_prefailure_trace_compare",
+      "summary": "生成 seed 63402 pre-failure trace compare：对齐 parent、seed-replay candidate、guard-retention probe 三组 traces，确认目标 seed 三者都在 37.2664-37.4998 秒死亡，均缺 action 3/7、多 action 4/5；新 probe 的目标 seed action 5 为 70.18%、action 7 为 0.0%。已导出 48 条 31.9999-37.3331 秒高压 sampled states，全部 action 5，并通过 behavior clone dry-run；该数据是反例/覆写目标设计输入，不是模仿训练目标。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2984,6 +2994,10 @@
     {
       "id": "rl_stage01_inspect_seed63402_prefailure_route",
       "summary": "guard + retention probe 已证明 31.9999-37.2664 秒 action 7 窄切片不足以修复在线闭环；下一步应导出并对比 seed 63402 在 0-37.5 秒的 pre-failure route states，补充更早的路线/压力状态覆盖或改为显式 staged branch，再重新通过 anchor guard 与 target preflight。"
+    },
+    {
+      "id": "rl_stage01_counterlabel_seed63402_prefailure_states",
+      "summary": "下一轮不要模仿 seed63402_prefailure_route_states.jsonl 中的 action 5；应把这 48 条高压失败 states 作为反例，设计 counterfactual target（优先 action 7/3 或 wrapper branch），然后先通过离线 target 覆写检查、anchor validation guard 和 soda-creek:63402 target preflight。"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",
