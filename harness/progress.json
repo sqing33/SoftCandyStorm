@@ -1296,6 +1296,11 @@
       "id": "rl_stage01_opening_route_recovery_conservative_sweep",
       "summary": "执行 opening-route-recovery 保守学习率 sweep：5e-6、2e-6、1e-6 仍有 strict no-regression 微回退或单图 blocker；5e-7 版本通过 60/180/300 秒 parent no-regression，60 秒 caramel-workshop 提升到 1.0，但 soda-creek 60 秒仍为 0.6667、300 秒三图仍全 0.0。已记录 fail_20260530_004，该 checkpoint 只能作为 parent-preserving 诊断起点，不得进入 stage 02。",
       "report": "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_lr5e7_probe_001/summary.md"
+    },
+    {
+      "id": "rl_opening_boundary_escape_profile",
+      "summary": "新增 opening-boundary-escape repair-only reward profile：在 0-60 秒开局窗口保留 route recovery 信号，并额外加入仅当贴边风险和敌压同时较高时生效的内侧逃逸 shaping。Rust gym-bridge、Python Gym wrapper、train_sb3 CLI 和文档均已接入，cargo test -p game_harness、Python env profile 测试和 dry-run 均通过；该入口尚未训练或通过 fixed-window gate。",
+      "report": "harness/reports/2026-05-30_opening_boundary_escape_profile_001/summary.md"
     }
   ],
   "current_findings": [

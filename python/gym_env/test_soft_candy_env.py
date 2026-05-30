@@ -64,6 +64,7 @@ def test_reward_profile_accepts_repair_profiles():
     assert env._normalize_reward_profile("late-route-recovery") == "late-route-recovery"
     assert env._normalize_reward_profile("late-win-conversion") == "late-win-conversion"
     assert env._normalize_reward_profile("opening-route-recovery") == "opening-route-recovery"
+    assert env._normalize_reward_profile("opening-boundary-escape") == "opening-boundary-escape"
     assert env._normalize_reward_profile(None) == "standard"
 
 
