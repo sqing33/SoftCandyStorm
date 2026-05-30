@@ -1661,7 +1661,7 @@
       "doc_id": "11",
       "doc_path": "docs/11_测试指标与上线门禁.md",
       "status": "partial",
-      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、素材最终接受证据包、剧情审校、剧情最终接受证据包、正式内容 lockfile、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、显式原生平台数据目录解析、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；headless 性能预算校验器已能检查 bot_matrix 终局、时长、有限数值和敌人数上限；Runtime 性能 capture 校验器已支持 smoke / release-local 分档并通过 600 秒本机 release-local 报告；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator；20 seed Bot gate 已通过校准复测，但当前本地候选仍因人工、多硬件性能与发布级门禁保持 not-ready。",
+      "summary": "Release Candidate 证据清单校验器已覆盖编译、测试、仿真、Bot、Replay、性能、人工试玩、素材 provenance、素材人工审查、素材最终接受证据包、剧情审校、剧情最终接受证据包、正式内容 lockfile、遥测隐私、Runtime 隐私设置契约、上传传输契约、平台路径策略、显式原生平台数据目录解析、人工隐私审查、人工平台路径审查、人工法律 / 合规审查和发布包门禁；headless 性能预算校验器已能检查 bot_matrix 终局、时长、有限数值和敌人数上限；Runtime 性能 capture 校验器已支持 smoke / release-local 分档并通过 600 秒本机 release-local 报告；发布包已有独立 manifest 校验器；人工试玩已有 9 局草稿生成器、真人审查包和完整性 validator，人工证据 gap 也已有跨域行动计划生成器；20 seed Bot gate 已通过校准复测，但当前本地候选仍因人工、多硬件性能与发布级门禁保持 not-ready。",
       "coverage": [
         {
           "id": "release-candidate-gates",
@@ -1785,12 +1785,16 @@
             "harness/simulated_candidates/2026-05-26_phase4_roster_gap_full_pack/metadata/manifest.json",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_matrix_20seed_001/summary.md",
             "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
-            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md"
+            "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md",
+            "tools/create_manual_evidence_action_plan.py",
+            "tools/test_create_manual_evidence_action_plan.py",
+            "harness/reports/2026-05-30_manual_evidence_action_plan_001/summary.md",
+            "harness/reports/2026-05-30_manual_evidence_action_plan_001/manual_evidence_action_plan.json"
           ],
           "gaps": [
             "Phase 4 full pack 候选 headless simulation、multi-seed no-deadlock、Bot matrix、Replay 180/180、headless 性能预算、Runtime 10 秒本机性能 smoke、权限恢复后的 Runtime 90 秒 demo-input smoke、600 秒 demo-input release-local 本机性能门禁和 failure case 记录完整性都有当前证据；20 seed Bot gate 已从较小样本 pass、发布探针 blocked，修复为校准后 pass。",
             "Runtime 隐私设置、上传传输、平台路径策略和显式原生平台数据目录解析已有可校验证据，Runtime 本地数据控制 smoke 已实际执行 CLI 并验证隐私说明、存档导出 / 显式删除、本地 telemetry/replay/crash 数据导出 / 显式删除；人工隐私审查、人工平台路径审查和人工法律 / 合规审查已有模板与审查包，但缺少真人填写并通过的人工隐私审查、平台路径审查、法律 / 合规审查、人工试玩、素材人工接受和剧情审校。",
-            "人工证据缺口审计当前仍用于集中排队，不代表任何人工门禁通过。"
+            "人工证据缺口审计和行动计划当前用于集中排队与分组执行，不代表任何人工门禁通过。"
           ],
           "blockers": [
             "manual_playtest_still_pending"

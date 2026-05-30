@@ -1,0 +1,516 @@
+{
+  "report_version": 1,
+  "decision": "manual_evidence_action_plan_ready",
+  "source_audit": "harness/reports/2026-05-26_manual_evidence_gap_audit_001/manual_evidence_gap_audit.json",
+  "source_decision": "manual_evidence_gaps_present",
+  "domain_filter": "",
+  "item_count": 20,
+  "gap_count": 20,
+  "satisfied_count": 0,
+  "domain_count": 8,
+  "domains": [
+    {
+      "domain": "playtest",
+      "total": 1,
+      "gaps": 1,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "manual_playtest_acceptance",
+          "domain": "playtest",
+          "title": "9-run human playtest acceptance",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "manual_playtest_acceptance_review_packet_needs_evidence",
+          "gate_decision": "",
+          "required_action": "Replace TODO playtest draft values with real human ratings, notes, tags, and acceptance evidence.",
+          "report": "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/manual_playtest_acceptance_review_packet.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/manual_playtest_acceptance_review_packet.json",
+            "harness/reports/2026-05-26_manual_playtest_acceptance_review_packet_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Run the 9 human playtest sessions and replace every TODO rating, note, tag, and next action.",
+            "Run validate_manual_review.py --strict-acceptance and keep a manual_review_valid JSON/Markdown report.",
+            "Update the release candidate manual_playtest gate only after real human evidence exists.",
+            "Use the validated manual review as evidence for content acceptance and accepted content lockfile generation."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Run the 9 human playtest sessions and replace every TODO rating, note, tag, and next action.",
+        "Run validate_manual_review.py --strict-acceptance and keep a manual_review_valid JSON/Markdown report.",
+        "Update the release candidate manual_playtest gate only after real human evidence exists.",
+        "Use the validated manual review as evidence for content acceptance and accepted content lockfile generation."
+      ]
+    },
+    {
+      "domain": "content",
+      "total": 3,
+      "gaps": 3,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "content_acceptance_manifest",
+          "domain": "content",
+          "title": "Accepted content manifest",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "content_acceptance_manifest_invalid",
+          "gate_decision": "",
+          "required_action": "Create a manifest backed by valid simulation-candidate, final human acceptance, and accepted-content lockfile reports.",
+          "report": "harness/reports/2026-05-26_content_acceptance_manifest_template_001/content_acceptance_manifest.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_content_acceptance_manifest_template_001/content_acceptance_manifest.json",
+            "harness/reports/2026-05-26_content_acceptance_manifest_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Create a manifest backed by valid simulation-candidate, final human acceptance, and accepted-content lockfile reports."
+          ]
+        },
+        {
+          "id": "content_acceptance_packet",
+          "domain": "content",
+          "title": "Content acceptance evidence packet",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "content_acceptance_review_packet_needs_evidence",
+          "gate_decision": "",
+          "required_action": "Finish human design review, manual playtest acceptance, demo readiness, and accepted-content lock evidence before validation.",
+          "report": "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/content_acceptance_review_packet.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/content_acceptance_review_packet.json",
+            "harness/reports/2026-05-26_phase4_content_acceptance_review_packet_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Replace design review TODO values with a real human design review and validate it.",
+            "After binary recovery, run formal Harness validate-candidates, budget-content, Bot simulation, and replay regression.",
+            "Run and fill the 9-run manual playtest review with human ratings and notes.",
+            "Only after strict human acceptance, generate a non-empty accepted content lockfile."
+          ]
+        },
+        {
+          "id": "content_final_acceptance",
+          "domain": "content",
+          "title": "Final human content acceptance",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "content_final_acceptance_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Bind a valid simulation candidate manifest and accepted-content lockfile, then record real final acceptance observations.",
+          "report": "harness/reports/2026-05-26_content_final_acceptance_template_001/content_final_acceptance.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_content_final_acceptance_template_001/content_final_acceptance.json",
+            "harness/reports/2026-05-26_content_final_acceptance_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Bind a valid simulation candidate manifest and accepted-content lockfile, then record real final acceptance observations."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Create a manifest backed by valid simulation-candidate, final human acceptance, and accepted-content lockfile reports.",
+        "Replace design review TODO values with a real human design review and validate it.",
+        "After binary recovery, run formal Harness validate-candidates, budget-content, Bot simulation, and replay regression.",
+        "Run and fill the 9-run manual playtest review with human ratings and notes.",
+        "Only after strict human acceptance, generate a non-empty accepted content lockfile.",
+        "Bind a valid simulation candidate manifest and accepted-content lockfile, then record real final acceptance observations."
+      ]
+    },
+    {
+      "domain": "asset",
+      "total": 6,
+      "gaps": 6,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "asset_acceptance_manifest",
+          "domain": "asset",
+          "title": "Accepted asset manifest",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "asset_acceptance_manifest_invalid",
+          "gate_decision": "",
+          "required_action": "Create a manifest backed by valid runtime-candidate, runtime preview, loudness, and final acceptance evidence.",
+          "report": "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/asset_acceptance_manifest.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/asset_acceptance_manifest.json",
+            "harness/reports/2026-05-26_asset_acceptance_manifest_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Create a manifest backed by valid runtime-candidate, runtime preview, loudness, and final acceptance evidence."
+          ]
+        },
+        {
+          "id": "asset_audio_loudness_review",
+          "domain": "asset",
+          "title": "Audio loudness/listening human review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "asset_audio_loudness_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Record real listening, clipping, loudness, dialogue clarity, and loop/duration-fit observations.",
+          "report": "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/asset_audio_loudness_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/asset_audio_loudness_review.json",
+            "harness/reports/2026-05-26_asset_audio_loudness_review_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Record real listening, clipping, loudness, dialogue clarity, and loop/duration-fit observations."
+          ]
+        },
+        {
+          "id": "asset_candidate_review_level_up_feedback",
+          "domain": "asset",
+          "title": "Level-up feedback candidate human review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "asset_candidate_manual_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Fill the level-up feedback review draft with human visual, listening, provenance, and technical-readiness observations.",
+          "report": "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/asset_manual_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/asset_manual_review.json",
+            "harness/reports/2026-05-26_mmx_level_up_feedback_manual_review_draft_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Fill the level-up feedback review draft with human visual, listening, provenance, and technical-readiness observations."
+          ]
+        },
+        {
+          "id": "asset_candidate_review_runtime_topdown_audio",
+          "domain": "asset",
+          "title": "Runtime top-down/audio candidate human review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "asset_candidate_manual_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Replace generated review draft ratings and TODO notes with real art/audio review observations.",
+          "report": "harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_manual_review_draft_001/asset_candidate_manual_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_manual_review_draft_001/asset_candidate_manual_review.json",
+            "harness/reports/2026-05-26_mmx_runtime_topdown_audio_plan_manual_review_draft_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Replace generated review draft ratings and TODO notes with real art/audio review observations."
+          ]
+        },
+        {
+          "id": "asset_final_acceptance",
+          "domain": "asset",
+          "title": "Final human asset acceptance",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "asset_final_acceptance_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Bind passing Runtime preview and audio loudness reviews before recording final asset acceptance.",
+          "report": "harness/reports/2026-05-26_asset_final_acceptance_template_001/asset_final_acceptance.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_asset_final_acceptance_template_001/asset_final_acceptance.json",
+            "harness/reports/2026-05-26_asset_final_acceptance_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Bind passing Runtime preview and audio loudness reviews before recording final asset acceptance."
+          ]
+        },
+        {
+          "id": "asset_runtime_preview_review",
+          "domain": "asset",
+          "title": "Asset Runtime preview human review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "asset_runtime_preview_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Preview staged runtime candidates in context and record concrete small-size/readability observations.",
+          "report": "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/asset_runtime_preview_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/asset_runtime_preview_review.json",
+            "harness/reports/2026-05-26_asset_runtime_preview_review_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Preview staged runtime candidates in context and record concrete small-size/readability observations."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Create a manifest backed by valid runtime-candidate, runtime preview, loudness, and final acceptance evidence.",
+        "Record real listening, clipping, loudness, dialogue clarity, and loop/duration-fit observations.",
+        "Fill the level-up feedback review draft with human visual, listening, provenance, and technical-readiness observations.",
+        "Replace generated review draft ratings and TODO notes with real art/audio review observations.",
+        "Bind passing Runtime preview and audio loudness reviews before recording final asset acceptance.",
+        "Preview staged runtime candidates in context and record concrete small-size/readability observations."
+      ]
+    },
+    {
+      "domain": "story",
+      "total": 4,
+      "gaps": 4,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "story_codex_acceptance_manifest",
+          "domain": "story",
+          "title": "Accepted story/codex manifest",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "story_codex_acceptance_manifest_invalid",
+          "gate_decision": "",
+          "required_action": "Create a manifest backed by valid UI-candidate, Runtime UI review, and final human acceptance evidence.",
+          "report": "harness/reports/2026-05-26_story_codex_acceptance_manifest_template_001/story_codex_acceptance_manifest.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_story_codex_acceptance_manifest_template_001/story_codex_acceptance_manifest.json",
+            "harness/reports/2026-05-26_story_codex_acceptance_manifest_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Create a manifest backed by valid UI-candidate, Runtime UI review, and final human acceptance evidence."
+          ]
+        },
+        {
+          "id": "story_codex_final_acceptance",
+          "domain": "story",
+          "title": "Final human story/codex acceptance",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "story_codex_final_acceptance_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Bind a passing Runtime UI review and record final human acceptance for story/codex text.",
+          "report": "harness/reports/2026-05-26_story_codex_final_acceptance_template_001/story_codex_final_acceptance.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_story_codex_final_acceptance_template_001/story_codex_final_acceptance.json",
+            "harness/reports/2026-05-26_story_codex_final_acceptance_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Bind a passing Runtime UI review and record final human acceptance for story/codex text."
+          ]
+        },
+        {
+          "id": "story_codex_runtime_ui_review",
+          "domain": "story",
+          "title": "Story/codex Runtime UI human review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "story_codex_runtime_ui_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Review the F3 candidate metadata UI in Runtime and record concrete observations without loading generated body text.",
+          "report": "harness/reports/2026-05-26_story_codex_runtime_ui_review_template_001/story_codex_runtime_ui_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_story_codex_runtime_ui_review_template_001/story_codex_runtime_ui_review.json",
+            "harness/reports/2026-05-26_story_codex_runtime_ui_review_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Review the F3 candidate metadata UI in Runtime and record concrete observations without loading generated body text."
+          ]
+        },
+        {
+          "id": "story_codex_ui_candidate_manifest",
+          "domain": "story",
+          "title": "Story/codex UI candidate manifest",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "story_codex_ui_candidate_manifest_invalid",
+          "gate_decision": "",
+          "required_action": "Complete real story/codex manual review before promoting the text pack to UI-candidate staging.",
+          "report": "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/story_codex_ui_candidate_manifest.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/story_codex_ui_candidate_manifest.json",
+            "harness/reports/2026-05-26_story_codex_ui_candidate_manifest_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Complete real story/codex manual review before promoting the text pack to UI-candidate staging."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Create a manifest backed by valid UI-candidate, Runtime UI review, and final human acceptance evidence.",
+        "Bind a passing Runtime UI review and record final human acceptance for story/codex text.",
+        "Review the F3 candidate metadata UI in Runtime and record concrete observations without loading generated body text.",
+        "Complete real story/codex manual review before promoting the text pack to UI-candidate staging."
+      ]
+    },
+    {
+      "domain": "privacy",
+      "total": 3,
+      "gaps": 3,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "manual_legal_review",
+          "domain": "privacy",
+          "title": "Manual legal/compliance review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "manual_legal_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Complete real legal/compliance review after privacy and platform-path reviews are passing.",
+          "report": "harness/reports/2026-05-26_manual_legal_review_template_001/manual_legal_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_manual_legal_review_template_001/manual_legal_review.json",
+            "harness/reports/2026-05-26_manual_legal_review_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Complete real legal/compliance review after privacy and platform-path reviews are passing."
+          ]
+        },
+        {
+          "id": "manual_privacy_review",
+          "domain": "privacy",
+          "title": "Manual privacy review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "manual_privacy_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Fill the privacy review with real checks for consent, prohibited fields, notices, retention, and local data controls.",
+          "report": "harness/reports/2026-05-26_manual_privacy_review_template_001/manual_privacy_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_manual_privacy_review_template_001/manual_privacy_review.json",
+            "harness/reports/2026-05-26_manual_privacy_review_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Fill the privacy review with real checks for consent, prohibited fields, notices, retention, and local data controls."
+          ]
+        },
+        {
+          "id": "telemetry_privacy_acceptance_packet",
+          "domain": "privacy",
+          "title": "Telemetry/privacy acceptance evidence packet",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "telemetry_privacy_acceptance_review_packet_needs_evidence",
+          "gate_decision": "",
+          "required_action": "Bring policy, runtime contract, upload transport, platform path, privacy, legal, and RC telemetry gate evidence to passing state.",
+          "report": "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/telemetry_privacy_acceptance_review_packet.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/telemetry_privacy_acceptance_review_packet.json",
+            "harness/reports/2026-05-26_telemetry_privacy_acceptance_review_packet_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Replace TODO placeholders in manual privacy, platform path, and legal/compliance review records.",
+            "Run each manual review validator and keep valid JSON/Markdown reports.",
+            "Implement or explicitly remove upload transport from the release scope, then attach Runtime evidence for the chosen path.",
+            "Update the Release Candidate telemetry_privacy gate only after real human review and Runtime evidence exist."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Complete real legal/compliance review after privacy and platform-path reviews are passing.",
+        "Fill the privacy review with real checks for consent, prohibited fields, notices, retention, and local data controls.",
+        "Replace TODO placeholders in manual privacy, platform path, and legal/compliance review records.",
+        "Run each manual review validator and keep valid JSON/Markdown reports.",
+        "Implement or explicitly remove upload transport from the release scope, then attach Runtime evidence for the chosen path.",
+        "Update the Release Candidate telemetry_privacy gate only after real human review and Runtime evidence exist."
+      ]
+    },
+    {
+      "domain": "platform",
+      "total": 1,
+      "gaps": 1,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "manual_platform_path_review",
+          "domain": "platform",
+          "title": "Manual platform path review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "manual_platform_path_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Review logical roots, delete/export scope, migration retention, cloud sync limits, and Runtime evidence limits on the target platform.",
+          "report": "harness/reports/2026-05-26_manual_platform_path_review_template_001/manual_platform_path_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_manual_platform_path_review_template_001/manual_platform_path_review.json",
+            "harness/reports/2026-05-26_manual_platform_path_review_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Review logical roots, delete/export scope, migration retention, cloud sync limits, and Runtime evidence limits on the target platform."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Review logical roots, delete/export scope, migration retention, cloud sync limits, and Runtime evidence limits on the target platform."
+      ]
+    },
+    {
+      "domain": "base_ui",
+      "total": 1,
+      "gaps": 1,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "base_ui_manual_review",
+          "domain": "base_ui",
+          "title": "Base UI manual review",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "base_ui_manual_review_invalid",
+          "gate_decision": "needs_more_review",
+          "required_action": "Review F1-F4 base UI flows, local data controls, candidate boundaries, and evidence limits with concrete human observations.",
+          "report": "harness/reports/2026-05-26_base_ui_manual_review_template_001/base_ui_manual_review.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_base_ui_manual_review_template_001/base_ui_manual_review.json",
+            "harness/reports/2026-05-26_base_ui_manual_review_template_001/summary.md"
+          ],
+          "required_next_steps": [
+            "Review F1-F4 base UI flows, local data controls, candidate boundaries, and evidence limits with concrete human observations."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Review F1-F4 base UI flows, local data controls, candidate boundaries, and evidence limits with concrete human observations."
+      ]
+    },
+    {
+      "domain": "release",
+      "total": 1,
+      "gaps": 1,
+      "satisfied": 0,
+      "items": [
+        {
+          "id": "release_candidate_evidence",
+          "domain": "release",
+          "title": "Release candidate evidence",
+          "status": "gap",
+          "satisfied": false,
+          "decision": "release_candidate_not_ready",
+          "gate_decision": "",
+          "required_action": "Clear every release gate, including compile, tests, Harness, Replay, performance, manual reviews, content, asset, privacy, and package gates.",
+          "report": "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/release_candidate_evidence.json",
+          "summary": "",
+          "evidence_paths": [
+            "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/release_candidate_evidence.json",
+            "harness/reports/2026-05-26_release_candidate_evidence_current_local_004/summary.md"
+          ],
+          "required_next_steps": [
+            "Clear every release gate, including compile, tests, Harness, Replay, performance, manual reviews, content, asset, privacy, and package gates."
+          ]
+        }
+      ],
+      "next_steps": [
+        "Clear every release gate, including compile, tests, Harness, Replay, performance, manual reviews, content, asset, privacy, and package gates."
+      ]
+    }
+  ],
+  "limitations": [
+    "This action plan organizes human-required evidence gaps only.",
+    "It does not run Runtime, inspect gameplay, fill review fields, approve content, or change release gates.",
+    "Every gap remains blocked until a real human review source passes its validator."
+  ]
+}
