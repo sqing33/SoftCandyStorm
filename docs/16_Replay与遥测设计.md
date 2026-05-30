@@ -202,6 +202,8 @@ python3 tools/run_runtime_gym_current_smoke.py \
 
 当前报告结论为 `runtime_gym_current_smoke_valid`：Gym wrapper 经由 `game_harness gym-bridge` 完成 2 秒短局 smoke，Runtime 使用 `--demo-input` 生成 120 秒本地 capture，随后由 `tools/validate_runtime_performance_capture.py` 校验 frame metrics、samples、terminal、实体数量和隐私默认值。该报告只证明本机 Runtime capture 与 Gym bridge 技术链路当前可运行，不能替代真人试玩、Steam Deck / 多硬件性能、内存增长分析、真实鼠标 / 手柄输入审查或发布级隐私验收。
 
+更长的 Runtime 本机资源探针可用 `tools/run_runtime_resource_probe.py` 刷新。当前 `harness/reports/2026-05-30_runtime_resource_probe_10min_001/summary.md` 记录了一次 600 秒 demo-input run：capture 由本次运行刷新，`release-local` 性能校验通过，隐私上传默认关闭，峰值 RSS 为 164.14 MiB / 2048 MiB。该报告只证明当前本机一次 Runtime 子进程没有超过 RSS 阈值，不替代长期泄漏观察、GPU profiling、多硬件或人工输入设备审查。
+
 Runtime 局外面板提供 `F4` 隐私与本地数据设置页：
 
 - `7`：切换上传匿名遥测。

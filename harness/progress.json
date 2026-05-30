@@ -1256,6 +1256,11 @@
       "id": "rl_sb3_cracked_terminal_window_risk_distill_w7",
       "summary": "复用 cracked-star-jar 210-240s terminal-window 121 条 clean risk rows，将 sample path weight 从 10x 降到 7x。drift/full-anchor alignment 继续通过，但 180 秒 soda-creek 胜率回落到 0.3333，300 秒 soda-creek 平均存活降到 93.0391s，repair-probe gate 从 w10 的 2 blockers 恶化到 6 blockers。已记录 fail_20260529_013，简单降权路线不应继续。",
       "report": "harness/reports/2026-05-29_rl_sb3_cracked_terminal_window_risk_distill_w7_e30_001/summary.md"
+    },
+    {
+      "id": "runtime_resource_probe_10min",
+      "summary": "新增 Runtime 本机资源探针工具：实际启动 game_runtime 运行 600 秒 demo-input，要求 playtest capture 由本次运行刷新，复用 release-local 性能校验，并记录子进程 ru_maxrss。当前报告为 runtime_resource_probe_valid，平均 FPS 57.91、30 FPS 以下慢帧比例 0.54%、峰值 RSS 164.14 MiB / 2048 MiB、终局 victory；该证据不替代 Steam Deck / 多硬件、GPU profiling、长时泄漏分析或真人试玩。",
+      "report": "harness/reports/2026-05-30_runtime_resource_probe_10min_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2853,7 +2858,7 @@
   "next_recommended": [
     {
       "id": "runtime_manual_playtest_capture",
-      "summary": "Runtime demo-input 技术 capture 和 10 分钟 release-local 本机性能门禁已通过；下一步仍需真人使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 进行可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
+      "summary": "Runtime demo-input 技术 capture、10 分钟 release-local 本机性能门禁和 Runtime 本机资源探针已通过；下一步仍需真人使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 进行可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",

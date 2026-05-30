@@ -1,0 +1,81 @@
+{
+  "report_version": 1,
+  "decision": "runtime_resource_probe_valid",
+  "command": [
+    "target/debug/game_runtime",
+    "--content-dir",
+    "content/base_demo",
+    "--seed",
+    "12345",
+    "--map-id",
+    "frosting-grassland",
+    "--seconds",
+    "600",
+    "--demo-input",
+    "--simulation-speed",
+    "30",
+    "--playtest-report",
+    "harness/telemetry/local/runtime_resource_probe_10min_001.json",
+    "--auto-exit-after-report",
+    "--capture-interval",
+    "30"
+  ],
+  "command_display": "target/debug/game_runtime --content-dir content/base_demo --seed 12345 --map-id frosting-grassland --seconds 600 --demo-input --simulation-speed 30 --playtest-report harness/telemetry/local/runtime_resource_probe_10min_001.json --auto-exit-after-report --capture-interval 30",
+  "cwd": ".",
+  "capture_path": "harness/telemetry/local/runtime_resource_probe_10min_001.json",
+  "capture_refreshed": true,
+  "profile": "release-local",
+  "returncode": 0,
+  "wall_seconds": 47.13926601409912,
+  "resource": {
+    "max_rss_bytes": 172113920,
+    "max_rss_mib": 164.140625,
+    "max_rss_threshold_mib": 2048.0,
+    "before_max_rss_bytes": 0
+  },
+  "performance_decision": "runtime_performance_capture_valid",
+  "performance_summary": {
+    "kind": "runtime_playtest_capture",
+    "input_mode": "demo",
+    "simulation_speed": 30.0,
+    "frame_metrics": {
+      "frame_count": 2599,
+      "total_frame_seconds": 44.878742,
+      "average_fps": 57.911602,
+      "worst_frame_fps": 10.0,
+      "slow_frame_count_45fps": 94,
+      "slow_frame_count_30fps": 14,
+      "slow_frame_ratio_30fps": 0.005386687187379761,
+      "status": "ok"
+    },
+    "samples": {
+      "sample_count": 21,
+      "max_visible_enemies": 15,
+      "max_visible_projectiles": 48,
+      "max_active_effects": 46
+    },
+    "final_metrics": {
+      "map_id": "frosting-grassland",
+      "target_duration_seconds": 600.0,
+      "duration_seconds": 600.0084,
+      "terminal": "victory",
+      "kills": 1908,
+      "level": 21,
+      "max_enemy_count": 17,
+      "max_projectile_count": 72
+    },
+    "privacy": {
+      "local_capture_only": true,
+      "upload_transport": "not_implemented"
+    }
+  },
+  "errors": [],
+  "warnings": [],
+  "stdout_tail": [],
+  "stderr_tail": [],
+  "limitations": [
+    "This probe measures one local child process via resource.getrusage only.",
+    "ru_maxrss is a peak resident set approximation and is not a heap profile or GPU memory measurement.",
+    "The probe does not replace Steam Deck, broad hardware, GPU profiling, leak analysis, or human readability review."
+  ]
+}

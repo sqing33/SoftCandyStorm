@@ -367,6 +367,22 @@ python3 tools/validate_runtime_performance_capture.py \
 
 该档位要求 600 秒目标时长、至少 20 个采样点、demo input、胜利终局、平均 FPS 不低于 55、30 FPS 以下慢帧比例不超过 1%，并继续检查实体、投射物、特效与隐私默认本地。当前本机报告结论为 `runtime_performance_capture_valid`，但它仍只是单机自动门禁，不替代 Steam Deck / 多硬件、GPU profiling、内存增长分析或人工可读性验收。
 
+Runtime 本机资源证据另由 `tools/run_runtime_resource_probe.py` 采集。它会实际启动 `game_runtime`，要求本次运行刷新 `--playtest-report` capture，再复用 `release-local` 性能校验，并记录子进程 `ru_maxrss` 峰值：
+
+```bash
+python3 tools/run_runtime_resource_probe.py \
+  --binary target/debug/game_runtime \
+  --capture harness/telemetry/local/runtime_resource_probe_10min_001.json \
+  --repo-root . \
+  --profile release-local \
+  --max-rss-mib 2048 \
+  --report harness/reports/2026-05-30_runtime_resource_probe_10min_001/runtime_resource_probe.json \
+  --markdown harness/reports/2026-05-30_runtime_resource_probe_10min_001/summary.md \
+  -- --content-dir content/base_demo --seed 12345 --map-id frosting-grassland --seconds 600 --demo-input --simulation-speed 30 --playtest-report harness/telemetry/local/runtime_resource_probe_10min_001.json --auto-exit-after-report --capture-interval 30
+```
+
+当前本机报告结论为 `runtime_resource_probe_valid`：600 秒 demo-input 到达 `victory`，`capture_refreshed=true`，平均 FPS 57.91，30 FPS 以下慢帧比例 0.54%，子进程峰值 RSS 164.14 MiB / 2048 MiB。该证据只覆盖当前 Mac 本机的一次 Runtime 子进程 RSS 上限，不是 heap profile、GPU memory profile、Steam Deck / 多硬件覆盖或长时泄漏分析。
+
 ## Python Bridge
 
 Python 训练层不应该直接控制窗口。
