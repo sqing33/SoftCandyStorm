@@ -1321,6 +1321,11 @@
       "id": "rl_stage01_seed63402_success_retention_samples",
       "summary": "新增 policy trace 样本导出器并从 seed 63402 trace 诊断中的 parent 成功 seeds 导出成功开局 retention anchors：soda-creek seeds 63400/63401 在 31.9-37.3 秒、boundary_edge_risk >= 0.75、action 7/3 条件下产出 32 条 action 7 样本；behavior clone dry-run 确认 32 条样本可读，observation_len 145、action_count 9。该数据只作为 target guard + success retention 的下一轮训练输入，不是 policy gate 或 RL acceptance。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_guard_retention_anchor",
+      "summary": "训练 seed 63402 guard + retention behavior-clone anchor：合并 17 条 target guard rows 与 32 条 parent 成功开局 retention rows，共 49 条 soda-creek 31.9999-37.2664 秒 action 7 样本；train / validation accuracy 均为 1.0，gate_decision 为 behavior_clone_smoke_only_not_policy_gate。该模型只是下一轮 target-specific repair 的离线 anchor，不是在线 policy 修复证据。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_anchor_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2938,6 +2943,11 @@
       "id": "rl_stage01_seed63402_success_retention_samples",
       "summary": "新增 policy trace 样本导出器并从 seed 63402 trace 诊断中的 parent 成功 seeds 导出成功开局 retention anchors：soda-creek seeds 63400/63401 在 31.9-37.3 秒、boundary_edge_risk >= 0.75、action 7/3 条件下产出 32 条 action 7 样本；behavior clone dry-run 确认 32 条样本可读，observation_len 145、action_count 9。该数据只作为 target guard + success retention 的下一轮训练输入，不是 policy gate 或 RL acceptance。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_guard_retention_anchor",
+      "summary": "训练 seed 63402 guard + retention behavior-clone anchor：合并 17 条 target guard rows 与 32 条 parent 成功开局 retention rows，共 49 条 soda-creek 31.9999-37.2664 秒 action 7 样本；train / validation accuracy 均为 1.0，gate_decision 为 behavior_clone_smoke_only_not_policy_gate。该模型只是下一轮 target-specific repair 的离线 anchor，不是在线 policy 修复证据。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_anchor_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2956,6 +2966,10 @@
     {
       "id": "rl_stage01_use_success_retention_samples",
       "summary": "下一轮 seed 63402 stage 01 repair 应将 17 条 target guard rows 与 32 条成功开局 retention anchors 结合，先用 target seed preflight 检查 soda-creek:63402，再决定是否运行完整 60/180/300 秒 parent no-regression。"
+    },
+    {
+      "id": "rl_stage01_use_guard_retention_anchor",
+      "summary": "下一轮应以 seed63402_guard_retention_anchor.pt 作为 target-specific repair anchor 或 supervised 初始化输入，小步训练后先跑 soda-creek:63402 target-seed preflight；未通过时不要跑完整矩阵。"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",
