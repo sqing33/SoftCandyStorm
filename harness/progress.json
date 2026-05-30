@@ -2828,12 +2828,17 @@
       "id": "gamecore_determinism_snapshot_contract",
       "summary": "刷新 GameCore 固定 seed 与 snapshot 语义证据：cargo test 定向通过 same_seed_produces_same_metrics，以及 projectile、hazard、nearest boss snapshot 三个观察面测试；同批重跑 v0 GameCore API source-shape 契约校验和契约校验器单测。该证据不替代 Replay 长局回归、Runtime 人工可读性或 Gym high-pressure 策略通过。",
       "report": "harness/reports/2026-05-29_gamecore_determinism_snapshot_contract_001/summary.md"
+    },
+    {
+      "id": "runtime_release_local_performance_gate",
+      "summary": "Runtime performance capture 校验器新增 smoke / release-local 分档；release-local 要求 600 秒目标、至少 20 个采样、demo input、victory、平均 FPS >=55、30 FPS 以下慢帧比例 <=1%，并复用实体、投射物、特效与隐私默认本地检查。当前 10 分钟 demo-input capture 通过该本机自动门槛：平均 FPS 58.65、30 FPS 以下慢帧占比 0.23%、终局 victory。该证据不替代 Steam Deck / 多硬件、GPU / 内存分析或真人试玩。",
+      "report": "harness/reports/2026-05-30_runtime_release_local_performance_gate_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "runtime_manual_playtest_capture",
-      "summary": "Runtime demo-input 技术 capture 已在权限恢复后通过；下一步仍需真人使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 进行可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
+      "summary": "Runtime demo-input 技术 capture 和 10 分钟 release-local 本机性能门禁已通过；下一步仍需真人使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 进行可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",

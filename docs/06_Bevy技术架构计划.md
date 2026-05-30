@@ -355,6 +355,18 @@ Headless 仿真必须支持：
 cargo run -p game_harness -- simulate --seeds 100 --bots reflex,kite,greedy --duration 600
 ```
 
+当前 Runtime 本机性能证据已经从普通 smoke 扩展出 `release-local` 校验档位：
+
+```bash
+python3 tools/validate_runtime_performance_capture.py \
+  harness/telemetry/local/runtime_demo_input_10min_001.json \
+  --profile release-local \
+  --report harness/reports/2026-05-30_runtime_release_local_performance_gate_001/runtime_performance_capture.json \
+  --markdown harness/reports/2026-05-30_runtime_release_local_performance_gate_001/summary.md
+```
+
+该档位要求 600 秒目标时长、至少 20 个采样点、demo input、胜利终局、平均 FPS 不低于 55、30 FPS 以下慢帧比例不超过 1%，并继续检查实体、投射物、特效与隐私默认本地。当前本机报告结论为 `runtime_performance_capture_valid`，但它仍只是单机自动门禁，不替代 Steam Deck / 多硬件、GPU profiling、内存增长分析或人工可读性验收。
+
 ## Python Bridge
 
 Python 训练层不应该直接控制窗口。
@@ -386,4 +398,3 @@ Rust -> Python: {"obs":[...],"reward":0.12,"done":false,"info":{...}}
 7. 接入 Python Gym。
 
 不要第一天就追求完整美术和 RL。
-

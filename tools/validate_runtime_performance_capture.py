@@ -23,6 +23,36 @@ DEFAULT_MAX_ENEMY_COUNT = 140
 DEFAULT_MAX_PROJECTILE_COUNT = 220
 DEFAULT_MAX_ACTIVE_EFFECTS = 96
 DEFAULT_DURATION_TOLERANCE_SECONDS = 1.0
+DEFAULT_PROFILE = "smoke"
+
+PROFILE_DEFAULTS = {
+    "smoke": {
+        "min_average_fps": DEFAULT_MIN_AVERAGE_FPS,
+        "min_worst_frame_fps": DEFAULT_MIN_WORST_FRAME_FPS,
+        "max_slow_30fps_ratio": DEFAULT_MAX_SLOW_30FPS_RATIO,
+        "max_enemy_count": DEFAULT_MAX_ENEMY_COUNT,
+        "max_projectile_count": DEFAULT_MAX_PROJECTILE_COUNT,
+        "max_active_effects": DEFAULT_MAX_ACTIVE_EFFECTS,
+        "duration_tolerance_seconds": DEFAULT_DURATION_TOLERANCE_SECONDS,
+        "min_target_duration_seconds": 0.0,
+        "min_sample_count": 1,
+        "required_input_mode": None,
+        "expected_terminal_kind": None,
+    },
+    "release-local": {
+        "min_average_fps": 55.0,
+        "min_worst_frame_fps": DEFAULT_MIN_WORST_FRAME_FPS,
+        "max_slow_30fps_ratio": 0.01,
+        "max_enemy_count": DEFAULT_MAX_ENEMY_COUNT,
+        "max_projectile_count": DEFAULT_MAX_PROJECTILE_COUNT,
+        "max_active_effects": DEFAULT_MAX_ACTIVE_EFFECTS,
+        "duration_tolerance_seconds": DEFAULT_DURATION_TOLERANCE_SECONDS,
+        "min_target_duration_seconds": 600.0,
+        "min_sample_count": 20,
+        "required_input_mode": "demo",
+        "expected_terminal_kind": "victory",
+    },
+}
 
 
 def load_json_object(path: Path) -> dict[str, Any]:
@@ -64,6 +94,12 @@ def close_enough(left: float, right: float, *, abs_tol: float = 0.01, rel_tol: f
 
 def fps_from_frame_seconds(frame_seconds: float) -> float:
     return 1.0 / frame_seconds if frame_seconds > 0 else 0.0
+
+
+def profile_defaults(profile: str) -> dict[str, Any]:
+    if profile not in PROFILE_DEFAULTS:
+        raise ValueError(f"unknown Runtime performance profile `{profile}`")
+    return PROFILE_DEFAULTS[profile].copy()
 
 
 def validate_frame_metrics(
@@ -168,6 +204,7 @@ def validate_samples(
     max_enemy_count: int,
     max_projectile_count: int,
     max_active_effects: int,
+    min_sample_count: int,
     errors: list[str],
     warnings: list[str],
 ) -> dict[str, Any]:
@@ -218,6 +255,8 @@ def validate_samples(
         max_visible_projectiles = max(max_visible_projectiles, visible_projectiles)
         max_effects = max(max_effects, active_effects)
 
+    if sample_count < min_sample_count:
+        errors.append(f"samples: {sample_count} sample(s) below required minimum {min_sample_count}")
     if max_visible_enemies > int(max_enemy_count * 0.75):
         warnings.append(f"samples.visible_enemies: peak {max_visible_enemies} is near ceiling {max_enemy_count}")
 
@@ -233,8 +272,10 @@ def validate_final_metrics(
     payload: dict[str, Any],
     *,
     duration_tolerance_seconds: float,
+    min_target_duration_seconds: float,
     max_enemy_count: int,
     max_projectile_count: int,
+    expected_terminal_kind: str | None,
     errors: list[str],
 ) -> dict[str, Any]:
     run_config = payload.get("run_config")
@@ -272,6 +313,11 @@ def validate_final_metrics(
         errors.append("final_metrics.tick_rate: does not match run_config.tick_rate")
     if target_duration <= 0:
         errors.append("run_config.duration_seconds: must be positive")
+    if target_duration < min_target_duration_seconds:
+        errors.append(
+            f"run_config.duration_seconds: {target_duration:.3f} is below required minimum "
+            f"{min_target_duration_seconds:.3f}"
+        )
     if duration_seconds < 0:
         errors.append("final_metrics.duration_seconds: must be non-negative")
     if target_duration > 0 and duration_seconds > target_duration + duration_tolerance_seconds:
@@ -297,6 +343,11 @@ def validate_final_metrics(
         finite_number(terminal.get("time_seconds"), "final_metrics.terminal.time_seconds", errors)
         if terminal_kind not in {"victory", "defeat"}:
             errors.append(f"final_metrics.terminal.kind: expected victory or defeat, got `{terminal_kind}`")
+        if expected_terminal_kind is not None and terminal_kind != expected_terminal_kind:
+            errors.append(
+                f"final_metrics.terminal.kind: expected `{expected_terminal_kind}` for this profile, "
+                f"got `{terminal_kind}`"
+            )
 
     return {
         "map_id": map_id,
@@ -332,14 +383,48 @@ def validate_privacy(payload: dict[str, Any], errors: list[str]) -> dict[str, An
 def build_report(
     capture_path: Path,
     *,
-    min_average_fps: float = DEFAULT_MIN_AVERAGE_FPS,
-    min_worst_frame_fps: float = DEFAULT_MIN_WORST_FRAME_FPS,
-    max_slow_30fps_ratio: float = DEFAULT_MAX_SLOW_30FPS_RATIO,
-    max_enemy_count: int = DEFAULT_MAX_ENEMY_COUNT,
-    max_projectile_count: int = DEFAULT_MAX_PROJECTILE_COUNT,
-    max_active_effects: int = DEFAULT_MAX_ACTIVE_EFFECTS,
-    duration_tolerance_seconds: float = DEFAULT_DURATION_TOLERANCE_SECONDS,
+    profile: str = DEFAULT_PROFILE,
+    min_average_fps: float | None = None,
+    min_worst_frame_fps: float | None = None,
+    max_slow_30fps_ratio: float | None = None,
+    max_enemy_count: int | None = None,
+    max_projectile_count: int | None = None,
+    max_active_effects: int | None = None,
+    duration_tolerance_seconds: float | None = None,
+    min_target_duration_seconds: float | None = None,
+    min_sample_count: int | None = None,
+    required_input_mode: str | None = None,
+    expected_terminal_kind: str | None = None,
 ) -> dict[str, Any]:
+    defaults = profile_defaults(profile)
+    min_average_fps = float(defaults["min_average_fps"] if min_average_fps is None else min_average_fps)
+    min_worst_frame_fps = float(
+        defaults["min_worst_frame_fps"] if min_worst_frame_fps is None else min_worst_frame_fps
+    )
+    max_slow_30fps_ratio = float(
+        defaults["max_slow_30fps_ratio"] if max_slow_30fps_ratio is None else max_slow_30fps_ratio
+    )
+    max_enemy_count = int(defaults["max_enemy_count"] if max_enemy_count is None else max_enemy_count)
+    max_projectile_count = int(
+        defaults["max_projectile_count"] if max_projectile_count is None else max_projectile_count
+    )
+    max_active_effects = int(defaults["max_active_effects"] if max_active_effects is None else max_active_effects)
+    duration_tolerance_seconds = float(
+        defaults["duration_tolerance_seconds"]
+        if duration_tolerance_seconds is None
+        else duration_tolerance_seconds
+    )
+    min_target_duration_seconds = float(
+        defaults["min_target_duration_seconds"]
+        if min_target_duration_seconds is None
+        else min_target_duration_seconds
+    )
+    min_sample_count = int(defaults["min_sample_count"] if min_sample_count is None else min_sample_count)
+    required_input_mode = defaults["required_input_mode"] if required_input_mode is None else required_input_mode
+    expected_terminal_kind = (
+        defaults["expected_terminal_kind"] if expected_terminal_kind is None else expected_terminal_kind
+    )
+
     payload = load_json_object(capture_path)
     errors: list[str] = []
     warnings: list[str] = []
@@ -353,6 +438,8 @@ def build_report(
     input_mode = nonempty_string(payload.get("input_mode"), "input_mode", errors)
     if input_mode not in {"demo", "keyboard"}:
         errors.append(f"input_mode: expected demo or keyboard, got `{input_mode}`")
+    if required_input_mode is not None and input_mode != required_input_mode:
+        errors.append(f"input_mode: expected `{required_input_mode}` for profile `{profile}`, got `{input_mode}`")
     simulation_speed = finite_number(payload.get("simulation_speed"), "simulation_speed", errors)
     if simulation_speed <= 0:
         errors.append("simulation_speed: must be positive")
@@ -370,14 +457,17 @@ def build_report(
         max_enemy_count=max_enemy_count,
         max_projectile_count=max_projectile_count,
         max_active_effects=max_active_effects,
+        min_sample_count=min_sample_count,
         errors=errors,
         warnings=warnings,
     )
     final_summary = validate_final_metrics(
         payload,
         duration_tolerance_seconds=duration_tolerance_seconds,
+        min_target_duration_seconds=min_target_duration_seconds,
         max_enemy_count=max_enemy_count,
         max_projectile_count=max_projectile_count,
+        expected_terminal_kind=expected_terminal_kind,
         errors=errors,
     )
     privacy_summary = validate_privacy(payload, errors)
@@ -386,6 +476,7 @@ def build_report(
     return {
         "report_version": 1,
         "source": str(capture_path),
+        "profile": profile,
         "decision": decision,
         "thresholds": {
             "min_average_fps": min_average_fps,
@@ -395,6 +486,10 @@ def build_report(
             "max_projectile_count": max_projectile_count,
             "max_active_effects": max_active_effects,
             "duration_tolerance_seconds": duration_tolerance_seconds,
+            "min_target_duration_seconds": min_target_duration_seconds,
+            "min_sample_count": min_sample_count,
+            "required_input_mode": required_input_mode,
+            "expected_terminal_kind": expected_terminal_kind,
         },
         "summary": {
             "kind": kind,
@@ -409,6 +504,7 @@ def build_report(
         "warnings": warnings,
         "limitations": [
             "This validates one local Runtime playtest capture only; it is not Steam Deck or broad hardware coverage.",
+            "The release-local profile is stricter than smoke, but still remains a single-machine automated gate.",
             "Frame timing comes from Bevy runtime frame deltas and does not replace GPU profiling or memory growth checks.",
             "Manual playtest readability, fun, death clarity, and content acceptance remain separate human gates.",
         ],
@@ -423,6 +519,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         "# Runtime Performance Capture Validation",
         "",
         f"- Source: `{report['source']}`",
+        f"- Profile: `{report['profile']}`",
         f"- Decision: `{report['decision']}`",
         f"- Input mode: `{report['summary']['input_mode']}`",
         f"- Simulation speed: `{report['summary']['simulation_speed']}`",
@@ -460,17 +557,23 @@ def main() -> int:
     parser.add_argument("capture", type=Path, help="Runtime --playtest-report JSON")
     parser.add_argument("--report", type=Path, default=None, help="Write JSON validation report")
     parser.add_argument("--markdown", type=Path, default=None, help="Write Markdown validation summary")
-    parser.add_argument("--min-average-fps", type=float, default=DEFAULT_MIN_AVERAGE_FPS)
-    parser.add_argument("--min-worst-frame-fps", type=float, default=DEFAULT_MIN_WORST_FRAME_FPS)
-    parser.add_argument("--max-slow-30fps-ratio", type=float, default=DEFAULT_MAX_SLOW_30FPS_RATIO)
-    parser.add_argument("--max-enemy-count", type=int, default=DEFAULT_MAX_ENEMY_COUNT)
-    parser.add_argument("--max-projectile-count", type=int, default=DEFAULT_MAX_PROJECTILE_COUNT)
-    parser.add_argument("--max-active-effects", type=int, default=DEFAULT_MAX_ACTIVE_EFFECTS)
-    parser.add_argument("--duration-tolerance-seconds", type=float, default=DEFAULT_DURATION_TOLERANCE_SECONDS)
+    parser.add_argument("--profile", choices=sorted(PROFILE_DEFAULTS), default=DEFAULT_PROFILE)
+    parser.add_argument("--min-average-fps", type=float, default=None)
+    parser.add_argument("--min-worst-frame-fps", type=float, default=None)
+    parser.add_argument("--max-slow-30fps-ratio", type=float, default=None)
+    parser.add_argument("--max-enemy-count", type=int, default=None)
+    parser.add_argument("--max-projectile-count", type=int, default=None)
+    parser.add_argument("--max-active-effects", type=int, default=None)
+    parser.add_argument("--duration-tolerance-seconds", type=float, default=None)
+    parser.add_argument("--min-target-duration-seconds", type=float, default=None)
+    parser.add_argument("--min-sample-count", type=int, default=None)
+    parser.add_argument("--required-input-mode", choices=["demo", "keyboard"], default=None)
+    parser.add_argument("--expected-terminal-kind", choices=["victory", "defeat"], default=None)
     args = parser.parse_args()
 
     report = build_report(
         args.capture,
+        profile=args.profile,
         min_average_fps=args.min_average_fps,
         min_worst_frame_fps=args.min_worst_frame_fps,
         max_slow_30fps_ratio=args.max_slow_30fps_ratio,
@@ -478,6 +581,10 @@ def main() -> int:
         max_projectile_count=args.max_projectile_count,
         max_active_effects=args.max_active_effects,
         duration_tolerance_seconds=args.duration_tolerance_seconds,
+        min_target_duration_seconds=args.min_target_duration_seconds,
+        min_sample_count=args.min_sample_count,
+        required_input_mode=args.required_input_mode,
+        expected_terminal_kind=args.expected_terminal_kind,
     )
     if args.report is not None:
         args.report.parent.mkdir(parents=True, exist_ok=True)

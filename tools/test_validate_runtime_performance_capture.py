@@ -156,6 +156,44 @@ def valid_capture() -> dict:
     }
 
 
+def release_local_capture() -> dict:
+    capture = valid_capture()
+    capture["run_config"]["duration_seconds"] = 600.0
+    capture["frame_metrics"] = {
+        "frame_count": 3600,
+        "total_frame_seconds": 60.0,
+        "average_frame_seconds": 1.0 / 60.0,
+        "average_fps": 60.0,
+        "min_frame_seconds": 0.010,
+        "max_frame_seconds": 0.050,
+        "worst_frame_fps": 20.0,
+        "slow_frame_count_45fps": 12,
+        "slow_frame_count_30fps": 4,
+    }
+    samples = []
+    for index in range(20):
+        sample = dict(capture["samples"][min(index, 1)])
+        sample["time_seconds"] = float(index * 30)
+        sample["kills"] = index * 25
+        sample["level"] = 1 + index // 2
+        sample["visible_enemies"] = min(12 + index, 40)
+        sample["visible_projectiles"] = min(5 + index * 2, 80)
+        sample["active_effects"] = min(3 + index, 32)
+        sample["last_event_kind"] = "terminal" if index == 19 else "tick"
+        samples.append(sample)
+    capture["samples"] = samples
+    capture["final_metrics"]["duration_seconds"] = 600.0
+    capture["final_metrics"]["terminal"]["time_seconds"] = 600.0
+    capture["final_metrics"]["terminal"]["kind"] = "victory"
+    capture["final_metrics"]["terminal"]["final_level"] = 11
+    capture["final_metrics"]["terminal"]["kills"] = 475
+    capture["final_metrics"]["kills"] = 475
+    capture["final_metrics"]["level"] = 11
+    capture["final_metrics"]["max_enemy_count"] = 40
+    capture["final_metrics"]["max_projectile_count"] = 80
+    return capture
+
+
 class RuntimePerformanceCaptureValidatorTests(unittest.TestCase):
     def test_valid_capture_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -183,6 +221,31 @@ class RuntimePerformanceCaptureValidatorTests(unittest.TestCase):
 
             self.assertEqual(report["decision"], "runtime_performance_capture_invalid")
             self.assertTrue(any("average_fps" in error for error in report["errors"]))
+
+    def test_short_capture_fails_release_local_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            capture_path = Path(temp_dir) / "capture.json"
+            write_json(capture_path, valid_capture())
+
+            report = build_report(capture_path, profile="release-local")
+
+            self.assertEqual(report["decision"], "runtime_performance_capture_invalid")
+            self.assertEqual(report["profile"], "release-local")
+            self.assertTrue(any("duration_seconds" in error for error in report["errors"]))
+            self.assertTrue(any("sample(s) below required minimum" in error for error in report["errors"]))
+
+    def test_release_local_profile_passes_long_demo_victory(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            capture_path = Path(temp_dir) / "capture.json"
+            write_json(capture_path, release_local_capture())
+
+            report = build_report(capture_path, profile="release-local")
+
+            self.assertEqual(report["decision"], "runtime_performance_capture_valid")
+            self.assertEqual(report["profile"], "release-local")
+            self.assertEqual(report["thresholds"]["min_target_duration_seconds"], 600.0)
+            self.assertEqual(report["thresholds"]["min_sample_count"], 20)
+            self.assertEqual(report["summary"]["final_metrics"]["terminal"], "victory")
 
     def test_entity_ceiling_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -252,6 +315,38 @@ class RuntimePerformanceCaptureValidatorTests(unittest.TestCase):
                 "runtime_performance_capture_valid",
             )
             self.assertIn("Runtime Performance Capture Validation", markdown_path.read_text(encoding="utf-8"))
+
+    def test_cli_release_local_profile_writes_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            capture_path = root / "capture.json"
+            report_path = root / "report.json"
+            markdown_path = root / "summary.md"
+            write_json(capture_path, release_local_capture())
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR),
+                    str(capture_path),
+                    "--profile",
+                    "release-local",
+                    "--report",
+                    str(report_path),
+                    "--markdown",
+                    str(markdown_path),
+                ],
+                cwd=REPO_ROOT,
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(report["decision"], "runtime_performance_capture_valid")
+            self.assertEqual(report["profile"], "release-local")
+            self.assertIn("- Profile: `release-local`", markdown_path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

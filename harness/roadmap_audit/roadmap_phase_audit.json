@@ -92,10 +92,11 @@
         "harness/reports/2026-05-26_local_binary_launch_diagnostic_after_restart_001/summary.md",
         "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md",
         "harness/reports/2026-05-26_runtime_demo_capture_after_restart_001/summary.md",
-        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/summary.md"
+        "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/summary.md",
+        "harness/reports/2026-05-30_runtime_release_local_performance_gate_001/summary.md"
       ],
       "gaps": [
-        "当前会话 Runtime demo capture 已通过：demo-input 以 8x simulation speed 跑满 240 秒，记录 121 个 telemetry sample，覆盖 Boss 出场 / 阶段 / 技能、受伤、XP、升级选择、终局报告和自动退出；Runtime 本地数据控制 smoke 也已验证隐私说明默认本地、save-state-v1 导出、隐式删除拒绝、显式存档删除、本地 telemetry/replay/crash 数据导出和显式目录删除。",
+        "当前会话 Runtime demo capture 已通过：demo-input 以 8x simulation speed 跑满 240 秒，记录 121 个 telemetry sample，覆盖 Boss 出场 / 阶段 / 技能、受伤、XP、升级选择、终局报告和自动退出；Runtime 本地数据控制 smoke 也已验证隐私说明默认本地、save-state-v1 导出、隐式删除拒绝、显式存档删除、本地 telemetry/replay/crash 数据导出和显式目录删除；600 秒 demo-input release-local 本机性能门禁已通过，平均 FPS 58.65、30 FPS 以下慢帧占比 0.23%、终局 victory。",
         "仍缺真实人工完整试玩记录和可读性评分；自动 demo capture 与 CLI 本地数据 smoke 不能替代 9 局人工试玩矩阵或发布级 UI 验证。"
       ],
       "blockers": [
@@ -698,12 +699,13 @@
         "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/summary.md",
         "harness/reports/2026-05-29_release_candidate_evidence_runtime_local_data_smoke_001/summary.md",
         "harness/reports/2026-05-29_runtime_native_platform_paths_001/summary.md",
-        "harness/reports/2026-05-29_runtime_surface_contract_native_platform_paths_001/summary.md"
+        "harness/reports/2026-05-29_runtime_surface_contract_native_platform_paths_001/summary.md",
+        "harness/reports/2026-05-30_runtime_release_local_performance_gate_001/summary.md"
       ],
       "gaps": [
         "Demo readiness 报告明确 demo_not_ready。",
         "正式 content/base_demo 普通敌人数量仍低于 Demo 目标；Phase 4 full pack 候选已进入 simulated_candidates，20 seed Bot gate 已通过策略校准复测，但仍未通过人工试玩和 accepted content lockfile。",
-        "已有当前会话 240 秒 Runtime demo capture、Runtime 本地数据控制 smoke 和显式原生平台数据目录解析作为内部证据，RC telemetry_privacy gate 已纳入该 smoke 但仍保持 waiting；公开 Demo 仍缺稳定运行矩阵、外部玩家反馈、真实人工试玩、Runtime 设置 UI、发布级本地导出 / 删除按钮、图鉴 UI 和人工隐私 / 平台 / 法律审查。"
+        "已有当前会话 240 秒 Runtime demo capture、600 秒 release-local 本机性能门禁、Runtime 本地数据控制 smoke 和显式原生平台数据目录解析作为内部证据，RC telemetry_privacy gate 已纳入该 smoke 但仍保持 waiting；公开 Demo 仍缺稳定运行矩阵、外部玩家反馈、真实人工试玩、Runtime 设置 UI、发布级本地导出 / 删除按钮、图鉴 UI、多硬件 / GPU / 内存性能覆盖和人工隐私 / 平台 / 法律审查。"
       ],
       "blockers": [
         "manual_playtest_still_pending",
@@ -740,10 +742,11 @@
         "harness/reports/2026-05-27_bot_policy_mid_skill_calibration_replay_regression_001/summary.md",
         "harness/reports/2026-05-27_harness_performance_budget_bot_policy_mid_skill_calibration_20seed_001/summary.md",
         "harness/reports/2026-05-29_runtime_local_data_controls_smoke_001/summary.md",
-        "harness/reports/2026-05-29_release_candidate_evidence_runtime_local_data_smoke_001/summary.md"
+        "harness/reports/2026-05-29_release_candidate_evidence_runtime_local_data_smoke_001/summary.md",
+        "harness/reports/2026-05-30_runtime_release_local_performance_gate_001/summary.md"
       ],
       "gaps": [
-        "内容规模、成就、设置、手柄支持、Steam 页面素材、首小时人工体验和发布级 Runtime FPS / 内存性能证据都未达到上线前要求；headless 实体预算与 Bot matrix 已有 Phase 4 full pack 180 局 valid/pass 报告，Runtime 已有 10 秒本机性能 smoke 与本地数据控制 smoke，但仍不是发布级性能、平台路径、隐私或 UI 验收。",
+        "内容规模、成就、设置、手柄支持、Steam 页面素材、首小时人工体验和发布级 Runtime 内存 / GPU / 多硬件性能证据都未达到上线前要求；headless 实体预算与 Bot matrix 已有 Phase 4 full pack 180 局 valid/pass 报告，Runtime 已有 10 秒本机性能 smoke、本地数据控制 smoke 和 600 秒 release-local 本机性能门禁，但仍不是平台路径、隐私、UI、人审或多硬件发布验收。",
         "当前 release candidate 与 release package manifest 都仍为 not-ready。"
       ],
       "blockers": [
