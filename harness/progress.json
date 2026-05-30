@@ -1401,6 +1401,11 @@
       "id": "rl_caramel_late_conversion_split_diagnostic",
       "summary": "对 chained diagnostic 剩余的 caramel-workshop 300 秒缺口做单图 failed-only trace 复查：三 seed 仍为 0.0 胜率，seed 63402 在 41.333s opening action 5 corner lock，seeds 63400/63401 在 213.2166s/235.3546s late hazard/low-health 死亡。clean risk 样本拆出 60-180s 158 条与 180-300s 100 条，合并 258 条 valid 且 0 warning；route hotspots 显示 147 个负 route_recovery rows 中 100 个在 opening。已记录 fail_20260530_016，下一轮必须拆 caramel opening escape 与 late conversion。",
       "report": "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/summary.md"
+    },
+    {
+      "id": "rl_caramel_opening_edge_branch_probe",
+      "summary": "对 caramel-workshop:63402 opening action 5 corner lock 做 edge branch scope probe：0-60s broad branch 能修 60 秒目标但因 300s/caramel action 5 ratio +0.2746 超阈值失败；30-45s narrow branch 只在 31.2665s 改 1 次 action 5 -> 7，target preflight 通过，high-pressure 60/180/300s parent no-regression 以 0 blockers 通过。caramel 300 秒平均存活提升到 180.0673s 但胜率仍为 0.0，已记录 fail_20260530_017；该结果只能作为 opening repair constraint，不是 policy candidate。",
+      "report": "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md"
     }
   ],
   "current_findings": [

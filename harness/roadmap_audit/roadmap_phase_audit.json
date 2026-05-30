@@ -770,7 +770,14 @@
         "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_trace_comparison.json",
         "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_route_recovery_trace_hotspots.json",
         "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_clean_risk_samples_validation.json",
-        "harness/failed_cases/fail_20260530_016_caramel_split_failure_modes.json"
+        "harness/failed_cases/fail_20260530_016_caramel_split_failure_modes.json",
+        "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md",
+        "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_comparison_60s.json",
+        "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_comparison_180s.json",
+        "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_comparison_300s.json",
+        "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_window_regression_vs_parent.json",
+        "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_target_seed_preflight.json",
+        "harness/failed_cases/fail_20260530_017_caramel_opening_branch_scope.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -819,7 +826,8 @@
         "edge recovery supervised init 已证明硬标签 SB3 能通过离线 alignment 和 soda-creek:63402 target preflight，但在线 60 秒三 seed comparison 出现 action 7 ratio 0.9987 的动作塌缩，并让 seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013，下一步应改做状态条件分派 / constrained opening branch。",
         "edge_recovery_branch 条件分派已扩大到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression，三窗口均通过，且 soda-creek 60 秒与 180 秒胜率均从 0.6667 提升到 1.0，300 秒平均存活从 143.0974s 提升到 221.8073s；但 300 秒三图胜率仍全为 0.0，gate 仍为 multimap_comparison_recorded_needs_policy_repair。已记录 fail_20260530_014，因此它只能作为 stage 01 opening repair 证据，不能进入 stage 03、RL test Bot 或 acceptance。",
         "edge_recovery_branch + late_recovery_filter chained diagnostic 已完成 60/180/300 秒 high-pressure 三图复跑，并相对单独 edge branch 通过 no-regression；300 秒 soda-creek 提升到 1.0 胜率、cracked-star-jar 提升到 0.3333，但 caramel-workshop 仍为 0.0。已记录 fail_20260530_015，因此它仍只是 repair diagnostic 和 late-risk 样本来源，不是策略质量证据或 acceptance。",
-        "caramel-workshop 单图 trace 复查确认剩余缺口是 split failure：seed 63402 在 opening_lt_60 右下角 action 5 lock，seeds 63400/63401 在 late_180_to_300 低血量 + hazard pressure 死亡；clean risk subset 258 条 valid、0 warning，但 route hotspots 主要集中在 opening。已记录 fail_20260530_016。"
+        "caramel-workshop 单图 trace 复查确认剩余缺口是 split failure：seed 63402 在 opening_lt_60 右下角 action 5 lock，seeds 63400/63401 在 late_180_to_300 低血量 + hazard pressure 死亡；clean risk subset 258 条 valid、0 warning，但 route hotspots 主要集中在 opening。已记录 fail_20260530_016。",
+        "caramel-workshop opening edge branch scope probe 已把 seed 63402 opening 修复收窄到 30-45s 单次 action 5 -> 7 分派，并通过 target preflight 与 60/180/300s parent no-regression；但 300 秒 caramel 胜率仍为 0.0，broad 0-60s scope 还会触发 action 5 ratio regression。已记录 fail_20260530_017。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -853,7 +861,8 @@
         "start alignment precheck 已拒绝当前 parent；下一步将 edge recovery anchor 蒸馏 / supervised 初始化为 SB3 checkpoint，并先过离线 alignment，再考虑 PPO 或 target-seed preflight。",
         "硬标签 supervised SB3 已把 target seed 修复变成 action 7 全局塌缩；下一步不要继续全局 opening policy，改做按 boundary/enemy-pressure state 条件触发的 edge recovery branch / adapter。",
         "edge_recovery_branch 已完成 high-pressure 60/180/300 秒 parent no-regression 并记录 long-window gap；下一轮不要把该 branch 推进为 policy candidate，应保留其 60/180 秒 opening repair 证据，另起 mid / late route recovery branch 或 closed-loop repair 来处理 300 秒三图全败。",
-        "基于 edge_recovery_branch + late_recovery_filter 与 caramel 单图 trace 诊断结果，下一轮应拆分 caramel-workshop repair：先处理 seed 63402 opening edge lock，再处理 seeds 63400/63401 的 180-300 秒 hazard/low-health conversion；把 60/180/300 秒 no-regression、validated clean risk samples、fail_20260530_015 和 fail_20260530_016 作为保守约束。"
+        "基于 edge_recovery_branch + late_recovery_filter 与 caramel 单图 trace 诊断结果，下一轮应拆分 caramel-workshop repair：先处理 seed 63402 opening edge lock，再处理 seeds 63400/63401 的 180-300 秒 hazard/low-health conversion；把 60/180/300 秒 no-regression、validated clean risk samples、fail_20260530_015 和 fail_20260530_016 作为保守约束。",
+        "caramel opening repair 应保留 30-45s 单点分派约束，拒绝 broad 0-60s scope；下一步把该 opening constraint 与独立 caramel late conversion objective 串联验证，仍必须跑 60/180/300s high-pressure no-regression。"
       ]
     },
     {

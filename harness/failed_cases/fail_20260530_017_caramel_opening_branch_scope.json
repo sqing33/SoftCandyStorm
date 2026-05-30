@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260530_017",
+  "category": "rl_policy",
+  "content_id": "caramel-workshop-opening-edge-branch-scope",
+  "seed": "63400-63402",
+  "bot": "caramel-edge-recovery-branch-over-e30-mid-anchor-parent",
+  "time_seconds": 300.0,
+  "symptom": "A broad 0-60s caramel-workshop edge_recovery_branch fixed the seed 63402 opening death but failed strict 300s parent no-regression because action 5 ratio increased by 0.2746, above the allowed 0.25 threshold. A narrower 30-45s branch passed no-regression and fixed the target opening seed, but caramel-workshop still had 0.0 win rate at 300s.",
+  "root_cause": "The full 0-60s branch over-dispatched after the decisive opening escape and changed long-window action distribution. The actual opening repair only needed one state-conditioned intervention at 31.2665s, while the remaining 300s failure is a separate late hazard / low-health conversion problem.",
+  "fix": "Use the 30-45s caramel opening branch scope as an evaluation-only repair constraint for seed 63402, and reject the broad 0-60s caramel scope. Keep late conversion as a separate repair objective using validated 180-300s caramel risk samples and successful long-window trajectory evidence.",
+  "validation": "caramel_window30_45_comparison_60s.json showed the target seed survived the 60s window with one branch decision. narrow_branch_comparison_60s/180s/300s.json ran high-pressure maps with seeds 63400-63402; narrow_window_regression_vs_parent.json reported policy_window_regression_passed with 0 blockers. narrow_target_seed_preflight.json passed for caramel-workshop:63402, and the narrow branch sample validations reported edge_recovery_samples_valid for one sample at 31.2665s.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/window_regression_vs_parent.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_window_regression_vs_parent.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_target_seed_preflight.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_samples_60s_caramel-workshop_validation.json"
+  ]
+}

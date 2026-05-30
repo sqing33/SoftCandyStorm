@@ -1696,7 +1696,16 @@
             "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_trace_comparison.json",
             "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_route_recovery_trace_hotspots.json",
             "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_clean_risk_samples_validation.json",
-            "harness/failed_cases/fail_20260530_016_caramel_split_failure_modes.json"
+            "harness/failed_cases/fail_20260530_016_caramel_split_failure_modes.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/window_regression_vs_parent.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_comparison_60s.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_comparison_180s.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_comparison_300s.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_window_regression_vs_parent.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_target_seed_preflight.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_samples_60s_caramel-workshop_validation.json",
+            "harness/failed_cases/fail_20260530_017_caramel_opening_branch_scope.json"
           ],
           "gaps": [
             "cracked-star-jar 胜利终局 trajectory sample filter 已保留 358 条 210-240 秒 movement samples，覆盖 2 个 KiteBot victory episode，并通过 behavior clone dry-run；但该批样本只是 terminal-conversion 正例训练输入，样本量小、只覆盖单图，且 high_action_persistence 为 watch，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
@@ -1817,7 +1826,8 @@
             "edge recovery supervised init 已证明硬标签 SB3 能通过离线 alignment 和 soda-creek:63402 target preflight，但在线 60 秒三 seed comparison 出现 action 7 ratio 0.9987 的动作塌缩，并让 seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013，下一步应改做状态条件分派 / constrained opening branch。",
             "edge_recovery_branch 条件分派已扩大到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression，三窗口均通过：soda-creek 60 秒胜率从 0.6667 提升到 1.0，180 秒从 0.6667 提升到 1.0，300 秒平均存活从 143.0974s 提升到 221.8073s；但 300 秒三图胜率仍全为 0.0，已记录 fail_20260530_014。该分支只能作为 stage 01 opening repair / no-regression 证据，不能解除 RL acceptance、stage 03 或 policy candidate 阻塞。",
             "edge_recovery_branch + late_recovery_filter chained high-pressure diagnostic 已完成 60/180/300 秒三图同 seed 63400-63402 对比，并相对单独 edge branch 通过 window no-regression（0 blockers）。300 秒 soda-creek 提升到 1.0 胜率、cracked-star-jar 提升到 0.3333，但 caramel-workshop 仍为 0.0，已记录 fail_20260530_015；2000 条 late-risk 样本 valid 但有 6 条 target risk score warning。因此该组合只能作为 repair diagnostic 和样本来源，不能解除 RL acceptance、stage 03 或 policy candidate 阻塞。",
-            "caramel-workshop 单图 failed-only trace 复查把剩余缺口拆成两个子问题：seed 63402 在 41.333s opening action 5 corner lock，seeds 63400/63401 在 213.2166s/235.3546s late hazard + low-health 状态死亡。clean risk subset 合并 258 条 valid 且 0 warning，但 route hotspots 的 147 个负 route_recovery rows 中 100 个在 opening。已记录 fail_20260530_016；下一轮必须拆 caramel opening escape 与 late conversion，不能把问题简化成 late filter 权重不足。"
+            "caramel-workshop 单图 failed-only trace 复查把剩余缺口拆成两个子问题：seed 63402 在 41.333s opening action 5 corner lock，seeds 63400/63401 在 213.2166s/235.3546s late hazard + low-health 状态死亡。clean risk subset 合并 258 条 valid 且 0 warning，但 route hotspots 的 147 个负 route_recovery rows 中 100 个在 opening。已记录 fail_20260530_016；下一轮必须拆 caramel opening escape 与 late conversion，不能把问题简化成 late filter 权重不足。",
+            "caramel-workshop opening edge branch scope probe 证明 broad 0-60s caramel branch 虽能修 target seed 63402，但会触发 300s/caramel action 5 ratio +0.2746 online regression；30-45s narrow branch 只在 31.2665s 触发 1 次 action 5 -> 7，target preflight 和 60/180/300s parent no-regression 均通过。已记录 fail_20260530_017；该结果只能作为 evaluation-only opening repair constraint，300 秒 caramel 胜率仍为 0.0，late conversion 仍阻塞。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
