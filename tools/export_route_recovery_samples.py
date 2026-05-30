@@ -206,6 +206,7 @@ def choose_target_action(
     diagnostics: dict[str, Any],
     action_score: dict[str, Any],
     edge_distance: float,
+    preferred_target_actions: list[int] | None = None,
 ) -> tuple[int | None, dict[str, Any]]:
     entries = score_entries(action_score)
     original_score = None
@@ -213,6 +214,31 @@ def choose_target_action(
         if item["action"] == original_action:
             original_score = item["score"]
             break
+    if preferred_target_actions:
+        for rank, action in enumerate(preferred_target_actions, start=1):
+            if action == original_action:
+                continue
+            if action_pushes_into_edge(action, diagnostics, edge_distance):
+                continue
+            decision: dict[str, Any] = {
+                "target_selection": "preferred_non_wallward_action",
+                "preferred_target_actions": preferred_target_actions,
+                "target_preference_rank": rank,
+            }
+            for item in entries:
+                if item["action"] == action:
+                    decision["target_rank"] = item["rank"]
+                    decision["target_action_score"] = round(float(item["score"]), 6)
+                    break
+            if original_score is not None:
+                decision["original_action_score"] = round(float(original_score), 6)
+                if "target_action_score" in decision:
+                    decision["score_margin"] = round(
+                        float(decision["target_action_score"] - original_score),
+                        6,
+                    )
+            return action, decision
+
     for item in entries:
         action = int(item["action"])
         if action == original_action:
@@ -338,6 +364,8 @@ def build_report(
     edge_distance: float,
     route_recovery_threshold: float,
     min_boundary_edge_risk: float,
+    route_recovery_filter: str = "below_threshold",
+    min_enemy_pressure_risk: float | None = None,
     min_seconds: float | None = None,
     max_seconds: float | None = None,
     phase_duration_seconds: float | None = None,
@@ -347,6 +375,8 @@ def build_report(
     min_hazard_pressure_risk: float | None = None,
     min_boss_pressure_risk: float | None = None,
     original_actions: set[int] | None = None,
+    preferred_target_actions: list[int] | None = None,
+    preferred_target_selection: str = "first",
     map_ids: set[str] | None = None,
     max_samples: int | None = None,
 ) -> dict[str, Any]:
@@ -354,6 +384,8 @@ def build_report(
     samples: list[dict[str, Any]] = []
     inspected_step_count = 0
     negative_route_count = 0
+    route_recovery_match_count = 0
+    missing_route_recovery_count = 0
     boundary_hotspot_count = 0
     missing_observation_count = 0
     original_not_edge_count = 0
@@ -361,6 +393,7 @@ def build_report(
     low_health_filtered_count = 0
     high_health_filtered_count = 0
     pressure_filtered_count = 0
+    enemy_pressure_filtered_count = 0
     low_health_risk_filtered_count = 0
     hazard_pressure_filtered_count = 0
     boss_pressure_filtered_count = 0
@@ -392,9 +425,16 @@ def build_report(
                 outside_time_window_count += 1
                 continue
             route_recovery = as_number((step.get("reward_breakdown") or {}).get("route_recovery"))
-            if route_recovery is None or route_recovery >= route_recovery_threshold:
+            if route_recovery is None:
+                missing_route_recovery_count += 1
                 continue
-            negative_route_count += 1
+            if route_recovery < 0.0:
+                negative_route_count += 1
+            if route_recovery_filter == "below_threshold" and route_recovery >= route_recovery_threshold:
+                continue
+            if route_recovery_filter != "below_threshold" and route_recovery_filter != "any":
+                raise ValueError(f"unsupported route_recovery_filter: {route_recovery_filter}")
+            route_recovery_match_count += 1
 
             diagnostics = step.get("diagnostics") if isinstance(step.get("diagnostics"), dict) else {}
             boundary = diagnostics.get("boundary", {}) if isinstance(diagnostics, dict) else {}
@@ -403,9 +443,13 @@ def build_report(
                 continue
             boundary_hotspot_count += 1
             pressure_filter_failed = False
+            enemy_pressure_risk = as_number(diagnostics.get("enemy_pressure_risk")) or 0.0
             low_health_risk = as_number(diagnostics.get("low_health_risk")) or 0.0
             hazard_pressure_risk = as_number(diagnostics.get("hazard_pressure_risk")) or 0.0
             boss_pressure_risk = as_number(diagnostics.get("boss_pressure_risk")) or 0.0
+            if min_enemy_pressure_risk is not None and enemy_pressure_risk < min_enemy_pressure_risk:
+                enemy_pressure_filtered_count += 1
+                pressure_filter_failed = True
             if min_low_health_risk is not None and low_health_risk < min_low_health_risk:
                 low_health_risk_filtered_count += 1
                 pressure_filter_failed = True
@@ -460,6 +504,11 @@ def build_report(
                 diagnostics,
                 step.get("action_score") if isinstance(step.get("action_score"), dict) else {},
                 edge_distance,
+                preferred_target_actions=target_preferences(
+                    preferred_target_actions,
+                    selection=preferred_target_selection,
+                    sample_index=len(samples),
+                ),
             )
             if target_action is None:
                 no_target_count += 1
@@ -485,6 +534,10 @@ def build_report(
         if max_samples is not None and len(samples) >= max_samples:
             break
 
+    if route_recovery_filter == "below_threshold":
+        hotspot_scope = "boundary-pinned negative route_recovery hotspots"
+    else:
+        hotspot_scope = "boundary-pinned rows matching the requested time, pressure, action, and map filters"
     write_samples(samples_out, samples)
     return {
         "report_version": 1,
@@ -496,6 +549,9 @@ def build_report(
         "source_trace_count": len(paths),
         "inspected_step_count": inspected_step_count,
         "negative_route_recovery_count": negative_route_count,
+        "route_recovery_filter": route_recovery_filter,
+        "route_recovery_match_count": route_recovery_match_count,
+        "missing_route_recovery_count": missing_route_recovery_count,
         "boundary_hotspot_count": boundary_hotspot_count,
         "outside_time_window_count": outside_time_window_count,
         "map_filtered_trace_count": map_filtered_trace_count,
@@ -505,6 +561,7 @@ def build_report(
         "low_health_filtered_count": low_health_filtered_count,
         "high_health_filtered_count": high_health_filtered_count,
         "pressure_filtered_count": pressure_filtered_count,
+        "enemy_pressure_filtered_count": enemy_pressure_filtered_count,
         "low_health_risk_filtered_count": low_health_risk_filtered_count,
         "hazard_pressure_filtered_count": hazard_pressure_filtered_count,
         "boss_pressure_filtered_count": boss_pressure_filtered_count,
@@ -514,6 +571,7 @@ def build_report(
         "edge_distance": edge_distance,
         "route_recovery_threshold": route_recovery_threshold,
         "min_boundary_edge_risk": min_boundary_edge_risk,
+        "min_enemy_pressure_risk": min_enemy_pressure_risk,
         "min_seconds": min_seconds,
         "max_seconds": max_seconds,
         "phase_duration_seconds": phase_duration_seconds,
@@ -523,6 +581,8 @@ def build_report(
         "min_hazard_pressure_risk": min_hazard_pressure_risk,
         "min_boss_pressure_risk": min_boss_pressure_risk,
         "original_actions": sorted(original_actions) if original_actions is not None else None,
+        "preferred_target_actions": preferred_target_actions,
+        "preferred_target_selection": preferred_target_selection,
         "map_ids": sorted(map_ids) if map_ids is not None else None,
         "map_distribution": count_map(sample.get("map_id") for sample in samples),
         "original_action_distribution": count_map(sample.get("original_action") for sample in samples),
@@ -530,10 +590,26 @@ def build_report(
         "target_label_distribution": count_map(sample.get("target_label") for sample in samples),
         "limitations": [
             "Samples are extracted only from sampled trace rows that include observation vectors.",
-            "The export targets boundary-pinned negative route_recovery hotspots, not all unsafe movement.",
+            f"The export targets {hotspot_scope}, not all unsafe movement.",
             "A successful export is repair training material, not RL policy acceptance.",
         ],
     }
+
+
+def target_preferences(
+    preferred_target_actions: list[int] | None,
+    *,
+    selection: str,
+    sample_index: int,
+) -> list[int] | None:
+    if not preferred_target_actions:
+        return None
+    if selection == "first":
+        return preferred_target_actions
+    if selection != "cycle":
+        raise ValueError(f"unsupported preferred_target_selection: {selection}")
+    offset = sample_index % len(preferred_target_actions)
+    return preferred_target_actions[offset:] + preferred_target_actions[:offset]
 
 
 def write_markdown(report: dict[str, Any], path: Path) -> None:
@@ -544,6 +620,8 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Source traces: `{report['source_trace_count']}`",
         f"- Inspected trace rows: `{report['inspected_step_count']}`",
         f"- Negative route_recovery rows: `{report['negative_route_recovery_count']}`",
+        f"- Route recovery filter: `{report['route_recovery_filter']}`",
+        f"- Route recovery matched rows: `{report['route_recovery_match_count']}`",
         f"- Boundary hotspot rows: `{report['boundary_hotspot_count']}`",
         f"- Outside time window rows: `{report['outside_time_window_count']}`",
         f"- Map filtered traces: `{report['map_filtered_trace_count']}`",
@@ -551,6 +629,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Low health filtered rows: `{report['low_health_filtered_count']}`",
         f"- High health filtered rows: `{report['high_health_filtered_count']}`",
         f"- Pressure filtered rows: `{report['pressure_filtered_count']}`",
+        f"  - Enemy pressure filtered rows: `{report['enemy_pressure_filtered_count']}`",
         f"  - Low health risk filtered rows: `{report['low_health_risk_filtered_count']}`",
         f"  - Hazard pressure filtered rows: `{report['hazard_pressure_filtered_count']}`",
         f"  - Boss pressure filtered rows: `{report['boss_pressure_filtered_count']}`",
@@ -583,7 +662,19 @@ def main() -> int:
     parser.add_argument("--markdown", type=Path, default=None)
     parser.add_argument("--edge-distance", type=float, default=32.0)
     parser.add_argument("--route-recovery-threshold", type=float, default=0.0)
+    parser.add_argument(
+        "--route-recovery-filter",
+        choices=("below-threshold", "any"),
+        default="below-threshold",
+        help="Use `any` for target-specific guard rows that are not limited to negative route_recovery.",
+    )
     parser.add_argument("--min-boundary-edge-risk", type=float, default=0.75)
+    parser.add_argument(
+        "--min-enemy-pressure-risk",
+        type=float,
+        default=None,
+        help="Keep only rows whose trace diagnostics enemy_pressure_risk is at least this value.",
+    )
     parser.add_argument("--min-seconds", type=float, default=None)
     parser.add_argument("--max-seconds", type=float, default=None)
     parser.add_argument(
@@ -628,6 +719,17 @@ def main() -> int:
         help="Comma-separated original policy actions to export, for example `3` or `1,3,6`.",
     )
     parser.add_argument(
+        "--preferred-target-actions",
+        default=None,
+        help="Comma-separated non-wallward repair targets to prefer before score or geometry fallback.",
+    )
+    parser.add_argument(
+        "--preferred-target-selection",
+        choices=("first", "cycle"),
+        default="first",
+        help="Use `cycle` to rotate preferred targets across exported rows.",
+    )
+    parser.add_argument(
         "--map-id",
         action="append",
         default=None,
@@ -658,6 +760,7 @@ def main() -> int:
     ):
         parser.error("--max-health-ratio must be greater than or equal to --min-health-ratio")
     for label, value in [
+        ("--min-enemy-pressure-risk", args.min_enemy_pressure_risk),
         ("--min-low-health-risk", args.min_low_health_risk),
         ("--min-hazard-pressure-risk", args.min_hazard_pressure_risk),
         ("--min-boss-pressure-risk", args.min_boss_pressure_risk),
@@ -679,6 +782,23 @@ def main() -> int:
         invalid_actions = sorted(action for action in original_actions if action not in GYM_ACTION_MOVEMENTS)
         if invalid_actions:
             parser.error(f"--original-actions contains unsupported actions: {invalid_actions}")
+    preferred_target_actions = None
+    if args.preferred_target_actions:
+        try:
+            preferred_target_actions = [
+                int(item.strip())
+                for item in args.preferred_target_actions.split(",")
+                if item.strip()
+            ]
+        except ValueError:
+            parser.error("--preferred-target-actions must be a comma-separated list of integers")
+        if not preferred_target_actions:
+            parser.error("--preferred-target-actions must include at least one action")
+        invalid_targets = sorted(
+            {action for action in preferred_target_actions if action not in GYM_ACTION_MOVEMENTS}
+        )
+        if invalid_targets:
+            parser.error(f"--preferred-target-actions contains unsupported actions: {invalid_targets}")
     map_ids = None
     if args.map_id:
         map_ids = {
@@ -695,7 +815,9 @@ def main() -> int:
         samples_out=args.out,
         edge_distance=args.edge_distance,
         route_recovery_threshold=args.route_recovery_threshold,
+        route_recovery_filter=args.route_recovery_filter.replace("-", "_"),
         min_boundary_edge_risk=args.min_boundary_edge_risk,
+        min_enemy_pressure_risk=args.min_enemy_pressure_risk,
         min_seconds=args.min_seconds,
         max_seconds=args.max_seconds,
         phase_duration_seconds=args.phase_duration_seconds,
@@ -705,6 +827,8 @@ def main() -> int:
         min_hazard_pressure_risk=args.min_hazard_pressure_risk,
         min_boss_pressure_risk=args.min_boss_pressure_risk,
         original_actions=original_actions,
+        preferred_target_actions=preferred_target_actions,
+        preferred_target_selection=args.preferred_target_selection,
         map_ids=map_ids,
         max_samples=args.max_samples,
     )

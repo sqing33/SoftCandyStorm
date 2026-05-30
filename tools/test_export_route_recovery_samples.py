@@ -17,39 +17,48 @@ def write_trace(
     include_observation: bool = True,
     time_seconds: float = 1.0,
     map_id: str = "soda-creek",
+    action: int = 3,
+    route_recovery: float = -0.004,
     health_ratio: float = 0.2,
     low_health_risk: float = 0.0,
+    enemy_pressure_risk: float = 0.7,
     hazard_pressure_risk: float = 0.0,
     boss_pressure_risk: float = 0.0,
+    boundary: dict | None = None,
+    top_actions: list[dict] | None = None,
 ) -> None:
+    if boundary is None:
+        boundary = {
+            "left_distance": 2600.0,
+            "right_distance": 0.0,
+            "bottom_distance": 800.0,
+            "top_distance": 900.0,
+            "min_distance": 0.0,
+            "edge_risk": 1.0,
+        }
+    if top_actions is None:
+        top_actions = [
+            {"action": "3", "score": 0.8},
+            {"action": "7", "score": 0.15},
+            {"action": "0", "score": 0.05},
+        ]
     step = {
         "step": 30,
         "tick": 30,
         "time_seconds": time_seconds,
-        "action": 3,
+        "action": action,
         "reward": -0.1,
         "health": 110.0,
         "level": 1,
         "kills": 2,
-        "reward_breakdown": {"route_recovery": -0.004},
+        "reward_breakdown": {"route_recovery": route_recovery},
         "action_score": {
             "kind": "probability",
-            "top_actions": [
-                {"action": "3", "score": 0.8},
-                {"action": "7", "score": 0.15},
-                {"action": "0", "score": 0.05},
-            ],
+            "top_actions": top_actions,
         },
         "diagnostics": {
-            "boundary": {
-                "left_distance": 2600.0,
-                "right_distance": 0.0,
-                "bottom_distance": 800.0,
-                "top_distance": 900.0,
-                "min_distance": 0.0,
-                "edge_risk": 1.0,
-            },
-            "enemy_pressure_risk": 0.7,
+            "boundary": boundary,
+            "enemy_pressure_risk": enemy_pressure_risk,
             "hazard_pressure_risk": hazard_pressure_risk,
             "boss_pressure_risk": boss_pressure_risk,
             "low_health_risk": low_health_risk,
@@ -290,6 +299,85 @@ class RouteRecoverySampleExportTests(unittest.TestCase):
         self.assertEqual(report["map_ids"], ["cracked-star-jar"])
         self.assertEqual(report["sample_count"], 1)
         self.assertEqual(rows[0]["map_id"], "cracked-star-jar")
+
+    def test_enemy_pressure_filter_keeps_only_high_pressure_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            kept = root / "kept_trace.json"
+            skipped = root / "skipped_trace.json"
+            samples = root / "samples.jsonl"
+            write_trace(kept, enemy_pressure_risk=0.8)
+            write_trace(skipped, enemy_pressure_risk=0.2)
+
+            report = build_report(
+                [root],
+                samples_out=samples,
+                edge_distance=32.0,
+                route_recovery_threshold=0.0,
+                min_boundary_edge_risk=0.75,
+                min_enemy_pressure_risk=0.6,
+            )
+            rows = [json.loads(line) for line in samples.read_text().splitlines()]
+
+        self.assertEqual(report["decision"], "route_recovery_samples_exported")
+        self.assertEqual(report["enemy_pressure_filtered_count"], 1)
+        self.assertEqual(report["sample_count"], 1)
+        self.assertEqual(rows[0]["diagnostics"]["enemy_pressure_risk"], 0.8)
+
+    def test_preferred_targets_can_cycle_success_actions_for_guard_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first = root / "first_trace.json"
+            second = root / "second_trace.json"
+            samples = root / "samples.jsonl"
+            bottom_edge = {
+                "left_distance": 2400.0,
+                "right_distance": 2400.0,
+                "bottom_distance": 0.0,
+                "top_distance": 1800.0,
+                "min_distance": 0.0,
+                "edge_risk": 1.0,
+            }
+            wallward_top_actions = [
+                {"action": "5", "score": 0.78},
+                {"action": "6", "score": 0.12},
+                {"action": "4", "score": 0.07},
+            ]
+            write_trace(
+                first,
+                action=5,
+                route_recovery=0.001,
+                boundary=bottom_edge,
+                top_actions=wallward_top_actions,
+            )
+            write_trace(
+                second,
+                action=5,
+                route_recovery=0.001,
+                boundary=bottom_edge,
+                top_actions=wallward_top_actions,
+            )
+
+            report = build_report(
+                [root],
+                samples_out=samples,
+                edge_distance=32.0,
+                route_recovery_threshold=0.0,
+                route_recovery_filter="any",
+                min_boundary_edge_risk=0.75,
+                min_enemy_pressure_risk=0.6,
+                original_actions={5},
+                preferred_target_actions=[7, 3],
+                preferred_target_selection="cycle",
+            )
+            rows = [json.loads(line) for line in samples.read_text().splitlines()]
+
+        self.assertEqual(report["decision"], "route_recovery_samples_exported")
+        self.assertEqual(report["route_recovery_filter"], "any")
+        self.assertEqual(report["route_recovery_match_count"], 2)
+        self.assertEqual(report["target_action_distribution"], {"7": 1, "3": 1})
+        self.assertEqual([row["target_action"] for row in rows], [7, 3])
+        self.assertEqual(rows[0]["target_label"], "preferred_non_wallward_action")
 
 
 if __name__ == "__main__":

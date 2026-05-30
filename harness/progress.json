@@ -2898,6 +2898,11 @@
       "id": "manual_evidence_action_plan",
       "summary": "新增人工证据行动计划生成器：读取 manual evidence gap audit，将 playtest、content、asset、story、privacy、platform、base_ui 和 release 的 20 个真人证据 gap 按领域分组，列出 required action、source report、下一步和限制说明。该计划只帮助真人补证据，不运行 Runtime、不填写审查字段、不接受内容、不改变 Release Candidate gate。",
       "report": "harness/reports/2026-05-30_manual_evidence_action_plan_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_target_guard_samples",
+      "summary": "从 seed 63402 trace 的高压贴边 action-lock 窗口导出 target-specific guard rows：export_route_recovery_samples.py 现支持 route_recovery any、enemy_pressure 过滤和 preferred target actions；首批 17 条样本来自 soda-creek seed 63402 的 31.9999-37.2664 秒，原始动作均为 action 5，校验后目标均为非顶墙 action 7。样本通过 edge_recovery_samples_valid，behavior clone dry-run 确认 17 条均被读取为 edge_recovery_supervision；但它只能作为下一轮 parent-preserving 5e-7 repair 的训练输入，不是 stage 02、policy gate 或 RL acceptance。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_target_guard_samples_001/summary.md"
     }
   ],
   "next_recommended": [
