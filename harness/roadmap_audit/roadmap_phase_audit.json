@@ -595,6 +595,13 @@
         "harness/reports/2026-05-30_rl_current_high_pressure_stage01_opening_probe_001/summary.md",
         "harness/reports/2026-05-30_rl_current_high_pressure_stage01_opening_probe_001/window_regression_vs_parent.json",
         "harness/failed_cases/fail_20260530_001_stage01_opening_fixed_window_probe.json",
+        "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/summary.md",
+        "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/ppo_training_report.json",
+        "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/comparison_60s.json",
+        "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/comparison_180s.json",
+        "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/comparison_300s.json",
+        "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/window_regression_vs_parent.json",
+        "harness/failed_cases/fail_20260530_002_stage01_seed_replay_regression.json",
         "python/train/create_staged_behavior_clone_policy.py",
         "python/train/train_behavior_clone.py",
         "python/train/test_train_behavior_clone.py",
@@ -623,7 +630,8 @@
         "staged behavior clone 已支持 --phase-duration-seconds，可用固定 300 秒 horizon 和 Gym time_seconds 做绝对阶段分发；旧 staged checkpoint 仍保持 normalized observation 分发。clean teacher 候选 absolute-time 重新打包后 60 秒仍为 70%/100%/80%，180 秒为 66.67%/100%/33.33%，300 秒三图全 0%，说明分段机制修复不能替代 retention 或 long-run objective。",
         "当前 high-pressure 固定窗口复查再次确认 RL blocker：e30 mid-anchor guarded checkpoint 在 seed 63200-63202 中 60 秒为 0.6667/1.0/1.0，180 秒为 0.3333/1.0/0.6667，300 秒为 0.0/0.0/0.0。该证据刷新了当前失败面，但不允许进入 stage 03、RL 测试 Bot 或 acceptance。",
         "固定窗口行动计划已将当前失败面拆成 stage 01 soda-creek opening retention、stage 02 soda-creek / cracked-star-jar handoff 与 mid-window retention、stage 03 三图 late conversion，并要求每阶段训练后都跑 60/180/300 秒 validation commands；这只是下一轮 repair 排程，尚未产生训练结果、no-regression 通过证据或 acceptance。",
-        "stage_01_opening_lt_60 首次小步 repair 仍失败：60 秒 soda-creek 有 opening death，180 秒 caramel-workshop 为 watch，300 秒三图仍全 0%，同 seed parent no-regression 因 300s/cracked-star-jar dominant_action_ratio +0.2034 超阈值失败；该 checkpoint 不得进入 stage 02。"
+        "stage_01_opening_lt_60 首次小步 repair 仍失败：60 秒 soda-creek 有 opening death，180 秒 caramel-workshop 为 watch，300 秒三图仍全 0%，同 seed parent no-regression 因 300s/cracked-star-jar dominant_action_ratio +0.2034 超阈值失败；该 checkpoint 不得进入 stage 02。",
+        "stage01_seed_replay 显式循环训练 seeds 63400-63402 后仍失败：60 秒 soda-creek seed 63402 仍在约 37.27 秒 opening 死亡，180 秒 soda-creek 相对 parent 胜率回落 -0.3334 且平均存活下降 11.4358 秒，300 秒三图仍全 0%。已记录 fail_20260530_002；该 checkpoint 不得进入 stage 02，下一步应先 trace seed 63402 的 observation / action score 差异。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -635,7 +643,8 @@
         "每轮 late repair 后先跑 60 秒 high-pressure 10 seed opening gate，再跑 180 秒三图 handoff 对比，最后跑 300 秒三图 long-run 对比；全部通过前不得进入 stage_03 或 RL 测试 Bot。",
         "不要继续只重打包 clean teacher-only late replacement；下一步必须加入 opening/mid retention 或 contrastive 约束，或转向 closed-loop late survival 训练。",
         "补足 caramel-workshop clean teacher 覆盖后，再比较 clean+contrast、route objective、low-health recovery、hazard / boss joint objective 或 closed-loop late survival 训练；每套都必须拆开记录训练报告与 deterministic 60/180/300 秒多图对比。",
-        "不要从已失败的 stage_01_opening_lt_60 checkpoint 进入 stage 02；下一步应重新设计 stage 01 opening repair，加入 explicit opening retention target 和 online action-distribution guard，然后重新跑 60/180/300 秒同 seed parent no-regression。"
+        "不要从已失败的 stage_01_opening_lt_60 checkpoint 进入 stage 02；下一步应重新设计 stage 01 opening repair，加入 explicit opening retention target 和 online action-distribution guard，然后重新跑 60/180/300 秒同 seed parent no-regression。",
+        "不要从 stage01_seed_replay checkpoint 进入 stage 02；先对 seed 63402 生成 observation / action-score trace，并与同窗口成功 seed 对比，再设计更窄的 opening retention objective 或 action-distribution guard。"
       ]
     },
     {

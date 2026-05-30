@@ -1,0 +1,22 @@
+{
+  "case_id": "fail_20260530_002",
+  "category": "rl_training",
+  "content_id": "stage01-seed-replay-probe",
+  "seed": 63402,
+  "bot": "stage01_seed_replay",
+  "time_seconds": 37.2664,
+  "symptom": "The stage01_seed_replay probe trained on soda-creek seeds 63400-63402 for 512 timesteps but still left seed 63402 as a 60s opening death, kept 300s high-pressure win rate at 0.0 on all three maps, and failed same-seed parent no-regression on soda-creek 180s.",
+  "root_cause": "Explicitly replaying the three validation seeds was not enough to learn the failing opening recovery state. The continuation improved some non-target windows but reduced soda-creek 180s win rate from 0.6667 to 0.3333 and average survival by 11.4358s, so the repair shifted the failure surface instead of clearing it.",
+  "fix": "Do not continue from the seed replay checkpoint. The next stage 01 attempt should collect or trace the seed 63402 failing state, add a narrower opening retention objective or action guard, and rerun same-seed 60/180/300s parent no-regression before any stage 02 handoff work.",
+  "validation": "Fixed-window high-pressure comparisons were run for 60/180/300 seconds at seed_start 63400, then validate_policy_window_regression.py compared the candidate against the same-seed parent baseline. The regression report returned policy_window_regression_failed with blockers on 180s/soda-creek win_rate_delta -0.3334 and average_survival_seconds -11.4358s.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/failure_analysis_60s.md",
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/failure_analysis_180s.md",
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/failure_analysis_300s.md",
+    "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/window_regression_vs_parent.md"
+  ]
+}

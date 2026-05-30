@@ -1271,6 +1271,11 @@
       "id": "rl_current_high_pressure_stage01_opening_probe",
       "summary": "执行固定窗口行动计划的 stage_01_opening_lt_60 小步 repair：从 e30 mid-anchor guarded checkpoint 继续 256 timestep 后，60 秒 soda-creek 仍有 opening death，180 秒 caramel-workshop 为 watch，300 秒三图仍全 0%；同 seed parent no-regression 因 300s/cracked-star-jar dominant action ratio +0.2034 失败。已记录 fail_20260530_001，该 checkpoint 不得进入 stage 02、stage 03 或 RL acceptance。",
       "report": "harness/reports/2026-05-30_rl_current_high_pressure_stage01_opening_probe_001/summary.md"
+    },
+    {
+      "id": "rl_current_high_pressure_stage01_seed_replay_probe",
+      "summary": "复查 stage 01 opening blocker 时显式循环训练 seeds 63400-63402：512 timestep seed replay 没有清除 soda-creek seed 63402 opening death，180 秒 soda-creek 相对 parent 从 0.6667 回落到 0.3333 且平均存活下降 11.4358 秒，300 秒三图仍全 0%。已记录 fail_20260530_002，该 checkpoint 不得进入 stage 02。",
+      "report": "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/summary.md"
     }
   ],
   "current_findings": [

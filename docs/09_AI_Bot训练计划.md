@@ -264,6 +264,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 首个 `stage_01_opening_lt_60` 按计划从 e30 mid-anchor guarded checkpoint 继续 `256` timestep 后，没有解除固定窗口 blocker：60 秒 `soda-creek` 仍有 seed `63402` 在约 `37.13s` opening 死亡，180 秒 `caramel-workshop` 仍为 watch，300 秒三图仍全为 `0.0` 胜率；同 seed parent no-regression 还因 `300s/cracked-star-jar` dominant action ratio 增加 `0.2034 > 0.2` 失败。已记录 `fail_20260530_001`，报告位于 `harness/reports/2026-05-30_rl_current_high_pressure_stage01_opening_probe_001/summary.md`；该 checkpoint 不得进入 stage 02、stage 03、RL 测试 Bot 或 acceptance。
 
+随后用同一 parent 显式循环训练 seeds `63400-63402` 的 `stage01_seed_replay` probe 也失败：60 秒 `soda-creek` seed `63402` 仍在约 `37.27s` opening 死亡，180 秒 `soda-creek` 从 parent 的 `0.6667` 回落到 `0.3333`，平均存活下降 `11.4358s`，300 秒三图仍全为 `0.0`。已记录 `fail_20260530_002`，报告位于 `harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/summary.md`；下一步应先 trace seed `63402` 的 observation / action score 差异，而不是继续从该 checkpoint 进入 stage 02。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。
