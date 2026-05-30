@@ -1306,6 +1306,11 @@
       "id": "rl_stage01_opening_boundary_escape_probe",
       "summary": "执行 opening-boundary-escape stage 01 probe：5e-7 版本通过 60/180/300 秒 parent no-regression 但 soda-creek 60 秒仍为 0.6667、300 秒三图仍全 0.0；1e-6 版本恢复 cracked-star-jar 300 秒 0.3333，但触发 300s/caramel-workshop 平均存活 -0.1444s blocker。已记录 fail_20260530_005，下一步需从 seed 63402 trace 导出 target-specific supervision 或 guard。",
       "report": "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_guard_anchor_strength_probe",
+      "summary": "执行 seed 63402 强 guard-anchor probe：anchor weight 1.0、20 个 KL epoch 与 lr 0.001 已把 17 条 guard rows 的离线 validation / alignment 压到 KL 0.178923 / 0.16974 且 argmax agreement 1.0，但在线 high-pressure 失败；soda-creek 60 秒降到 0.3333，seed 63402 仍在 45.2330 秒死亡，180 秒 soda-creek 降到 0.0，300 秒三图全 0.0；相对 parent window no-regression 触发 8 个 blockers。已记录 fail_20260530_007，该 checkpoint 不得进入 stage 02。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2908,12 +2913,21 @@
       "id": "rl_stage01_seed63402_guard_anchor_probe",
       "summary": "执行 seed 63402 guard-anchor probe：17 条 guard rows 训练出的 behavior-clone anchor 离线准确率为 1.0，但 256 timestep opening-boundary-escape PPO continuation 的 anchor validation guard 失败，validation KL 4.251955、argmax agreement 0.0。候选通过 60/180/300 秒 parent no-regression 且 0 blockers，但 soda-creek seed 63402 仍在 37.3331 秒死亡并继续 action 5 锁定。已记录 fail_20260530_006，该 checkpoint 不得进入 stage 02。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_guard_anchor_strength_probe",
+      "summary": "执行 seed 63402 强 guard-anchor probe：anchor weight 1.0、20 个 KL epoch 与 lr 0.001 已把 17 条 guard rows 的离线 validation / alignment 压到 KL 0.178923 / 0.16974 且 argmax agreement 1.0，但在线 high-pressure 失败；soda-creek 60 秒降到 0.3333，seed 63402 仍在 45.2330 秒死亡，180 秒 soda-creek 降到 0.0，300 秒三图全 0.0；相对 parent window no-regression 触发 8 个 blockers。已记录 fail_20260530_007，该 checkpoint 不得进入 stage 02。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "Runtime demo-input 技术 capture、10 分钟 release-local 本机性能门禁和 Runtime 本机资源探针已通过；下一步仍需真人使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 进行可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"
+    },
+    {
+      "id": "rl_stage01_after_strong_guard_anchor_probe",
+      "summary": "强 guard-anchor 已证明离线 action 7 对齐不足以修复在线 seed 63402，且会造成 60/180/300 秒 parent 回归。下一轮 stage 01 repair 不应继续单纯提高 guard strength；应先加在线 seed 63402 preflight、成功开局 retention anchor 或 staged / constrained repair，并把目标 seed 改善与 parent no-regression 作为硬门槛。"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",

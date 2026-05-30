@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260530_007",
+  "category": "rl_training",
+  "content_id": "stage01-seed63402-guard-anchor-strength-probe",
+  "seed": "63400-63402",
+  "bot": "opening-boundary-escape-ppo-strong-guard-anchor",
+  "time_seconds": 300.0,
+  "symptom": "The stronger seed 63402 guard-anchor probe matched the 17 offline guard rows but failed online fixed-window validation. Offline guard alignment passed with mean KL 0.16974 and argmax agreement 1.0, yet soda-creek 60s dropped to 0.3333, seed 63402 still died at 45.2330s, 180s soda-creek fell to 0.0, and parent no-regression reported 8 blockers.",
+  "root_cause": "The local guard objective overfit a narrow 31.9999s-37.2664s slice and did not preserve the broader opening/mid retention behavior. Raising anchor weight to 1.0 and running 20 KL epochs made the policy agree with the offline action 7 rows, but closed-loop action distribution shifted toward action 1 / 8 and damaged soda-creek plus cracked-star-jar window behavior.",
+  "fix": "Do not enter stage 02 or continue by simply increasing guard strength. The next repair should add an online seed 63402 preflight before full comparisons, include successful-opening retention anchors around the same state distribution, or split the target guard into a constrained/staged policy that must pass both seed 63402 improvement and 60/180/300 second parent no-regression.",
+  "validation": "Trained a 256 timestep opening-boundary-escape PPO continuation from the e30 mid-anchor guarded parent with anchor_regularization_weight 1.0, 20 regularization epochs, anchor lr 0.001, and the same 17 target guard rows. Training validation reached KL 0.178923 and argmax agreement 1.0; compare_sb3_to_behavior_clone_anchor passed on the guard rows. Fixed-window comparisons then failed: 60s soda-creek 0.3333, 180s soda-creek 0.0, 300s all maps 0.0, and window_regression_vs_parent reported 8 blockers.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/guard_anchor_alignment.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/window_regression_vs_parent.md"
+  ]
+}
