@@ -1,0 +1,46 @@
+{
+  "decision": "policy_target_seed_preflight_failed",
+  "comparison": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/comparison_60s.json",
+  "seconds": 60.0,
+  "gate_decision": "comparison_recorded_not_balance_gate",
+  "action_selection": "deterministic",
+  "reward_profile": "opening-boundary-escape",
+  "target_count": 1,
+  "target_results": [
+    {
+      "map_id": "soda-creek",
+      "seed": 63402,
+      "found": true,
+      "time_seconds": 37.666435,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "terminated": true,
+      "truncated": false,
+      "action_ratios": {
+        "7": 0.0
+      }
+    }
+  ],
+  "checks": {
+    "min_survival_seconds": null,
+    "require_window_survival": true,
+    "require_non_defeat": false,
+    "min_action_ratios": {
+      "7": 0.1
+    },
+    "max_action_ratios": {},
+    "survival_tolerance_seconds": 0.05
+  },
+  "errors": [],
+  "blockers": [
+    "soda-creek:63402: time_seconds 37.6664 did not reach window 60.0000",
+    "soda-creek:63402: terminal_kind `defeat` is not `victory`",
+    "soda-creek:63402: action 7 ratio 0.000000 below required 0.100000"
+  ],
+  "warnings": [],
+  "limitations": [
+    "This preflight only validates target episodes already present in a comparison report.",
+    "A passing preflight does not replace fixed-window high-pressure comparison, no-regression validation, failure-case review, or RL acceptance.",
+    "Target action ratios are diagnostic checks; they should not be used alone as proof of good play."
+  ]
+}

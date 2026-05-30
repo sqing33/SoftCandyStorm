@@ -1341,6 +1341,11 @@
       "id": "rl_stage01_seed63402_counterlabel_prefailure_states",
       "summary": "新增 policy trace counterlabel 工具并生成 seed 63402 pre-failure counterfactual 样本：tools/relabel_policy_trace_samples.py 可保留 original_action 与 counterfactual_label，将训练 action 改写为指定目标；首批数据把 48 条 action 5 高压失败 states 轮换标为 action 7/3，各 24 条，并通过 behavior clone dry-run。该数据只是修复假设输入，不是观察到的成功行为或 policy gate。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_counterlabel_retention_probe",
+      "summary": "训练 seed 63402 counterlabel + retention anchor，并执行 256 timestep PPO 小步 probe：80 条 anchor 样本由 48 条 pre-failure counterlabel rows 与 32 条成功 retention rows 组成，离线诊断 accuracy 0.75、预测 action 7/3 分布为 52/28；PPO anchor validation guard 失败（KL 1.971987、argmax agreement 0.625），soda-creek:63402 target preflight 仍失败（37.6664 秒 defeat，action 7 ratio 0.0）。已记录 fail_20260530_009，未运行完整 60/180/300 秒矩阵。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2978,6 +2983,11 @@
       "id": "rl_stage01_seed63402_counterlabel_prefailure_states",
       "summary": "新增 policy trace counterlabel 工具并生成 seed 63402 pre-failure counterfactual 样本：tools/relabel_policy_trace_samples.py 可保留 original_action 与 counterfactual_label，将训练 action 改写为指定目标；首批数据把 48 条 action 5 高压失败 states 轮换标为 action 7/3，各 24 条，并通过 behavior clone dry-run。该数据只是修复假设输入，不是观察到的成功行为或 policy gate。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_counterlabel_retention_probe",
+      "summary": "训练 seed 63402 counterlabel + retention anchor，并执行 256 timestep PPO 小步 probe：80 条 anchor 样本由 48 条 pre-failure counterlabel rows 与 32 条成功 retention rows 组成，离线诊断 accuracy 0.75、预测 action 7/3 分布为 52/28；PPO anchor validation guard 失败（KL 1.971987、argmax agreement 0.625），soda-creek:63402 target preflight 仍失败（37.6664 秒 defeat，action 7 ratio 0.0）。已记录 fail_20260530_009，未运行完整 60/180/300 秒矩阵。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3044,6 +3054,10 @@
     {
       "id": "phase4_full_pack_manual_review",
       "summary": "Phase 4 full pack 的 20 seed Bot 平衡阻塞已通过策略校准复测解除；下一步基于 simulated_candidates 准备设计审查与 9 局人工试玩，真人证据通过前不得写入 accepted_content 或 Runtime 正式内容。"
+    },
+    {
+      "id": "rl_stage01_after_counterlabel_retention_failure",
+      "summary": "counterlabel + retention anchor 已证明简单把 action 5 失败 states 改标为 action 7/3 仍不足以修复在线闭环；下一轮不要继续 plain mixed anchor，应改为显式 staged / constrained opening branch，或先生成更高置信 counterfactual labels，并在 PPO 前要求离线 target accuracy、anchor validation guard 和 soda-creek:63402 target preflight 同时通过。"
     }
   ]
 }

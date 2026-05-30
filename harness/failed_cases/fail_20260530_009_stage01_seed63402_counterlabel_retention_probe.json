@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260530_009",
+  "category": "rl_training",
+  "content_id": "stage01-seed63402-counterlabel-retention-probe",
+  "seed": "63400-63402",
+  "bot": "opening-boundary-escape-ppo-counterlabel-retention-anchor",
+  "time_seconds": 60.0,
+  "symptom": "The seed 63402 counterlabel + retention repair probe failed before it could become a policy gate. The behavior-clone anchor learned the 80-row counterfactual dataset only partially, with offline diagnostic accuracy 0.75. The 256 timestep PPO continuation then failed anchor validation guard with validation KL 1.971987 and argmax agreement 0.625. The soda-creek target preflight failed because seed 63402 died at 37.6664s and used action 7 with ratio 0.0.",
+  "root_cause": "Counterfactual relabeling removed action 5 from the offline repair labels, but the online closed-loop PPO trajectory still enters the same action 5 dominated failure basin on seed 63402. The anchor itself is also ambiguous: it predicts action 7 for 52/80 samples and action 3 for 28/80 samples, but only matches the mixed counterlabel + retention dataset at 0.75 accuracy. This is not a strong enough objective to overcome the parent policy's online state distribution.",
+  "fix": "Do not run the full 60/180/300 second matrix or advance this checkpoint to stage 02. The next repair should avoid another plain mixed counterlabel anchor and instead use a staged or constrained opening branch with explicit dispatch conditions, or produce higher-confidence counterfactual labels that pass offline target accuracy before any PPO continuation. The target seed preflight must remain the first online gate.",
+  "validation": "Trained seed63402_counterlabel_retention_anchor.pt from 48 counterfactual pre-failure samples plus 32 successful retention samples. Offline diagnostic recorded watch-only but only 0.75 accuracy and no action 5 predictions. A 256 timestep opening-boundary-escape PPO continuation from ppo_e30_mid_anchor_guarded_probe.zip used anchor regularization weight 0.5, 10 KL epochs, lr 0.0005, opening_lt_60 filtering, max validation KL 0.25, and min argmax agreement 0.85. Anchor guard failed with KL 1.971987 and argmax agreement 0.625. A 3 seed soda-creek 60s comparison recorded seed 63402 as defeat at 37.6664s with action 7 ratio 0.0, and validate_policy_target_seed_preflight reported policy_target_seed_preflight_failed.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_anchor_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_anchor_001/behavior_clone_anchor_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_anchor_001/offline_policy_diagnostic.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/target_seed_preflight.json"
+  ]
+}
