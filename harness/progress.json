@@ -1421,6 +1421,11 @@
       "id": "rl_late_recovery_map_scope_high_pressure",
       "summary": "用 --late-recovery-maps caramel-workshop 复跑 chained high-pressure 诊断：60/180 秒三图仍为 1.0 胜率且 regression 通过，但 300 秒失败，soda-creek 从 1.0 掉到 0.0，cracked-star-jar 从 0.3333 掉到 0.0；caramel-workshop 平均存活保持 231.2871s 但胜率仍 0.0。已记录 fail_20260530_019；结论是 late filter 不能简单 caramel-only，下一轮必须保留 soda/cracked late safety repair，再单独做 caramel conversion。",
       "report": "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/summary.md"
+    },
+    {
+      "id": "rl_caramel_branch_late_all_high_pressure",
+      "summary": "反向隔离探针保留 all-map late_recovery_filter，只把 edge_recovery_branch 限到 caramel-workshop：cracked-star-jar 300 秒保住 0.3333，但 60/180/300 秒均因 soda-creek regression 失败，300 秒 soda-creek 从 1.0 降到 0.3333，seed 63402 在 37.6664s opening 死亡。已记录 fail_20260530_020；下一步需要 per-map branch composition，同时保留 soda opening branch 和 all-map late safety。",
+      "report": "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/summary.md"
     }
   ],
   "current_findings": [

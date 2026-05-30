@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260530_020",
+  "category": "rl_policy",
+  "content_id": "caramel-branch-late-all-soda-opening-regression",
+  "seed": "63400-63402",
+  "bot": "caramel-only-edge-recovery-branch-plus-all-map-late-recovery-filter",
+  "time_seconds": 300.0,
+  "symptom": "The evaluation-only chain with edge_recovery_branch scoped only to caramel-workshop and late_recovery_filter active on all maps failed regression against the previous chained diagnostic. It failed all fixed windows on soda-creek: 60s and 180s win rate dropped from 1.0 to 0.6667, and 300s win rate dropped from 1.0 to 0.3333 with average survival dropping from 300.015s to 207.9777s. soda-creek seed 63402 died at 37.6664s. caramel-workshop still had 0.0 300s win rate despite 231.2871s average survival.",
+  "root_cause": "The previous soda-winning diagnostic depends on a soda-creek opening branch as well as the late recovery filter. Removing soda-creek from edge_recovery_branch reintroduces the known opening failure on seed 63402. Keeping the late filter all-map preserves cracked-star-jar but does not compensate for missing soda opening repair, and it still does not create caramel terminal conversion.",
+  "fix": "Reject the caramel-only edge branch plus all-map late filter chain as a policy candidate, stage 03 checkpoint, RL test Bot, or acceptance evidence. Future repair should preserve the proven soda-creek opening branch and all-map late safety behavior, then add a separate caramel-workshop opening/late conversion objective through explicit per-map branch composition or an equivalent policy-composition manifest.",
+  "validation": "Ran high-pressure 60s, 180s, and 300s comparisons on seeds 63400-63402 with edge_recovery_branch maps caramel-workshop, branch window 25-45s, and all-map late_recovery_filter from 60s. Regression validation failed 60s, 180s, and 300s against the previous chained diagnostic, with all blockers on soda-creek. Sample validation reported 3 valid edge samples, 1806 valid raw risk samples with 6 warnings, 1139 valid clean mid samples, and 634 valid clean late samples.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/summary.md",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_comparison_60s.json",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_comparison_180s.json",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_comparison_300s.json",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/window_regression_vs_previous_chain_300s.json",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_edge_samples_validation.json",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_mid_clean_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_late_clean_risk_samples_validation.json"
+  ]
+}
