@@ -695,7 +695,13 @@
         "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/trace_comparison.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/seed63402_prefailure_route_states.jsonl",
         "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/prefailure_route_export.json",
-        "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/prefailure_route_behavior_clone_dry_run.json"
+        "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/prefailure_route_behavior_clone_dry_run.json",
+        "tools/relabel_policy_trace_samples.py",
+        "tools/test_relabel_policy_trace_samples.py",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/summary.md",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/relabel_report.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/seed63402_prefailure_counterlabel_samples.jsonl",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/behavior_clone_dry_run.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -733,7 +739,8 @@
         "成功开局 retention anchor 输入已建立：从 soda-creek parent 成功 seeds 63400/63401 的同窗口导出 32 条 action 7 样本并通过 behavior clone dry-run；但尚未训练新 anchor / PPO，也没有 target-seed preflight、60/180/300 秒 high-pressure 或 parent no-regression 通过证据。",
         "guard + retention anchor 已训练完成：49 条 action 7 样本 train / validation accuracy 均为 1.0；但尚未做 PPO / supervised SB3 follow-up，也没有 target-seed preflight、60/180/300 秒 high-pressure 或 parent no-regression 通过证据。",
         "首个 guard + retention PPO probe 已失败：anchor validation guard 在 KL 2.155758 / argmax agreement 0.6 处拦截，soda-creek:63402 target preflight 在 37.4998 秒 defeat 且 action 7 ratio 0.0；已记录 fail_20260530_008，未运行完整矩阵。",
-        "seed 63402 pre-failure trace compare 已确认 parent、seed-replay candidate、guard-retention probe 三者同形失败：目标 seed 缺 action 3/7、多 action 4/5，并导出 48 条高压 action 5 sampled states 作为反例 / 覆写目标设计输入；尚未生成新 counterfactual labels、staged branch 或通过 target preflight 的 repair。"
+        "seed 63402 pre-failure trace compare 已确认 parent、seed-replay candidate、guard-retention probe 三者同形失败：目标 seed 缺 action 3/7、多 action 4/5，并导出 48 条高压 action 5 sampled states 作为反例 / 覆写目标设计输入；尚未生成新 counterfactual labels、staged branch 或通过 target preflight 的 repair。",
+        "pre-failure counterlabel 工具和首批数据集已建立：48 条 action 5 反例被标注为 24 条 action 7 与 24 条 action 3，并通过 dry-run；但 counterfactual labels 是设计假设，不是观察到的成功行为，尚未训练、预检或通过 no-regression。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -757,7 +764,8 @@
         "下一轮 seed 63402 stage 01 repair 应将 17 条 target guard rows 与 32 条成功开局 retention anchors 结合，先用 target seed preflight 检查 soda-creek:63402，再决定是否运行完整 60/180/300 秒 parent no-regression。",
         "下一轮应以 seed63402_guard_retention_anchor.pt 作为 target-specific repair anchor 或 supervised 初始化输入，小步训练后先跑 soda-creek:63402 target-seed preflight；未通过时不要跑完整矩阵。",
         "guard + retention probe 已证明 31.9999-37.2664 秒 action 7 窄切片不足以修复在线闭环；下一步应导出并对比 seed 63402 在 0-37.5 秒的 pre-failure route states，补充更早的路线/压力状态覆盖或改为显式 staged branch，再重新通过 anchor guard 与 target preflight。",
-        "下一轮不要模仿 seed63402_prefailure_route_states.jsonl 中的 action 5；应把这 48 条高压失败 states 作为反例，设计 counterfactual target（优先 action 7/3 或 wrapper branch），然后先通过离线 target 覆写检查、anchor validation guard 和 soda-creek:63402 target preflight。"
+        "下一轮不要模仿 seed63402_prefailure_route_states.jsonl 中的 action 5；应把这 48 条高压失败 states 作为反例，设计 counterfactual target（优先 action 7/3 或 wrapper branch），然后先通过离线 target 覆写检查、anchor validation guard 和 soda-creek:63402 target preflight。",
+        "下一轮可把 seed63402_prefailure_counterlabel_samples.jsonl 与成功 retention anchors 结合，先训练一个小型 counterlabel anchor 或 staged branch；必须先检查离线 action 7/3 覆写命中、anchor validation guard 和 soda-creek:63402 target preflight，失败则不跑完整矩阵。"
       ]
     },
     {

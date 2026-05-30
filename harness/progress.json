@@ -1336,6 +1336,11 @@
       "id": "rl_stage01_seed63402_prefailure_trace_compare",
       "summary": "生成 seed 63402 pre-failure trace compare：对齐 parent、seed-replay candidate、guard-retention probe 三组 traces，确认目标 seed 三者都在 37.2664-37.4998 秒死亡，均缺 action 3/7、多 action 4/5；新 probe 的目标 seed action 5 为 70.18%、action 7 为 0.0%。已导出 48 条 31.9999-37.3331 秒高压 sampled states，全部 action 5，并通过 behavior clone dry-run；该数据是反例/覆写目标设计输入，不是模仿训练目标。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_counterlabel_prefailure_states",
+      "summary": "新增 policy trace counterlabel 工具并生成 seed 63402 pre-failure counterfactual 样本：tools/relabel_policy_trace_samples.py 可保留 original_action 与 counterfactual_label，将训练 action 改写为指定目标；首批数据把 48 条 action 5 高压失败 states 轮换标为 action 7/3，各 24 条，并通过 behavior clone dry-run。该数据只是修复假设输入，不是观察到的成功行为或 policy gate。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2968,6 +2973,11 @@
       "id": "rl_stage01_seed63402_prefailure_trace_compare",
       "summary": "生成 seed 63402 pre-failure trace compare：对齐 parent、seed-replay candidate、guard-retention probe 三组 traces，确认目标 seed 三者都在 37.2664-37.4998 秒死亡，均缺 action 3/7、多 action 4/5；新 probe 的目标 seed action 5 为 70.18%、action 7 为 0.0%。已导出 48 条 31.9999-37.3331 秒高压 sampled states，全部 action 5，并通过 behavior clone dry-run；该数据是反例/覆写目标设计输入，不是模仿训练目标。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_counterlabel_prefailure_states",
+      "summary": "新增 policy trace counterlabel 工具并生成 seed 63402 pre-failure counterfactual 样本：tools/relabel_policy_trace_samples.py 可保留 original_action 与 counterfactual_label，将训练 action 改写为指定目标；首批数据把 48 条 action 5 高压失败 states 轮换标为 action 7/3，各 24 条，并通过 behavior clone dry-run。该数据只是修复假设输入，不是观察到的成功行为或 policy gate。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2998,6 +3008,10 @@
     {
       "id": "rl_stage01_counterlabel_seed63402_prefailure_states",
       "summary": "下一轮不要模仿 seed63402_prefailure_route_states.jsonl 中的 action 5；应把这 48 条高压失败 states 作为反例，设计 counterfactual target（优先 action 7/3 或 wrapper branch），然后先通过离线 target 覆写检查、anchor validation guard 和 soda-creek:63402 target preflight。"
+    },
+    {
+      "id": "rl_stage01_counterlabel_anchor_probe",
+      "summary": "下一轮可把 seed63402_prefailure_counterlabel_samples.jsonl 与成功 retention anchors 结合，先训练一个小型 counterlabel anchor 或 staged branch；必须先检查离线 action 7/3 覆写命中、anchor validation guard 和 soda-creek:63402 target preflight，失败则不跑完整矩阵。"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",

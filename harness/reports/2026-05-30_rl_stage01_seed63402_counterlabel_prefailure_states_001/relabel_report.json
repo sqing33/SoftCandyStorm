@@ -1,0 +1,35 @@
+{
+  "decision": "policy_trace_samples_relabeled",
+  "sample_count": 48,
+  "target_actions": [
+    7,
+    3
+  ],
+  "assignment": "cycle",
+  "sample_role": "counterfactual_repair_input",
+  "sample_source": "seed63402_prefailure_counterlabel",
+  "target_source": "counterfactual_prefailure_relabel",
+  "unchanged_count": 0,
+  "original_action_distribution": {
+    "5": {
+      "count": 48,
+      "ratio": 1.0
+    }
+  },
+  "relabeled_action_distribution": {
+    "3": {
+      "count": 24,
+      "ratio": 0.5
+    },
+    "7": {
+      "count": 24,
+      "ratio": 0.5
+    }
+  },
+  "limitations": [
+    "Counterfactual labels are design hypotheses, not observed successful actions.",
+    "A dataset produced by this tool must pass dry-run checks, anchor validation, target-seed preflight, fixed-window comparison, and no-regression review before use as policy evidence."
+  ],
+  "input": "harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/seed63402_prefailure_route_states.jsonl",
+  "output": "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/seed63402_prefailure_counterlabel_samples.jsonl"
+}

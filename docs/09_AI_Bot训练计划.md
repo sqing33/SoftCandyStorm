@@ -292,6 +292,8 @@ seed `63402` 的 target-specific guard rows 已从上述 trace 中导出：`tool
 
 seed `63402` pre-failure trace compare 已把 parent、seed-replay candidate 和 guard-retention probe 的同 seed trace 对齐：三个目标 trace 都在 `37.2664s-37.4998s` 左右死亡，目标 seed 相对成功 seeds 同样缺 action `3` / `7`，多 action `4` / `5`；guard-retention probe 的 seed `63402` action `5` 占 `70.18%`，action `7` 为 `0.0%`，首个高压边界帧在 `32.3332s` 仍选 action `5`。已导出 `48` 条 `31.9999s-37.3331s` 高压 pre-failure sampled states，全部 action `5`，并通过 behavior clone dry-run；这批数据是反例 / 覆写目标设计输入，不应直接作为模仿目标。报告位于 `harness/reports/2026-05-30_rl_stage01_seed63402_prefailure_trace_compare_001/summary.md`。
 
+`tools/relabel_policy_trace_samples.py` 已提供 sampled trace 反例标签改写工具：它保留 `original_action`，写入 `counterfactual_label`，并把训练用 `action` 改成指定 counterfactual target。首个 seed `63402` counterlabel 数据集读取上述 `48` 条 action `5` pre-failure states，并用 action `7,3` 轮换改写为 `24/24` 分布；behavior clone dry-run 通过，`observation_len = 145`、`action_count = 9`。报告位于 `harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_prefailure_states_001/summary.md`。该数据只是修复假设输入，不是观察到的成功行为或 policy gate。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。
