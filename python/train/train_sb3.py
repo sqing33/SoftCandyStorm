@@ -947,7 +947,7 @@ class EdgeRecoveryBranchPolicy:
         return opening_policy_report(self.base_model)
 
     def policy_adapter_report(self):
-        return {
+        report = {
             "mode": "edge_recovery_branch",
             "target_maps": sorted(self.target_maps),
             "min_seconds": self.min_seconds,
@@ -969,6 +969,13 @@ class EdgeRecoveryBranchPolicy:
                 "It is not policy acceptance evidence and still requires high-pressure no-regression gates.",
             ],
         }
+        base_adapter = policy_adapter_report(self.base_model)
+        if base_adapter is not None:
+            report["base_policy_adapter"] = base_adapter
+        branch_adapter = policy_adapter_report(self.branch_model)
+        if branch_adapter is not None:
+            report["branch_policy_adapter"] = branch_adapter
+        return report
 
 
 class EdgeRecoveryFilterPolicy:

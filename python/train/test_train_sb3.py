@@ -1671,6 +1671,48 @@ def test_edge_recovery_branch_uses_map_specific_windows():
     )
 
 
+def test_edge_recovery_branch_reports_nested_base_policy_adapter():
+    base_policy = TerminalConversionBranchPolicy(
+        DummyPolicy(5),
+        DummyPolicy(6),
+        ["caramel-workshop"],
+        210.0,
+        240.0,
+        0.2,
+        0.25,
+        "base.zip",
+        "terminal.zip",
+        map_overrides={
+            "caramel-workshop": {
+                "min_seconds": 210.0,
+                "max_seconds": 300.0,
+            }
+        },
+    )
+    policy = EdgeRecoveryBranchPolicy(
+        base_policy,
+        DummyPolicy(7),
+        ["caramel-workshop"],
+        30.0,
+        45.0,
+        32.0,
+        0.2,
+        0.0,
+        0.75,
+        "base.zip",
+        "branch.zip",
+    )
+
+    report = policy.policy_adapter_report()
+
+    assert report["base_policy_kind"] == "terminal_conversion_branch"
+    assert report["base_policy_adapter"]["mode"] == "terminal_conversion_branch"
+    terminal_config = report["base_policy_adapter"]["effective_map_configs"][
+        "caramel-workshop"
+    ]
+    assert terminal_config["max_seconds"] == 300.0
+
+
 def test_edge_recovery_branch_rejects_non_target_or_low_pressure_contexts():
     policy = EdgeRecoveryBranchPolicy(
         DummyPolicy(5),
