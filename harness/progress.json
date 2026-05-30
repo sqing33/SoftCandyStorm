@@ -1371,6 +1371,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_start_alignment",
       "summary": "执行 start-policy vs edge recovery anchor 离线对齐预检：e30 mid-anchor parent 在 76 条 edge recovery rows 上 mean KL 2.131519、argmax agreement 0.0；在 32 条 retention rows 上 argmax agreement 1.0 但 mean KL 0.759214，仍超过 0.25 阈值。已记录 fail_20260530_012；下一步不应从该 parent 直接 PPO regularization，而应先做 supervised SB3 initialization / distillation 或 constrained opening branch。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_supervised_init",
+      "summary": "执行 edge recovery supervised SB3 初始化：teacher_probs 版本 validation argmax accuracy 0.8636 但 anchor alignment 仍失败；dataset_actions 硬标签版本通过离线 alignment（combined mean KL 0.207452、argmax agreement 0.9444）并让 soda-creek:63402 target preflight 通过，但 60 秒 soda-creek 三 seed comparison 出现 action 7 ratio 0.9987 动作塌缩，seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3038,6 +3043,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_start_alignment",
       "summary": "执行 start-policy vs edge recovery anchor 离线对齐预检：e30 mid-anchor parent 在 76 条 edge recovery rows 上 mean KL 2.131519、argmax agreement 0.0；在 32 条 retention rows 上 argmax agreement 1.0 但 mean KL 0.759214，仍超过 0.25 阈值。已记录 fail_20260530_012；下一步不应从该 parent 直接 PPO regularization，而应先做 supervised SB3 initialization / distillation 或 constrained opening branch。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_supervised_init",
+      "summary": "执行 edge recovery supervised SB3 初始化：teacher_probs 版本 validation argmax accuracy 0.8636 但 anchor alignment 仍失败；dataset_actions 硬标签版本通过离线 alignment（combined mean KL 0.207452、argmax agreement 0.9444）并让 soda-creek:63402 target preflight 通过，但 60 秒 soda-creek 三 seed comparison 出现 action 7 ratio 0.9987 动作塌缩，seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3128,6 +3138,10 @@
     {
       "id": "rl_stage01_supervised_init_edge_recovery_anchor",
       "summary": "start alignment precheck 已确认 parent 在 edge recovery rows 上 argmax agreement 为 0.0；下一步应尝试把 edge recovery anchor 蒸馏 / supervised 初始化为 SB3 checkpoint，先要求离线 alignment 通过，再进入小步 PPO 或 target-seed preflight。"
+    },
+    {
+      "id": "rl_stage01_constrained_edge_recovery_branch",
+      "summary": "硬标签 supervised SB3 已把 target seed 修复变成 action 7 全局塌缩；下一步不要继续全局 opening policy，改做按 boundary/enemy-pressure state 条件触发的 edge recovery branch / adapter，并先用 63400-63402 三 seed 60 秒预检动作多样性。"
     }
   ]
 }

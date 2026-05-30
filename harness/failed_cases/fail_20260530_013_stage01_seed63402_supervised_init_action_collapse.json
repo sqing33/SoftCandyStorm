@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260530_013",
+  "category": "rl_policy",
+  "content_id": "stage01-seed63402-edge-recovery-supervised-init-action-collapse",
+  "seed": "63400-63402",
+  "bot": "seed63402-edge-recovery-supervised-dataset-actions-sb3",
+  "time_seconds": 60.0,
+  "symptom": "The dataset-actions supervised SB3 initialization passed offline edge-recovery anchor alignment and the soda-creek:63402 target preflight, but its 60s soda-creek comparison collapsed to action 7. Policy action 7 ratio was 0.9987 overall; seed 63400 died at 30.1666s while seeds 63401 and 63402 survived to 60.0328s.",
+  "root_cause": "The hard-label supervised initialization overgeneralized the edge-recovery/retention action into a global opening policy. It learned the local target action well enough for the target seed and offline anchor rows, but it lost state-conditioned action diversity needed for neighboring seeds.",
+  "fix": "Do not run 180/300 second windows or promote this checkpoint. The next repair should constrain edge recovery by state, for example an opening branch or policy adapter that only dispatches when boundary and enemy-pressure features match the failure mode, and it must preserve multi-seed action diversity before target preflight.",
+  "validation": "Distilled an SB3 PPO checkpoint from the edge recovery samples with target-mode dataset_actions, then ran compare_sb3_to_behavior_clone_anchor.py on combined, edge-only, and retention-only datasets. Alignment passed with combined mean KL 0.207452 and argmax agreement 0.9444. A 3 seed soda-creek 60s comparison then reported comparison_recorded_needs_action_bias_repair; validate_policy_target_seed_preflight passed only for soda-creek:63402.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/distillation_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/alignment_combined.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/target_seed_preflight.json"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "model_version": 1,
+  "algorithm": "ppo",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/seed63402_edge_recovery_supervised_dataset_actions.zip",
+  "config_file": "python/train/rl_training_config.json",
+  "distillation_source": {
+    "mode": "dataset_actions",
+    "teacher_model": null,
+    "opening_model": null,
+    "opening_seconds": null,
+    "teacher_argmax_agreement": null,
+    "target_transform": {
+      "teacher_temperature": 1.0,
+      "uniform_target_mix": 0.0
+    },
+    "recovery_target_override": {
+      "mode": "not_applicable_global_dataset_actions",
+      "sources": [
+        "edge_recovery_supervision",
+        "risk_recovery_supervision"
+      ],
+      "maps": null,
+      "min_seconds": null,
+      "max_seconds": null,
+      "primary_mass": 0.65,
+      "top_k": 3,
+      "overridden_sample_count": 0,
+      "soft_sample_count": 0,
+      "fallback_one_hot_count": 0,
+      "source_scoped_out_sample_count": 0,
+      "map_scoped_out_sample_count": 0,
+      "time_scoped_out_sample_count": 0,
+      "average_nonzero_actions": null
+    },
+    "dataset_action_target_override": {
+      "enabled": false,
+      "mode": "none",
+      "paths": [],
+      "maps": null,
+      "uniform_target_mix": 0.0,
+      "overridden_sample_count": 0,
+      "map_scoped_out_sample_count": 0,
+      "average_nonzero_actions": null,
+      "entries": []
+    },
+    "target_entropy_nats": 1e-06,
+    "target_argmax_distribution": {
+      "0": {
+        "count": 23,
+        "ratio": 0.213
+      },
+      "1": {
+        "count": 38,
+        "ratio": 0.3519
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 6,
+        "ratio": 0.0556
+      },
+      "4": {
+        "count": 1,
+        "ratio": 0.0093
+      },
+      "5": {
+        "count": 3,
+        "ratio": 0.0278
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 37,
+        "ratio": 0.3426
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    }
+  },
+  "observation_version": 2,
+  "observation_len": 145,
+  "algorithm_parameters": {
+    "learning_rate": 0.0003,
+    "n_steps": 256,
+    "batch_size": 64,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "ent_coef": 0.0,
+    "clip_range": 0.2
+  },
+  "started_at": "2026-05-30T13:46:05.571451+00:00",
+  "completed_at": "2026-05-30T13:46:06.803492+00:00"
+}

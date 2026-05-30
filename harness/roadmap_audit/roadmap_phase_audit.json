@@ -732,7 +732,16 @@
         "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/summary.md",
         "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/parent_vs_edge_recovery_anchor_edge_samples.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/parent_vs_edge_recovery_anchor_retention_samples.json",
-        "harness/failed_cases/fail_20260530_012_stage01_seed63402_edge_recovery_start_alignment_precheck.json"
+        "harness/failed_cases/fail_20260530_012_stage01_seed63402_edge_recovery_start_alignment_precheck.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_init_001/summary.md",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_init_001/distillation_report.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_init_001/alignment_combined.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/summary.md",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/distillation_report.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/alignment_combined.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/comparison_60s.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/target_seed_preflight.json",
+        "harness/failed_cases/fail_20260530_013_stage01_seed63402_supervised_init_action_collapse.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -777,7 +786,8 @@
         "edge_recovery_filter 预检首次让 soda-creek:63402 target preflight 通过，并导出 76 条有效 edge recovery samples；但该结果依赖手写 policy_adapter，只能作为 repair training input，不是 policy gate 或 RL acceptance 证据。",
         "edge recovery anchor 已训练完成：108 条 edge recovery + retention 样本的离线 diagnostic accuracy 为 0.9722；但它仍是 offline anchor，不是 policy gate。",
         "edge recovery anchor PPO probe 已被 anchor validation guard 拦截：validation KL 1.614822 超过 0.25，argmax agreement 0.2273 低于 0.85。已记录 fail_20260530_011，未运行 target-seed preflight 或完整 fixed-window no-regression。",
-        "start-policy alignment precheck 确认 e30 mid-anchor parent 与 edge recovery anchor 起点不匹配：edge recovery rows mean KL 2.131519、argmax agreement 0.0；retention rows mean KL 0.759214。已记录 fail_20260530_012，下一步应改走 supervised SB3 initialization / distillation 或 constrained opening branch。"
+        "start-policy alignment precheck 确认 e30 mid-anchor parent 与 edge recovery anchor 起点不匹配：edge recovery rows mean KL 2.131519、argmax agreement 0.0；retention rows mean KL 0.759214。已记录 fail_20260530_012。",
+        "edge recovery supervised init 已证明硬标签 SB3 能通过离线 alignment 和 soda-creek:63402 target preflight，但在线 60 秒三 seed comparison 出现 action 7 ratio 0.9987 的动作塌缩，并让 seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013，下一步应改做状态条件分派 / constrained opening branch。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -808,7 +818,8 @@
         "把 76 条 edge_recovery_filter 样本转成 learned seed-specific opening branch / anchor，并先过离线样本命中、soda-creek:63402 target preflight，再考虑 60/180/300 秒 parent no-regression。",
         "用 seed63402_edge_recovery_anchor.pt 做小步 PPO anchor-regularized probe；先跑 anchor validation guard 与 soda-creek:63402 target preflight，未通过时直接记录 failure case，不跑完整矩阵。",
         "edge recovery anchor PPO probe 已被 guard 拒绝；下一步先做 start-policy vs edge-recovery-anchor alignment precheck，再尝试 supervised SB3 初始化 / distillation 或更窄 constrained opening branch。",
-        "start alignment precheck 已拒绝当前 parent；下一步将 edge recovery anchor 蒸馏 / supervised 初始化为 SB3 checkpoint，并先过离线 alignment，再考虑 PPO 或 target-seed preflight。"
+        "start alignment precheck 已拒绝当前 parent；下一步将 edge recovery anchor 蒸馏 / supervised 初始化为 SB3 checkpoint，并先过离线 alignment，再考虑 PPO 或 target-seed preflight。",
+        "硬标签 supervised SB3 已把 target seed 修复变成 action 7 全局塌缩；下一步不要继续全局 opening policy，改做按 boundary/enemy-pressure state 条件触发的 edge recovery branch / adapter。"
       ]
     },
     {

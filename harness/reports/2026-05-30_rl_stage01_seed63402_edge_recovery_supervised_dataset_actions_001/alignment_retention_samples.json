@@ -1,0 +1,140 @@
+{
+  "report_version": 1,
+  "candidate_model": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/seed63402_edge_recovery_supervised_dataset_actions.zip",
+  "anchor_model": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/seed63402_edge_recovery_anchor.pt",
+  "opening_model": null,
+  "opening_seconds": null,
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/soda_success_opening_retention_samples.jsonl"
+    ],
+    "sample_count": 32,
+    "episode_count": 0,
+    "skipped_upgrade_samples": 0,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 0,
+    "risk_recovery_sample_records": 0,
+    "anchor_drift_sample_records": 0,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "1": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "2": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "3": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "4": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "5": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "6": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "7": {
+        "count": 32,
+        "ratio": 1.0
+      },
+      "8": {
+        "count": 0,
+        "ratio": 0.0
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 31.9999,
+      "time_seconds_max": 36.9998,
+      "health_ratio_min": 0.3839,
+      "health_ratio_average": 0.4256,
+      "map_distribution": {
+        "soda-creek": {
+          "count": 32,
+          "ratio": 1.0
+        }
+      },
+      "sample_source_distribution": {
+        "trajectory": {
+          "count": 32,
+          "ratio": 1.0
+        }
+      }
+    },
+    "metadata": [
+      {
+        "path": "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/soda_success_opening_retention_samples.jsonl",
+        "bot": "seed63402_success_opening_retention",
+        "map_id": "soda-creek",
+        "observation_version": 2,
+        "observation_len": 145,
+        "action_count": 9,
+        "sample_start_seconds": 31.9,
+        "sample_end_seconds": 37.3,
+        "content_hash": null
+      }
+    ]
+  },
+  "sample_stride": 1,
+  "limit_samples": null,
+  "dependency_status": {
+    "gymnasium": true,
+    "numpy": true,
+    "stable_baselines3": true,
+    "torch": true
+  },
+  "thresholds": {
+    "max_mean_kl": 0.25,
+    "min_argmax_agreement": 0.85,
+    "max_bucket_mean_kl": 0.25
+  },
+  "overall": {
+    "sample_count": 32,
+    "mean_kl": 0.139997,
+    "max_kl": 0.155228,
+    "argmax_agreement": 1.0,
+    "anchor_entropy_nats": 0.10656,
+    "candidate_entropy_nats": 0.710402
+  },
+  "by_map": {
+    "soda-creek": {
+      "sample_count": 32,
+      "mean_kl": 0.139997,
+      "max_kl": 0.155228,
+      "argmax_agreement": 1.0,
+      "anchor_entropy_nats": 0.10656,
+      "candidate_entropy_nats": 0.710402
+    }
+  },
+  "by_time_bucket": {
+    "opening_lt_60": {
+      "sample_count": 32,
+      "mean_kl": 0.139997,
+      "max_kl": 0.155228,
+      "argmax_agreement": 1.0,
+      "anchor_entropy_nats": 0.10656,
+      "candidate_entropy_nats": 0.710402
+    }
+  },
+  "blockers": [],
+  "warnings": [],
+  "limitations": [
+    "This report checks policy-anchor alignment on supplied offline samples only.",
+    "A passing alignment threshold is repair evidence, not RL policy acceptance.",
+    "The candidate still requires deterministic high-pressure comparison and no-regression checks."
+  ],
+  "decision": "behavior_clone_anchor_alignment_within_thresholds",
+  "gate_decision": "behavior_clone_anchor_alignment_within_thresholds"
+}
