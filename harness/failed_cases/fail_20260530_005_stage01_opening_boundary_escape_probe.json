@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260530_005",
+  "category": "rl_training",
+  "content_id": "stage01-opening-boundary-escape-probe",
+  "seed": "63400-63402",
+  "bot": "opening-boundary-escape-ppo",
+  "time_seconds": 60.0,
+  "symptom": "The opening-boundary-escape stage 01 probe activated the new edge-escape reward signal but did not improve the target soda-creek 60s blocker: both 5e-7 and 1e-6 runs stayed at soda-creek 60s policy_win_rate 0.6667. The 1e-6 run restored cracked-star-jar 300s to 0.3333 but failed parent no-regression on 300s/caramel-workshop average survival by 0.1444s.",
+  "root_cause": "A scalar pressure-gated boundary escape reward is still too indirect for the seed 63402 action-lock state. The reward breakdown shows opening_boundary_escape is active and negative, but PPO does not reliably switch the failing edge-locked action sequence into the successful action 7 / action 3 recovery pattern within a parent-preserving update.",
+  "fix": "Do not enter stage 02 from either opening-boundary-escape checkpoint. The next stage 01 attempt should derive target-specific supervised or guarded rows from the seed 63402 high-pressure edge-lock trace, then combine them with the parent-preserving 5e-7 setting and rerun same-seed 60/180/300 second parent no-regression.",
+  "validation": "Ran 256 timestep opening-boundary-escape PPO probes at learning rates 5e-7 and 1e-6 from the e30 mid-anchor guarded parent, then ran high-pressure 60/180/300 second comparisons at seed_start 63400. The 5e-7 probe passed parent no-regression with 0 blockers but did not improve soda-creek 60s; the 1e-6 probe failed parent no-regression with one 300s/caramel-workshop average survival blocker.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/window_regression_vs_parent.md",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/window_regression_vs_parent.md"
+  ]
+}

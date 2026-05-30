@@ -274,6 +274,8 @@ seed `63402` 的 trace 诊断已确认 seed replay candidate 与 parent 在目�
 
 `opening-boundary-escape` reward profile 已接入 Rust gym-bridge、Python Gym wrapper 和 `train_sb3.py` CLI。它保留 opening route recovery 的 0-60 秒窗口，但新增独立 `opening_boundary_escape` breakdown 字段：只有当 boundary edge risk 与 enemy pressure 同时较高时，才根据动作是否朝地图内侧逃离边界给小额正 / 负 shaping。`cargo test -p game_harness`、Python env profile 测试和 dry-run 已通过，报告位于 `harness/reports/2026-05-30_opening_boundary_escape_profile_001/summary.md`；该入口只是针对 seed `63402` action lock 的下一轮 target-specific repair 工具，不是 policy gate。
 
+首个 `opening-boundary-escape` stage 01 probe 证明单靠这条 scalar reward 还不够：`5e-7` 版本通过同 seed 60 / 180 / 300 秒 parent no-regression，但 `soda-creek` 60 秒仍为 `0.6667`，300 秒三图仍全 `0.0`；`1e-6` 版本恢复 `cracked-star-jar` 300 秒 `0.3333` 胜率，但因 `300s/caramel-workshop` 平均存活 `-0.1444s` 失败。两个版本的 reward breakdown 都显示 `opening_boundary_escape` 为负，说明信号已被记录，但 PPO 没有把 seed `63402` 的 action lock 转成成功 seed 的 action `7` / `3` 逃逸模式。已记录 `fail_20260530_005`，报告位于 `harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_probe_001/summary.md`；下一轮应从 seed `63402` 高压贴边帧导出 target-specific supervision 或 guard，而不是继续只调 scalar reward。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。

@@ -1,0 +1,280 @@
+{
+  "report_version": 1,
+  "repo_root": ".",
+  "decision": "goal_blockers_present",
+  "blocker_count": 5,
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 2
+  },
+  "category_counts": {
+    "coverage": 1,
+    "human_review": 1,
+    "release": 2,
+    "roadmap": 1
+  },
+  "sources": {
+    "manual_evidence": "harness/reports/2026-05-26_manual_evidence_gap_audit_001/manual_evidence_gap_audit.json",
+    "local_binary": "harness/reports/2026-05-28_local_binary_launch_diagnostic_after_codex_devtools_001/local_binary_launch_diagnostic.json",
+    "release_candidate": "harness/reports/2026-05-27_release_candidate_evidence_current_local_005/release_candidate_evidence.json",
+    "release_package": "harness/reports/2026-05-27_release_package_manifest_current_local_001/release_package_manifest.json",
+    "docs_coverage": "harness/docs_implementation_coverage.json",
+    "roadmap_audit": "harness/roadmap_audit/roadmap_phase_audit.json",
+    "goal_consistency": "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_probe_001/goal_consistency.json"
+  },
+  "errors": [],
+  "blockers": [
+    {
+      "id": "manual_evidence_gaps",
+      "severity": "P0",
+      "category": "human_review",
+      "status": "manual_evidence_gaps_present",
+      "summary": "Manual review evidence is still incomplete across 20 requirement(s).",
+      "source": "harness/reports/2026-05-26_manual_evidence_gap_audit_001/manual_evidence_gap_audit.json",
+      "blocked_by": [],
+      "requires_external_action": false,
+      "requires_human": true,
+      "next_actions": [
+        "Use the manual evidence gap audit as the human-review checklist.",
+        "Do not mark playtest, content, story, asset, privacy, platform, base UI, or release gates as passing until their validators pass."
+      ],
+      "detail": {
+        "gap_count": 20,
+        "requirement_count": 20,
+        "domains_with_gaps": [
+          "asset:6",
+          "base_ui:1",
+          "content:3",
+          "platform:1",
+          "playtest:1",
+          "privacy:3",
+          "release:1",
+          "story:4"
+        ]
+      }
+    },
+    {
+      "id": "release_candidate_not_ready",
+      "severity": "P1",
+      "category": "release",
+      "status": "release_candidate_not_ready",
+      "summary": "Release Candidate evidence is not ready.",
+      "source": "harness/reports/2026-05-27_release_candidate_evidence_current_local_005/release_candidate_evidence.json",
+      "blocked_by": [
+        "manual_evidence_gaps"
+      ],
+      "requires_external_action": false,
+      "requires_human": false,
+      "next_actions": [
+        "Keep release_candidate_not_ready until binary-dependent gates and human gates are real pass evidence.",
+        "After blockers clear, rerun tools/validate_release_candidate_evidence.py without --allow-not-ready."
+      ],
+      "detail": {
+        "blockers": [
+          "content_frozen: gate status is `waiting`",
+          "performance: gate status is `waiting`",
+          "manual_playtest: gate status is `waiting`",
+          "asset_manual_review: gate status is `waiting`",
+          "story_codex_review: gate status is `waiting`",
+          "telemetry_privacy: gate status is `waiting`",
+          "release_package: gate status is `waiting`"
+        ],
+        "missing_gates": []
+      }
+    },
+    {
+      "id": "release_package_not_ready",
+      "severity": "P1",
+      "category": "release",
+      "status": "release_package_not_ready",
+      "summary": "Release package manifest is not ready.",
+      "source": "harness/reports/2026-05-27_release_package_manifest_current_local_001/release_package_manifest.json",
+      "blocked_by": [
+        "release_candidate_not_ready"
+      ],
+      "requires_external_action": false,
+      "requires_human": false,
+      "next_actions": [
+        "Do not prepare a release package until Release Candidate evidence is ready.",
+        "After a concrete package exists, rerun tools/validate_release_package_manifest.py."
+      ],
+      "detail": {
+        "package_status": "blocked",
+        "blockers": [
+          "package_status is `blocked`",
+          "package_created: check status is `waiting`",
+          "final_smoke: check status is `waiting`",
+          "package blocker: release_candidate_not_ready"
+        ],
+        "missing_ready_checks": [
+          "asset_manifest_verified",
+          "checksum_recorded",
+          "content_lock_verified",
+          "release_notes_reviewed"
+        ]
+      }
+    },
+    {
+      "id": "docs_implementation_incomplete",
+      "severity": "P2",
+      "category": "coverage",
+      "status": "docs_implementation_incomplete",
+      "summary": "Docs coverage remains incomplete for 18 document(s).",
+      "source": "harness/docs_implementation_coverage.json",
+      "blocked_by": [
+        "manual_evidence_gaps"
+      ],
+      "requires_external_action": false,
+      "requires_human": false,
+      "next_actions": [
+        "Use docs coverage gaps to choose only tasks that can be honestly evidenced.",
+        "Keep binary- and human-dependent docs partial/blocked until real validation exists."
+      ],
+      "detail": {
+        "doc_status_counts": {},
+        "item_status_counts": {},
+        "incomplete_docs": [
+          "docs/01_游戏愿景与设计支柱.md",
+          "docs/02_核心玩法规格.md",
+          "docs/03_世界观与剧情大纲.md",
+          "docs/04_内容系统与素材库.md",
+          "docs/05_美术与音频素材计划.md",
+          "docs/06_Bevy技术架构计划.md",
+          "docs/07_Harness工程计划.md",
+          "docs/08_Bot测试计划.md",
+          "docs/09_AI_Bot训练计划.md",
+          "docs/10_AI内容生成流水线.md",
+          "docs/11_测试指标与上线门禁.md",
+          "docs/12_阶段路线图.md"
+        ]
+      }
+    },
+    {
+      "id": "roadmap_incomplete",
+      "severity": "P2",
+      "category": "roadmap",
+      "status": "roadmap_phase_audit_incomplete",
+      "summary": "Roadmap has 8 incomplete phase(s).",
+      "source": "harness/roadmap_audit/roadmap_phase_audit.json",
+      "blocked_by": [
+        "manual_evidence_gaps"
+      ],
+      "requires_external_action": false,
+      "requires_human": false,
+      "next_actions": [
+        "准备 9 局人工试玩审查，并让真人填写 runtime_manual_review_pack。",
+        "准备 full pack 人工设计审查与 9 局人工试玩记录。",
+        "真人审查和试玩通过后，再用 acceptance manifest / lockfile 推进 accepted_content。",
+        "收集人工设计审查与试玩记录，并运行 strict acceptance 校验。",
+        "通过人工接受后再生成非空 accepted content lockfile。",
+        "停止继续堆同构 MLP 样本或单图补强。"
+      ],
+      "detail": {
+        "phase_status_counts": {
+          "blocked": 3,
+          "partial": 3,
+          "pending": 2
+        },
+        "incomplete_phases": [
+          {
+            "phase": 2,
+            "title": "Bevy Runtime 可玩版",
+            "status": "blocked"
+          },
+          {
+            "phase": 4,
+            "title": "内容配置化与首批内容",
+            "status": "partial"
+          },
+          {
+            "phase": 5,
+            "title": "AI 内容生成闭环",
+            "status": "partial"
+          },
+          {
+            "phase": 6,
+            "title": "AI Bot 训练",
+            "status": "blocked"
+          },
+          {
+            "phase": 7,
+            "title": "美术与音频垂直切片",
+            "status": "partial"
+          },
+          {
+            "phase": 8,
+            "title": "公开 Demo",
+            "status": "blocked"
+          },
+          {
+            "phase": 9,
+            "title": "上线前扩展",
+            "status": "pending"
+          },
+          {
+            "phase": 10,
+            "title": "上线后运营",
+            "status": "pending"
+          }
+        ]
+      }
+    }
+  ],
+  "next_queue": [
+    {
+      "id": "manual_evidence_gaps",
+      "severity": "P0",
+      "summary": "Manual review evidence is still incomplete across 20 requirement(s).",
+      "next_actions": [
+        "Use the manual evidence gap audit as the human-review checklist.",
+        "Do not mark playtest, content, story, asset, privacy, platform, base UI, or release gates as passing until their validators pass."
+      ]
+    },
+    {
+      "id": "release_candidate_not_ready",
+      "severity": "P1",
+      "summary": "Release Candidate evidence is not ready.",
+      "next_actions": [
+        "Keep release_candidate_not_ready until binary-dependent gates and human gates are real pass evidence.",
+        "After blockers clear, rerun tools/validate_release_candidate_evidence.py without --allow-not-ready."
+      ]
+    },
+    {
+      "id": "release_package_not_ready",
+      "severity": "P1",
+      "summary": "Release package manifest is not ready.",
+      "next_actions": [
+        "Do not prepare a release package until Release Candidate evidence is ready.",
+        "After a concrete package exists, rerun tools/validate_release_package_manifest.py."
+      ]
+    },
+    {
+      "id": "docs_implementation_incomplete",
+      "severity": "P2",
+      "summary": "Docs coverage remains incomplete for 18 document(s).",
+      "next_actions": [
+        "Use docs coverage gaps to choose only tasks that can be honestly evidenced.",
+        "Keep binary- and human-dependent docs partial/blocked until real validation exists."
+      ]
+    },
+    {
+      "id": "roadmap_incomplete",
+      "severity": "P2",
+      "summary": "Roadmap has 8 incomplete phase(s).",
+      "next_actions": [
+        "准备 9 局人工试玩审查，并让真人填写 runtime_manual_review_pack。",
+        "准备 full pack 人工设计审查与 9 局人工试玩记录。",
+        "真人审查和试玩通过后，再用 acceptance manifest / lockfile 推进 accepted_content。",
+        "收集人工设计审查与试玩记录，并运行 strict acceptance 校验。",
+        "通过人工接受后再生成非空 accepted content lockfile。",
+        "停止继续堆同构 MLP 样本或单图补强。"
+      ]
+    }
+  ],
+  "limitations": [
+    "This audit prioritizes existing blocker reports only; it does not execute binaries, run Harness, fill human reviews, or approve release readiness.",
+    "External host policy and human review blockers must be cleared outside this script before downstream gates can become passing evidence.",
+    "Derived release, docs, and roadmap blockers should remain until their source validators report ready or complete."
+  ]
+}

@@ -1301,6 +1301,11 @@
       "id": "rl_opening_boundary_escape_profile",
       "summary": "新增 opening-boundary-escape repair-only reward profile：在 0-60 秒开局窗口保留 route recovery 信号，并额外加入仅当贴边风险和敌压同时较高时生效的内侧逃逸 shaping。Rust gym-bridge、Python Gym wrapper、train_sb3 CLI 和文档均已接入，cargo test -p game_harness、Python env profile 测试和 dry-run 均通过；该入口尚未训练或通过 fixed-window gate。",
       "report": "harness/reports/2026-05-30_opening_boundary_escape_profile_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_opening_boundary_escape_probe",
+      "summary": "执行 opening-boundary-escape stage 01 probe：5e-7 版本通过 60/180/300 秒 parent no-regression 但 soda-creek 60 秒仍为 0.6667、300 秒三图仍全 0.0；1e-6 版本恢复 cracked-star-jar 300 秒 0.3333，但触发 300s/caramel-workshop 平均存活 -0.1444s blocker。已记录 fail_20260530_005，下一步需从 seed 63402 trace 导出 target-specific supervision 或 guard。",
+      "report": "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_probe_001/summary.md"
     }
   ],
   "current_findings": [

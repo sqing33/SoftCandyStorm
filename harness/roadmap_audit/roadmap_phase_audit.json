@@ -638,7 +638,19 @@
         "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_lr1e6_probe_001/window_regression_vs_parent.json",
         "python/train/README.md",
         "harness/reports/2026-05-30_opening_boundary_escape_profile_001/summary.md",
-        "harness/reports/2026-05-30_opening_boundary_escape_profile_001/dry_run.json"
+        "harness/reports/2026-05-30_opening_boundary_escape_profile_001/dry_run.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_probe_001/summary.md",
+        "harness/failed_cases/fail_20260530_005_stage01_opening_boundary_escape_probe.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/ppo_training_report.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/comparison_60s.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/comparison_180s.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/comparison_300s.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr5e7_probe_001/window_regression_vs_parent.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/ppo_training_report.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/comparison_60s.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/comparison_180s.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/comparison_300s.json",
+        "harness/reports/2026-05-30_rl_stage01_opening_boundary_escape_lr1e6_probe_001/window_regression_vs_parent.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -667,7 +679,8 @@
         "seed 63402 trace 诊断确认 seed replay candidate 与 parent 在目标 seed 上几乎没有行为差异：两者均约 37.3 秒死亡，目标 seed 采样 action 5 占 69.91%，缺失成功 seeds 的 action 7 / 3，并从 11.3334 秒到死亡持续 action 5；下一轮 stage 01 修复应针对贴边敌压上升时的 action 5 锁定，而不是继续单纯 replay seed。",
         "opening-route-recovery 小步 stage 01 probe 有短窗改善信号：60 秒平均胜率 0.7778、180 秒平均胜率 0.6667，300 秒平均存活较 parent 提升；但 300 秒胜率仍为 0.0/0.0/0.0，且同 seed parent no-regression 因 cracked-star-jar 180 秒胜率 -0.3333、平均存活 -31.0702s 以及 60/180 秒微存活回归失败。已记录 fail_20260530_003；该 checkpoint 不得进入 stage 02。",
         "opening-route-recovery 保守学习率 sweep 找到 parent-preserving 设置：5e-7 版本通过 60/180/300 秒 strict parent no-regression，60 秒 caramel-workshop 提升到 1.0；但 soda-creek 60 秒仍为 0.6667，300 秒三图仍为 0.0/0.0/0.0。已记录 fail_20260530_004；它只能作为下一轮 target-specific stage 01 repair 起点，不得进入 stage 02。",
-        "opening-boundary-escape reward profile 已接入 Rust gym-bridge、Python Gym wrapper 与 train_sb3 CLI，并通过 cargo test -p game_harness、Python env profile 测试和 dry-run；但它目前只是 seed 63402 target-specific repair profile 入口，尚未产出训练 checkpoint、60/180/300 秒 fixed-window 结果或 parent no-regression 通过证据。"
+        "opening-boundary-escape reward profile 已接入 Rust gym-bridge、Python Gym wrapper 与 train_sb3 CLI，并通过 cargo test -p game_harness、Python env profile 测试和 dry-run；但它目前只是 seed 63402 target-specific repair profile 入口，尚未产出训练 checkpoint、60/180/300 秒 fixed-window 结果或 parent no-regression 通过证据。",
+        "opening-boundary-escape stage 01 probe 已验证新 reward breakdown 会激活，但单靠 scalar reward 未解除 seed 63402 opening blocker：5e-7 parent no-regression 通过但 soda-creek 60 秒仍 0.6667；1e-6 恢复 cracked-star-jar 300 秒 0.3333 但触发 300s/caramel-workshop 存活回归。已记录 fail_20260530_005；下一步需要 target-specific supervised / guard rows。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -685,7 +698,7 @@
         "不要从 opening-route-recovery probe checkpoint 进入 stage 02；它仍未通过 parent no-regression，且 300 秒三图胜率仍全 0。",
         "不要从 5e-7 opening-route-recovery checkpoint 进入 stage 02；它只证明 parent-preserving 小步可行，仍未解除 soda-creek seed 63402 opening blocker。",
         "下一轮 stage 01 repair 应在 5e-7 设置上叠加 seed 63402 target objective 或 online action-distribution guard，并要求 soda-creek 60 秒提升与 60/180/300 秒 parent no-regression 同时成立。",
-        "用 opening-boundary-escape 在 5e-7 parent-preserving 设置上跑 seed 63402 target stage 01 小步 probe，并同时要求 soda-creek 60 秒提升与 60/180/300 秒 parent no-regression 成立。"
+        "从 seed 63402 高压贴边 action-lock trace 导出 target-specific supervision 或 guard rows，再与 parent-preserving 5e-7 设置组合；不要继续只调 opening-boundary-escape scalar reward。"
       ]
     },
     {
