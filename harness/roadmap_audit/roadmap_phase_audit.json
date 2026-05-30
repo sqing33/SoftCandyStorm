@@ -710,7 +710,11 @@
         "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/ppo_training_report.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/comparison_60s.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_counterlabel_retention_probe_001/target_seed_preflight.json",
-        "harness/failed_cases/fail_20260530_009_stage01_seed63402_counterlabel_retention_probe.json"
+        "harness/failed_cases/fail_20260530_009_stage01_seed63402_counterlabel_retention_probe.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/summary.md",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/comparison_60s.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/target_seed_preflight.json",
+        "harness/failed_cases/fail_20260530_010_stage01_seed63402_staged_opening_wrapper_preflight.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -750,7 +754,8 @@
         "首个 guard + retention PPO probe 已失败：anchor validation guard 在 KL 2.155758 / argmax agreement 0.6 处拦截，soda-creek:63402 target preflight 在 37.4998 秒 defeat 且 action 7 ratio 0.0；已记录 fail_20260530_008，未运行完整矩阵。",
         "seed 63402 pre-failure trace compare 已确认 parent、seed-replay candidate、guard-retention probe 三者同形失败：目标 seed 缺 action 3/7、多 action 4/5，并导出 48 条高压 action 5 sampled states 作为反例 / 覆写目标设计输入；尚未生成新 counterfactual labels、staged branch 或通过 target preflight 的 repair。",
         "pre-failure counterlabel 工具和首批数据集已建立：48 条 action 5 反例被标注为 24 条 action 7 与 24 条 action 3，并通过 dry-run；但 counterfactual labels 是设计假设，不是观察到的成功行为，尚未训练、预检或通过 no-regression。",
-        "counterlabel + retention anchor/probe 已失败：80 条 action 7/3 counterfactual + retention 样本的离线 anchor accuracy 只有 0.75；PPO anchor validation guard 在 KL 1.971987 / argmax agreement 0.625 处拦截，soda-creek:63402 target preflight 仍在 37.6664 秒 defeat 且 action 7 ratio 0.0。已记录 fail_20260530_009，未运行完整矩阵。"
+        "counterlabel + retention anchor/probe 已失败：80 条 action 7/3 counterfactual + retention 样本的离线 anchor accuracy 只有 0.75；PPO anchor validation guard 在 KL 1.971987 / argmax agreement 0.625 处拦截，soda-creek:63402 target preflight 仍在 37.6664 秒 defeat 且 action 7 ratio 0.0。已记录 fail_20260530_009，未运行完整矩阵。",
+        "generic staged opening wrapper preflight 已失败：stage01_corner_risk_delta_smoke.zip 负责前 60 秒时，soda-creek:63402 仍在 36.4665 秒 defeat，action 7 ratio 0.0，失败路径转为 action 4 主导。已记录 fail_20260530_010，说明不能直接复用旧 opening wrapper 修 seed 63402。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -776,7 +781,8 @@
         "guard + retention probe 已证明 31.9999-37.2664 秒 action 7 窄切片不足以修复在线闭环；下一步应导出并对比 seed 63402 在 0-37.5 秒的 pre-failure route states，补充更早的路线/压力状态覆盖或改为显式 staged branch，再重新通过 anchor guard 与 target preflight。",
         "下一轮不要模仿 seed63402_prefailure_route_states.jsonl 中的 action 5；应把这 48 条高压失败 states 作为反例，设计 counterfactual target（优先 action 7/3 或 wrapper branch），然后先通过离线 target 覆写检查、anchor validation guard 和 soda-creek:63402 target preflight。",
         "下一轮可把 seed63402_prefailure_counterlabel_samples.jsonl 与成功 retention anchors 结合，先训练一个小型 counterlabel anchor 或 staged branch；必须先检查离线 action 7/3 覆写命中、anchor validation guard 和 soda-creek:63402 target preflight，失败则不跑完整矩阵。",
-        "不要继续 plain mixed counterlabel anchor；下一轮应改为显式 staged / constrained opening branch，或先生成更高置信 counterfactual labels，并要求离线 target accuracy、anchor validation guard 和 soda-creek:63402 target preflight 同时通过后再考虑 fixed-window no-regression。"
+        "不要继续 plain mixed counterlabel anchor；下一轮应改为显式 staged / constrained opening branch，或先生成更高置信 counterfactual labels，并要求离线 target accuracy、anchor validation guard 和 soda-creek:63402 target preflight 同时通过后再考虑 fixed-window no-regression。",
+        "下一轮 seed 63402 opening branch 必须基于 seed-specific trace states 或显式 constrained dispatch 训练/评估；generic opening wrapper 已被 target preflight 拒绝，不能进入完整矩阵。"
       ]
     },
     {

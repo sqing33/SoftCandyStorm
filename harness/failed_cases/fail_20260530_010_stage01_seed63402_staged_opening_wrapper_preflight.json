@@ -1,0 +1,17 @@
+{
+  "case_id": "fail_20260530_010",
+  "category": "rl_evaluation",
+  "content_id": "stage01-seed63402-staged-opening-wrapper-preflight",
+  "seed": "63400-63402",
+  "bot": "opening-boundary-escape-staged-sb3-opening-wrapper",
+  "time_seconds": 60.0,
+  "symptom": "The evaluation-only staged opening wrapper failed the seed 63402 target preflight. Using stage01_corner_risk_delta_smoke.zip for the first 60 seconds and ppo_e30_mid_anchor_guarded_probe.zip as fallback, soda-creek seed 63402 died at 36.4665s with action 7 ratio 0.0.",
+  "root_cause": "The existing generic stage01 corner_risk_delta opening model does not cover the newer seed 63402 failure state. Instead of the parent action 5 dominated path, this wrapper drives the target seed into an action 4 dominated defeat path: seed 63402 recorded 906 action 4 steps, 188 action 2 steps, and no action 7.",
+  "fix": "Do not use the generic stage01 corner_risk_delta opening wrapper as the seed 63402 repair branch. The next opening branch must be trained or constrained from seed 63402-specific trace states, and must prove target seed preflight before any 60/180/300 second matrix.",
+  "validation": "Ran a 3 seed soda-creek 60s comparison with --opening-model stage01_corner_risk_delta_smoke.zip, --opening-seconds 60, and fallback model ppo_e30_mid_anchor_guarded_probe.zip. validate_policy_target_seed_preflight reported policy_target_seed_preflight_failed for soda-creek:63402 because the episode ended at 36.4665s with player_health_depleted and action 7 ratio 0.0.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/target_seed_preflight.json"
+  ]
+}
