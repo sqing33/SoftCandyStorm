@@ -2903,6 +2903,11 @@
       "id": "rl_stage01_seed63402_target_guard_samples",
       "summary": "从 seed 63402 trace 的高压贴边 action-lock 窗口导出 target-specific guard rows：export_route_recovery_samples.py 现支持 route_recovery any、enemy_pressure 过滤和 preferred target actions；首批 17 条样本来自 soda-creek seed 63402 的 31.9999-37.2664 秒，原始动作均为 action 5，校验后目标均为非顶墙 action 7。样本通过 edge_recovery_samples_valid，behavior clone dry-run 确认 17 条均被读取为 edge_recovery_supervision；但它只能作为下一轮 parent-preserving 5e-7 repair 的训练输入，不是 stage 02、policy gate 或 RL acceptance。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_target_guard_samples_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_guard_anchor_probe",
+      "summary": "执行 seed 63402 guard-anchor probe：17 条 guard rows 训练出的 behavior-clone anchor 离线准确率为 1.0，但 256 timestep opening-boundary-escape PPO continuation 的 anchor validation guard 失败，validation KL 4.251955、argmax agreement 0.0。候选通过 60/180/300 秒 parent no-regression 且 0 blockers，但 soda-creek seed 63402 仍在 37.3331 秒死亡并继续 action 5 锁定。已记录 fail_20260530_006，该 checkpoint 不得进入 stage 02。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/summary.md"
     }
   ],
   "next_recommended": [

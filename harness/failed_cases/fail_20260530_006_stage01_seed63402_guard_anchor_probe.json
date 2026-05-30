@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260530_006",
+  "category": "rl_training",
+  "content_id": "stage01-seed63402-guard-anchor-probe",
+  "seed": "63400-63402",
+  "bot": "opening-boundary-escape-ppo-guard-anchor",
+  "time_seconds": 60.0,
+  "symptom": "The seed 63402 guard-anchor probe preserved the parent fixed-window metrics but did not repair the target opening blocker. The anchor validation guard failed immediately with validation_mean_kl 4.251955 and validation_argmax_agreement 0.0, and soda-creek seed 63402 still died at 37.3331s with action 5 locked for 787 sampled ticks and no action 7 samples.",
+  "root_cause": "The first local anchor configuration was too weak and too narrow to alter the closed-loop PPO policy on the exact edge-lock state. The behavior-clone anchor learned the 17 repair rows, but the PPO continuation did not align to it on the validation rows, so the target-specific guard data stayed as offline training material rather than becoming an online escape trigger.",
+  "fix": "Do not enter stage 02 from this checkpoint. The next attempt should either strengthen the guard-anchor update in a controlled sweep, distill the guard rows into a supervised SB3 pre-alignment before PPO, or add an explicit online action-distribution guard that checks seed 63402 high-pressure rows before running full fixed-window comparisons.",
+  "validation": "Trained a 30 epoch behavior-clone guard anchor on 17 seed 63402 target rows, then ran a 256 timestep opening-boundary-escape PPO continuation from the e30 mid-anchor guarded parent with learning_rate 5e-7 and anchor_regularization_weight 0.05. The resulting checkpoint passed 60/180/300 second parent no-regression with 0 blockers but failed the anchor validation guard and kept soda-creek 60s win_rate at 0.6667.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/behavior_clone_anchor_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/window_regression_vs_parent.md"
+  ]
+}

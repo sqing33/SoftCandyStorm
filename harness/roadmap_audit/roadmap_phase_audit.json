@@ -654,7 +654,15 @@
         "harness/reports/2026-05-30_rl_stage01_seed63402_target_guard_samples_001/summary.md",
         "harness/reports/2026-05-30_rl_stage01_seed63402_target_guard_samples_001/export_report.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_target_guard_samples_001/sample_validation.json",
-        "harness/reports/2026-05-30_rl_stage01_seed63402_target_guard_samples_001/behavior_clone_dry_run.json"
+        "harness/reports/2026-05-30_rl_stage01_seed63402_target_guard_samples_001/behavior_clone_dry_run.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/summary.md",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/behavior_clone_anchor_report.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/ppo_training_report.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/comparison_60s.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/comparison_180s.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/comparison_300s.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_probe_001/window_regression_vs_parent.json",
+        "harness/failed_cases/fail_20260530_006_stage01_seed63402_guard_anchor_probe.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -685,7 +693,8 @@
         "opening-route-recovery 保守学习率 sweep 找到 parent-preserving 设置：5e-7 版本通过 60/180/300 秒 strict parent no-regression，60 秒 caramel-workshop 提升到 1.0；但 soda-creek 60 秒仍为 0.6667，300 秒三图仍为 0.0/0.0/0.0。已记录 fail_20260530_004；它只能作为下一轮 target-specific stage 01 repair 起点，不得进入 stage 02。",
         "opening-boundary-escape reward profile 已接入 Rust gym-bridge、Python Gym wrapper 与 train_sb3 CLI，并通过 cargo test -p game_harness、Python env profile 测试和 dry-run；但它目前只是 seed 63402 target-specific repair profile 入口，尚未产出训练 checkpoint、60/180/300 秒 fixed-window 结果或 parent no-regression 通过证据。",
         "opening-boundary-escape stage 01 probe 已验证新 reward breakdown 会激活，但单靠 scalar reward 未解除 seed 63402 opening blocker：5e-7 parent no-regression 通过但 soda-creek 60 秒仍 0.6667；1e-6 恢复 cracked-star-jar 300 秒 0.3333 但触发 300s/caramel-workshop 存活回归。已记录 fail_20260530_005；下一步需要 target-specific supervised / guard rows。",
-        "seed 63402 target guard rows 已导出并通过 edge_recovery_samples_valid：17 条样本来自 soda-creek seed 63402 的 31.9999-37.2664 秒高压贴边 action 5 锁定窗口，目标为非顶墙 action 7；behavior clone dry-run 已确认可读为 edge_recovery_supervision。这只是下一轮 repair_training_input，不是 stage 02、policy gate 或 RL acceptance 证据。"
+        "seed 63402 target guard rows 已导出并通过 edge_recovery_samples_valid：17 条样本来自 soda-creek seed 63402 的 31.9999-37.2664 秒高压贴边 action 5 锁定窗口，目标为非顶墙 action 7；behavior clone dry-run 已确认可读为 edge_recovery_supervision。这只是下一轮 repair_training_input，不是 stage 02、policy gate 或 RL acceptance 证据。",
+        "seed 63402 guard-anchor probe 已失败：behavior-clone anchor 离线准确率 1.0，但 PPO anchor validation guard 失败，validation KL 4.251955、argmax agreement 0.0；候选通过 60/180/300 秒 parent no-regression 但没有修复 soda-creek seed 63402 opening death，已记录 fail_20260530_006。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -703,7 +712,7 @@
         "不要从 opening-route-recovery probe checkpoint 进入 stage 02；它仍未通过 parent no-regression，且 300 秒三图胜率仍全 0。",
         "不要从 5e-7 opening-route-recovery checkpoint 进入 stage 02；它只证明 parent-preserving 小步可行，仍未解除 soda-creek seed 63402 opening blocker。",
         "下一轮 stage 01 repair 应在 5e-7 设置上叠加 seed 63402 target objective 或 online action-distribution guard，并要求 soda-creek 60 秒提升与 60/180/300 秒 parent no-regression 同时成立。",
-        "用 seed 63402 target guard rows 与 parent-preserving 5e-7 设置组合做下一轮 stage 01 repair；训练后必须重新跑 soda-creek 60 秒提升检查以及 60/180/300 秒 parent no-regression，未通过前不得进入 stage 02。"
+        "不要从 seed 63402 guard-anchor checkpoint 进入 stage 02；下一轮应强化或重构局部 guard objective，并在全窗口对比前先检查 guard rows 上的 SB3 argmax 是否切到 action 7。"
       ]
     },
     {
