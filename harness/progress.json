@@ -1311,6 +1311,11 @@
       "id": "rl_stage01_seed63402_guard_anchor_strength_probe",
       "summary": "执行 seed 63402 强 guard-anchor probe：anchor weight 1.0、20 个 KL epoch 与 lr 0.001 已把 17 条 guard rows 的离线 validation / alignment 压到 KL 0.178923 / 0.16974 且 argmax agreement 1.0，但在线 high-pressure 失败；soda-creek 60 秒降到 0.3333，seed 63402 仍在 45.2330 秒死亡，180 秒 soda-creek 降到 0.0，300 秒三图全 0.0；相对 parent window no-regression 触发 8 个 blockers。已记录 fail_20260530_007，该 checkpoint 不得进入 stage 02。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/summary.md"
+    },
+    {
+      "id": "rl_target_seed_preflight_validator",
+      "summary": "新增 RL target seed online preflight 校验器：validate_policy_target_seed_preflight.py 可从 comparison JSON 中按 map_id:seed 检查窗口存活、非 defeat、最小存活时间和动作比例上下限；单元测试 4 项通过。首个真实示例读取强 guard-anchor 60 秒报告并检查 soda-creek:63402，预检失败并抓到 45.2330 秒 defeat、action 7 ratio 0.0。该工具用于 stage 01 repair 的早停预检，不替代 60/180/300 秒 high-pressure、parent no-regression 或 RL acceptance。",
+      "report": "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2918,6 +2923,11 @@
       "id": "rl_stage01_seed63402_guard_anchor_strength_probe",
       "summary": "执行 seed 63402 强 guard-anchor probe：anchor weight 1.0、20 个 KL epoch 与 lr 0.001 已把 17 条 guard rows 的离线 validation / alignment 压到 KL 0.178923 / 0.16974 且 argmax agreement 1.0，但在线 high-pressure 失败；soda-creek 60 秒降到 0.3333，seed 63402 仍在 45.2330 秒死亡，180 秒 soda-creek 降到 0.0，300 秒三图全 0.0；相对 parent window no-regression 触发 8 个 blockers。已记录 fail_20260530_007，该 checkpoint 不得进入 stage 02。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/summary.md"
+    },
+    {
+      "id": "rl_target_seed_preflight_validator",
+      "summary": "新增 RL target seed online preflight 校验器：validate_policy_target_seed_preflight.py 可从 comparison JSON 中按 map_id:seed 检查窗口存活、非 defeat、最小存活时间和动作比例上下限；单元测试 4 项通过。首个真实示例读取强 guard-anchor 60 秒报告并检查 soda-creek:63402，预检失败并抓到 45.2330 秒 defeat、action 7 ratio 0.0。该工具用于 stage 01 repair 的早停预检，不替代 60/180/300 秒 high-pressure、parent no-regression 或 RL acceptance。",
+      "report": "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2928,6 +2938,10 @@
     {
       "id": "rl_stage01_after_strong_guard_anchor_probe",
       "summary": "强 guard-anchor 已证明离线 action 7 对齐不足以修复在线 seed 63402，且会造成 60/180/300 秒 parent 回归。下一轮 stage 01 repair 不应继续单纯提高 guard strength；应先加在线 seed 63402 preflight、成功开局 retention anchor 或 staged / constrained repair，并把目标 seed 改善与 parent no-regression 作为硬门槛。"
+    },
+    {
+      "id": "rl_stage01_use_target_seed_preflight",
+      "summary": "后续 stage 01 repair 在进入完整 60/180/300 秒矩阵前，应先用 validate_policy_target_seed_preflight.py 检查 soda-creek:63402 是否达到窗口 survival、非 defeat 和必要的逃逸动作比例；预检失败时直接记录 failure case 或调整训练，不继续跑昂贵矩阵。"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",

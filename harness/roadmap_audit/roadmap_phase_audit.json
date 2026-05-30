@@ -670,7 +670,12 @@
         "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/comparison_180s.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/comparison_300s.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_guard_anchor_strength_probe_001/window_regression_vs_parent.json",
-        "harness/failed_cases/fail_20260530_007_stage01_seed63402_guard_anchor_strength_probe.json"
+        "harness/failed_cases/fail_20260530_007_stage01_seed63402_guard_anchor_strength_probe.json",
+        "tools/validate_policy_target_seed_preflight.py",
+        "tools/test_validate_policy_target_seed_preflight.py",
+        "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/summary.md",
+        "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/seed63402_strong_guard_preflight.json",
+        "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/seed63402_strong_guard_preflight.md"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -703,7 +708,8 @@
         "opening-boundary-escape stage 01 probe 已验证新 reward breakdown 会激活，但单靠 scalar reward 未解除 seed 63402 opening blocker：5e-7 parent no-regression 通过但 soda-creek 60 秒仍 0.6667；1e-6 恢复 cracked-star-jar 300 秒 0.3333 但触发 300s/caramel-workshop 存活回归。已记录 fail_20260530_005；下一步需要 target-specific supervised / guard rows。",
         "seed 63402 target guard rows 已导出并通过 edge_recovery_samples_valid：17 条样本来自 soda-creek seed 63402 的 31.9999-37.2664 秒高压贴边 action 5 锁定窗口，目标为非顶墙 action 7；behavior clone dry-run 已确认可读为 edge_recovery_supervision。这只是下一轮 repair_training_input，不是 stage 02、policy gate 或 RL acceptance 证据。",
         "seed 63402 guard-anchor probe 已失败：behavior-clone anchor 离线准确率 1.0，但 PPO anchor validation guard 失败，validation KL 4.251955、argmax agreement 0.0；候选通过 60/180/300 秒 parent no-regression 但没有修复 soda-creek seed 63402 opening death，已记录 fail_20260530_006。",
-        "强 guard-anchor probe 已失败：17 条 guard rows 的离线 alignment 通过（mean KL 0.16974、argmax agreement 1.0），但在线 60 秒 soda-creek 降到 0.3333、seed 63402 仍在 45.2330 秒死亡，180 秒 soda-creek 为 0.0，300 秒三图全 0.0；相对 parent 触发 8 个 window regression blockers。已记录 fail_20260530_007，说明不能把离线 guard alignment 当成在线 policy 修复证据。"
+        "强 guard-anchor probe 已失败：17 条 guard rows 的离线 alignment 通过（mean KL 0.16974、argmax agreement 1.0），但在线 60 秒 soda-creek 降到 0.3333、seed 63402 仍在 45.2330 秒死亡，180 秒 soda-creek 为 0.0，300 秒三图全 0.0；相对 parent 触发 8 个 window regression blockers。已记录 fail_20260530_007，说明不能把离线 guard alignment 当成在线 policy 修复证据。",
+        "target seed online preflight 校验器已能在 comparison JSON 中抓出 soda-creek:63402 的强 guard-anchor 在线失败：45.2330 秒 defeat 且 action 7 ratio 为 0.0；它是早停预检工具，仍不能替代完整 fixed-window high-pressure、parent no-regression 或 acceptance。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -722,7 +728,8 @@
         "不要从 5e-7 opening-route-recovery checkpoint 进入 stage 02；它只证明 parent-preserving 小步可行，仍未解除 soda-creek seed 63402 opening blocker。",
         "下一轮 stage 01 repair 应在 5e-7 设置上叠加 seed 63402 target objective 或 online action-distribution guard，并要求 soda-creek 60 秒提升与 60/180/300 秒 parent no-regression 同时成立。",
         "不要从 seed 63402 guard-anchor checkpoint 进入 stage 02；下一轮应强化或重构局部 guard objective，并在全窗口对比前先检查 guard rows 上的 SB3 argmax 是否切到 action 7。",
-        "不要继续单纯提高 seed 63402 guard strength；下一轮必须先做在线 seed 63402 preflight，并加入成功开局 retention anchor 或 staged / constrained repair，同时要求目标 seed 改善和 60/180/300 秒 parent no-regression 均通过。"
+        "不要继续单纯提高 seed 63402 guard strength；下一轮必须先做在线 seed 63402 preflight，并加入成功开局 retention anchor 或 staged / constrained repair，同时要求目标 seed 改善和 60/180/300 秒 parent no-regression 均通过。",
+        "后续 stage 01 repair 在进入完整 60/180/300 秒矩阵前，应先用 validate_policy_target_seed_preflight.py 检查 soda-creek:63402 是否达到窗口 survival、非 defeat 和必要的逃逸动作比例；预检失败时直接记录 failure case 或调整训练，不继续跑昂贵矩阵。"
       ]
     },
     {
