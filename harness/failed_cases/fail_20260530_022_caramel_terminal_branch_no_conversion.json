@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260530_022",
+  "category": "rl_policy",
+  "content_id": "caramel-terminal-branch-per-map-chain-no-conversion",
+  "seed": "63400-63402",
+  "bot": "per-map-edge-recovery-branch-plus-caramel-terminal-conversion-branch-plus-all-map-late-recovery-filter",
+  "time_seconds": 300.0,
+  "symptom": "Adding the multimap victory terminal model as a caramel-workshop-only terminal_conversion_branch in the 210-300s late window did not convert caramel-workshop to a 300s victory. The 300s high-pressure result stayed soda-creek 1.0, caramel-workshop 0.0, cracked-star-jar 0.3333, while caramel-workshop average survival dropped from the per-map chain baseline 231.2871s to 228.9533s.",
+  "root_cause": "The terminal branch plumbing and per-map dispatch are working, but the existing multimap victory terminal model does not contain a useful caramel-workshop late conversion sequence for the actual failure states. In the 300s comparison the branch dispatched 796 times on caramel-workshop, including 796 late-window decisions, yet produced no win and introduced a small survival regression.",
+  "fix": "Do not continue tuning the same terminal dispatch window or thresholds as a promotion path. Keep the per-map edge branch plus all-map late filter as the current no-regression diagnostic baseline, then collect or train a caramel-workshop-specific late conversion target closer to the failing 210-300s states before any further policy candidate evaluation.",
+  "validation": "Ran high-pressure 60s, 180s, and 300s comparisons on seeds 63400-63402 using e30 mid-anchor parent, terminal_victory_multimap_path_target_w1_e30 as a caramel-workshop-only terminal_conversion_branch with map override 210-300s / min_pressure 0.2 / min_low_health_risk 0.25, soda-creek 0-60s and caramel-workshop 30-45s edge branch map overrides, and all-map late_recovery_filter from 60s. window_regression_vs_per_map_chain.json failed with one blocker: 300s/caramel-workshop average survival dropped 2.3338s.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/summary.md",
+    "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/comparison_180s.json",
+    "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/comparison_300s.json",
+    "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/window_regression_vs_per_map_chain.json"
+  ]
+}

@@ -1436,6 +1436,21 @@
       "id": "rl_per_map_edge_branch_late_all_high_pressure",
       "summary": "使用 soda-creek:0-60s 与 caramel-workshop:30-45s 的 per-map edge branch composition，并保留 all-map late_recovery_filter 复跑 high-pressure 60/180/300 秒诊断：相对上一条 chain 的 regression 0 blockers，60/180 秒三图 1.0，300 秒保住 soda 1.0 与 cracked 0.3333，但 caramel 仍 0.0 胜率。",
       "report": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/summary.md"
+    },
+    {
+      "id": "rl_terminal_conversion_per_map_config",
+      "summary": "为 evaluation-only terminal_conversion_branch 增加 --terminal-conversion-map-overrides，可按地图覆写 terminal branch 的时间窗、pressure 阈值和 low-health 阈值；单测覆盖解析、分地图窗口行为和 compare 透传。",
+      "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_nested_policy_adapter_provenance",
+      "summary": "edge_recovery_branch 的 policy_adapter_report 现在会展开内层 base / branch policy adapter，确保 terminal_conversion_branch 被外层 edge branch 和 late filter 包住时仍保留 usage、effective config 与模型来源证据；单测覆盖 nested base adapter provenance。",
+      "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_caramel_terminal_branch_per_map_chain",
+      "summary": "将旧 multimap victory terminal model 作为 caramel-workshop 专属 terminal branch 叠到 per-map edge branch + all-map late filter 基线上：60/180 秒三图仍为 1.0，300 秒仍为 soda 1.0、caramel 0.0、cracked 0.3333。terminal branch 在 caramel late bucket 触发 796/4404 次但无转胜，相对 per-map chain 触发 300s/caramel 平均存活 -2.3338s blocker，已记录 fail_20260530_022。",
+      "report": "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3111,6 +3126,10 @@
     }
   ],
   "next_recommended": [
+    {
+      "id": "rl_caramel_terminal_conversion_target",
+      "summary": "当前 caramel terminal branch 诊断已确认问题不是分支未触发：旧 multimap victory terminal model 在 caramel late bucket 触发 796/4404 次仍无 300 秒转胜，并造成 2.3338 秒平均存活回归。下一步应收集或训练更贴近 caramel-workshop 210-300 秒真实失败态的专用 conversion target，再以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression。"
+    },
     {
       "id": "runtime_manual_playtest_capture",
       "summary": "Runtime demo-input 技术 capture、10 分钟 release-local 本机性能门禁和 Runtime 本机资源探针已通过；下一步仍需真人使用 `game_runtime --playtest-report harness/telemetry/local/runtime_manual_playtest_001.json` 进行可玩性走查，并补充 projectile 可读性、命中反馈、XP 拾取节奏、Boss 出场提示和需要保留的 failure case"

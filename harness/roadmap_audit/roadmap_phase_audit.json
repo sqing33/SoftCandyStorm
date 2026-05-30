@@ -809,9 +809,13 @@
         "harness/failed_cases/fail_20260530_020_caramel_branch_late_all_soda_opening_regression.json",
         "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/summary.md",
         "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/window_regression_vs_previous_chain.json",
-        "harness/failed_cases/fail_20260530_021_per_map_edge_branch_late_conversion_gap.json"
+        "harness/failed_cases/fail_20260530_021_per_map_edge_branch_late_conversion_gap.json",
+        "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/summary.md",
+        "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/window_regression_vs_per_map_chain.json",
+        "harness/failed_cases/fail_20260530_022_caramel_terminal_branch_no_conversion.json"
       ],
       "gaps": [
+        "caramel-workshop 专属 terminal_conversion_branch 诊断已证明旧 multimap victory terminal model 在目标 late bucket 实际触发 796/4404 次仍不能转胜，并相对 per-map chain baseline 造成 300 秒平均存活 -2.3338s 回归；下一步需要专用 caramel late failure-state conversion target，而不是继续调同一 terminal model 的分派阈值。",
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
         "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认旧坏路径是右下角 action 4，首个 action-specific 20k 重训又转为 action 8 塌缩。corner_risk_delta smoke 已让 stage 01 opening 60 秒 deterministic / stochastic 10 seed 三图 100% 胜率，但 stage 02 单图训练、mixed retention 和 low-lr short continuation 都会让 soda-creek opening 或 mid-window 回归失败；seed replay 将 soda-creek opening 提升到 90%，但 seed 62405 trace compare 显示 stage 02 丢掉了右下角切 action 7 离角落的触发。",
         "当前 RL Bot 不能作为正式压力测试基线。",
