@@ -1679,7 +1679,17 @@
             "python/train/train_sb3.py",
             "python/train/test_train_sb3.py",
             "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/summary.md",
-            "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/evaluation.json"
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/evaluation.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/summary.md",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_60s.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_180s.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_300s.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/window_regression_vs_edge_branch.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_60s_soda-creek_validation.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_180s_soda-creek_edge_only_validation.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_300s_soda-creek_edge_only_validation.json",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_risk_samples_validation.json",
+            "harness/failed_cases/fail_20260530_015_edge_branch_late_filter_caramel_gap.json"
           ],
           "gaps": [
             "cracked-star-jar 胜利终局 trajectory sample filter 已保留 358 条 210-240 秒 movement samples，覆盖 2 个 KiteBot victory episode，并通过 behavior clone dry-run；但该批样本只是 terminal-conversion 正例训练输入，样本量小、只覆盖单图，且 high_action_persistence 为 watch，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
@@ -1799,7 +1809,7 @@
             "start-policy alignment precheck 确认 e30 mid-anchor parent 与 edge recovery anchor 起点不匹配：edge recovery rows mean KL 2.131519、argmax agreement 0.0；retention rows mean KL 0.759214。已记录 fail_20260530_012。",
             "edge recovery supervised init 已证明硬标签 SB3 能通过离线 alignment 和 soda-creek:63402 target preflight，但在线 60 秒三 seed comparison 出现 action 7 ratio 0.9987 的动作塌缩，并让 seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013，下一步应改做状态条件分派 / constrained opening branch。",
             "edge_recovery_branch 条件分派已扩大到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression，三窗口均通过：soda-creek 60 秒胜率从 0.6667 提升到 1.0，180 秒从 0.6667 提升到 1.0，300 秒平均存活从 143.0974s 提升到 221.8073s；但 300 秒三图胜率仍全为 0.0，已记录 fail_20260530_014。该分支只能作为 stage 01 opening repair / no-regression 证据，不能解除 RL acceptance、stage 03 或 policy candidate 阻塞。",
-            "evaluation-only adapter chaining 已允许 edge_recovery_branch 与 late_recovery_filter 组合，并能在 late filter 未改动作时透传内层 branch decision、late filter 改动作时清理内层旧 decision；5 秒 smoke 只证明包装、报告 provenance 和样本导出链路可用，尚未运行 180/300 秒 high-pressure chained diagnostic，也不能作为 policy gate。"
+            "edge_recovery_branch + late_recovery_filter chained high-pressure diagnostic 已完成 60/180/300 秒三图同 seed 63400-63402 对比，并相对单独 edge branch 通过 window no-regression（0 blockers）。300 秒 soda-creek 提升到 1.0 胜率、cracked-star-jar 提升到 0.3333，但 caramel-workshop 仍为 0.0，已记录 fail_20260530_015；2000 条 late-risk 样本 valid 但有 6 条 target risk score warning。因此该组合只能作为 repair diagnostic 和样本来源，不能解除 RL acceptance、stage 03 或 policy candidate 阻塞。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

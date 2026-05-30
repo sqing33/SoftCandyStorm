@@ -759,7 +759,13 @@
         "python/train/train_sb3.py",
         "python/train/test_train_sb3.py",
         "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/summary.md",
-        "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/evaluation.json"
+        "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/evaluation.json",
+        "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/summary.md",
+        "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_60s.json",
+        "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_180s.json",
+        "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_300s.json",
+        "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/window_regression_vs_edge_branch.json",
+        "harness/failed_cases/fail_20260530_015_edge_branch_late_filter_caramel_gap.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -807,7 +813,7 @@
         "start-policy alignment precheck 确认 e30 mid-anchor parent 与 edge recovery anchor 起点不匹配：edge recovery rows mean KL 2.131519、argmax agreement 0.0；retention rows mean KL 0.759214。已记录 fail_20260530_012。",
         "edge recovery supervised init 已证明硬标签 SB3 能通过离线 alignment 和 soda-creek:63402 target preflight，但在线 60 秒三 seed comparison 出现 action 7 ratio 0.9987 的动作塌缩，并让 seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013，下一步应改做状态条件分派 / constrained opening branch。",
         "edge_recovery_branch 条件分派已扩大到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression，三窗口均通过，且 soda-creek 60 秒与 180 秒胜率均从 0.6667 提升到 1.0，300 秒平均存活从 143.0974s 提升到 221.8073s；但 300 秒三图胜率仍全为 0.0，gate 仍为 multimap_comparison_recorded_needs_policy_repair。已记录 fail_20260530_014，因此它只能作为 stage 01 opening repair 证据，不能进入 stage 03、RL test Bot 或 acceptance。",
-        "edge_recovery_branch 与 late_recovery_filter 已可组合为 evaluation-only diagnostic chain，并通过 5 秒 smoke 确认 wrapped_policy_adapter 和样本导出链路；这只是为下一轮 180/300 秒 high-pressure chained diagnostic 铺路，不是策略质量证据。"
+        "edge_recovery_branch + late_recovery_filter chained diagnostic 已完成 60/180/300 秒 high-pressure 三图复跑，并相对单独 edge branch 通过 no-regression；300 秒 soda-creek 提升到 1.0 胜率、cracked-star-jar 提升到 0.3333，但 caramel-workshop 仍为 0.0。已记录 fail_20260530_015，因此它仍只是 repair diagnostic 和 late-risk 样本来源，不是策略质量证据或 acceptance。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -841,7 +847,7 @@
         "start alignment precheck 已拒绝当前 parent；下一步将 edge recovery anchor 蒸馏 / supervised 初始化为 SB3 checkpoint，并先过离线 alignment，再考虑 PPO 或 target-seed preflight。",
         "硬标签 supervised SB3 已把 target seed 修复变成 action 7 全局塌缩；下一步不要继续全局 opening policy，改做按 boundary/enemy-pressure state 条件触发的 edge recovery branch / adapter。",
         "edge_recovery_branch 已完成 high-pressure 60/180/300 秒 parent no-regression 并记录 long-window gap；下一轮不要把该 branch 推进为 policy candidate，应保留其 60/180 秒 opening repair 证据，另起 mid / late route recovery branch 或 closed-loop repair 来处理 300 秒三图全败。",
-        "使用 edge_recovery_branch + late_recovery_filter chained diagnostic 在 180/300 秒 high-pressure 窗口复跑，记录 late filter 触发率、样本类型、胜率 / 存活变化和 parent no-regression；若 late filter 只是移动失败面，应记录新的 failure case。"
+        "基于 edge_recovery_branch + late_recovery_filter 的 chained diagnostic 结果，下一轮应聚焦 caramel-workshop 300 秒 late conversion，并把 60/180/300 秒 no-regression、validated risk samples 和 fail_20260530_015 作为保守约束；不要把 deterministic wrapper 推进为 policy candidate。"
       ]
     },
     {

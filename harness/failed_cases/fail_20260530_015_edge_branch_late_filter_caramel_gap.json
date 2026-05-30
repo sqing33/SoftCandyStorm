@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260530_015",
+  "category": "rl_policy",
+  "content_id": "edge-branch-late-filter-caramel-300s-gap",
+  "seed": "63400-63402",
+  "bot": "edge-recovery-branch-plus-late-recovery-filter-over-e30-mid-anchor-parent",
+  "time_seconds": 300.0,
+  "symptom": "The chained evaluation-only edge_recovery_branch + late_recovery_filter diagnostic passed 60/180/300 second no-regression against the edge branch baseline and improved 300 second soda-creek and cracked-star-jar outcomes, but caramel-workshop still recorded 0.0 win rate at 300 seconds.",
+  "root_cause": "The opening branch only dispatches in the 0-60s soda-creek edge-lock window, while the late recovery filter changes risky actions after 60 seconds but does not yet produce a full caramel-workshop terminal conversion sequence. The adapter can improve survival from 120.1944s to 163.3014s, but it remains a deterministic diagnostic wrapper rather than a learned late-win policy.",
+  "fix": "Do not promote the chained wrapper as an RL policy candidate, stage 03 checkpoint, or acceptance evidence. Keep the 2000 validated risk_recovery_supervision_sample rows as repair-training input candidates, then design a caramel-workshop late-conversion repair objective that preserves the existing 60/180/300 second no-regression evidence.",
+  "validation": "Ran high-pressure 60, 180, and 300 second comparisons on seeds 63400-63402 with edge_recovery_branch wrapped by late_recovery_filter. window_regression_vs_edge_branch.json passed with 0 blockers. chain_comparison_300s.json reported soda-creek win rate 1.0, caramel-workshop win rate 0.0, cracked-star-jar win rate 0.3333, and gate multimap_comparison_recorded_needs_policy_repair. Edge samples validated as edge_recovery_samples_valid and the combined late-risk sample set validated as risk_recovery_samples_valid with 6 target risk score warnings.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/summary.md",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_60s.json",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_180s.json",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_comparison_300s.json",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/window_regression_vs_edge_branch.json",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_risk_samples_validation.json"
+  ]
+}

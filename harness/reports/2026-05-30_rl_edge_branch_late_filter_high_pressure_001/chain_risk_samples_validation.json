@@ -1,0 +1,75 @@
+{
+  "report_version": 1,
+  "sources": [
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_180s_soda-creek_risk_only.jsonl",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_180s_caramel-workshop.jsonl",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_180s_cracked-star-jar.jsonl",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_300s_soda-creek_risk_only.jsonl",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_300s_caramel-workshop.jsonl",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_300s_cracked-star-jar.jsonl"
+  ],
+  "decision": "risk_recovery_samples_valid",
+  "sample_count": 2000,
+  "map_ids": [
+    "caramel-workshop",
+    "cracked-star-jar",
+    "soda-creek"
+  ],
+  "seeds": [
+    63400,
+    63401,
+    63402
+  ],
+  "time_range_seconds": {
+    "min": 60.0328,
+    "max": 297.5156
+  },
+  "original_action_distribution": {
+    "1": 167,
+    "2": 68,
+    "3": 219,
+    "4": 187,
+    "5": 341,
+    "6": 488,
+    "7": 231,
+    "8": 299
+  },
+  "target_action_distribution": {
+    "0": 53,
+    "1": 202,
+    "2": 70,
+    "3": 192,
+    "4": 378,
+    "5": 203,
+    "6": 61,
+    "7": 648,
+    "8": 193
+  },
+  "risk_reason_distribution": {
+    "toward_enemy_pressure": 953,
+    "wallward_edge": 803,
+    "toward_hazard": 252,
+    "toward_boss": 42
+  },
+  "target_risk_reason_distribution": {
+    "<none>": 1967,
+    "toward_enemy_pressure": 13,
+    "toward_boss": 11,
+    "idle_under_late_pressure": 8,
+    "toward_hazard": 1
+  },
+  "errors": [],
+  "warnings": [
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_180s_caramel-workshop.jsonl:93 seed 63401 map caramel-workshop: target risk score 0.103595 is worse than original 0.040605",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_180s_caramel-workshop.jsonl:94 seed 63401 map caramel-workshop: target risk score 0.113089 is worse than original 0.031317",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_180s_caramel-workshop.jsonl:95 seed 63401 map caramel-workshop: target risk score 0.118338 is worse than original 0.02852",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_300s_soda-creek_risk_only.jsonl:184 seed 63400 map soda-creek: target risk score 0.066986 is worse than original 0.019223",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_300s_caramel-workshop.jsonl:69 seed 63400 map caramel-workshop: target risk score 0.31294 is worse than original 0.121505",
+    "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/chain_samples_300s_cracked-star-jar.jsonl:78 seed 63400 map cracked-star-jar: target risk score 0.046002 is worse than original 0.028885"
+  ],
+  "limitations": [
+    "This validator checks sample structure and late-risk reason consistency only.",
+    "A valid result means samples may be used for repair training inputs, not RL policy acceptance.",
+    "Final policies still require deterministic high-pressure, multimap, failure-case, and acceptance checks."
+  ]
+}
