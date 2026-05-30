@@ -1406,6 +1406,11 @@
       "id": "rl_caramel_opening_edge_branch_probe",
       "summary": "对 caramel-workshop:63402 opening action 5 corner lock 做 edge branch scope probe：0-60s broad branch 能修 60 秒目标但因 300s/caramel action 5 ratio +0.2746 超阈值失败；30-45s narrow branch 只在 31.2665s 改 1 次 action 5 -> 7，target preflight 通过，high-pressure 60/180/300s parent no-regression 以 0 blockers 通过。caramel 300 秒平均存活提升到 180.0673s 但胜率仍为 0.0，已记录 fail_20260530_017；该结果只能作为 opening repair constraint，不是 policy candidate。",
       "report": "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md"
+    },
+    {
+      "id": "rl_caramel_opening_late_chain_probe",
+      "summary": "将 caramel narrow opening branch 与 late_recovery_filter 串回统一 high-pressure 链路：60/180 秒三图均为 1.0 胜率且相对上一版 chained diagnostic 为 0 blockers，但 300 秒 regression 失败，soda-creek 从 1.0 回落到 0.6667，平均存活下降 4.5878s；caramel-workshop 平均存活提升到 231.2871s 但胜率仍 0.0。已记录 fail_20260530_018；该链路只能作为诊断和样本来源，不得推进 policy candidate。",
+      "report": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/summary.md"
     }
   ],
   "current_findings": [

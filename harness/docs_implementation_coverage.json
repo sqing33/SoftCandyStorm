@@ -1705,9 +1705,20 @@
             "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_window_regression_vs_parent.json",
             "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_target_seed_preflight.json",
             "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/narrow_branch_samples_60s_caramel-workshop_validation.json",
-            "harness/failed_cases/fail_20260530_017_caramel_opening_branch_scope.json"
+            "harness/failed_cases/fail_20260530_017_caramel_opening_branch_scope.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/summary.md",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_comparison_60s.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_comparison_180s.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_comparison_300s.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_window_regression_vs_previous_chain_300s.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_edge_samples_validation.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples_validation.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_mid_clean_risk_samples_validation.json",
+            "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_late_clean_risk_samples_validation.json",
+            "harness/failed_cases/fail_20260530_018_caramel_opening_late_chain_soda_regression.json"
           ],
           "gaps": [
+            "caramel narrow opening branch 与 late filter 串回统一 high-pressure 链路后，60/180 秒三图均为 1.0 胜率且 0 blockers，但 300 秒相对上一版 chained diagnostic 失败：soda-creek 从 1.0 回落到 0.6667，平均存活下降 4.5878s；caramel-workshop 仍为 0.0 胜率。已记录 fail_20260530_018；该结果只能作为诊断和样本来源，不能推进 policy candidate、stage 03 或 RL acceptance。",
             "cracked-star-jar 胜利终局 trajectory sample filter 已保留 358 条 210-240 秒 movement samples，覆盖 2 个 KiteBot victory episode，并通过 behavior clone dry-run；但该批样本只是 terminal-conversion 正例训练输入，样本量小、只覆盖单图，且 high_action_persistence 为 watch，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
             "多图 victory terminal samples 已扩展到 1437 条 210-240 秒 movement samples 和 8 个 victory episode，覆盖 high-pressure 三图；但该数据集仍只是训练输入，且 soda-creek 样本占比 0.6256、caramel-workshop 只有 1 个 episode，仍需后续训练和多基线门禁。",
             "dataset-action-target-path 监督目标覆写已能只对指定胜利终局路径样本使用 dataset action one-hot target，并在 w5 中保住 drift alignment、full-anchor alignment 和 parent window regression；但 300 秒 high-pressure 三图仍为 0.0/0.0/0.0，且相对 e30 在 300s/soda-creek 触发 action 1 ratio +0.2234 online blocker。该能力是训练工具，不是 policy candidate、stage 03 或 RL acceptance 证据。",

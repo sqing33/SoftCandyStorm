@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260530_018",
+  "category": "rl_policy",
+  "content_id": "caramel-opening-late-chain-soda-regression",
+  "seed": "63400-63402",
+  "bot": "caramel-and-soda-edge-recovery-branch-plus-late-recovery-filter-over-e30-mid-anchor-parent",
+  "time_seconds": 300.0,
+  "symptom": "The unified evaluation-only chain that enabled edge_recovery_branch on both caramel-workshop and soda-creek passed 60s and 180s high-pressure checks, but failed 300s regression against the previous chained diagnostic. soda-creek dropped from 1.0 to 0.6667 win rate and average survival dropped from 300.015s to 295.4272s, while caramel-workshop still had 0.0 win rate.",
+  "root_cause": "The caramel opening branch plus late filter improves caramel-workshop survival but does not create a terminal conversion sequence, and sharing the branch scope with soda-creek changes the long-window behavior enough to lose one soda-creek 300s seed. The wrapper remains a deterministic diagnostic adapter stack rather than a learned policy with stable cross-map retention.",
+  "fix": "Reject this unified wrapper as a policy candidate, stage 03 checkpoint, RL test Bot, or acceptance evidence. Keep the validated clean mid and late risk samples as repair-training input candidates only. Future repair should use per-map or state-conditioned late conversion objectives and require 300s no-regression against the previous soda-winning chain before continuing.",
+  "validation": "Ran high-pressure 60s, 180s, and 300s comparisons on seeds 63400-63402 with edge_recovery_branch maps soda-creek,caramel-workshop, branch window 25-45s, and late_recovery_filter from 60s. Regression validation passed 60s and 180s with 0 blockers, but unified_window_regression_vs_previous_chain_300s.json failed with two soda-creek blockers. Sample validation reported 8 valid edge samples, 2165 valid raw risk samples with 8 warnings, 1402 valid clean mid samples, and 727 valid clean late samples.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_comparison_60s.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_comparison_180s.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_comparison_300s.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_window_regression_vs_previous_chain_300s.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_edge_samples_validation.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_mid_clean_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_late_clean_risk_samples_validation.json"
+  ]
+}

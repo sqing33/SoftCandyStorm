@@ -1,0 +1,125 @@
+{
+  "report_version": 1,
+  "decision": "risk_recovery_clean_samples_exported",
+  "sources": [
+    "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl"
+  ],
+  "out": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_mid_clean_risk_samples.jsonl",
+  "input_sample_count": 2165,
+  "kept_sample_count": 1402,
+  "drop_count": 763,
+  "drop_reasons": {
+    "invalid_sample": 0,
+    "target_risk_reasons": 1,
+    "worse_target_risk_score": 5,
+    "above_max_target_risk_score": 0,
+    "map_filter": 0,
+    "time_window": 757
+  },
+  "source_warning_count": 8,
+  "filter": {
+    "allow_target_risk": false,
+    "allow_worse_target_risk": false,
+    "target_risk_tolerance": 1e-06,
+    "max_target_risk_score": null,
+    "map_filter": null,
+    "min_seconds": 60.0,
+    "max_seconds": 180.0
+  },
+  "kept_original_action_distribution": {
+    "1": 122,
+    "2": 57,
+    "3": 127,
+    "4": 126,
+    "5": 212,
+    "6": 452,
+    "7": 140,
+    "8": 166
+  },
+  "kept_target_action_distribution": {
+    "0": 40,
+    "1": 150,
+    "2": 33,
+    "3": 125,
+    "4": 206,
+    "5": 158,
+    "6": 44,
+    "7": 566,
+    "8": 80
+  },
+  "kept_risk_reason_distribution": {
+    "wallward_edge": 711,
+    "toward_enemy_pressure": 628,
+    "toward_hazard": 75
+  },
+  "validation_decision": "risk_recovery_samples_valid",
+  "drop_examples": [
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 93,
+      "target_risk_delta": 0.06299
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 94,
+      "target_risk_delta": 0.081772
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 95,
+      "target_risk_delta": 0.089818
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 96,
+      "target_risk_reasons": [
+        "toward_enemy_pressure"
+      ]
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 808,
+      "target_risk_delta": 0.191435
+    },
+    {
+      "reason": "time_window",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 853,
+      "time_seconds": 180.5429
+    },
+    {
+      "reason": "time_window",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 854,
+      "time_seconds": 184.1104
+    },
+    {
+      "reason": "time_window",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 855,
+      "time_seconds": 184.5104
+    },
+    {
+      "reason": "time_window",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 856,
+      "time_seconds": 184.5438
+    },
+    {
+      "reason": "time_window",
+      "source": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_risk_samples.jsonl",
+      "line": 857,
+      "time_seconds": 184.5771
+    }
+  ],
+  "limitations": [
+    "Clean risk-recovery subsets are still adapter-derived repair training inputs.",
+    "Filtering removes obvious target-risk rows; it does not prove policy quality.",
+    "Any policy trained with this output still needs deterministic high-pressure gates and failure-case review."
+  ]
+}
