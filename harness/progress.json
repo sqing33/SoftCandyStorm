@@ -1266,6 +1266,11 @@
       "id": "rl_current_high_pressure_fixed_window_action_plan",
       "summary": "新增 RL 固定窗口行动计划生成器：把当前 high-pressure 60/180/300 秒失败分析合并成 opening、handoff/mid 和 late conversion 三阶段修复计划，并为每阶段保留 60/180/300 秒 validation commands。该计划只用于下一轮修复排程，不训练模型、不批准 checkpoint，也不改变 RL acceptance blocked 状态。",
       "report": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/summary.md"
+    },
+    {
+      "id": "rl_current_high_pressure_stage01_opening_probe",
+      "summary": "执行固定窗口行动计划的 stage_01_opening_lt_60 小步 repair：从 e30 mid-anchor guarded checkpoint 继续 256 timestep 后，60 秒 soda-creek 仍有 opening death，180 秒 caramel-workshop 为 watch，300 秒三图仍全 0%；同 seed parent no-regression 因 300s/cracked-star-jar dominant action ratio +0.2034 失败。已记录 fail_20260530_001，该 checkpoint 不得进入 stage 02、stage 03 或 RL acceptance。",
+      "report": "harness/reports/2026-05-30_rl_current_high_pressure_stage01_opening_probe_001/summary.md"
     }
   ],
   "current_findings": [
