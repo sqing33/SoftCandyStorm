@@ -300,6 +300,8 @@ generic staged opening wrapper 预检也已失败：评估时前 `60s` 使用既
 
 `edge_recovery_filter` 预检提供了第一条正向 seed `63402` 修复信号：在 `ppo_e30_mid_anchor_guarded_probe.zip` 上只加 deterministic edge recovery adapter，`soda-creek` seeds `63400-63402` 的 60 秒 smoke 达到 `1.0` 胜率，`soda-creek:63402` target preflight 通过（`60.0328s` victory，action `7` ratio `0.2965`）。本轮同时导出 `76` 条 `edge_recovery_supervision_sample`，时间范围 `6.8333s-58.9661s`，并通过 `edge_recovery_samples_valid` 与 behavior clone dry-run；报告位于 `harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/summary.md`。该 adapter 是手写诊断 wrapper，不是 policy gate；真正下一步是把这 `76` 条样本训练进 learned seed-specific opening branch / anchor。
 
+首个 seed `63402` edge recovery anchor 已训练完成：混合上述 `76` 条 filter-derived repair rows 与 `32` 条成功 retention rows，共 `108` 条样本；target action 分布以 action `1`、`7`、`0` 为主，behavior clone final train accuracy `0.9767`、validation accuracy `0.9545`，离线诊断 accuracy `0.9722` 且预测分布接近 target。报告位于 `harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/summary.md`。该模型是 learned repair input，不是 policy gate；下一步必须先做小步 PPO anchor validation guard 和 `soda-creek:63402` target preflight。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。

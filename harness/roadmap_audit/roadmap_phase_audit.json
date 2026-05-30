@@ -720,7 +720,11 @@
         "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/target_seed_preflight.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/edge_recovery_samples.jsonl",
         "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/edge_recovery_samples_validation.json",
-        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/behavior_clone_dry_run.json"
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/behavior_clone_dry_run.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/summary.md",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/behavior_clone_anchor_report.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/offline_policy_diagnostic.json",
+        "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/seed63402_edge_recovery_anchor.pt"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -762,7 +766,8 @@
         "pre-failure counterlabel 工具和首批数据集已建立：48 条 action 5 反例被标注为 24 条 action 7 与 24 条 action 3，并通过 dry-run；但 counterfactual labels 是设计假设，不是观察到的成功行为，尚未训练、预检或通过 no-regression。",
         "counterlabel + retention anchor/probe 已失败：80 条 action 7/3 counterfactual + retention 样本的离线 anchor accuracy 只有 0.75；PPO anchor validation guard 在 KL 1.971987 / argmax agreement 0.625 处拦截，soda-creek:63402 target preflight 仍在 37.6664 秒 defeat 且 action 7 ratio 0.0。已记录 fail_20260530_009，未运行完整矩阵。",
         "generic staged opening wrapper preflight 已失败：stage01_corner_risk_delta_smoke.zip 负责前 60 秒时，soda-creek:63402 仍在 36.4665 秒 defeat，action 7 ratio 0.0，失败路径转为 action 4 主导。已记录 fail_20260530_010，说明不能直接复用旧 opening wrapper 修 seed 63402。",
-        "edge_recovery_filter 预检首次让 soda-creek:63402 target preflight 通过，并导出 76 条有效 edge recovery samples；但该结果依赖手写 policy_adapter，只能作为 repair training input，不是 policy gate 或 RL acceptance 证据。"
+        "edge_recovery_filter 预检首次让 soda-creek:63402 target preflight 通过，并导出 76 条有效 edge recovery samples；但该结果依赖手写 policy_adapter，只能作为 repair training input，不是 policy gate 或 RL acceptance 证据。",
+        "edge recovery anchor 已训练完成：108 条 edge recovery + retention 样本的离线 diagnostic accuracy 为 0.9722；但它仍是 offline anchor，不是 policy gate，尚未通过 PPO anchor validation guard、target preflight 或 fixed-window no-regression。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -790,7 +795,8 @@
         "下一轮可把 seed63402_prefailure_counterlabel_samples.jsonl 与成功 retention anchors 结合，先训练一个小型 counterlabel anchor 或 staged branch；必须先检查离线 action 7/3 覆写命中、anchor validation guard 和 soda-creek:63402 target preflight，失败则不跑完整矩阵。",
         "不要继续 plain mixed counterlabel anchor；下一轮应改为显式 staged / constrained opening branch，或先生成更高置信 counterfactual labels，并要求离线 target accuracy、anchor validation guard 和 soda-creek:63402 target preflight 同时通过后再考虑 fixed-window no-regression。",
         "下一轮 seed 63402 opening branch 必须基于 seed-specific trace states 或显式 constrained dispatch 训练/评估；generic opening wrapper 已被 target preflight 拒绝，不能进入完整矩阵。",
-        "把 76 条 edge_recovery_filter 样本转成 learned seed-specific opening branch / anchor，并先过离线样本命中、soda-creek:63402 target preflight，再考虑 60/180/300 秒 parent no-regression。"
+        "把 76 条 edge_recovery_filter 样本转成 learned seed-specific opening branch / anchor，并先过离线样本命中、soda-creek:63402 target preflight，再考虑 60/180/300 秒 parent no-regression。",
+        "用 seed63402_edge_recovery_anchor.pt 做小步 PPO anchor-regularized probe；先跑 anchor validation guard 与 soda-creek:63402 target preflight，未通过时直接记录 failure case，不跑完整矩阵。"
       ]
     },
     {
