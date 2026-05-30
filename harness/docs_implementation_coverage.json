@@ -1,6 +1,6 @@
 {
   "report_version": 1,
-  "updated_at": "2026-05-29",
+  "updated_at": "2026-05-30",
   "scope": "docs/00-19 implementation coverage",
   "summary": "Goal 模式下用于审计所有设计文档是否已经被当前仓库实现的覆盖账本。状态必须保守：缺少运行验证、真人试玩、最终素材或发布证据时，不得标为 complete。",
   "docs": [
@@ -352,7 +352,7 @@
       "doc_id": "07",
       "doc_path": "docs/07_Harness工程计划.md",
       "status": "partial",
-      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；恢复后矩阵与 Replay 可执行，Phase 4 full pack 的 20 seed Bot 平衡阻塞和重启后 base_demo 600 秒长局 Bot gate 回归均已通过策略校准复测解除，当前主要缺口转为 release 级 Runtime 性能和人工证据。",
+      "summary": "Harness 报告、候选校验、失败案例、release evidence、progress 引用、docs 覆盖和 Goal 总账一致性等门禁已补强；Phase 3 规则 Bot 与 Harness 基础设施已完成审计，当前主要缺口仍是 release 级多硬件 / 内存证据和人工证据。",
       "coverage": [
         {
           "id": "harness-gates-and-reports",
@@ -397,11 +397,14 @@
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
             "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json",
             "harness/reports/2026-05-28_local_binary_launch_diagnostic_after_codex_devtools_001/summary.md",
-            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md"
+            "harness/reports/2026-05-28_runtime_demo_input_after_codex_devtools_001/summary.md",
+            "harness/reports/2026-05-30_phase3_bot_harness_completion_audit_001/summary.md",
+            "harness/reports/2026-05-30_phase3_bot_harness_completion_audit_001/phase3_bot_harness_completion_audit.json"
           ],
           "gaps": [
             "本地二进制启动已恢复，game_harness --help、cargo test --workspace、60 秒 simulate 和权限恢复后的 Runtime demo-input capture 已在当前会话通过；Phase 4 full pack 的 20 seed Bot 策略校准矩阵、180 条 Replay 回归和 headless 性能预算均已通过，自动 Bot gate 已从 blocked 回到 pass。",
             "本地二进制启动已有可复现诊断门禁和恢复交接包，最新 Codex Developer Tool 权限复测仍为 local_binary_launch_ok；base_demo 9 Bot x 20 seed x 600 秒矩阵曾暴露 GreedyXpBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 胜率高于目标，已作为 repair failure case 记录并通过规则 Bot 策略校准修复：seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，Replay 各 180/180，headless 性能预算 valid。",
+            "Phase 3 审计已确认规则 Bot 阵列、多 Bot 多 seed 矩阵、summary / metrics 输出、坏信号拒绝、Replay 回归与 headless 性能预算具备基础设施闭环；该结论不替代新增内容后的 fresh matrix、人工试玩、Runtime polish、Release Candidate 或发布包证据。",
             "Progress 账本已完成历史证据回填，Goal 证据一致性门禁会检查 docs 覆盖、路线图、progress、RC evidence 和 release package 是否互相一致；后续新增进度项仍需持续维护 report 证据路径。"
           ],
           "blockers": []
@@ -412,7 +415,7 @@
       "doc_id": "08",
       "doc_path": "docs/08_Bot测试计划.md",
       "status": "partial",
-      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；本地二进制已恢复，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过策略校准复测解除，重启后 base_demo 600 秒 all Bot 矩阵暴露的长局目标区间回归也已修复，后续重点转为继续多地图复测和人工试玩证据。",
+      "summary": "规则 Bot、矩阵报告和 replay 回归已有多轮实现和校准；Phase 3 规则 Bot 与 Harness 基础设施已完成审计，后续新增内容和平衡改动仍必须重新跑对应矩阵，并继续由真人判断乐趣与可读性。",
       "coverage": [
         {
           "id": "rule-bot-baselines",
@@ -440,12 +443,15 @@
             "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
             "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
-            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
+            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json",
+            "harness/reports/2026-05-30_phase3_bot_harness_completion_audit_001/summary.md",
+            "harness/reports/2026-05-30_phase3_bot_harness_completion_audit_001/phase3_bot_harness_completion_audit.json"
           ],
           "gaps": [
             "新增内容和平衡改动后需要重跑多地图、多 seed Bot 矩阵；当前 20 seed 发布探针证明 5 seed 候选仿真不足以支撑 Release Candidate Bot gate。重启后 base_demo seed 53000-53019 的 20 seed / 600 秒 all Bot 复测曾进一步暴露长局 Bot gate 目标区间回归，现已补充 seed 52000-52019 与 seed 53000-53019 双窗口校准复测。",
             "Phase 4 full pack 已完成同等样本复测：GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部进入目标区间，Replay 180/180 和 headless 性能预算 valid。",
             "base_demo 600 秒 20 seed all Bot 矩阵的原始失败为 GreedyXpBot 75.0%、KiteBot 85.0%、TankBot / BossHunterBot 100.0%、ZoneControlBot 90.0%、RouteBot 45.0% 均高于目标；修复后 seed52000 窗口分别为 Greedy 50.0%、Kite 70.0%、Tank 30.0%、BossHunter 65.0%、ZoneControl 25.0%、Route 15.0%，seed53000 窗口分别为 Greedy 55.0%、Kite 75.0%、Tank 25.0%、BossHunter 65.0%、ZoneControl 25.0%、Route 15.0%，两个窗口均未放宽门禁且 Replay / 性能预算通过。",
+            "Phase 3 基础设施验收已关闭：9 个规则 Bot 可由 Harness 调用，多 Bot 多 seed 命令、summary / metrics 输出、坏信号拒绝、Replay 回归和性能预算都有现存证据；这只关闭基础设施阶段，不代表未来内容可以复用旧矩阵。",
             "规则 Bot 不是人工乐趣证明，仍需真人审查。"
           ],
           "blockers": []
@@ -1796,7 +1802,7 @@
       "doc_id": "12",
       "doc_path": "docs/12_阶段路线图.md",
       "status": "partial",
-      "summary": "Phase 0-10 已有独立路线图阶段审计清单和报告；Phase 0 与 Phase 1 已完成，Phase 2-8 多数受人工试玩、素材审查、发布包或 RL 泛化阻塞，Phase 9-10 仍未达到公开 Demo、上线和运营要求。",
+      "summary": "Phase 0-10 已有独立路线图阶段审计清单和报告；Phase 0、Phase 1 和 Phase 3 已完成，Phase 2 / 4 / 5 / 7 / 8 仍受人工试玩、素材审查、发布包或接受证据阻塞，Phase 6 仍受 RL 300 秒 high-pressure 泛化阻塞，Phase 9-10 仍未达到公开 Demo、上线和运营要求。",
       "coverage": [
         {
           "id": "roadmap-phase-audit",
@@ -1820,11 +1826,14 @@
             "tools/test_validate_demo_readiness.py",
             "harness/reports/2026-05-26_demo_readiness_current_local_001/summary.md",
             "harness/reports/2026-05-30_phase1_gamecore_completion_audit_001/summary.md",
-            "harness/reports/2026-05-30_phase1_gamecore_completion_audit_001/phase1_gamecore_completion_audit.json"
+            "harness/reports/2026-05-30_phase1_gamecore_completion_audit_001/phase1_gamecore_completion_audit.json",
+            "harness/reports/2026-05-30_phase3_bot_harness_completion_audit_001/summary.md",
+            "harness/reports/2026-05-30_phase3_bot_harness_completion_audit_001/phase3_bot_harness_completion_audit.json"
           ],
           "gaps": [
-            "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete；Phase 1 GameCore 原型完成审计已确认 headless GameCore 验收项通过，Runtime 本地数据控制 smoke、600 秒 release-local 本机性能门禁和 RC telemetry_privacy refresh 已纳入 Phase 2 / 8 / 9 证据，但 Demo readiness 审计仍明确当前为 demo_not_ready。",
-            "Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending；当前 release package manifest 仍 blocked，Goal 证据一致性门禁确认该 not-ready 状态没有被其他账本误标为 ready。",
+            "路线图阶段审计当前结论为 roadmap_phase_audit_incomplete；Phase 1 GameCore 原型和 Phase 3 规则 Bot / Harness 基础设施已完成审计，Runtime 本地数据控制 smoke、600 秒 release-local 本机性能门禁和 RC telemetry_privacy refresh 已纳入 Phase 2 / 8 / 9 证据，但 Demo readiness 审计仍明确当前为 demo_not_ready。",
+            "Phase 2 仍缺真人完整试玩和可读性评分；Phase 4 / 5 仍缺真人设计审查、9 局人工试玩、final acceptance、acceptance manifest 和非空 accepted_content lockfile；Phase 6 的 RL high-pressure 300 秒三图仍全 0；Phase 7 最终美术音频垂直切片仍未接受，Phase 8 公开 Demo 仍 blocked，Phase 9-10 仍 pending。",
+            "当前 release package manifest 仍 blocked，Goal 证据一致性门禁确认该 not-ready 状态没有被其他账本误标为 ready。",
             "补齐正式内容、人工试玩、素材审查和 Release Candidate 门禁通过前，不能标为 complete。"
           ]
         }
