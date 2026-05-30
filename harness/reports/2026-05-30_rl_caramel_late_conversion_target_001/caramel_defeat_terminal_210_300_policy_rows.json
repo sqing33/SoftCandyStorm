@@ -1,0 +1,93 @@
+{
+  "decision": "policy_trace_samples_exported",
+  "source_trace_count": 3,
+  "source_step_count": 4167,
+  "sample_count": 387,
+  "samples_path": "harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_defeat_terminal_210_300_policy_rows.jsonl",
+  "terminal_filter": "defeat",
+  "map_ids": [
+    "caramel-workshop"
+  ],
+  "seeds": null,
+  "min_seconds": 210.0,
+  "max_seconds": 300.0,
+  "actions": null,
+  "min_boundary_edge_risk": null,
+  "min_enemy_pressure_risk": null,
+  "max_enemy_pressure_risk": null,
+  "sample_role": "terminal_conversion_failure_trace_input",
+  "sample_source": "caramel_per_map_chain_failure_trace",
+  "observation_len": 145,
+  "action_distribution": {
+    "1": {
+      "count": 60,
+      "ratio": 0.155
+    },
+    "2": {
+      "count": 16,
+      "ratio": 0.0413
+    },
+    "3": {
+      "count": 84,
+      "ratio": 0.2171
+    },
+    "4": {
+      "count": 13,
+      "ratio": 0.0336
+    },
+    "5": {
+      "count": 80,
+      "ratio": 0.2067
+    },
+    "6": {
+      "count": 3,
+      "ratio": 0.0078
+    },
+    "7": {
+      "count": 49,
+      "ratio": 0.1266
+    },
+    "8": {
+      "count": 82,
+      "ratio": 0.2119
+    }
+  },
+  "map_distribution": {
+    "caramel-workshop": {
+      "count": 387,
+      "ratio": 1.0
+    }
+  },
+  "trace_summaries": [
+    {
+      "path": "harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/traces/caramel-workshop_seed63400_trace.json",
+      "map_id": "caramel-workshop",
+      "seed": 63400,
+      "terminal_kind": "defeat",
+      "kept_samples": 21
+    },
+    {
+      "path": "harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/traces/caramel-workshop_seed63401_trace.json",
+      "map_id": "caramel-workshop",
+      "seed": 63401,
+      "terminal_kind": "defeat",
+      "kept_samples": 153
+    },
+    {
+      "path": "harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/traces/caramel-workshop_seed63402_trace.json",
+      "map_id": "caramel-workshop",
+      "seed": 63402,
+      "terminal_kind": "defeat",
+      "kept_samples": 213
+    }
+  ],
+  "dropped_counts": {
+    "time_before_min": 3780
+  },
+  "errors": [],
+  "limitations": [
+    "Exported samples come from sampled policy traces, not full replays.",
+    "The output is supervised retention or repair input only, not policy acceptance evidence.",
+    "Any model trained from these samples must still pass target-seed preflight, fixed-window high-pressure comparison, no-regression, and failure-case review."
+  ]
+}

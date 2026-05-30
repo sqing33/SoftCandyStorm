@@ -1,0 +1,287 @@
+{
+  "status": "ok",
+  "mode": "dry_run",
+  "gate_decision": "dataset_validated_not_training_gate",
+  "dataset": {
+    "paths": [
+      "harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_clean_risk_samples.jsonl"
+    ],
+    "sample_count": 164,
+    "episode_count": 0,
+    "skipped_upgrade_samples": 0,
+    "upgrade_sample_records": 0,
+    "edge_recovery_sample_records": 0,
+    "risk_recovery_sample_records": 164,
+    "anchor_drift_sample_records": 0,
+    "observation_len": 145,
+    "action_count": 9,
+    "action_distribution": {
+      "0": {
+        "count": 3,
+        "ratio": 0.0183
+      },
+      "1": {
+        "count": 38,
+        "ratio": 0.2317
+      },
+      "2": {
+        "count": 3,
+        "ratio": 0.0183
+      },
+      "3": {
+        "count": 10,
+        "ratio": 0.061
+      },
+      "4": {
+        "count": 17,
+        "ratio": 0.1037
+      },
+      "5": {
+        "count": 33,
+        "ratio": 0.2012
+      },
+      "6": {
+        "count": 6,
+        "ratio": 0.0366
+      },
+      "7": {
+        "count": 42,
+        "ratio": 0.2561
+      },
+      "8": {
+        "count": 12,
+        "ratio": 0.0732
+      }
+    },
+    "sample_summary": {
+      "time_seconds_min": 180.0762,
+      "time_seconds_max": 243.7898,
+      "health_ratio_min": 1.0,
+      "health_ratio_average": 1.0,
+      "map_distribution": {
+        "caramel-workshop": {
+          "count": 164,
+          "ratio": 1.0
+        }
+      },
+      "sample_source_distribution": {
+        "risk_recovery_supervision": {
+          "count": 164,
+          "ratio": 1.0
+        }
+      }
+    },
+    "metadata": []
+  },
+  "sequence_diagnostics": {
+    "context_frames": 1,
+    "history_limit": 0,
+    "sample_count": 164,
+    "episode_key_count": 3,
+    "padding": {
+      "total_missing_frames": 0,
+      "average_missing_frames": 0.0,
+      "fully_seeded_samples": 164,
+      "fully_seeded_ratio": 1.0
+    },
+    "sequence_span_seconds": {
+      "min": 0.0,
+      "average": 0.0,
+      "max": 0.0
+    },
+    "action_transitions": {
+      "transition_count": 161,
+      "same_action_count": 100,
+      "same_action_ratio": 0.6211,
+      "changed_action_ratio": 0.3789
+    },
+    "time_buckets": {
+      "opening_lt_late_start": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid_late_start_to_180": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late_gte_180": {
+        "count": 164,
+        "ratio": 1.0
+      }
+    },
+    "late_low_health": {
+      "threshold_time_seconds": 60.0,
+      "threshold_health_ratio": 0.7,
+      "sample_count": 0,
+      "ratio": 0.0
+    },
+    "per_map": {
+      "caramel-workshop": {
+        "sample_count": 164,
+        "sample_ratio": 1.0,
+        "time_seconds_min": 180.0762,
+        "time_seconds_max": 243.7898,
+        "average_missing_frames": 0.0,
+        "fully_seeded_ratio": 1.0,
+        "average_sequence_span_seconds": 0.0,
+        "late_low_health_ratio": 0.0,
+        "action_distribution": {
+          "0": {
+            "count": 3,
+            "ratio": 0.0183
+          },
+          "1": {
+            "count": 38,
+            "ratio": 0.2317
+          },
+          "2": {
+            "count": 3,
+            "ratio": 0.0183
+          },
+          "3": {
+            "count": 10,
+            "ratio": 0.061
+          },
+          "4": {
+            "count": 17,
+            "ratio": 0.1037
+          },
+          "5": {
+            "count": 33,
+            "ratio": 0.2012
+          },
+          "6": {
+            "count": 6,
+            "ratio": 0.0366
+          },
+          "7": {
+            "count": 42,
+            "ratio": 0.2561
+          },
+          "8": {
+            "count": 12,
+            "ratio": 0.0732
+          }
+        }
+      }
+    },
+    "diagnosis_flags": [
+      {
+        "id": "low_late_low_health_coverage",
+        "severity": "watch",
+        "summary": "Few samples cover late low-health recovery states; this can hide long-run policy failures."
+      }
+    ]
+  },
+  "time_phase_conditioning": {
+    "mode": "none",
+    "labels": [],
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "dimension": 0,
+    "phase_distribution": {
+      "opening": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late": {
+        "count": 164,
+        "ratio": 1.0
+      }
+    }
+  },
+  "time_phase_filter": {
+    "mode": "all",
+    "thresholds": [
+      0.2,
+      0.6
+    ],
+    "before_sample_count": 164,
+    "after_sample_count": 164,
+    "phase_distribution": {
+      "opening": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "mid": {
+        "count": 0,
+        "ratio": 0.0
+      },
+      "late": {
+        "count": 164,
+        "ratio": 1.0
+      }
+    }
+  },
+  "edge_recovery_time_window_filter": {
+    "mode": "all",
+    "min_seconds": null,
+    "max_seconds": null,
+    "before_sample_count": 164,
+    "after_sample_count": 164,
+    "before_edge_recovery_sample_count": 0,
+    "after_edge_recovery_sample_count": 0,
+    "dropped_edge_recovery_sample_count": 0
+  },
+  "risk_recovery_time_window_filter": {
+    "mode": "time_window",
+    "min_seconds": 180.0,
+    "max_seconds": 300.0,
+    "before_sample_count": 164,
+    "after_sample_count": 164,
+    "before_risk_recovery_sample_count": 164,
+    "after_risk_recovery_sample_count": 164,
+    "dropped_risk_recovery_sample_count": 0
+  },
+  "recovery_soft_targets": {
+    "mode": "top_k_scores",
+    "primary_mass": 0.65,
+    "top_k": 3,
+    "soft_sample_count": 164,
+    "fallback_one_hot_count": 0,
+    "average_nonzero_actions": 2.2317
+  },
+  "sample_weights": {
+    "mode": "risk_recovery_auxiliary",
+    "base_mode": "none",
+    "min": 0.5,
+    "max": 0.5,
+    "mean": 0.5,
+    "edge_recovery_sample_weight": 1.0,
+    "edge_recovery_weighted_sample_count": 0,
+    "edge_recovery_weighted_sample_ratio": 0.0,
+    "risk_recovery_sample_weight": 0.5,
+    "risk_recovery_weighted_sample_count": 164,
+    "risk_recovery_weighted_sample_ratio": 1.0,
+    "sample_path_weights": {
+      "enabled": false,
+      "weighted_sample_count": 0,
+      "weighted_sample_ratio": 0.0,
+      "entries": []
+    },
+    "danger_health_threshold": 0.7,
+    "danger_low_health_weight": 2.0,
+    "danger_late_start_seconds": 60.0,
+    "danger_late_horizon_seconds": 300.0,
+    "danger_late_weight": 1.0
+  },
+  "action_distribution_regularization": {
+    "enabled": false,
+    "coefficient": 0.0,
+    "target_mode": "uniform_present",
+    "map_ids": [
+      "caramel-workshop"
+    ],
+    "scope": "none"
+  },
+  "dependencies": {
+    "numpy": true,
+    "torch": true
+  }
+}

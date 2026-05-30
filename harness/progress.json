@@ -1451,6 +1451,11 @@
       "id": "rl_caramel_terminal_branch_per_map_chain",
       "summary": "将旧 multimap victory terminal model 作为 caramel-workshop 专属 terminal branch 叠到 per-map edge branch + all-map late filter 基线上：60/180 秒三图仍为 1.0，300 秒仍为 soda 1.0、caramel 0.0、cracked 0.3333。terminal branch 在 caramel late bucket 触发 796/4404 次但无转胜，相对 per-map chain 触发 300s/caramel 平均存活 -2.3338s blocker，已记录 fail_20260530_022。",
       "report": "harness/reports/2026-05-30_rl_caramel_terminal_branch_per_map_chain_001/summary.md"
+    },
+    {
+      "id": "rl_caramel_late_conversion_target",
+      "summary": "基于最新 per-map edge branch + all-map late filter baseline 复跑 caramel-workshop seeds 63400-63402 的 300 秒 failed-only traces：三局分别死于 213.2166s、235.3546s、243.7898s。导出 164 条 180-300s clean risk rows（risk_recovery_samples_valid）、387 条 210-300s failure policy rows，并用旧 multimap victory terminal dataset 做 same-map nearest check；三个失败 seed 的 nearest target match ratio 分别为 0.0、0.1569、0.169，说明旧 victory target 对当前 caramel late failure states 覆盖太薄。",
+      "report": "harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3128,7 +3133,7 @@
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "当前 caramel terminal branch 诊断已确认问题不是分支未触发：旧 multimap victory terminal model 在 caramel late bucket 触发 796/4404 次仍无 300 秒转胜，并造成 2.3338 秒平均存活回归。下一步应收集或训练更贴近 caramel-workshop 210-300 秒真实失败态的专用 conversion target，再以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression。"
+      "summary": "已导出当前 per-map chain 下 caramel-workshop seeds 63400-63402 的 failed-only traces、164 条 180-300s clean risk rows 和 387 条 210-300s failure policy rows；same-map nearest check 证明旧 victory terminal dataset 主要只有 seed 62301 路径，覆盖当前失败态不足。下一步应收集更贴近 seeds 63400-63402 的成功 terminal trajectories，或将 clean risk rows 作为低权重 safety repair input 训练新的 caramel 专属 terminal branch，并继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression。"
     },
     {
       "id": "runtime_manual_playtest_capture",

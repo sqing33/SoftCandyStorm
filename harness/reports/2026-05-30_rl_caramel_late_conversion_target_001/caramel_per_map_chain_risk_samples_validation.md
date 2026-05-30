@@ -1,0 +1,59 @@
+# Risk Recovery Sample Validation
+
+- Decision: `risk_recovery_samples_invalid`
+- Sources: `1`
+- Samples: `374`
+- Maps: `caramel-workshop`
+- Seeds: `63400, 63401, 63402`
+- Time range: `31.2665` to `243.7898` seconds
+
+## Original Actions
+- `1`: 34
+- `2`: 4
+- `3`: 38
+- `4`: 43
+- `5`: 66
+- `6`: 79
+- `7`: 36
+- `8`: 74
+
+## Target Actions
+- `0`: 9
+- `1`: 59
+- `2`: 6
+- `3`: 30
+- `4`: 71
+- `5`: 52
+- `6`: 10
+- `7`: 114
+- `8`: 23
+
+## Risk Reasons
+- `wallward_edge`: 185
+- `toward_hazard`: 103
+- `toward_enemy_pressure`: 90
+- `toward_boss`: 3
+- `<missing>`: 1
+
+## Target Risk Reasons
+- `<none>`: 373
+- `<missing>`: 1
+
+## Notes
+- This validator checks sample structure and late-risk reason consistency only.
+- A valid result means samples may be used for repair training inputs, not RL policy acceptance.
+- Final policies still require deterministic high-pressure, multimap, failure-case, and acceptance checks.
+
+## Errors
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: record_type must be risk_recovery_supervision_sample
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: target_source must be late_recovery_filter
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: adapter_decision.mode must be late_recovery_filter
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: adapter_decision.thresholds must be an object
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: adapter_decision.risk_reasons must be a non-empty list
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: adapter_decision.target_risk_reasons must be a list
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: risk_reasons mismatch: recorded=[] computed=['wallward_edge', 'toward_hazard', 'toward_boss', 'toward_enemy_pressure']
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:265 seed 63402 map caramel-workshop: target_risk_reasons mismatch: recorded=[] computed=['toward_hazard', 'toward_boss', 'toward_enemy_pressure']
+
+## Warnings
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:69 seed 63400 map caramel-workshop: target risk score 0.31294 is worse than original 0.121505
+- harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/caramel_per_map_chain_risk_samples.jsonl:288 seed 63402 map caramel-workshop: target risk score 0.115372 is worse than original 0.106327
