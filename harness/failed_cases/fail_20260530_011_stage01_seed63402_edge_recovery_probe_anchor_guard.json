@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260530_011",
+  "category": "rl_training",
+  "content_id": "stage01-seed63402-edge-recovery-probe-anchor-guard",
+  "seed": "63400-63402",
+  "bot": "opening-boundary-escape-edge-recovery-anchor-sb3",
+  "time_seconds": 60.0,
+  "symptom": "The first PPO continuation using seed63402_edge_recovery_anchor.pt was stopped by the anchor validation guard after the initial 256 timestep chunk. Validation mean KL was 1.614822 against the 0.25 maximum, and validation argmax agreement was 0.2273 against the 0.85 minimum.",
+  "root_cause": "The e30 mid-anchor guarded parent policy is not aligned with the learned edge recovery anchor on the 108 opening_lt_60 repair and retention samples. The offline anchor itself reached 0.9722 diagnostic accuracy, but the SB3 continuation starts too far from the anchor targets for this regularization-only PPO probe to become a safe target-seed repair.",
+  "fix": "Do not run a full fixed-window matrix or target preflight from this checkpoint. Before another closed-loop PPO probe, run a start-policy versus edge-recovery-anchor alignment precheck and consider supervised SB3 initialization/distillation or a narrower constrained opening branch that can satisfy the anchor guard before online evaluation.",
+  "validation": "Ran train_sb3.py with --timesteps 256, opening-boundary-escape reward, seed63402_edge_recovery_anchor.pt, and the edge recovery plus success retention datasets. The training report set status to aborted_by_anchor_validation_guard and gate_decision to trained_anchor_validation_guard_failed_not_policy_gate, so no target-seed preflight or full 60/180/300 matrix was run.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/stage01_seed63402_edge_recovery_probe_metadata.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/ppo_evaluation_report.json"
+  ]
+}

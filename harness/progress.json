@@ -1361,6 +1361,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_anchor",
       "summary": "训练 seed 63402 edge recovery anchor：混合 76 条 edge_recovery_filter repair rows 与 32 条成功 retention rows，共 108 条样本；behavior clone final train accuracy 0.9767、validation accuracy 0.9545，离线诊断 accuracy 0.9722，预测分布与 target 接近。该 anchor 是 learned repair input，不是 policy gate，下一步需要小步 PPO anchor guard 与 target preflight。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_probe",
+      "summary": "执行 seed 63402 edge recovery anchor 小步 PPO probe：从 e30 mid-anchor guarded parent 继续 256 timestep，并用 108 条 edge recovery + retention opening 样本做 anchor regularization。训练被 anchor validation guard 拦截，validation KL 1.614822 超过 0.25，argmax agreement 0.2273 低于 0.85；已记录 fail_20260530_011，未运行 target preflight 或完整矩阵。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3018,6 +3023,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_anchor",
       "summary": "训练 seed 63402 edge recovery anchor：混合 76 条 edge_recovery_filter repair rows 与 32 条成功 retention rows，共 108 条样本；behavior clone final train accuracy 0.9767、validation accuracy 0.9545，离线诊断 accuracy 0.9722，预测分布与 target 接近。该 anchor 是 learned repair input，不是 policy gate，下一步需要小步 PPO anchor guard 与 target preflight。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_anchor_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_probe",
+      "summary": "执行 seed 63402 edge recovery anchor 小步 PPO probe：从 e30 mid-anchor guarded parent 继续 256 timestep，并用 108 条 edge recovery + retention opening 样本做 anchor regularization。训练被 anchor validation guard 拦截，validation KL 1.614822 超过 0.25，argmax agreement 0.2273 低于 0.85；已记录 fail_20260530_011，未运行 target preflight 或完整矩阵。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3100,6 +3110,10 @@
     {
       "id": "rl_stage01_probe_edge_recovery_anchor",
       "summary": "下一轮从 e30 mid-anchor guarded parent 做 256 timestep 小步 PPO，使用 seed63402_edge_recovery_anchor.pt 和 edge recovery + retention datasets 做 anchor regularization；必须先通过 anchor validation guard 与 soda-creek:63402 target preflight，失败则记录 failure case，不跑完整矩阵。"
+    },
+    {
+      "id": "rl_stage01_after_edge_recovery_anchor_guard_failure",
+      "summary": "edge recovery anchor PPO probe 已证明当前 parent 与 learned anchor 在线约束差距过大；下一步先做 start-policy vs edge-recovery-anchor alignment precheck，再考虑 supervised SB3 初始化 / distillation 或更窄 constrained opening branch，必须先满足 anchor guard 再跑 target-seed preflight。"
     }
   ]
 }
