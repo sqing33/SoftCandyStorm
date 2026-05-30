@@ -1281,6 +1281,11 @@
       "id": "rl_stage01_seed63402_trace_diagnostic",
       "summary": "对 stage01 seed replay blocker 的目标 seed 63402 生成 parent / candidate 60 秒 observation trace，并新增 compare_policy_episode_traces.py 固化对比：candidate 与 parent 均在约 37.3 秒死亡，目标 seed 采样 action 5 占 69.91%、缺失成功 seeds 的 action 7 / 3，且从 11.3334 秒到死亡持续 action 5。下一轮 stage 01 修复应针对贴边敌压上升时的 action 5 锁定，而不是继续单纯 replay seed。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_trace_diagnostic_001/summary.md"
+    },
+    {
+      "id": "rl_opening_route_recovery_profile",
+      "summary": "新增 opening-route-recovery repair-only reward profile：只在 0-60 秒开局窗口放大 route recovery、安全风险、低血量、边界、敌压和重复动作信号，并为开局死亡增加小额惩罚。Rust gym-bridge、Python Gym wrapper、train_sb3 CLI 和文档均已接入，cargo test -p game_harness、Python env profile 测试和 dry-run 均通过；该入口尚未训练或通过 fixed-window gate。",
+      "report": "harness/reports/2026-05-30_opening_route_recovery_profile_001/summary.md"
     }
   ],
   "current_findings": [

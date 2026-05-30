@@ -4340,6 +4340,7 @@ def main():
             "long-run-retention",
             "late-route-recovery",
             "late-win-conversion",
+            "opening-route-recovery",
         ],
         default="standard",
         help="Select the Rust gym-bridge reward profile used by dry-run, training, and policy reward reports.",

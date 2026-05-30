@@ -88,6 +88,10 @@ const GYM_REWARD_LATE_WIN_CONVERSION_COMPONENT_SCALE: f32 = 1.25;
 const GYM_REWARD_LATE_WIN_CONVERSION_ACTION_REPEAT_SCALE: f32 = 0.5;
 const GYM_REWARD_LATE_WIN_CONVERSION_VICTORY_BONUS: f32 = 4.0;
 const GYM_REWARD_LATE_WIN_CONVERSION_DEFEAT_PENALTY: f32 = -3.0;
+const GYM_REWARD_OPENING_ROUTE_RECOVERY_END_SECONDS: f32 = 60.0;
+const GYM_REWARD_OPENING_ROUTE_RECOVERY_COMPONENT_SCALE: f32 = 0.8;
+const GYM_REWARD_OPENING_ROUTE_RECOVERY_ACTION_REPEAT_SCALE: f32 = 1.0;
+const GYM_REWARD_OPENING_ROUTE_RECOVERY_DEFEAT_PENALTY: f32 = -1.0;
 const DEFAULT_MAP_ID: &str = "frosting-grassland";
 const REQUIRED_PLAYTEST_RUN_IDS: [&str; 9] = [
     "new_001",
@@ -386,6 +390,7 @@ enum GymRewardProfile {
     LongRunRetention,
     LateRouteRecovery,
     LateWinConversion,
+    OpeningRouteRecovery,
 }
 
 impl GymRewardProfile {
@@ -396,6 +401,7 @@ impl GymRewardProfile {
             "long-run-retention" => Some(Self::LongRunRetention),
             "late-route-recovery" => Some(Self::LateRouteRecovery),
             "late-win-conversion" => Some(Self::LateWinConversion),
+            "opening-route-recovery" => Some(Self::OpeningRouteRecovery),
             _ => None,
         }
     }
@@ -407,6 +413,7 @@ impl GymRewardProfile {
             Self::LongRunRetention => "long-run-retention",
             Self::LateRouteRecovery => "late-route-recovery",
             Self::LateWinConversion => "late-win-conversion",
+            Self::OpeningRouteRecovery => "opening-route-recovery",
         }
     }
 }
@@ -3192,6 +3199,9 @@ fn gym_profile_scale(
         GymRewardProfile::LateWinConversion => {
             late_route_recovery_scale * GYM_REWARD_LATE_WIN_CONVERSION_COMPONENT_SCALE
         }
+        GymRewardProfile::OpeningRouteRecovery => {
+            late_route_recovery_scale * GYM_REWARD_OPENING_ROUTE_RECOVERY_COMPONENT_SCALE
+        }
     };
     gym_reward_profile_phase_scale(profile, time_seconds) * profile_scale
 }
@@ -3206,11 +3216,25 @@ fn gym_reward_profile_action_repeat(
         GymRewardProfile::LongRunRetention => GYM_REWARD_LONG_RUN_RETENTION_ACTION_REPEAT_SCALE,
         GymRewardProfile::LateRouteRecovery => GYM_REWARD_LATE_ROUTE_RECOVERY_ACTION_REPEAT_SCALE,
         GymRewardProfile::LateWinConversion => GYM_REWARD_LATE_WIN_CONVERSION_ACTION_REPEAT_SCALE,
+        GymRewardProfile::OpeningRouteRecovery => {
+            GYM_REWARD_OPENING_ROUTE_RECOVERY_ACTION_REPEAT_SCALE
+        }
     };
     action_repeat * (1.0 + gym_reward_profile_phase_scale(profile, time_seconds) * repeat_scale)
 }
 
 fn gym_reward_profile_phase_scale(profile: GymRewardProfile, time_seconds: Option<f32>) -> f32 {
+    if matches!(profile, GymRewardProfile::OpeningRouteRecovery) {
+        let Some(time_seconds) = time_seconds else {
+            return 0.0;
+        };
+        return if time_seconds <= GYM_REWARD_OPENING_ROUTE_RECOVERY_END_SECONDS {
+            1.0
+        } else {
+            0.0
+        };
+    }
+
     let (start_seconds, ramp_seconds) = match profile {
         GymRewardProfile::Standard => return 0.0,
         GymRewardProfile::LateSurvival => (
@@ -3229,6 +3253,7 @@ fn gym_reward_profile_phase_scale(profile: GymRewardProfile, time_seconds: Optio
             GYM_REWARD_LATE_WIN_CONVERSION_START_SECONDS,
             GYM_REWARD_LATE_WIN_CONVERSION_RAMP_SECONDS,
         ),
+        GymRewardProfile::OpeningRouteRecovery => unreachable!(),
     };
     if ramp_seconds <= 0.0 {
         return 1.0;
@@ -3272,6 +3297,9 @@ fn gym_reward_profile_terminal_adjustment(
         }
         (GymRewardProfile::LateWinConversion, TerminalKind::Defeat) => {
             GYM_REWARD_LATE_WIN_CONVERSION_DEFEAT_PENALTY * scale
+        }
+        (GymRewardProfile::OpeningRouteRecovery, TerminalKind::Defeat) => {
+            GYM_REWARD_OPENING_ROUTE_RECOVERY_DEFEAT_PENALTY * scale
         }
         _ => 0.0,
     }
@@ -7026,7 +7054,7 @@ fn print_help() {
         "  cargo run -p game_harness -- lock-accepted-content [--accepted-dir harness/accepted_content] [--lock-file harness/accepted_content/accepted_content.lock.json] [--runtime-content-root harness/accepted_content] [--report-dir harness/reports/local_accepted_content_lock]"
     );
     eprintln!(
-        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--reward-profile standard|late-survival|long-run-retention|late-route-recovery|late-win-conversion] [--content-dir content/base_demo]",
+        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--reward-profile standard|late-survival|long-run-retention|late-route-recovery|late-win-conversion|opening-route-recovery] [--content-dir content/base_demo]",
         DEFAULT_MAP_ID
     );
     eprintln!(
@@ -7424,6 +7452,10 @@ mod tests {
             Some(GymRewardProfile::LateWinConversion)
         );
         assert_eq!(
+            GymRewardProfile::parse("opening-route-recovery"),
+            Some(GymRewardProfile::OpeningRouteRecovery)
+        );
+        assert_eq!(
             GymRewardProfile::parse("standard"),
             Some(GymRewardProfile::Standard)
         );
@@ -7440,6 +7472,10 @@ mod tests {
         assert_eq!(
             GymRewardProfile::LateWinConversion.as_str(),
             "late-win-conversion"
+        );
+        assert_eq!(
+            GymRewardProfile::OpeningRouteRecovery.as_str(),
+            "opening-route-recovery"
         );
     }
 
@@ -7630,6 +7666,79 @@ mod tests {
         let mid_scale =
             gym_reward_profile_phase_scale(GymRewardProfile::LateWinConversion, Some(180.0));
         assert_eq!(mid_scale, 0.0);
+    }
+
+    #[test]
+    fn gym_opening_route_recovery_profile_focuses_opening_window() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        snapshot.time_seconds = 30.0;
+        let hint = RewardHint {
+            survival_delta: 1.0,
+            ..RewardHint::default()
+        };
+        let shaping = GymRewardShaping {
+            action_repeat: -0.01,
+            safety_delta: 0.1,
+            route_recovery: 0.02,
+            ..GymRewardShaping::default()
+        };
+        let terminal = TerminalState {
+            kind: TerminalKind::Defeat,
+            time_seconds: 37.0,
+            reason: "player_health_depleted".to_string(),
+            final_level: 1,
+            kills: 0,
+        };
+
+        let standard = gym_reward_breakdown(
+            GymRewardProfile::Standard,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+        let opening = gym_reward_breakdown(
+            GymRewardProfile::OpeningRouteRecovery,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+
+        snapshot.time_seconds = 90.0;
+        let post_opening = gym_reward_breakdown(
+            GymRewardProfile::OpeningRouteRecovery,
+            &hint,
+            &[],
+            None,
+            shaping,
+            Some(&snapshot),
+        );
+        let post_standard = gym_reward_breakdown(
+            GymRewardProfile::Standard,
+            &hint,
+            &[],
+            None,
+            shaping,
+            Some(&snapshot),
+        );
+
+        assert!(opening.survival > standard.survival);
+        assert!(opening.action_repeat < standard.action_repeat);
+        assert!(opening.safety_delta > standard.safety_delta);
+        assert!(opening.route_recovery > standard.route_recovery);
+        assert!(opening.terminal < standard.terminal);
+        assert!((post_opening.total - post_standard.total).abs() < 0.0001);
+        assert_eq!(
+            gym_reward_profile_phase_scale(GymRewardProfile::OpeningRouteRecovery, Some(30.0)),
+            1.0
+        );
+        assert_eq!(
+            gym_reward_profile_phase_scale(GymRewardProfile::OpeningRouteRecovery, Some(90.0)),
+            0.0
+        );
     }
 
     #[test]

@@ -609,6 +609,11 @@
         "harness/reports/2026-05-30_rl_stage01_seed63402_trace_diagnostic_001/candidate_trace_evaluation.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_trace_diagnostic_001/trace_comparison.json",
         "harness/reports/2026-05-30_rl_stage01_seed63402_trace_diagnostic_001/candidate_route_recovery_hotspots.json",
+        "harness/reports/2026-05-30_opening_route_recovery_profile_001/summary.md",
+        "harness/reports/2026-05-30_opening_route_recovery_profile_001/dry_run.json",
+        "crates/game_harness/src/main.rs",
+        "python/gym_env/soft_candy_env.py",
+        "python/gym_env/test_soft_candy_env.py",
         "python/train/create_staged_behavior_clone_policy.py",
         "python/train/train_behavior_clone.py",
         "python/train/test_train_behavior_clone.py",
@@ -639,7 +644,8 @@
         "固定窗口行动计划已将当前失败面拆成 stage 01 soda-creek opening retention、stage 02 soda-creek / cracked-star-jar handoff 与 mid-window retention、stage 03 三图 late conversion，并要求每阶段训练后都跑 60/180/300 秒 validation commands；这只是下一轮 repair 排程，尚未产生训练结果、no-regression 通过证据或 acceptance。",
         "stage_01_opening_lt_60 首次小步 repair 仍失败：60 秒 soda-creek 有 opening death，180 秒 caramel-workshop 为 watch，300 秒三图仍全 0%，同 seed parent no-regression 因 300s/cracked-star-jar dominant_action_ratio +0.2034 超阈值失败；该 checkpoint 不得进入 stage 02。",
         "stage01_seed_replay 显式循环训练 seeds 63400-63402 后仍失败：60 秒 soda-creek seed 63402 仍在约 37.27 秒 opening 死亡，180 秒 soda-creek 相对 parent 胜率回落 -0.3334 且平均存活下降 11.4358 秒，300 秒三图仍全 0%。已记录 fail_20260530_002；该 checkpoint 不得进入 stage 02，下一步应先 trace seed 63402 的 observation / action score 差异。",
-        "seed 63402 trace 诊断确认 seed replay candidate 与 parent 在目标 seed 上几乎没有行为差异：两者均约 37.3 秒死亡，目标 seed 采样 action 5 占 69.91%，缺失成功 seeds 的 action 7 / 3，并从 11.3334 秒到死亡持续 action 5；下一轮 stage 01 修复应针对贴边敌压上升时的 action 5 锁定，而不是继续单纯 replay seed。"
+        "seed 63402 trace 诊断确认 seed replay candidate 与 parent 在目标 seed 上几乎没有行为差异：两者均约 37.3 秒死亡，目标 seed 采样 action 5 占 69.91%，缺失成功 seeds 的 action 7 / 3，并从 11.3334 秒到死亡持续 action 5；下一轮 stage 01 修复应针对贴边敌压上升时的 action 5 锁定，而不是继续单纯 replay seed。",
+        "opening-route-recovery reward profile 已接入 Rust gym-bridge、Python Gym wrapper 与 train_sb3 CLI，并通过 dry-run / 单测；但它目前只是 repair profile 入口，尚未产出训练 checkpoint、60/180/300 秒 fixed-window 结果或 parent no-regression 通过证据。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -653,7 +659,8 @@
         "补足 caramel-workshop clean teacher 覆盖后，再比较 clean+contrast、route objective、low-health recovery、hazard / boss joint objective 或 closed-loop late survival 训练；每套都必须拆开记录训练报告与 deterministic 60/180/300 秒多图对比。",
         "不要从已失败的 stage_01_opening_lt_60 checkpoint 进入 stage 02；下一步应重新设计 stage 01 opening repair，加入 explicit opening retention target 和 online action-distribution guard，然后重新跑 60/180/300 秒同 seed parent no-regression。",
         "不要从 stage01_seed_replay checkpoint 进入 stage 02；先对 seed 63402 生成 observation / action-score trace，并与同窗口成功 seed 对比，再设计更窄的 opening retention objective 或 action-distribution guard。",
-        "下一轮 stage 01 repair 应以 seed 63402 trace 里的连续 action 5 锁定为目标，加入贴边 + enemy_pressure 上升时的逃逸动作约束或监督样本，并要求 action 7 / 3 retention 与 60/180/300 秒 parent no-regression 同时通过。"
+        "下一轮 stage 01 repair 应以 seed 63402 trace 里的连续 action 5 锁定为目标，加入贴边 + enemy_pressure 上升时的逃逸动作约束或监督样本，并要求 action 7 / 3 retention 与 60/180/300 秒 parent no-regression 同时通过。",
+        "用 opening-route-recovery 从 e30 mid-anchor guarded parent 做小步 stage 01 probe；如果 60 秒目标 seed 或 180/300 秒 parent no-regression 失败，立即记录 failure case，不得进入 stage 02。"
       ]
     },
     {
