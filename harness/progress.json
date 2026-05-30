@@ -1351,6 +1351,11 @@
       "id": "rl_stage01_seed63402_staged_opening_wrapper_preflight",
       "summary": "执行 seed 63402 staged opening wrapper 快速预检：前 60 秒使用 stage01_corner_risk_delta_smoke.zip，fallback 使用 e30 mid-anchor guarded parent。soda-creek:63402 仍在 36.4665 秒 defeat，action 7 ratio 0.0，且失败路径转为 action 4 主导（906 次 action 4、188 次 action 2）。已记录 fail_20260530_010，未运行完整矩阵。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_filter_preflight",
+      "summary": "执行 seed 63402 edge_recovery_filter 快速预检：在 e30 mid-anchor guarded parent 上使用 deterministic edge recovery adapter，soda-creek seeds 63400-63402 的 60 秒 smoke 达到 1.0 胜率，soda-creek:63402 target preflight 通过（60.0328 秒 victory，action 7 ratio 0.2965）。导出 76 条 edge recovery supervision samples，并通过 edge_recovery_samples_valid 与 behavior clone dry-run。该结果是诊断修复信号，不是 policy gate。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2998,6 +3003,11 @@
       "id": "rl_stage01_seed63402_staged_opening_wrapper_preflight",
       "summary": "执行 seed 63402 staged opening wrapper 快速预检：前 60 秒使用 stage01_corner_risk_delta_smoke.zip，fallback 使用 e30 mid-anchor guarded parent。soda-creek:63402 仍在 36.4665 秒 defeat，action 7 ratio 0.0，且失败路径转为 action 4 主导（906 次 action 4、188 次 action 2）。已记录 fail_20260530_010，未运行完整矩阵。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_staged_opening_wrapper_preflight_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_filter_preflight",
+      "summary": "执行 seed 63402 edge_recovery_filter 快速预检：在 e30 mid-anchor guarded parent 上使用 deterministic edge recovery adapter，soda-creek seeds 63400-63402 的 60 秒 smoke 达到 1.0 胜率，soda-creek:63402 target preflight 通过（60.0328 秒 victory，action 7 ratio 0.2965）。导出 76 条 edge recovery supervision samples，并通过 edge_recovery_samples_valid 与 behavior clone dry-run。该结果是诊断修复信号，不是 policy gate。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_filter_preflight_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3072,6 +3082,10 @@
     {
       "id": "rl_stage01_after_staged_opening_wrapper_failure",
       "summary": "generic stage01 corner_risk_delta opening wrapper 不能修复 seed 63402，且会把 action 5 坏路径换成 action 4 坏路径；下一轮 opening branch 必须来自 seed 63402-specific trace states 或显式 constrained dispatch，先过 target preflight 再跑 fixed-window no-regression。"
+    },
+    {
+      "id": "rl_stage01_train_from_edge_recovery_samples",
+      "summary": "下一轮 seed 63402 repair 应把 edge_recovery_filter 导出的 76 条 edge recovery samples 作为训练输入，而不是直接使用手写 adapter；先训练小型 seed-specific opening branch 或 anchor，要求离线样本命中、target preflight 和 parent no-regression 逐级通过。"
     }
   ]
 }
