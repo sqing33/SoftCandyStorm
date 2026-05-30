@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260530_004",
+  "category": "rl_training",
+  "content_id": "stage01-opening-route-recovery-conservative-sweep",
+  "seed": "63400-63402",
+  "bot": "opening-route-recovery-conservative-ppo",
+  "time_seconds": 60.0,
+  "symptom": "The conservative opening-route-recovery sweep found a parent-preserving 5e-7 learning-rate run, but stage 01 remains unresolved: soda-creek 60s still has policy_win_rate 0.6667, and 300s high-pressure win rate remains 0.0 on all three maps.",
+  "root_cause": "Lowering the learning rate prevents the repair objective from damaging parent fixed-window behavior, but it also makes the update too weak to change the known soda-creek seed 63402 opening failure surface. The opening route recovery signal is useful as a safe base setting, but it is not target-specific enough to force the action 5 lock to switch into the successful action 7 / action 3 recovery pattern.",
+  "fix": "Do not enter stage 02 from the 5e-7 checkpoint. Use it only as a parent-preserving baseline for the next targeted stage 01 attempt, adding a seed 63402 opening objective or online action-distribution guard before rerunning fixed-window validation.",
+  "validation": "Ran 5e-6, 2e-6, 1e-6 and 5e-7 learning-rate probes with the same 256 timestep opening-route-recovery setup. Only the 5e-7 probe passed strict 60/180/300 second parent no-regression with 0 blockers, but its 60s soda-creek win rate remained 0.6667 and 300s high-pressure win rates remained 0.0/0.0/0.0.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_lr5e7_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_conservative_probe_001/window_regression_vs_parent.md",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_lr2e6_probe_001/window_regression_vs_parent.md",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_lr1e6_probe_001/window_regression_vs_parent.md",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_lr5e7_probe_001/window_regression_vs_parent.md"
+  ]
+}

@@ -1291,6 +1291,11 @@
       "id": "rl_stage01_opening_route_recovery_probe",
       "summary": "执行 opening-route-recovery 小步 stage 01 probe：从 e30 mid-anchor guarded parent 继续 512 timestep 后，60 秒 high-pressure 平均胜率恢复到 0.7778、180 秒恢复到 0.6667，300 秒平均存活较 parent 提升；但 300 秒三图胜率仍全 0.0，且同 seed parent no-regression 因 cracked-star-jar 180 秒胜率 -0.3333、平均存活 -31.0702s 等 5 个 blockers 失败。已记录 fail_20260530_003，该 checkpoint 不得进入 stage 02。",
       "report": "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_opening_route_recovery_conservative_sweep",
+      "summary": "执行 opening-route-recovery 保守学习率 sweep：5e-6、2e-6、1e-6 仍有 strict no-regression 微回退或单图 blocker；5e-7 版本通过 60/180/300 秒 parent no-regression，60 秒 caramel-workshop 提升到 1.0，但 soda-creek 60 秒仍为 0.6667、300 秒三图仍全 0.0。已记录 fail_20260530_004，该 checkpoint 只能作为 parent-preserving 诊断起点，不得进入 stage 02。",
+      "report": "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_lr5e7_probe_001/summary.md"
     }
   ],
   "current_findings": [
