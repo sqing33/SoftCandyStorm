@@ -1386,6 +1386,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_branch_high_pressure",
       "summary": "扩展 edge_recovery_branch 到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression：三窗口均通过无回归，soda-creek 60 秒胜率 0.6667 -> 1.0，180 秒 0.6667 -> 1.0，300 秒平均存活 143.0974s -> 221.8073s；但 300 秒三图胜率仍全为 0.0，gate 为 multimap_comparison_recorded_needs_policy_repair。已记录 fail_20260530_014，该分支只能作为 stage 01 opening repair 证据，不能推进 RL acceptance 或 stage 03。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/summary.md"
+    },
+    {
+      "id": "rl_edge_branch_late_filter_chain_smoke",
+      "summary": "允许 evaluation-only edge_recovery_branch 与 late_recovery_filter 组合：late filter 未改动作时透传内层 branch decision，late filter 改动作时清理内层旧 decision，确保 opening branch 与 late-window diagnostic 的 provenance 和样本导出不会互相污染；5 秒 smoke 已确认报告中保留 wrapped_policy_adapter。",
+      "report": "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/summary.md"
     }
   ],
   "current_findings": [

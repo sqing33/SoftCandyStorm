@@ -796,6 +796,106 @@ def test_late_recovery_filter_ignores_opening_window():
     assert consume_policy_adapter_decision(policy) is None
 
 
+def test_late_recovery_filter_delegates_inner_branch_decision_before_late_window():
+    inner = EdgeRecoveryBranchPolicy(
+        DummyPolicy(5),
+        DummyPolicy(7),
+        ["soda-creek"],
+        0.0,
+        60.0,
+        32.0,
+        0.2,
+        0.0,
+        0.75,
+        "base.zip",
+        "branch.zip",
+    )
+    policy = LateRecoveryFilterPolicy(inner, min_seconds=180.0)
+    policy.set_map_id("soda-creek")
+    policy.set_step_context(
+        {
+            "map_id": "soda-creek",
+            "time_seconds": 36.0,
+            "diagnostics": {
+                "boundary_edge_risk": 1.0,
+                "enemy_pressure_risk": 0.3,
+                "boundary": {
+                    "left_distance": 400.0,
+                    "right_distance": 400.0,
+                    "bottom_distance": 0.0,
+                    "top_distance": 400.0,
+                },
+            },
+        }
+    )
+
+    action, _state = policy.predict([0.0] * 145, deterministic=True)
+    decision = consume_policy_adapter_decision(policy)
+    report = policy.policy_adapter_report()
+
+    assert action == 7
+    assert decision["mode"] == "edge_recovery_branch"
+    assert decision["original_action"] == 5
+    assert decision["target_action"] == 7
+    assert report["mode"] == "late_recovery_filter"
+    assert report["wrapped_policy_kind"] == "edge_recovery_branch"
+    assert report["wrapped_policy_adapter"]["mode"] == "edge_recovery_branch"
+
+
+def test_late_recovery_filter_clears_inner_branch_decision_when_overriding():
+    inner = EdgeRecoveryBranchPolicy(
+        DummyPolicy(5),
+        DummyPolicy(7),
+        ["soda-creek"],
+        0.0,
+        300.0,
+        32.0,
+        0.2,
+        0.0,
+        0.75,
+        "base.zip",
+        "branch.zip",
+    )
+    policy = LateRecoveryFilterPolicy(
+        inner,
+        min_seconds=0.0,
+        hazard_threshold=0.2,
+        low_health_threshold=0.25,
+    )
+    observation = [0.0] * 145
+    observation[130] = -1.0
+    observation[131] = 0.0
+    observation[132] = 1.0
+    policy.set_map_id("soda-creek")
+    policy.set_step_context(
+        {
+            "map_id": "soda-creek",
+            "time_seconds": 220.0,
+            "diagnostics": {
+                "boundary_edge_risk": 1.0,
+                "enemy_pressure_risk": 0.3,
+                "hazard_pressure_risk": 1.0,
+                "low_health_risk": 0.0,
+                "boundary": {
+                    "left_distance": 400.0,
+                    "right_distance": 400.0,
+                    "bottom_distance": 0.0,
+                    "top_distance": 400.0,
+                },
+            },
+        }
+    )
+
+    action, _state = policy.predict(observation, deterministic=True)
+    decision = consume_policy_adapter_decision(policy)
+
+    assert action == 1
+    assert decision["mode"] == "late_recovery_filter"
+    assert decision["original_action"] == 7
+    assert decision["target_action"] == 1
+    assert consume_policy_adapter_decision(policy) is None
+
+
 def test_build_edge_recovery_sample_includes_observation_and_diagnostics():
     sample = build_edge_recovery_sample(
         episode_seed=62201,

@@ -1675,7 +1675,11 @@
             "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/branch_samples_60s_soda-creek_validation.json",
             "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/branch_samples_180s_soda-creek_validation.json",
             "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/branch_samples_300s_soda-creek_validation.json",
-            "harness/failed_cases/fail_20260530_014_stage01_edge_recovery_branch_long_window_gap.json"
+            "harness/failed_cases/fail_20260530_014_stage01_edge_recovery_branch_long_window_gap.json",
+            "python/train/train_sb3.py",
+            "python/train/test_train_sb3.py",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/summary.md",
+            "harness/reports/2026-05-30_rl_edge_branch_late_filter_chain_smoke_001/evaluation.json"
           ],
           "gaps": [
             "cracked-star-jar 胜利终局 trajectory sample filter 已保留 358 条 210-240 秒 movement samples，覆盖 2 个 KiteBot victory episode，并通过 behavior clone dry-run；但该批样本只是 terminal-conversion 正例训练输入，样本量小、只覆盖单图，且 high_action_persistence 为 watch，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
@@ -1794,7 +1798,8 @@
             "edge recovery anchor PPO probe 已被 anchor validation guard 拦截：validation KL 1.614822 超过 0.25，argmax agreement 0.2273 低于 0.85。已记录 fail_20260530_011，未运行 target-seed preflight 或完整 fixed-window no-regression。",
             "start-policy alignment precheck 确认 e30 mid-anchor parent 与 edge recovery anchor 起点不匹配：edge recovery rows mean KL 2.131519、argmax agreement 0.0；retention rows mean KL 0.759214。已记录 fail_20260530_012。",
             "edge recovery supervised init 已证明硬标签 SB3 能通过离线 alignment 和 soda-creek:63402 target preflight，但在线 60 秒三 seed comparison 出现 action 7 ratio 0.9987 的动作塌缩，并让 seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013，下一步应改做状态条件分派 / constrained opening branch。",
-            "edge_recovery_branch 条件分派已扩大到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression，三窗口均通过：soda-creek 60 秒胜率从 0.6667 提升到 1.0，180 秒从 0.6667 提升到 1.0，300 秒平均存活从 143.0974s 提升到 221.8073s；但 300 秒三图胜率仍全为 0.0，已记录 fail_20260530_014。该分支只能作为 stage 01 opening repair / no-regression 证据，不能解除 RL acceptance、stage 03 或 policy candidate 阻塞。"
+            "edge_recovery_branch 条件分派已扩大到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression，三窗口均通过：soda-creek 60 秒胜率从 0.6667 提升到 1.0，180 秒从 0.6667 提升到 1.0，300 秒平均存活从 143.0974s 提升到 221.8073s；但 300 秒三图胜率仍全为 0.0，已记录 fail_20260530_014。该分支只能作为 stage 01 opening repair / no-regression 证据，不能解除 RL acceptance、stage 03 或 policy candidate 阻塞。",
+            "evaluation-only adapter chaining 已允许 edge_recovery_branch 与 late_recovery_filter 组合，并能在 late filter 未改动作时透传内层 branch decision、late filter 改动作时清理内层旧 decision；5 秒 smoke 只证明包装、报告 provenance 和样本导出链路可用，尚未运行 180/300 秒 high-pressure chained diagnostic，也不能作为 policy gate。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

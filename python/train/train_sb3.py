@@ -839,13 +839,16 @@ class EdgeRecoveryFilterPolicy:
     def consume_recovery_decision(self):
         decision = self._last_recovery_decision
         self._last_recovery_decision = None
-        return decision
+        if decision is not None:
+            consume_policy_adapter_decision(self.policy)
+            return decision
+        return consume_policy_adapter_decision(self.policy)
 
     def opening_policy_report(self):
         return opening_policy_report(self.policy)
 
     def policy_adapter_report(self):
-        return {
+        report = {
             "mode": "edge_recovery_filter",
             "edge_distance": self.edge_distance,
             "wrapped_policy_kind": getattr(self.policy, "policy_kind", "sb3"),
@@ -854,6 +857,10 @@ class EdgeRecoveryFilterPolicy:
                 "It is not a trained policy and cannot be used as RL policy acceptance evidence.",
             ],
         }
+        wrapped_adapter = policy_adapter_report(self.policy)
+        if wrapped_adapter is not None:
+            report["wrapped_policy_adapter"] = wrapped_adapter
+        return report
 
 
 class LateRecoveryFilterPolicy:
@@ -1105,13 +1112,16 @@ class LateRecoveryFilterPolicy:
     def consume_recovery_decision(self):
         decision = self._last_recovery_decision
         self._last_recovery_decision = None
-        return decision
+        if decision is not None:
+            consume_policy_adapter_decision(self.policy)
+            return decision
+        return consume_policy_adapter_decision(self.policy)
 
     def opening_policy_report(self):
         return opening_policy_report(self.policy)
 
     def policy_adapter_report(self):
-        return {
+        report = {
             "mode": "late_recovery_filter",
             "min_seconds": self.min_seconds,
             "edge_distance": self.edge_distance,
@@ -1126,6 +1136,10 @@ class LateRecoveryFilterPolicy:
                 "It produces late-window supervision samples and cannot be used as RL policy acceptance evidence.",
             ],
         }
+        wrapped_adapter = policy_adapter_report(self.policy)
+        if wrapped_adapter is not None:
+            report["wrapped_policy_adapter"] = wrapped_adapter
+        return report
 
 
 def action_pushes_into_edge(action_index, diagnostics, edge_distance):
@@ -5164,10 +5178,8 @@ def main():
         parser.error("--anchor-guard-* requires --anchor-model and --anchor-dataset")
     if args.edge_recovery_filter and args.late_recovery_filter:
         parser.error("--edge-recovery-filter and --late-recovery-filter cannot be combined")
-    if args.edge_recovery_branch_model and (
-        args.edge_recovery_filter or args.late_recovery_filter
-    ):
-        parser.error("--edge-recovery-branch-model cannot be combined with recovery filters")
+    if args.edge_recovery_branch_model and args.edge_recovery_filter:
+        parser.error("--edge-recovery-branch-model cannot be combined with --edge-recovery-filter")
     if args.edge_recovery_samples_out and not (
         args.edge_recovery_filter
         or args.late_recovery_filter
