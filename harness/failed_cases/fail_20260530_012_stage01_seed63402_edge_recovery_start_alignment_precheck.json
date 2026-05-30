@@ -1,0 +1,17 @@
+{
+  "case_id": "fail_20260530_012",
+  "category": "rl_diagnostic",
+  "content_id": "stage01-seed63402-edge-recovery-start-alignment-precheck",
+  "seed": "63400-63402",
+  "bot": "ppo-e30-mid-anchor-parent-vs-seed63402-edge-recovery-anchor",
+  "time_seconds": 60.0,
+  "symptom": "The e30 mid-anchor guarded parent failed the offline start-policy alignment precheck against seed63402_edge_recovery_anchor.pt. On 76 edge recovery samples, mean KL was 2.131519 and argmax agreement was 0.0. On 32 success retention samples, argmax agreement was 1.0 but mean KL remained 0.759214, above the 0.25 threshold.",
+  "root_cause": "The parent policy is too far from the learned edge-recovery repair distribution before PPO starts. It fully disagrees with the anchor on the edge recovery rows, so anchor regularization inside a short closed-loop PPO continuation is starting from a badly mismatched policy.",
+  "fix": "Do not continue direct PPO regularization from this parent for the edge-recovery anchor. Use supervised SB3 initialization/distillation from the anchor or a narrower constrained opening branch, then rerun the alignment precheck before target-seed preflight.",
+  "validation": "Ran compare_sb3_to_behavior_clone_anchor.py against edge_recovery_samples.jsonl and soda_success_opening_retention_samples.jsonl with max mean KL 0.25, min argmax agreement 0.85, and max bucket mean KL 0.25. Both reports returned behavior_clone_anchor_alignment_failed.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/parent_vs_edge_recovery_anchor_edge_samples.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/parent_vs_edge_recovery_anchor_retention_samples.json"
+  ]
+}

@@ -1366,6 +1366,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_probe",
       "summary": "执行 seed 63402 edge recovery anchor 小步 PPO probe：从 e30 mid-anchor guarded parent 继续 256 timestep，并用 108 条 edge recovery + retention opening 样本做 anchor regularization。训练被 anchor validation guard 拦截，validation KL 1.614822 超过 0.25，argmax agreement 0.2273 低于 0.85；已记录 fail_20260530_011，未运行 target preflight 或完整矩阵。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_start_alignment",
+      "summary": "执行 start-policy vs edge recovery anchor 离线对齐预检：e30 mid-anchor parent 在 76 条 edge recovery rows 上 mean KL 2.131519、argmax agreement 0.0；在 32 条 retention rows 上 argmax agreement 1.0 但 mean KL 0.759214，仍超过 0.25 阈值。已记录 fail_20260530_012；下一步不应从该 parent 直接 PPO regularization，而应先做 supervised SB3 initialization / distillation 或 constrained opening branch。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3028,6 +3033,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_probe",
       "summary": "执行 seed 63402 edge recovery anchor 小步 PPO probe：从 e30 mid-anchor guarded parent 继续 256 timestep，并用 108 条 edge recovery + retention opening 样本做 anchor regularization。训练被 anchor validation guard 拦截，validation KL 1.614822 超过 0.25，argmax agreement 0.2273 低于 0.85；已记录 fail_20260530_011，未运行 target preflight 或完整矩阵。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_start_alignment",
+      "summary": "执行 start-policy vs edge recovery anchor 离线对齐预检：e30 mid-anchor parent 在 76 条 edge recovery rows 上 mean KL 2.131519、argmax agreement 0.0；在 32 条 retention rows 上 argmax agreement 1.0 但 mean KL 0.759214，仍超过 0.25 阈值。已记录 fail_20260530_012；下一步不应从该 parent 直接 PPO regularization，而应先做 supervised SB3 initialization / distillation 或 constrained opening branch。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3114,6 +3124,10 @@
     {
       "id": "rl_stage01_after_edge_recovery_anchor_guard_failure",
       "summary": "edge recovery anchor PPO probe 已证明当前 parent 与 learned anchor 在线约束差距过大；下一步先做 start-policy vs edge-recovery-anchor alignment precheck，再考虑 supervised SB3 初始化 / distillation 或更窄 constrained opening branch，必须先满足 anchor guard 再跑 target-seed preflight。"
+    },
+    {
+      "id": "rl_stage01_supervised_init_edge_recovery_anchor",
+      "summary": "start alignment precheck 已确认 parent 在 edge recovery rows 上 argmax agreement 为 0.0；下一步应尝试把 edge recovery anchor 蒸馏 / supervised 初始化为 SB3 checkpoint，先要求离线 alignment 通过，再进入小步 PPO 或 target-seed preflight。"
     }
   ]
 }

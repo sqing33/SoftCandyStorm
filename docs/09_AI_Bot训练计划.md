@@ -304,6 +304,8 @@ generic staged opening wrapper 预检也已失败：评估时前 `60s` 使用既
 
 首个 edge recovery anchor PPO probe 已被 anchor validation guard 拒绝：从 `ppo_e30_mid_anchor_guarded_probe.zip` 继续 `256` timestep，并用 `seed63402_edge_recovery_anchor.pt` 约束上述 `108` 条 opening 样本后，validation KL 为 `1.614822`（阈值 `0.25`），argmax agreement 为 `0.2273`（阈值 `0.85`），状态为 `aborted_by_anchor_validation_guard`。报告位于 `harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_probe_001/summary.md`，失败记录为 `fail_20260530_011`；未运行 target-seed preflight 或完整 60/180/300 秒矩阵。下一步应先做 start-policy vs edge-recovery-anchor 对齐预检，或通过 supervised SB3 初始化 / 更窄 constrained opening branch 让候选先满足 anchor guard。
 
+start-policy alignment precheck 已确认上述失败来自起点 policy 与 learned anchor 距离过大：`ppo_e30_mid_anchor_guarded_probe.zip` 在 `76` 条 edge recovery rows 上 mean KL `2.131519`、argmax agreement `0.0`；在 `32` 条 retention rows 上 argmax agreement 为 `1.0`，但 mean KL 仍为 `0.759214`，超过 `0.25` 阈值。报告位于 `harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_start_alignment_001/summary.md`，失败记录为 `fail_20260530_012`；下一步不要从该 parent 直接做 PPO regularization，应先尝试 supervised SB3 initialization / distillation 或更窄 constrained opening branch。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。
