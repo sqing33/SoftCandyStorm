@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260530_014",
+  "category": "rl_policy",
+  "content_id": "stage01-seed63402-edge-recovery-branch-long-window-gap",
+  "seed": "63400-63402",
+  "bot": "edge-recovery-branch-over-e30-mid-anchor-parent",
+  "time_seconds": 300.0,
+  "symptom": "The conditioned edge_recovery_branch passed 60/180/300 second parent no-regression and improved soda-creek survival, but the 300 second high-pressure comparison still recorded 0.0 win rate on soda-creek, caramel-workshop, and cracked-star-jar.",
+  "root_cause": "The branch only repairs the 0-60s soda-creek edge-lock failure and does not address the broader late-window route recovery and win-conversion gaps. Non-target maps are unchanged, and soda-creek still dies before 300 seconds despite a longer average survival.",
+  "fix": "Do not promote the branch as an RL policy candidate or stage 03 input. Keep it as a narrow stage 01 opening repair signal, then design a separate mid/late route recovery branch or closed-loop repair that targets 180-300s failure states while preserving the new 60/180s no-regression evidence.",
+  "validation": "Ran high-pressure parent/candidate comparisons for 60, 180, and 300 seconds on seeds 63400-63402. validate_policy_window_regression.py passed across all three windows, but branch_comparison_300s.json reported multimap_comparison_recorded_needs_policy_repair with 0.0 average policy win rate. The branch improved soda-creek 300s average survival from 143.0974s to 221.8073s but did not create a 300s victory.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/parent_comparison_300s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/branch_comparison_300s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/window_regression_60_180_300s.json"
+  ]
+}
