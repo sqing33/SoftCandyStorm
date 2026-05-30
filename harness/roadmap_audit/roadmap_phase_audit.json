@@ -786,7 +786,17 @@
         "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_edge_samples_validation.json",
         "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_mid_clean_risk_samples_validation.json",
         "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/unified_chain_late_clean_risk_samples_validation.json",
-        "harness/failed_cases/fail_20260530_018_caramel_opening_late_chain_soda_regression.json"
+        "harness/failed_cases/fail_20260530_018_caramel_opening_late_chain_soda_regression.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/summary.md",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_comparison_60s.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_comparison_180s.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_comparison_300s.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_window_regression_vs_previous_chain_300s.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_edge_samples_validation.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_risk_samples_validation.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_mid_clean_risk_samples_validation.json",
+        "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_late_clean_risk_samples_validation.json",
+        "harness/failed_cases/fail_20260530_019_late_recovery_map_scope_soda_cracked_regression.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -872,7 +882,8 @@
         "edge_recovery_branch 已完成 high-pressure 60/180/300 秒 parent no-regression 并记录 long-window gap；下一轮不要把该 branch 推进为 policy candidate，应保留其 60/180 秒 opening repair 证据，另起 mid / late route recovery branch 或 closed-loop repair 来处理 300 秒三图全败。",
         "基于 edge_recovery_branch + late_recovery_filter 与 caramel 单图 trace 诊断结果，下一轮应拆分 caramel-workshop repair：先处理 seed 63402 opening edge lock，再处理 seeds 63400/63401 的 180-300 秒 hazard/low-health conversion；把 60/180/300 秒 no-regression、validated clean risk samples、fail_20260530_015 和 fail_20260530_016 作为保守约束。",
         "caramel opening repair 应保留 30-45s 单点分派约束，拒绝 broad 0-60s scope；下一步把该 opening constraint 与独立 caramel late conversion objective 串联验证，仍必须跑 60/180/300s high-pressure no-regression。",
-        "caramel narrow opening branch 与 late filter 的统一链路虽然通过 60/180 秒 no-regression 并把 caramel-workshop 300 秒平均存活提高到 231.2871s，但 300 秒 soda-creek 从 1.0 回落到 0.6667，已记录 fail_20260530_018；下一轮不能把 caramel 分支直接并入上一版 soda-winning chain，应改做 per-map 或更强 state-conditioned late conversion，并把 soda-creek 300 秒 no-regression 设为硬门槛。"
+        "caramel narrow opening branch 与 late filter 的统一链路虽然通过 60/180 秒 no-regression 并把 caramel-workshop 300 秒平均存活提高到 231.2871s，但 300 秒 soda-creek 从 1.0 回落到 0.6667，已记录 fail_20260530_018；下一轮不能把 caramel 分支直接并入上一版 soda-winning chain，应改做 per-map 或更强 state-conditioned late conversion，并把 soda-creek 300 秒 no-regression 设为硬门槛。",
+        "`--late-recovery-maps caramel-workshop` 已验证参数和 provenance 生效，但 300 秒窗口从上一版 chained diagnostic 回归为 soda-creek 0.0、caramel-workshop 0.0、cracked-star-jar 0.0，已记录 fail_20260530_019；下一步应保留 soda/cracked late safety repair，另起 caramel late conversion objective，不能用 caramel-only late filter 作为候选链路。"
       ]
     },
     {

@@ -1416,6 +1416,11 @@
       "id": "rl_late_recovery_map_scope",
       "summary": "为 evaluation-only late_recovery_filter 增加 --late-recovery-maps 地图作用域，非目标地图不会改写动作，policy_adapter_report 会记录 target_maps；完整 python/train/test_train_sb3.py 为 55 passed / 4 skipped。该能力用于后续 caramel late conversion 诊断，不能替代 high-pressure no-regression 或 RL acceptance。",
       "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_late_recovery_map_scope_high_pressure",
+      "summary": "用 --late-recovery-maps caramel-workshop 复跑 chained high-pressure 诊断：60/180 秒三图仍为 1.0 胜率且 regression 通过，但 300 秒失败，soda-creek 从 1.0 掉到 0.0，cracked-star-jar 从 0.3333 掉到 0.0；caramel-workshop 平均存活保持 231.2871s 但胜率仍 0.0。已记录 fail_20260530_019；结论是 late filter 不能简单 caramel-only，下一轮必须保留 soda/cracked late safety repair，再单独做 caramel conversion。",
+      "report": "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/summary.md"
     }
   ],
   "current_findings": [

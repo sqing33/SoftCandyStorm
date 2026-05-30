@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260530_019",
+  "category": "rl_policy",
+  "content_id": "late-recovery-map-scope-soda-cracked-regression",
+  "seed": "63400-63402",
+  "bot": "caramel-scoped-late-recovery-filter-over-edge-recovery-branch",
+  "time_seconds": 300.0,
+  "symptom": "The evaluation-only chain with edge_recovery_branch on soda-creek,caramel-workshop and late_recovery_filter scoped only to caramel-workshop passed 60s and 180s high-pressure regression, but failed the 300s check against the previous chained diagnostic. soda-creek dropped from 1.0 to 0.0 win rate and average survival dropped from 300.015s to 204.1369s; cracked-star-jar dropped from 0.3333 to 0.0 win rate and average survival dropped from 289.7397s to 220.9516s. caramel-workshop still had 0.0 win rate, although average survival stayed at 231.2871s.",
+  "root_cause": "The previous long-window success on soda-creek and partial recovery on cracked-star-jar depended on late_recovery_filter being active on those maps. Scoping late recovery to caramel-workshop removes that safety repair from non-target maps while the opening edge branch does not cover late_180_to_300 failures. The prior regression was not solved by simply excluding soda-creek from late filtering; the repair needs map-conditioned or state-conditioned late conversion that preserves existing safety behavior.",
+  "fix": "Reject the caramel-only late-recovery scoped chain as a policy candidate, stage 03 checkpoint, RL test Bot, or acceptance evidence. Keep --late-recovery-maps as a diagnostic control and keep the validated clean mid/late samples as repair-training input only. The next repair should preserve late recovery on maps where it is already needed, then add a separate caramel-workshop late conversion objective or a stronger state-conditioned branch with 300s no-regression as a hard gate.",
+  "validation": "Ran high-pressure 60s, 180s, and 300s comparisons on seeds 63400-63402 with edge_recovery_branch maps soda-creek,caramel-workshop, branch window 25-45s, late_recovery_filter from 60s, and --late-recovery-maps caramel-workshop. Regression validation passed 60s and 180s with 0 blockers, but scoped_window_regression_vs_previous_chain_300s.json failed with four blockers: soda-creek win rate -1.0 and survival -95.8781s, cracked-star-jar win rate -0.3333 and survival -68.7881s. Sample validation reported 8 valid edge samples, 610 valid raw risk samples with 5 warnings, 440 valid clean mid samples, and 164 valid clean late samples.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/summary.md",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_comparison_60s.json",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_comparison_180s.json",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_comparison_300s.json",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_window_regression_vs_previous_chain_300s.json",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_edge_samples_validation.json",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_mid_clean_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_late_recovery_map_scope_high_pressure_001/scoped_chain_late_clean_risk_samples_validation.json"
+  ]
+}
