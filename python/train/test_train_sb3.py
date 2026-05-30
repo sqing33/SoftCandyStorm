@@ -31,6 +31,7 @@ from python.train.train_sb3 import (
     load_behavior_clone_policy_with_optional_opening,
     parse_anchor_time_bucket_list,
     parse_anchor_time_bucket_weights,
+    parse_edge_recovery_branch_map_overrides,
     policy_quality_findings,
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
@@ -135,6 +136,28 @@ def test_resolve_train_seed_values_accepts_explicit_list():
 def test_resolve_train_seed_values_rejects_mixed_sources():
     with pytest.raises(ValueError, match="--train-seeds"):
         resolve_train_seed_values("62400", 62400, 2)
+
+
+def test_parse_edge_recovery_branch_map_overrides_accepts_windows_and_thresholds():
+    overrides = parse_edge_recovery_branch_map_overrides(
+        "soda-creek:0:60,caramel-workshop:30:45:0.2:0.0:0.75"
+    )
+
+    assert overrides["soda-creek"] == {
+        "min_seconds": 0.0,
+        "max_seconds": 60.0,
+    }
+    assert overrides["caramel-workshop"] == {
+        "min_seconds": 30.0,
+        "max_seconds": 45.0,
+        "min_pressure": 0.2,
+        "min_low_health_risk": 0.0,
+        "min_boundary_edge_risk": 0.75,
+    }
+    with pytest.raises(ValueError, match="max_seconds"):
+        parse_edge_recovery_branch_map_overrides("soda-creek:60:30")
+    with pytest.raises(ValueError, match="duplicates"):
+        parse_edge_recovery_branch_map_overrides("soda-creek:0:60,soda-creek:30:45")
 
 
 def test_validate_eval_random_seed_requires_stochastic_evaluation():
@@ -1475,6 +1498,83 @@ def test_edge_recovery_branch_switches_only_for_wallward_target_context():
     assert report["usage"]["branch_decisions"] == 1
 
 
+def test_edge_recovery_branch_uses_map_specific_windows():
+    policy = EdgeRecoveryBranchPolicy(
+        DummyPolicy(5),
+        DummyPolicy(7),
+        ["soda-creek", "caramel-workshop"],
+        0.0,
+        60.0,
+        32.0,
+        0.2,
+        0.0,
+        0.75,
+        "base.zip",
+        "branch.zip",
+        map_overrides={
+            "caramel-workshop": {
+                "min_seconds": 30.0,
+                "max_seconds": 45.0,
+            }
+        },
+    )
+
+    common_diagnostics = {
+        "boundary_edge_risk": 1.0,
+        "enemy_pressure_risk": 0.3,
+        "boundary": {
+            "left_distance": 400.0,
+            "right_distance": 400.0,
+            "bottom_distance": 0.0,
+            "top_distance": 400.0,
+        },
+    }
+    policy.set_step_context(
+        {
+            "map_id": "soda-creek",
+            "time_seconds": 20.0,
+            "diagnostics": common_diagnostics,
+        }
+    )
+    soda_action, _ = policy.predict(None)
+    soda_decision = consume_policy_adapter_decision(policy)
+
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "time_seconds": 20.0,
+            "diagnostics": common_diagnostics,
+        }
+    )
+    early_caramel_action, _ = policy.predict(None)
+    early_caramel_decision = consume_policy_adapter_decision(policy)
+
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "time_seconds": 36.0,
+            "diagnostics": common_diagnostics,
+        }
+    )
+    caramel_action, _ = policy.predict(None)
+    caramel_decision = consume_policy_adapter_decision(policy)
+    report = policy.policy_adapter_report()
+
+    assert soda_action == 7
+    assert soda_decision["min_seconds"] == 0.0
+    assert soda_decision["max_seconds"] == 60.0
+    assert early_caramel_action == 5
+    assert early_caramel_decision is None
+    assert caramel_action == 7
+    assert caramel_decision["min_seconds"] == 30.0
+    assert caramel_decision["max_seconds"] == 45.0
+    assert report["map_overrides"]["caramel-workshop"]["min_seconds"] == 30.0
+    assert (
+        report["effective_map_configs"]["soda-creek"]["max_seconds"]
+        == 60.0
+    )
+
+
 def test_edge_recovery_branch_rejects_non_target_or_low_pressure_contexts():
     policy = EdgeRecoveryBranchPolicy(
         DummyPolicy(5),
@@ -1876,6 +1976,12 @@ def test_compare_policy_to_rule_bots_forwards_edge_recovery_branch_options(monke
         edge_recovery_branch_min_pressure=0.2,
         edge_recovery_branch_min_low_health_risk=0.3,
         edge_recovery_branch_min_boundary_risk=0.75,
+        edge_recovery_branch_map_overrides={
+            "caramel-workshop": {
+                "min_seconds": 30.0,
+                "max_seconds": 45.0,
+            },
+        },
     )
 
     assert captured["edge_recovery_branch_model_path"] == "branch.zip"
@@ -1886,6 +1992,12 @@ def test_compare_policy_to_rule_bots_forwards_edge_recovery_branch_options(monke
     assert captured["edge_recovery_branch_min_pressure"] == 0.2
     assert captured["edge_recovery_branch_min_low_health_risk"] == 0.3
     assert captured["edge_recovery_branch_min_boundary_risk"] == 0.75
+    assert captured["edge_recovery_branch_map_overrides"] == {
+        "caramel-workshop": {
+            "min_seconds": 30.0,
+            "max_seconds": 45.0,
+        },
+    }
     assert report["policy_adapter"]["mode"] == "edge_recovery_branch"
 
 

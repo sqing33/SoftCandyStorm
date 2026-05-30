@@ -489,6 +489,77 @@ class TerminalConversionBranchPolicy:
         }
 
 
+EDGE_RECOVERY_BRANCH_CONFIG_KEYS = (
+    "min_seconds",
+    "max_seconds",
+    "min_pressure",
+    "min_low_health_risk",
+    "min_boundary_edge_risk",
+)
+
+
+def validate_edge_recovery_branch_config(config, label):
+    if config["min_seconds"] < 0.0:
+        raise ValueError(f"{label}.min_seconds must be non-negative")
+    if (
+        config["max_seconds"] is not None
+        and config["max_seconds"] <= config["min_seconds"]
+    ):
+        raise ValueError(f"{label}.max_seconds must be greater than min_seconds")
+    for key in (
+        "min_pressure",
+        "min_low_health_risk",
+        "min_boundary_edge_risk",
+    ):
+        value = config[key]
+        if not (0.0 <= value <= 1.0):
+            raise ValueError(f"{label}.{key} must be between 0 and 1")
+
+
+def normalize_edge_recovery_branch_map_overrides(
+    map_overrides,
+    *,
+    default_min_seconds,
+    default_max_seconds,
+    default_min_pressure,
+    default_min_low_health_risk,
+    default_min_boundary_edge_risk,
+):
+    if not map_overrides:
+        return {}
+    defaults = {
+        "min_seconds": default_min_seconds,
+        "max_seconds": default_max_seconds,
+        "min_pressure": default_min_pressure,
+        "min_low_health_risk": default_min_low_health_risk,
+        "min_boundary_edge_risk": default_min_boundary_edge_risk,
+    }
+    normalized = {}
+    for map_id, override in map_overrides.items():
+        map_id = str(map_id).strip()
+        if not map_id:
+            raise ValueError("map override target must include a map id")
+        if not isinstance(override, dict):
+            raise ValueError(f"map override for {map_id} must be an object")
+        config = {}
+        for key in EDGE_RECOVERY_BRANCH_CONFIG_KEYS:
+            raw_value = override.get(key, defaults[key])
+            if raw_value is None:
+                if key == "max_seconds":
+                    config[key] = None
+                    continue
+                raise ValueError(f"map override for {map_id}.{key} must be numeric")
+            try:
+                config[key] = float(raw_value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"map override for {map_id}.{key} must be numeric"
+                ) from exc
+        validate_edge_recovery_branch_config(config, f"map_overrides[{map_id}]")
+        normalized[map_id] = config
+    return normalized
+
+
 class EdgeRecoveryBranchPolicy:
     policy_kind = "edge_recovery_branch"
 
@@ -505,6 +576,7 @@ class EdgeRecoveryBranchPolicy:
         min_boundary_edge_risk,
         base_model_path,
         branch_model_path,
+        map_overrides=None,
     ):
         if not target_maps:
             raise ValueError("target_maps must include at least one map id")
@@ -530,6 +602,22 @@ class EdgeRecoveryBranchPolicy:
         self.min_pressure = float(min_pressure)
         self.min_low_health_risk = float(min_low_health_risk)
         self.min_boundary_edge_risk = float(min_boundary_edge_risk)
+        self.map_overrides = normalize_edge_recovery_branch_map_overrides(
+            map_overrides,
+            default_min_seconds=self.min_seconds,
+            default_max_seconds=self.max_seconds,
+            default_min_pressure=self.min_pressure,
+            default_min_low_health_risk=self.min_low_health_risk,
+            default_min_boundary_edge_risk=self.min_boundary_edge_risk,
+        )
+        unknown_override_maps = sorted(
+            set(self.map_overrides.keys()).difference(self.target_maps)
+        )
+        if unknown_override_maps:
+            joined = ", ".join(unknown_override_maps)
+            raise ValueError(
+                f"map override targets must be included in target_maps: {joined}"
+            )
         self.base_model_path = str(base_model_path)
         self.branch_model_path = str(branch_model_path)
         self._map_id = None
@@ -579,9 +667,13 @@ class EdgeRecoveryBranchPolicy:
     def should_consider_branch(self, base_action_index):
         if self._map_id not in self.target_maps:
             return False
-        if self._time_seconds < self.min_seconds:
+        config = self.branch_config_for_current_map()
+        if self._time_seconds < config["min_seconds"]:
             return False
-        if self.max_seconds is not None and self._time_seconds > self.max_seconds:
+        if (
+            config["max_seconds"] is not None
+            and self._time_seconds > config["max_seconds"]
+        ):
             return False
         diagnostics = self._step_context.get("diagnostics", {}) or {}
         if not action_pushes_into_edge(
@@ -590,21 +682,45 @@ class EdgeRecoveryBranchPolicy:
             self.edge_distance,
         ):
             return False
-        if self.boundary_edge_risk(diagnostics) < self.min_boundary_edge_risk:
+        if self.boundary_edge_risk(diagnostics) < config["min_boundary_edge_risk"]:
             return False
-        if self.min_pressure <= 0.0 and self.min_low_health_risk <= 0.0:
+        if config["min_pressure"] <= 0.0 and config["min_low_health_risk"] <= 0.0:
             return True
         pressure = self._pressure_context
         return (
             (
-                self.min_pressure > 0.0
-                and pressure["combined_pressure"] >= self.min_pressure
+                config["min_pressure"] > 0.0
+                and pressure["combined_pressure"] >= config["min_pressure"]
             )
             or (
-                self.min_low_health_risk > 0.0
-                and pressure["low_health_risk"] >= self.min_low_health_risk
+                config["min_low_health_risk"] > 0.0
+                and pressure["low_health_risk"] >= config["min_low_health_risk"]
             )
         )
+
+    def default_branch_config(self):
+        return {
+            "min_seconds": self.min_seconds,
+            "max_seconds": self.max_seconds,
+            "min_pressure": self.min_pressure,
+            "min_low_health_risk": self.min_low_health_risk,
+            "min_boundary_edge_risk": self.min_boundary_edge_risk,
+        }
+
+    def branch_config_for_map(self, map_id):
+        config = self.default_branch_config()
+        if map_id in self.map_overrides:
+            config.update(self.map_overrides[map_id])
+        return config
+
+    def branch_config_for_current_map(self):
+        return self.branch_config_for_map(self._map_id)
+
+    def effective_map_configs(self):
+        return {
+            map_id: self.branch_config_for_map(map_id)
+            for map_id in sorted(self.target_maps)
+        }
 
     def boundary_edge_risk(self, diagnostics):
         value = as_float((diagnostics or {}).get("boundary_edge_risk"))
@@ -674,6 +790,7 @@ class EdgeRecoveryBranchPolicy:
     def build_branch_decision(self, base_action, branch_action, observation):
         base_scores = policy_action_scores(self.base_model, observation)
         branch_scores = policy_action_scores(self.branch_model, observation)
+        config = self.branch_config_for_current_map()
         base_score_values = (
             base_scores.get("scores", []) if isinstance(base_scores, dict) else []
         )
@@ -684,11 +801,12 @@ class EdgeRecoveryBranchPolicy:
             "mode": "edge_recovery_branch",
             "edge_distance": self.edge_distance,
             "target_maps": sorted(self.target_maps),
-            "min_seconds": self.min_seconds,
-            "max_seconds": self.max_seconds,
-            "min_pressure": self.min_pressure,
-            "min_low_health_risk": self.min_low_health_risk,
-            "min_boundary_edge_risk": self.min_boundary_edge_risk,
+            "map_overrides": self.map_overrides,
+            "min_seconds": config["min_seconds"],
+            "max_seconds": config["max_seconds"],
+            "min_pressure": config["min_pressure"],
+            "min_low_health_risk": config["min_low_health_risk"],
+            "min_boundary_edge_risk": config["min_boundary_edge_risk"],
             "original_action": int(base_action),
             "target_action": int(branch_action),
             "pressure_context": dict(self._pressure_context),
@@ -723,6 +841,8 @@ class EdgeRecoveryBranchPolicy:
             "min_pressure": self.min_pressure,
             "min_low_health_risk": self.min_low_health_risk,
             "min_boundary_edge_risk": self.min_boundary_edge_risk,
+            "map_overrides": self.map_overrides,
+            "effective_map_configs": self.effective_map_configs(),
             "base_model_path": self.base_model_path,
             "branch_model_path": self.branch_model_path,
             "base_policy_kind": getattr(self.base_model, "policy_kind", "sb3"),
@@ -1512,6 +1632,66 @@ def parse_map_list(value):
     if not maps:
         raise ValueError("map list must include at least one map id")
     return maps
+
+
+def parse_edge_recovery_branch_map_overrides(value):
+    if value is None:
+        return None
+    overrides = {}
+    for raw_item in value.split(","):
+        raw_item = raw_item.strip()
+        if not raw_item:
+            continue
+        parts = [part.strip() for part in raw_item.split(":")]
+        if len(parts) < 3 or len(parts) > 6:
+            raise ValueError(
+                "--edge-recovery-branch-map-overrides entries must use "
+                "map:min_seconds:max_seconds[:min_pressure[:min_low_health_risk"
+                "[:min_boundary_edge_risk]]]"
+            )
+        map_id = parts[0]
+        if not map_id:
+            raise ValueError("--edge-recovery-branch-map-overrides map id is required")
+        if map_id in overrides:
+            raise ValueError(
+                f"--edge-recovery-branch-map-overrides duplicates map id `{map_id}`"
+            )
+        override = {}
+        for key, raw_value in zip(EDGE_RECOVERY_BRANCH_CONFIG_KEYS, parts[1:]):
+            if not raw_value:
+                raise ValueError(
+                    f"--edge-recovery-branch-map-overrides {map_id}.{key} is required"
+                )
+            try:
+                override[key] = float(raw_value)
+            except ValueError as exc:
+                raise ValueError(
+                    f"--edge-recovery-branch-map-overrides {map_id}.{key} must be numeric"
+                ) from exc
+        min_seconds = override["min_seconds"]
+        max_seconds = override["max_seconds"]
+        if min_seconds < 0.0:
+            raise ValueError(
+                f"--edge-recovery-branch-map-overrides {map_id}.min_seconds "
+                "must be non-negative"
+            )
+        if max_seconds <= min_seconds:
+            raise ValueError(
+                f"--edge-recovery-branch-map-overrides {map_id}.max_seconds "
+                "must be greater than min_seconds"
+            )
+        for key in EDGE_RECOVERY_BRANCH_CONFIG_KEYS[2:]:
+            if key in override and not (0.0 <= override[key] <= 1.0):
+                raise ValueError(
+                    f"--edge-recovery-branch-map-overrides {map_id}.{key} "
+                    "must be between 0 and 1"
+                )
+        overrides[map_id] = override
+    if not overrides:
+        raise ValueError(
+            "--edge-recovery-branch-map-overrides must include at least one map config"
+        )
+    return overrides
 
 
 def parse_seed_list(value):
@@ -2847,6 +3027,7 @@ def wrap_edge_recovery_branch_policy(
     edge_recovery_branch_min_pressure=0.0,
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
+    edge_recovery_branch_map_overrides=None,
     base_model_path=None,
 ):
     if edge_recovery_branch_model_path is None:
@@ -2864,6 +3045,7 @@ def wrap_edge_recovery_branch_policy(
         edge_recovery_branch_min_boundary_risk,
         base_model_path or "base_policy",
         edge_recovery_branch_model_path,
+        map_overrides=edge_recovery_branch_map_overrides,
     )
 
 
@@ -2890,6 +3072,7 @@ def evaluate_saved_policy(
     edge_recovery_branch_min_pressure=0.0,
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
+    edge_recovery_branch_map_overrides=None,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -2960,6 +3143,7 @@ def evaluate_saved_policy(
         edge_recovery_branch_min_boundary_risk=(
             edge_recovery_branch_min_boundary_risk
         ),
+        edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
         base_model_path=fallback_model_path,
     )
     model = wrap_recovery_filter_for_eval(
@@ -3020,6 +3204,7 @@ def evaluate_policy_model(
     edge_recovery_branch_min_pressure=0.0,
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
+    edge_recovery_branch_map_overrides=None,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3078,6 +3263,7 @@ def evaluate_policy_model(
             edge_recovery_branch_min_boundary_risk=(
                 edge_recovery_branch_min_boundary_risk
             ),
+            edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
             seed_start=seed_start,
@@ -3127,6 +3313,7 @@ def evaluate_policy_model(
             edge_recovery_branch_min_low_health_risk
         ),
         edge_recovery_branch_min_boundary_risk=edge_recovery_branch_min_boundary_risk,
+        edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
         eval_episodes=eval_episodes,
         eval_seconds=eval_seconds,
         seed_start=seed_start,
@@ -3176,6 +3363,7 @@ def evaluate_behavior_clone_policy(
     edge_recovery_branch_min_pressure=0.0,
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
+    edge_recovery_branch_map_overrides=None,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -3247,6 +3435,7 @@ def evaluate_behavior_clone_policy(
             edge_recovery_branch_min_boundary_risk=(
                 edge_recovery_branch_min_boundary_risk
             ),
+            edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
             base_model_path=model_path,
         )
     policy = wrap_recovery_filter_for_eval(
@@ -4189,6 +4378,7 @@ def compare_policy_to_rule_bots(
     edge_recovery_branch_min_pressure=0.0,
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
+    edge_recovery_branch_map_overrides=None,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -4245,6 +4435,7 @@ def compare_policy_to_rule_bots(
             edge_recovery_branch_min_low_health_risk
         ),
         edge_recovery_branch_min_boundary_risk=edge_recovery_branch_min_boundary_risk,
+        edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
         behavior_clone_model=behavior_clone_model,
         eval_episodes=episodes,
         eval_seconds=seconds,
@@ -4334,6 +4525,7 @@ def compare_policy_to_rule_bots_across_maps(
     edge_recovery_branch_min_pressure=0.0,
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
+    edge_recovery_branch_map_overrides=None,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -4388,6 +4580,7 @@ def compare_policy_to_rule_bots_across_maps(
             edge_recovery_branch_min_boundary_risk=(
                 edge_recovery_branch_min_boundary_risk
             ),
+            edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
             behavior_clone_model=behavior_clone_model,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
@@ -4827,6 +5020,15 @@ def main():
         default=None,
         help="Comma-separated map ids where --edge-recovery-branch-model may replace wallward base actions.",
     )
+    parser.add_argument(
+        "--edge-recovery-branch-map-overrides",
+        default=None,
+        help=(
+            "Comma-separated per-map branch configs as "
+            "map:min_seconds:max_seconds[:min_pressure[:min_low_health_risk"
+            "[:min_boundary_edge_risk]]]."
+        ),
+    )
     parser.add_argument("--edge-recovery-branch-min-seconds", type=float, default=0.0)
     parser.add_argument("--edge-recovery-branch-max-seconds", type=float, default=60.0)
     parser.add_argument("--edge-recovery-branch-distance", type=float, default=32.0)
@@ -5092,6 +5294,14 @@ def main():
             "--edge-recovery-branch-max-seconds",
         )
         edge_recovery_branch_maps = parse_map_list(args.edge_recovery_branch_maps)
+        edge_recovery_branch_map_overrides = parse_edge_recovery_branch_map_overrides(
+            args.edge_recovery_branch_map_overrides
+        )
+        if (
+            edge_recovery_branch_maps is None
+            and edge_recovery_branch_map_overrides is not None
+        ):
+            edge_recovery_branch_maps = sorted(edge_recovery_branch_map_overrides)
         late_recovery_maps = parse_map_list(args.late_recovery_maps)
         anchor_include_time_buckets = parse_anchor_time_bucket_list(
             args.anchor_include_time_buckets,
@@ -5200,6 +5410,22 @@ def main():
         parser.error("--edge-recovery-branch-model requires --edge-recovery-branch-maps")
     if args.edge_recovery_branch_maps and not args.edge_recovery_branch_model:
         parser.error("--edge-recovery-branch-maps requires --edge-recovery-branch-model")
+    if args.edge_recovery_branch_map_overrides and not args.edge_recovery_branch_model:
+        parser.error(
+            "--edge-recovery-branch-map-overrides requires --edge-recovery-branch-model"
+        )
+    if edge_recovery_branch_map_overrides is not None:
+        unknown_override_maps = sorted(
+            set(edge_recovery_branch_map_overrides).difference(
+                edge_recovery_branch_maps or []
+            )
+        )
+        if unknown_override_maps:
+            parser.error(
+                "--edge-recovery-branch-map-overrides maps must also be listed in "
+                "--edge-recovery-branch-maps: "
+                + ", ".join(unknown_override_maps)
+            )
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
@@ -5313,6 +5539,7 @@ def main():
                 edge_recovery_branch_min_boundary_risk=(
                     args.edge_recovery_branch_min_boundary_risk
                 ),
+                edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
@@ -5398,6 +5625,9 @@ def main():
                     edge_recovery_branch_min_boundary_risk=(
                         args.edge_recovery_branch_min_boundary_risk
                     ),
+                    edge_recovery_branch_map_overrides=(
+                        edge_recovery_branch_map_overrides
+                    ),
                     behavior_clone_model=(
                         Path(args.behavior_clone_model)
                         if args.behavior_clone_model
@@ -5479,6 +5709,7 @@ def main():
                 edge_recovery_branch_min_boundary_risk=(
                     args.edge_recovery_branch_min_boundary_risk
                 ),
+                edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
