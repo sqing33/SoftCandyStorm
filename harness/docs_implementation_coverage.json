@@ -467,7 +467,7 @@
       "doc_id": "09",
       "doc_path": "docs/09_AI_Bot训练计划.md",
       "status": "partial",
-      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、distillation action-distribution guard / scope、online action-distribution delta no-regression gate、terminal-conversion branch 调度入口、terminal branch usage instrumentation 与真实 usage comparison、dataset-action-target map scope、soda per-map terminal objective、胜利终局 trajectory sample filter、多图 victory terminal samples、dataset-action-target-path 监督目标覆写、多图 victory path target branch probe、pressure / low-health 条件分派探针、recovery target map/time scope filter、clean risk map/time subset filter、scoped risk distillation、terminal-window scoped distillation、terminal-window weight ablation、当前 high-pressure 固定窗口复查、基于 60/180/300 秒失败分析的三阶段修复行动计划、stage 01 opening 固定窗口 probe、stage 01 seed replay probe、seed 63402 trace 对比诊断、opening-route-recovery reward profile、首个 opening-route-recovery probe、保守学习率 sweep、opening-boundary-escape profile、首个 opening-boundary-escape probe、seed 63402 target guard rows、首个 guard-anchor probe 与强 guard-anchor probe、target seed online preflight 均已建立；但 stage 01 仍未解除 opening / 300 秒 blocker。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
+      "summary": "Gym bridge、SB3 DQN/PPO、行为克隆、观测 v2、多地图训练诊断、sequence_diagnostics、entropy regularization 动作约束、time-phase balance curriculum、RL policy failure analysis、time-bucket curriculum plan、staged opening/fallback repair、edge / risk / anchor drift 样本导出、升级选择训练、movement+upgrade 联合对比、RL policy acceptance 门禁、behavior-clone anchor alignment、anchor regularization、anchor validation guard、drift-row precheck / sweep、SB3 supervised re-alignment 输入、validation_slices、distillation action-distribution guard / scope、online action-distribution delta no-regression gate、terminal-conversion branch 调度入口、terminal branch usage instrumentation 与真实 usage comparison、dataset-action-target map scope、soda per-map terminal objective、胜利终局 trajectory sample filter、多图 victory terminal samples、dataset-action-target-path 监督目标覆写、多图 victory path target branch probe、pressure / low-health 条件分派探针、recovery target map/time scope filter、clean risk map/time subset filter、scoped risk distillation、terminal-window scoped distillation、terminal-window weight ablation、当前 high-pressure 固定窗口复查、基于 60/180/300 秒失败分析的三阶段修复行动计划、stage 01 opening 固定窗口 probe、stage 01 seed replay probe、seed 63402 trace 对比诊断、opening-route-recovery reward profile、首个 opening-route-recovery probe、保守学习率 sweep、opening-boundary-escape profile、首个 opening-boundary-escape probe、seed 63402 target guard rows、首个 guard-anchor probe 与强 guard-anchor probe、target seed online preflight、success retention trace samples 均已建立；但 stage 01 仍未解除 opening / 300 秒 blocker。RL Bot 还没有达到正式压力测试基线，RL acceptance 继续 blocked。",
       "coverage": [
         {
           "id": "rl-training-and-diagnostics",
@@ -1592,7 +1592,14 @@
             "tools/test_validate_policy_target_seed_preflight.py",
             "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/summary.md",
             "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/seed63402_strong_guard_preflight.json",
-            "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/seed63402_strong_guard_preflight.md"
+            "harness/reports/2026-05-30_rl_target_seed_preflight_validator_001/seed63402_strong_guard_preflight.md",
+            "tools/export_policy_trace_samples.py",
+            "tools/test_export_policy_trace_samples.py",
+            "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/summary.md",
+            "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/export_report.json",
+            "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/export_report.md",
+            "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/soda_success_opening_retention_samples.jsonl",
+            "harness/reports/2026-05-30_rl_stage01_seed63402_success_retention_samples_001/behavior_clone_dry_run.json"
           ],
           "gaps": [
             "cracked-star-jar 胜利终局 trajectory sample filter 已保留 358 条 210-240 秒 movement samples，覆盖 2 个 KiteBot victory episode，并通过 behavior clone dry-run；但该批样本只是 terminal-conversion 正例训练输入，样本量小、只覆盖单图，且 high_action_persistence 为 watch，尚未产生 learned branch、300 秒转换收益或 acceptance 证据。",
@@ -1698,7 +1705,8 @@
             "seed 63402 target guard rows 已导出并通过 edge_recovery_samples_valid：17 条样本全部来自 soda-creek seed 63402 的 31.9999-37.2664 秒高压贴边 action 5 锁定窗口，目标均为非顶墙 action 7；behavior clone dry-run 已确认 17 条均作为 edge_recovery_supervision 读取。该数据只是 repair_training_input，尚未完成训练、60/180/300 秒 parent no-regression 或 policy acceptance。",
             "seed 63402 guard-anchor probe 已失败：behavior-clone anchor 离线准确率 1.0，但 PPO anchor validation guard 失败，validation KL 4.251955、argmax agreement 0.0；候选通过 60/180/300 秒 parent no-regression 但没有修复 soda-creek seed 63402 opening death，已记录 fail_20260530_006。",
             "强 guard-anchor probe 已失败：17 条 guard rows 的离线 alignment 通过（mean KL 0.16974、argmax agreement 1.0），但在线 60 秒 soda-creek 降到 0.3333、seed 63402 仍在 45.2330 秒死亡，180 秒 soda-creek 为 0.0，300 秒三图全 0.0；相对 parent 触发 8 个 window regression blockers。已记录 fail_20260530_007，说明不能把离线 guard alignment 当成在线 policy 修复证据。",
-            "target seed online preflight 校验器已能在 comparison JSON 中抓出 soda-creek:63402 的强 guard-anchor 在线失败：45.2330 秒 defeat 且 action 7 ratio 为 0.0；它是早停预检工具，仍不能替代完整 fixed-window high-pressure、parent no-regression 或 acceptance。"
+            "target seed online preflight 校验器已能在 comparison JSON 中抓出 soda-creek:63402 的强 guard-anchor 在线失败：45.2330 秒 defeat 且 action 7 ratio 为 0.0；它是早停预检工具，仍不能替代完整 fixed-window high-pressure、parent no-regression 或 acceptance。",
+            "成功开局 retention anchor 输入已建立：从 soda-creek parent 成功 seeds 63400/63401 的同窗口导出 32 条 action 7 样本并通过 behavior clone dry-run；但尚未训练新 anchor / PPO，也没有 target-seed preflight、60/180/300 秒 high-pressure 或 parent no-regression 通过证据。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"
