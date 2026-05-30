@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260530_021",
+  "category": "rl_policy",
+  "content_id": "per-map-edge-branch-late-conversion-gap",
+  "seed": "63400-63402",
+  "bot": "per-map-edge-recovery-branch-plus-all-map-late-recovery-filter",
+  "time_seconds": 300.0,
+  "symptom": "The evaluation-only chain with soda-creek edge_recovery_branch window 0-60s, caramel-workshop edge_recovery_branch window 30-45s, and all-map late_recovery_filter passed 60/180/300s regression against the previous chained diagnostic with 0 blockers. It preserved soda-creek 300s win rate 1.0 and cracked-star-jar 300s win rate 0.3333, and improved caramel-workshop 300s average survival from 163.3014s to 231.2871s, but caramel-workshop still recorded 0.0 300s win rate.",
+  "root_cause": "Per-map branch composition fixes the prior branch-scope conflict and preserves all-map late safety, but the caramel-workshop chain still lacks a true late terminal conversion objective. The narrow caramel opening branch can remove the seed 63402 opening lock, and the generic late recovery filter can improve survival, but neither produces a complete 300s victory sequence on caramel-workshop.",
+  "fix": "Do not promote the per-map chained wrapper as a policy candidate, stage 03 checkpoint, RL test Bot, or acceptance evidence. Keep the per-map branch composition as the no-regression diagnostic baseline, then train or diagnose a caramel-workshop late conversion objective that preserves soda-creek opening repair, cracked-star-jar late safety, and the 60/180/300s no-regression gate.",
+  "validation": "Ran high-pressure 60s, 180s, and 300s comparisons on seeds 63400-63402 with edge_recovery_branch map overrides soda-creek:0-60s and caramel-workshop:30-45s, min_pressure 0.2, min_boundary_edge_risk 0.75, and all-map late_recovery_filter from 60s. window_regression_vs_previous_chain.json passed with 0 blockers. Sample validation reported 21 valid edge samples, 2184 valid raw risk samples with 7 target risk score warnings, 1360 valid clean mid samples, and 784 valid clean late samples.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/summary.md",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_comparison_60s.json",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_comparison_180s.json",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_comparison_300s.json",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/window_regression_vs_previous_chain.json",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_edge_samples_validation.json",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_mid_clean_risk_samples_validation.json",
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_late_clean_risk_samples_validation.json"
+  ]
+}

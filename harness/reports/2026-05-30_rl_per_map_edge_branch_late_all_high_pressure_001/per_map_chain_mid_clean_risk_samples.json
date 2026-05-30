@@ -1,0 +1,131 @@
+{
+  "report_version": 1,
+  "decision": "risk_recovery_clean_samples_exported",
+  "sources": [
+    "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl"
+  ],
+  "out": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_mid_clean_risk_samples.jsonl",
+  "input_sample_count": 2184,
+  "kept_sample_count": 1360,
+  "drop_count": 824,
+  "drop_reasons": {
+    "invalid_sample": 0,
+    "target_risk_reasons": 4,
+    "worse_target_risk_score": 5,
+    "above_max_target_risk_score": 0,
+    "map_filter": 0,
+    "time_window": 815
+  },
+  "source_warning_count": 7,
+  "filter": {
+    "allow_target_risk": false,
+    "allow_worse_target_risk": false,
+    "target_risk_tolerance": 1e-06,
+    "max_target_risk_score": null,
+    "map_filter": null,
+    "min_seconds": 60.0,
+    "max_seconds": 180.0
+  },
+  "kept_original_action_distribution": {
+    "1": 111,
+    "2": 23,
+    "3": 130,
+    "4": 112,
+    "5": 268,
+    "6": 410,
+    "7": 148,
+    "8": 158
+  },
+  "kept_target_action_distribution": {
+    "0": 39,
+    "1": 115,
+    "2": 23,
+    "3": 114,
+    "4": 267,
+    "5": 158,
+    "6": 35,
+    "7": 527,
+    "8": 82
+  },
+  "kept_risk_reason_distribution": {
+    "wallward_edge": 678,
+    "toward_enemy_pressure": 619,
+    "toward_hazard": 75
+  },
+  "validation_decision": "risk_recovery_samples_valid",
+  "drop_examples": [
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 93,
+      "target_risk_delta": 0.06299
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 94,
+      "target_risk_delta": 0.081772
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 95,
+      "target_risk_delta": 0.089818
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 96,
+      "target_risk_reasons": [
+        "toward_enemy_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 498,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 499,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    },
+    {
+      "reason": "target_risk_reasons",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 500,
+      "target_risk_reasons": [
+        "idle_under_late_pressure"
+      ]
+    },
+    {
+      "reason": "worse_target_risk_score",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 822,
+      "target_risk_delta": 0.191435
+    },
+    {
+      "reason": "time_window",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 867,
+      "time_seconds": 180.5429
+    },
+    {
+      "reason": "time_window",
+      "source": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_risk_samples.jsonl",
+      "line": 868,
+      "time_seconds": 184.1104
+    }
+  ],
+  "limitations": [
+    "Clean risk-recovery subsets are still adapter-derived repair training inputs.",
+    "Filtering removes obvious target-risk rows; it does not prove policy quality.",
+    "Any policy trained with this output still needs deterministic high-pressure gates and failure-case review."
+  ]
+}

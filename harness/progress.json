@@ -1426,6 +1426,16 @@
       "id": "rl_caramel_branch_late_all_high_pressure",
       "summary": "反向隔离探针保留 all-map late_recovery_filter，只把 edge_recovery_branch 限到 caramel-workshop：cracked-star-jar 300 秒保住 0.3333，但 60/180/300 秒均因 soda-creek regression 失败，300 秒 soda-creek 从 1.0 降到 0.3333，seed 63402 在 37.6664s opening 死亡。已记录 fail_20260530_020；下一步需要 per-map branch composition，同时保留 soda opening branch 和 all-map late safety。",
       "report": "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/summary.md"
+    },
+    {
+      "id": "rl_edge_recovery_per_map_branch_config",
+      "summary": "为 evaluation-only edge_recovery_branch 增加 --edge-recovery-branch-map-overrides，可按地图覆写分支时间窗和阈值，并在 policy_adapter_report 中记录 map_overrides / effective_map_configs；单测覆盖解析、分地图窗口行为和 compare 透传。",
+      "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_per_map_edge_branch_late_all_high_pressure",
+      "summary": "使用 soda-creek:0-60s 与 caramel-workshop:30-45s 的 per-map edge branch composition，并保留 all-map late_recovery_filter 复跑 high-pressure 60/180/300 秒诊断：相对上一条 chain 的 regression 0 blockers，60/180 秒三图 1.0，300 秒保住 soda 1.0 与 cracked 0.3333，但 caramel 仍 0.0 胜率。",
+      "report": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/summary.md"
     }
   ],
   "current_findings": [

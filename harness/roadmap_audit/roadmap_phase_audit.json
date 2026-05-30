@@ -806,7 +806,10 @@
         "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_risk_samples_validation.json",
         "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_mid_clean_risk_samples_validation.json",
         "harness/reports/2026-05-30_rl_caramel_branch_late_all_high_pressure_001/caramel_branch_late_all_late_clean_risk_samples_validation.json",
-        "harness/failed_cases/fail_20260530_020_caramel_branch_late_all_soda_opening_regression.json"
+        "harness/failed_cases/fail_20260530_020_caramel_branch_late_all_soda_opening_regression.json",
+        "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/summary.md",
+        "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/window_regression_vs_previous_chain.json",
+        "harness/failed_cases/fail_20260530_021_per_map_edge_branch_late_conversion_gap.json"
       ],
       "gaps": [
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
@@ -856,7 +859,8 @@
         "edge_recovery_branch 条件分派已扩大到 high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 parent no-regression，三窗口均通过，且 soda-creek 60 秒与 180 秒胜率均从 0.6667 提升到 1.0，300 秒平均存活从 143.0974s 提升到 221.8073s；但 300 秒三图胜率仍全为 0.0，gate 仍为 multimap_comparison_recorded_needs_policy_repair。已记录 fail_20260530_014，因此它只能作为 stage 01 opening repair 证据，不能进入 stage 03、RL test Bot 或 acceptance。",
         "edge_recovery_branch + late_recovery_filter chained diagnostic 已完成 60/180/300 秒 high-pressure 三图复跑，并相对单独 edge branch 通过 no-regression；300 秒 soda-creek 提升到 1.0 胜率、cracked-star-jar 提升到 0.3333，但 caramel-workshop 仍为 0.0。已记录 fail_20260530_015，因此它仍只是 repair diagnostic 和 late-risk 样本来源，不是策略质量证据或 acceptance。",
         "caramel-workshop 单图 trace 复查确认剩余缺口是 split failure：seed 63402 在 opening_lt_60 右下角 action 5 lock，seeds 63400/63401 在 late_180_to_300 低血量 + hazard pressure 死亡；clean risk subset 258 条 valid、0 warning，但 route hotspots 主要集中在 opening。已记录 fail_20260530_016。",
-        "caramel-workshop opening edge branch scope probe 已把 seed 63402 opening 修复收窄到 30-45s 单次 action 5 -> 7 分派，并通过 target preflight 与 60/180/300s parent no-regression；但 300 秒 caramel 胜率仍为 0.0，broad 0-60s scope 还会触发 action 5 ratio regression。已记录 fail_20260530_017。"
+        "caramel-workshop opening edge branch scope probe 已把 seed 63402 opening 修复收窄到 30-45s 单次 action 5 -> 7 分派，并通过 target preflight 与 60/180/300s parent no-regression；但 300 秒 caramel 胜率仍为 0.0，broad 0-60s scope 还会触发 action 5 ratio regression。已记录 fail_20260530_017。",
+        "per-map edge_recovery_branch map overrides 已支持同一分支模型按地图使用不同时间窗，并用 soda-creek:0-60s + caramel-workshop:30-45s + all-map late_recovery_filter 通过上一条 chained diagnostic 的 60/180/300 秒 no-regression（0 blockers）；但 caramel-workshop 300 秒胜率仍为 0.0，只是平均存活提升到 231.2871s，已记录 fail_20260530_021。下一步仍需 caramel-workshop late terminal conversion objective，不能把 deterministic wrapper chain 当成 policy candidate 或 acceptance。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -894,7 +898,8 @@
         "caramel opening repair 应保留 30-45s 单点分派约束，拒绝 broad 0-60s scope；下一步把该 opening constraint 与独立 caramel late conversion objective 串联验证，仍必须跑 60/180/300s high-pressure no-regression。",
         "caramel narrow opening branch 与 late filter 的统一链路虽然通过 60/180 秒 no-regression 并把 caramel-workshop 300 秒平均存活提高到 231.2871s，但 300 秒 soda-creek 从 1.0 回落到 0.6667，已记录 fail_20260530_018；下一轮不能把 caramel 分支直接并入上一版 soda-winning chain，应改做 per-map 或更强 state-conditioned late conversion，并把 soda-creek 300 秒 no-regression 设为硬门槛。",
         "`--late-recovery-maps caramel-workshop` 已验证参数和 provenance 生效，但 300 秒窗口从上一版 chained diagnostic 回归为 soda-creek 0.0、caramel-workshop 0.0、cracked-star-jar 0.0，已记录 fail_20260530_019；下一步应保留 soda/cracked late safety repair，另起 caramel late conversion objective，不能用 caramel-only late filter 作为候选链路。",
-        "保留 all-map late_recovery_filter 并只启用 caramel-workshop edge branch 的隔离探针保住 cracked-star-jar 300 秒 0.3333，但 soda-creek 300 秒降到 0.3333 且 seed 63402 在 37.6664s opening 死亡，已记录 fail_20260530_020；下一步需要 per-map branch composition 或等价 manifest，保留 soda opening branch 与 all-map late safety 后再追加 caramel conversion。"
+        "保留 all-map late_recovery_filter 并只启用 caramel-workshop edge branch 的隔离探针保住 cracked-star-jar 300 秒 0.3333，但 soda-creek 300 秒降到 0.3333 且 seed 63402 在 37.6664s opening 死亡，已记录 fail_20260530_020；下一步需要 per-map branch composition 或等价 manifest，保留 soda opening branch 与 all-map late safety 后再追加 caramel conversion。",
+        "在 per-map branch composition 基线上继续设计 caramel-workshop late terminal conversion objective，并保留 60/180/300 秒 no-regression 与 adapter provenance。"
       ]
     },
     {
