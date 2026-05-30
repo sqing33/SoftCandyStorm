@@ -1276,6 +1276,11 @@
       "id": "rl_current_high_pressure_stage01_seed_replay_probe",
       "summary": "复查 stage 01 opening blocker 时显式循环训练 seeds 63400-63402：512 timestep seed replay 没有清除 soda-creek seed 63402 opening death，180 秒 soda-creek 相对 parent 从 0.6667 回落到 0.3333 且平均存活下降 11.4358 秒，300 秒三图仍全 0%。已记录 fail_20260530_002，该 checkpoint 不得进入 stage 02。",
       "report": "harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_trace_diagnostic",
+      "summary": "对 stage01 seed replay blocker 的目标 seed 63402 生成 parent / candidate 60 秒 observation trace，并新增 compare_policy_episode_traces.py 固化对比：candidate 与 parent 均在约 37.3 秒死亡，目标 seed 采样 action 5 占 69.91%、缺失成功 seeds 的 action 7 / 3，且从 11.3334 秒到死亡持续 action 5。下一轮 stage 01 修复应针对贴边敌压上升时的 action 5 锁定，而不是继续单纯 replay seed。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_trace_diagnostic_001/summary.md"
     }
   ],
   "current_findings": [

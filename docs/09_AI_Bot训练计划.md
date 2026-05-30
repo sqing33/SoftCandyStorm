@@ -266,6 +266,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 随后用同一 parent 显式循环训练 seeds `63400-63402` 的 `stage01_seed_replay` probe 也失败：60 秒 `soda-creek` seed `63402` 仍在约 `37.27s` opening 死亡，180 秒 `soda-creek` 从 parent 的 `0.6667` 回落到 `0.3333`，平均存活下降 `11.4358s`，300 秒三图仍全为 `0.0`。已记录 `fail_20260530_002`，报告位于 `harness/reports/2026-05-30_rl_current_high_pressure_stage01_seed_replay_probe_001/summary.md`；下一步应先 trace seed `63402` 的 observation / action score 差异，而不是继续从该 checkpoint 进入 stage 02。
 
+seed `63402` 的 trace 诊断已确认 seed replay candidate 与 parent 在目标 seed 上几乎没有行为差异：两者都在 60 秒 `soda-creek` 中于约 `37.3s` 死亡，采样 action mix 均为 action `5` `69.91%`、action `2` `18.58%`、action `4` `11.50%`，没有采样 action `3` 或 `7`。同窗口成功 seeds 平均 action `7` 为 `56.87%`、action `3` 为 `15.39%`；candidate seed `63402` 从 `11.3334s` 到死亡持续 action `5`，首次高压贴边帧在 `31.9999s`，`boundary_edge_risk = 1.0`、`enemy_pressure_risk = 0.671`、action `5` score 为 `0.7658`。报告位于 `harness/reports/2026-05-30_rl_stage01_seed63402_trace_diagnostic_001/summary.md`；下一轮 stage 01 修复应针对“贴边 + 敌压上升时的 action 5 锁定”与成功 seed 的 action `7` / `3` 逃逸触发，而不是继续单纯 replay seed。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。
