@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260530_016",
+  "category": "rl_policy",
+  "content_id": "caramel-workshop-edge-branch-late-filter-split-failure-modes",
+  "seed": "63400-63402",
+  "bot": "edge-recovery-branch-plus-late-recovery-filter-over-e30-mid-anchor-parent",
+  "time_seconds": 300.0,
+  "symptom": "A focused caramel-workshop replay of the chained edge_recovery_branch + late_recovery_filter diagnostic reproduced 0.0 win rate. Seeds 63400 and 63401 failed in late_180_to_300, while seed 63402 failed in opening_lt_60 at 41.333s with an action 5 corner lock.",
+  "root_cause": "The existing opening branch is intentionally scoped to soda-creek and dispatches 0 times on caramel-workshop, while the late filter begins at 60 seconds and cannot affect the seed 63402 opening failure. For the late deaths, the filter produces clean risk-recovery rows but does not yet create a full low-health / hazard-pressure terminal conversion sequence.",
+  "fix": "Split the next repair target into a caramel opening escape objective for seed 63402 and a separate caramel 180-300s low-health / hazard conversion objective for seeds 63400 and 63401. Use the 258 validated clean caramel risk samples as repair-training input candidates only, and collect successful caramel long-window trajectories before attempting a terminal conversion branch.",
+  "validation": "Reran caramel-workshop 300s comparison with failed-only sampled traces. caramel_300s_trace_comparison.json matched the prior 0.0 win rate and average survival 163.3014s. compare_policy_episode_traces.py recorded three defeats, analyze_route_recovery_traces.py found 147 negative route_recovery rows with 100 in opening_lt_60, and the combined clean risk sample validation reported risk_recovery_samples_valid for 258 rows with 0 warnings.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/summary.md",
+    "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_300s_trace_comparison.json",
+    "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_trace_comparison.md",
+    "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_route_recovery_trace_hotspots.md",
+    "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_clean_risk_samples_validation.json"
+  ]
+}

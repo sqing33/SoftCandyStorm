@@ -1396,6 +1396,11 @@
       "id": "rl_edge_branch_late_filter_high_pressure_diagnostic",
       "summary": "复跑 edge_recovery_branch + late_recovery_filter high-pressure 三图同 seed 63400-63402 的 60/180/300 秒 chained diagnostic：相对单独 edge branch 的 window regression 为 policy_window_regression_passed 且 0 blockers，300 秒平均胜率提升到 0.4444（soda-creek 1.0、cracked-star-jar 0.3333），但 caramel-workshop 300 秒仍为 0.0。已校验 18 条 edge 样本和 2000 条 late-risk 样本，记录 fail_20260530_015；该组合只能作为 repair diagnostic，不是 policy candidate 或 RL acceptance。",
       "report": "harness/reports/2026-05-30_rl_edge_branch_late_filter_high_pressure_001/summary.md"
+    },
+    {
+      "id": "rl_caramel_late_conversion_split_diagnostic",
+      "summary": "对 chained diagnostic 剩余的 caramel-workshop 300 秒缺口做单图 failed-only trace 复查：三 seed 仍为 0.0 胜率，seed 63402 在 41.333s opening action 5 corner lock，seeds 63400/63401 在 213.2166s/235.3546s late hazard/low-health 死亡。clean risk 样本拆出 60-180s 158 条与 180-300s 100 条，合并 258 条 valid 且 0 warning；route hotspots 显示 147 个负 route_recovery rows 中 100 个在 opening。已记录 fail_20260530_016，下一轮必须拆 caramel opening escape 与 late conversion。",
+      "report": "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/summary.md"
     }
   ],
   "current_findings": [

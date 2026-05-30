@@ -1,0 +1,57 @@
+{
+  "report_version": 1,
+  "sources": [
+    "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_180s_mid_clean_risk_samples.jsonl",
+    "harness/reports/2026-05-30_rl_caramel_late_conversion_diagnostic_001/caramel_300s_late_clean_risk_samples.jsonl"
+  ],
+  "decision": "risk_recovery_samples_valid",
+  "sample_count": 258,
+  "map_ids": [
+    "caramel-workshop"
+  ],
+  "seeds": [
+    63400,
+    63401
+  ],
+  "time_range_seconds": {
+    "min": 60.0328,
+    "max": 235.1213
+  },
+  "original_action_distribution": {
+    "1": 28,
+    "2": 5,
+    "3": 30,
+    "4": 41,
+    "5": 32,
+    "6": 39,
+    "7": 24,
+    "8": 59
+  },
+  "target_action_distribution": {
+    "0": 9,
+    "1": 49,
+    "2": 6,
+    "3": 17,
+    "4": 45,
+    "5": 43,
+    "6": 4,
+    "7": 62,
+    "8": 23
+  },
+  "risk_reason_distribution": {
+    "wallward_edge": 139,
+    "toward_enemy_pressure": 70,
+    "toward_hazard": 49,
+    "toward_boss": 3
+  },
+  "target_risk_reason_distribution": {
+    "<none>": 258
+  },
+  "errors": [],
+  "warnings": [],
+  "limitations": [
+    "This validator checks sample structure and late-risk reason consistency only.",
+    "A valid result means samples may be used for repair training inputs, not RL policy acceptance.",
+    "Final policies still require deterministic high-pressure, multimap, failure-case, and acceptance checks."
+  ]
+}
