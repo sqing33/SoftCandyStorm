@@ -354,6 +354,76 @@ class MapLateSplitPolicy:
         }
 
 
+TERMINAL_CONVERSION_CONFIG_KEYS = (
+    "min_seconds",
+    "max_seconds",
+    "min_pressure",
+    "min_low_health_risk",
+)
+
+
+def validate_terminal_conversion_branch_config(config, label):
+    if config["min_seconds"] < 0.0:
+        raise ValueError(f"{label}.min_seconds must be non-negative")
+    if (
+        config["max_seconds"] is not None
+        and config["max_seconds"] <= config["min_seconds"]
+    ):
+        raise ValueError(f"{label}.max_seconds must be greater than min_seconds")
+    for key in (
+        "min_pressure",
+        "min_low_health_risk",
+    ):
+        value = config[key]
+        if not (0.0 <= value <= 1.0):
+            raise ValueError(f"{label}.{key} must be between 0 and 1")
+
+
+def normalize_terminal_conversion_map_overrides(
+    map_overrides,
+    *,
+    default_min_seconds,
+    default_max_seconds,
+    default_min_pressure,
+    default_min_low_health_risk,
+):
+    if not map_overrides:
+        return {}
+    defaults = {
+        "min_seconds": default_min_seconds,
+        "max_seconds": default_max_seconds,
+        "min_pressure": default_min_pressure,
+        "min_low_health_risk": default_min_low_health_risk,
+    }
+    normalized = {}
+    for map_id, override in map_overrides.items():
+        map_id = str(map_id).strip()
+        if not map_id:
+            raise ValueError("map override target must include a map id")
+        if not isinstance(override, dict):
+            raise ValueError(f"map override for {map_id} must be an object")
+        config = {}
+        for key in TERMINAL_CONVERSION_CONFIG_KEYS:
+            raw_value = override.get(key, defaults[key])
+            if raw_value is None:
+                if key == "max_seconds":
+                    config[key] = None
+                    continue
+                raise ValueError(f"map override for {map_id}.{key} must be numeric")
+            try:
+                config[key] = float(raw_value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"map override for {map_id}.{key} must be numeric"
+                ) from exc
+        validate_terminal_conversion_branch_config(
+            config,
+            f"map_overrides[{map_id}]",
+        )
+        normalized[map_id] = config
+    return normalized
+
+
 class TerminalConversionBranchPolicy:
     policy_kind = "terminal_conversion_branch"
 
@@ -368,6 +438,7 @@ class TerminalConversionBranchPolicy:
         min_low_health_risk,
         base_model_path,
         terminal_model_path,
+        map_overrides=None,
     ):
         if not target_maps:
             raise ValueError("target_maps must include at least one map id")
@@ -386,6 +457,21 @@ class TerminalConversionBranchPolicy:
         self.max_seconds = float(max_seconds) if max_seconds is not None else None
         self.min_pressure = float(min_pressure)
         self.min_low_health_risk = float(min_low_health_risk)
+        self.map_overrides = normalize_terminal_conversion_map_overrides(
+            map_overrides,
+            default_min_seconds=self.min_seconds,
+            default_max_seconds=self.max_seconds,
+            default_min_pressure=self.min_pressure,
+            default_min_low_health_risk=self.min_low_health_risk,
+        )
+        unknown_override_maps = sorted(
+            set(self.map_overrides.keys()).difference(self.target_maps)
+        )
+        if unknown_override_maps:
+            joined = ", ".join(unknown_override_maps)
+            raise ValueError(
+                f"map override targets must be included in target_maps: {joined}"
+            )
         self.base_model_path = str(base_model_path)
         self.terminal_model_path = str(terminal_model_path)
         self._map_id = None
@@ -422,23 +508,50 @@ class TerminalConversionBranchPolicy:
     def should_use_terminal_model(self):
         if self._map_id not in self.target_maps:
             return False
-        if self._time_seconds < self.min_seconds:
+        config = self.branch_config_for_current_map()
+        if self._time_seconds < config["min_seconds"]:
             return False
-        if self.max_seconds is not None and self._time_seconds > self.max_seconds:
+        if (
+            config["max_seconds"] is not None
+            and self._time_seconds > config["max_seconds"]
+        ):
             return False
-        if self.min_pressure <= 0.0 and self.min_low_health_risk <= 0.0:
+        if config["min_pressure"] <= 0.0 and config["min_low_health_risk"] <= 0.0:
             return True
         pressure = self._pressure_context
         return (
             (
-                self.min_pressure > 0.0
-                and pressure["combined_pressure"] >= self.min_pressure
+                config["min_pressure"] > 0.0
+                and pressure["combined_pressure"] >= config["min_pressure"]
             )
             or (
-                self.min_low_health_risk > 0.0
-                and pressure["low_health_risk"] >= self.min_low_health_risk
+                config["min_low_health_risk"] > 0.0
+                and pressure["low_health_risk"] >= config["min_low_health_risk"]
             )
         )
+
+    def default_branch_config(self):
+        return {
+            "min_seconds": self.min_seconds,
+            "max_seconds": self.max_seconds,
+            "min_pressure": self.min_pressure,
+            "min_low_health_risk": self.min_low_health_risk,
+        }
+
+    def branch_config_for_map(self, map_id):
+        config = self.default_branch_config()
+        if map_id in self.map_overrides:
+            config.update(self.map_overrides[map_id])
+        return config
+
+    def branch_config_for_current_map(self):
+        return self.branch_config_for_map(self._map_id)
+
+    def effective_map_configs(self):
+        return {
+            map_id: self.branch_config_for_map(map_id)
+            for map_id in sorted(self.target_maps)
+        }
 
     def active_model(self):
         if self.should_use_terminal_model():
@@ -476,6 +589,8 @@ class TerminalConversionBranchPolicy:
             "max_seconds": self.max_seconds,
             "min_pressure": self.min_pressure,
             "min_low_health_risk": self.min_low_health_risk,
+            "map_overrides": self.map_overrides,
+            "effective_map_configs": self.effective_map_configs(),
             "base_model_path": self.base_model_path,
             "terminal_model_path": self.terminal_model_path,
             "base_policy_kind": getattr(self.base_model, "policy_kind", "sb3"),
@@ -1632,6 +1747,65 @@ def parse_map_list(value):
     if not maps:
         raise ValueError("map list must include at least one map id")
     return maps
+
+
+def parse_terminal_conversion_map_overrides(value):
+    if value is None:
+        return None
+    overrides = {}
+    for raw_item in value.split(","):
+        raw_item = raw_item.strip()
+        if not raw_item:
+            continue
+        parts = [part.strip() for part in raw_item.split(":")]
+        if len(parts) < 3 or len(parts) > 5:
+            raise ValueError(
+                "--terminal-conversion-map-overrides entries must use "
+                "map:min_seconds:max_seconds[:min_pressure[:min_low_health_risk]]"
+            )
+        map_id = parts[0]
+        if not map_id:
+            raise ValueError("--terminal-conversion-map-overrides map id is required")
+        if map_id in overrides:
+            raise ValueError(
+                f"--terminal-conversion-map-overrides duplicates map id `{map_id}`"
+            )
+        override = {}
+        for key, raw_value in zip(TERMINAL_CONVERSION_CONFIG_KEYS, parts[1:]):
+            if not raw_value:
+                raise ValueError(
+                    f"--terminal-conversion-map-overrides {map_id}.{key} is required"
+                )
+            try:
+                override[key] = float(raw_value)
+            except ValueError as exc:
+                raise ValueError(
+                    f"--terminal-conversion-map-overrides {map_id}.{key} must be numeric"
+                ) from exc
+        min_seconds = override["min_seconds"]
+        max_seconds = override["max_seconds"]
+        if min_seconds < 0.0:
+            raise ValueError(
+                f"--terminal-conversion-map-overrides {map_id}.min_seconds "
+                "must be non-negative"
+            )
+        if max_seconds <= min_seconds:
+            raise ValueError(
+                f"--terminal-conversion-map-overrides {map_id}.max_seconds "
+                "must be greater than min_seconds"
+            )
+        for key in TERMINAL_CONVERSION_CONFIG_KEYS[2:]:
+            if key in override and not (0.0 <= override[key] <= 1.0):
+                raise ValueError(
+                    f"--terminal-conversion-map-overrides {map_id}.{key} "
+                    "must be between 0 and 1"
+                )
+        overrides[map_id] = override
+    if not overrides:
+        raise ValueError(
+            "--terminal-conversion-map-overrides must include at least one map config"
+        )
+    return overrides
 
 
 def parse_edge_recovery_branch_map_overrides(value):
@@ -2998,6 +3172,7 @@ def wrap_terminal_conversion_branch_policy(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    terminal_conversion_map_overrides=None,
     base_model_path=None,
 ):
     if terminal_conversion_model_path is None:
@@ -3013,6 +3188,7 @@ def wrap_terminal_conversion_branch_policy(
         terminal_conversion_min_low_health_risk,
         base_model_path or "base_policy",
         terminal_conversion_model_path,
+        map_overrides=terminal_conversion_map_overrides,
     )
 
 
@@ -3064,6 +3240,7 @@ def evaluate_saved_policy(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    terminal_conversion_map_overrides=None,
     edge_recovery_branch_model_path=None,
     edge_recovery_branch_maps=None,
     edge_recovery_branch_min_seconds=0.0,
@@ -3126,6 +3303,7 @@ def evaluate_saved_policy(
         terminal_conversion_max_seconds=terminal_conversion_max_seconds,
         terminal_conversion_min_pressure=terminal_conversion_min_pressure,
         terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+        terminal_conversion_map_overrides=terminal_conversion_map_overrides,
         base_model_path=fallback_model_path,
     )
     model = wrap_edge_recovery_branch_policy(
@@ -3196,6 +3374,7 @@ def evaluate_policy_model(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    terminal_conversion_map_overrides=None,
     edge_recovery_branch_model_path=None,
     edge_recovery_branch_maps=None,
     edge_recovery_branch_min_seconds=0.0,
@@ -3251,6 +3430,7 @@ def evaluate_policy_model(
             terminal_conversion_max_seconds=terminal_conversion_max_seconds,
             terminal_conversion_min_pressure=terminal_conversion_min_pressure,
             terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+            terminal_conversion_map_overrides=terminal_conversion_map_overrides,
             edge_recovery_branch_model_path=edge_recovery_branch_model_path,
             edge_recovery_branch_maps=edge_recovery_branch_maps,
             edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
@@ -3303,6 +3483,7 @@ def evaluate_policy_model(
         terminal_conversion_max_seconds=terminal_conversion_max_seconds,
         terminal_conversion_min_pressure=terminal_conversion_min_pressure,
         terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+        terminal_conversion_map_overrides=terminal_conversion_map_overrides,
         edge_recovery_branch_model_path=edge_recovery_branch_model_path,
         edge_recovery_branch_maps=edge_recovery_branch_maps,
         edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
@@ -3355,6 +3536,7 @@ def evaluate_behavior_clone_policy(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    terminal_conversion_map_overrides=None,
     edge_recovery_branch_model_path=None,
     edge_recovery_branch_maps=None,
     edge_recovery_branch_min_seconds=0.0,
@@ -3416,6 +3598,7 @@ def evaluate_behavior_clone_policy(
             terminal_conversion_max_seconds=terminal_conversion_max_seconds,
             terminal_conversion_min_pressure=terminal_conversion_min_pressure,
             terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+            terminal_conversion_map_overrides=terminal_conversion_map_overrides,
             base_model_path=model_path,
         )
     if edge_recovery_branch_model_path is not None:
@@ -4370,6 +4553,7 @@ def compare_policy_to_rule_bots(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    terminal_conversion_map_overrides=None,
     edge_recovery_branch_model_path=None,
     edge_recovery_branch_maps=None,
     edge_recovery_branch_min_seconds=0.0,
@@ -4425,6 +4609,7 @@ def compare_policy_to_rule_bots(
         terminal_conversion_max_seconds=terminal_conversion_max_seconds,
         terminal_conversion_min_pressure=terminal_conversion_min_pressure,
         terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+        terminal_conversion_map_overrides=terminal_conversion_map_overrides,
         edge_recovery_branch_model_path=edge_recovery_branch_model_path,
         edge_recovery_branch_maps=edge_recovery_branch_maps,
         edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
@@ -4517,6 +4702,7 @@ def compare_policy_to_rule_bots_across_maps(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    terminal_conversion_map_overrides=None,
     edge_recovery_branch_model_path=None,
     edge_recovery_branch_maps=None,
     edge_recovery_branch_min_seconds=0.0,
@@ -4568,6 +4754,7 @@ def compare_policy_to_rule_bots_across_maps(
             terminal_conversion_max_seconds=terminal_conversion_max_seconds,
             terminal_conversion_min_pressure=terminal_conversion_min_pressure,
             terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+            terminal_conversion_map_overrides=terminal_conversion_map_overrides,
             edge_recovery_branch_model_path=edge_recovery_branch_model_path,
             edge_recovery_branch_maps=edge_recovery_branch_maps,
             edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
@@ -5011,6 +5198,14 @@ def main():
         help="Minimum low-health risk required before terminal branch dispatch.",
     )
     parser.add_argument(
+        "--terminal-conversion-map-overrides",
+        default=None,
+        help=(
+            "Optional comma-separated map-specific terminal branch configs: "
+            "map:min_seconds:max_seconds[:min_pressure[:min_low_health_risk]]."
+        ),
+    )
+    parser.add_argument(
         "--edge-recovery-branch-model",
         default=None,
         help="Optional SB3 zip used as a constrained edge-recovery branch during evaluation/comparison.",
@@ -5285,6 +5480,14 @@ def main():
             "--terminal-conversion-max-seconds",
         )
         terminal_conversion_maps = parse_map_list(args.terminal_conversion_maps)
+        terminal_conversion_map_overrides = parse_terminal_conversion_map_overrides(
+            args.terminal_conversion_map_overrides
+        )
+        if (
+            terminal_conversion_maps is None
+            and terminal_conversion_map_overrides is not None
+        ):
+            terminal_conversion_maps = sorted(terminal_conversion_map_overrides)
         edge_recovery_branch_min_seconds = validate_non_negative_seconds(
             args.edge_recovery_branch_min_seconds,
             "--edge-recovery-branch-min-seconds",
@@ -5400,6 +5603,22 @@ def main():
         parser.error("--terminal-conversion-model requires --terminal-conversion-maps")
     if args.terminal_conversion_maps and not args.terminal_conversion_model:
         parser.error("--terminal-conversion-maps requires --terminal-conversion-model")
+    if args.terminal_conversion_map_overrides and not args.terminal_conversion_model:
+        parser.error(
+            "--terminal-conversion-map-overrides requires --terminal-conversion-model"
+        )
+    if terminal_conversion_map_overrides is not None:
+        unknown_override_maps = sorted(
+            set(terminal_conversion_map_overrides).difference(
+                terminal_conversion_maps or []
+            )
+        )
+        if unknown_override_maps:
+            parser.error(
+                "--terminal-conversion-map-overrides maps must also be listed in "
+                "--terminal-conversion-maps: "
+                + ", ".join(unknown_override_maps)
+            )
     if args.terminal_conversion_model and args.late_split_model:
         parser.error("--terminal-conversion-model cannot be combined with --late-split-model")
     if args.edge_recovery_branch_model and not (
@@ -5523,6 +5742,7 @@ def main():
                 terminal_conversion_max_seconds=terminal_conversion_max_seconds,
                 terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
                 terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
+                terminal_conversion_map_overrides=terminal_conversion_map_overrides,
                 edge_recovery_branch_model_path=(
                     Path(args.edge_recovery_branch_model)
                     if args.edge_recovery_branch_model
@@ -5609,6 +5829,7 @@ def main():
                     terminal_conversion_max_seconds=terminal_conversion_max_seconds,
                     terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
                     terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
+                    terminal_conversion_map_overrides=terminal_conversion_map_overrides,
                     edge_recovery_branch_model_path=(
                         Path(args.edge_recovery_branch_model)
                         if args.edge_recovery_branch_model
@@ -5693,6 +5914,7 @@ def main():
                 terminal_conversion_max_seconds=terminal_conversion_max_seconds,
                 terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
                 terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
+                terminal_conversion_map_overrides=terminal_conversion_map_overrides,
                 edge_recovery_branch_model_path=(
                     Path(args.edge_recovery_branch_model)
                     if args.edge_recovery_branch_model

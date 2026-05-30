@@ -32,6 +32,7 @@ from python.train.train_sb3 import (
     parse_anchor_time_bucket_list,
     parse_anchor_time_bucket_weights,
     parse_edge_recovery_branch_map_overrides,
+    parse_terminal_conversion_map_overrides,
     policy_quality_findings,
     resolve_train_seed_values,
     seed_stochastic_action_sampling,
@@ -158,6 +159,29 @@ def test_parse_edge_recovery_branch_map_overrides_accepts_windows_and_thresholds
         parse_edge_recovery_branch_map_overrides("soda-creek:60:30")
     with pytest.raises(ValueError, match="duplicates"):
         parse_edge_recovery_branch_map_overrides("soda-creek:0:60,soda-creek:30:45")
+
+
+def test_parse_terminal_conversion_map_overrides_accepts_windows_and_thresholds():
+    overrides = parse_terminal_conversion_map_overrides(
+        "cracked-star-jar:210:240,caramel-workshop:240:300:0.4:0.5"
+    )
+
+    assert overrides["cracked-star-jar"] == {
+        "min_seconds": 210.0,
+        "max_seconds": 240.0,
+    }
+    assert overrides["caramel-workshop"] == {
+        "min_seconds": 240.0,
+        "max_seconds": 300.0,
+        "min_pressure": 0.4,
+        "min_low_health_risk": 0.5,
+    }
+    with pytest.raises(ValueError, match="max_seconds"):
+        parse_terminal_conversion_map_overrides("caramel-workshop:300:240")
+    with pytest.raises(ValueError, match="duplicates"):
+        parse_terminal_conversion_map_overrides(
+            "caramel-workshop:240:300,caramel-workshop:210:240"
+        )
 
 
 def test_validate_eval_random_seed_requires_stochastic_evaluation():
@@ -1424,6 +1448,78 @@ def test_terminal_conversion_branch_can_switch_on_low_health_risk():
     assert action == 6
 
 
+def test_terminal_conversion_branch_uses_map_specific_windows_and_thresholds():
+    policy = TerminalConversionBranchPolicy(
+        DummyPolicy(1),
+        DummyPolicy(6),
+        ["cracked-star-jar", "caramel-workshop"],
+        210.0,
+        240.0,
+        0.25,
+        0.0,
+        "base.zip",
+        "terminal.zip",
+        map_overrides={
+            "caramel-workshop": {
+                "min_seconds": 240.0,
+                "max_seconds": 300.0,
+                "min_pressure": 0.4,
+            }
+        },
+    )
+
+    policy.set_step_context(
+        {
+            "map_id": "cracked-star-jar",
+            "time_seconds": 220.0,
+            "diagnostics": {"enemy_pressure_risk": 0.3},
+        }
+    )
+    cracked_action, _ = policy.predict(None)
+
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "time_seconds": 220.0,
+            "diagnostics": {"enemy_pressure_risk": 0.9},
+        }
+    )
+    early_caramel_action, _ = policy.predict(None)
+
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "time_seconds": 260.0,
+            "diagnostics": {"enemy_pressure_risk": 0.3},
+        }
+    )
+    low_pressure_caramel_action, _ = policy.predict(None)
+
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "time_seconds": 260.0,
+            "diagnostics": {"enemy_pressure_risk": 0.5},
+        }
+    )
+    caramel_action, _ = policy.predict(None)
+    report = policy.policy_adapter_report()
+
+    assert cracked_action == 6
+    assert early_caramel_action == 1
+    assert low_pressure_caramel_action == 1
+    assert caramel_action == 6
+    assert report["map_overrides"]["caramel-workshop"]["min_seconds"] == 240.0
+    assert (
+        report["effective_map_configs"]["cracked-star-jar"]["max_seconds"]
+        == 240.0
+    )
+    assert (
+        report["effective_map_configs"]["caramel-workshop"]["min_pressure"]
+        == 0.4
+    )
+
+
 def test_edge_recovery_branch_switches_only_for_wallward_target_context():
     base = DummyPolicy(5)
     branch = DummyPolicy(7)
@@ -1911,19 +2007,34 @@ def test_compare_policy_to_rule_bots_forwards_terminal_conversion_options(monkey
         },
         "ppo",
         terminal_conversion_model_path="terminal.zip",
-        terminal_conversion_maps=["cracked-star-jar"],
+        terminal_conversion_maps=["cracked-star-jar", "caramel-workshop"],
         terminal_conversion_min_seconds=210.0,
         terminal_conversion_max_seconds=240.0,
         terminal_conversion_min_pressure=0.25,
         terminal_conversion_min_low_health_risk=0.4,
+        terminal_conversion_map_overrides={
+            "caramel-workshop": {
+                "min_seconds": 240.0,
+                "max_seconds": 300.0,
+            },
+        },
     )
 
     assert captured["terminal_conversion_model_path"] == "terminal.zip"
-    assert captured["terminal_conversion_maps"] == ["cracked-star-jar"]
+    assert captured["terminal_conversion_maps"] == [
+        "cracked-star-jar",
+        "caramel-workshop",
+    ]
     assert captured["terminal_conversion_min_seconds"] == 210.0
     assert captured["terminal_conversion_max_seconds"] == 240.0
     assert captured["terminal_conversion_min_pressure"] == 0.25
     assert captured["terminal_conversion_min_low_health_risk"] == 0.4
+    assert captured["terminal_conversion_map_overrides"] == {
+        "caramel-workshop": {
+            "min_seconds": 240.0,
+            "max_seconds": 300.0,
+        },
+    }
     assert report["policy_adapter"]["mode"] == "terminal_conversion_branch"
 
 
