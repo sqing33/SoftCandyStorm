@@ -1,0 +1,332 @@
+{
+  "report_version": 1,
+  "decision": "rl_fixed_window_action_plan_ready",
+  "initial_model": "harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip",
+  "output_dir": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages",
+  "timesteps_per_stage": 256,
+  "reward_profile": "late-route-recovery",
+  "train_map_selection": "random",
+  "validation_windows": [
+    60,
+    180,
+    300
+  ],
+  "sources": [
+    {
+      "label": "60s",
+      "path": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_60s.json",
+      "decision": "rl_policy_failure_analysis_recorded",
+      "gate_decision": "multimap_comparison_recorded_not_balance_gate",
+      "seconds": 60.0,
+      "failure_group_count": 1,
+      "total_failure_count": 1
+    },
+    {
+      "label": "180s",
+      "path": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_180s.json",
+      "decision": "rl_policy_failure_analysis_recorded",
+      "gate_decision": "multimap_comparison_recorded_watch",
+      "seconds": 180.0,
+      "failure_group_count": 3,
+      "total_failure_count": 3
+    },
+    {
+      "label": "300s",
+      "path": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_300s.json",
+      "decision": "rl_policy_failure_analysis_recorded",
+      "gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+      "seconds": 300.0,
+      "failure_group_count": 5,
+      "total_failure_count": 9
+    }
+  ],
+  "failure_group_count": 9,
+  "total_failure_count": 13,
+  "stage_count": 3,
+  "stages": [
+    {
+      "stage": 1,
+      "id": "stage_01_opening_lt_60",
+      "focus_bucket": "opening_lt_60",
+      "title": "opening retention repair",
+      "strategy": "Protect short-window movement before any mid or late continuation.",
+      "train_maps": [
+        "soda-creek"
+      ],
+      "train_seconds": 60,
+      "timesteps": 256,
+      "model_in": "harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip",
+      "model_out": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip",
+      "report_dir": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60",
+      "primary_eval_map": "soda-creek",
+      "primary_eval_seconds": 60,
+      "source_windows": [
+        60,
+        180,
+        300
+      ],
+      "source_failures": [
+        {
+          "source_label": "60s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_60s.json",
+          "source_window_seconds": 60.0,
+          "map_id": "soda-creek",
+          "time_bucket": "opening_lt_60",
+          "failure_count": 1,
+          "failure_ratio": 1.0,
+          "win_rate": 0.6667,
+          "average_failure_survival_seconds": 49.3663,
+          "dominant_action": {
+            "action": "7",
+            "count": 2182,
+            "ratio": 0.4293
+          },
+          "stage_priority": 10
+        },
+        {
+          "source_label": "180s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_180s.json",
+          "source_window_seconds": 180.0,
+          "map_id": "soda-creek",
+          "time_bucket": "opening_lt_60",
+          "failure_count": 1,
+          "failure_ratio": 0.5,
+          "win_rate": 0.3333,
+          "average_failure_survival_seconds": 84.2324,
+          "dominant_action": {
+            "action": "5",
+            "count": 4118,
+            "ratio": 0.3939
+          },
+          "stage_priority": 10
+        },
+        {
+          "source_label": "300s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_300s.json",
+          "source_window_seconds": 300.0,
+          "map_id": "soda-creek",
+          "time_bucket": "opening_lt_60",
+          "failure_count": 2,
+          "failure_ratio": 0.6667,
+          "win_rate": 0.0,
+          "average_failure_survival_seconds": 115.586,
+          "dominant_action": {
+            "action": "5",
+            "count": 4562,
+            "ratio": 0.4386
+          },
+          "stage_priority": 10
+        }
+      ],
+      "total_failure_count": 4,
+      "validation_seed_start": 63400,
+      "required_validation_windows": [
+        60,
+        180,
+        300
+      ],
+      "hard_rules": [
+        "Run all required validation windows after any training attempt.",
+        "Do not promote a checkpoint while any 60/180/300 high-pressure window regresses.",
+        "Keep RL acceptance blocked until the dedicated acceptance gate passes."
+      ],
+      "train_command": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --model-in harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip --model-out harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --report-dir harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60 --train-maps soda-creek --train-map-selection random --train-seconds 60 --timesteps 256 --reward-profile late-route-recovery --eval-episodes 3 --eval-seconds 60 --map-id soda-creek --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/ppo_training_report.json",
+      "compare_commands": [
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --eval-episodes 3 --eval-seconds 60 --seed-start 63400 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/comparison_60s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --eval-episodes 3 --eval-seconds 180 --seed-start 63400 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/comparison_180s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --eval-episodes 3 --eval-seconds 300 --seed-start 63400 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/comparison_300s.json"
+      ]
+    },
+    {
+      "stage": 2,
+      "id": "stage_02_mid_60_to_180",
+      "focus_bucket": "mid_60_to_180",
+      "title": "handoff and mid-window retention repair",
+      "strategy": "Repair post-opening handoff without regressing the 60 second gate.",
+      "train_maps": [
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "train_seconds": 180,
+      "timesteps": 256,
+      "model_in": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip",
+      "model_out": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/stage_02_mid_60_to_180.zip",
+      "report_dir": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180",
+      "primary_eval_map": "cracked-star-jar",
+      "primary_eval_seconds": 180,
+      "source_windows": [
+        180,
+        300
+      ],
+      "source_failures": [
+        {
+          "source_label": "180s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_180s.json",
+          "source_window_seconds": 180.0,
+          "map_id": "soda-creek",
+          "time_bucket": "mid_60_to_180",
+          "failure_count": 1,
+          "failure_ratio": 0.5,
+          "win_rate": 0.3333,
+          "average_failure_survival_seconds": 84.2324,
+          "dominant_action": {
+            "action": "5",
+            "count": 4118,
+            "ratio": 0.3939
+          },
+          "stage_priority": 20
+        },
+        {
+          "source_label": "180s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_180s.json",
+          "source_window_seconds": 180.0,
+          "map_id": "cracked-star-jar",
+          "time_bucket": "mid_60_to_180",
+          "failure_count": 1,
+          "failure_ratio": 1.0,
+          "win_rate": 0.6667,
+          "average_failure_survival_seconds": 77.3325,
+          "dominant_action": {
+            "action": "5",
+            "count": 6881,
+            "ratio": 0.5245
+          },
+          "stage_priority": 20
+        },
+        {
+          "source_label": "300s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_300s.json",
+          "source_window_seconds": 300.0,
+          "map_id": "cracked-star-jar",
+          "time_bucket": "mid_60_to_180",
+          "failure_count": 1,
+          "failure_ratio": 0.3333,
+          "win_rate": 0.0,
+          "average_failure_survival_seconds": 192.2798,
+          "dominant_action": {
+            "action": "5",
+            "count": 5919,
+            "ratio": 0.3421
+          },
+          "stage_priority": 20
+        }
+      ],
+      "total_failure_count": 3,
+      "validation_seed_start": 63500,
+      "required_validation_windows": [
+        60,
+        180,
+        300
+      ],
+      "hard_rules": [
+        "Run all required validation windows after any training attempt.",
+        "Do not promote a checkpoint while any 60/180/300 high-pressure window regresses.",
+        "Keep RL acceptance blocked until the dedicated acceptance gate passes."
+      ],
+      "train_command": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --model-in harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_01_opening_lt_60/stage_01_opening_lt_60.zip --model-out harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/stage_02_mid_60_to_180.zip --report-dir harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180 --train-maps cracked-star-jar,soda-creek --train-map-selection random --train-seconds 180 --timesteps 256 --reward-profile late-route-recovery --eval-episodes 3 --eval-seconds 180 --map-id cracked-star-jar --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/ppo_training_report.json",
+      "compare_commands": [
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/stage_02_mid_60_to_180.zip --eval-episodes 3 --eval-seconds 60 --seed-start 63500 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/comparison_60s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/stage_02_mid_60_to_180.zip --eval-episodes 3 --eval-seconds 180 --seed-start 63500 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/comparison_180s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/stage_02_mid_60_to_180.zip --eval-episodes 3 --eval-seconds 300 --seed-start 63500 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/comparison_300s.json"
+      ]
+    },
+    {
+      "stage": 3,
+      "id": "stage_03_late_180_to_300",
+      "focus_bucket": "late_180_to_300",
+      "title": "late conversion repair",
+      "strategy": "Improve late route recovery and 300 second conversion while preserving earlier windows.",
+      "train_maps": [
+        "caramel-workshop",
+        "cracked-star-jar",
+        "soda-creek"
+      ],
+      "train_seconds": 300,
+      "timesteps": 256,
+      "model_in": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/stage_02_mid_60_to_180.zip",
+      "model_out": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/stage_03_late_180_to_300.zip",
+      "report_dir": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300",
+      "primary_eval_map": "caramel-workshop",
+      "primary_eval_seconds": 300,
+      "source_windows": [
+        300
+      ],
+      "source_failures": [
+        {
+          "source_label": "300s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_300s.json",
+          "source_window_seconds": 300.0,
+          "map_id": "soda-creek",
+          "time_bucket": "late_180_to_300",
+          "failure_count": 1,
+          "failure_ratio": 0.3333,
+          "win_rate": 0.0,
+          "average_failure_survival_seconds": 115.586,
+          "dominant_action": {
+            "action": "5",
+            "count": 4562,
+            "ratio": 0.4386
+          },
+          "stage_priority": 30
+        },
+        {
+          "source_label": "300s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_300s.json",
+          "source_window_seconds": 300.0,
+          "map_id": "caramel-workshop",
+          "time_bucket": "late_180_to_300",
+          "failure_count": 3,
+          "failure_ratio": 1.0,
+          "win_rate": 0.0,
+          "average_failure_survival_seconds": 215.6949,
+          "dominant_action": {
+            "action": "5",
+            "count": 5418,
+            "ratio": 0.2791
+          },
+          "stage_priority": 30
+        },
+        {
+          "source_label": "300s",
+          "source": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_failure_analysis_001/failure_analysis_300s.json",
+          "source_window_seconds": 300.0,
+          "map_id": "cracked-star-jar",
+          "time_bucket": "late_180_to_300",
+          "failure_count": 2,
+          "failure_ratio": 0.6667,
+          "win_rate": 0.0,
+          "average_failure_survival_seconds": 192.2798,
+          "dominant_action": {
+            "action": "5",
+            "count": 5919,
+            "ratio": 0.3421
+          },
+          "stage_priority": 30
+        }
+      ],
+      "total_failure_count": 6,
+      "validation_seed_start": 63600,
+      "required_validation_windows": [
+        60,
+        180,
+        300
+      ],
+      "hard_rules": [
+        "Run all required validation windows after any training attempt.",
+        "Do not promote a checkpoint while any 60/180/300 high-pressure window regresses.",
+        "Keep RL acceptance blocked until the dedicated acceptance gate passes."
+      ],
+      "train_command": "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --model-in harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_02_mid_60_to_180/stage_02_mid_60_to_180.zip --model-out harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/stage_03_late_180_to_300.zip --report-dir harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300 --train-maps caramel-workshop,cracked-star-jar,soda-creek --train-map-selection random --train-seconds 300 --timesteps 256 --reward-profile late-route-recovery --eval-episodes 3 --eval-seconds 300 --map-id caramel-workshop --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/ppo_training_report.json",
+      "compare_commands": [
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/stage_03_late_180_to_300.zip --eval-episodes 3 --eval-seconds 60 --seed-start 63600 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/comparison_60s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/stage_03_late_180_to_300.zip --eval-episodes 3 --eval-seconds 180 --seed-start 63600 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/comparison_180s.json",
+        "uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/stage_03_late_180_to_300.zip --eval-episodes 3 --eval-seconds 300 --seed-start 63600 --rule-bots random,kite,tank --report harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/stages/stage_03_late_180_to_300/comparison_300s.json"
+      ]
+    }
+  ],
+  "limitations": [
+    "This plan is generated from existing fixed-window diagnostic reports only.",
+    "It does not train, evaluate, or approve a policy.",
+    "Every suggested follow-up must still pass fixed-window no-regression and RL acceptance gates."
+  ]
+}

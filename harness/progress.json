@@ -1261,6 +1261,11 @@
       "id": "runtime_resource_probe_10min",
       "summary": "新增 Runtime 本机资源探针工具：实际启动 game_runtime 运行 600 秒 demo-input，要求 playtest capture 由本次运行刷新，复用 release-local 性能校验，并记录子进程 ru_maxrss。当前报告为 runtime_resource_probe_valid，平均 FPS 57.91、30 FPS 以下慢帧比例 0.54%、峰值 RSS 164.14 MiB / 2048 MiB、终局 victory；该证据不替代 Steam Deck / 多硬件、GPU profiling、长时泄漏分析或真人试玩。",
       "report": "harness/reports/2026-05-30_runtime_resource_probe_10min_001/summary.md"
+    },
+    {
+      "id": "rl_current_high_pressure_fixed_window_action_plan",
+      "summary": "新增 RL 固定窗口行动计划生成器：把当前 high-pressure 60/180/300 秒失败分析合并成 opening、handoff/mid 和 late conversion 三阶段修复计划，并为每阶段保留 60/180/300 秒 validation commands。该计划只用于下一轮修复排程，不训练模型、不批准 checkpoint，也不改变 RL acceptance blocked 状态。",
+      "report": "harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/summary.md"
     }
   ],
   "current_findings": [

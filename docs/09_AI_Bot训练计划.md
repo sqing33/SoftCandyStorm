@@ -260,6 +260,8 @@ soda / caramel closed-loop anchor probe 的首个真实导出检查 `36426` 条�
 
 用同一 mid-anchor checkpoint 在新 seed 窗口 `63200-63202` 复跑当前 high-pressure 固定窗口 smoke 后，结论仍是 repair。60 秒三图胜率为 `0.6667/1.0/1.0`，说明 `soda-creek` opening / short-window retention 仍不稳定；180 秒为 `0.3333/1.0/0.6667`，其中 `soda-creek` 低于规则 Bot watch 阈值；300 秒三图仍为 `0.0/0.0/0.0`，gate 为 `multimap_comparison_recorded_needs_policy_repair`。已记录 `fail_20260529_020`，报告位于 `harness/reports/2026-05-29_rl_current_high_pressure_smoke_001/summary.md`；这只是当前证据刷新，不能作为 RL acceptance、stage 03 或 policy candidate。
 
+为避免下一轮 RL probe 继续把 60 / 180 / 300 秒窗口混成一句“继续修”，`tools/create_rl_fixed_window_action_plan.py` 已把当前 high-pressure 复查拆成固定窗口失败分析和三阶段行动计划。当前计划位于 `harness/reports/2026-05-30_rl_current_high_pressure_fixed_window_action_plan_001/summary.md`，结论为 `rl_fixed_window_action_plan_ready`：stage 01 先修 `soda-creek` opening retention，stage 02 修 `soda-creek` / `cracked-star-jar` handoff 与 mid-window retention，stage 03 再处理三张高压图的 late conversion。每个阶段都强制保留 60 / 180 / 300 秒 validation commands；该计划不训练模型、不批准 checkpoint，也不改变 RL acceptance blocked 状态。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。
