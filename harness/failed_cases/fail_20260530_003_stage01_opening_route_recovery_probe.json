@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260530_003",
+  "category": "rl_training",
+  "content_id": "stage01-opening-route-recovery-probe",
+  "seed": "63400-63402",
+  "bot": "opening-route-recovery-ppo",
+  "time_seconds": 180.0,
+  "symptom": "The opening-route-recovery probe improved 60s and 180s fixed-window win rates but still failed same-seed parent no-regression. The candidate kept 300s high-pressure win rate at 0.0 on all three maps and regressed cracked-star-jar 180s from parent win rate 1.0 to 0.6667 with average survival down 31.0702s.",
+  "root_cause": "Opening-only route recovery reward helped restore short-window action 7 usage, but the 512 timestep closed-loop continuation shifted the policy surface enough to damage cracked-star-jar 180s retention and leave long-run conversion unsolved. The profile does not yet preserve parent behavior tightly enough while repairing the seed 63402 action-5 lock pattern.",
+  "fix": "Do not enter stage 02 from this checkpoint. Keep the opening-route-recovery signal as a useful repair direction, but add parent-preservation and online action-distribution guards around cracked-star-jar 180s plus the 60s survival micro-regressions before rerunning 60/180/300 second fixed-window validation.",
+  "validation": "Ran PPO 512 timestep opening-route-recovery training from the e30 mid-anchor guarded parent, then high-pressure 60/180/300 second comparisons at seed_start 63400. validate_policy_window_regression.py returned policy_window_regression_failed with 5 blockers: cracked-star-jar 180s win_rate_delta -0.3333 and average_survival_seconds -31.0702s, soda-creek 180s survival -0.0445s, caramel-workshop 60s survival -0.5667s, and soda-creek 60s survival -0.0667s.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/summary.md",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/window_regression_vs_parent.md"
+  ]
+}

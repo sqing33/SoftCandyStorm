@@ -1286,6 +1286,11 @@
       "id": "rl_opening_route_recovery_profile",
       "summary": "新增 opening-route-recovery repair-only reward profile：只在 0-60 秒开局窗口放大 route recovery、安全风险、低血量、边界、敌压和重复动作信号，并为开局死亡增加小额惩罚。Rust gym-bridge、Python Gym wrapper、train_sb3 CLI 和文档均已接入，cargo test -p game_harness、Python env profile 测试和 dry-run 均通过；该入口尚未训练或通过 fixed-window gate。",
       "report": "harness/reports/2026-05-30_opening_route_recovery_profile_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_opening_route_recovery_probe",
+      "summary": "执行 opening-route-recovery 小步 stage 01 probe：从 e30 mid-anchor guarded parent 继续 512 timestep 后，60 秒 high-pressure 平均胜率恢复到 0.7778、180 秒恢复到 0.6667，300 秒平均存活较 parent 提升；但 300 秒三图胜率仍全 0.0，且同 seed parent no-regression 因 cracked-star-jar 180 秒胜率 -0.3333、平均存活 -31.0702s 等 5 个 blockers 失败。已记录 fail_20260530_003，该 checkpoint 不得进入 stage 02。",
+      "report": "harness/reports/2026-05-30_rl_stage01_opening_route_recovery_probe_001/summary.md"
     }
   ],
   "current_findings": [
