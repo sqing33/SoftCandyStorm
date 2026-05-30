@@ -489,6 +489,253 @@ class TerminalConversionBranchPolicy:
         }
 
 
+class EdgeRecoveryBranchPolicy:
+    policy_kind = "edge_recovery_branch"
+
+    def __init__(
+        self,
+        base_model,
+        branch_model,
+        target_maps,
+        min_seconds,
+        max_seconds,
+        edge_distance,
+        min_pressure,
+        min_low_health_risk,
+        min_boundary_edge_risk,
+        base_model_path,
+        branch_model_path,
+    ):
+        if not target_maps:
+            raise ValueError("target_maps must include at least one map id")
+        if min_seconds < 0.0:
+            raise ValueError("min_seconds must be non-negative")
+        if max_seconds is not None and max_seconds <= min_seconds:
+            raise ValueError("max_seconds must be greater than min_seconds")
+        if edge_distance < 0.0:
+            raise ValueError("edge_distance must be non-negative")
+        for name, value in (
+            ("min_pressure", min_pressure),
+            ("min_low_health_risk", min_low_health_risk),
+            ("min_boundary_edge_risk", min_boundary_edge_risk),
+        ):
+            if not (0.0 <= value <= 1.0):
+                raise ValueError(f"{name} must be between 0 and 1")
+        self.base_model = base_model
+        self.branch_model = branch_model
+        self.target_maps = frozenset(str(map_id) for map_id in target_maps)
+        self.min_seconds = float(min_seconds)
+        self.max_seconds = float(max_seconds) if max_seconds is not None else None
+        self.edge_distance = float(edge_distance)
+        self.min_pressure = float(min_pressure)
+        self.min_low_health_risk = float(min_low_health_risk)
+        self.min_boundary_edge_risk = float(min_boundary_edge_risk)
+        self.base_model_path = str(base_model_path)
+        self.branch_model_path = str(branch_model_path)
+        self._map_id = None
+        self._time_seconds = 0.0
+        self._step_context = {}
+        self._pressure_context = terminal_pressure_context({})
+        self._last_branch_decision = None
+        self._last_action_source = "base"
+        self._usage_stats = new_policy_branch_usage_stats()
+
+    def reset(self):
+        self._time_seconds = 0.0
+        self._step_context = {}
+        self._pressure_context = terminal_pressure_context({})
+        self._last_branch_decision = None
+        self._last_action_source = "base"
+        for model in (self.base_model, self.branch_model):
+            reset = getattr(model, "reset", None)
+            if callable(reset):
+                reset()
+
+    def set_map_id(self, map_id):
+        self._map_id = map_id
+        for model in (self.base_model, self.branch_model):
+            set_map_id = getattr(model, "set_map_id", None)
+            if callable(set_map_id):
+                set_map_id(map_id)
+
+    def set_step_context(self, info):
+        info = info or {}
+        self._step_context = info
+        self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+        if info.get("map_id") is not None:
+            self._map_id = info.get("map_id")
+        self._pressure_context = terminal_pressure_context(info.get("diagnostics", {}))
+        for model in (self.base_model, self.branch_model):
+            set_step_context = getattr(model, "set_step_context", None)
+            if callable(set_step_context):
+                set_step_context(info)
+
+    def set_random_seed(self, seed):
+        for model in (self.base_model, self.branch_model):
+            set_random_seed = getattr(model, "set_random_seed", None)
+            if callable(set_random_seed):
+                set_random_seed(seed)
+
+    def should_consider_branch(self, base_action_index):
+        if self._map_id not in self.target_maps:
+            return False
+        if self._time_seconds < self.min_seconds:
+            return False
+        if self.max_seconds is not None and self._time_seconds > self.max_seconds:
+            return False
+        diagnostics = self._step_context.get("diagnostics", {}) or {}
+        if not action_pushes_into_edge(
+            base_action_index,
+            diagnostics,
+            self.edge_distance,
+        ):
+            return False
+        if self.boundary_edge_risk(diagnostics) < self.min_boundary_edge_risk:
+            return False
+        if self.min_pressure <= 0.0 and self.min_low_health_risk <= 0.0:
+            return True
+        pressure = self._pressure_context
+        return (
+            (
+                self.min_pressure > 0.0
+                and pressure["combined_pressure"] >= self.min_pressure
+            )
+            or (
+                self.min_low_health_risk > 0.0
+                and pressure["low_health_risk"] >= self.min_low_health_risk
+            )
+        )
+
+    def boundary_edge_risk(self, diagnostics):
+        value = as_float((diagnostics or {}).get("boundary_edge_risk"))
+        if value is not None:
+            return clamp_float(value, 0.0, 1.0)
+        boundary = (diagnostics or {}).get("boundary") or {}
+        distances = [
+            as_float(boundary.get(key))
+            for key in (
+                "left_distance",
+                "right_distance",
+                "bottom_distance",
+                "top_distance",
+            )
+        ]
+        distances = [distance for distance in distances if distance is not None]
+        if not distances:
+            return 0.0
+        if self.edge_distance <= 0.0:
+            return 1.0 if min(distances) <= 0.0 else 0.0
+        return clamp_float(1.0 - (min(distances) / self.edge_distance), 0.0, 1.0)
+
+    def predict(self, observation, deterministic=True):
+        self._last_branch_decision = None
+        self._last_action_source = "base"
+        base_action, base_state = self.base_model.predict(
+            observation,
+            deterministic=deterministic,
+        )
+        base_action_index = action_to_int(base_action)
+        use_branch = False
+        branch_action_index = None
+        branch_state = None
+        if deterministic and self.should_consider_branch(base_action_index):
+            branch_action, branch_state = self.branch_model.predict(
+                observation,
+                deterministic=deterministic,
+            )
+            branch_action_index = action_to_int(branch_action)
+            diagnostics = self._step_context.get("diagnostics", {}) or {}
+            use_branch = not action_pushes_into_edge(
+                branch_action_index,
+                diagnostics,
+                self.edge_distance,
+            )
+        record_policy_branch_usage(
+            self._usage_stats,
+            self._map_id,
+            self._time_seconds,
+            use_branch,
+        )
+        if use_branch:
+            self._last_action_source = "branch"
+            self._last_branch_decision = self.build_branch_decision(
+                base_action_index,
+                branch_action_index,
+                observation,
+            )
+            return branch_action_index, branch_state
+        return base_action, base_state
+
+    def action_scores(self, observation):
+        if self._last_action_source == "branch":
+            return policy_action_scores(self.branch_model, observation)
+        return policy_action_scores(self.base_model, observation)
+
+    def build_branch_decision(self, base_action, branch_action, observation):
+        base_scores = policy_action_scores(self.base_model, observation)
+        branch_scores = policy_action_scores(self.branch_model, observation)
+        base_score_values = (
+            base_scores.get("scores", []) if isinstance(base_scores, dict) else []
+        )
+        branch_score_values = (
+            branch_scores.get("scores", []) if isinstance(branch_scores, dict) else []
+        )
+        return {
+            "mode": "edge_recovery_branch",
+            "edge_distance": self.edge_distance,
+            "target_maps": sorted(self.target_maps),
+            "min_seconds": self.min_seconds,
+            "max_seconds": self.max_seconds,
+            "min_pressure": self.min_pressure,
+            "min_low_health_risk": self.min_low_health_risk,
+            "min_boundary_edge_risk": self.min_boundary_edge_risk,
+            "original_action": int(base_action),
+            "target_action": int(branch_action),
+            "pressure_context": dict(self._pressure_context),
+            "boundary_edge_risk": self.boundary_edge_risk(
+                self._step_context.get("diagnostics", {}) or {}
+            ),
+            "base_score_kind": (
+                base_scores.get("kind") if isinstance(base_scores, dict) else None
+            ),
+            "branch_score_kind": (
+                branch_scores.get("kind") if isinstance(branch_scores, dict) else None
+            ),
+            "original_action_score": score_at(base_score_values, base_action),
+            "target_action_score": score_at(branch_score_values, branch_action),
+        }
+
+    def consume_recovery_decision(self):
+        decision = self._last_branch_decision
+        self._last_branch_decision = None
+        return decision
+
+    def opening_policy_report(self):
+        return opening_policy_report(self.base_model)
+
+    def policy_adapter_report(self):
+        return {
+            "mode": "edge_recovery_branch",
+            "target_maps": sorted(self.target_maps),
+            "min_seconds": self.min_seconds,
+            "max_seconds": self.max_seconds,
+            "edge_distance": self.edge_distance,
+            "min_pressure": self.min_pressure,
+            "min_low_health_risk": self.min_low_health_risk,
+            "min_boundary_edge_risk": self.min_boundary_edge_risk,
+            "base_model_path": self.base_model_path,
+            "branch_model_path": self.branch_model_path,
+            "base_policy_kind": getattr(self.base_model, "policy_kind", "sb3"),
+            "branch_policy_kind": getattr(self.branch_model, "policy_kind", "sb3"),
+            "usage": policy_branch_usage_report(self._usage_stats),
+            "limitations": [
+                "This wrapper is for state-conditioned edge-recovery diagnostics only.",
+                "It dispatches to the branch only when the base policy pushes into an edge under configured conditions.",
+                "It is not policy acceptance evidence and still requires high-pressure no-regression gates.",
+            ],
+        }
+
+
 class EdgeRecoveryFilterPolicy:
     policy_kind = "edge_recovery_filter"
 
@@ -1017,6 +1264,90 @@ def merge_terminal_branch_usage_reports(reports):
     return terminal_branch_usage_report(stats)
 
 
+def new_policy_branch_usage_stats():
+    return {
+        "total_decisions": 0,
+        "base_decisions": 0,
+        "branch_decisions": 0,
+        "by_map": {},
+        "by_time_bucket": {},
+    }
+
+
+def record_policy_branch_usage(stats, map_id, time_seconds, use_branch):
+    map_key = str(map_id or "unknown")
+    bucket_key = anchor_time_bucket_label(time_seconds)
+    branch_delta = 1 if use_branch else 0
+    base_delta = 0 if use_branch else 1
+    stats["total_decisions"] += 1
+    stats["branch_decisions"] += branch_delta
+    stats["base_decisions"] += base_delta
+    for group_name, key in (("by_map", map_key), ("by_time_bucket", bucket_key)):
+        group = stats[group_name].setdefault(
+            key,
+            {
+                "total_decisions": 0,
+                "base_decisions": 0,
+                "branch_decisions": 0,
+            },
+        )
+        group["total_decisions"] += 1
+        group["branch_decisions"] += branch_delta
+        group["base_decisions"] += base_delta
+
+
+def policy_branch_usage_bucket_report(bucket):
+    total = int(bucket.get("total_decisions", 0))
+    branch = int(bucket.get("branch_decisions", 0))
+    base = int(bucket.get("base_decisions", 0))
+    return {
+        "total_decisions": total,
+        "base_decisions": base,
+        "branch_decisions": branch,
+        "branch_ratio": round(branch / total, 4) if total else 0.0,
+    }
+
+
+def policy_branch_usage_report(stats):
+    report = policy_branch_usage_bucket_report(stats)
+    report["by_map"] = {
+        key: policy_branch_usage_bucket_report(value)
+        for key, value in sorted(stats.get("by_map", {}).items())
+    }
+    report["by_time_bucket"] = {
+        key: policy_branch_usage_bucket_report(value)
+        for key, value in sorted(stats.get("by_time_bucket", {}).items())
+    }
+    return report
+
+
+def merge_policy_branch_usage_reports(reports):
+    stats = new_policy_branch_usage_stats()
+    for report in reports:
+        stats["total_decisions"] += int(report.get("total_decisions", 0) or 0)
+        stats["base_decisions"] += int(report.get("base_decisions", 0) or 0)
+        stats["branch_decisions"] += int(report.get("branch_decisions", 0) or 0)
+        for group_name in ("by_map", "by_time_bucket"):
+            source_group = report.get(group_name, {})
+            if not isinstance(source_group, dict):
+                continue
+            for key, value in source_group.items():
+                target = stats[group_name].setdefault(
+                    key,
+                    {
+                        "total_decisions": 0,
+                        "base_decisions": 0,
+                        "branch_decisions": 0,
+                    },
+                )
+                target["total_decisions"] += int(value.get("total_decisions", 0) or 0)
+                target["base_decisions"] += int(value.get("base_decisions", 0) or 0)
+                target["branch_decisions"] += int(
+                    value.get("branch_decisions", 0) or 0
+                )
+    return policy_branch_usage_report(stats)
+
+
 def action_vector_alignment(action_index, vector):
     movement = GYM_ACTION_MOVEMENTS.get(int(action_index), (0.0, 0.0))
     vx, vy = vector or (0.0, 0.0)
@@ -1200,6 +1531,14 @@ def validate_positive_seconds(value, flag_name):
         return None
     if value <= 0.0:
         raise ValueError(f"{flag_name} must be greater than 0")
+    return value
+
+
+def validate_non_negative_seconds(value, flag_name):
+    if value is None:
+        return None
+    if value < 0.0:
+        raise ValueError(f"{flag_name} must be non-negative")
     return value
 
 
@@ -2457,6 +2796,37 @@ def wrap_terminal_conversion_branch_policy(
     )
 
 
+def wrap_edge_recovery_branch_policy(
+    policy,
+    model_class,
+    edge_recovery_branch_model_path=None,
+    edge_recovery_branch_maps=None,
+    edge_recovery_branch_min_seconds=0.0,
+    edge_recovery_branch_max_seconds=60.0,
+    edge_recovery_branch_distance=32.0,
+    edge_recovery_branch_min_pressure=0.0,
+    edge_recovery_branch_min_low_health_risk=0.0,
+    edge_recovery_branch_min_boundary_risk=0.0,
+    base_model_path=None,
+):
+    if edge_recovery_branch_model_path is None:
+        return policy
+    branch_model = model_class.load(edge_recovery_branch_model_path)
+    return EdgeRecoveryBranchPolicy(
+        policy,
+        branch_model,
+        edge_recovery_branch_maps,
+        edge_recovery_branch_min_seconds,
+        edge_recovery_branch_max_seconds,
+        edge_recovery_branch_distance,
+        edge_recovery_branch_min_pressure,
+        edge_recovery_branch_min_low_health_risk,
+        edge_recovery_branch_min_boundary_risk,
+        base_model_path or "base_policy",
+        edge_recovery_branch_model_path,
+    )
+
+
 def evaluate_saved_policy(
     config,
     algorithm,
@@ -2472,6 +2842,14 @@ def evaluate_saved_policy(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    edge_recovery_branch_model_path=None,
+    edge_recovery_branch_maps=None,
+    edge_recovery_branch_min_seconds=0.0,
+    edge_recovery_branch_max_seconds=60.0,
+    edge_recovery_branch_distance=32.0,
+    edge_recovery_branch_min_pressure=0.0,
+    edge_recovery_branch_min_low_health_risk=0.0,
+    edge_recovery_branch_min_boundary_risk=0.0,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -2526,6 +2904,23 @@ def evaluate_saved_policy(
         terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
         base_model_path=fallback_model_path,
     )
+    model = wrap_edge_recovery_branch_policy(
+        model,
+        model_class,
+        edge_recovery_branch_model_path=edge_recovery_branch_model_path,
+        edge_recovery_branch_maps=edge_recovery_branch_maps,
+        edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+        edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+        edge_recovery_branch_distance=edge_recovery_branch_distance,
+        edge_recovery_branch_min_pressure=edge_recovery_branch_min_pressure,
+        edge_recovery_branch_min_low_health_risk=(
+            edge_recovery_branch_min_low_health_risk
+        ),
+        edge_recovery_branch_min_boundary_risk=(
+            edge_recovery_branch_min_boundary_risk
+        ),
+        base_model_path=fallback_model_path,
+    )
     model = wrap_recovery_filter_for_eval(
         model,
         edge_recovery_filter=edge_recovery_filter,
@@ -2575,6 +2970,14 @@ def evaluate_policy_model(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    edge_recovery_branch_model_path=None,
+    edge_recovery_branch_maps=None,
+    edge_recovery_branch_min_seconds=0.0,
+    edge_recovery_branch_max_seconds=60.0,
+    edge_recovery_branch_distance=32.0,
+    edge_recovery_branch_min_pressure=0.0,
+    edge_recovery_branch_min_low_health_risk=0.0,
+    edge_recovery_branch_min_boundary_risk=0.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -2620,6 +3023,18 @@ def evaluate_policy_model(
             terminal_conversion_max_seconds=terminal_conversion_max_seconds,
             terminal_conversion_min_pressure=terminal_conversion_min_pressure,
             terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+            edge_recovery_branch_model_path=edge_recovery_branch_model_path,
+            edge_recovery_branch_maps=edge_recovery_branch_maps,
+            edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+            edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+            edge_recovery_branch_distance=edge_recovery_branch_distance,
+            edge_recovery_branch_min_pressure=edge_recovery_branch_min_pressure,
+            edge_recovery_branch_min_low_health_risk=(
+                edge_recovery_branch_min_low_health_risk
+            ),
+            edge_recovery_branch_min_boundary_risk=(
+                edge_recovery_branch_min_boundary_risk
+            ),
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
             seed_start=seed_start,
@@ -2658,6 +3073,16 @@ def evaluate_policy_model(
         terminal_conversion_max_seconds=terminal_conversion_max_seconds,
         terminal_conversion_min_pressure=terminal_conversion_min_pressure,
         terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+        edge_recovery_branch_model_path=edge_recovery_branch_model_path,
+        edge_recovery_branch_maps=edge_recovery_branch_maps,
+        edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+        edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+        edge_recovery_branch_distance=edge_recovery_branch_distance,
+        edge_recovery_branch_min_pressure=edge_recovery_branch_min_pressure,
+        edge_recovery_branch_min_low_health_risk=(
+            edge_recovery_branch_min_low_health_risk
+        ),
+        edge_recovery_branch_min_boundary_risk=edge_recovery_branch_min_boundary_risk,
         eval_episodes=eval_episodes,
         eval_seconds=eval_seconds,
         seed_start=seed_start,
@@ -2698,6 +3123,14 @@ def evaluate_behavior_clone_policy(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    edge_recovery_branch_model_path=None,
+    edge_recovery_branch_maps=None,
+    edge_recovery_branch_min_seconds=0.0,
+    edge_recovery_branch_max_seconds=60.0,
+    edge_recovery_branch_distance=32.0,
+    edge_recovery_branch_min_pressure=0.0,
+    edge_recovery_branch_min_low_health_risk=0.0,
+    edge_recovery_branch_min_boundary_risk=0.0,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -2751,6 +3184,25 @@ def evaluate_behavior_clone_policy(
             terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
             base_model_path=model_path,
         )
+    if edge_recovery_branch_model_path is not None:
+        model_class = stable_baselines_model_classes()[algorithm]
+        policy = wrap_edge_recovery_branch_policy(
+            policy,
+            model_class,
+            edge_recovery_branch_model_path=edge_recovery_branch_model_path,
+            edge_recovery_branch_maps=edge_recovery_branch_maps,
+            edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+            edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+            edge_recovery_branch_distance=edge_recovery_branch_distance,
+            edge_recovery_branch_min_pressure=edge_recovery_branch_min_pressure,
+            edge_recovery_branch_min_low_health_risk=(
+                edge_recovery_branch_min_low_health_risk
+            ),
+            edge_recovery_branch_min_boundary_risk=(
+                edge_recovery_branch_min_boundary_risk
+            ),
+            base_model_path=model_path,
+        )
     policy = wrap_recovery_filter_for_eval(
         policy,
         edge_recovery_filter=edge_recovery_filter,
@@ -2780,7 +3232,9 @@ def evaluate_behavior_clone_policy(
         trace_include_observation=trace_include_observation,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
-    if terminal_conversion_model_path is not None:
+    if edge_recovery_branch_model_path is not None:
+        evaluation["policy_kind"] = "edge_recovery_branch"
+    elif terminal_conversion_model_path is not None:
         evaluation["policy_kind"] = "terminal_conversion_branch"
     elif late_split_model_path is not None:
         evaluation["policy_kind"] = "map_late_split"
@@ -3142,16 +3596,26 @@ def build_edge_recovery_sample(
     score_payload = compact_full_action_scores(action_scores)
     mode = adapter_decision.get("mode")
     is_late_recovery = mode == "late_recovery_filter"
+    is_edge_branch = mode == "edge_recovery_branch"
     record_type = (
         "risk_recovery_supervision_sample"
         if is_late_recovery
         else "edge_recovery_supervision_sample"
     )
-    target_source = "late_recovery_filter" if is_late_recovery else "edge_recovery_filter"
+    if is_late_recovery:
+        target_source = "late_recovery_filter"
+    elif is_edge_branch:
+        target_source = "edge_recovery_branch"
+    else:
+        target_source = "edge_recovery_filter"
     target_label = (
         "highest_scored_late_safe_action"
         if is_late_recovery
-        else "highest_scored_non_wallward_action"
+        else (
+            "branch_conditioned_non_wallward_action"
+            if is_edge_branch
+            else "highest_scored_non_wallward_action"
+        )
     )
     return {
         "record_type": record_type,
@@ -3669,6 +4133,14 @@ def compare_policy_to_rule_bots(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    edge_recovery_branch_model_path=None,
+    edge_recovery_branch_maps=None,
+    edge_recovery_branch_min_seconds=0.0,
+    edge_recovery_branch_max_seconds=60.0,
+    edge_recovery_branch_distance=32.0,
+    edge_recovery_branch_min_pressure=0.0,
+    edge_recovery_branch_min_low_health_risk=0.0,
+    edge_recovery_branch_min_boundary_risk=0.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3714,6 +4186,16 @@ def compare_policy_to_rule_bots(
         terminal_conversion_max_seconds=terminal_conversion_max_seconds,
         terminal_conversion_min_pressure=terminal_conversion_min_pressure,
         terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+        edge_recovery_branch_model_path=edge_recovery_branch_model_path,
+        edge_recovery_branch_maps=edge_recovery_branch_maps,
+        edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+        edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+        edge_recovery_branch_distance=edge_recovery_branch_distance,
+        edge_recovery_branch_min_pressure=edge_recovery_branch_min_pressure,
+        edge_recovery_branch_min_low_health_risk=(
+            edge_recovery_branch_min_low_health_risk
+        ),
+        edge_recovery_branch_min_boundary_risk=edge_recovery_branch_min_boundary_risk,
         behavior_clone_model=behavior_clone_model,
         eval_episodes=episodes,
         eval_seconds=seconds,
@@ -3794,6 +4276,14 @@ def compare_policy_to_rule_bots_across_maps(
     terminal_conversion_max_seconds=240.0,
     terminal_conversion_min_pressure=0.0,
     terminal_conversion_min_low_health_risk=0.0,
+    edge_recovery_branch_model_path=None,
+    edge_recovery_branch_maps=None,
+    edge_recovery_branch_min_seconds=0.0,
+    edge_recovery_branch_max_seconds=60.0,
+    edge_recovery_branch_distance=32.0,
+    edge_recovery_branch_min_pressure=0.0,
+    edge_recovery_branch_min_low_health_risk=0.0,
+    edge_recovery_branch_min_boundary_risk=0.0,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3835,6 +4325,18 @@ def compare_policy_to_rule_bots_across_maps(
             terminal_conversion_max_seconds=terminal_conversion_max_seconds,
             terminal_conversion_min_pressure=terminal_conversion_min_pressure,
             terminal_conversion_min_low_health_risk=terminal_conversion_min_low_health_risk,
+            edge_recovery_branch_model_path=edge_recovery_branch_model_path,
+            edge_recovery_branch_maps=edge_recovery_branch_maps,
+            edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+            edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+            edge_recovery_branch_distance=edge_recovery_branch_distance,
+            edge_recovery_branch_min_pressure=edge_recovery_branch_min_pressure,
+            edge_recovery_branch_min_low_health_risk=(
+                edge_recovery_branch_min_low_health_risk
+            ),
+            edge_recovery_branch_min_boundary_risk=(
+                edge_recovery_branch_min_boundary_risk
+            ),
             behavior_clone_model=behavior_clone_model,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
@@ -3993,7 +4495,10 @@ def summarize_multimap_policy_adapter(comparisons):
     if not usage_reports:
         return first
     report = dict(first)
-    report["usage"] = merge_terminal_branch_usage_reports(usage_reports)
+    if mode == "edge_recovery_branch":
+        report["usage"] = merge_policy_branch_usage_reports(usage_reports)
+    else:
+        report["usage"] = merge_terminal_branch_usage_reports(usage_reports)
     report["usage_scope"] = "multimap_aggregate"
     return report
 
@@ -4261,6 +4766,30 @@ def main():
         help="Minimum low-health risk required before terminal branch dispatch.",
     )
     parser.add_argument(
+        "--edge-recovery-branch-model",
+        default=None,
+        help="Optional SB3 zip used as a constrained edge-recovery branch during evaluation/comparison.",
+    )
+    parser.add_argument(
+        "--edge-recovery-branch-maps",
+        default=None,
+        help="Comma-separated map ids where --edge-recovery-branch-model may replace wallward base actions.",
+    )
+    parser.add_argument("--edge-recovery-branch-min-seconds", type=float, default=0.0)
+    parser.add_argument("--edge-recovery-branch-max-seconds", type=float, default=60.0)
+    parser.add_argument("--edge-recovery-branch-distance", type=float, default=32.0)
+    parser.add_argument("--edge-recovery-branch-min-pressure", type=float, default=0.0)
+    parser.add_argument(
+        "--edge-recovery-branch-min-low-health-risk",
+        type=float,
+        default=0.0,
+    )
+    parser.add_argument(
+        "--edge-recovery-branch-min-boundary-risk",
+        type=float,
+        default=0.0,
+    )
+    parser.add_argument(
         "--behavior-clone-model",
         default=None,
         help="Evaluate or compare a train_behavior_clone.py checkpoint instead of an SB3 zip.",
@@ -4497,6 +5026,15 @@ def main():
             "--terminal-conversion-max-seconds",
         )
         terminal_conversion_maps = parse_map_list(args.terminal_conversion_maps)
+        edge_recovery_branch_min_seconds = validate_non_negative_seconds(
+            args.edge_recovery_branch_min_seconds,
+            "--edge-recovery-branch-min-seconds",
+        )
+        edge_recovery_branch_max_seconds = validate_positive_seconds(
+            args.edge_recovery_branch_max_seconds,
+            "--edge-recovery-branch-max-seconds",
+        )
+        edge_recovery_branch_maps = parse_map_list(args.edge_recovery_branch_maps)
         anchor_include_time_buckets = parse_anchor_time_bucket_list(
             args.anchor_include_time_buckets,
         )
@@ -4540,13 +5078,23 @@ def main():
                 "--terminal-conversion-max-seconds must be greater than "
                 "--terminal-conversion-min-seconds"
             )
+        if edge_recovery_branch_max_seconds <= edge_recovery_branch_min_seconds:
+            raise ValueError(
+                "--edge-recovery-branch-max-seconds must be greater than "
+                "--edge-recovery-branch-min-seconds"
+            )
         for name in (
             "terminal_conversion_min_pressure",
             "terminal_conversion_min_low_health_risk",
+            "edge_recovery_branch_min_pressure",
+            "edge_recovery_branch_min_low_health_risk",
+            "edge_recovery_branch_min_boundary_risk",
         ):
             value = getattr(args, name)
             if not (0.0 <= value <= 1.0):
                 raise ValueError(f"--{name.replace('_', '-')} must be between 0 and 1")
+        if args.edge_recovery_branch_distance < 0.0:
+            raise ValueError("--edge-recovery-branch-distance must be non-negative")
         if args.edge_recovery_distance < 0.0:
             raise ValueError("--edge-recovery-distance must be non-negative")
         if args.late_recovery_min_seconds < 0.0:
@@ -4586,6 +5134,14 @@ def main():
         parser.error("--terminal-conversion-maps requires --terminal-conversion-model")
     if args.terminal_conversion_model and args.late_split_model:
         parser.error("--terminal-conversion-model cannot be combined with --late-split-model")
+    if args.edge_recovery_branch_model and not (
+        args.evaluate_model or args.compare_rule_bots
+    ):
+        parser.error("--edge-recovery-branch-model requires --evaluate-model or --compare-rule-bots")
+    if args.edge_recovery_branch_model and edge_recovery_branch_maps is None:
+        parser.error("--edge-recovery-branch-model requires --edge-recovery-branch-maps")
+    if args.edge_recovery_branch_maps and not args.edge_recovery_branch_model:
+        parser.error("--edge-recovery-branch-maps requires --edge-recovery-branch-model")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
@@ -4608,10 +5164,16 @@ def main():
         parser.error("--anchor-guard-* requires --anchor-model and --anchor-dataset")
     if args.edge_recovery_filter and args.late_recovery_filter:
         parser.error("--edge-recovery-filter and --late-recovery-filter cannot be combined")
-    if args.edge_recovery_samples_out and not (
+    if args.edge_recovery_branch_model and (
         args.edge_recovery_filter or args.late_recovery_filter
     ):
-        parser.error("--edge-recovery-samples-out requires a recovery filter")
+        parser.error("--edge-recovery-branch-model cannot be combined with recovery filters")
+    if args.edge_recovery_samples_out and not (
+        args.edge_recovery_filter
+        or args.late_recovery_filter
+        or args.edge_recovery_branch_model
+    ):
+        parser.error("--edge-recovery-samples-out requires a recovery filter or branch")
     if args.trace_sample_stride <= 0:
         parser.error("--trace-sample-stride must be greater than 0")
 
@@ -4677,6 +5239,22 @@ def main():
                 terminal_conversion_max_seconds=terminal_conversion_max_seconds,
                 terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
                 terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
+                edge_recovery_branch_model_path=(
+                    Path(args.edge_recovery_branch_model)
+                    if args.edge_recovery_branch_model
+                    else None
+                ),
+                edge_recovery_branch_maps=edge_recovery_branch_maps,
+                edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+                edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+                edge_recovery_branch_distance=args.edge_recovery_branch_distance,
+                edge_recovery_branch_min_pressure=args.edge_recovery_branch_min_pressure,
+                edge_recovery_branch_min_low_health_risk=(
+                    args.edge_recovery_branch_min_low_health_risk
+                ),
+                edge_recovery_branch_min_boundary_risk=(
+                    args.edge_recovery_branch_min_boundary_risk
+                ),
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
@@ -4745,6 +5323,22 @@ def main():
                     terminal_conversion_max_seconds=terminal_conversion_max_seconds,
                     terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
                     terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
+                    edge_recovery_branch_model_path=(
+                        Path(args.edge_recovery_branch_model)
+                        if args.edge_recovery_branch_model
+                        else None
+                    ),
+                    edge_recovery_branch_maps=edge_recovery_branch_maps,
+                    edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+                    edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+                    edge_recovery_branch_distance=args.edge_recovery_branch_distance,
+                    edge_recovery_branch_min_pressure=args.edge_recovery_branch_min_pressure,
+                    edge_recovery_branch_min_low_health_risk=(
+                        args.edge_recovery_branch_min_low_health_risk
+                    ),
+                    edge_recovery_branch_min_boundary_risk=(
+                        args.edge_recovery_branch_min_boundary_risk
+                    ),
                     behavior_clone_model=(
                         Path(args.behavior_clone_model)
                         if args.behavior_clone_model
@@ -4809,6 +5403,22 @@ def main():
                 terminal_conversion_max_seconds=terminal_conversion_max_seconds,
                 terminal_conversion_min_pressure=args.terminal_conversion_min_pressure,
                 terminal_conversion_min_low_health_risk=args.terminal_conversion_min_low_health_risk,
+                edge_recovery_branch_model_path=(
+                    Path(args.edge_recovery_branch_model)
+                    if args.edge_recovery_branch_model
+                    else None
+                ),
+                edge_recovery_branch_maps=edge_recovery_branch_maps,
+                edge_recovery_branch_min_seconds=edge_recovery_branch_min_seconds,
+                edge_recovery_branch_max_seconds=edge_recovery_branch_max_seconds,
+                edge_recovery_branch_distance=args.edge_recovery_branch_distance,
+                edge_recovery_branch_min_pressure=args.edge_recovery_branch_min_pressure,
+                edge_recovery_branch_min_low_health_risk=(
+                    args.edge_recovery_branch_min_low_health_risk
+                ),
+                edge_recovery_branch_min_boundary_risk=(
+                    args.edge_recovery_branch_min_boundary_risk
+                ),
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model

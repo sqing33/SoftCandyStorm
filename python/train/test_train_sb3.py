@@ -6,6 +6,7 @@ import pytest
 
 import python.train.train_sb3 as train_sb3
 from python.train.train_sb3 import (
+    EdgeRecoveryBranchPolicy,
     EdgeRecoveryFilterPolicy,
     LateRecoveryFilterPolicy,
     MapLateSplitPolicy,
@@ -868,6 +869,34 @@ def test_build_late_recovery_sample_uses_risk_record_type():
     assert sample["target_label"] == "highest_scored_late_safe_action"
 
 
+def test_build_edge_branch_sample_records_branch_target_source():
+    sample = build_edge_recovery_sample(
+        episode_seed=63402,
+        step_number=1080,
+        observation=[0.1, 0.2, 0.3],
+        info={
+            "map_id": "soda-creek",
+            "tick": 1079,
+            "time_seconds": 36.0,
+            "diagnostics": {"boundary_edge_risk": 1.0},
+        },
+        adapter_decision={
+            "mode": "edge_recovery_branch",
+            "original_action": 5,
+            "target_action": 7,
+        },
+        action_scores={
+            "kind": "probability",
+            "scores": [0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.9, 0.0],
+        },
+        config={"environment": {"observation_version": 2}},
+    )
+
+    assert sample["record_type"] == "edge_recovery_supervision_sample"
+    assert sample["target_source"] == "edge_recovery_branch"
+    assert sample["target_label"] == "branch_conditioned_non_wallward_action"
+
+
 def test_write_edge_recovery_samples_writes_jsonl(tmp_path):
     target = tmp_path / "edge_samples.jsonl"
     report = write_edge_recovery_samples(
@@ -1238,6 +1267,124 @@ def test_terminal_conversion_branch_can_switch_on_low_health_risk():
     assert action == 6
 
 
+def test_edge_recovery_branch_switches_only_for_wallward_target_context():
+    base = DummyPolicy(5)
+    branch = DummyPolicy(7)
+    policy = EdgeRecoveryBranchPolicy(
+        base,
+        branch,
+        ["soda-creek"],
+        0.0,
+        60.0,
+        32.0,
+        0.2,
+        0.0,
+        0.75,
+        "base.zip",
+        "branch.zip",
+    )
+
+    policy.reset()
+    policy.set_random_seed(999)
+    policy.set_map_id("soda-creek")
+    policy.set_step_context(
+        {
+            "map_id": "soda-creek",
+            "time_seconds": 36.0,
+            "diagnostics": {
+                "boundary_edge_risk": 1.0,
+                "enemy_pressure_risk": 0.3,
+                "boundary": {
+                    "left_distance": 400.0,
+                    "right_distance": 400.0,
+                    "bottom_distance": 0.0,
+                    "top_distance": 400.0,
+                },
+            },
+        }
+    )
+    branch_action, _ = policy.predict(None)
+    decision = consume_policy_adapter_decision(policy)
+    branch_scores = policy.action_scores(None)
+    policy.set_step_context(
+        {
+            "map_id": "soda-creek",
+            "time_seconds": 36.0,
+            "diagnostics": {
+                "boundary_edge_risk": 1.0,
+                "enemy_pressure_risk": 0.3,
+                "boundary": {
+                    "left_distance": 0.0,
+                    "right_distance": 400.0,
+                    "bottom_distance": 400.0,
+                    "top_distance": 400.0,
+                },
+            },
+        }
+    )
+    unsafe_branch_action, _ = policy.predict(None)
+
+    assert base.reset_count == 1
+    assert branch.reset_count == 1
+    assert base.random_seed == 999
+    assert branch.random_seed == 999
+    assert branch_action == 7
+    assert branch_scores["scores"][7] == 1.0
+    assert decision["mode"] == "edge_recovery_branch"
+    assert decision["original_action"] == 5
+    assert decision["target_action"] == 7
+    assert unsafe_branch_action == 5
+    report = policy.policy_adapter_report()
+    assert report["mode"] == "edge_recovery_branch"
+    assert report["usage"]["total_decisions"] == 2
+    assert report["usage"]["base_decisions"] == 1
+    assert report["usage"]["branch_decisions"] == 1
+
+
+def test_edge_recovery_branch_rejects_non_target_or_low_pressure_contexts():
+    policy = EdgeRecoveryBranchPolicy(
+        DummyPolicy(5),
+        DummyPolicy(7),
+        ["soda-creek"],
+        10.0,
+        60.0,
+        32.0,
+        0.2,
+        0.0,
+        0.75,
+        "base.zip",
+        "branch.zip",
+    )
+
+    scenarios = [
+        ("caramel-workshop", 36.0, 1.0, 0.3),
+        ("soda-creek", 9.9, 1.0, 0.3),
+        ("soda-creek", 36.0, 0.4, 0.3),
+        ("soda-creek", 36.0, 1.0, 0.1),
+    ]
+    for map_id, time_seconds, boundary_edge_risk, enemy_pressure_risk in scenarios:
+        policy.set_map_id(map_id)
+        policy.set_step_context(
+            {
+                "map_id": map_id,
+                "time_seconds": time_seconds,
+                "diagnostics": {
+                    "boundary_edge_risk": boundary_edge_risk,
+                    "enemy_pressure_risk": enemy_pressure_risk,
+                    "boundary": {
+                        "left_distance": 400.0,
+                        "right_distance": 400.0,
+                        "bottom_distance": 0.0,
+                        "top_distance": 400.0,
+                    },
+                },
+            }
+        )
+        action, _ = policy.predict(None)
+        assert action == 5
+        assert consume_policy_adapter_decision(policy) is None
+
+
 def test_multimap_policy_adapter_report_aggregates_terminal_usage():
     adapter_a = {
         "mode": "terminal_conversion_branch",
@@ -1307,6 +1454,72 @@ def test_multimap_policy_adapter_report_aggregates_terminal_usage():
         report["usage"]["by_time_bucket"]["late_180_to_300"]["total_decisions"]
         == 15
     )
+
+
+def test_multimap_policy_adapter_report_aggregates_edge_branch_usage():
+    adapter_a = {
+        "mode": "edge_recovery_branch",
+        "target_maps": ["soda-creek"],
+        "usage": {
+            "total_decisions": 10,
+            "base_decisions": 8,
+            "branch_decisions": 2,
+            "branch_ratio": 0.2,
+            "by_map": {
+                "soda-creek": {
+                    "total_decisions": 10,
+                    "base_decisions": 8,
+                    "branch_decisions": 2,
+                    "branch_ratio": 0.2,
+                }
+            },
+            "by_time_bucket": {
+                "opening_lt_60": {
+                    "total_decisions": 10,
+                    "base_decisions": 8,
+                    "branch_decisions": 2,
+                    "branch_ratio": 0.2,
+                }
+            },
+        },
+    }
+    adapter_b = {
+        "mode": "edge_recovery_branch",
+        "target_maps": ["soda-creek"],
+        "usage": {
+            "total_decisions": 5,
+            "base_decisions": 4,
+            "branch_decisions": 1,
+            "branch_ratio": 0.2,
+            "by_map": {
+                "soda-creek": {
+                    "total_decisions": 5,
+                    "base_decisions": 4,
+                    "branch_decisions": 1,
+                    "branch_ratio": 0.2,
+                }
+            },
+            "by_time_bucket": {
+                "opening_lt_60": {
+                    "total_decisions": 5,
+                    "base_decisions": 4,
+                    "branch_decisions": 1,
+                    "branch_ratio": 0.2,
+                }
+            },
+        },
+    }
+
+    report = train_sb3.summarize_multimap_policy_adapter(
+        [{"policy_adapter": adapter_a}, {"policy_adapter": adapter_b}]
+    )
+
+    assert report["usage_scope"] == "multimap_aggregate"
+    assert report["usage"]["total_decisions"] == 15
+    assert report["usage"]["base_decisions"] == 12
+    assert report["usage"]["branch_decisions"] == 3
+    assert report["usage"]["branch_ratio"] == 0.2
+    assert report["usage"]["by_map"]["soda-creek"]["branch_decisions"] == 3
 
 
 def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch):
@@ -1476,6 +1689,68 @@ def test_compare_policy_to_rule_bots_forwards_terminal_conversion_options(monkey
     assert captured["terminal_conversion_min_pressure"] == 0.25
     assert captured["terminal_conversion_min_low_health_risk"] == 0.4
     assert report["policy_adapter"]["mode"] == "terminal_conversion_branch"
+
+
+def test_compare_policy_to_rule_bots_forwards_edge_recovery_branch_options(monkeypatch):
+    captured = {}
+
+    def fake_evaluate_policy_model(config, algorithm, **kwargs):
+        captured.update(kwargs)
+        return {
+            "policy_kind": "edge_recovery_branch",
+            "opening_policy": None,
+            "policy_adapter": {"mode": "edge_recovery_branch"},
+            "edge_recovery_samples": None,
+            "upgrade_policy": None,
+            "action_selection": "deterministic",
+            "summary": {
+                "episodes": 1,
+                "win_rate": 1.0,
+                "average_kills": 5.0,
+                "dominant_action_ratio": 0.1,
+                "normalized_action_entropy": 1.0,
+            },
+        }
+
+    monkeypatch.setattr(train_sb3, "evaluate_policy_model", fake_evaluate_policy_model)
+    monkeypatch.setattr(
+        train_sb3,
+        "run_rule_bot_matrix",
+        lambda config, bots, seed_start, episodes, seconds, map_id: {
+            "stdout": {"bots": []},
+            "command": ["game_harness", "matrix"],
+            "stderr": "",
+        },
+    )
+
+    report = train_sb3.compare_policy_to_rule_bots(
+        {
+            "phase": "test",
+            "evaluation": {"episodes": 1, "seconds": 5, "seed_start": 10},
+            "environment": {"tick_rate": 30},
+            "models": {"ppo": "unused.zip"},
+            "outputs": {"model_dir": "python/train/models"},
+        },
+        "ppo",
+        edge_recovery_branch_model_path="branch.zip",
+        edge_recovery_branch_maps=["soda-creek"],
+        edge_recovery_branch_min_seconds=5.0,
+        edge_recovery_branch_max_seconds=45.0,
+        edge_recovery_branch_distance=24.0,
+        edge_recovery_branch_min_pressure=0.2,
+        edge_recovery_branch_min_low_health_risk=0.3,
+        edge_recovery_branch_min_boundary_risk=0.75,
+    )
+
+    assert captured["edge_recovery_branch_model_path"] == "branch.zip"
+    assert captured["edge_recovery_branch_maps"] == ["soda-creek"]
+    assert captured["edge_recovery_branch_min_seconds"] == 5.0
+    assert captured["edge_recovery_branch_max_seconds"] == 45.0
+    assert captured["edge_recovery_branch_distance"] == 24.0
+    assert captured["edge_recovery_branch_min_pressure"] == 0.2
+    assert captured["edge_recovery_branch_min_low_health_risk"] == 0.3
+    assert captured["edge_recovery_branch_min_boundary_risk"] == 0.75
+    assert report["policy_adapter"]["mode"] == "edge_recovery_branch"
 
 
 def test_evaluation_gate_flags_deterministic_action_collapse():

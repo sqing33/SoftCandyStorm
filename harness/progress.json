@@ -1376,6 +1376,11 @@
       "id": "rl_stage01_seed63402_edge_recovery_supervised_init",
       "summary": "执行 edge recovery supervised SB3 初始化：teacher_probs 版本 validation argmax accuracy 0.8636 但 anchor alignment 仍失败；dataset_actions 硬标签版本通过离线 alignment（combined mean KL 0.207452、argmax agreement 0.9444）并让 soda-creek:63402 target preflight 通过，但 60 秒 soda-creek 三 seed comparison 出现 action 7 ratio 0.9987 动作塌缩，seed 63400 在 30.1666 秒死亡。已记录 fail_20260530_013。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_edge_recovery_branch_preflight",
+      "summary": "新增 edge_recovery_branch 条件分派：只在目标地图、时间窗、boundary/pressure 条件下且 base action 顶边时切换到 supervised edge recovery branch，并要求 branch action 不继续顶边。首个 soda-creek seeds 63400-63402 60 秒预检通过，win_rate 1.0，soda-creek:63402 target preflight 通过（60.0328 秒 victory，action 7 ratio 0.372016），整体 action 7 ratio 0.4525，branch usage 4/5403，未复现 0.9987 全局塌缩。该 adapter 仍是 evaluation-only 诊断，不是 RL acceptance。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_preflight_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3141,7 +3146,7 @@
     },
     {
       "id": "rl_stage01_constrained_edge_recovery_branch",
-      "summary": "硬标签 supervised SB3 已把 target seed 修复变成 action 7 全局塌缩；下一步不要继续全局 opening policy，改做按 boundary/enemy-pressure state 条件触发的 edge recovery branch / adapter，并先用 63400-63402 三 seed 60 秒预检动作多样性。"
+      "summary": "edge_recovery_branch 已完成首个 63400-63402 三 seed 60 秒预检并修复 target seed，同时未复现 global action 7 collapse；下一步必须扩大到 parent no-regression 和 high-pressure 60/180/300 秒窗口，确认分支 usage、动作分布和平均存活不会引入新的跨图回归。"
     }
   ]
 }

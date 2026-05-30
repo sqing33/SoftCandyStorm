@@ -1,0 +1,44 @@
+{
+  "decision": "policy_target_seed_preflight_passed",
+  "comparison": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_preflight_001/comparison_60s.json",
+  "seconds": 60.0,
+  "gate_decision": "comparison_recorded_not_balance_gate",
+  "action_selection": "deterministic",
+  "reward_profile": "opening-boundary-escape",
+  "target_count": 1,
+  "target_results": [
+    {
+      "map_id": "soda-creek",
+      "seed": 63402,
+      "found": true,
+      "time_seconds": 60.03276,
+      "terminal_kind": "victory",
+      "terminal_reason": "duration_reached",
+      "terminated": true,
+      "truncated": false,
+      "action_ratios": {
+        "7": 0.372016
+      }
+    }
+  ],
+  "checks": {
+    "min_survival_seconds": null,
+    "require_window_survival": true,
+    "require_non_defeat": false,
+    "min_action_ratios": {
+      "7": 0.1
+    },
+    "max_action_ratios": {
+      "7": 0.6
+    },
+    "survival_tolerance_seconds": 0.05
+  },
+  "errors": [],
+  "blockers": [],
+  "warnings": [],
+  "limitations": [
+    "This preflight only validates target episodes already present in a comparison report.",
+    "A passing preflight does not replace fixed-window high-pressure comparison, no-regression validation, failure-case review, or RL acceptance.",
+    "Target action ratios are diagnostic checks; they should not be used alone as proof of good play."
+  ]
+}

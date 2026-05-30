@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Validate edge-recovery supervision samples.
 
-These samples are produced by the diagnostic edge_recovery_filter adapter. They
-are allowed as repair training inputs, but they are never policy acceptance
+These samples are produced by diagnostic edge-recovery adapters. They are
+allowed as repair training inputs, but they are never policy acceptance
 evidence.
 """
 
@@ -37,6 +37,7 @@ FORBIDDEN_ROLE_TOKENS = {
 }
 
 ALLOWED_TARGET_SOURCES = {
+    "edge_recovery_branch",
     "edge_recovery_filter",
     "route_recovery_trace_hotspot",
 }

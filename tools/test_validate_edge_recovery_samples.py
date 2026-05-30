@@ -104,6 +104,30 @@ class EdgeRecoverySampleValidationTests(unittest.TestCase):
             self.assertEqual(report["decision"], "edge_recovery_samples_valid")
             self.assertEqual(report["errors"], [])
 
+    def test_edge_recovery_branch_source_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "samples.jsonl"
+            write_jsonl(
+                path,
+                [
+                    sample_payload(
+                        target_source="edge_recovery_branch",
+                        target_label="branch_conditioned_non_wallward_action",
+                        adapter_decision={
+                            "mode": "edge_recovery_branch",
+                            "edge_distance": 32.0,
+                            "original_action": 7,
+                            "target_action": 0,
+                        },
+                    )
+                ],
+            )
+
+            report = build_report(path)
+
+            self.assertEqual(report["decision"], "edge_recovery_samples_valid")
+            self.assertEqual(report["errors"], [])
+
     def test_target_still_pushing_edge_is_invalid(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "samples.jsonl"
