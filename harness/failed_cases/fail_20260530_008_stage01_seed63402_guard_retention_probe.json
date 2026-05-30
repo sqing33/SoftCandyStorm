@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260530_008",
+  "category": "rl_training",
+  "content_id": "stage01-seed63402-guard-retention-probe",
+  "seed": "63400-63402",
+  "bot": "opening-boundary-escape-ppo-guard-retention-anchor",
+  "time_seconds": 60.0,
+  "symptom": "The seed 63402 guard + retention PPO probe failed before it could become a policy gate. Anchor validation guard stopped the 256 timestep continuation with validation KL 2.155758 and argmax agreement 0.6; the cheap soda-creek 60s online preflight then failed because target seed 63402 died at 37.4998s and used action 7 with ratio 0.0.",
+  "root_cause": "Adding successful-opening retention rows to the local action 7 anchor was not enough to align the closed-loop PPO state distribution. The offline anchor still covers only the narrow 31.9999s-37.2664s soda-creek window and all 49 rows target action 7, while the online target seed drifts into an action 5 dominated failure path before reaching the intended escape behavior.",
+  "fix": "Do not run the full 60/180/300 second matrix or advance this checkpoint to stage 02. The next repair should stop treating the narrow action 7 slice as sufficient supervision, inspect the target seed trajectory before 37.5s, and add broader pre-failure route state coverage or a staged/constrained branch that must pass anchor validation and soda-creek:63402 target preflight before any expensive matrix run.",
+  "validation": "Trained a 256 timestep opening-boundary-escape PPO continuation from ppo_e30_mid_anchor_guarded_probe.zip using seed63402_guard_retention_anchor.pt and both target guard plus success retention datasets. Anchor regularization used weight 0.5, 10 epochs, lr 0.0005, opening_lt_60 filter, max validation KL 0.25, and min argmax agreement 0.85. The anchor guard failed with KL 2.155758 and argmax agreement 0.6. A 3 seed soda-creek 60s comparison recorded seed 63402 as defeat at 37.4998s with action 7 ratio 0.0, and validate_policy_target_seed_preflight reported policy_target_seed_preflight_failed.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/target_seed_preflight.md",
+    "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/target_seed_preflight.json"
+  ]
+}

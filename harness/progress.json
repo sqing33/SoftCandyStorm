@@ -1326,6 +1326,11 @@
       "id": "rl_stage01_seed63402_guard_retention_anchor",
       "summary": "训练 seed 63402 guard + retention behavior-clone anchor：合并 17 条 target guard rows 与 32 条 parent 成功开局 retention rows，共 49 条 soda-creek 31.9999-37.2664 秒 action 7 样本；train / validation accuracy 均为 1.0，gate_decision 为 behavior_clone_smoke_only_not_policy_gate。该模型只是下一轮 target-specific repair 的离线 anchor，不是在线 policy 修复证据。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_anchor_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_guard_retention_probe",
+      "summary": "执行 seed 63402 guard + retention PPO 小步 probe：从 e30 mid-anchor guarded parent 继续 256 timestep，使用 49 条 opening anchor 样本、anchor weight 0.5、10 个 KL epoch 与 lr 0.0005；anchor validation guard 失败（KL 2.155758、argmax agreement 0.6），soda-creek:63402 target preflight 也失败（37.4998 秒 defeat，action 7 ratio 0.0）。已记录 fail_20260530_008，未运行完整 60/180/300 秒矩阵。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/summary.md"
     }
   ],
   "current_findings": [
@@ -2948,6 +2953,11 @@
       "id": "rl_stage01_seed63402_guard_retention_anchor",
       "summary": "训练 seed 63402 guard + retention behavior-clone anchor：合并 17 条 target guard rows 与 32 条 parent 成功开局 retention rows，共 49 条 soda-creek 31.9999-37.2664 秒 action 7 样本；train / validation accuracy 均为 1.0，gate_decision 为 behavior_clone_smoke_only_not_policy_gate。该模型只是下一轮 target-specific repair 的离线 anchor，不是在线 policy 修复证据。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_anchor_001/summary.md"
+    },
+    {
+      "id": "rl_stage01_seed63402_guard_retention_probe",
+      "summary": "执行 seed 63402 guard + retention PPO 小步 probe：从 e30 mid-anchor guarded parent 继续 256 timestep，使用 49 条 opening anchor 样本、anchor weight 0.5、10 个 KL epoch 与 lr 0.0005；anchor validation guard 失败（KL 2.155758、argmax agreement 0.6），soda-creek:63402 target preflight 也失败（37.4998 秒 defeat，action 7 ratio 0.0）。已记录 fail_20260530_008，未运行完整 60/180/300 秒矩阵。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_guard_retention_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -2970,6 +2980,10 @@
     {
       "id": "rl_stage01_use_guard_retention_anchor",
       "summary": "下一轮应以 seed63402_guard_retention_anchor.pt 作为 target-specific repair anchor 或 supervised 初始化输入，小步训练后先跑 soda-creek:63402 target-seed preflight；未通过时不要跑完整矩阵。"
+    },
+    {
+      "id": "rl_stage01_inspect_seed63402_prefailure_route",
+      "summary": "guard + retention probe 已证明 31.9999-37.2664 秒 action 7 窄切片不足以修复在线闭环；下一步应导出并对比 seed 63402 在 0-37.5 秒的 pre-failure route states，补充更早的路线/压力状态覆盖或改为显式 staged branch，再重新通过 anchor guard 与 target preflight。"
     },
     {
       "id": "rl_policy_multimap_training_after_closed_loop_no_regression",
