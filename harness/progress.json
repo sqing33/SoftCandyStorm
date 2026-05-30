@@ -2833,6 +2833,11 @@
       "id": "runtime_release_local_performance_gate",
       "summary": "Runtime performance capture 校验器新增 smoke / release-local 分档；release-local 要求 600 秒目标、至少 20 个采样、demo input、victory、平均 FPS >=55、30 FPS 以下慢帧比例 <=1%，并复用实体、投射物、特效与隐私默认本地检查。当前 10 分钟 demo-input capture 通过该本机自动门槛：平均 FPS 58.65、30 FPS 以下慢帧占比 0.23%、终局 victory。该证据不替代 Steam Deck / 多硬件、GPU / 内存分析或真人试玩。",
       "report": "harness/reports/2026-05-30_runtime_release_local_performance_gate_001/summary.md"
+    },
+    {
+      "id": "phase1_gamecore_completion_audit",
+      "summary": "完成 Phase 1 GameCore 原型审计：当前 `cargo test -p game_core` 为 35/35 通过，固定 seed metrics 复现定向测试通过，历史 600 秒 headless all Bot 矩阵可输出 metrics，45/45 replay regression 与 headless 性能预算均有证据。Phase 1 现标记 complete；该结论只覆盖 headless GameCore，不代表 Runtime 可玩性、人工试玩、RL acceptance、Release Candidate 或发布包完成。",
+      "report": "harness/reports/2026-05-30_phase1_gamecore_completion_audit_001/summary.md"
     }
   ],
   "next_recommended": [

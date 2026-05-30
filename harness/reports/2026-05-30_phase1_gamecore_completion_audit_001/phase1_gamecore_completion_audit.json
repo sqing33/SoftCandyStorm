@@ -1,0 +1,77 @@
+{
+  "report_version": 1,
+  "decision": "phase1_gamecore_complete",
+  "scope": "docs/12 Phase 1 Bevy GameCore 原型",
+  "checked_at": "2026-05-30",
+  "requirements": [
+    {
+      "id": "bevy_workspace",
+      "requirement": "Bevy/Rust workspace 与 game_core crate 已建立。",
+      "status": "pass",
+      "evidence": [
+        "Cargo.toml",
+        "crates/game_core/Cargo.toml",
+        "crates/game_harness/Cargo.toml",
+        "crates/game_runtime/Cargo.toml"
+      ]
+    },
+    {
+      "id": "gamecore_systems",
+      "requirement": "GameCore 覆盖移动、敌人追踪、武器自动释放、碰撞伤害、XP、升级、波次和 10 分钟结算。",
+      "status": "pass",
+      "evidence": [
+        "crates/game_core/src/lib.rs",
+        "content/base_demo",
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
+      ]
+    },
+    {
+      "id": "cargo_test",
+      "requirement": "cargo test 通过。",
+      "status": "pass",
+      "evidence": [
+        "cargo test -p game_core: 35 passed, 0 failed",
+        "harness/reports/2026-05-26_post_recovery_rust_verification_001/summary.md"
+      ]
+    },
+    {
+      "id": "headless_600s_metrics",
+      "requirement": "headless simulate 可以跑 600 秒并输出 metrics。",
+      "status": "pass",
+      "evidence": [
+        "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/summary.md",
+        "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_001/metrics.json",
+        "harness/reports/2026-05-27_harness_performance_budget_base_demo_600s_after_terminal_devtools_restart_001/summary.md"
+      ]
+    },
+    {
+      "id": "fixed_seed_reproducible",
+      "requirement": "固定 seed 可复现。",
+      "status": "pass",
+      "evidence": [
+        "cargo test -p game_core same_seed_produces_same_metrics -- --nocapture: 1 passed",
+        "harness/reports/2026-05-29_gamecore_determinism_snapshot_contract_001/summary.md",
+        "harness/reports/2026-05-27_base_demo_all_bot_matrix_600s_after_terminal_devtools_restart_replay_regression_001/summary.md"
+      ]
+    }
+  ],
+  "commands_run": [
+    {
+      "command": "cargo test -p game_core",
+      "result": "35 passed; 0 failed"
+    },
+    {
+      "command": "cargo test -p game_core same_seed_produces_same_metrics -- --nocapture",
+      "result": "1 passed; 0 failed"
+    },
+    {
+      "command": "cargo run -p game_harness -- --help",
+      "result": "game_harness CLI launched and listed simulate, batch, matrix, replay and gym-bridge commands"
+    }
+  ],
+  "limitations": [
+    "This audit only closes docs/12 Phase 1 GameCore prototype acceptance.",
+    "It does not mark Runtime playability, manual playtest, content acceptance, RL acceptance, Release Candidate, release package, multi-hardware performance, GPU profiling, memory growth, visual polish, or audio polish as complete.",
+    "Historical Bot balance repair notes in 600-second matrix reports belong to Phase 3/4 balancing, not Phase 1 headless GameCore availability."
+  ]
+}
