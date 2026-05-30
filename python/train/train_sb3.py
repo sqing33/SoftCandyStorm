@@ -876,11 +876,14 @@ class LateRecoveryFilterPolicy:
         enemy_threshold=0.05,
         low_health_threshold=0.25,
         toward_dot_threshold=0.15,
+        target_maps=None,
     ):
         if min_seconds < 0.0:
             raise ValueError("min_seconds must be non-negative")
         if edge_distance < 0.0:
             raise ValueError("edge_distance must be non-negative")
+        if target_maps is not None and not target_maps:
+            raise ValueError("target_maps must include at least one map id")
         self.policy = policy
         self.min_seconds = float(min_seconds)
         self.edge_distance = float(edge_distance)
@@ -889,21 +892,34 @@ class LateRecoveryFilterPolicy:
         self.enemy_threshold = float(enemy_threshold)
         self.low_health_threshold = float(low_health_threshold)
         self.toward_dot_threshold = float(toward_dot_threshold)
+        self.target_maps = (
+            frozenset(str(map_id) for map_id in target_maps)
+            if target_maps is not None
+            else None
+        )
+        self._map_id = None
         self._step_context = {}
         self._last_recovery_decision = None
 
     def reset(self):
+        self._map_id = None
+        self._step_context = {}
+        self._last_recovery_decision = None
         reset = getattr(self.policy, "reset", None)
         if callable(reset):
             reset()
 
     def set_map_id(self, map_id):
+        self._map_id = map_id
         set_map_id = getattr(self.policy, "set_map_id", None)
         if callable(set_map_id):
             set_map_id(map_id)
 
     def set_step_context(self, info):
-        self._step_context = info or {}
+        info = info or {}
+        self._step_context = info
+        if info.get("map_id") is not None:
+            self._map_id = info.get("map_id")
         set_step_context = getattr(self.policy, "set_step_context", None)
         if callable(set_step_context):
             set_step_context(info)
@@ -966,6 +982,8 @@ class LateRecoveryFilterPolicy:
         return best_action, original_reasons, self.action_risk_reasons(best_action, observation)
 
     def action_risk_reasons(self, action_index, observation):
+        if self.target_maps is not None and self._map_id not in self.target_maps:
+            return []
         if self.current_time_seconds() < self.min_seconds:
             return []
         diagnostics = self._step_context.get("diagnostics", {}) or {}
@@ -1136,6 +1154,8 @@ class LateRecoveryFilterPolicy:
                 "It produces late-window supervision samples and cannot be used as RL policy acceptance evidence.",
             ],
         }
+        if self.target_maps is not None:
+            report["target_maps"] = sorted(self.target_maps)
         wrapped_adapter = policy_adapter_report(self.policy)
         if wrapped_adapter is not None:
             report["wrapped_policy_adapter"] = wrapped_adapter
@@ -1434,6 +1454,7 @@ def wrap_late_recovery_filter(
     enemy_threshold=0.05,
     low_health_threshold=0.25,
     toward_dot_threshold=0.15,
+    target_maps=None,
 ):
     if not enabled:
         return policy
@@ -1446,6 +1467,7 @@ def wrap_late_recovery_filter(
         enemy_threshold=enemy_threshold,
         low_health_threshold=low_health_threshold,
         toward_dot_threshold=toward_dot_threshold,
+        target_maps=target_maps,
     )
 
 
@@ -1461,6 +1483,7 @@ def wrap_recovery_filter_for_eval(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
 ):
     if late_recovery_filter:
         return wrap_late_recovery_filter(
@@ -1473,6 +1496,7 @@ def wrap_recovery_filter_for_eval(
             enemy_threshold=late_recovery_enemy_threshold,
             low_health_threshold=late_recovery_low_health_threshold,
             toward_dot_threshold=late_recovery_toward_dot_threshold,
+            target_maps=late_recovery_maps,
         )
     return wrap_edge_recovery_filter(
         policy,
@@ -2472,6 +2496,7 @@ def train(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
     upgrade_choice_model=None,
     anchor_model=None,
     anchor_datasets=None,
@@ -2607,6 +2632,7 @@ def train(
         late_recovery_enemy_threshold=late_recovery_enemy_threshold,
         late_recovery_low_health_threshold=late_recovery_low_health_threshold,
         late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
+        late_recovery_maps=late_recovery_maps,
     )
     evaluation = evaluate_model(
         evaluation_model,
@@ -2886,6 +2912,7 @@ def evaluate_saved_policy(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
 ):
     model_class = stable_baselines_model_classes()[algorithm]
     fallback_model_path = model_path or default_model_path(config, algorithm)
@@ -2946,6 +2973,7 @@ def evaluate_saved_policy(
         late_recovery_enemy_threshold=late_recovery_enemy_threshold,
         late_recovery_low_health_threshold=late_recovery_low_health_threshold,
         late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
+        late_recovery_maps=late_recovery_maps,
     )
     upgrade_policy = (
         load_upgrade_choice_policy(upgrade_choice_model) if upgrade_choice_model else None
@@ -3015,6 +3043,7 @@ def evaluate_policy_model(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
 ):
     if behavior_clone_model is not None:
         upgrade_policy = (
@@ -3071,6 +3100,7 @@ def evaluate_policy_model(
             late_recovery_enemy_threshold=late_recovery_enemy_threshold,
             late_recovery_low_health_threshold=late_recovery_low_health_threshold,
             late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
+            late_recovery_maps=late_recovery_maps,
         )
     return evaluate_saved_policy(
         config,
@@ -3119,6 +3149,7 @@ def evaluate_policy_model(
         late_recovery_enemy_threshold=late_recovery_enemy_threshold,
         late_recovery_low_health_threshold=late_recovery_low_health_threshold,
         late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
+        late_recovery_maps=late_recovery_maps,
     )
 
 
@@ -3167,6 +3198,7 @@ def evaluate_behavior_clone_policy(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
 ):
     model_path = Path(model_path)
     policy = load_behavior_clone_policy_with_optional_opening(
@@ -3228,6 +3260,7 @@ def evaluate_behavior_clone_policy(
         late_recovery_enemy_threshold=late_recovery_enemy_threshold,
         late_recovery_low_health_threshold=late_recovery_low_health_threshold,
         late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
+        late_recovery_maps=late_recovery_maps,
     )
     evaluation = evaluate_model(
         policy,
@@ -3314,6 +3347,7 @@ def evaluate_model(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
 ):
     eval_random_seed = validate_eval_random_seed(eval_random_seed, deterministic)
     action_random_seed_report = seed_stochastic_action_sampling(
@@ -4179,6 +4213,7 @@ def compare_policy_to_rule_bots(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
 ):
     episodes = eval_episodes or config["evaluation"]["episodes"]
     seconds = eval_seconds or config["evaluation"]["seconds"]
@@ -4233,6 +4268,7 @@ def compare_policy_to_rule_bots(
         late_recovery_enemy_threshold=late_recovery_enemy_threshold,
         late_recovery_low_health_threshold=late_recovery_low_health_threshold,
         late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
+        late_recovery_maps=late_recovery_maps,
     )
     rule_matrix = run_rule_bot_matrix(config, bots, seed_start, episodes, seconds, map_id)
     findings = comparison_findings(policy, rule_matrix["stdout"])
@@ -4322,6 +4358,7 @@ def compare_policy_to_rule_bots_across_maps(
     late_recovery_enemy_threshold=0.05,
     late_recovery_low_health_threshold=0.25,
     late_recovery_toward_dot_threshold=0.15,
+    late_recovery_maps=None,
 ):
     comparisons = [
         compare_policy_to_rule_bots(
@@ -4378,6 +4415,7 @@ def compare_policy_to_rule_bots_across_maps(
             late_recovery_enemy_threshold=late_recovery_enemy_threshold,
             late_recovery_low_health_threshold=late_recovery_low_health_threshold,
             late_recovery_toward_dot_threshold=late_recovery_toward_dot_threshold,
+            late_recovery_maps=late_recovery_maps,
         )
         for map_id in map_ids
     ]
@@ -4973,6 +5011,11 @@ def main():
         action="store_true",
         help="Use a deterministic 180-300s safety recovery filter during evaluation/comparison only.",
     )
+    parser.add_argument(
+        "--late-recovery-maps",
+        default=None,
+        help="Optional comma-separated map ids where --late-recovery-filter is active.",
+    )
     parser.add_argument("--late-recovery-min-seconds", type=float, default=180.0)
     parser.add_argument("--late-recovery-hazard-threshold", type=float, default=0.2)
     parser.add_argument("--late-recovery-boss-threshold", type=float, default=0.05)
@@ -5049,6 +5092,7 @@ def main():
             "--edge-recovery-branch-max-seconds",
         )
         edge_recovery_branch_maps = parse_map_list(args.edge_recovery_branch_maps)
+        late_recovery_maps = parse_map_list(args.late_recovery_maps)
         anchor_include_time_buckets = parse_anchor_time_bucket_list(
             args.anchor_include_time_buckets,
         )
@@ -5162,6 +5206,8 @@ def main():
         parser.error("--edge-recovery-filter requires --evaluate-model or --compare-rule-bots")
     if args.late_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--late-recovery-filter requires --evaluate-model or --compare-rule-bots")
+    if args.late_recovery_maps and not args.late_recovery_filter:
+        parser.error("--late-recovery-maps requires --late-recovery-filter")
     if anchor_regularization_requested and (
         args.dry_run or args.evaluate_model or args.compare_rule_bots
     ):
@@ -5298,6 +5344,7 @@ def main():
                 late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
                 late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
                 late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
+                late_recovery_maps=late_recovery_maps,
             ),
         )
         return
@@ -5383,6 +5430,7 @@ def main():
                     late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
                     late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
                     late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
+                    late_recovery_maps=late_recovery_maps,
                 ),
             )
             return
@@ -5463,6 +5511,7 @@ def main():
                 late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
                 late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
                 late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
+                late_recovery_maps=late_recovery_maps,
             ),
         )
         return
@@ -5503,6 +5552,7 @@ def main():
             late_recovery_enemy_threshold=args.late_recovery_enemy_threshold,
             late_recovery_low_health_threshold=args.late_recovery_low_health_threshold,
             late_recovery_toward_dot_threshold=args.late_recovery_toward_dot_threshold,
+            late_recovery_maps=late_recovery_maps,
             upgrade_choice_model=(
                 Path(args.upgrade_choice_model)
                 if args.upgrade_choice_model

@@ -322,6 +322,8 @@ edge recovery supervised init 已验证两种路线：`teacher_probs` 蒸馏能�
 
 把 `caramel-workshop` narrow opening branch 与 late filter 串回统一 high-pressure 链路后，60 秒和 180 秒三图均达到 `1.0` 胜率，且相对上一版 chained diagnostic 的 window regression 都是 `0` blockers；但 300 秒检查失败：`soda-creek` 从 `1.0` 回落到 `0.6667`，平均存活从 `300.015s` 降到 `295.4272s`，同时 `caramel-workshop` 仍为 `0.0` 胜率，只是平均存活从 `163.3014s` 提升到 `231.2871s`。统一样本校验得到 `8` 条 valid edge samples、`2165` 条 valid raw risk samples（含 `8` 条 target risk score warning）、`1402` 条 clean mid samples 和 `727` 条 clean late samples。报告位于 `harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/summary.md`，失败记录为 `fail_20260530_018`；结论是该组合只能作为诊断和样本来源，下一步必须做 per-map 或更强 state-conditioned late conversion，且保留 `soda-creek` 300 秒 no-regression 为硬约束。
 
+为避免下一轮 `caramel-workshop` late filter 继续污染 `soda-creek`，`train_sb3.py` 已支持 `--late-recovery-maps`，可把 evaluation-only `late_recovery_filter` 限制到指定地图。该参数只改变诊断 adapter 的作用域和 provenance，不是训练目标或验收捷径；使用后仍必须跑 high-pressure `60/180/300s` no-regression，特别是 `soda-creek` 300 秒胜率和平均存活硬门槛。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。

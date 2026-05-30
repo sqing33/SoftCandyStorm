@@ -796,6 +796,40 @@ def test_late_recovery_filter_ignores_opening_window():
     assert consume_policy_adapter_decision(policy) is None
 
 
+def test_late_recovery_filter_skips_non_target_map():
+    observation = [0.0] * 145
+    observation[130] = 0.3
+    observation[131] = -0.3
+    observation[132] = 0.4
+    policy = LateRecoveryFilterPolicy(
+        DummyPolicy(4),
+        min_seconds=180.0,
+        target_maps=["caramel-workshop"],
+    )
+    policy.set_map_id("soda-creek")
+    policy.set_step_context(
+        {
+            "map_id": "soda-creek",
+            "time_seconds": 220.0,
+            "diagnostics": {
+                "boundary": {
+                    "right_distance": 0.0,
+                    "bottom_distance": 0.0,
+                },
+                "hazard_pressure_risk": 1.0,
+                "low_health_risk": 0.5,
+            },
+        }
+    )
+
+    action, _state = policy.predict(observation, deterministic=True)
+    report = policy.policy_adapter_report()
+
+    assert action == 4
+    assert consume_policy_adapter_decision(policy) is None
+    assert report["target_maps"] == ["caramel-workshop"]
+
+
 def test_late_recovery_filter_delegates_inner_branch_decision_before_late_window():
     inner = EdgeRecoveryBranchPolicy(
         DummyPolicy(5),
@@ -1670,6 +1704,7 @@ def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch)
         late_recovery_enemy_threshold=0.1,
         late_recovery_low_health_threshold=0.4,
         late_recovery_toward_dot_threshold=0.25,
+        late_recovery_maps=["caramel-workshop"],
     )
 
     assert captured["late_recovery_filter"] is True
@@ -1678,6 +1713,7 @@ def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch)
     assert captured["late_recovery_enemy_threshold"] == 0.1
     assert captured["late_recovery_low_health_threshold"] == 0.4
     assert captured["late_recovery_toward_dot_threshold"] == 0.25
+    assert captured["late_recovery_maps"] == ["caramel-workshop"]
     assert report["policy_adapter"]["mode"] == "late_recovery_filter"
 
 

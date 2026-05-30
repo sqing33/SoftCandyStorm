@@ -1411,6 +1411,11 @@
       "id": "rl_caramel_opening_late_chain_probe",
       "summary": "将 caramel narrow opening branch 与 late_recovery_filter 串回统一 high-pressure 链路：60/180 秒三图均为 1.0 胜率且相对上一版 chained diagnostic 为 0 blockers，但 300 秒 regression 失败，soda-creek 从 1.0 回落到 0.6667，平均存活下降 4.5878s；caramel-workshop 平均存活提升到 231.2871s 但胜率仍 0.0。已记录 fail_20260530_018；该链路只能作为诊断和样本来源，不得推进 policy candidate。",
       "report": "harness/reports/2026-05-30_rl_caramel_opening_late_chain_probe_001/summary.md"
+    },
+    {
+      "id": "rl_late_recovery_map_scope",
+      "summary": "为 evaluation-only late_recovery_filter 增加 --late-recovery-maps 地图作用域，非目标地图不会改写动作，policy_adapter_report 会记录 target_maps；完整 python/train/test_train_sb3.py 为 55 passed / 4 skipped。该能力用于后续 caramel late conversion 诊断，不能替代 high-pressure no-regression 或 RL acceptance。",
+      "report": "python/train/train_sb3.py"
     }
   ],
   "current_findings": [
