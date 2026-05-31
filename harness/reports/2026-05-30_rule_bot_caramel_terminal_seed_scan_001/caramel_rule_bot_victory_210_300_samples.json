@@ -1,0 +1,56 @@
+{
+  "report_version": 1,
+  "decision": "bot_trajectory_samples_filtered",
+  "output_file": "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/caramel_rule_bot_victory_210_300_samples.jsonl",
+  "source_files": [
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/boss_hunter_63380_63420_210_300.jsonl",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/greedy_63380_63420_210_300.jsonl",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/kite_63380_63420_210_300.jsonl",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/random_63380_63420_210_300.jsonl",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/route_63380_63420_210_300.jsonl",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/zone_control_63380_63420_210_300.jsonl"
+  ],
+  "source_file_count": 6,
+  "source_sample_count": 21610,
+  "source_episode_count": 246,
+  "source_summary_count": 6,
+  "kept_sample_count": 8630,
+  "kept_episode_count": 16,
+  "orphan_sample_count": 0,
+  "dropped_episode_count": 202,
+  "dropped_samples": {},
+  "map_counts": {
+    "caramel-workshop": 16
+  },
+  "bot_counts": {
+    "boss-hunter": 1,
+    "greedy": 2,
+    "kite": 9,
+    "random": 2,
+    "route": 1,
+    "zone-control": 1
+  },
+  "terminal_counts": {
+    "victory": 16
+  },
+  "filters": {
+    "terminal": "victory",
+    "map_ids": [
+      "caramel-workshop"
+    ],
+    "bots": null,
+    "min_seconds": 210.0,
+    "max_seconds": 300.0,
+    "min_health_ratio": null,
+    "max_health_ratio": null,
+    "actions": null,
+    "max_samples_per_episode": null,
+    "max_total_samples": null
+  },
+  "errors": [],
+  "limitations": [
+    "This filter only preserves existing bot trajectory movement samples.",
+    "Victory-window samples are training input, not policy acceptance evidence.",
+    "Filtered samples still require behavior-clone or SB3 training plus fixed-window high-pressure gates."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "fail_20260530_023",
+  "category": "rl_policy",
+  "content_id": "rule-bot-caramel-terminal-target-gap",
+  "seed": "63400-63402",
+  "bot": "all-rule-bots",
+  "time_seconds": 300.0,
+  "symptom": "All 9 rule bots failed to convert the exact caramel-workshop target seeds 63400-63402 into 300s victories, even though the wider neighbor scan over seeds 63380-63420 found 16 same-map victory episodes across random, greedy, kite, boss-hunter, zone-control, and route.",
+  "root_cause": "The current caramel-workshop late conversion failure surface is narrower and harder than the existing rule bot policies can solve on the exact target seeds. However, nearby successful seeds provide materially better same-map terminal coverage than the older seed 62301-only victory target dataset.",
+  "fix": "Use the filtered rule-bot neighbor victory samples as diagnostic terminal-branch training input, not as a policy gate. Keep the current per-map edge branch plus all-map late filter as the no-regression baseline, and combine the new victory samples with low-weight clean risk rows before any new caramel terminal branch probe.",
+  "validation": "Ran all-bot 300s caramel-workshop matrix for seeds 63400-63402 and 63380-63420, exported six successful-neighbor bot trajectory packs in the 210-300s window, filtered 8630 victory samples from 16 episodes, and compared the three current failing traces against the new dataset with nearest-neighbor diagnostics.",
+  "diagnostics": [
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/summary.md",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/matrix_63400_63402/summary.md",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/matrix_63380_63420/summary.md",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/caramel_rule_bot_victory_210_300_samples.md",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/behavior_clone_dry_run_rule_victory.json",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/nearest_rule_victory_seed63400.md",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/nearest_rule_victory_seed63401.md",
+    "harness/reports/2026-05-30_rule_bot_caramel_terminal_seed_scan_001/nearest_rule_victory_seed63402.md"
+  ]
+}
