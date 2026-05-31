@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260531_011",
+  "category": "rl_policy",
+  "content_id": "failure-lane-opening-broad-branch-drift-trace",
+  "seed": "63400-63402",
+  "bot": "ppo-opening-mid-boundary-retention-with-edge-recovery-branch",
+  "time_seconds": 300.0,
+  "symptom": "A single-map 300s diagnostic reproduced the broad 0-60s caramel-workshop edge-recovery branch drift. The branch used only 3 decisions across seeds 63400-63402, but seed 63401 shifted from a balanced base trace to sampled action 5 dominance, while seed 63402 was rescued from opening death but still died late and contributed a much longer failed trajectory.",
+  "root_cause": "The broad opening branch is too permissive for closed-loop trajectory preservation. It fires at 6.6333s and 20.0s on seed 63401 and at 19.5334s on seed 63402. Those sparse opening changes happen under high boundary risk and low-to-moderate pressure, then steer the later policy into different route states. Seed 63401 is the clearest drift source: sampled action 5 ratio rises by 0.5199 relative to base after only two branch decisions.",
+  "fix": "Keep the 0-60s branch rejected and do not run a 10 seed follow-up from it. Design the next opening_repair candidate as a narrower state-conditioned dispatch that excludes seed 63401-style early top-edge intervention, or add an online action-distribution/path-retention guard before any follow-up. Any replacement must rerun target seed preflight, 60s/caramel hard preflight, high-pressure 60/180/300s parent no-regression, and then only proceed to 10 seed follow-up if those gates pass.",
+  "validation": "Reran base and branch deterministic evaluations for caramel-workshop seeds 63400-63402 at 300s with sampled traces, trace stride 5, and branch edge sample export. Then ran compare_policy_episode_traces.py and validate_edge_recovery_samples.py. The trace comparison shows seed 63400 unchanged, seed 63401 first divergence at 6.6667s with sampled action 5 ratio delta +0.5199, and seed 63402 first divergence at 19.6667s with survival delta +171.95s but no victory. Edge sample validation passed for 3 samples across seeds 63401 and 63402.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/summary.md",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/base_caramel_300s_eval.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/branch_caramel_300s_eval.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/base_vs_branch_trace_compare.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/base_vs_branch_trace_compare.md",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/branch_edge_samples_validation.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/branch_edge_samples_validation.md"
+  ]
+}
