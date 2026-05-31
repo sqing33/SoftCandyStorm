@@ -30,6 +30,8 @@ The SB3 terminal branch was distilled from:
 
 At `300s`, `caramel-workshop` average survival was `230.8648s`, compared with `231.2871s` for the current per-map chain baseline. The terminal branch was dispatched on `caramel-workshop`: `832 / 20776` total decisions and `832 / 4576` late-window decisions.
 
+`policy_adapter_scope_terminal_300s.json` now validates the nested terminal branch scope as `policy_adapter_scope_passed`: `832 / 73851` effective decisions used the terminal branch, all within `caramel-workshop` and `late_180_to_300`. `terminal_conversion_probe_gate.json` requires that scope report, but still fails on conversion and no-regression blockers.
+
 ## No-Regression
 
 `window_regression_vs_per_map_chain.json` reports `policy_window_regression_failed` with `1` blocker:

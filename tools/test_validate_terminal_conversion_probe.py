@@ -66,6 +66,20 @@ def regression(decision="policy_window_regression_passed"):
     }
 
 
+def policy_adapter_scope(decision="policy_adapter_scope_passed"):
+    return {
+        "decision": decision,
+        "comparison_count": 1,
+        "count_key": "terminal_decisions",
+        "ratio_key": "terminal_ratio",
+        "total_decisions": 100,
+        "total_branch_decisions": 12,
+        "total_branch_ratio": 0.12,
+        "blockers": [] if decision == "policy_adapter_scope_passed" else ["terminal branch escaped scope"],
+        "errors": [] if decision != "policy_adapter_scope_invalid" else ["invalid scope"],
+    }
+
+
 def test_terminal_conversion_probe_passes_limited_followup(tmp_path):
     baseline = write_json(tmp_path / "baseline.json", comparison(0.0, 220.0, 0, 0.0))
     candidate = write_json(tmp_path / "candidate.json", comparison(0.3333, 245.0, 12, 0.12))
@@ -90,6 +104,65 @@ def test_terminal_conversion_probe_passes_limited_followup(tmp_path):
     assert report["decision"] == "terminal_conversion_probe_passed_for_limited_followup"
     assert report["terminal_usage"]["bucket_terminal_decisions"] == 12
     assert report["target_metrics"]["win_rate_delta"] == 0.3333
+
+
+def test_terminal_conversion_probe_records_required_policy_adapter_scope(tmp_path):
+    baseline = write_json(tmp_path / "baseline.json", comparison(0.0, 220.0, 0, 0.0))
+    candidate = write_json(tmp_path / "candidate.json", comparison(0.3333, 245.0, 12, 0.12))
+    window_regression = write_json(tmp_path / "regression.json", regression())
+    scope = write_json(tmp_path / "scope.json", policy_adapter_scope())
+
+    report = build_report(
+        baseline_windows={"300s": baseline},
+        candidate_windows={"300s": candidate},
+        target_map="caramel-workshop",
+        target_window="300s",
+        terminal_time_bucket="late_180_to_300",
+        min_target_win_rate=0.3333,
+        min_win_rate_delta=0.3333,
+        min_survival_delta=5.0,
+        min_terminal_decisions=1,
+        min_terminal_ratio=0.01,
+        min_bucket_terminal_decisions=1,
+        min_bucket_terminal_ratio=0.01,
+        window_regression=window_regression,
+        required_policy_adapter_scopes=[("terminal", scope)],
+    )
+
+    assert report["decision"] == "terminal_conversion_probe_passed_for_limited_followup"
+    assert report["policy_adapter_scope_requirement"] == "required"
+    assert report["required_policy_adapter_scope_labels"] == ["terminal"]
+    assert report["policy_adapter_scopes"][0]["decision"] == "policy_adapter_scope_passed"
+
+
+def test_terminal_conversion_probe_fails_on_policy_adapter_scope_blocker(tmp_path):
+    baseline = write_json(tmp_path / "baseline.json", comparison(0.0, 220.0, 0, 0.0))
+    candidate = write_json(tmp_path / "candidate.json", comparison(0.3333, 245.0, 12, 0.12))
+    window_regression = write_json(tmp_path / "regression.json", regression())
+    scope = write_json(
+        tmp_path / "scope.json",
+        policy_adapter_scope("policy_adapter_scope_failed"),
+    )
+
+    report = build_report(
+        baseline_windows={"300s": baseline},
+        candidate_windows={"300s": candidate},
+        target_map="caramel-workshop",
+        target_window="300s",
+        terminal_time_bucket="late_180_to_300",
+        min_target_win_rate=0.3333,
+        min_win_rate_delta=0.3333,
+        min_survival_delta=5.0,
+        min_terminal_decisions=1,
+        min_terminal_ratio=0.01,
+        min_bucket_terminal_decisions=1,
+        min_bucket_terminal_ratio=0.01,
+        window_regression=window_regression,
+        required_policy_adapter_scopes=[("terminal", scope)],
+    )
+
+    assert report["decision"] == "terminal_conversion_probe_failed"
+    assert any("terminal branch escaped scope" in blocker for blocker in report["blockers"])
 
 
 def test_terminal_conversion_probe_fails_when_used_without_conversion(tmp_path):

@@ -3191,7 +3191,7 @@
     },
     {
       "id": "rl_terminal_conversion_probe_gate",
-      "summary": "新增 terminal conversion probe gate，用于验证 terminal branch 是否在目标地图 / late window 真实调用、目标胜率和存活是否相对 baseline 改善，并要求配套 window regression 通过。对 w0.5 selective ranked victory terminal branch 的真实复核判定 terminal_conversion_probe_failed：caramel-workshop 300 秒胜率仍为 0.0、胜率增量 0.0、平均存活 -0.4223s，terminal branch 虽触发 832/20776 次且 late bucket 触发 832/4576 次，但未产生胜利转换且 window regression 失败。后续 terminal branch 不得只凭离线 action agreement 或 branch usage 推进。",
+      "summary": "新增 terminal conversion probe gate，用于验证 terminal branch 是否在目标地图 / late window 真实调用、目标胜率和存活是否相对 baseline 改善，并要求配套 window regression 通过；现在也支持 required policy adapter scope 作为必需证据。对 w0.5 selective ranked victory terminal branch 的真实复核判定 terminal_conversion_probe_failed：policy_adapter_scope_terminal_300s.json 确认嵌套 terminal branch 只在 caramel-workshop / late_180_to_300 使用，832/73851 次决策、ratio 0.011266，无 errors/blockers；但 caramel-workshop 300 秒胜率仍为 0.0、胜率增量 0.0、平均存活 -0.4223s，未产生胜利转换且 window regression 失败。后续 terminal branch 不得只凭离线 action agreement 或 branch usage 推进。",
       "report": "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/terminal_conversion_probe_gate.md"
     },
     {

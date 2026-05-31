@@ -10,8 +10,16 @@ from __future__ import annotations
 
 import argparse
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+
+@dataclass(frozen=True)
+class PolicyAdapterScopeInput:
+    label: str
+    path: Path
+    required: bool
 
 
 def load_json_object(path: Path) -> dict[str, Any]:
@@ -41,6 +49,26 @@ def parse_window_arg(value: str) -> tuple[str, Path]:
     if not path_text:
         raise argparse.ArgumentTypeError("window path must be non-empty")
     return label, Path(path_text)
+
+
+def parse_optional_policy_adapter_scope(value: str) -> tuple[str | None, Path]:
+    if "=" not in value:
+        return None, Path(value)
+    label, path_text = value.split("=", 1)
+    label = label.strip()
+    path_text = path_text.strip()
+    if not label:
+        raise argparse.ArgumentTypeError("policy adapter scope label must be non-empty")
+    if not path_text:
+        raise argparse.ArgumentTypeError("policy adapter scope path must be non-empty")
+    return label, Path(path_text)
+
+
+def parse_required_policy_adapter_scope(value: str) -> tuple[str, Path]:
+    label, path = parse_optional_policy_adapter_scope(value)
+    if label is None:
+        raise argparse.ArgumentTypeError("required policy adapter scope must use LABEL=PATH")
+    return label, path
 
 
 def window_map(entries: list[tuple[str, Path]]) -> dict[str, Path]:
@@ -249,6 +277,97 @@ def validate_window_regression(path: Path | None, blockers: list[str], errors: l
     }
 
 
+def report_label(path: Path) -> str:
+    return path.stem or str(path)
+
+
+def normalize_policy_adapter_scope_inputs(
+    policy_adapter_scopes: list[tuple[str | None, Path]] | None,
+    required_policy_adapter_scopes: list[tuple[str, Path]] | None,
+    errors: list[str],
+) -> list[PolicyAdapterScopeInput]:
+    inputs: list[PolicyAdapterScopeInput] = []
+    labels: set[str] = set()
+
+    def add(label: str | None, path: Path, required: bool) -> None:
+        resolved_label = label or report_label(path)
+        if not resolved_label:
+            errors.append(f"policy_adapter_scope: label for {path} must be non-empty")
+            return
+        if resolved_label in labels:
+            errors.append(f"policy_adapter_scope: duplicate label `{resolved_label}`")
+            return
+        labels.add(resolved_label)
+        inputs.append(PolicyAdapterScopeInput(resolved_label, path, required))
+
+    for label, path in policy_adapter_scopes or []:
+        add(label, path, False)
+    for label, path in required_policy_adapter_scopes or []:
+        add(label, path, True)
+    return inputs
+
+
+def string_list(value: Any) -> list[str]:
+    return [str(item) for item in value] if isinstance(value, list) else []
+
+
+def summarize_policy_adapter_scope(
+    scope_inputs: list[PolicyAdapterScopeInput],
+    errors: list[str],
+    blockers: list[str],
+) -> list[dict[str, Any]]:
+    summaries: list[dict[str, Any]] = []
+    for scope_input in scope_inputs:
+        try:
+            report = load_json_object(scope_input.path)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            errors.append(f"{scope_input.label}: unable to load {scope_input.path}: {exc}")
+            summaries.append(
+                {
+                    "label": scope_input.label,
+                    "path": str(scope_input.path),
+                    "required": scope_input.required,
+                    "loaded": False,
+                }
+            )
+            continue
+
+        decision = report.get("decision")
+        report_blockers = string_list(report.get("blockers"))
+        report_errors = string_list(report.get("errors"))
+        if decision == "policy_adapter_scope_invalid":
+            errors.extend(
+                f"{scope_input.label}: {item}"
+                for item in report_errors or ["invalid policy adapter scope report"]
+            )
+        elif decision == "policy_adapter_scope_failed":
+            blockers.extend(
+                f"{scope_input.label}: {item}"
+                for item in report_blockers or ["policy adapter scope failed"]
+            )
+        elif decision != "policy_adapter_scope_passed":
+            errors.append(f"{scope_input.label}: unknown policy adapter scope decision `{decision}`")
+
+        summaries.append(
+            {
+                "label": scope_input.label,
+                "path": str(scope_input.path),
+                "required": scope_input.required,
+                "loaded": True,
+                "decision": decision,
+                "comparison_count": report.get("comparison_count"),
+                "count_key": report.get("count_key"),
+                "ratio_key": report.get("ratio_key"),
+                "total_decisions": report.get("total_decisions"),
+                "total_branch_decisions": report.get("total_branch_decisions"),
+                "total_branch_ratio": report.get("total_branch_ratio"),
+                "blocker_count": len(report_blockers),
+                "error_count": len(report_errors),
+            }
+        )
+    return summaries
+
+
 def build_report(
     baseline_windows: dict[str, Path],
     candidate_windows: dict[str, Path],
@@ -263,6 +382,8 @@ def build_report(
     min_bucket_terminal_decisions: int | None,
     min_bucket_terminal_ratio: float | None,
     window_regression: Path | None,
+    policy_adapter_scopes: list[tuple[str | None, Path]] | None = None,
+    required_policy_adapter_scopes: list[tuple[str, Path]] | None = None,
 ) -> dict[str, Any]:
     errors: list[str] = []
     blockers: list[str] = []
@@ -363,6 +484,16 @@ def build_report(
         )
 
     window_regression_report = validate_window_regression(window_regression, blockers, errors)
+    policy_adapter_scope_inputs = normalize_policy_adapter_scope_inputs(
+        policy_adapter_scopes,
+        required_policy_adapter_scopes,
+        errors,
+    )
+    policy_adapter_scope_summaries = summarize_policy_adapter_scope(
+        policy_adapter_scope_inputs,
+        errors,
+        blockers,
+    )
 
     decision = (
         "terminal_conversion_probe_invalid"
@@ -392,6 +523,17 @@ def build_report(
         "baseline_windows": {key: str(value) for key, value in sorted(baseline_windows.items())},
         "candidate_windows": {key: str(value) for key, value in sorted(candidate_windows.items())},
         "window_regression": window_regression_report,
+        "policy_adapter_scope_requirement": (
+            "required"
+            if any(item.required for item in policy_adapter_scope_inputs)
+            else "provided"
+            if policy_adapter_scope_inputs
+            else "not_provided"
+        ),
+        "required_policy_adapter_scope_labels": [
+            item.label for item in policy_adapter_scope_inputs if item.required
+        ],
+        "policy_adapter_scopes": policy_adapter_scope_summaries,
         "target_metrics": {
             "baseline_win_rate": baseline_win_rate,
             "candidate_win_rate": candidate_win_rate,
@@ -446,9 +588,29 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         f"- Bucket: `{usage.get('bucket')}`",
         f"- Bucket terminal decisions: `{usage.get('bucket_terminal_decisions')}` / `{usage.get('bucket_total_decisions')}` (`{usage.get('bucket_terminal_ratio')}`)",
         "",
+        "## Policy Adapter Scope",
+        "",
+        f"- Requirement: `{report.get('policy_adapter_scope_requirement')}`",
+    ]
+    if report["policy_adapter_scopes"]:
+        for item in report["policy_adapter_scopes"]:
+            required = "required" if item.get("required") else "provided"
+            lines.append(
+                "- Scope ({required}, `{label}`): `{decision}`, branch decisions `{branch_decisions}`, ratio `{branch_ratio}`".format(
+                    required=required,
+                    label=item.get("label"),
+                    decision=item.get("decision"),
+                    branch_decisions=item.get("total_branch_decisions"),
+                    branch_ratio=item.get("total_branch_ratio"),
+                )
+            )
+    else:
+        lines.append("- None")
+    lines.extend([
+        "",
         "## Blockers",
         "",
-    ]
+    ])
     if report["blockers"]:
         lines.extend(f"- {item}" for item in report["blockers"])
     else:
@@ -484,6 +646,20 @@ def main() -> int:
     parser.add_argument("--min-bucket-terminal-decisions", type=int, default=None)
     parser.add_argument("--min-bucket-terminal-ratio", type=float, default=None)
     parser.add_argument("--window-regression", type=Path, default=None)
+    parser.add_argument(
+        "--policy-adapter-scope",
+        type=parse_optional_policy_adapter_scope,
+        action="append",
+        default=[],
+        help="Policy adapter scope report as PATH or LABEL=PATH.",
+    )
+    parser.add_argument(
+        "--required-policy-adapter-scope",
+        type=parse_required_policy_adapter_scope,
+        action="append",
+        default=[],
+        help="Required policy adapter scope report as LABEL=PATH.",
+    )
     parser.add_argument("--report", type=Path, default=None)
     parser.add_argument("--markdown", type=Path, default=None)
     parser.add_argument("--allow-fail", action="store_true")
@@ -520,6 +696,8 @@ def main() -> int:
         min_bucket_terminal_decisions=args.min_bucket_terminal_decisions,
         min_bucket_terminal_ratio=args.min_bucket_terminal_ratio,
         window_regression=args.window_regression,
+        policy_adapter_scopes=args.policy_adapter_scope,
+        required_policy_adapter_scopes=args.required_policy_adapter_scope,
     )
     if args.report is not None:
         args.report.parent.mkdir(parents=True, exist_ok=True)

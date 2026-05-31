@@ -20,6 +20,11 @@
 - Bucket: `late_180_to_300`
 - Bucket terminal decisions: `832` / `4576` (`0.1818`)
 
+## Policy Adapter Scope
+
+- Requirement: `required`
+- Scope (required, `terminal`): `policy_adapter_scope_passed`, branch decisions `832`, ratio `0.011266`
+
 ## Blockers
 
 - 300s/caramel-workshop: win_rate 0.0000 below required 0.3333

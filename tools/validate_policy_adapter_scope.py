@@ -24,6 +24,13 @@ FORBIDDEN_DECISION_TOKENS = {
     "rl_test_bot_candidate",
 }
 
+ADAPTER_CHILD_KEYS = (
+    "wrapped_policy_adapter",
+    "base_policy_adapter",
+    "branch_policy_adapter",
+    "terminal_policy_adapter",
+)
+
 
 def load_json_object(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
@@ -81,6 +88,37 @@ def adapter_from_policy_map(item: dict[str, Any]) -> dict[str, Any] | None:
         if isinstance(adapter, dict):
             return adapter
     return None
+
+
+def iter_adapters(adapter: dict[str, Any]) -> list[dict[str, Any]]:
+    found = [adapter]
+    for key in ADAPTER_CHILD_KEYS:
+        child = adapter.get(key)
+        if isinstance(child, dict):
+            found.extend(iter_adapters(child))
+    return found
+
+
+def adapter_decision_count(adapter: dict[str, Any], count_key: str) -> int:
+    usage = adapter.get("usage")
+    if not isinstance(usage, dict):
+        return 0
+    return usage_count(usage, count_key)
+
+
+def select_adapter(
+    adapter: dict[str, Any],
+    expected_mode: str,
+    count_key: str,
+) -> dict[str, Any] | None:
+    matches = [
+        candidate
+        for candidate in iter_adapters(adapter)
+        if candidate.get("mode") == expected_mode
+    ]
+    if not matches:
+        return None
+    return max(matches, key=lambda candidate: adapter_decision_count(candidate, count_key))
 
 
 def policy_map_entries(report: dict[str, Any]) -> list[dict[str, Any]]:
@@ -176,14 +214,19 @@ def summarize_comparison(
     blockers: list[str],
 ) -> dict[str, Any]:
     collect_gate_wording_errors(label, report, errors)
-    adapter = report.get("policy_adapter")
-    if not isinstance(adapter, dict):
+    root_adapter = report.get("policy_adapter")
+    if not isinstance(root_adapter, dict):
         errors.append(f"{label}: top-level policy_adapter is missing")
+        root_adapter = {}
+
+    adapter = select_adapter(root_adapter, expected_mode, count_key)
+    if adapter is None:
+        errors.append(
+            f"{label}: adapter mode `{root_adapter.get('mode')}` does not include expected `{expected_mode}`"
+        )
         adapter = {}
 
     mode = adapter.get("mode")
-    if mode != expected_mode:
-        errors.append(f"{label}: adapter mode `{mode}` does not match expected `{expected_mode}`")
     target_maps = string_list(adapter.get("target_maps"))
     unexpected_targets = sorted(set(target_maps) - allowed_branch_maps)
     if unexpected_targets:
@@ -208,15 +251,18 @@ def summarize_comparison(
         map_id = item.get("map_id")
         if not isinstance(map_id, str) or not map_id:
             continue
-        map_adapter = adapter_from_policy_map(item)
-        if map_adapter is None:
+        map_root_adapter = adapter_from_policy_map(item)
+        if map_root_adapter is None:
             errors.append(f"{label}/{map_id}: policy_adapter is missing")
             continue
-        map_mode = map_adapter.get("mode")
-        if map_mode != expected_mode:
+        map_adapter = select_adapter(map_root_adapter, expected_mode, count_key)
+        if map_adapter is None:
             errors.append(
-                f"{label}/{map_id}: adapter mode `{map_mode}` does not match expected `{expected_mode}`"
+                f"{label}/{map_id}: adapter mode `{map_root_adapter.get('mode')}` "
+                f"does not include expected `{expected_mode}`"
             )
+            map_adapter = {}
+        map_mode = map_adapter.get("mode")
         map_usage = extract_usage(map_adapter, count_key, ratio_key)
         map_decisions = map_usage["branch_decisions"]
         if map_id not in allowed_branch_maps and map_decisions > 0:
@@ -234,6 +280,7 @@ def summarize_comparison(
             {
                 "map_id": map_id,
                 "mode": map_mode,
+                "total_decisions": map_usage["total_decisions"],
                 "branch_decisions": map_decisions,
                 "branch_ratio": map_usage["branch_ratio"],
                 "by_time_bucket": map_usage["by_time_bucket"],
@@ -304,8 +351,33 @@ def build_report(
             blockers=blockers,
         )
         usage = summary["usage"]
-        total_branch_decisions += int(usage.get("branch_decisions") or 0)
-        total_decisions += int(usage.get("total_decisions") or 0)
+        usage_branch_decisions = int(usage.get("branch_decisions") or 0)
+        usage_total_decisions = int(usage.get("total_decisions") or 0)
+        map_branch_decisions = sum(
+            int(item.get("branch_decisions") or 0)
+            for item in summary.get("maps", [])
+            if isinstance(item, dict)
+        )
+        map_total_decisions = sum(
+            int(item.get("total_decisions") or 0)
+            for item in summary.get("maps", [])
+            if isinstance(item, dict)
+        )
+        if map_branch_decisions > usage_branch_decisions:
+            effective_branch_decisions = map_branch_decisions
+            effective_total_decisions = map_total_decisions
+        else:
+            effective_branch_decisions = usage_branch_decisions
+            effective_total_decisions = usage_total_decisions
+        summary["effective_total_decisions"] = effective_total_decisions
+        summary["effective_branch_decisions"] = effective_branch_decisions
+        summary["effective_branch_ratio"] = (
+            round(effective_branch_decisions / effective_total_decisions, 6)
+            if effective_total_decisions
+            else 0.0
+        )
+        total_branch_decisions += effective_branch_decisions
+        total_decisions += effective_total_decisions
         report_summaries.append(summary)
 
     total_branch_ratio = round(total_branch_decisions / total_decisions, 6) if total_decisions else 0.0
@@ -364,13 +436,12 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         "|---|---|---:|---:|",
     ]
     for item in report["comparisons"]:
-        usage = item.get("usage") if isinstance(item, dict) else None
         lines.append(
             "| `{label}` | `{mode}` | {decisions} | {ratio} |".format(
                 label=item.get("label"),
                 mode=item.get("mode"),
-                decisions=(usage or {}).get("branch_decisions", 0),
-                ratio=(usage or {}).get("branch_ratio", 0.0),
+                decisions=item.get("effective_branch_decisions", 0),
+                ratio=item.get("effective_branch_ratio", 0.0),
             )
         )
     lines.extend(["", "## Blockers", ""])
