@@ -41,6 +41,22 @@ Compared with the prior `8630`-sample neighbor dataset:
 
 The wider dataset reduces nearest-neighbor distance for all three failing traces, which means it contains closer observation states. However, the nearest target action agreement regresses on `seed63400`, is effectively flat on `seed63401`, and only improves on `seed63402`.
 
+## Episode Ranking
+
+`python/train/rank_behavior_clone_dataset_episodes.py` ranks victory episodes by how often their samples become nearest neighbors of the three failing traces and whether those nearest samples match the online action.
+
+The combined top episodes are:
+
+| Rank | Episode | Top1 hits | Match ratio | Avg distance |
+|---:|---|---:|---:|---:|
+| `1` | `greedy@63463` | `513` | `0.6335` | `2.430600` |
+| `2` | `greedy@63417` | `238` | `0.8403` | `2.306473` |
+| `3` | `greedy@63489` | `169` | `0.8521` | `2.423738` |
+| `4` | `greedy@63488` | `148` | `0.8649` | `2.485289` |
+| `5` | `route@63333` | `139` | `0.9209` | `2.209728` |
+
+The ranking suggests that a selective weighting experiment should start from high-match episodes such as `greedy@63417`, `greedy@63489`, `greedy@63488`, `route@63333`, `route@63412`, or `route@63348`, rather than blindly using all `45853` wide samples. `greedy@63463` has the most hits, but its match ratio is only `0.6335`, so it should be treated as a coverage-heavy but risky source.
+
 ## Conclusion
 
 This is mixed diagnostic evidence, not a training gate. The wider scan is useful for understanding the failure surface, but it does not justify another plain supervised terminal-path imitation branch by itself.

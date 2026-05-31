@@ -3143,12 +3143,17 @@
       "id": "rl_caramel_rule_bot_wide_terminal_seed_scan",
       "summary": "将 caramel-workshop 规则 Bot 搜索窗口扩大到 seeds 63300-63500，并复跑 random、greedy、kite、boss-hunter、zone-control、route 六个曾产生胜利的规则 Bot：目标 seeds 63400-63402 仍无直接胜利；wide scan 共找到 85 个 same-map 胜利 episode，过滤出 45853 条 210-300s victory movement samples。相比 8630 条旧邻近样本，三条失败 trace 的 nearest distance 全部下降，但 action match ratio 为 0.4176、0.5534、0.4915，对 seed63400 回退、seed63401 基本持平、只改善 seed63402。已记录 fail_20260531_002；该样本池是 mixed diagnostic evidence，不应直接触发新的 plain supervised terminal branch。",
       "report": "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/summary.md"
+    },
+    {
+      "id": "rl_behavior_clone_dataset_episode_ranker",
+      "summary": "新增 behavior-clone dataset episode ranking 工具，按失败 trace 最近邻覆盖、action match ratio 和平均距离对离线 trajectory episodes 排名；wide caramel victory 样本的 combined top episodes 为 greedy@63463、greedy@63417、greedy@63489、greedy@63488、route@63333。该排名显示下一轮应优先做选择性加权，而不是直接使用全部 45853 条 wide samples；工具单测与 compare trace 单测通过。",
+      "report": "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/episode_ranking_wide_rule_victory.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "新的 rule-bot victory terminal branch 已训练并被 repair gate 拒绝；随后 63300-63500 wide rule-bot scan 虽把 same-map victory samples 扩到 45853 条并降低三条失败 trace 的 nearest distance，但 action match ratio 对 seed63400 回退、seed63401 基本持平、只改善 seed63402，且 63400-63402 仍无直接规则 Bot 胜利。下一步不要继续简单 supervised terminal-path imitation 或盲目扩大 victory 样本；应设计 constrained online / sequence objective，或先做选择性轨迹加权并证明不伤害 63400/63401，同时继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression。"
+      "summary": "新的 rule-bot victory terminal branch 已训练并被 repair gate 拒绝；随后 63300-63500 wide rule-bot scan 虽把 same-map victory samples 扩到 45853 条并降低三条失败 trace 的 nearest distance，但 action match ratio 对 seed63400 回退、seed63401 基本持平、只改善 seed63402，且 63400-63402 仍无直接规则 Bot 胜利。episode ranking 已把候选收窄到 greedy@63417、greedy@63489、greedy@63488、route@63333、route@63412、route@63348 等高 match episode。下一步不要继续简单 supervised terminal-path imitation 或盲目扩大 victory 样本；应设计 selective weighting / constrained online / sequence objective，并证明不伤害 63400/63401，同时继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression。"
     },
     {
       "id": "runtime_manual_playtest_capture",
