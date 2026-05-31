@@ -1481,6 +1481,11 @@
       "id": "rl_repair_probe_gate_policy_adapter_scope",
       "summary": "扩展 validate_rl_repair_probe_gate.py，新增 --policy-adapter-scope 与 --required-policy-adapter-scope，可把 evaluation-only adapter scope 复核纳入包级 hard preflight。edge_recovery_branch high-pressure smoke 同时要求 window_regression_60_180_300s 与 policy_adapter_scope，输出 rl_repair_probe_gate_passed_for_limited_followup；该结果仍只是 limited follow-up 条件，不是 policy candidate 或 RL acceptance。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/repair_probe_gate_adapter_scope_smoke.md"
+    },
+    {
+      "id": "rl_repair_split_plan_gate_routing",
+      "summary": "新增 create_rl_repair_split_plan.py 与单测，将 repair probe hard preflight 的 blockers 按 evidence lane 拆分。真实 mid-path-retention seed 63407 报告显示 target63407 通过，opening63402、retention63405、short60 和 parent 四条 lane 失败，后续不能继续单一 shared PPO continuation。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.md"
     }
   ],
   "current_findings": [
@@ -3238,6 +3243,11 @@
       "id": "rl_mid_path_retention_seed63407_closed_loop_probe",
       "summary": "从 e30 mid-anchor parent 出发，用 mid-path-retention 在 caramel-workshop:63407 上做 256 timestep guarded PPO continuation；anchor guard 通过（final validation mean KL 0.10678、argmax agreement 0.8255）。裸 SB3 10 seed caramel follow-up 相对 parent 从 0.0 胜率提升到 0.1、平均存活 +10.5663s，并把 seed 63407 转为 300.0150s victory；target-seed preflight 同时确认 63402 仍在 40.0997s opening defeat、63405 只到 138.6673s defeat。同 seed high-pressure parent no-regression 失败，blockers 为 60s/caramel-workshop 胜率 -0.3334、180s/cracked-star-jar action L1 0.4646、300s/caramel-workshop action L1 0.5872。新增 60s/caramel-workshop window target preflight 也失败，repair probe hard preflight 汇总后为 rl_repair_probe_gate_failed，共 9 个 blockers。已记录 fail_20260531_007，不能推进为 policy candidate。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/summary.md"
+    },
+    {
+      "id": "rl_mid_path_retention_seed63407_repair_split_plan",
+      "summary": "repair_split_plan 已把 seed 63407 closed-loop hard preflight 的 9 个 blockers 拆成 5 条 lane：target63407 作为已通过 required evidence 保留；opening63402、retention63405、short60 与 parent 分别要求 target seed repair、短窗 hard preflight 和 parent-preservation 修复。该计划只路由既有证据，不重新仿真，也不放行 checkpoint。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.md"
     }
   ],
   "next_recommended": [
@@ -3338,8 +3348,9 @@
       "summary": "edge_recovery_branch 已完成首个 63400-63402 三 seed 60 秒预检并修复 target seed，同时未复现 global action 7 collapse；下一步必须扩大到 parent no-regression 和 high-pressure 60/180/300 秒窗口，确认分支 usage、动作分布和平均存活不会引入新的跨图回归。"
     },
     {
-      "id": "rl_health_retention_guard_seed63407_next_objective",
-      "summary": "mid-path-retention reward profile 已把 seed 63407 的 60-180s route/path retention 信号转成训练入口；下一轮应先用该 profile 做小步 closed-loop probe，再跑 10 seed caramel target follow-up、60/180/300s high-pressure no-regression 和 adapter provenance。不要继续扩大 180s 后 low-health-only guard。"
+      "id": "rl_mid_path_retention_seed63407_split_repair_next",
+      "summary": "下一轮 seed 63407 相关 RL repair 必须按 repair_split_plan 分 lane 推进：先独立处理 63402 opening repair、63405 retention repair、60s/caramel-workshop short-window preflight 和 parent-preservation，再用 target63407 passed evidence 复核，不要把这些失败面塞进同一个 shared PPO continuation。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.md"
     }
   ]
 }

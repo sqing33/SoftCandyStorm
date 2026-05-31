@@ -69,6 +69,10 @@
 - `180s/cracked-star-jar`: action distribution L1 delta `0.4646` > `0.45`
 - `300s/caramel-workshop`: action distribution L1 delta `0.5872` > `0.45`
 
+## Repair Split Plan
+
+`repair_split_plan.json` / `repair_split_plan.md` 已把 hard preflight 的 `9` 个 blockers 拆成 `5` 条 lane：`target63407` 通过；`opening63402` 失败于 `40.0997s` defeat；`retention63405` 失败于 `138.6673s` defeat；`short60` 失败于 `60s/caramel-workshop` 胜率 `0.3333` 与平均存活 `49.2774s`；`parent` 失败于 high-pressure parent-preservation 的 `3` 个回归。该拆分只路由现有证据，不重新仿真，也不放行 checkpoint。
+
 ## 结论
 
 结论：`repair`，但拒绝推进为 policy candidate、stage 03 或 RL test Bot。
@@ -78,5 +82,5 @@
 ## 下一步
 
 - 不要继续加长该 checkpoint。
-- 下一轮如果继续 closed-loop，应加入训练中 `60s/caramel-workshop` hard preflight 或多地图/多 seed early-stop。
-- 需要把 `63402` opening repair 与 `63407` mid-path retention 分开处理，避免单一 shared PPO continuation 在两个 seed failure mode 之间搬运回归。
+- 下一轮必须按 `repair_split_plan` 分 lane 推进：`63402` opening repair、`63405` retention repair、`60s/caramel-workshop` short-window preflight 和 parent-preservation 分开验收。
+- 需要保留 `target63407` 作为已通过的 required evidence，但不能用它掩盖其他 lane 的失败。
