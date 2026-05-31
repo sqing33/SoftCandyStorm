@@ -117,6 +117,35 @@ def single_map_payload(
     }
 
 
+def top_level_single_map_payload(
+    seconds: float,
+    map_id: str,
+    win_rate: float,
+    survival: float,
+    seed_start: int = 63400,
+    seeds: int = 10,
+) -> dict:
+    return {
+        "report_version": 1,
+        "status": "compared",
+        "seconds": seconds,
+        "seed_start": seed_start,
+        "seeds": seeds,
+        "map_id": map_id,
+        "action_selection": "deterministic",
+        "reward_profile": "standard",
+        "gate_decision": "comparison_recorded_not_balance_gate",
+        "summary": {
+            "win_rate": win_rate,
+            "average_survival_seconds": survival,
+            "action_distribution": distribution_from_ratios(
+                {"1": 0.2, "5": 0.35, "7": 0.45}
+            ),
+            "normalized_action_entropy": 0.74,
+        },
+    }
+
+
 class PolicyWindowRegressionTests(unittest.TestCase):
     def test_candidate_matching_baseline_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -156,6 +185,40 @@ class PolicyWindowRegressionTests(unittest.TestCase):
         self.assertTrue(
             any("average_survival_seconds" in blocker for blocker in report["blockers"])
         )
+
+    def test_single_map_top_level_summary_reports_are_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            baseline = root / "baseline_300.json"
+            candidate = root / "candidate_300.json"
+            write_json(
+                baseline,
+                top_level_single_map_payload(
+                    300.0, "caramel-workshop", 0.0, 188.1405
+                ),
+            )
+            write_json(
+                candidate,
+                top_level_single_map_payload(
+                    300.0, "caramel-workshop", 0.1, 198.7068
+                ),
+            )
+
+            report = build_report(
+                {"300s": baseline},
+                {"300s": candidate},
+                max_action_ratio_increase=0.2,
+                max_action_distribution_l1_delta=0.45,
+                max_normalized_entropy_drop=0.15,
+            )
+
+        self.assertEqual(report["decision"], "policy_window_regression_passed")
+        self.assertEqual(report["errors"], [])
+        self.assertEqual(report["blockers"], [])
+        result = report["windows"][0]["map_results"][0]
+        self.assertEqual(result["map_id"], "caramel-workshop")
+        self.assertEqual(result["deltas"]["policy_win_rate"], 0.1)
+        self.assertTrue(result["action_distribution_delta"]["enabled"])
 
     def test_win_rate_drop_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

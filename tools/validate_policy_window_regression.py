@@ -123,6 +123,9 @@ def policy_summary_by_map(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
         summary = policy.get("summary") if isinstance(policy, dict) else None
         if isinstance(summary, dict):
             result[report["map_id"]] = summary
+        top_level_summary = report.get("summary")
+        if isinstance(top_level_summary, dict):
+            result.setdefault(report["map_id"], top_level_summary)
     for item in report.get("maps", []):
         if not isinstance(item, dict):
             continue
