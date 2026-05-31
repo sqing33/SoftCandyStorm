@@ -1,0 +1,68 @@
+{
+  "report_version": 1,
+  "decision": "policy_window_regression_passed",
+  "gate_decision": "policy_window_regression_passed",
+  "baseline_window_count": 1,
+  "candidate_window_count": 1,
+  "criteria": {
+    "min_win_rate_delta": 0.0,
+    "max_survival_drop_seconds": 0.0,
+    "max_dominant_ratio_increase": null,
+    "max_action_ratio_increase": null,
+    "max_action_distribution_l1_delta": null,
+    "max_normalized_entropy_drop": null
+  },
+  "errors": [],
+  "warnings": [],
+  "blockers": [],
+  "windows": [
+    {
+      "label": "300s",
+      "baseline_path": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/baseline_caramel_300s_10seed.json",
+      "candidate_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/mid_path_retention_caramel_300s_10seed.json",
+      "baseline_seconds": 300.0,
+      "candidate_seconds": 300.0,
+      "baseline_gate_decision": "comparison_recorded_not_balance_gate",
+      "candidate_gate_decision": "comparison_recorded_not_balance_gate",
+      "map_results": [
+        {
+          "window": "300s",
+          "map_id": "caramel-workshop",
+          "baseline": {
+            "policy_win_rate": 0.1,
+            "policy_average_survival_seconds": 242.8409,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 18777,
+              "ratio": 0.2578
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.2,
+            "policy_average_survival_seconds": 245.5495,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 19788,
+              "ratio": 0.2686
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.1,
+            "policy_average_survival_seconds": 2.7086,
+            "policy_dominant_action_ratio": 0.0108
+          },
+          "action_distribution_delta": {
+            "enabled": false
+          },
+          "status": "pass",
+          "blockers": []
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "This validator checks no-regression against supplied comparison reports only.",
+    "A passing no-regression result is repair evidence, not RL policy acceptance.",
+    "Final policies still require deterministic high-pressure, failure-case, and acceptance manifest review."
+  ]
+}

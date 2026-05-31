@@ -1,0 +1,2173 @@
+{
+  "report_version": 1,
+  "status": "compared",
+  "phase": "rl_phase_1_movement_survival",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_caramel_terminal_sequence_recovery_probe.zip",
+  "policy_kind": "late_recovery_filter",
+  "opening_policy": {
+    "mode": "staged_sb3_opening",
+    "opening_model_path": "harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip",
+    "fallback_model_path": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_caramel_terminal_sequence_recovery_probe.zip",
+    "opening_seconds": 60.0,
+    "opening_targets": [
+      {
+        "map_id": "caramel-workshop",
+        "seed": 63400
+      }
+    ],
+    "limitations": [
+      "The opening model is used only during evaluation/comparison before opening_seconds.",
+      "When opening_targets is set, the opening model applies only to those map/seed episodes.",
+      "This wrapper does not train a new policy and is not policy acceptance evidence by itself."
+    ]
+  },
+  "policy_adapter": {
+    "mode": "late_recovery_filter",
+    "min_seconds": 60.0,
+    "edge_distance": 32.0,
+    "hazard_threshold": 0.2,
+    "boss_threshold": 0.05,
+    "enemy_threshold": 0.05,
+    "low_health_threshold": 0.25,
+    "toward_dot_threshold": 0.15,
+    "wrapped_policy_kind": "health_retention_guard",
+    "limitations": [
+      "This deterministic wrapper is diagnostic repair evidence only.",
+      "It produces late-window supervision samples and cannot be used as RL policy acceptance evidence."
+    ],
+    "wrapped_policy_adapter": {
+      "mode": "health_retention_guard",
+      "min_seconds": 180.0,
+      "max_seconds": 300.0,
+      "min_pressure": 0.0,
+      "min_low_health_risk": 0.15,
+      "target_maps": [
+        "caramel-workshop"
+      ],
+      "targets": [
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63407
+        }
+      ],
+      "base_model_path": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_caramel_terminal_sequence_recovery_probe.zip",
+      "retention_model_path": "harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip",
+      "base_policy_kind": "edge_recovery_branch",
+      "retention_policy_kind": "sb3",
+      "usage": {
+        "total_decisions": 71589,
+        "base_decisions": 71408,
+        "branch_decisions": 181,
+        "branch_ratio": 0.0025,
+        "by_map": {
+          "caramel-workshop": {
+            "total_decisions": 71589,
+            "base_decisions": 71408,
+            "branch_decisions": 181,
+            "branch_ratio": 0.0025
+          }
+        },
+        "by_time_bucket": {
+          "late_180_to_300": {
+            "total_decisions": 17589,
+            "base_decisions": 17408,
+            "branch_decisions": 181,
+            "branch_ratio": 0.0103
+          },
+          "mid_60_to_180": {
+            "total_decisions": 35990,
+            "base_decisions": 35990,
+            "branch_decisions": 0,
+            "branch_ratio": 0.0
+          },
+          "opening_lt_60": {
+            "total_decisions": 18010,
+            "base_decisions": 18010,
+            "branch_decisions": 0,
+            "branch_ratio": 0.0
+          }
+        }
+      },
+      "limitations": [
+        "This wrapper is for baseline-winning health-retention diagnostics only.",
+        "It routes to a retention model only within configured map/seed/time/pressure conditions.",
+        "It is not policy acceptance evidence and still requires multi-seed no-regression gates."
+      ],
+      "base_policy_adapter": {
+        "mode": "edge_recovery_branch",
+        "target_maps": [
+          "caramel-workshop",
+          "soda-creek"
+        ],
+        "min_seconds": 0.0,
+        "max_seconds": 60.0,
+        "edge_distance": 32.0,
+        "min_pressure": 0.0,
+        "min_low_health_risk": 0.0,
+        "min_boundary_edge_risk": 0.0,
+        "map_overrides": {
+          "soda-creek": {
+            "min_seconds": 0.0,
+            "max_seconds": 60.0,
+            "min_pressure": 0.2,
+            "min_low_health_risk": 0.0,
+            "min_boundary_edge_risk": 0.75
+          },
+          "caramel-workshop": {
+            "min_seconds": 30.0,
+            "max_seconds": 45.0,
+            "min_pressure": 0.2,
+            "min_low_health_risk": 0.0,
+            "min_boundary_edge_risk": 0.75
+          }
+        },
+        "effective_map_configs": {
+          "caramel-workshop": {
+            "min_seconds": 30.0,
+            "max_seconds": 45.0,
+            "min_pressure": 0.2,
+            "min_low_health_risk": 0.0,
+            "min_boundary_edge_risk": 0.75
+          },
+          "soda-creek": {
+            "min_seconds": 0.0,
+            "max_seconds": 60.0,
+            "min_pressure": 0.2,
+            "min_low_health_risk": 0.0,
+            "min_boundary_edge_risk": 0.75
+          }
+        },
+        "base_model_path": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_caramel_terminal_sequence_recovery_probe.zip",
+        "branch_model_path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/seed63402_edge_recovery_supervised_dataset_actions.zip",
+        "base_policy_kind": "staged_sb3_opening",
+        "branch_policy_kind": "sb3",
+        "usage": {
+          "total_decisions": 71589,
+          "base_decisions": 71585,
+          "branch_decisions": 4,
+          "branch_ratio": 0.0001,
+          "by_map": {
+            "caramel-workshop": {
+              "total_decisions": 71589,
+              "base_decisions": 71585,
+              "branch_decisions": 4,
+              "branch_ratio": 0.0001
+            }
+          },
+          "by_time_bucket": {
+            "late_180_to_300": {
+              "total_decisions": 17589,
+              "base_decisions": 17589,
+              "branch_decisions": 0,
+              "branch_ratio": 0.0
+            },
+            "mid_60_to_180": {
+              "total_decisions": 35990,
+              "base_decisions": 35990,
+              "branch_decisions": 0,
+              "branch_ratio": 0.0
+            },
+            "opening_lt_60": {
+              "total_decisions": 18010,
+              "base_decisions": 18006,
+              "branch_decisions": 4,
+              "branch_ratio": 0.0002
+            }
+          }
+        },
+        "limitations": [
+          "This wrapper is for state-conditioned edge-recovery diagnostics only.",
+          "It dispatches to the branch only when the base policy pushes into an edge under configured conditions.",
+          "It is not policy acceptance evidence and still requires high-pressure no-regression gates."
+        ]
+      }
+    }
+  },
+  "edge_recovery_samples": null,
+  "upgrade_policy": {
+    "mode": "bridge_default_first_option",
+    "model_path": null
+  },
+  "upgrade_choice_model": null,
+  "map_id": "caramel-workshop",
+  "action_selection": "deterministic",
+  "action_random_seed": null,
+  "reward_profile": "opening-boundary-escape",
+  "seed_start": 63400,
+  "seeds": 10,
+  "seconds": 300.0,
+  "tick_rate": 30,
+  "policy": {
+    "report_version": 1,
+    "status": "evaluated",
+    "phase": "rl_phase_1_movement_survival",
+    "map_id": "caramel-workshop",
+    "reward_profile": "opening-boundary-escape",
+    "policy_kind": "late_recovery_filter",
+    "opening_policy": {
+      "mode": "staged_sb3_opening",
+      "opening_model_path": "harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip",
+      "fallback_model_path": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_caramel_terminal_sequence_recovery_probe.zip",
+      "opening_seconds": 60.0,
+      "opening_targets": [
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63400
+        }
+      ],
+      "limitations": [
+        "The opening model is used only during evaluation/comparison before opening_seconds.",
+        "When opening_targets is set, the opening model applies only to those map/seed episodes.",
+        "This wrapper does not train a new policy and is not policy acceptance evidence by itself."
+      ]
+    },
+    "policy_adapter": {
+      "mode": "late_recovery_filter",
+      "min_seconds": 60.0,
+      "edge_distance": 32.0,
+      "hazard_threshold": 0.2,
+      "boss_threshold": 0.05,
+      "enemy_threshold": 0.05,
+      "low_health_threshold": 0.25,
+      "toward_dot_threshold": 0.15,
+      "wrapped_policy_kind": "health_retention_guard",
+      "limitations": [
+        "This deterministic wrapper is diagnostic repair evidence only.",
+        "It produces late-window supervision samples and cannot be used as RL policy acceptance evidence."
+      ],
+      "wrapped_policy_adapter": {
+        "mode": "health_retention_guard",
+        "min_seconds": 180.0,
+        "max_seconds": 300.0,
+        "min_pressure": 0.0,
+        "min_low_health_risk": 0.15,
+        "target_maps": [
+          "caramel-workshop"
+        ],
+        "targets": [
+          {
+            "map_id": "caramel-workshop",
+            "seed": 63407
+          }
+        ],
+        "base_model_path": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_caramel_terminal_sequence_recovery_probe.zip",
+        "retention_model_path": "harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip",
+        "base_policy_kind": "edge_recovery_branch",
+        "retention_policy_kind": "sb3",
+        "usage": {
+          "total_decisions": 71589,
+          "base_decisions": 71408,
+          "branch_decisions": 181,
+          "branch_ratio": 0.0025,
+          "by_map": {
+            "caramel-workshop": {
+              "total_decisions": 71589,
+              "base_decisions": 71408,
+              "branch_decisions": 181,
+              "branch_ratio": 0.0025
+            }
+          },
+          "by_time_bucket": {
+            "late_180_to_300": {
+              "total_decisions": 17589,
+              "base_decisions": 17408,
+              "branch_decisions": 181,
+              "branch_ratio": 0.0103
+            },
+            "mid_60_to_180": {
+              "total_decisions": 35990,
+              "base_decisions": 35990,
+              "branch_decisions": 0,
+              "branch_ratio": 0.0
+            },
+            "opening_lt_60": {
+              "total_decisions": 18010,
+              "base_decisions": 18010,
+              "branch_decisions": 0,
+              "branch_ratio": 0.0
+            }
+          }
+        },
+        "limitations": [
+          "This wrapper is for baseline-winning health-retention diagnostics only.",
+          "It routes to a retention model only within configured map/seed/time/pressure conditions.",
+          "It is not policy acceptance evidence and still requires multi-seed no-regression gates."
+        ],
+        "base_policy_adapter": {
+          "mode": "edge_recovery_branch",
+          "target_maps": [
+            "caramel-workshop",
+            "soda-creek"
+          ],
+          "min_seconds": 0.0,
+          "max_seconds": 60.0,
+          "edge_distance": 32.0,
+          "min_pressure": 0.0,
+          "min_low_health_risk": 0.0,
+          "min_boundary_edge_risk": 0.0,
+          "map_overrides": {
+            "soda-creek": {
+              "min_seconds": 0.0,
+              "max_seconds": 60.0,
+              "min_pressure": 0.2,
+              "min_low_health_risk": 0.0,
+              "min_boundary_edge_risk": 0.75
+            },
+            "caramel-workshop": {
+              "min_seconds": 30.0,
+              "max_seconds": 45.0,
+              "min_pressure": 0.2,
+              "min_low_health_risk": 0.0,
+              "min_boundary_edge_risk": 0.75
+            }
+          },
+          "effective_map_configs": {
+            "caramel-workshop": {
+              "min_seconds": 30.0,
+              "max_seconds": 45.0,
+              "min_pressure": 0.2,
+              "min_low_health_risk": 0.0,
+              "min_boundary_edge_risk": 0.75
+            },
+            "soda-creek": {
+              "min_seconds": 0.0,
+              "max_seconds": 60.0,
+              "min_pressure": 0.2,
+              "min_low_health_risk": 0.0,
+              "min_boundary_edge_risk": 0.75
+            }
+          },
+          "base_model_path": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_caramel_terminal_sequence_recovery_probe.zip",
+          "branch_model_path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/seed63402_edge_recovery_supervised_dataset_actions.zip",
+          "base_policy_kind": "staged_sb3_opening",
+          "branch_policy_kind": "sb3",
+          "usage": {
+            "total_decisions": 71589,
+            "base_decisions": 71585,
+            "branch_decisions": 4,
+            "branch_ratio": 0.0001,
+            "by_map": {
+              "caramel-workshop": {
+                "total_decisions": 71589,
+                "base_decisions": 71585,
+                "branch_decisions": 4,
+                "branch_ratio": 0.0001
+              }
+            },
+            "by_time_bucket": {
+              "late_180_to_300": {
+                "total_decisions": 17589,
+                "base_decisions": 17589,
+                "branch_decisions": 0,
+                "branch_ratio": 0.0
+              },
+              "mid_60_to_180": {
+                "total_decisions": 35990,
+                "base_decisions": 35990,
+                "branch_decisions": 0,
+                "branch_ratio": 0.0
+              },
+              "opening_lt_60": {
+                "total_decisions": 18010,
+                "base_decisions": 18006,
+                "branch_decisions": 4,
+                "branch_ratio": 0.0002
+              }
+            }
+          },
+          "limitations": [
+            "This wrapper is for state-conditioned edge-recovery diagnostics only.",
+            "It dispatches to the branch only when the base policy pushes into an edge under configured conditions.",
+            "It is not policy acceptance evidence and still requires high-pressure no-regression gates."
+          ]
+        }
+      }
+    },
+    "action_selection": "deterministic",
+    "action_random_seed": null,
+    "action_random_seed_report": {
+      "seed": null,
+      "seeded_sources": []
+    },
+    "upgrade_policy": {
+      "mode": "bridge_default_first_option",
+      "model_path": null
+    },
+    "trace_dir": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces",
+    "trace_failed_only": false,
+    "trace_sample_stride": 30,
+    "trace_include_observation": false,
+    "edge_recovery_samples": null,
+    "episodes": [
+      {
+        "seed": 63400,
+        "map_id": "caramel-workshop",
+        "steps": 6396,
+        "reward": -3.3014,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 213.21658,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 7,
+        "kills": 326,
+        "xp_collected": 468.0,
+        "damage_taken": 120.46649,
+        "action_counts": {
+          "0": 5,
+          "1": 635,
+          "2": 291,
+          "3": 1551,
+          "4": 239,
+          "5": 992,
+          "6": 5,
+          "7": 2251,
+          "8": 427
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 6396,
+          "mean_scores": {
+            "0": 0.0617,
+            "1": 0.0936,
+            "2": 0.0715,
+            "3": 0.1668,
+            "4": 0.086,
+            "5": 0.1557,
+            "6": 0.0758,
+            "7": 0.1973,
+            "8": 0.0915
+          },
+          "mean_top_actions": [
+            {
+              "action": "7",
+              "score": 0.1973
+            },
+            {
+              "action": "3",
+              "score": 0.1668
+            },
+            {
+              "action": "5",
+              "score": 0.1557
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 629,
+              "ratio": 0.0983
+            },
+            "2": {
+              "count": 292,
+              "ratio": 0.0457
+            },
+            "3": {
+              "count": 1554,
+              "ratio": 0.243
+            },
+            "4": {
+              "count": 228,
+              "ratio": 0.0356
+            },
+            "5": {
+              "count": 995,
+              "ratio": 0.1556
+            },
+            "6": {
+              "count": 39,
+              "ratio": 0.0061
+            },
+            "7": {
+              "count": 2202,
+              "ratio": 0.3443
+            },
+            "8": {
+              "count": 457,
+              "ratio": 0.0715
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 2202,
+            "ratio": 0.3443
+          },
+          "mean_chosen_action_score": 0.5773,
+          "chosen_action_score_sample_count": 6396
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 162,
+        "reward_breakdown": {
+          "action_repeat": -25.736,
+          "boss_pressure": 0.0,
+          "boundary_risk": -3.9398,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0001,
+          "damage_taken": -9.6373,
+          "enemy_pressure": -0.8075,
+          "hazard_risk": -1.7657,
+          "kill": 26.08,
+          "level": 4.8,
+          "low_health": -6.462,
+          "opening_boundary_escape": -0.4033,
+          "opening_edge_risk_delta": 0.0001,
+          "route_recovery": -4.2011,
+          "safety_delta": -0.0409,
+          "survival": 3.092,
+          "terminal": -3.0,
+          "total": -3.3014,
+          "xp": 18.72
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63400_trace.json"
+      },
+      {
+        "seed": 63401,
+        "map_id": "caramel-workshop",
+        "steps": 6954,
+        "reward": 6.4805,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 231.82056,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 8,
+        "kills": 363,
+        "xp_collected": 599.7001,
+        "damage_taken": 120.149994,
+        "action_counts": {
+          "0": 4,
+          "1": 761,
+          "2": 1090,
+          "3": 991,
+          "4": 265,
+          "5": 1218,
+          "6": 72,
+          "7": 2048,
+          "8": 505
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 6954,
+          "mean_scores": {
+            "0": 0.0649,
+            "1": 0.0928,
+            "2": 0.1159,
+            "3": 0.1188,
+            "4": 0.0952,
+            "5": 0.167,
+            "6": 0.0718,
+            "7": 0.1744,
+            "8": 0.0993
+          },
+          "mean_top_actions": [
+            {
+              "action": "7",
+              "score": 0.1744
+            },
+            {
+              "action": "5",
+              "score": 0.167
+            },
+            {
+              "action": "3",
+              "score": 0.1188
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 725,
+              "ratio": 0.1043
+            },
+            "2": {
+              "count": 1090,
+              "ratio": 0.1567
+            },
+            "3": {
+              "count": 996,
+              "ratio": 0.1432
+            },
+            "4": {
+              "count": 278,
+              "ratio": 0.04
+            },
+            "5": {
+              "count": 1202,
+              "ratio": 0.1729
+            },
+            "6": {
+              "count": 152,
+              "ratio": 0.0219
+            },
+            "7": {
+              "count": 1979,
+              "ratio": 0.2846
+            },
+            "8": {
+              "count": 532,
+              "ratio": 0.0765
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 1979,
+            "ratio": 0.2846
+          },
+          "mean_chosen_action_score": 0.5723,
+          "chosen_action_score_sample_count": 6954
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 217,
+        "reward_breakdown": {
+          "action_repeat": -27.916,
+          "boss_pressure": -0.0007,
+          "boundary_risk": -3.2493,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0,
+          "damage_taken": -9.612,
+          "enemy_pressure": -0.3285,
+          "hazard_risk": -2.625,
+          "kill": 29.04,
+          "level": 5.6,
+          "low_health": -0.1618,
+          "opening_boundary_escape": -0.1249,
+          "opening_edge_risk_delta": -0.0,
+          "route_recovery": -8.3763,
+          "safety_delta": -0.031,
+          "survival": 3.278,
+          "terminal": -3.0,
+          "total": 6.4805,
+          "xp": 23.988
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63401_trace.json"
+      },
+      {
+        "seed": 63402,
+        "map_id": "caramel-workshop",
+        "steps": 9000,
+        "reward": 37.7761,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 300.01498,
+        "terminal_kind": "victory",
+        "terminal_reason": "duration_reached",
+        "level": 10,
+        "kills": 514,
+        "xp_collected": 890.80005,
+        "damage_taken": 82.083275,
+        "action_counts": {
+          "0": 57,
+          "1": 1108,
+          "2": 212,
+          "3": 2159,
+          "4": 602,
+          "5": 1497,
+          "6": 227,
+          "7": 2642,
+          "8": 496
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 9000,
+          "mean_scores": {
+            "0": 0.0458,
+            "1": 0.0938,
+            "2": 0.0581,
+            "3": 0.1575,
+            "4": 0.1209,
+            "5": 0.1683,
+            "6": 0.0802,
+            "7": 0.185,
+            "8": 0.0903
+          },
+          "mean_top_actions": [
+            {
+              "action": "7",
+              "score": 0.185
+            },
+            {
+              "action": "5",
+              "score": 0.1683
+            },
+            {
+              "action": "3",
+              "score": 0.1575
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 1103,
+              "ratio": 0.1226
+            },
+            "2": {
+              "count": 202,
+              "ratio": 0.0224
+            },
+            "3": {
+              "count": 2101,
+              "ratio": 0.2334
+            },
+            "4": {
+              "count": 672,
+              "ratio": 0.0747
+            },
+            "5": {
+              "count": 1511,
+              "ratio": 0.1679
+            },
+            "6": {
+              "count": 295,
+              "ratio": 0.0328
+            },
+            "7": {
+              "count": 2566,
+              "ratio": 0.2851
+            },
+            "8": {
+              "count": 550,
+              "ratio": 0.0611
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 2566,
+            "ratio": 0.2851
+          },
+          "mean_chosen_action_score": 0.5864,
+          "chosen_action_score_sample_count": 9000
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 308,
+        "reward_breakdown": {
+          "action_repeat": -34.08,
+          "boss_pressure": -0.0105,
+          "boundary_risk": -3.788,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0001,
+          "damage_taken": -6.5667,
+          "enemy_pressure": -0.154,
+          "hazard_risk": -1.1385,
+          "kill": 41.12,
+          "level": 7.2,
+          "low_health": -0.212,
+          "opening_boundary_escape": -0.0487,
+          "opening_edge_risk_delta": 0.0001,
+          "route_recovery": -5.1213,
+          "safety_delta": -0.0165,
+          "survival": 3.96,
+          "terminal": 1.0,
+          "total": 37.7761,
+          "xp": 35.632
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63402_trace.json"
+      },
+      {
+        "seed": 63403,
+        "map_id": "caramel-workshop",
+        "steps": 7488,
+        "reward": 11.6653,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 249.62436,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 8,
+        "kills": 402,
+        "xp_collected": 581.80005,
+        "damage_taken": 120.14987,
+        "action_counts": {
+          "0": 1,
+          "1": 1596,
+          "2": 344,
+          "3": 1129,
+          "4": 400,
+          "5": 1835,
+          "6": 32,
+          "7": 1894,
+          "8": 257
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 7488,
+          "mean_scores": {
+            "0": 0.0397,
+            "1": 0.1316,
+            "2": 0.0915,
+            "3": 0.1147,
+            "4": 0.0918,
+            "5": 0.2102,
+            "6": 0.0736,
+            "7": 0.1703,
+            "8": 0.0768
+          },
+          "mean_top_actions": [
+            {
+              "action": "5",
+              "score": 0.2102
+            },
+            {
+              "action": "7",
+              "score": 0.1703
+            },
+            {
+              "action": "1",
+              "score": 0.1316
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 1595,
+              "ratio": 0.213
+            },
+            "2": {
+              "count": 342,
+              "ratio": 0.0457
+            },
+            "3": {
+              "count": 1133,
+              "ratio": 0.1513
+            },
+            "4": {
+              "count": 413,
+              "ratio": 0.0552
+            },
+            "5": {
+              "count": 1817,
+              "ratio": 0.2427
+            },
+            "6": {
+              "count": 37,
+              "ratio": 0.0049
+            },
+            "7": {
+              "count": 1892,
+              "ratio": 0.2527
+            },
+            "8": {
+              "count": 259,
+              "ratio": 0.0346
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 1892,
+            "ratio": 0.2527
+          },
+          "mean_chosen_action_score": 0.5987,
+          "chosen_action_score_sample_count": 7488
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 124,
+        "reward_breakdown": {
+          "action_repeat": -28.34,
+          "boss_pressure": -0.0013,
+          "boundary_risk": -2.9822,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0,
+          "damage_taken": -9.612,
+          "enemy_pressure": -0.0713,
+          "hazard_risk": -0.6519,
+          "kill": 32.16,
+          "level": 5.6,
+          "low_health": -0.3732,
+          "opening_boundary_escape": 0.0,
+          "opening_edge_risk_delta": -0.0,
+          "route_recovery": -7.7687,
+          "safety_delta": -0.0221,
+          "survival": 3.456,
+          "terminal": -3.0,
+          "total": 11.6653,
+          "xp": 23.272
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63403_trace.json"
+      },
+      {
+        "seed": 63404,
+        "map_id": "caramel-workshop",
+        "steps": 6636,
+        "reward": 11.7367,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 221.21829,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 7,
+        "kills": 333,
+        "xp_collected": 536.80005,
+        "damage_taken": 120.38677,
+        "action_counts": {
+          "0": 7,
+          "1": 839,
+          "2": 1053,
+          "3": 1166,
+          "4": 498,
+          "5": 808,
+          "6": 267,
+          "7": 1710,
+          "8": 288
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 6636,
+          "mean_scores": {
+            "0": 0.0543,
+            "1": 0.0947,
+            "2": 0.1314,
+            "3": 0.1506,
+            "4": 0.1053,
+            "5": 0.137,
+            "6": 0.0873,
+            "7": 0.1644,
+            "8": 0.075
+          },
+          "mean_top_actions": [
+            {
+              "action": "7",
+              "score": 0.1644
+            },
+            {
+              "action": "3",
+              "score": 0.1506
+            },
+            {
+              "action": "5",
+              "score": 0.137
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 1,
+              "ratio": 0.0002
+            },
+            "1": {
+              "count": 835,
+              "ratio": 0.1258
+            },
+            "2": {
+              "count": 1053,
+              "ratio": 0.1587
+            },
+            "3": {
+              "count": 1153,
+              "ratio": 0.1737
+            },
+            "4": {
+              "count": 500,
+              "ratio": 0.0753
+            },
+            "5": {
+              "count": 818,
+              "ratio": 0.1233
+            },
+            "6": {
+              "count": 274,
+              "ratio": 0.0413
+            },
+            "7": {
+              "count": 1706,
+              "ratio": 0.2571
+            },
+            "8": {
+              "count": 296,
+              "ratio": 0.0446
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 1706,
+            "ratio": 0.2571
+          },
+          "mean_chosen_action_score": 0.5624,
+          "chosen_action_score_sample_count": 6636
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 132,
+        "reward_breakdown": {
+          "action_repeat": -24.772,
+          "boss_pressure": -0.0071,
+          "boundary_risk": -2.3631,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0001,
+          "damage_taken": -9.6309,
+          "enemy_pressure": -0.0432,
+          "hazard_risk": -0.6271,
+          "kill": 26.64,
+          "level": 4.8,
+          "low_health": -0.0158,
+          "opening_boundary_escape": 0.0,
+          "opening_edge_risk_delta": 0.0,
+          "route_recovery": -3.8627,
+          "safety_delta": -0.0255,
+          "survival": 3.172,
+          "terminal": -3.0,
+          "total": 11.7367,
+          "xp": 21.472
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63404_trace.json"
+      },
+      {
+        "seed": 63405,
+        "map_id": "caramel-workshop",
+        "steps": 6600,
+        "reward": 5.3042,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 220.01804,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 7,
+        "kills": 337,
+        "xp_collected": 513.9,
+        "damage_taken": 120.0999,
+        "action_counts": {
+          "0": 1,
+          "1": 1318,
+          "2": 356,
+          "3": 649,
+          "4": 534,
+          "5": 1389,
+          "6": 232,
+          "7": 1696,
+          "8": 425
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 6600,
+          "mean_scores": {
+            "0": 0.0538,
+            "1": 0.1363,
+            "2": 0.0812,
+            "3": 0.0878,
+            "4": 0.1007,
+            "5": 0.2043,
+            "6": 0.0852,
+            "7": 0.1551,
+            "8": 0.0958
+          },
+          "mean_top_actions": [
+            {
+              "action": "5",
+              "score": 0.2043
+            },
+            {
+              "action": "7",
+              "score": 0.1551
+            },
+            {
+              "action": "1",
+              "score": 0.1363
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 1316,
+              "ratio": 0.1994
+            },
+            "2": {
+              "count": 354,
+              "ratio": 0.0536
+            },
+            "3": {
+              "count": 650,
+              "ratio": 0.0985
+            },
+            "4": {
+              "count": 513,
+              "ratio": 0.0777
+            },
+            "5": {
+              "count": 1410,
+              "ratio": 0.2136
+            },
+            "6": {
+              "count": 241,
+              "ratio": 0.0365
+            },
+            "7": {
+              "count": 1686,
+              "ratio": 0.2555
+            },
+            "8": {
+              "count": 430,
+              "ratio": 0.0652
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 1686,
+            "ratio": 0.2555
+          },
+          "mean_chosen_action_score": 0.5889,
+          "chosen_action_score_sample_count": 6600
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 129,
+        "reward_breakdown": {
+          "action_repeat": -25.128,
+          "boss_pressure": -0.002,
+          "boundary_risk": -2.3035,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0001,
+          "damage_taken": -9.608,
+          "enemy_pressure": -0.507,
+          "hazard_risk": -1.8289,
+          "kill": 26.96,
+          "level": 4.8,
+          "low_health": -0.1098,
+          "opening_boundary_escape": -0.5197,
+          "opening_edge_risk_delta": -0.0,
+          "route_recovery": -7.139,
+          "safety_delta": -0.026,
+          "survival": 3.16,
+          "terminal": -3.0,
+          "total": 5.3042,
+          "xp": 20.556
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63405_trace.json"
+      },
+      {
+        "seed": 63406,
+        "map_id": "caramel-workshop",
+        "steps": 7123,
+        "reward": 11.4842,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 237.4551,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 8,
+        "kills": 387,
+        "xp_collected": 601.2,
+        "damage_taken": 120.349815,
+        "action_counts": {
+          "0": 3,
+          "1": 947,
+          "2": 666,
+          "3": 972,
+          "4": 524,
+          "5": 1079,
+          "6": 125,
+          "7": 2265,
+          "8": 542
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 7123,
+          "mean_scores": {
+            "0": 0.0557,
+            "1": 0.1053,
+            "2": 0.1016,
+            "3": 0.1224,
+            "4": 0.0966,
+            "5": 0.1591,
+            "6": 0.0831,
+            "7": 0.1821,
+            "8": 0.0941
+          },
+          "mean_top_actions": [
+            {
+              "action": "7",
+              "score": 0.1821
+            },
+            {
+              "action": "5",
+              "score": 0.1591
+            },
+            {
+              "action": "3",
+              "score": 0.1224
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 950,
+              "ratio": 0.1334
+            },
+            "2": {
+              "count": 666,
+              "ratio": 0.0935
+            },
+            "3": {
+              "count": 971,
+              "ratio": 0.1363
+            },
+            "4": {
+              "count": 516,
+              "ratio": 0.0724
+            },
+            "5": {
+              "count": 1087,
+              "ratio": 0.1526
+            },
+            "6": {
+              "count": 254,
+              "ratio": 0.0357
+            },
+            "7": {
+              "count": 2133,
+              "ratio": 0.2995
+            },
+            "8": {
+              "count": 546,
+              "ratio": 0.0767
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 2133,
+            "ratio": 0.2995
+          },
+          "mean_chosen_action_score": 0.5951,
+          "chosen_action_score_sample_count": 7123
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 198,
+        "reward_breakdown": {
+          "action_repeat": -27.848,
+          "boss_pressure": -0.0123,
+          "boundary_risk": -2.3832,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0,
+          "damage_taken": -9.628,
+          "enemy_pressure": -0.2519,
+          "hazard_risk": -1.5554,
+          "kill": 30.96,
+          "level": 5.6,
+          "low_health": -0.2369,
+          "opening_boundary_escape": -0.1898,
+          "opening_edge_risk_delta": -0.0001,
+          "route_recovery": -7.3283,
+          "safety_delta": -0.0243,
+          "survival": 3.3343,
+          "terminal": -3.0,
+          "total": 11.4842,
+          "xp": 24.048
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63406_trace.json"
+      },
+      {
+        "seed": 63407,
+        "map_id": "caramel-workshop",
+        "steps": 6930,
+        "reward": 6.33,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 231.02039,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 8,
+        "kills": 366,
+        "xp_collected": 585.0,
+        "damage_taken": 120.03343,
+        "action_counts": {
+          "0": 3,
+          "1": 752,
+          "2": 1037,
+          "3": 1090,
+          "4": 549,
+          "5": 870,
+          "6": 199,
+          "7": 2035,
+          "8": 395
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 6930,
+          "mean_scores": {
+            "0": 0.0656,
+            "1": 0.0984,
+            "2": 0.1258,
+            "3": 0.124,
+            "4": 0.109,
+            "5": 0.1385,
+            "6": 0.0843,
+            "7": 0.1691,
+            "8": 0.0852
+          },
+          "mean_top_actions": [
+            {
+              "action": "7",
+              "score": 0.1691
+            },
+            {
+              "action": "5",
+              "score": 0.1385
+            },
+            {
+              "action": "2",
+              "score": 0.1258
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 754,
+              "ratio": 0.1088
+            },
+            "2": {
+              "count": 1036,
+              "ratio": 0.1495
+            },
+            "3": {
+              "count": 1082,
+              "ratio": 0.1561
+            },
+            "4": {
+              "count": 556,
+              "ratio": 0.0802
+            },
+            "5": {
+              "count": 873,
+              "ratio": 0.126
+            },
+            "6": {
+              "count": 263,
+              "ratio": 0.038
+            },
+            "7": {
+              "count": 1976,
+              "ratio": 0.2851
+            },
+            "8": {
+              "count": 390,
+              "ratio": 0.0563
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 1976,
+            "ratio": 0.2851
+          },
+          "mean_chosen_action_score": 0.563,
+          "chosen_action_score_sample_count": 6930
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 310,
+        "reward_breakdown": {
+          "action_repeat": -28.416,
+          "boss_pressure": -0.0013,
+          "boundary_risk": -3.1382,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": 0.0,
+          "damage_taken": -9.6027,
+          "enemy_pressure": -0.2381,
+          "hazard_risk": -1.4623,
+          "kill": 29.28,
+          "level": 5.6,
+          "low_health": -0.1478,
+          "opening_boundary_escape": 0.0005,
+          "opening_edge_risk_delta": 0.0,
+          "route_recovery": -9.1876,
+          "safety_delta": -0.0265,
+          "survival": 3.27,
+          "terminal": -3.0,
+          "total": 6.33,
+          "xp": 23.4
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63407_trace.json"
+      },
+      {
+        "seed": 63408,
+        "map_id": "caramel-workshop",
+        "steps": 7312,
+        "reward": 15.2863,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 243.75644,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 8,
+        "kills": 400,
+        "xp_collected": 658.39996,
+        "damage_taken": 120.51651,
+        "action_counts": {
+          "0": 4,
+          "1": 814,
+          "2": 298,
+          "3": 1410,
+          "4": 872,
+          "5": 1262,
+          "6": 75,
+          "7": 1534,
+          "8": 1043
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 7312,
+          "mean_scores": {
+            "0": 0.0466,
+            "1": 0.0977,
+            "2": 0.065,
+            "3": 0.1433,
+            "4": 0.1299,
+            "5": 0.1831,
+            "6": 0.0591,
+            "7": 0.1441,
+            "8": 0.1312
+          },
+          "mean_top_actions": [
+            {
+              "action": "5",
+              "score": 0.1831
+            },
+            {
+              "action": "7",
+              "score": 0.1441
+            },
+            {
+              "action": "3",
+              "score": 0.1433
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 0,
+              "ratio": 0.0
+            },
+            "1": {
+              "count": 807,
+              "ratio": 0.1104
+            },
+            "2": {
+              "count": 298,
+              "ratio": 0.0408
+            },
+            "3": {
+              "count": 1406,
+              "ratio": 0.1923
+            },
+            "4": {
+              "count": 862,
+              "ratio": 0.1179
+            },
+            "5": {
+              "count": 1272,
+              "ratio": 0.174
+            },
+            "6": {
+              "count": 96,
+              "ratio": 0.0131
+            },
+            "7": {
+              "count": 1515,
+              "ratio": 0.2072
+            },
+            "8": {
+              "count": 1056,
+              "ratio": 0.1444
+            }
+          },
+          "dominant_top_action": {
+            "action": "7",
+            "count": 1515,
+            "ratio": 0.2072
+          },
+          "mean_chosen_action_score": 0.5894,
+          "chosen_action_score_sample_count": 7312
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 121,
+        "reward_breakdown": {
+          "action_repeat": -28.22,
+          "boss_pressure": -0.0008,
+          "boundary_risk": -2.0896,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": -0.0,
+          "damage_taken": -9.6413,
+          "enemy_pressure": -0.1872,
+          "hazard_risk": -2.6544,
+          "kill": 32.0,
+          "level": 5.6,
+          "low_health": -0.2444,
+          "opening_boundary_escape": 0.0178,
+          "opening_edge_risk_delta": -0.0001,
+          "route_recovery": -6.0022,
+          "safety_delta": -0.0248,
+          "survival": 3.3973,
+          "terminal": -3.0,
+          "total": 15.2863,
+          "xp": 26.336
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63408_trace.json"
+      },
+      {
+        "seed": 63409,
+        "map_id": "caramel-workshop",
+        "steps": 7150,
+        "reward": 14.0737,
+        "terminated": true,
+        "truncated": false,
+        "time_seconds": 238.35529,
+        "terminal_kind": "defeat",
+        "terminal_reason": "player_health_depleted",
+        "level": 8,
+        "kills": 374,
+        "xp_collected": 628.0,
+        "damage_taken": 120.09986,
+        "action_counts": {
+          "0": 4,
+          "1": 1277,
+          "2": 620,
+          "3": 862,
+          "4": 599,
+          "5": 1816,
+          "6": 118,
+          "7": 1573,
+          "8": 281
+        },
+        "action_score_diagnostic": {
+          "kind": "probability",
+          "sample_count": 7150,
+          "mean_scores": {
+            "0": 0.0387,
+            "1": 0.1178,
+            "2": 0.1029,
+            "3": 0.1054,
+            "4": 0.1145,
+            "5": 0.2194,
+            "6": 0.0743,
+            "7": 0.1494,
+            "8": 0.0777
+          },
+          "mean_top_actions": [
+            {
+              "action": "5",
+              "score": 0.2194
+            },
+            {
+              "action": "7",
+              "score": 0.1494
+            },
+            {
+              "action": "1",
+              "score": 0.1178
+            }
+          ],
+          "top_action_distribution": {
+            "0": {
+              "count": 1,
+              "ratio": 0.0001
+            },
+            "1": {
+              "count": 1259,
+              "ratio": 0.1761
+            },
+            "2": {
+              "count": 620,
+              "ratio": 0.0867
+            },
+            "3": {
+              "count": 863,
+              "ratio": 0.1207
+            },
+            "4": {
+              "count": 591,
+              "ratio": 0.0827
+            },
+            "5": {
+              "count": 1811,
+              "ratio": 0.2533
+            },
+            "6": {
+              "count": 131,
+              "ratio": 0.0183
+            },
+            "7": {
+              "count": 1567,
+              "ratio": 0.2192
+            },
+            "8": {
+              "count": 307,
+              "ratio": 0.0429
+            }
+          },
+          "dominant_top_action": {
+            "action": "5",
+            "count": 1811,
+            "ratio": 0.2533
+          },
+          "mean_chosen_action_score": 0.6219,
+          "chosen_action_score_sample_count": 7150
+        },
+        "upgrade_policy_decisions": [],
+        "upgrade_policy_decision_count": 0,
+        "edge_recovery_sample_count": 138,
+        "reward_breakdown": {
+          "action_repeat": -27.792,
+          "boss_pressure": -0.0009,
+          "boundary_risk": -2.4887,
+          "corner_action_risk": 0.0,
+          "corner_risk_delta": -0.0,
+          "damage_taken": -9.608,
+          "enemy_pressure": -0.1456,
+          "hazard_risk": -1.8837,
+          "kill": 29.92,
+          "level": 5.6,
+          "low_health": -0.1343,
+          "opening_boundary_escape": -0.0477,
+          "opening_edge_risk_delta": 0.0,
+          "route_recovery": -4.7881,
+          "safety_delta": -0.0207,
+          "survival": 3.3433,
+          "terminal": -3.0,
+          "total": 14.0737,
+          "xp": 25.12
+        },
+        "trace_path": "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/traces/caramel-workshop_seed63409_trace.json"
+      }
+    ],
+    "summary": {
+      "episodes": 10,
+      "win_rate": 0.1,
+      "average_survival_seconds": 238.65,
+      "average_level": 7.9,
+      "average_kills": 380.2,
+      "average_reward": 11.6836,
+      "damage_taken_average": 116.4336,
+      "action_distribution": {
+        "0": {
+          "count": 89,
+          "ratio": 0.0012
+        },
+        "1": {
+          "count": 10047,
+          "ratio": 0.1403
+        },
+        "2": {
+          "count": 5967,
+          "ratio": 0.0834
+        },
+        "3": {
+          "count": 11979,
+          "ratio": 0.1673
+        },
+        "4": {
+          "count": 5082,
+          "ratio": 0.071
+        },
+        "5": {
+          "count": 12766,
+          "ratio": 0.1783
+        },
+        "6": {
+          "count": 1352,
+          "ratio": 0.0189
+        },
+        "7": {
+          "count": 19648,
+          "ratio": 0.2745
+        },
+        "8": {
+          "count": 4659,
+          "ratio": 0.0651
+        }
+      },
+      "action_entropy_bits": 2.7309,
+      "normalized_action_entropy": 0.8615,
+      "action_score_diagnostic": {
+        "kind": "probability",
+        "sample_count": 71589,
+        "mean_scores": {
+          "0": 0.0522,
+          "1": 0.106,
+          "2": 0.0934,
+          "3": 0.1296,
+          "4": 0.1056,
+          "5": 0.1747,
+          "6": 0.0774,
+          "7": 0.1693,
+          "8": 0.0918
+        },
+        "mean_top_actions": [
+          {
+            "action": "5",
+            "score": 0.1747
+          },
+          {
+            "action": "7",
+            "score": 0.1693
+          },
+          {
+            "action": "3",
+            "score": 0.1296
+          }
+        ],
+        "top_action_distribution": {
+          "0": {
+            "count": 2,
+            "ratio": 0.0
+          },
+          "1": {
+            "count": 9973,
+            "ratio": 0.1393
+          },
+          "2": {
+            "count": 5953,
+            "ratio": 0.0832
+          },
+          "3": {
+            "count": 11909,
+            "ratio": 0.1664
+          },
+          "4": {
+            "count": 5129,
+            "ratio": 0.0716
+          },
+          "5": {
+            "count": 12796,
+            "ratio": 0.1787
+          },
+          "6": {
+            "count": 1782,
+            "ratio": 0.0249
+          },
+          "7": {
+            "count": 19222,
+            "ratio": 0.2685
+          },
+          "8": {
+            "count": 4823,
+            "ratio": 0.0674
+          }
+        },
+        "dominant_top_action": {
+          "action": "7",
+          "count": 19222,
+          "ratio": 0.2685
+        },
+        "mean_chosen_action_score": 0.586,
+        "chosen_action_score_sample_count": 71589
+      },
+      "upgrade_policy_decision_count": 0,
+      "reward_breakdown_average": {
+        "action_repeat": -27.8248,
+        "boss_pressure": -0.0037,
+        "boundary_risk": -2.8726,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": 0.0,
+        "damage_taken": -9.3147,
+        "enemy_pressure": -0.2734,
+        "hazard_risk": -1.6193,
+        "kill": 30.416,
+        "level": 5.52,
+        "low_health": -0.8098,
+        "opening_boundary_escape": -0.1316,
+        "opening_edge_risk_delta": 0.0,
+        "route_recovery": -6.3775,
+        "safety_delta": -0.0258,
+        "survival": 3.3463,
+        "terminal": -2.6,
+        "total": 11.6836,
+        "xp": 24.2544
+      }
+    },
+    "findings": [],
+    "gate_decision": "evaluation_recorded_not_policy_gate"
+  },
+  "rule_bots": {
+    "kind": "bot_matrix",
+    "bots": [
+      {
+        "bot": "random",
+        "map_id": "caramel-workshop",
+        "seed_start": 63400,
+        "seeds": 10,
+        "seconds": 300.0,
+        "tick_rate": 30,
+        "victories": 0,
+        "win_rate": 0.0,
+        "gate_status": "pass",
+        "gate_target": {
+          "label": "random robustness",
+          "min_win_rate": 0.0,
+          "max_win_rate": 0.15
+        },
+        "average_duration_seconds": 195.158,
+        "average_level": 5.1,
+        "average_kills": 285.2,
+        "max_enemy_count": 23,
+        "runs": [
+          {
+            "seed": 63400,
+            "terminal": "defeat",
+            "duration_seconds": 223.252,
+            "level": 5,
+            "kills": 344,
+            "damage_taken": 120.583,
+            "max_enemy_count": 12
+          },
+          {
+            "seed": 63401,
+            "terminal": "defeat",
+            "duration_seconds": 218.151,
+            "level": 5,
+            "kills": 333,
+            "damage_taken": 136.23,
+            "max_enemy_count": 12
+          },
+          {
+            "seed": 63402,
+            "terminal": "defeat",
+            "duration_seconds": 224.886,
+            "level": 5,
+            "kills": 344,
+            "damage_taken": 121.033,
+            "max_enemy_count": 14
+          },
+          {
+            "seed": 63403,
+            "terminal": "defeat",
+            "duration_seconds": 219.985,
+            "level": 7,
+            "kills": 329,
+            "damage_taken": 121.067,
+            "max_enemy_count": 15
+          },
+          {
+            "seed": 63404,
+            "terminal": "defeat",
+            "duration_seconds": 220.852,
+            "level": 6,
+            "kills": 337,
+            "damage_taken": 121.287,
+            "max_enemy_count": 14
+          },
+          {
+            "seed": 63405,
+            "terminal": "defeat",
+            "duration_seconds": 213.85,
+            "level": 3,
+            "kills": 329,
+            "damage_taken": 120.55,
+            "max_enemy_count": 13
+          },
+          {
+            "seed": 63406,
+            "terminal": "defeat",
+            "duration_seconds": 221.085,
+            "level": 7,
+            "kills": 341,
+            "damage_taken": 120.357,
+            "max_enemy_count": 16
+          },
+          {
+            "seed": 63407,
+            "terminal": "defeat",
+            "duration_seconds": 66.966,
+            "level": 3,
+            "kills": 45,
+            "damage_taken": 120.199,
+            "max_enemy_count": 9
+          },
+          {
+            "seed": 63408,
+            "terminal": "defeat",
+            "duration_seconds": 225.753,
+            "level": 7,
+            "kills": 345,
+            "damage_taken": 136.317,
+            "max_enemy_count": 18
+          },
+          {
+            "seed": 63409,
+            "terminal": "defeat",
+            "duration_seconds": 116.799,
+            "level": 3,
+            "kills": 105,
+            "damage_taken": 120.76,
+            "max_enemy_count": 23
+          }
+        ]
+      },
+      {
+        "bot": "kite",
+        "map_id": "caramel-workshop",
+        "seed_start": 63400,
+        "seeds": 10,
+        "seconds": 300.0,
+        "tick_rate": 30,
+        "victories": 1,
+        "win_rate": 0.1,
+        "gate_status": "repair",
+        "gate_target": {
+          "label": "high-skill rule bot",
+          "min_win_rate": 0.45,
+          "max_win_rate": 0.75
+        },
+        "average_duration_seconds": 217.306,
+        "average_level": 8.7,
+        "average_kills": 335.7,
+        "max_enemy_count": 23,
+        "runs": [
+          {
+            "seed": 63400,
+            "terminal": "defeat",
+            "duration_seconds": 217.884,
+            "level": 9,
+            "kills": 325,
+            "damage_taken": 120.133,
+            "max_enemy_count": 23
+          },
+          {
+            "seed": 63401,
+            "terminal": "defeat",
+            "duration_seconds": 231.354,
+            "level": 10,
+            "kills": 359,
+            "damage_taken": 120.417,
+            "max_enemy_count": 17
+          },
+          {
+            "seed": 63402,
+            "terminal": "defeat",
+            "duration_seconds": 216.917,
+            "level": 9,
+            "kills": 337,
+            "damage_taken": 120.167,
+            "max_enemy_count": 17
+          },
+          {
+            "seed": 63403,
+            "terminal": "defeat",
+            "duration_seconds": 218.218,
+            "level": 9,
+            "kills": 335,
+            "damage_taken": 120.067,
+            "max_enemy_count": 17
+          },
+          {
+            "seed": 63404,
+            "terminal": "defeat",
+            "duration_seconds": 231.454,
+            "level": 9,
+            "kills": 362,
+            "damage_taken": 120.383,
+            "max_enemy_count": 10
+          },
+          {
+            "seed": 63405,
+            "terminal": "defeat",
+            "duration_seconds": 217.584,
+            "level": 8,
+            "kills": 334,
+            "damage_taken": 120.1,
+            "max_enemy_count": 13
+          },
+          {
+            "seed": 63406,
+            "terminal": "victory",
+            "duration_seconds": 300.015,
+            "level": 11,
+            "kills": 525,
+            "damage_taken": 43.333,
+            "max_enemy_count": 10
+          },
+          {
+            "seed": 63407,
+            "terminal": "defeat",
+            "duration_seconds": 98.566,
+            "level": 4,
+            "kills": 80,
+            "damage_taken": 120.0,
+            "max_enemy_count": 11
+          },
+          {
+            "seed": 63408,
+            "terminal": "defeat",
+            "duration_seconds": 227.486,
+            "level": 9,
+            "kills": 367,
+            "damage_taken": 120.567,
+            "max_enemy_count": 10
+          },
+          {
+            "seed": 63409,
+            "terminal": "defeat",
+            "duration_seconds": 213.583,
+            "level": 9,
+            "kills": 333,
+            "damage_taken": 120.2,
+            "max_enemy_count": 11
+          }
+        ]
+      },
+      {
+        "bot": "tank",
+        "map_id": "caramel-workshop",
+        "seed_start": 63400,
+        "seeds": 10,
+        "seconds": 300.0,
+        "tick_rate": 30,
+        "victories": 0,
+        "win_rate": 0.0,
+        "gate_status": "repair",
+        "gate_target": {
+          "label": "mid-skill rule bot",
+          "min_win_rate": 0.25,
+          "max_win_rate": 0.55
+        },
+        "average_duration_seconds": 182.154,
+        "average_level": 6.2,
+        "average_kills": 239.9,
+        "max_enemy_count": 55,
+        "runs": [
+          {
+            "seed": 63400,
+            "terminal": "defeat",
+            "duration_seconds": 231.154,
+            "level": 9,
+            "kills": 361,
+            "damage_taken": 152.309,
+            "max_enemy_count": 19
+          },
+          {
+            "seed": 63401,
+            "terminal": "defeat",
+            "duration_seconds": 221.918,
+            "level": 6,
+            "kills": 341,
+            "damage_taken": 120.397,
+            "max_enemy_count": 11
+          },
+          {
+            "seed": 63402,
+            "terminal": "defeat",
+            "duration_seconds": 221.085,
+            "level": 8,
+            "kills": 342,
+            "damage_taken": 120.408,
+            "max_enemy_count": 19
+          },
+          {
+            "seed": 63403,
+            "terminal": "defeat",
+            "duration_seconds": 122.598,
+            "level": 4,
+            "kills": 113,
+            "damage_taken": 136.201,
+            "max_enemy_count": 28
+          },
+          {
+            "seed": 63404,
+            "terminal": "defeat",
+            "duration_seconds": 193.179,
+            "level": 5,
+            "kills": 209,
+            "damage_taken": 168.056,
+            "max_enemy_count": 55
+          },
+          {
+            "seed": 63405,
+            "terminal": "defeat",
+            "duration_seconds": 96.699,
+            "level": 3,
+            "kills": 64,
+            "damage_taken": 136.075,
+            "max_enemy_count": 21
+          },
+          {
+            "seed": 63406,
+            "terminal": "defeat",
+            "duration_seconds": 213.883,
+            "level": 7,
+            "kills": 323,
+            "damage_taken": 120.31,
+            "max_enemy_count": 21
+          },
+          {
+            "seed": 63407,
+            "terminal": "defeat",
+            "duration_seconds": 119.165,
+            "level": 4,
+            "kills": 108,
+            "damage_taken": 120.057,
+            "max_enemy_count": 25
+          },
+          {
+            "seed": 63408,
+            "terminal": "defeat",
+            "duration_seconds": 175.875,
+            "level": 6,
+            "kills": 197,
+            "damage_taken": 136.089,
+            "max_enemy_count": 55
+          },
+          {
+            "seed": 63409,
+            "terminal": "defeat",
+            "duration_seconds": 225.986,
+            "level": 10,
+            "kills": 341,
+            "damage_taken": 136.362,
+            "max_enemy_count": 22
+          }
+        ]
+      }
+    ]
+  },
+  "rule_bot_command": [
+    "cargo",
+    "run",
+    "-q",
+    "-p",
+    "game_harness",
+    "--",
+    "matrix",
+    "--seed-start",
+    "63400",
+    "--seeds",
+    "10",
+    "--seconds",
+    "300.0",
+    "--tick-rate",
+    "30",
+    "--map-id",
+    "caramel-workshop",
+    "--bots",
+    "random,kite,tank",
+    "--content-dir",
+    "content/base_demo"
+  ],
+  "rule_bot_stderr": "",
+  "findings": [],
+  "limitations": [
+    "This comparison uses the same seed/map/duration, but a smoke-scale policy is not a balance or fun gate.",
+    "Rule Bot baselines remain the primary deterministic content gate until RL policies are trained and calibrated at larger scale."
+  ],
+  "gate_decision": "comparison_recorded_not_balance_gate"
+}

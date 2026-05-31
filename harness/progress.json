@@ -1456,6 +1456,16 @@
       "id": "rl_caramel_late_conversion_target",
       "summary": "基于最新 per-map edge branch + all-map late filter baseline 复跑 caramel-workshop seeds 63400-63402 的 300 秒 failed-only traces：三局分别死于 213.2166s、235.3546s、243.7898s。导出 164 条 180-300s clean risk rows（risk_recovery_samples_valid）、387 条 210-300s failure policy rows，并用旧 multimap victory terminal dataset 做 same-map nearest check；三个失败 seed 的 nearest target match ratio 分别为 0.0、0.1569、0.169，说明旧 victory target 对当前 caramel late failure states 覆盖太薄。",
       "report": "harness/reports/2026-05-30_rl_caramel_late_conversion_target_001/summary.md"
+    },
+    {
+      "id": "rl_health_retention_guard_seed63407_probe",
+      "summary": "新增 evaluation-only health-retention guard，可按地图或 map:seed target 在指定时间窗切回 baseline-winning retention model，并记录 target、阈值、嵌套 adapter provenance 和 branch usage；单测覆盖解析、targeted switch、usage 聚合和 compare 透传。",
+      "report": "python/train/train_sb3.py"
+    },
+    {
+      "id": "rl_health_retention_guard_seed63407_followup",
+      "summary": "围绕 selective opening guard 10 seed tradeoff 复查 seed 63407：180-300s low-health-only guard 和 180-300s late-only path retention 均失败；60-300s mid-path retention 恢复 seed 63407，并让 caramel-workshop 10 seed follow-up 从 0.1 胜率提升到 0.2、平均存活 +2.7086s，window regression 0 blocker。high-pressure 60/180/300s 三图相对 per-map chain 也 0 blocker，但这是 target-specific repair evidence，不是 acceptance。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3193,6 +3203,11 @@
       "id": "rl_terminal_sequence_selective_opening_guard_10seed_followup",
       "summary": "扩大到 caramel-workshop seeds 63400-63409 的 300 秒单图 follow-up 后，selective opening guard 未能继续推进：baseline 与 candidate 胜率同为 0.1，但 candidate 平均存活从 242.8409s 降到 238.65s，window_regression_caramel_300s_10seed 判定 policy_window_regression_failed，blocker 为 -4.1909s。candidate 修成 seed 63402，却丢掉 baseline 原本胜利的 seed 63407；已保存 9 条 failed-only trace、补跑 63402/63407 成功 trace 对比，并确认 63407 的关键差异不是单纯 opening action2，而是 candidate 在 226.0193s 进入 low health、231.0204s 死亡。已记录 fail_20260531_006。",
       "report": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md"
+    },
+    {
+      "id": "rl_health_retention_guard_seed63407_diagnostic",
+      "summary": "health-retention guard 诊断已完成：180-300s low-health-only guard 和 180-300s late-only path retention 都未救回 caramel-workshop seed 63407；只有 60-300s mid-path retention 恢复 seed 63407，并在 63400-63409 10 seed target follow-up 中把 win_rate 从 0.1 提到 0.2、average_survival_seconds 从 242.8409s 提到 245.5495s，window_regression_caramel_300s_10seed 以 0 blocker 通过。high-pressure 60/180/300s 三图复查相对 per-map chain 也 0 blocker，但 seed 63407 不在 63400-63402 窗口内，因此该结果仍是 target-specific repair evidence，不是 RL test Bot、stage 03 或 acceptance。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3291,6 +3306,10 @@
     {
       "id": "rl_stage01_constrained_edge_recovery_branch",
       "summary": "edge_recovery_branch 已完成首个 63400-63402 三 seed 60 秒预检并修复 target seed，同时未复现 global action 7 collapse；下一步必须扩大到 parent no-regression 和 high-pressure 60/180/300 秒窗口，确认分支 usage、动作分布和平均存活不会引入新的跨图回归。"
+    },
+    {
+      "id": "rl_health_retention_guard_seed63407_next_objective",
+      "summary": "下一轮应把 seed 63407 的 60-180s route/path retention 信号转成训练期 constrained objective；不要继续扩大 180s 后 low-health-only guard。任何 follow-up 仍必须同时保留 10 seed caramel target follow-up、60/180/300s high-pressure no-regression 和 adapter provenance。"
     }
   ]
 }

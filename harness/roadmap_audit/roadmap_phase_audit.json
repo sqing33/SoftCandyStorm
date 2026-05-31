@@ -830,7 +830,22 @@
         "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_probe_001/window_regression_vs_per_map_chain.json",
         "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md",
         "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/trace_compare_seed63407_baseline_vs_candidate.json",
-        "harness/failed_cases/fail_20260531_006_selective_opening_guard_10seed_tradeoff.json"
+        "harness/failed_cases/fail_20260531_006_selective_opening_guard_10seed_tradeoff.json",
+        "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/summary.md",
+        "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/health_retention_caramel_300s_10seed.json",
+        "harness/reports/2026-05-31_rl_health_retention_guard_seed63407_probe_001/window_regression_caramel_300s_10seed.json",
+        "harness/reports/2026-05-31_rl_late_path_retention_seed63407_probe_001/summary.md",
+        "harness/reports/2026-05-31_rl_late_path_retention_seed63407_probe_001/seed63407_300s.json",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_probe_001/summary.md",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_probe_001/seed63407_300s.json",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/summary.md",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/mid_path_retention_caramel_300s_10seed.json",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/window_regression_caramel_300s_10seed.json",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_high_pressure_001/summary.md",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_high_pressure_001/comparison_60s.json",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_high_pressure_001/comparison_180s.json",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_high_pressure_001/comparison_300s.json",
+        "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_high_pressure_001/window_regression_vs_per_map_chain.json"
       ],
       "gaps": [
         "terminal-sequence-recovery reward profile 已提供 constrained online / sequence objective 的训练入口，并证明能改善 300 秒 conversion；原始 checkpoint 的 60s/caramel-workshop opening regression 已记录为 fail_20260531_004，0-60 staged opening 与 caramel 180s late split 的取舍失败已记录为 fail_20260531_005。selective opening guard 在 3 seed high-pressure 窗口通过 no-regression，但 10 seed caramel-workshop follow-up 失败：胜率仍为 0.1，平均存活从 242.8409s 降到 238.65s，修成 seed 63402 的同时丢掉 baseline 原本胜利的 seed 63407，已记录 fail_20260531_006。Trace 对比显示 63407 baseline 与 candidate 都有 opening boundary/action2 热点，真正差异是 candidate 在 226.0193s 进入 low health 并于 231.0204s 死亡；Phase 6 下一步应先补 mid/late health-retention guard。该结果仍是 repair evidence，不是 RL test Bot、stage 03 或 acceptance。",
@@ -885,7 +900,8 @@
         "edge_recovery_branch + late_recovery_filter chained diagnostic 已完成 60/180/300 秒 high-pressure 三图复跑，并相对单独 edge branch 通过 no-regression；300 秒 soda-creek 提升到 1.0 胜率、cracked-star-jar 提升到 0.3333，但 caramel-workshop 仍为 0.0。已记录 fail_20260530_015，因此它仍只是 repair diagnostic 和 late-risk 样本来源，不是策略质量证据或 acceptance。",
         "caramel-workshop 单图 trace 复查确认剩余缺口是 split failure：seed 63402 在 opening_lt_60 右下角 action 5 lock，seeds 63400/63401 在 late_180_to_300 低血量 + hazard pressure 死亡；clean risk subset 258 条 valid、0 warning，但 route hotspots 主要集中在 opening。已记录 fail_20260530_016。",
         "caramel-workshop opening edge branch scope probe 已把 seed 63402 opening 修复收窄到 30-45s 单次 action 5 -> 7 分派，并通过 target preflight 与 60/180/300s parent no-regression；但 300 秒 caramel 胜率仍为 0.0，broad 0-60s scope 还会触发 action 5 ratio regression。已记录 fail_20260530_017。",
-        "per-map edge_recovery_branch map overrides 已支持同一分支模型按地图使用不同时间窗，并用 soda-creek:0-60s + caramel-workshop:30-45s + all-map late_recovery_filter 通过上一条 chained diagnostic 的 60/180/300 秒 no-regression（0 blockers）；但 caramel-workshop 300 秒胜率仍为 0.0，只是平均存活提升到 231.2871s，已记录 fail_20260530_021。下一步仍需 caramel-workshop late terminal conversion objective，不能把 deterministic wrapper chain 当成 policy candidate 或 acceptance。"
+        "per-map edge_recovery_branch map overrides 已支持同一分支模型按地图使用不同时间窗，并用 soda-creek:0-60s + caramel-workshop:30-45s + all-map late_recovery_filter 通过上一条 chained diagnostic 的 60/180/300 秒 no-regression（0 blockers）；但 caramel-workshop 300 秒胜率仍为 0.0，只是平均存活提升到 231.2871s，已记录 fail_20260530_021。下一步仍需 caramel-workshop late terminal conversion objective，不能把 deterministic wrapper chain 当成 policy candidate 或 acceptance。",
+        "health-retention guard 诊断已完成：180-300s low-health-only guard 和 180-300s late-only path retention 都未救回 caramel-workshop seed 63407；只有 60-300s mid-path retention 恢复 seed 63407，并在 63400-63409 10 seed target follow-up 中把 win_rate 从 0.1 提到 0.2、average_survival_seconds 从 242.8409s 提到 245.5495s，window_regression_caramel_300s_10seed 以 0 blocker 通过。high-pressure 60/180/300s 三图复查相对 per-map chain 也 0 blocker，但 seed 63407 不在 63400-63402 窗口内，因此该结果仍是 target-specific repair evidence，不是 RL test Bot、stage 03 或 acceptance。"
       ],
       "blockers": [
         "rl_policy_multimap_generalization_gap"
@@ -924,7 +940,8 @@
         "caramel narrow opening branch 与 late filter 的统一链路虽然通过 60/180 秒 no-regression 并把 caramel-workshop 300 秒平均存活提高到 231.2871s，但 300 秒 soda-creek 从 1.0 回落到 0.6667，已记录 fail_20260530_018；下一轮不能把 caramel 分支直接并入上一版 soda-winning chain，应改做 per-map 或更强 state-conditioned late conversion，并把 soda-creek 300 秒 no-regression 设为硬门槛。",
         "`--late-recovery-maps caramel-workshop` 已验证参数和 provenance 生效，但 300 秒窗口从上一版 chained diagnostic 回归为 soda-creek 0.0、caramel-workshop 0.0、cracked-star-jar 0.0，已记录 fail_20260530_019；下一步应保留 soda/cracked late safety repair，另起 caramel late conversion objective，不能用 caramel-only late filter 作为候选链路。",
         "保留 all-map late_recovery_filter 并只启用 caramel-workshop edge branch 的隔离探针保住 cracked-star-jar 300 秒 0.3333，但 soda-creek 300 秒降到 0.3333 且 seed 63402 在 37.6664s opening 死亡，已记录 fail_20260530_020；下一步需要 per-map branch composition 或等价 manifest，保留 soda opening branch 与 all-map late safety 后再追加 caramel conversion。",
-        "selective opening guard 的 10 seed caramel follow-up 已失败：下一轮应围绕 seed 63407 的 mid/late low-health regression 设计 health-retention guard；任何候选仍必须保留 10 seed target follow-up、60/180/300 秒 no-regression 和 adapter provenance。若回到 terminal_conversion_branch 路线，仍要通过 terminal conversion probe gate。"
+        "selective opening guard 的 10 seed caramel follow-up 已失败：下一轮应围绕 seed 63407 的 mid/late low-health regression 设计 health-retention guard；任何候选仍必须保留 10 seed target follow-up、60/180/300 秒 no-regression 和 adapter provenance。若回到 terminal_conversion_branch 路线，仍要通过 terminal conversion probe gate。",
+        "下一轮应把 seed 63407 的 60-180s route/path retention 信号转成训练期 constrained objective；不要继续扩大 180s 后 low-health-only guard。任何 follow-up 仍必须同时保留 10 seed caramel target follow-up、60/180/300s high-pressure no-regression 和 adapter provenance。"
       ]
     },
     {
