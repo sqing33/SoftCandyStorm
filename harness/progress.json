@@ -1471,6 +1471,11 @@
       "id": "rl_policy_window_target_preflight_gate",
       "summary": "新增 validate_policy_window_target_preflight.py，用于在已有 comparison report 中对单个 map/window 执行绝对阈值 early-stop 检查；repair probe gate 现在可通过 --required-window-target-preflight 把该检查纳入包级硬门禁。对 mid-path-retention seed 63407 closed-loop probe 复跑后，60s/caramel-workshop preflight 以 win_rate 0.3333 < 0.6667、average_survival_seconds 49.2774 < 55.0 失败，repair gate blockers 从 7 个扩展到 9 个。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/window_target_preflight_60s_caramel.md"
+    },
+    {
+      "id": "rl_policy_adapter_scope_gate",
+      "summary": "新增 validate_policy_adapter_scope.py，用于复核 evaluation-only policy_adapter 的 mode、目标地图、分支时间桶、总 branch ratio 和报告措辞，避免把诊断 wrapper 误读成 policy candidate 或 acceptance。对 seed 63402 edge_recovery_branch high-pressure 60/180/300 秒 comparison 复核后，policy_adapter_scope_passed：108848 次决策中只有 18 次 branch decision，总 ratio 0.000165，所有非零分派均限于 soda-creek 与 opening_lt_60。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/policy_adapter_scope.md"
     }
   ],
   "current_findings": [
