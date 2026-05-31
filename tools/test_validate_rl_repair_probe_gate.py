@@ -145,6 +145,30 @@ def window_target_preflight_payload(
     }
 
 
+def policy_adapter_scope_payload(
+    *,
+    blockers: list[str] | None = None,
+    errors: list[str] | None = None,
+) -> dict:
+    blockers = blockers or []
+    errors = errors or []
+    if errors:
+        decision = "policy_adapter_scope_invalid"
+    elif blockers:
+        decision = "policy_adapter_scope_failed"
+    else:
+        decision = "policy_adapter_scope_passed"
+    return {
+        "decision": decision,
+        "expected_mode": "edge_recovery_branch",
+        "comparison_count": 3,
+        "total_branch_decisions": 18,
+        "total_branch_ratio": 0.000165,
+        "errors": errors,
+        "blockers": blockers,
+    }
+
+
 class RlRepairProbeGateTests(unittest.TestCase):
     def test_clean_bundle_passes_for_limited_followup(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -378,6 +402,97 @@ class RlRepairProbeGateTests(unittest.TestCase):
                 window_regressions=[regression],
                 window_target_preflights=[("short60", first)],
                 required_window_target_preflights=[("short60", second)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_invalid")
+        self.assertTrue(any("duplicate label" in error for error in report["errors"]))
+
+    def test_required_policy_adapter_scope_passes_for_limited_followup(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            scope = root / "policy_adapter_scope.json"
+            write_json(training, training_payload())
+            write_json(regression, regression_payload())
+            write_json(scope, policy_adapter_scope_payload())
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+                required_policy_adapter_scopes=[("edge", scope)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_passed_for_limited_followup")
+        self.assertEqual(
+            report["policy_adapter_scope_requirement"],
+            "required_labeled_scopes",
+        )
+        self.assertEqual(report["required_policy_adapter_scope_labels"], ["edge"])
+        self.assertTrue(all(item["required"] for item in report["policy_adapter_scopes"]))
+
+    def test_policy_adapter_scope_blocker_fails_with_label(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            scope = root / "policy_adapter_scope.json"
+            write_json(training, training_payload())
+            write_json(regression, regression_payload())
+            write_json(
+                scope,
+                policy_adapter_scope_payload(
+                    blockers=["300s: branch used in disallowed time bucket `late_180_to_300`"]
+                ),
+            )
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+                required_policy_adapter_scopes=[("edge", scope)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_failed")
+        self.assertTrue(
+            any("edge" in blocker and "disallowed time bucket" in blocker for blocker in report["blockers"])
+        )
+
+    def test_invalid_policy_adapter_scope_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            scope = root / "policy_adapter_scope.json"
+            write_json(training, training_payload())
+            write_json(regression, regression_payload())
+            write_json(scope, policy_adapter_scope_payload(errors=["top-level policy_adapter is missing"]))
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+                policy_adapter_scopes=[("edge", scope)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_invalid")
+        self.assertTrue(any("policy_adapter" in error for error in report["errors"]))
+
+    def test_duplicate_policy_adapter_scope_labels_are_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            first = root / "first_policy_adapter_scope.json"
+            second = root / "second_policy_adapter_scope.json"
+            write_json(training, training_payload())
+            write_json(regression, regression_payload())
+            write_json(first, policy_adapter_scope_payload())
+            write_json(second, policy_adapter_scope_payload())
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+                policy_adapter_scopes=[("edge", first)],
+                required_policy_adapter_scopes=[("edge", second)],
             )
 
         self.assertEqual(report["decision"], "rl_repair_probe_gate_invalid")

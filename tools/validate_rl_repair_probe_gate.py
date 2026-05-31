@@ -48,6 +48,13 @@ class WindowTargetPreflightInput:
     required: bool = False
 
 
+@dataclass(frozen=True)
+class PolicyAdapterScopeInput:
+    label: str
+    path: Path
+    required: bool = False
+
+
 def load_json_object(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
@@ -122,6 +129,26 @@ def parse_required_window_target_preflight(value: str) -> tuple[str, Path]:
     label, path = parse_optional_window_target_preflight(value)
     if label is None:
         raise argparse.ArgumentTypeError("required window target preflight must use LABEL=PATH")
+    return label, path
+
+
+def parse_optional_policy_adapter_scope(value: str) -> tuple[str | None, Path]:
+    if "=" not in value:
+        return None, Path(value)
+    label, path_text = value.split("=", 1)
+    label = label.strip()
+    path_text = path_text.strip()
+    if not label:
+        raise argparse.ArgumentTypeError("policy adapter scope label must be non-empty")
+    if not path_text:
+        raise argparse.ArgumentTypeError("policy adapter scope path must be non-empty")
+    return label, Path(path_text)
+
+
+def parse_required_policy_adapter_scope(value: str) -> tuple[str, Path]:
+    label, path = parse_optional_policy_adapter_scope(value)
+    if label is None:
+        raise argparse.ArgumentTypeError("required policy adapter scope must use LABEL=PATH")
     return label, path
 
 
@@ -393,6 +420,65 @@ def summarize_window_target_preflight(
     return summaries
 
 
+def summarize_policy_adapter_scope(
+    scope_inputs: list[PolicyAdapterScopeInput],
+    errors: list[str],
+    blockers: list[str],
+) -> list[dict[str, Any]]:
+    summaries: list[dict[str, Any]] = []
+    for scope_input in scope_inputs:
+        path = scope_input.path
+        path_label = report_label(path)
+        display_label = (
+            path_label if scope_input.label == path_label else f"{scope_input.label}/{path_label}"
+        )
+        try:
+            report = load_json_object(path)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            errors.append(f"{display_label}: unable to load {path}: {exc}")
+            summaries.append(
+                {
+                    "label": scope_input.label,
+                    "path": str(path),
+                    "required": scope_input.required,
+                    "loaded": False,
+                }
+            )
+            continue
+
+        collect_gate_wording_errors(display_label, report, errors)
+        decision = report.get("decision")
+        report_blockers = [str(item) for item in report.get("blockers", [])]
+        report_errors = [str(item) for item in report.get("errors", [])]
+        if decision == "policy_adapter_scope_invalid":
+            errors.extend(
+                f"{display_label}: {item}"
+                for item in report_errors or ["invalid policy adapter scope report"]
+            )
+        elif decision == "policy_adapter_scope_failed":
+            blockers.extend(
+                f"{display_label}: {item}"
+                for item in report_blockers or ["policy adapter scope failed"]
+            )
+        elif decision != "policy_adapter_scope_passed":
+            errors.append(f"{display_label}: unknown policy adapter scope decision `{decision}`")
+        summaries.append(
+            {
+                "label": scope_input.label,
+                "path": str(path),
+                "required": scope_input.required,
+                "loaded": True,
+                "decision": decision,
+                "comparison_count": report.get("comparison_count"),
+                "total_branch_decisions": report.get("total_branch_decisions"),
+                "total_branch_ratio": report.get("total_branch_ratio"),
+                "blocker_count": len(report_blockers),
+                "error_count": len(report_errors),
+            }
+        )
+    return summaries
+
+
 def summarize_failure_analysis(path: Path | None, errors: list[str]) -> dict[str, Any] | None:
     if path is None:
         return None
@@ -538,6 +624,47 @@ def normalize_window_target_preflight_inputs(
     return inputs
 
 
+def normalize_policy_adapter_scope_inputs(
+    policy_adapter_scopes: list[Path | tuple[str, Path] | PolicyAdapterScopeInput] | None,
+    required_policy_adapter_scopes: list[tuple[str, Path]] | dict[str, Path] | None,
+    errors: list[str],
+) -> list[PolicyAdapterScopeInput]:
+    inputs: list[PolicyAdapterScopeInput] = []
+    seen_labels: dict[str, Path] = {}
+
+    def add_input(label: str, path: Path, *, required: bool) -> None:
+        if not label:
+            errors.append(f"policy_adapter_scope: label for {path} must be non-empty")
+            return
+        existing = seen_labels.get(label)
+        if existing is not None:
+            errors.append(
+                "policy_adapter_scope: duplicate label "
+                f"`{label}` for {existing} and {path}"
+            )
+            return
+        seen_labels[label] = path
+        inputs.append(PolicyAdapterScopeInput(label=label, path=path, required=required))
+
+    for item in policy_adapter_scopes or []:
+        if isinstance(item, PolicyAdapterScopeInput):
+            add_input(item.label, item.path, required=item.required)
+        elif isinstance(item, tuple):
+            label, path = item
+            add_input(label, path, required=False)
+        else:
+            add_input(report_label(item), item, required=False)
+
+    if isinstance(required_policy_adapter_scopes, dict):
+        required_items = list(required_policy_adapter_scopes.items())
+    else:
+        required_items = required_policy_adapter_scopes or []
+    for label, path in required_items:
+        add_input(label, path, required=True)
+
+    return inputs
+
+
 def build_report(
     *,
     training_report: Path,
@@ -547,6 +674,8 @@ def build_report(
     required_target_seed_preflights: list[tuple[str, Path]] | dict[str, Path] | None = None,
     window_target_preflights: list[Path | tuple[str, Path] | WindowTargetPreflightInput] | None = None,
     required_window_target_preflights: list[tuple[str, Path]] | dict[str, Path] | None = None,
+    policy_adapter_scopes: list[Path | tuple[str, Path] | PolicyAdapterScopeInput] | None = None,
+    required_policy_adapter_scopes: list[tuple[str, Path]] | dict[str, Path] | None = None,
     anchor_alignment: Path | None = None,
     failure_analysis: Path | None = None,
 ) -> dict[str, Any]:
@@ -575,6 +704,16 @@ def build_report(
     )
     window_target_summaries = summarize_window_target_preflight(
         window_target_inputs,
+        errors,
+        blockers,
+    )
+    policy_adapter_scope_inputs = normalize_policy_adapter_scope_inputs(
+        policy_adapter_scopes,
+        required_policy_adapter_scopes,
+        errors,
+    )
+    policy_adapter_scope_summaries = summarize_policy_adapter_scope(
+        policy_adapter_scope_inputs,
         errors,
         blockers,
     )
@@ -629,6 +768,17 @@ def build_report(
             item.label for item in window_target_inputs if item.required
         ],
         "window_target_preflights": window_target_summaries,
+        "policy_adapter_scope_requirement": (
+            "required_labeled_scopes"
+            if any(item.required for item in policy_adapter_scope_inputs)
+            else "provided_reports_only"
+            if policy_adapter_scope_inputs
+            else "not_required"
+        ),
+        "required_policy_adapter_scope_labels": [
+            item.label for item in policy_adapter_scope_inputs if item.required
+        ],
+        "policy_adapter_scopes": policy_adapter_scope_summaries,
         "failure_analysis": failure_summary,
         "errors": errors,
         "blockers": blockers,
@@ -670,6 +820,11 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         required = "required" if item.get("required") else "provided"
         lines.append(
             f"- Window target preflight ({required}, `{item.get('label')}`): `{item.get('path')}`"
+        )
+    for item in report["policy_adapter_scopes"]:
+        required = "required" if item.get("required") else "provided"
+        lines.append(
+            f"- Policy adapter scope ({required}, `{item.get('label')}`): `{item.get('path')}`"
         )
     if report.get("failure_analysis"):
         lines.append(f"- Failure analysis: `{report['failure_analysis'].get('path')}`")
@@ -733,6 +888,20 @@ def main() -> int:
         default=[],
         help="Required window target preflight report as LABEL=PATH.",
     )
+    parser.add_argument(
+        "--policy-adapter-scope",
+        type=parse_optional_policy_adapter_scope,
+        action="append",
+        default=[],
+        help="Policy adapter scope report as PATH or LABEL=PATH.",
+    )
+    parser.add_argument(
+        "--required-policy-adapter-scope",
+        type=parse_required_policy_adapter_scope,
+        action="append",
+        default=[],
+        help="Required policy adapter scope report as LABEL=PATH.",
+    )
     parser.add_argument("--anchor-alignment", type=Path, default=None)
     parser.add_argument("--failure-analysis", type=Path, default=None)
     parser.add_argument("--report", type=Path, default=None)
@@ -759,6 +928,11 @@ def main() -> int:
             for label, path in args.window_target_preflight
         ],
         required_window_target_preflights=args.required_window_target_preflight,
+        policy_adapter_scopes=[
+            (label or report_label(path), path)
+            for label, path in args.policy_adapter_scope
+        ],
+        required_policy_adapter_scopes=args.required_policy_adapter_scope,
         anchor_alignment=args.anchor_alignment,
         failure_analysis=args.failure_analysis,
     )

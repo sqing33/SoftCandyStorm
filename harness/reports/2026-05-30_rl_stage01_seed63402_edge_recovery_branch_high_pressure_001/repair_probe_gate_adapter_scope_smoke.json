@@ -1,0 +1,63 @@
+{
+  "report_version": 1,
+  "decision": "rl_repair_probe_gate_passed_for_limited_followup",
+  "gate_decision": "rl_repair_probe_gate_passed_for_limited_followup",
+  "training_report": {
+    "path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/distillation_report.json",
+    "loaded": true,
+    "status": "trained",
+    "gate_decision": "sb3_distillation_smoke_only_not_policy_gate",
+    "model_path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_supervised_dataset_actions_001/seed63402_edge_recovery_supervised_dataset_actions.zip",
+    "reward_profile": null,
+    "anchor_validation_guard": null
+  },
+  "anchor_alignment": null,
+  "window_regression_requirement": "required_labeled_baselines",
+  "required_window_regression_labels": [
+    "edge"
+  ],
+  "window_regressions": [
+    {
+      "label": "edge",
+      "path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/window_regression_60_180_300s.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_window_regression_passed",
+      "blocker_count": 0,
+      "error_count": 0
+    }
+  ],
+  "target_seed_preflight_requirement": "not_required",
+  "required_target_seed_preflight_labels": [],
+  "target_seed_preflights": [],
+  "window_target_preflight_requirement": "not_required",
+  "required_window_target_preflight_labels": [],
+  "window_target_preflights": [],
+  "policy_adapter_scope_requirement": "required_labeled_scopes",
+  "required_policy_adapter_scope_labels": [
+    "edge"
+  ],
+  "policy_adapter_scopes": [
+    {
+      "label": "edge",
+      "path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/policy_adapter_scope.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_adapter_scope_passed",
+      "comparison_count": 3,
+      "total_branch_decisions": 18,
+      "total_branch_ratio": 0.000165,
+      "blocker_count": 0,
+      "error_count": 0
+    }
+  ],
+  "failure_analysis": null,
+  "errors": [],
+  "blockers": [],
+  "warnings": [],
+  "limitations": [
+    "This gate is for RL repair probes only; it is not policy acceptance.",
+    "Passing means a limited follow-up run may be considered, not that the policy is a candidate.",
+    "Release, playtest, and RL acceptance require their separate manifests and manual gates."
+  ]
+}

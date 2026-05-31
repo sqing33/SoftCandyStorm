@@ -1476,6 +1476,11 @@
       "id": "rl_policy_adapter_scope_gate",
       "summary": "新增 validate_policy_adapter_scope.py，用于复核 evaluation-only policy_adapter 的 mode、目标地图、分支时间桶、总 branch ratio 和报告措辞，避免把诊断 wrapper 误读成 policy candidate 或 acceptance。对 seed 63402 edge_recovery_branch high-pressure 60/180/300 秒 comparison 复核后，policy_adapter_scope_passed：108848 次决策中只有 18 次 branch decision，总 ratio 0.000165，所有非零分派均限于 soda-creek 与 opening_lt_60。",
       "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/policy_adapter_scope.md"
+    },
+    {
+      "id": "rl_repair_probe_gate_policy_adapter_scope",
+      "summary": "扩展 validate_rl_repair_probe_gate.py，新增 --policy-adapter-scope 与 --required-policy-adapter-scope，可把 evaluation-only adapter scope 复核纳入包级 hard preflight。edge_recovery_branch high-pressure smoke 同时要求 window_regression_60_180_300s 与 policy_adapter_scope，输出 rl_repair_probe_gate_passed_for_limited_followup；该结果仍只是 limited follow-up 条件，不是 policy candidate 或 RL acceptance。",
+      "report": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/repair_probe_gate_adapter_scope_smoke.md"
     }
   ],
   "current_findings": [

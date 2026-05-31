@@ -27,6 +27,7 @@ The branch still fails the policy repair gate at `300s`: high-pressure `soda-cre
 - `parent_comparison_300s.json`, `branch_comparison_300s.json`
 - `window_regression_60_180_300s.json`: `policy_window_regression_passed`.
 - `policy_adapter_scope.json`: `policy_adapter_scope_passed`; `18 / 108848` branch decisions, all non-zero branch usage stayed within `soda-creek` and `opening_lt_60`.
+- `repair_probe_gate_adapter_scope_smoke.json`: `rl_repair_probe_gate_passed_for_limited_followup` with required window regression and required adapter scope inputs.
 - `branch_samples_60s_soda-creek_validation.json`: `edge_recovery_samples_valid`.
 - `branch_samples_180s_soda-creek_validation.json`: `edge_recovery_samples_valid`.
 - `branch_samples_300s_soda-creek_validation.json`: `edge_recovery_samples_valid`.
