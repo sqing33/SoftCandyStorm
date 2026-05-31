@@ -3348,12 +3348,17 @@
       "id": "rl_failure_lane_repair_preflight_findings",
       "summary": "failure_lane_repair_preflight 已把下一轮推进条件固定成两个 required lanes：opening_repair 不得和 late terminal mixed PPO 继续合并；late_terminal_survival_conversion 必须证明 path-retention-preserving terminal conversion，同时通过 10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure 60/180/300s parent no-regression。该 preflight 是 repair contract，不是训练结果或 acceptance。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_repair_preflight.md"
+    },
+    {
+      "id": "rl_failure_lane_opening_repair_branch_preflight_findings",
+      "summary": "opening_repair 首轮 edge-recovery branch preflight 给出 mixed repair evidence：30-45s、30-50s、30-55s 和 30-60s 窄窗口都让 caramel-workshop:63402 到 60.0328s victory，但因 action 5 ratio 0.308162 > 0.300000 失败；0-60s broad branch 通过 target seed 与 60s/caramel hard preflight，action 5 ratio 降到 0.112715，但 target seed action 7 ratio 升到 0.556358，60s/caramel dominant action 7 ratio 为 0.6243。该结果只能作为 opening lane diagnostic，尚未通过 180/300s parent no-regression 或 10 seed caramel follow-up；已记录 fail_20260531_009。",
+      "report": "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_after_failure_lane_repair_preflight",
-      "summary": "下一步按 preflight 分两条线推进：先做 caramel-workshop seed 63402 的窄 opening state-conditioned branch 或 target-seed preflight；late_terminal_survival_conversion 只能在保留 60-180s path retention 的前提下尝试 terminal conversion。任一新 branch 或 checkpoint 都必须回到 failure_lane_repair_preflight 的 10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure parent no-regression。"
+      "summary": "下一步按 preflight 分两条线推进：opening_repair 已有 0-60s broad branch 通过 target seed 与 60s/caramel hard preflight，但因 action 7 dominance 和缺少 180/300s parent no-regression / 10 seed follow-up 仍只能作为 diagnostic；后续要么先跑 full parent no-regression，要么设计更窄 state-conditioned branch。late_terminal_survival_conversion 只能在保留 60-180s path retention 的前提下尝试 terminal conversion。任一新 branch 或 checkpoint 都必须回到 failure_lane_repair_preflight 的 10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure parent no-regression。"
     },
     {
       "id": "rl_caramel_terminal_conversion_target",

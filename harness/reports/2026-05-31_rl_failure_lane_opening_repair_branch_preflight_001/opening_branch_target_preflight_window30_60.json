@@ -1,0 +1,47 @@
+{
+  "decision": "policy_target_seed_preflight_failed",
+  "comparison": "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_comparison_60s_window30_60.json",
+  "seconds": 60.0,
+  "gate_decision": "comparison_recorded_not_balance_gate",
+  "action_selection": "deterministic",
+  "reward_profile": "standard",
+  "target_count": 1,
+  "target_results": [
+    {
+      "map_id": "caramel-workshop",
+      "seed": 63402,
+      "found": true,
+      "time_seconds": 60.03276,
+      "terminal_kind": "victory",
+      "terminal_reason": "duration_reached",
+      "terminated": true,
+      "truncated": false,
+      "action_ratios": {
+        "7": 0.350916,
+        "5": 0.308162
+      }
+    }
+  ],
+  "checks": {
+    "min_survival_seconds": null,
+    "require_window_survival": true,
+    "require_non_defeat": false,
+    "min_action_ratios": {
+      "7": 0.25
+    },
+    "max_action_ratios": {
+      "5": 0.3
+    },
+    "survival_tolerance_seconds": 0.05
+  },
+  "errors": [],
+  "blockers": [
+    "caramel-workshop:63402: action 5 ratio 0.308162 above allowed 0.300000"
+  ],
+  "warnings": [],
+  "limitations": [
+    "This preflight only validates target episodes already present in a comparison report.",
+    "A passing preflight does not replace fixed-window high-pressure comparison, no-regression validation, failure-case review, or RL acceptance.",
+    "Target action ratios are diagnostic checks; they should not be used alone as proof of good play."
+  ]
+}

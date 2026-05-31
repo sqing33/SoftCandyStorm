@@ -1,0 +1,27 @@
+{
+  "case_id": "fail_20260531_009",
+  "category": "rl_policy",
+  "content_id": "failure-lane-opening-repair-branch-preflight",
+  "seed": 63402,
+  "bot": "ppo-opening-mid-boundary-retention-with-edge-recovery-branch",
+  "time_seconds": 60.0,
+  "symptom": "The caramel-workshop seed 63402 opening_repair branch preflight produced mixed evidence. Narrow 30-45s, 30-50s, 30-55s, and 30-60s edge-recovery branch windows all converted the target seed to a 60.0328s victory, but the target seed preflight still failed because action 5 ratio stayed at 0.308162, above the allowed 0.300000 cap. A broader 0-60s branch passed the target seed preflight with action 5 ratio 0.112715 and action 7 ratio 0.556358, and also passed the 60s/caramel-workshop window target preflight, but it has not passed 180s/300s parent no-regression or 10 seed caramel follow-up.",
+  "root_cause": "The narrow dispatch window is too late or too rarely active to change the problematic action distribution enough, even though the single branch trigger is enough to alter the target outcome. The broad 0-60s dispatch reduces the action 5 lock, but it shifts behavior toward action 7 dominance and has only been validated on a short-window smoke. This keeps the repair in a diagnostic state rather than a safe policy candidate.",
+  "fix": "Do not promote the branch as a candidate and do not merge it into a shared PPO continuation. Either run full 60/180/300s high-pressure parent no-regression and 10 seed caramel follow-up for the broad branch, or build a narrower state-conditioned dispatch that preserves the target seed action 5 reduction without broad action 7 dominance. Keep the failure_lane_repair_preflight contract as the required gate.",
+  "validation": "Generated target comparisons and preflights for 30-45s, 30-50s, 30-55s, 30-60s, and 0-60s edge-recovery branch windows. The four narrow windows failed policy_target_seed_preflight because action 5 ratio was 0.308162. The 0-60s window passed policy_target_seed_preflight for caramel-workshop:63402 at 60.0328s victory, with action 5 ratio 0.112715 and action 7 ratio 0.556358. A 60s high-pressure smoke for the broad window passed the caramel-workshop window target preflight with win_rate 0.6667, average_survival_seconds 55.9217, normalized_action_entropy 0.4817, and dominant action 7 ratio 0.6243, but no full parent no-regression or 10 seed follow-up has been completed.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/summary.md",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_comparison_60s.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_preflight.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_comparison_60s_window30_50.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_preflight_window30_50.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_comparison_60s_window30_55.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_preflight_window30_55.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_comparison_60s_window30_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_preflight_window30_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_comparison_60s_window0_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_target_preflight_window0_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_high_pressure_60s_window0_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/window_target_preflight_60s_caramel_window0_60.json"
+  ]
+}
