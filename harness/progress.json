@@ -1526,6 +1526,11 @@
       "id": "rl_failure_lane_trace_plan",
       "summary": "新增 create_rl_failure_lane_trace_plan.py，把 failure_lanes 转成 trace/preflight 调度计划。63405 probe 当前生成 opening_repair（seed 63402，0-60s trace）和 late_terminal_survival_conversion（扫描 63400-63409 以覆盖 8 个 late seeds，额外扫到 63402/63407）两条 priority 1 任务；该计划只批准采样和诊断，不批准继续训练。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.md"
+    },
+    {
+      "id": "rl_failure_lane_trace_diagnostics",
+      "summary": "补跑 failure lane trace 并生成汇总：opening_repair 的 seed 63402 仍在 40.0997s opening defeat，82 个 sampled rows 中 51 个负 route_recovery，主要是 boundary_edge 下 action 5/4 锁定；late_terminal_survival_conversion 过滤到 8 条 late failure trace 后，3479 个 sampled rows 中 2599 个负 route_recovery，且 mid_60_to_180 热点 1505 个、opening_lt_60 热点 573 个，说明 late death 前已有 opening/mid route debt。该诊断只作为 repair routing evidence，不是 policy acceptance。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_summary.md"
     }
   ],
   "current_findings": [
@@ -3328,9 +3333,18 @@
       "id": "rl_failure_lane_trace_plan_findings",
       "summary": "failure_lane_trace_plan 已把 failure_analysis lane 拆成可执行 trace 任务：opening_repair 可单 seed 采样；late_terminal_survival_conversion 因 eval 接口只支持连续 seed range，需要扫描 63400-63409 并在后续分析中过滤非 late lane seed。下一步先跑 trace 与 route hotspot，再做 terminal branch 或 opening branch preflight。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.md"
+    },
+    {
+      "id": "rl_failure_lane_trace_diagnostics_findings",
+      "summary": "failure lane trace 已确认两个后续修复面不能混在一起：opening_repair 是 seed 63402 的 0-60s boundary/action-lock 问题；late_terminal_survival_conversion 虽在 180-300s 死亡，但 late-only seed 过滤后负 route_recovery 热点主要集中在 boundary_edge，且 mid_60_to_180 热点多于 late_180_to_300。下一步应分开设计 opening branch 与 path-retention + terminal-conversion 目标，并继续把 short60 与 parent no-regression 作为硬门禁。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_summary.md"
     }
   ],
   "next_recommended": [
+    {
+      "id": "rl_after_failure_lane_trace_diagnostics",
+      "summary": "下一步先建立 split repair preflight：opening_repair 只处理 caramel-workshop seed 63402 的 0-60s boundary/action-lock；late_terminal_survival_conversion 必须同时保护 60-180s path retention 与 180-300s terminal conversion。任何新 branch 或 checkpoint 都必须先过 10 seed caramel follow-up、60s/caramel-workshop hard preflight 和 high-pressure 60/180/300s parent no-regression。"
+    },
     {
       "id": "rl_caramel_terminal_conversion_target",
       "summary": "mid-path-retention closed-loop probe 已证明 seed 63407 的 60-180s path-retention signal 能训练出局部收益，但单 seed continuation 会破坏 high-pressure parent preservation。下一步不要继续加长该 checkpoint；应把 seed 63402 opening repair 和 seed 63407 mid-path retention 分开约束，并使用 repair probe hard preflight 同时要求 target seed preflight、60s/caramel-workshop window target preflight 与 60/180/300s parent no-regression，再重新跑 10 seed target follow-up。若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"

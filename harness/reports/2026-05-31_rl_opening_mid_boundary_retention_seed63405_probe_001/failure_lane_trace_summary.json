@@ -1,0 +1,115 @@
+{
+  "report_version": 1,
+  "decision": "rl_failure_lane_trace_diagnostics_recorded",
+  "source_failure_analysis": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.json",
+  "source_trace_plan": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.json",
+  "phase": "rl_phase_1_movement_survival",
+  "model_path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_opening_mid_boundary_retention_seed63405_probe.zip",
+  "map_id": "caramel-workshop",
+  "lanes": [
+    {
+      "lane": "opening_repair",
+      "status": "trace_collected",
+      "seeds": [63402],
+      "trace_window_seconds": [0.0, 60.0],
+      "candidate_comparison": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/opening_repair/caramel-workshop/candidate_comparison.json",
+      "route_hotspots": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/opening_repair/caramel-workshop/route_hotspots.json",
+      "episode_summary": {
+        "episodes": 1,
+        "win_rate": 0.0,
+        "average_survival_seconds": 40.0997,
+        "dominant_action": "5",
+        "dominant_action_ratio": 0.6891
+      },
+      "hotspot_summary": {
+        "trace_count": 1,
+        "sample_count": 82,
+        "negative_sample_count": 51,
+        "negative_sample_ratio": 0.622,
+        "dominant_time_bucket": "opening_lt_60",
+        "dominant_pressure": "boundary_edge",
+        "time_bucket_hotspots": {
+          "opening_lt_60": 51
+        },
+        "pressure_hotspots": {
+          "boundary_edge": 47,
+          "enemy_pressure": 6,
+          "hazard_pressure": 6,
+          "no_major_pressure": 4
+        },
+        "action_counts": {
+          "5": 39,
+          "4": 10,
+          "2": 2
+        }
+      },
+      "diagnosis": "seed 63402 是 0-60 秒 opening boundary/action-lock 问题，负 route_recovery 热点几乎全部在 boundary_edge 下，主动作集中在 action 5 和 action 4。",
+      "next_validation": [
+        "为 seed 63402 单独设计 opening state-conditioned branch 或 target preflight",
+        "继续要求 60s/caramel-workshop hard preflight",
+        "继续要求 high-pressure 60/180/300s parent no-regression"
+      ]
+    },
+    {
+      "lane": "late_terminal_survival_conversion",
+      "status": "trace_collected_late_seeds_only_hotspots",
+      "seeds": [63400, 63401, 63403, 63404, 63405, 63406, 63408, 63409],
+      "extra_scan_seeds": [63402, 63407],
+      "candidate_comparison": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop/candidate_comparison.json",
+      "route_hotspots_all_scanned_seeds": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop/route_hotspots.json",
+      "route_hotspots_late_seeds_only": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop/route_hotspots_late_seeds_only.json",
+      "hotspot_summary": {
+        "trace_count": 8,
+        "sample_count": 3479,
+        "negative_sample_count": 2599,
+        "negative_sample_ratio": 0.7471,
+        "time_bucket_hotspots": {
+          "opening_lt_60": 573,
+          "mid_60_to_180": 1505,
+          "late_180_to_300": 521
+        },
+        "pressure_hotspots": {
+          "boundary_edge": 2482,
+          "hazard_pressure": 297,
+          "low_health": 106,
+          "no_major_pressure": 110,
+          "enemy_pressure": 22,
+          "boss_pressure": 2
+        },
+        "action_counts": {
+          "5": 767,
+          "7": 560,
+          "1": 474,
+          "3": 313,
+          "2": 232,
+          "8": 177,
+          "4": 48,
+          "6": 28
+        }
+      },
+      "diagnosis": "late lane 虽然终局死亡集中在 180-300 秒，但 late-only seed 过滤后仍有 1505 个 mid_60_to_180 和 573 个 opening_lt_60 负 route_recovery 热点；主要压力是 boundary_edge，说明 terminal survival/conversion 前已有中窗和开局路线债务。",
+      "next_validation": [
+        "不要把 late_terminal_survival_conversion 简化为纯 180 秒后 low-health 或 terminal branch",
+        "下一轮需要同时保护 60-180 秒 path retention 和 180-300 秒 terminal conversion",
+        "继续要求 10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure parent no-regression"
+      ]
+    }
+  ],
+  "gate_conclusion": {
+    "classification": "repair",
+    "policy_acceptance": false,
+    "rl_test_bot_approval": false,
+    "stage_03_approval": false,
+    "reason": "trace diagnostics provide repair routing evidence only; no new checkpoint, acceptance gate, replay regression, or human playtest evidence is produced."
+  },
+  "limitations": [
+    "Trace diagnostics inspect sampled rows only and do not replace Replay or full GameCore snapshot regression.",
+    "The late_terminal_survival_conversion trace command scanned seeds 63400-63409; late-only conclusions must filter out extra seed 63402 and baseline-winning seed 63407.",
+    "Negative route_recovery hotspots are repair evidence, not policy acceptance evidence."
+  ],
+  "next_actions": [
+    "Create a split repair preflight that treats opening_repair and late_terminal_survival_conversion as separate required lanes.",
+    "For opening_repair, test a narrow state-conditioned caramel-workshop seed 63402 branch before any broader PPO continuation.",
+    "For late_terminal_survival_conversion, design a constrained objective or branch that preserves mid-window path retention while targeting terminal conversion."
+  ]
+}

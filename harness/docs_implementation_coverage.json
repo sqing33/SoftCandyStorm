@@ -1863,9 +1863,14 @@
             "tools/test_create_rl_failure_lane_trace_plan.py",
             "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.json",
             "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.md",
+            "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/opening_repair/caramel-workshop/route_hotspots.md",
+            "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop/route_hotspots_late_seeds_only.md",
+            "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_summary.json",
+            "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_summary.md",
             "harness/failed_cases/fail_20260531_008_opening_mid_boundary_retention_seed63405_gate_failure.json"
           ],
           "gaps": [
+            "failure lane trace 已补齐 repair routing evidence：opening_repair 确认为 seed 63402 的 0-60 秒 boundary/action-lock；late_terminal_survival_conversion 的 late-only 过滤结果显示 8 条 late failure trace 仍有 74.71% sampled rows 为负 route_recovery，热点主要是 boundary_edge，且 mid_60_to_180 多于 late_180_to_300。该证据仍不等于 policy acceptance，下一步还缺 split repair preflight、10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure parent no-regression 通过。",
             "terminal-sequence-recovery guarded closed-loop probe 证明该在线序列目标能改善 300 秒转换，但原始 checkpoint 曾触发 60s/caramel-workshop opening regression；两条粗粒度 opening-preservation 诊断又证明 0-60 staged wrapper 和 180s late split 都不能同时保住短窗和 conversion。selective opening guard 在 3 seed high-pressure 窗口通过 no-regression，但 10 seed caramel-workshop follow-up 失败：胜率仍为 0.1，平均存活从 242.8409s 降到 238.65s，修成 seed 63402 的同时丢掉 baseline 原本胜利的 seed 63407。trace 对比显示 63407 的关键差异不是单纯 opening action2，而是 candidate 在 226.0193s 进入 low health 并于 231.0204s 死亡；已记录 fail_20260531_006。该路线仍是 seed-local tradeoff，不能作为 RL test Bot、stage 03 或 acceptance。",
             "terminal-sequence-recovery reward profile 已接入 Rust gym-bridge、Python Gym wrapper、train_sb3.py 和 RL 计划工具，能在 180-210 秒 ramp up 后覆盖 210-300 秒终局序列，并通过 Rust 单测、Python targeted pytest 与 dry-run；最新 selective opening guard 已产生 no-regression repair signal，但仍未完成更多 seed 的 caramel 300 秒 follow-up，也不是 terminal_conversion_branch usage 证据。若后续回到 terminal branch 路线，仍必须单独通过 terminal conversion probe gate。",
             "w0.5 selective ranked terminal branch 的 failed-only sequence diagnostic 显示三条 caramel target seed 的 nearest action match ratio 仍高达 0.8509/0.8634/0.8172，且部分 terminal window match ratio 达到 0.9048 或 0.9231，但三局仍全部 player_health_depleted；这进一步证明失败不是 branch usage 或 nearest action agreement 不足，而是在线低血量 / hazard 恢复和终局序列目标没有被 simple supervised imitation 解决。",
