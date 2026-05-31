@@ -23,6 +23,8 @@
 
 `window_regression_vs_per_map_chain.json` 判定为 `policy_window_regression_passed`，blockers 为 `0`。
 
+`policy_adapter_scope_health_retention.json` 判定为 `policy_adapter_scope_passed`：三窗口共 `48603` 次决策中 `health_retention_guard` 触发 `0` 次，branch ratio 为 `0.0`，无 errors / blockers。
+
 因为本轮 high-pressure 使用 seeds `63400-63402`，`caramel-workshop:63407` 的 health-retention target 不会触发；该报告主要证明新增 wrapper 的 target scope 和 provenance 没有污染现有三 seed high-pressure 信号。
 
 ## 结论
