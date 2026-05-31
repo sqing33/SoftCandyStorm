@@ -2961,7 +2961,7 @@
     },
     {
       "id": "rl_terminal_branch_usage_real_report",
-      "summary": "复跑三图 300 秒 high-pressure terminal branch comparison 后，真实报告已输出 policy_adapter.usage_scope=multimap_aggregate：44904 次决策中 terminal 分支介入 2996 次，late_180_to_300 桶内 terminal_ratio 为 0.3247，且三图按地图 usage 聚合正确。但 300 秒胜率仍为 0.0/0.0/0.0，说明当前失败不是分支未调用，而是 terminal model 没有形成可用胜利转换动作序列。已记录 fail_20260529_018；下一步应转向 per-map terminal objective 或更贴近失败前状态的 conversion target。",
+      "summary": "复跑三图 300 秒 high-pressure terminal branch comparison 后，真实报告已输出 policy_adapter.usage_scope=multimap_aggregate：44904 次决策中 terminal 分支介入 2996 次，late_180_to_300 桶内 terminal_ratio 为 0.3247，且三图按地图 usage 聚合正确。新增 terminal_conversion_branch scope 复核使用 terminal_decisions / terminal_ratio 计数键，policy_adapter_scope_passed，确认 terminal usage 只出现在允许的 late_180_to_300 桶。但 300 秒胜率仍为 0.0/0.0/0.0，说明当前失败不是分支未调用，而是 terminal model 没有形成可用胜利转换动作序列。已记录 fail_20260529_018；下一步应转向 per-map terminal objective 或更贴近失败前状态的 conversion target。",
       "report": "harness/reports/2026-05-29_rl_terminal_branch_usage_real_report_001/summary.md"
     },
     {

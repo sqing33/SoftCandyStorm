@@ -54,6 +54,33 @@ def adapter_payload(
     }
 
 
+def terminal_usage_entry(total_decisions: int, terminal_decisions: int) -> dict:
+    ratio = round(terminal_decisions / total_decisions, 4) if total_decisions else 0.0
+    return {
+        "total_decisions": total_decisions,
+        "base_decisions": total_decisions - terminal_decisions,
+        "terminal_decisions": terminal_decisions,
+        "terminal_ratio": ratio,
+    }
+
+
+def terminal_adapter_payload() -> dict:
+    return {
+        "mode": "terminal_conversion_branch",
+        "target_maps": ["caramel-workshop"],
+        "usage": {
+            **terminal_usage_entry(1000, 80),
+            "by_map": {
+                "caramel-workshop": terminal_usage_entry(1000, 80),
+            },
+            "by_time_bucket": {
+                "late_180_to_300": terminal_usage_entry(600, 80),
+                "mid_60_to_180": terminal_usage_entry(400, 0),
+            },
+        },
+    }
+
+
 def comparison_payload(
     *,
     gate_decision: str = "multimap_comparison_recorded_needs_policy_repair",
@@ -121,6 +148,38 @@ class PolicyAdapterScopeTests(unittest.TestCase):
         self.assertEqual(report["errors"], [])
         self.assertEqual(report["blockers"], [])
         self.assertEqual(report["total_branch_decisions"], 4)
+
+    def test_terminal_conversion_branch_uses_terminal_count_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "comparison.json"
+            adapter = terminal_adapter_payload()
+            write_json(
+                path,
+                {
+                    "gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+                    "policy_adapter": adapter,
+                    "maps": [
+                        {
+                            "map_id": "caramel-workshop",
+                            "policy_adapter": adapter,
+                        }
+                    ],
+                },
+            )
+
+            report = build_report(
+                [("300s", path)],
+                expected_mode="terminal_conversion_branch",
+                allowed_branch_maps=["caramel-workshop"],
+                allowed_branch_time_buckets=["late_180_to_300"],
+                min_total_branch_decisions=1,
+                max_total_branch_ratio=0.1,
+            )
+
+        self.assertEqual(report["decision"], "policy_adapter_scope_passed")
+        self.assertEqual(report["count_key"], "terminal_decisions")
+        self.assertEqual(report["ratio_key"], "terminal_ratio")
+        self.assertEqual(report["total_branch_decisions"], 80)
 
     def test_disallowed_map_branch_usage_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

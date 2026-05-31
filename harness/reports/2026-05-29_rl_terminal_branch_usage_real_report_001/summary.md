@@ -21,6 +21,7 @@
 - terminal decisions: `2996`
 - terminal ratio: `0.0667`
 - late_180_to_300 terminal ratio: `0.3247`
+- scope validation: `policy_adapter_scope_terminal_300s.json` 为 `policy_adapter_scope_passed`，使用 `terminal_decisions` / `terminal_ratio` 计数键，确认 terminal branch usage 只出现在允许的 `late_180_to_300` 桶。
 
 按地图统计：
 
@@ -43,3 +44,4 @@
 ## 验证
 
 - `env UV_CACHE_DIR=/private/tmp/soft-candy-uv-cache PYTHONPYCACHEPREFIX=/private/tmp/soft-candy-pycache uv run --with-requirements python/train/requirements.txt python python/train/train_sb3.py --algorithm ppo --compare-rule-bots --compare-map-preset high-pressure --model harness/reports/2026-05-29_rl_sb3_e30_mid_anchor_guarded_probe_001/ppo_e30_mid_anchor_guarded_probe.zip --terminal-conversion-model harness/reports/2026-05-29_rl_sb3_terminal_victory_multimap_path_target_w1_e30_001/ppo_terminal_victory_multimap_path_target_w1_e30.zip --terminal-conversion-maps soda-creek,caramel-workshop,cracked-star-jar --terminal-conversion-min-seconds 210 --terminal-conversion-max-seconds 240 --seed-start 63100 --eval-episodes 3 --eval-seconds 300 --rule-bots random,kite,tank --report harness/reports/2026-05-29_rl_terminal_branch_usage_real_report_001/comparison_300s.json`
+- `policy_adapter_scope_terminal_300s.json`: `policy_adapter_scope_passed`.
