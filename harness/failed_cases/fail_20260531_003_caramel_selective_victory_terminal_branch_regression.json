@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260531_003",
+  "category": "rl_policy",
+  "content_id": "caramel-selective-ranked-victory-terminal-branch-regression",
+  "seed": "63400-63402",
+  "bot": "per-map-edge-recovery-branch-plus-caramel-selective-ranked-victory-terminal-conversion-branch-plus-all-map-late-recovery-filter",
+  "time_seconds": 300.0,
+  "symptom": "A low-weight caramel-workshop terminal branch distilled from 3237 selective ranked rule-bot victory samples plus 164 clean risk rows passed the offline action-distribution guard, but did not convert caramel-workshop in the 300s high-pressure comparison. The fixed-window result stayed soda-creek 1.0, caramel-workshop 0.0, cracked-star-jar 0.3333, and caramel-workshop average survival dropped from the per-map chain baseline 231.2871s to 230.8648s.",
+  "root_cause": "The selective ranked victory samples improve offline nearest action agreement for the failing traces, but the supervised terminal branch still imitates isolated late-window actions rather than a robust online conversion sequence. The branch was dispatched 832 times on caramel-workshop during the 300s comparison, including 832 late-window decisions, but it did not produce a victory and caused a larger survival regression than the prior full-neighbor terminal branch.",
+  "fix": "Do not promote this checkpoint as a policy candidate, stage 03 model, RL test Bot, or acceptance evidence. Keep the per-map edge branch plus all-map late filter as the current diagnostic baseline. Pause further simple supervised terminal-path imitation variants from rule-bot victories until the next repair changes the objective, for example by collecting direct successful target-seed traces, adding a constrained online/sequence objective, or adding sequence-level terminal conversion validation before branch evaluation.",
+  "validation": "Distilled ppo_caramel_selective_ranked_victory_terminal_branch_w05.zip with dataset action overrides for caramel_selective_ranked_victory_210_300_samples.jsonl at sample weight 0.5 and top_k_scores soft targets for caramel_per_map_chain_clean_risk_samples.jsonl at sample weight 0.25. The distillation report passed action_distribution_guard with overall validation dominant action ratio 0.1647 and normalized entropy 0.9372. High-pressure comparisons on seeds 63400-63402 preserved 60s and 180s win rates at 1.0 across all three maps, but 300s remained soda-creek 1.0, caramel-workshop 0.0, cracked-star-jar 0.3333. window_regression_vs_per_map_chain.json failed with one blocker: 300s/caramel-workshop average survival dropped 0.4223s.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/summary.md",
+    "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/distillation_report.json",
+    "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/comparison_60s.json",
+    "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/comparison_180s.json",
+    "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/comparison_300s.json",
+    "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/window_regression_vs_per_map_chain.json",
+    "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/repair_probe_gate.json"
+  ]
+}
