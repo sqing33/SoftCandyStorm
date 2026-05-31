@@ -1466,6 +1466,11 @@
       "id": "rl_health_retention_guard_seed63407_followup",
       "summary": "围绕 selective opening guard 10 seed tradeoff 复查 seed 63407：180-300s low-health-only guard 和 180-300s late-only path retention 均失败；60-300s mid-path retention 恢复 seed 63407，并让 caramel-workshop 10 seed follow-up 从 0.1 胜率提升到 0.2、平均存活 +2.7086s，window regression 0 blocker。high-pressure 60/180/300s 三图相对 per-map chain 也 0 blocker，但这是 target-specific repair evidence，不是 acceptance。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/summary.md"
+    },
+    {
+      "id": "rl_policy_window_target_preflight_gate",
+      "summary": "新增 validate_policy_window_target_preflight.py，用于在已有 comparison report 中对单个 map/window 执行绝对阈值 early-stop 检查；repair probe gate 现在可通过 --required-window-target-preflight 把该检查纳入包级硬门禁。对 mid-path-retention seed 63407 closed-loop probe 复跑后，60s/caramel-workshop preflight 以 win_rate 0.3333 < 0.6667、average_survival_seconds 49.2774 < 55.0 失败，repair gate blockers 从 7 个扩展到 9 个。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/window_target_preflight_60s_caramel.md"
     }
   ],
   "current_findings": [
@@ -3221,14 +3226,14 @@
     },
     {
       "id": "rl_mid_path_retention_seed63407_closed_loop_probe",
-      "summary": "从 e30 mid-anchor parent 出发，用 mid-path-retention 在 caramel-workshop:63407 上做 256 timestep guarded PPO continuation；anchor guard 通过（final validation mean KL 0.10678、argmax agreement 0.8255）。裸 SB3 10 seed caramel follow-up 相对 parent 从 0.0 胜率提升到 0.1、平均存活 +10.5663s，并把 seed 63407 转为 300.0150s victory；target-seed preflight 同时确认 63402 仍在 40.0997s opening defeat、63405 只到 138.6673s defeat。同 seed high-pressure parent no-regression 失败，blockers 为 60s/caramel-workshop 胜率 -0.3334、180s/cracked-star-jar action L1 0.4646、300s/caramel-workshop action L1 0.5872。repair probe hard preflight 汇总后为 rl_repair_probe_gate_failed，共 7 个 blockers。已记录 fail_20260531_007，不能推进为 policy candidate。",
+      "summary": "从 e30 mid-anchor parent 出发，用 mid-path-retention 在 caramel-workshop:63407 上做 256 timestep guarded PPO continuation；anchor guard 通过（final validation mean KL 0.10678、argmax agreement 0.8255）。裸 SB3 10 seed caramel follow-up 相对 parent 从 0.0 胜率提升到 0.1、平均存活 +10.5663s，并把 seed 63407 转为 300.0150s victory；target-seed preflight 同时确认 63402 仍在 40.0997s opening defeat、63405 只到 138.6673s defeat。同 seed high-pressure parent no-regression 失败，blockers 为 60s/caramel-workshop 胜率 -0.3334、180s/cracked-star-jar action L1 0.4646、300s/caramel-workshop action L1 0.5872。新增 60s/caramel-workshop window target preflight 也失败，repair probe hard preflight 汇总后为 rl_repair_probe_gate_failed，共 9 个 blockers。已记录 fail_20260531_007，不能推进为 policy candidate。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "mid-path-retention closed-loop probe 已证明 seed 63407 的 60-180s path-retention signal 能训练出局部收益，但单 seed continuation 会破坏 high-pressure parent preservation。下一步不要继续加长该 checkpoint；应把 seed 63402 opening repair 和 seed 63407 mid-path retention 分开约束，并使用 repair probe hard preflight 同时要求 target seed preflight 与 60/180/300s parent no-regression，再重新跑 10 seed target follow-up。若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
+      "summary": "mid-path-retention closed-loop probe 已证明 seed 63407 的 60-180s path-retention signal 能训练出局部收益，但单 seed continuation 会破坏 high-pressure parent preservation。下一步不要继续加长该 checkpoint；应把 seed 63402 opening repair 和 seed 63407 mid-path retention 分开约束，并使用 repair probe hard preflight 同时要求 target seed preflight、60s/caramel-workshop window target preflight 与 60/180/300s parent no-regression，再重新跑 10 seed target follow-up。若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
     },
     {
       "id": "runtime_manual_playtest_capture",

@@ -8,7 +8,23 @@
     "status": "trained",
     "gate_decision": "trained_needs_rule_bot_comparison",
     "model_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/ppo_mid_path_retention_seed63407_probe.zip",
-    "reward_profile": "mid-path-retention"
+    "reward_profile": "mid-path-retention",
+    "anchor_validation_guard": {
+      "status": "applied",
+      "guard_decision": "anchor_validation_guard_passed",
+      "final_decision": "anchor_validation_guard_passed",
+      "blockers": [],
+      "metrics": {
+        "mean_kl": 0.10678,
+        "cross_entropy": 1.075925,
+        "argmax_agreement": 0.8255,
+        "policy_entropy_nats": 1.162638
+      },
+      "thresholds": {
+        "max_validation_kl": 0.25,
+        "min_argmax_agreement": 0.8
+      }
+    }
   },
   "anchor_alignment": null,
   "window_regression_requirement": "required_labeled_baselines",
@@ -64,6 +80,22 @@
       "error_count": 0
     }
   ],
+  "window_target_preflight_requirement": "required_labeled_preflights",
+  "required_window_target_preflight_labels": [
+    "short60"
+  ],
+  "window_target_preflights": [
+    {
+      "label": "short60",
+      "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/window_target_preflight_60s_caramel.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_window_target_preflight_failed",
+      "target_count": 1,
+      "blocker_count": 2,
+      "error_count": 0
+    }
+  ],
   "failure_analysis": null,
   "errors": [],
   "blockers": [
@@ -73,7 +105,9 @@
     "opening63402/target_seed_preflight_seed63402_opening: caramel-workshop:63402: time_seconds 40.0997 below required 60.0000",
     "opening63402/target_seed_preflight_seed63402_opening: caramel-workshop:63402: terminal_kind is `defeat`",
     "retention63405/target_seed_preflight_seed63405_retention: caramel-workshop:63405: time_seconds 138.6673 below required 180.0000",
-    "retention63405/target_seed_preflight_seed63405_retention: caramel-workshop:63405: terminal_kind is `defeat`"
+    "retention63405/target_seed_preflight_seed63405_retention: caramel-workshop:63405: terminal_kind is `defeat`",
+    "short60/window_target_preflight_60s_caramel: 60s-caramel-short-window/caramel-workshop: win_rate 0.3333 below required 0.6667",
+    "short60/window_target_preflight_60s_caramel: 60s-caramel-short-window/caramel-workshop: average_survival_seconds 49.2774 below required 55.0000"
   ],
   "warnings": [],
   "limitations": [

@@ -115,6 +115,36 @@ def target_seed_preflight_payload(
     }
 
 
+def window_target_preflight_payload(
+    *,
+    blockers: list[str] | None = None,
+    errors: list[str] | None = None,
+) -> dict:
+    blockers = blockers or []
+    errors = errors or []
+    if errors:
+        decision = "policy_window_target_preflight_invalid"
+    elif blockers:
+        decision = "policy_window_target_preflight_failed"
+    else:
+        decision = "policy_window_target_preflight_passed"
+    return {
+        "decision": decision,
+        "comparison": "reports/comparison_60s.json",
+        "label": "60s-caramel",
+        "map_id": "caramel-workshop",
+        "target_count": 1,
+        "target_result": {
+            "map_id": "caramel-workshop",
+            "episodes": 3,
+            "win_rate": 0.6667,
+            "average_survival_seconds": 58.5,
+        },
+        "errors": errors,
+        "blockers": blockers,
+    }
+
+
 class RlRepairProbeGateTests(unittest.TestCase):
     def test_clean_bundle_passes_for_limited_followup(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -280,6 +310,78 @@ class RlRepairProbeGateTests(unittest.TestCase):
 
         self.assertEqual(report["decision"], "rl_repair_probe_gate_invalid")
         self.assertTrue(any("target episode missing seed" in error for error in report["errors"]))
+
+    def test_required_window_target_preflight_passes_for_limited_followup(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            preflight = root / "window_preflight.json"
+            write_json(training, training_payload())
+            write_json(regression, regression_payload())
+            write_json(preflight, window_target_preflight_payload())
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+                required_window_target_preflights=[("short60", preflight)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_passed_for_limited_followup")
+        self.assertEqual(
+            report["window_target_preflight_requirement"],
+            "required_labeled_preflights",
+        )
+        self.assertEqual(report["required_window_target_preflight_labels"], ["short60"])
+        self.assertTrue(all(item["required"] for item in report["window_target_preflights"]))
+
+    def test_window_target_preflight_blocker_fails_with_label(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            preflight = root / "window_preflight.json"
+            write_json(training, training_payload())
+            write_json(regression, regression_payload())
+            write_json(
+                preflight,
+                window_target_preflight_payload(
+                    blockers=["60s-caramel/caramel-workshop: win_rate 0.3333 below required 0.6667"]
+                ),
+            )
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+                required_window_target_preflights=[("short60", preflight)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_failed")
+        self.assertTrue(
+            any("short60" in blocker and "win_rate" in blocker for blocker in report["blockers"])
+        )
+
+    def test_duplicate_window_target_preflight_labels_are_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            first = root / "first_window_preflight.json"
+            second = root / "second_window_preflight.json"
+            write_json(training, training_payload())
+            write_json(regression, regression_payload())
+            write_json(first, window_target_preflight_payload())
+            write_json(second, window_target_preflight_payload())
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+                window_target_preflights=[("short60", first)],
+                required_window_target_preflights=[("short60", second)],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_invalid")
+        self.assertTrue(any("duplicate label" in error for error in report["errors"]))
 
     def test_required_parent_regression_blocker_fails_with_label(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
