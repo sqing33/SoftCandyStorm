@@ -3163,12 +3163,17 @@
       "id": "rl_terminal_conversion_probe_gate",
       "summary": "新增 terminal conversion probe gate，用于验证 terminal branch 是否在目标地图 / late window 真实调用、目标胜率和存活是否相对 baseline 改善，并要求配套 window regression 通过。对 w0.5 selective ranked victory terminal branch 的真实复核判定 terminal_conversion_probe_failed：caramel-workshop 300 秒胜率仍为 0.0、胜率增量 0.0、平均存活 -0.4223s，terminal branch 虽触发 832/20776 次且 late bucket 触发 832/4576 次，但未产生胜利转换且 window regression 失败。后续 terminal branch 不得只凭离线 action agreement 或 branch usage 推进。",
       "report": "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/terminal_conversion_probe_gate.md"
+    },
+    {
+      "id": "rl_caramel_selective_terminal_sequence_diagnostic",
+      "summary": "对 w0.5 selective ranked terminal branch 只重跑 caramel-workshop 300 秒 failed-only trace，并与 selective ranked victory dataset 做 nearest-neighbor 序列对齐。三条目标 seed 仍在 213.2166s、235.2880s、244.0898s 死亡；整体 nearest action match ratio 为 0.8509、0.8634、0.8172，平均距离为 2.550705、2.425201、2.490466。late terminal windows 仍有较高动作匹配（如 seed63400 的 210-240s 为 0.9048、seed63402 的 240-270s 为 0.9231）但没有转胜，说明问题不是 branch usage 或 nearest action agreement，而是在线闭环低血量 / hazard 恢复和终局序列目标没有被 simple supervised imitation 解决。",
+      "report": "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_sequence_diagnostic_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "新的 rule-bot victory terminal branch、wide sample scan、episode ranking 与 w0.5 selective ranked terminal branch 都已完成；selective 小池虽把三条失败 trace 的 nearest action match ratio 提升到 0.8509、0.8627、0.8058，离线 action-distribution guard 也通过，但在线 300s/caramel-workshop 仍为 0 胜率并触发 -0.4223s parent survival blocker。terminal_conversion_probe_gate 已把该结果判定为 terminal_conversion_probe_failed。下一步不要继续做 simple supervised terminal-path imitation 的样本池/权重微调；应改为直接目标 seed 成功轨迹或 constrained online / sequence objective，并继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression；任何新 terminal branch 进入 limited follow-up 前必须先通过 terminal conversion probe gate。"
+      "summary": "新的 rule-bot victory terminal branch、wide sample scan、episode ranking、w0.5 selective ranked terminal branch、terminal_conversion_probe_gate 和 failed-only sequence diagnostic 都已完成；selective 小池虽让三条在线失败 trace 的 nearest action match ratio 维持在 0.8509、0.8634、0.8172，离线 action-distribution guard 也通过，但在线 300s/caramel-workshop 仍为 0 胜率并触发 -0.4223s parent survival blocker。下一步不要继续做 simple supervised terminal-path imitation 的样本池/权重微调；应改为直接目标 seed 成功轨迹或 constrained online / sequence objective，并继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression；任何新 terminal branch 进入 limited follow-up 前必须先通过 terminal conversion probe gate。"
     },
     {
       "id": "runtime_manual_playtest_capture",

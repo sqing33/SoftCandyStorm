@@ -823,6 +823,7 @@
       "gaps": [
         "caramel-workshop 专属 terminal_conversion_branch 诊断已证明旧 multimap victory terminal model 在目标 late bucket 实际触发 796/4404 次仍不能转胜，并相对 per-map chain baseline 造成 300 秒平均存活 -2.3338s 回归；当前已导出最新 per-map chain 下 164 条 180-300s clean risk rows 和 387 条 210-300s failure policy rows，且 same-map nearest check 显示旧 victory terminal dataset 对 seeds 63400-63402 的匹配率只有 0.0/0.1569/0.169。下一步需要收集更贴近这些失败态的成功 caramel terminal trajectories 或训练新的 per-map terminal objective，而不是继续调同一 terminal model 的分派阈值。",
         "terminal conversion probe gate 已把 w0.5 selective ranked terminal branch 判定为 terminal_conversion_probe_failed：terminal branch 在 caramel-workshop 300 秒目标窗口触发 832/20776 次、late bucket 触发 832/4576 次，但胜率仍为 0.0、相对 baseline 胜率增量 0.0、平均存活 -0.4223s 且 window_regression 失败；Phase 6 后续 terminal branch 必须证明目标窗口在线胜利转换和 no-regression 同时成立，不能只凭离线 action agreement 或 branch usage 推进。",
+        "selective ranked terminal branch failed-only sequence diagnostic 显示三条 caramel target seed 的 nearest action match ratio 仍有 0.8509/0.8634/0.8172，部分 terminal window 甚至达到 0.9048 或 0.9231，但三局仍全部 player_health_depleted；Phase 6 不能继续把 simple supervised terminal-path imitation 当作主要路线，下一步必须改成直接成功轨迹或 constrained online / sequence objective。",
         "多轮 PPO/BC 仍存在跨地图泛化 failure case。",
         "多轮 PPO/BC 仍存在跨地图泛化 failure case；stage 01 retry snapshot compare 确认旧坏路径是右下角 action 4，首个 action-specific 20k 重训又转为 action 8 塌缩。corner_risk_delta smoke 已让 stage 01 opening 60 秒 deterministic / stochastic 10 seed 三图 100% 胜率，但 stage 02 单图训练、mixed retention 和 low-lr short continuation 都会让 soda-creek opening 或 mid-window 回归失败；seed replay 将 soda-creek opening 提升到 90%，但 seed 62405 trace compare 显示 stage 02 丢掉了右下角切 action 7 离角落的触发。",
         "当前 RL Bot 不能作为正式压力测试基线。",
@@ -910,7 +911,7 @@
         "caramel narrow opening branch 与 late filter 的统一链路虽然通过 60/180 秒 no-regression 并把 caramel-workshop 300 秒平均存活提高到 231.2871s，但 300 秒 soda-creek 从 1.0 回落到 0.6667，已记录 fail_20260530_018；下一轮不能把 caramel 分支直接并入上一版 soda-winning chain，应改做 per-map 或更强 state-conditioned late conversion，并把 soda-creek 300 秒 no-regression 设为硬门槛。",
         "`--late-recovery-maps caramel-workshop` 已验证参数和 provenance 生效，但 300 秒窗口从上一版 chained diagnostic 回归为 soda-creek 0.0、caramel-workshop 0.0、cracked-star-jar 0.0，已记录 fail_20260530_019；下一步应保留 soda/cracked late safety repair，另起 caramel late conversion objective，不能用 caramel-only late filter 作为候选链路。",
         "保留 all-map late_recovery_filter 并只启用 caramel-workshop edge branch 的隔离探针保住 cracked-star-jar 300 秒 0.3333，但 soda-creek 300 秒降到 0.3333 且 seed 63402 在 37.6664s opening 死亡，已记录 fail_20260530_020；下一步需要 per-map branch composition 或等价 manifest，保留 soda opening branch 与 all-map late safety 后再追加 caramel conversion。",
-        "基于 caramel_late_conversion_target trace pack 收集更贴近 seeds 63400-63402 的成功 terminal trajectories，或把 164 条 clean risk rows 作为低权重 safety repair input 训练新的 caramel 专属 terminal branch；任何候选都必须保留 60/180/300 秒 no-regression、adapter provenance，并在进入 limited follow-up 前通过 terminal conversion probe gate。"
+        "基于 caramel_late_conversion_target trace pack 收集更贴近 seeds 63400-63402 的成功 terminal trajectories，或把 164 条 clean risk rows 转成 constrained online / sequence objective，而不是再做 simple supervised imitation 权重微调；任何候选都必须保留 60/180/300 秒 no-regression、adapter provenance，并在进入 limited follow-up 前通过 terminal conversion probe gate。"
       ]
     },
     {
