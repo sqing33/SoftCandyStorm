@@ -5325,6 +5325,7 @@ def main():
             "long-run-retention",
             "late-route-recovery",
             "late-win-conversion",
+            "terminal-sequence-recovery",
             "opening-route-recovery",
             "opening-boundary-escape",
         ],

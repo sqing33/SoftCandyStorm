@@ -88,6 +88,12 @@ const GYM_REWARD_LATE_WIN_CONVERSION_COMPONENT_SCALE: f32 = 1.25;
 const GYM_REWARD_LATE_WIN_CONVERSION_ACTION_REPEAT_SCALE: f32 = 0.5;
 const GYM_REWARD_LATE_WIN_CONVERSION_VICTORY_BONUS: f32 = 4.0;
 const GYM_REWARD_LATE_WIN_CONVERSION_DEFEAT_PENALTY: f32 = -3.0;
+const GYM_REWARD_TERMINAL_SEQUENCE_START_SECONDS: f32 = 180.0;
+const GYM_REWARD_TERMINAL_SEQUENCE_RAMP_SECONDS: f32 = 30.0;
+const GYM_REWARD_TERMINAL_SEQUENCE_COMPONENT_SCALE: f32 = 1.5;
+const GYM_REWARD_TERMINAL_SEQUENCE_ACTION_REPEAT_SCALE: f32 = 0.75;
+const GYM_REWARD_TERMINAL_SEQUENCE_VICTORY_BONUS: f32 = 5.0;
+const GYM_REWARD_TERMINAL_SEQUENCE_DEFEAT_PENALTY: f32 = -4.0;
 const GYM_REWARD_OPENING_ROUTE_RECOVERY_END_SECONDS: f32 = 60.0;
 const GYM_REWARD_OPENING_ROUTE_RECOVERY_COMPONENT_SCALE: f32 = 0.8;
 const GYM_REWARD_OPENING_ROUTE_RECOVERY_ACTION_REPEAT_SCALE: f32 = 1.0;
@@ -393,6 +399,7 @@ enum GymRewardProfile {
     LongRunRetention,
     LateRouteRecovery,
     LateWinConversion,
+    TerminalSequenceRecovery,
     OpeningRouteRecovery,
     OpeningBoundaryEscape,
 }
@@ -405,6 +412,7 @@ impl GymRewardProfile {
             "long-run-retention" => Some(Self::LongRunRetention),
             "late-route-recovery" => Some(Self::LateRouteRecovery),
             "late-win-conversion" => Some(Self::LateWinConversion),
+            "terminal-sequence-recovery" => Some(Self::TerminalSequenceRecovery),
             "opening-route-recovery" => Some(Self::OpeningRouteRecovery),
             "opening-boundary-escape" => Some(Self::OpeningBoundaryEscape),
             _ => None,
@@ -418,6 +426,7 @@ impl GymRewardProfile {
             Self::LongRunRetention => "long-run-retention",
             Self::LateRouteRecovery => "late-route-recovery",
             Self::LateWinConversion => "late-win-conversion",
+            Self::TerminalSequenceRecovery => "terminal-sequence-recovery",
             Self::OpeningRouteRecovery => "opening-route-recovery",
             Self::OpeningBoundaryEscape => "opening-boundary-escape",
         }
@@ -3220,6 +3229,9 @@ fn gym_profile_scale(
         GymRewardProfile::LateWinConversion => {
             late_route_recovery_scale * GYM_REWARD_LATE_WIN_CONVERSION_COMPONENT_SCALE
         }
+        GymRewardProfile::TerminalSequenceRecovery => {
+            late_route_recovery_scale * GYM_REWARD_TERMINAL_SEQUENCE_COMPONENT_SCALE
+        }
         GymRewardProfile::OpeningRouteRecovery | GymRewardProfile::OpeningBoundaryEscape => {
             late_route_recovery_scale * GYM_REWARD_OPENING_ROUTE_RECOVERY_COMPONENT_SCALE
         }
@@ -3237,6 +3249,9 @@ fn gym_reward_profile_action_repeat(
         GymRewardProfile::LongRunRetention => GYM_REWARD_LONG_RUN_RETENTION_ACTION_REPEAT_SCALE,
         GymRewardProfile::LateRouteRecovery => GYM_REWARD_LATE_ROUTE_RECOVERY_ACTION_REPEAT_SCALE,
         GymRewardProfile::LateWinConversion => GYM_REWARD_LATE_WIN_CONVERSION_ACTION_REPEAT_SCALE,
+        GymRewardProfile::TerminalSequenceRecovery => {
+            GYM_REWARD_TERMINAL_SEQUENCE_ACTION_REPEAT_SCALE
+        }
         GymRewardProfile::OpeningRouteRecovery | GymRewardProfile::OpeningBoundaryEscape => {
             GYM_REWARD_OPENING_ROUTE_RECOVERY_ACTION_REPEAT_SCALE
         }
@@ -3276,6 +3291,10 @@ fn gym_reward_profile_phase_scale(profile: GymRewardProfile, time_seconds: Optio
         GymRewardProfile::LateWinConversion => (
             GYM_REWARD_LATE_WIN_CONVERSION_START_SECONDS,
             GYM_REWARD_LATE_WIN_CONVERSION_RAMP_SECONDS,
+        ),
+        GymRewardProfile::TerminalSequenceRecovery => (
+            GYM_REWARD_TERMINAL_SEQUENCE_START_SECONDS,
+            GYM_REWARD_TERMINAL_SEQUENCE_RAMP_SECONDS,
         ),
         GymRewardProfile::OpeningRouteRecovery | GymRewardProfile::OpeningBoundaryEscape => {
             unreachable!()
@@ -3323,6 +3342,12 @@ fn gym_reward_profile_terminal_adjustment(
         }
         (GymRewardProfile::LateWinConversion, TerminalKind::Defeat) => {
             GYM_REWARD_LATE_WIN_CONVERSION_DEFEAT_PENALTY * scale
+        }
+        (GymRewardProfile::TerminalSequenceRecovery, TerminalKind::Victory) => {
+            GYM_REWARD_TERMINAL_SEQUENCE_VICTORY_BONUS * scale
+        }
+        (GymRewardProfile::TerminalSequenceRecovery, TerminalKind::Defeat) => {
+            GYM_REWARD_TERMINAL_SEQUENCE_DEFEAT_PENALTY * scale
         }
         (
             GymRewardProfile::OpeningRouteRecovery | GymRewardProfile::OpeningBoundaryEscape,
@@ -7126,7 +7151,7 @@ fn print_help() {
         "  cargo run -p game_harness -- lock-accepted-content [--accepted-dir harness/accepted_content] [--lock-file harness/accepted_content/accepted_content.lock.json] [--runtime-content-root harness/accepted_content] [--report-dir harness/reports/local_accepted_content_lock]"
     );
     eprintln!(
-        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--reward-profile standard|late-survival|long-run-retention|late-route-recovery|late-win-conversion|opening-route-recovery|opening-boundary-escape] [--content-dir content/base_demo]",
+        "  cargo run -p game_harness -- gym-bridge [--seed N] [--map-id {}] [--seconds N] [--tick-rate N] [--observation-version 1|2] [--reward-profile standard|late-survival|long-run-retention|late-route-recovery|late-win-conversion|terminal-sequence-recovery|opening-route-recovery|opening-boundary-escape] [--content-dir content/base_demo]",
         DEFAULT_MAP_ID
     );
     eprintln!(
@@ -7559,6 +7584,10 @@ mod tests {
             Some(GymRewardProfile::LateWinConversion)
         );
         assert_eq!(
+            GymRewardProfile::parse("terminal-sequence-recovery"),
+            Some(GymRewardProfile::TerminalSequenceRecovery)
+        );
+        assert_eq!(
             GymRewardProfile::parse("opening-route-recovery"),
             Some(GymRewardProfile::OpeningRouteRecovery)
         );
@@ -7583,6 +7612,10 @@ mod tests {
         assert_eq!(
             GymRewardProfile::LateWinConversion.as_str(),
             "late-win-conversion"
+        );
+        assert_eq!(
+            GymRewardProfile::TerminalSequenceRecovery.as_str(),
+            "terminal-sequence-recovery"
         );
         assert_eq!(
             GymRewardProfile::OpeningRouteRecovery.as_str(),
@@ -7781,6 +7814,62 @@ mod tests {
         let mid_scale =
             gym_reward_profile_phase_scale(GymRewardProfile::LateWinConversion, Some(180.0));
         assert_eq!(mid_scale, 0.0);
+    }
+
+    #[test]
+    fn gym_terminal_sequence_recovery_profile_focuses_whole_terminal_sequence() {
+        let mut snapshot = GameCore::reset(RunConfig::default()).snapshot();
+        snapshot.time_seconds = 225.0;
+        let hint = RewardHint {
+            survival_delta: 1.0,
+            ..RewardHint::default()
+        };
+        let shaping = GymRewardShaping {
+            action_repeat: -0.01,
+            safety_delta: 0.1,
+            route_recovery: 0.02,
+            ..GymRewardShaping::default()
+        };
+        let terminal = TerminalState {
+            kind: TerminalKind::Victory,
+            time_seconds: 300.0,
+            reason: "duration_reached".to_string(),
+            final_level: 1,
+            kills: 0,
+        };
+
+        let standard = gym_reward_breakdown(
+            GymRewardProfile::Standard,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+        let sequence = gym_reward_breakdown(
+            GymRewardProfile::TerminalSequenceRecovery,
+            &hint,
+            &[],
+            Some(&terminal),
+            shaping,
+            Some(&snapshot),
+        );
+
+        assert!(sequence.survival > standard.survival);
+        assert!(sequence.action_repeat < standard.action_repeat);
+        assert!(sequence.safety_delta > standard.safety_delta);
+        assert!(sequence.route_recovery > standard.route_recovery);
+        assert!(sequence.terminal > standard.terminal);
+        assert!(sequence.total > standard.total);
+
+        assert_eq!(
+            gym_reward_profile_phase_scale(GymRewardProfile::TerminalSequenceRecovery, Some(180.0)),
+            0.0
+        );
+        assert_eq!(
+            gym_reward_profile_phase_scale(GymRewardProfile::TerminalSequenceRecovery, Some(210.0)),
+            1.0
+        );
     }
 
     #[test]

@@ -144,14 +144,15 @@ class SoftCandyStormEnv(gym.Env):
             "long-run-retention",
             "late-route-recovery",
             "late-win-conversion",
+            "terminal-sequence-recovery",
             "opening-route-recovery",
             "opening-boundary-escape",
         }:
             raise ValueError(
                 "reward_profile must be `standard`, `late-survival`, "
                 "`long-run-retention`, `late-route-recovery`, or "
-                "`late-win-conversion`, `opening-route-recovery`, or "
-                "`opening-boundary-escape`"
+                "`late-win-conversion`, `terminal-sequence-recovery`, "
+                "`opening-route-recovery`, or `opening-boundary-escape`"
             )
         return reward_profile
 

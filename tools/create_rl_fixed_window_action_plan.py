@@ -380,7 +380,12 @@ def main() -> int:
     parser.add_argument("--timesteps-per-stage", type=int, default=256)
     parser.add_argument(
         "--reward-profile",
-        choices=["late-survival", "long-run-retention", "late-route-recovery"],
+        choices=[
+            "late-survival",
+            "long-run-retention",
+            "late-route-recovery",
+            "terminal-sequence-recovery",
+        ],
         default="late-route-recovery",
     )
     parser.add_argument("--train-map-selection", choices=["cycle", "random"], default="random")

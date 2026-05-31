@@ -168,7 +168,7 @@ v2 已覆盖：
 - `--train-map-selection cycle|random`：控制多地图 reset 轮换方式。
 - `--train-map-preset all-base-demo|high-pressure|stable-open`：使用常见 `base_demo` 地图集合。
 - `--train-seconds`：覆盖训练 episode 时长，独立于 `--eval-seconds`。
-- `--reward-profile standard|late-survival|long-run-retention|late-route-recovery|late-win-conversion|opening-route-recovery|opening-boundary-escape`：选择 Rust `gym-bridge` 侧 reward shaping。`late-survival` 只作为 closed-loop 长局修复实验入口，会在 180 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并提高 300 秒存活终局奖励。`long-run-retention` 用于修复 late-survival 扩展训练暴露出的中窗 retention 回归，会从 60 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并放大重复动作惩罚，帮助观察 60-180 秒安全保持和动作多样性。`late-route-recovery` 从 120 秒后逐步放大路线恢复、低血量、危险区、Boss 压力和轻量重复动作惩罚，用于 180-300 秒 closed-loop 路线修复消融。`late-win-conversion` 只在 240 秒后 ramp up，强化 final-minute route recovery、重复动作惩罚和 victory / defeat terminal signal，用于当前“能进 late 但不能把 300 秒窗口转成胜利”的探针。`opening-route-recovery` 只在 60 秒内放大路线恢复、安全风险、低血量、边界、敌群与重复动作信号，用于 seed `63402` 这类开局贴边后 action lock 的 closed-loop 修复探针。`opening-boundary-escape` 在同一 0-60 秒窗口增加仅在贴边风险和敌压同时偏高时生效的内侧逃逸信号，用于约束 seed `63402` 这类“贴边 + 敌压上升后仍顶向危险边界”的动作锁定。它们都是训练实验入口，不是验收捷径，也不能替代 deterministic high-pressure 60 / 180 / 300 多图门禁。
+- `--reward-profile standard|late-survival|long-run-retention|late-route-recovery|late-win-conversion|terminal-sequence-recovery|opening-route-recovery|opening-boundary-escape`：选择 Rust `gym-bridge` 侧 reward shaping。`late-survival` 只作为 closed-loop 长局修复实验入口，会在 180 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并提高 300 秒存活终局奖励。`long-run-retention` 用于修复 late-survival 扩展训练暴露出的中窗 retention 回归，会从 60 秒后逐步加强生存、安全风险下降、低血量、边界、敌群、危险区和 Boss 压力相关 reward / penalty，并放大重复动作惩罚，帮助观察 60-180 秒安全保持和动作多样性。`late-route-recovery` 从 120 秒后逐步放大路线恢复、低血量、危险区、Boss 压力和轻量重复动作惩罚，用于 180-300 秒 closed-loop 路线修复消融。`late-win-conversion` 只在 240 秒后 ramp up，强化 final-minute route recovery、重复动作惩罚和 victory / defeat terminal signal，用于当前“能进 late 但不能把 300 秒窗口转成胜利”的探针。`terminal-sequence-recovery` 在 180-210 秒 ramp up，并覆盖 210-300 秒终局序列，进一步强化路线恢复、安全风险下降、低血量、危险区、Boss 压力、重复动作惩罚和胜负终局信号，用于 selective terminal branch 证明“nearest action agreement 仍高但不转胜”后的在线序列目标探针。`opening-route-recovery` 只在 60 秒内放大路线恢复、安全风险、低血量、边界、敌群与重复动作信号，用于 seed `63402` 这类开局贴边后 action lock 的 closed-loop 修复探针。`opening-boundary-escape` 在同一 0-60 秒窗口增加仅在贴边风险和敌压同时偏高时生效的内侧逃逸信号，用于约束 seed `63402` 这类“贴边 + 敌压上升后仍顶向危险边界”的动作锁定。它们都是训练实验入口，不是验收捷径，也不能替代 deterministic high-pressure 60 / 180 / 300 多图门禁。
 - `--map-id`：在训练模式下指定训练后评估地图，避免 high-pressure 或 curriculum 实验仍默认用 `frosting-grassland` 做短局 gate。
 - `--model-in`：从已有 SB3 模型 warm start 继续训练，用于课程学习、失败策略修复和后续规则 Bot 轨迹蒸馏实验。
 
@@ -190,6 +190,12 @@ python3 python/train/train_sb3.py --algorithm ppo --reward-profile long-run-rete
 
 ```bash
 python3 python/train/train_sb3.py --algorithm ppo --reward-profile late-win-conversion --train-map-preset high-pressure --train-map-selection random --train-seconds 300 --eval-seconds 60
+```
+
+针对 `caramel-workshop` 210-300 秒终局序列已经有高 nearest action agreement 但仍低血量 / hazard 压力死亡的策略，可以用 `terminal-sequence-recovery` 做在线序列目标探针：
+
+```bash
+python3 python/train/train_sb3.py --algorithm ppo --reward-profile terminal-sequence-recovery --train-maps caramel-workshop --train-map-selection cycle --train-seconds 300 --eval-seconds 60
 ```
 
 首个 `late-win-conversion` 蒸馏探针把 current-failure fallback best teacher 蒸馏为 SB3 PPO 后继续 2048 timestep closed-loop 训练，但 60 秒 `soda-creek` 从 `1.0` 回落到 `0.3333`，180 秒回落到 `0.0`，300 秒仍为 `0.0/0.0/0.3333`。该结果记录为 `fail_20260528_080`，说明 final-minute reward profile 只能作为诊断入口，不能单独替代 opening retention、staged opening protection 或 KL / behavior-clone anchor。
@@ -351,6 +357,8 @@ edge recovery supervised init 已验证两种路线：`teacher_probs` 蒸馏能�
 为把“序列级 terminal conversion 验证”落成可审计门槛，新增 `tools/validate_terminal_conversion_probe.py`。该 gate 不判断 RL acceptance，只检查 terminal branch 是否在目标地图 / 时间桶真实调用、目标 `win_rate` 与存活是否相对 baseline 改善，以及配套 `window_regression` 是否通过。对上述 `w0.5` selective branch 复核时，terminal branch 在 `caramel-workshop` 触发 `832 / 20776` 次、late bucket 触发 `832 / 4576` 次，但 `300s/caramel-workshop` 胜率仍为 `0.0`、相对 baseline 胜率增量 `0.0`、平均存活 `-0.4223s`，且 window regression 失败，因此 `terminal_conversion_probe_gate` 判定为 `terminal_conversion_probe_failed`。报告位于 `harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/terminal_conversion_probe_gate.md`；后续 caramel terminal branch 若要进入 limited follow-up，必须先通过该 gate，不能只用离线 action agreement、样本 nearest match 或 branch usage 次数证明 conversion。
 
 随后对同一 `w0.5` selective branch 只重跑 `caramel-workshop` 300 秒 failed-only trace，并把在线失败序列与 selective ranked victory dataset 做 nearest-neighbor 对齐。三条目标 seed 仍分别在 `213.2166s`、`235.2880s`、`244.0898s` 死亡；整体 nearest action match ratio 为 `0.8509 / 0.8634 / 0.8172`，平均距离为 `2.550705 / 2.425201 / 2.490466`。关键 late windows 仍有较高动作匹配：`63400` 的 `210-240s` 为 `0.9048`、`63402` 的 `240-270s` 为 `0.9231`，但仍没有胜利转换。报告位于 `harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_sequence_diagnostic_001/summary.md`；结论进一步收窄为：失败不是 branch usage 或 nearest action agreement 问题，而是在线闭环状态、低血量 / hazard 恢复和终局序列目标没有被 supervised imitation 解决。
+
+为把该结论转成可训练入口，新增 `terminal-sequence-recovery` reward profile。它在 `180-210s` ramp up，并覆盖完整 `210-300s` 终局序列，强化 route recovery、安全风险下降、低血量、危险区、Boss 压力、重复动作惩罚和 victory / defeat terminal signal；Rust `gym-bridge`、Python Gym wrapper、`train_sb3.py` 与 RL 计划工具均已接通。报告位于 `harness/reports/2026-05-31_rl_terminal_sequence_reward_profile_001/summary.md`；该能力只是下一轮 guarded closed-loop probe 的训练入口，尚不代表 300 秒 caramel 转胜、policy candidate 或 RL acceptance。
 
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 

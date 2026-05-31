@@ -324,7 +324,12 @@ def main() -> int:
     parser.add_argument("--ent-coef", type=float, default=0.02)
     parser.add_argument(
         "--reward-profile",
-        choices=["late-survival", "long-run-retention", "late-route-recovery"],
+        choices=[
+            "late-survival",
+            "long-run-retention",
+            "late-route-recovery",
+            "terminal-sequence-recovery",
+        ],
         default="late-route-recovery",
     )
     parser.add_argument("--train-map-selection", choices=["cycle", "random"], default="random")

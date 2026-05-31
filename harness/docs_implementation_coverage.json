@@ -1756,9 +1756,16 @@
             "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_sequence_diagnostic_001/comparison_300s_caramel_trace.json",
             "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_sequence_diagnostic_001/nearest_selective_ranked_online_seed63400.json",
             "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_sequence_diagnostic_001/nearest_selective_ranked_online_seed63401.json",
-            "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_sequence_diagnostic_001/nearest_selective_ranked_online_seed63402.json"
+            "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_sequence_diagnostic_001/nearest_selective_ranked_online_seed63402.json",
+            "crates/game_harness/src/main.rs",
+            "python/gym_env/soft_candy_env.py",
+            "python/train/train_sb3.py",
+            "tools/create_rl_curriculum_plan.py",
+            "tools/create_rl_fixed_window_action_plan.py",
+            "harness/reports/2026-05-31_rl_terminal_sequence_reward_profile_001/summary.md"
           ],
           "gaps": [
+            "terminal-sequence-recovery reward profile 已接入 Rust gym-bridge、Python Gym wrapper、train_sb3.py 和 RL 计划工具，能在 180-210 秒 ramp up 后覆盖 210-300 秒终局序列，并通过 Rust 单测、Python targeted pytest 与 dry-run；但这只是 constrained online / sequence objective 的训练入口，尚未训练 checkpoint、产生 300 秒 caramel-workshop 胜利转换或通过 terminal conversion probe gate。",
             "w0.5 selective ranked terminal branch 的 failed-only sequence diagnostic 显示三条 caramel target seed 的 nearest action match ratio 仍高达 0.8509/0.8634/0.8172，且部分 terminal window match ratio 达到 0.9048 或 0.9231，但三局仍全部 player_health_depleted；这进一步证明失败不是 branch usage 或 nearest action agreement 不足，而是在线低血量 / hazard 恢复和终局序列目标没有被 simple supervised imitation 解决。",
             "terminal conversion probe gate 已把 w0.5 selective ranked terminal branch 判定为 terminal_conversion_probe_failed：terminal branch 在 caramel-workshop 300 秒目标窗口触发 832/20776 次、late bucket 触发 832/4576 次，但胜率仍为 0.0、相对 baseline 胜率增量 0.0、平均存活 -0.4223s 且 window_regression 失败。下一轮不能只用离线 action agreement、nearest match 或 branch usage 次数推进，必须证明目标窗口在线胜利转换和 no-regression 同时成立。",
             "将旧 multimap victory terminal model 作为 caramel-workshop 专属 terminal branch 叠到 per-map edge branch + all-map late filter 基线上后，terminal branch 在 caramel late bucket 实际触发 796/4404 次，但 300 秒 caramel-workshop 仍为 0.0 胜率，且相对 per-map chain baseline 平均存活下降 2.3338s。已记录 fail_20260530_022；随后已基于当前 per-map chain 导出 164 条 180-300s clean risk rows 和 387 条 210-300s failure policy rows，并确认旧 multimap victory terminal dataset 的 same-map nearest match ratio 只有 0.0/0.1569/0.169。下一步需要更贴近 seeds 63400-63402 的成功 terminal trajectories 或新的 caramel 专属 terminal branch，不能继续只调旧 terminal dispatch 阈值。",
