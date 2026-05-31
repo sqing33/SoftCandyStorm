@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260531_010",
+  "category": "rl_policy",
+  "content_id": "failure-lane-opening-repair-broad-branch-parent-regression",
+  "seed": "63400-63402",
+  "bot": "ppo-opening-mid-boundary-retention-with-edge-recovery-branch",
+  "time_seconds": 300.0,
+  "symptom": "The broad 0-60s caramel-workshop edge-recovery branch passed the target seed preflight for caramel-workshop:63402 and passed the 60s/caramel-workshop hard preflight, but failed the full 60/180/300s high-pressure parent no-regression check against the unbranched base report. The validator reported 2 blockers: 180s/caramel-workshop action_distribution_l1_delta 0.4813 above the 0.45 cap and 300s/caramel-workshop action_distribution_l1_delta 0.5787 above the 0.45 cap.",
+  "root_cause": "The broad opening branch is scoped to caramel-workshop and only triggers 3 times in the opening window, but those early interventions change the later caramel-workshop trajectory enough to create long-window action distribution drift. The short-window improvement reduces action 5 at 60s, but the 180s and 300s windows show action 5 increasing by 0.1270 and 0.1940 relative to the unbranched base, so the branch does not preserve the parent policy shape.",
+  "fix": "Reject the 0-60s broad branch as a follow-up candidate and do not run a 10 seed caramel promotion from it. The next repair should use a narrower state-conditioned dispatch or an online action-distribution guard that keeps the target seed action 5 reduction without creating 180s/300s caramel action 5 drift. Any revised branch must rerun target seed preflight, 60s/caramel hard preflight, and high-pressure 60/180/300s parent no-regression before a 10 seed follow-up.",
+  "validation": "Ran high-pressure comparisons for the broad 0-60s branch at 180s and 300s, combined with the previously recorded 60s branch report. Then ran validate_policy_window_regression.py against the unbranched base reports with min_win_rate_delta 0.0, max_survival_drop_seconds 5.0, max_dominant_ratio_increase 0.2, max_action_ratio_increase 0.2, max_action_distribution_l1_delta 0.45, and max_normalized_entropy_drop 0.15. The resulting window_regression_high_pressure_window0_60_vs_base.json decision is policy_window_regression_failed with 2 blockers, both on caramel-workshop action distribution L1 drift.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/summary.md",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_high_pressure_60s_window0_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_high_pressure_180s_window0_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/opening_branch_high_pressure_300s_window0_60.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/window_regression_high_pressure_window0_60_vs_base.json",
+    "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/window_regression_high_pressure_window0_60_vs_base.md"
+  ]
+}
