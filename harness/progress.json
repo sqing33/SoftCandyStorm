@@ -1496,6 +1496,11 @@
       "id": "rl_mid_path_retention_seed63405_trace_diagnostic",
       "summary": "补充 retention63405 lane 的 parent-vs-candidate trace compare 与 route hotspot：candidate 比 parent 早死 75.8496s，首次分歧在 13.0001s（action 3 -> 7），首次 high-pressure 从 100.9988s 提前到 45.9996s；248 条负 route_recovery 主要集中在 opening_lt_60 与 mid_60_to_180 的 boundary_edge，说明 63405 是 opening + mid-window boundary/path retention lane，不是纯 late low-health 修复。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/trace_compare_seed63405_parent_vs_candidate.md"
+    },
+    {
+      "id": "rl_lane_repair_action_plan_seed63405",
+      "summary": "新增 create_rl_lane_repair_action_plan.py 与单测，将 lane inventory、trace compare 和 route hotspots 汇成结构化修复计划。真实 seed 63405 plan 分类为 opening_mid_boundary_path_retention，要求覆盖 opening_lt_60 boundary escape / route retention 与 mid_60_to_180 boundary/path retention，并明确禁止纯 late low-health continuation、shared 63407 continuation 和放宽 short60 / parent gate。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/lane_action_plan_seed63405.md"
     }
   ],
   "current_findings": [
@@ -3268,6 +3273,11 @@
       "id": "rl_mid_path_retention_seed63405_trace_findings",
       "summary": "seed 63405 诊断已从“缺少证据”推进到 lane 定性：parent-vs-candidate trace compare 显示 candidate 提前 75.8496s 死亡、13.0001s 就从 parent action 3 分歧为 action 7，并在 45.9996s 进入 high-pressure；route hotspots 显示 69.66% 采样为负 route_recovery，压力主要是 opening + mid-window boundary_edge。该 lane 应单独做 boundary/path retention 修复计划。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/route_hotspots_seed63405_parent_vs_candidate.md"
+    },
+    {
+      "id": "rl_lane_repair_action_plan_seed63405_findings",
+      "summary": "lane_action_plan_seed63405 已把 retention63405 的下一步收束为 opening + mid-window boundary/path retention 修复：必须先定义 lane-specific objective 或 narrow state-conditioned branch，并把 seed 63405 180s retention preflight、60s/caramel-workshop hard preflight、60/180/300s parent no-regression 与 10 seed follow-up 作为同一组门禁。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/lane_action_plan_seed63405.md"
     }
   ],
   "next_recommended": [
@@ -3368,9 +3378,9 @@
       "summary": "edge_recovery_branch 已完成首个 63400-63402 三 seed 60 秒预检并修复 target seed，同时未复现 global action 7 collapse；下一步必须扩大到 parent no-regression 和 high-pressure 60/180/300 秒窗口，确认分支 usage、动作分布和平均存活不会引入新的跨图回归。"
     },
     {
-      "id": "rl_mid_path_retention_seed63405_boundary_lane_plan",
-      "summary": "retention63405 trace compare 已完成，下一步不要做纯 late low-health 或 shared 63407 continuation；应为 seed 63405 设计 opening + mid-window boundary/path retention lane，先定义 target seed 180s retention preflight、60s/caramel-workshop hard preflight 和 parent no-regression 组合门禁，再决定是否训练小步 continuation 或 narrow state-conditioned branch。",
-      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/trace_compare_seed63405_parent_vs_candidate.md"
+      "id": "rl_mid_path_retention_seed63405_boundary_lane_candidate",
+      "summary": "retention63405 action plan 已完成；下一步应按 plan 实现一个 lane-specific boundary/path retention 候选（reward/profile、narrow state-conditioned branch 或小步 continuation 三选一），并在训练前固定 seed 63405 180s retention preflight、60s/caramel-workshop hard preflight、parent no-regression、10 seed follow-up 和 failure-case review，失败则停止而不是继续加长。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/lane_action_plan_seed63405.md"
     }
   ]
 }

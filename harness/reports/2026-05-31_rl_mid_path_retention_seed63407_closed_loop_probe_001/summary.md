@@ -81,6 +81,8 @@
 
 route hotspot 进一步显示，`356` 条采样中有 `248` 条负 route_recovery（`69.66%`），其中 `opening_lt_60` 有 `67` 条、`mid_60_to_180` 有 `156` 条，pressure 主要集中在 `boundary_edge`（`236` 条）。因此 `retention63405` 不应再被当成纯 late low-health 修复，而应按开局到中窗连续的 boundary/path retention lane 处理。
 
+`lane_action_plan_seed63405.json` / `.md` 已把该诊断转成 lane-level repair plan：分类为 `opening_mid_boundary_path_retention`，要求 objective scope 覆盖 `opening_lt_60` boundary escape / route retention 与 `mid_60_to_180` boundary/path retention；禁止纯 late low-health continuation、与 `target63407` 混合的 shared PPO continuation，以及放宽 `short60` 或 parent-preservation gate。
+
 ## 结论
 
 结论：`repair`，但拒绝推进为 policy candidate、stage 03 或 RL test Bot。
@@ -92,4 +94,4 @@ route hotspot 进一步显示，`356` 条采样中有 `248` 条负 route_recover
 - 不要继续加长该 checkpoint。
 - 下一轮必须按 `repair_split_plan` 分 lane 推进：`63402` opening repair、`63405` retention repair、`60s/caramel-workshop` short-window preflight 和 parent-preservation 分开验收。
 - 需要保留 `target63407` 作为已通过的 required evidence，但不能用它掩盖其他 lane 的失败。
-- seed `63405` 下一步应先形成 lane-specific boundary/path retention 修复计划，再跑 seed `63405` retention preflight、`60s/caramel-workshop` hard preflight 与 parent no-regression；不要把它直接混入 `63407` shared PPO continuation。
+- seed `63405` 下一步应按 `lane_action_plan_seed63405` 执行：先设计 lane-specific boundary/path retention 修复，再跑 seed `63405` retention preflight、`60s/caramel-workshop` hard preflight 与 parent no-regression；不要把它直接混入 `63407` shared PPO continuation。

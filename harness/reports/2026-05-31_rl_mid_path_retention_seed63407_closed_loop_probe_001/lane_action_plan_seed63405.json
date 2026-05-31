@@ -1,0 +1,102 @@
+{
+  "report_version": 1,
+  "decision": "rl_lane_repair_action_plan_ready",
+  "lane_label": "retention63405",
+  "lane_status": "failed",
+  "lane_reuse_decision": "trace_diagnostic_recorded_boundary_path_retention_lane",
+  "source_reports": {
+    "lane_inventory": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_lane_inventory.json",
+    "trace_comparison": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/trace_compare_seed63405_parent_vs_candidate.json",
+    "route_hotspots": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/route_hotspots_seed63405_parent_vs_candidate.json"
+  },
+  "metrics": {
+    "target_seed": 63405,
+    "parent_episode_time_seconds": 214.5169,
+    "candidate_episode_time_seconds": 138.6673,
+    "episode_time_delta_seconds": -75.8496,
+    "first_divergent_time_seconds": 13.0001,
+    "first_divergent_parent_action": "3",
+    "first_divergent_candidate_action": "7",
+    "parent_first_high_pressure_time_seconds": 100.9988,
+    "candidate_first_high_pressure_time_seconds": 45.9996,
+    "high_pressure_delta_seconds": -54.9992,
+    "parent_first_low_health_time_seconds": 214.0168,
+    "candidate_first_low_health_time_seconds": 138.0005,
+    "low_health_delta_seconds": -76.0163,
+    "sample_count": 356,
+    "negative_sample_count": 248,
+    "negative_sample_ratio": 0.6966,
+    "time_bucket_hotspots": {
+      "opening_lt_60": 67,
+      "mid_60_to_180": 156,
+      "late_180_to_300": 25
+    },
+    "pressure_hotspots": {
+      "boundary_edge": 236,
+      "hazard_pressure": 33,
+      "low_health": 2
+    },
+    "opening_action_counts": {
+      "7": 46,
+      "2": 10,
+      "4": 5,
+      "3": 4,
+      "5": 2
+    },
+    "mid_action_counts": {
+      "5": 59,
+      "3": 50,
+      "1": 31,
+      "8": 14,
+      "7": 2
+    },
+    "boundary_action_counts": {
+      "5": 76,
+      "3": 52,
+      "7": 46,
+      "1": 30,
+      "8": 20,
+      "2": 8,
+      "4": 4
+    }
+  },
+  "diagnosis": {
+    "classification": "opening_mid_boundary_path_retention",
+    "opening_mid_hotspot_ratio": 0.8992,
+    "late_hotspot_ratio": 0.1008,
+    "boundary_edge_hotspot_ratio": 0.9516,
+    "early_divergence": true,
+    "candidate_enters_pressure_earlier": true,
+    "not_pure_late_low_health": true
+  },
+  "action_plan": {
+    "objective_scope": [
+      "opening_lt_60 boundary escape / route retention",
+      "mid_60_to_180 boundary/path retention"
+    ],
+    "disallowed_next_steps": [
+      "pure late low-health continuation",
+      "shared PPO continuation that also tries to solve target63407",
+      "relaxing short60 or parent-preservation gates to make the lane pass"
+    ],
+    "candidate_repair_shapes": [
+      "lane-specific reward/profile or adapter focused on boundary_edge route recovery",
+      "narrow state-conditioned branch triggered by boundary pressure and bad route_recovery",
+      "small-step continuation only after predefining all hard preflights"
+    ],
+    "required_gates": [
+      "target seed 63405 180s retention preflight must pass",
+      "60s/caramel-workshop window target preflight must pass",
+      "60/180/300s high-pressure parent no-regression must pass",
+      "10 seed caramel-workshop follow-up must not hide seed-local tradeoffs",
+      "failure-case review must stay attached if any gate fails"
+    ],
+    "acceptance_boundary": "This plan is repair routing only; it is not RL acceptance, stage 03 approval, or policy-candidate approval."
+  },
+  "errors": [],
+  "limitations": [
+    "This plan reads existing diagnostics only; it does not rerun simulation or train a policy.",
+    "Sampled traces can miss unsampled frames and do not replace Replay or GameCore snapshots.",
+    "Any follow-up checkpoint still requires target preflight, fixed-window no-regression, failure-case review, and RL acceptance gates."
+  ]
+}

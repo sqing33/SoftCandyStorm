@@ -11,7 +11,7 @@
 |---|---|---|---|
 | `target63407` | `passed` | `keep_as_required_evidence` | 保留为下一轮 hard gate 的 required evidence，但不能覆盖其他失败 lane。 |
 | `opening63402` | `failed` | `reuse_narrow_opening_branch_as_diagnostic_only` | 单独走 opening repair，复用 narrow state-conditioned branch 作为诊断证据，再跑 target preflight 与 parent no-regression。 |
-| `retention63405` | `failed` | `trace_diagnostic_recorded_boundary_path_retention_lane` | 按 opening + mid-window boundary/path retention lane 设计修复；不得继续把 `63405` 混入 `63407` shared PPO continuation。 |
+| `retention63405` | `failed` | `trace_diagnostic_recorded_boundary_path_retention_lane` | 按 `lane_action_plan_seed63405` 执行 opening + mid-window boundary/path retention 修复；不得继续把 `63405` 混入 `63407` shared PPO continuation。 |
 | `short60` | `failed` | `keep_as_hard_preflight` | 未来任何 `63407` 或 `63405` continuation 都必须先过 `60s/caramel-workshop` early-stop preflight。 |
 | `parent` | `failed` | `keep_as_required_no_regression` | 继续作为所有 follow-up 的 required no-regression lane；target seed 改善也不能越过 parent 回归。 |
 
