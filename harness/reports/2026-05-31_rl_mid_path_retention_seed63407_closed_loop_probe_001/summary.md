@@ -75,6 +75,12 @@
 
 `repair_lane_inventory.json` / `repair_lane_inventory.md` 进一步盘点既有证据：`opening63402` 可复用 `caramel-workshop` narrow opening branch 作为 evaluation-only 诊断，但仍需单独验收；`retention63405` 没有可复用正向 lane，需要先做 parent-vs-candidate trace compare；`short60` 和 `parent` 应保持 required hard gate。
 
+## Seed 63405 Trace Diagnostic
+
+已补充 `trace_compare_seed63405_parent_vs_candidate.json` / `.md` 与 `route_hotspots_seed63405_parent_vs_candidate.json` / `.md`。对比显示，candidate 在 seed `63405` 上比 parent 早死 `75.8496s`：parent 为 `214.5169s` defeat，candidate 为 `138.6673s` defeat；首次动作分歧发生在 `13.0001s`，从 parent action `3` 切到 candidate action `7`；首次 high-pressure 从 parent 的 `100.9988s` 提前到 candidate 的 `45.9996s`。
+
+route hotspot 进一步显示，`356` 条采样中有 `248` 条负 route_recovery（`69.66%`），其中 `opening_lt_60` 有 `67` 条、`mid_60_to_180` 有 `156` 条，pressure 主要集中在 `boundary_edge`（`236` 条）。因此 `retention63405` 不应再被当成纯 late low-health 修复，而应按开局到中窗连续的 boundary/path retention lane 处理。
+
 ## 结论
 
 结论：`repair`，但拒绝推进为 policy candidate、stage 03 或 RL test Bot。
@@ -86,4 +92,4 @@
 - 不要继续加长该 checkpoint。
 - 下一轮必须按 `repair_split_plan` 分 lane 推进：`63402` opening repair、`63405` retention repair、`60s/caramel-workshop` short-window preflight 和 parent-preservation 分开验收。
 - 需要保留 `target63407` 作为已通过的 required evidence，但不能用它掩盖其他 lane 的失败。
-- 优先补 seed `63405` trace compare，因为它目前没有像 `63402` narrow opening branch 那样的正向诊断证据。
+- seed `63405` 下一步应先形成 lane-specific boundary/path retention 修复计划，再跑 seed `63405` retention preflight、`60s/caramel-workshop` hard preflight 与 parent no-regression；不要把它直接混入 `63407` shared PPO continuation。

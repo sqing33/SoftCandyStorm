@@ -11,7 +11,7 @@
 |---|---|---|---|
 | `target63407` | `passed` | `keep_as_required_evidence` | 保留为下一轮 hard gate 的 required evidence，但不能覆盖其他失败 lane。 |
 | `opening63402` | `failed` | `reuse_narrow_opening_branch_as_diagnostic_only` | 单独走 opening repair，复用 narrow state-conditioned branch 作为诊断证据，再跑 target preflight 与 parent no-regression。 |
-| `retention63405` | `failed` | `needs_new_lane_specific_diagnostic` | 先做 seed `63405` parent-vs-candidate trace compare，确认是中窗 retention、late health retention 还是 opening debt。 |
+| `retention63405` | `failed` | `trace_diagnostic_recorded_boundary_path_retention_lane` | 按 opening + mid-window boundary/path retention lane 设计修复；不得继续把 `63405` 混入 `63407` shared PPO continuation。 |
 | `short60` | `failed` | `keep_as_hard_preflight` | 未来任何 `63407` 或 `63405` continuation 都必须先过 `60s/caramel-workshop` early-stop preflight。 |
 | `parent` | `failed` | `keep_as_required_no_regression` | 继续作为所有 follow-up 的 required no-regression lane；target seed 改善也不能越过 parent 回归。 |
 
@@ -32,6 +32,8 @@
 
 - `target_seed_preflight_seed63405_retention.json`: 当前 checkpoint 让 `caramel-workshop:63405` 在 `138.6673s` defeat，未过 `180s` retention preflight。
 - `harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md`: 早先 selective opening guard follow-up 也让 seed `63405` 相对 baseline 回退 `23.9718s`，说明它不在 `63407` guard 证据覆盖内。
+- `trace_compare_seed63405_parent_vs_candidate.json`: parent-vs-candidate trace compare 显示 candidate 比 parent 早死 `75.8496s`，首次动作分歧发生在 `13.0001s`（parent action `3` -> candidate action `7`），首次 high-pressure 从 parent 的 `100.9988s` 提前到 candidate 的 `45.9996s`。
+- `route_hotspots_seed63405_parent_vs_candidate.json`: `248` 条负 route_recovery 采样中，热点集中在 `opening_lt_60` 和 `mid_60_to_180` 的 `boundary_edge` 压力；这不是纯 late low-health 问题。
 
 ### `short60`
 

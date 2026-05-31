@@ -44,7 +44,7 @@
     {
       "label": "retention63405",
       "split_status": "failed",
-      "reuse_decision": "needs_new_lane_specific_diagnostic",
+      "reuse_decision": "trace_diagnostic_recorded_boundary_path_retention_lane",
       "existing_evidence": [
         {
           "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/target_seed_preflight_seed63405_retention.json",
@@ -53,9 +53,17 @@
         {
           "path": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md",
           "summary": "earlier selective opening guard follow-up also regressed seed 63405 by 23.9718s, so this is not covered by the 63407 guard evidence."
+        },
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/trace_compare_seed63405_parent_vs_candidate.json",
+          "summary": "parent-vs-candidate trace compare shows the candidate dies 75.8496s earlier, first diverges at 13.0001s from action 3 to action 7, and enters first high pressure at 45.9996s instead of the parent's 100.9988s."
+        },
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/route_hotspots_seed63405_parent_vs_candidate.json",
+          "summary": "route hotspot analysis records 248 negative route_recovery samples, dominated by boundary_edge pressure across opening_lt_60 and mid_60_to_180 rather than a pure late low-health failure."
         }
       ],
-      "next_action": "Create a parent-vs-candidate trace comparison for seed 63405 before training; define whether the blocker is mid-window path retention, late health retention, or opening debt."
+      "next_action": "Treat seed 63405 as a boundary/path retention lane spanning opening and mid-window; design a lane-specific repair plan before any further shared PPO continuation, then require seed 63405 retention preflight, 60s caramel hard preflight, and parent no-regression together."
     },
     {
       "label": "short60",
