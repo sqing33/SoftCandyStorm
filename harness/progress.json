@@ -1531,6 +1531,11 @@
       "id": "rl_failure_lane_trace_diagnostics",
       "summary": "补跑 failure lane trace 并生成汇总：opening_repair 的 seed 63402 仍在 40.0997s opening defeat，82 个 sampled rows 中 51 个负 route_recovery，主要是 boundary_edge 下 action 5/4 锁定；late_terminal_survival_conversion 过滤到 8 条 late failure trace 后，3479 个 sampled rows 中 2599 个负 route_recovery，且 mid_60_to_180 热点 1505 个、opening_lt_60 热点 573 个，说明 late death 前已有 opening/mid route debt。该诊断只作为 repair routing evidence，不是 policy acceptance。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_summary.md"
+    },
+    {
+      "id": "rl_failure_lane_repair_preflight",
+      "summary": "新增 create_rl_failure_lane_repair_preflight.py 与单测，将 failure lane trace 诊断转成下一轮修复前的硬门槛契约：opening_repair 要求 seed 63402 target preflight、60s/caramel hard preflight 和 high-pressure parent no-regression；late_terminal_survival_conversion 要求 10 seed caramel follow-up、short60 hard preflight 和 parent no-regression，并禁止纯 late low-health continuation 或未过滤连续 seed hotspot 作为 late-only 证据。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_repair_preflight.md"
     }
   ],
   "current_findings": [
@@ -3338,12 +3343,17 @@
       "id": "rl_failure_lane_trace_diagnostics_findings",
       "summary": "failure lane trace 已确认两个后续修复面不能混在一起：opening_repair 是 seed 63402 的 0-60s boundary/action-lock 问题；late_terminal_survival_conversion 虽在 180-300s 死亡，但 late-only seed 过滤后负 route_recovery 热点主要集中在 boundary_edge，且 mid_60_to_180 热点多于 late_180_to_300。下一步应分开设计 opening branch 与 path-retention + terminal-conversion 目标，并继续把 short60 与 parent no-regression 作为硬门禁。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_summary.md"
+    },
+    {
+      "id": "rl_failure_lane_repair_preflight_findings",
+      "summary": "failure_lane_repair_preflight 已把下一轮推进条件固定成两个 required lanes：opening_repair 不得和 late terminal mixed PPO 继续合并；late_terminal_survival_conversion 必须证明 path-retention-preserving terminal conversion，同时通过 10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure 60/180/300s parent no-regression。该 preflight 是 repair contract，不是训练结果或 acceptance。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_repair_preflight.md"
     }
   ],
   "next_recommended": [
     {
-      "id": "rl_after_failure_lane_trace_diagnostics",
-      "summary": "下一步先建立 split repair preflight：opening_repair 只处理 caramel-workshop seed 63402 的 0-60s boundary/action-lock；late_terminal_survival_conversion 必须同时保护 60-180s path retention 与 180-300s terminal conversion。任何新 branch 或 checkpoint 都必须先过 10 seed caramel follow-up、60s/caramel-workshop hard preflight 和 high-pressure 60/180/300s parent no-regression。"
+      "id": "rl_after_failure_lane_repair_preflight",
+      "summary": "下一步按 preflight 分两条线推进：先做 caramel-workshop seed 63402 的窄 opening state-conditioned branch 或 target-seed preflight；late_terminal_survival_conversion 只能在保留 60-180s path retention 的前提下尝试 terminal conversion。任一新 branch 或 checkpoint 都必须回到 failure_lane_repair_preflight 的 10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure parent no-regression。"
     },
     {
       "id": "rl_caramel_terminal_conversion_target",

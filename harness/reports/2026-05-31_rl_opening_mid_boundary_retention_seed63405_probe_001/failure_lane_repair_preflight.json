@@ -1,0 +1,176 @@
+{
+  "report_version": 1,
+  "decision": "rl_failure_lane_repair_preflight_ready",
+  "source_trace_summary": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_summary.json",
+  "source_trace_plan": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.json",
+  "source_failure_analysis": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.json",
+  "map_id": "caramel-workshop",
+  "gate_conclusion": "repair",
+  "preflight_lanes": [
+    {
+      "lane": "opening_repair",
+      "classification": "opening_boundary_action_lock",
+      "seeds": [
+        63402
+      ],
+      "repair_shape": "narrow state-conditioned opening branch or target-seed preflight",
+      "dominant_action": "5",
+      "trace_quality": {
+        "trace_count": 1,
+        "sample_count": 82,
+        "negative_sample_count": 51,
+        "negative_sample_ratio": 0.622
+      },
+      "evidence": {
+        "route_hotspots": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/opening_repair/caramel-workshop/route_hotspots.json",
+        "candidate_comparison": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/opening_repair/caramel-workshop/candidate_comparison.json",
+        "time_bucket_hotspots": {
+          "opening_lt_60": 51
+        },
+        "pressure_hotspots": {
+          "boundary_edge": 47,
+          "enemy_pressure": 6,
+          "hazard_pressure": 6,
+          "no_major_pressure": 4
+        },
+        "action_counts": {
+          "5": 39,
+          "4": 10,
+          "2": 2
+        }
+      },
+      "required_preflights": [
+        {
+          "id": "opening_seed63402_target_preflight",
+          "type": "target_seed_preflight",
+          "map_id": "caramel-workshop",
+          "seed": 63402,
+          "required_result": "non_defeat_or_survival_window_passed"
+        },
+        {
+          "id": "short60_caramel_window_preflight",
+          "type": "window_target_preflight",
+          "map_id": "caramel-workshop",
+          "window_seconds": 60,
+          "minimum_win_rate": 0.6667,
+          "minimum_average_survival_seconds": 55.0
+        },
+        {
+          "id": "high_pressure_parent_no_regression",
+          "type": "window_regression",
+          "windows_seconds": [
+            60,
+            180,
+            300
+          ],
+          "required_result": "policy_window_regression_passed"
+        }
+      ],
+      "blocked_patterns": [
+        "shared PPO continuation that also targets late_terminal_survival_conversion",
+        "broad 0-60s branch without online action-distribution regression review",
+        "treating route hotspot evidence as policy acceptance"
+      ]
+    },
+    {
+      "lane": "late_terminal_survival_conversion",
+      "classification": "terminal_conversion_with_opening_mid_route_debt",
+      "seeds": [
+        63400,
+        63401,
+        63403,
+        63404,
+        63405,
+        63406,
+        63408,
+        63409
+      ],
+      "extra_scan_seeds": [
+        63402,
+        63407
+      ],
+      "repair_shape": "path-retention-preserving terminal conversion",
+      "dominant_action": "5",
+      "trace_quality": {
+        "trace_count": 8,
+        "sample_count": 3479,
+        "negative_sample_count": 2599,
+        "negative_sample_ratio": 0.7471
+      },
+      "evidence": {
+        "route_hotspots_late_seeds_only": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop/route_hotspots_late_seeds_only.json",
+        "route_hotspots_all_scanned_seeds": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop/route_hotspots.json",
+        "candidate_comparison": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop/candidate_comparison.json",
+        "time_bucket_hotspots": {
+          "opening_lt_60": 573,
+          "mid_60_to_180": 1505,
+          "late_180_to_300": 521
+        },
+        "pressure_hotspots": {
+          "boundary_edge": 2482,
+          "hazard_pressure": 297,
+          "low_health": 106,
+          "no_major_pressure": 110,
+          "enemy_pressure": 22,
+          "boss_pressure": 2
+        },
+        "action_counts": {
+          "5": 767,
+          "7": 560,
+          "1": 474,
+          "3": 313,
+          "2": 232,
+          "8": 177,
+          "4": 48,
+          "6": 28
+        }
+      },
+      "required_preflights": [
+        {
+          "id": "caramel_300s_10seed_followup",
+          "type": "target_followup",
+          "map_id": "caramel-workshop",
+          "seed_start": 63400,
+          "eval_episodes": 10,
+          "window_seconds": 300,
+          "required_result": "target_followup_no_regression_or_improvement"
+        },
+        {
+          "id": "short60_caramel_window_preflight",
+          "type": "window_target_preflight",
+          "map_id": "caramel-workshop",
+          "window_seconds": 60,
+          "minimum_win_rate": 0.6667,
+          "minimum_average_survival_seconds": 55.0
+        },
+        {
+          "id": "high_pressure_parent_no_regression",
+          "type": "window_regression",
+          "windows_seconds": [
+            60,
+            180,
+            300
+          ],
+          "required_result": "policy_window_regression_passed"
+        }
+      ],
+      "blocked_patterns": [
+        "pure 180s+ low-health-only continuation",
+        "terminal branch that ignores 60-180s path retention debt",
+        "using unfiltered continuous-seed trace hotspots as late-only evidence"
+      ]
+    }
+  ],
+  "blocked_until": [
+    "opening_repair and late_terminal_survival_conversion are validated as separate lanes",
+    "short60_caramel_window_preflight passes",
+    "high_pressure_parent_no_regression passes for 60/180/300 seconds",
+    "10 seed caramel follow-up does not regress baseline evidence"
+  ],
+  "errors": [],
+  "limitations": [
+    "This report creates a preflight contract only; it does not run simulation or train a policy.",
+    "Trace diagnostics are sampled evidence and must not be treated as Replay regression.",
+    "A ready decision is repair routing evidence, not policy acceptance or RL test Bot approval."
+  ]
+}
