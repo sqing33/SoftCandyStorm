@@ -3208,6 +3208,11 @@
       "id": "rl_health_retention_guard_seed63407_diagnostic",
       "summary": "health-retention guard 诊断已完成：180-300s low-health-only guard 和 180-300s late-only path retention 都未救回 caramel-workshop seed 63407；只有 60-300s mid-path retention 恢复 seed 63407，并在 63400-63409 10 seed target follow-up 中把 win_rate 从 0.1 提到 0.2、average_survival_seconds 从 242.8409s 提到 245.5495s，window_regression_caramel_300s_10seed 以 0 blocker 通过。high-pressure 60/180/300s 三图复查相对 per-map chain 也 0 blocker，但 seed 63407 不在 63400-63402 窗口内，因此该结果仍是 target-specific repair evidence，不是 RL test Bot、stage 03 或 acceptance。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_followup_001/summary.md"
+    },
+    {
+      "id": "rl_mid_path_retention_reward_profile",
+      "summary": "新增 mid-path-retention reward profile，并接通 Rust gym-bridge、Python Gym wrapper、train_sb3.py CLI、训练 README 和 RL 计划文档。该 profile 只在 60-180 秒窗口放大 route recovery、安全风险下降、低血量、边界、敌群、危险区、Boss 压力和重复动作惩罚，180 秒后关闭，用于把 seed 63407 的中窗 path retention 信号转成训练期 constrained objective。当前仅通过单元测试和 dry-run，尚未产生新 checkpoint、target follow-up 或 high-pressure no-regression 证据。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_reward_profile_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3309,7 +3314,7 @@
     },
     {
       "id": "rl_health_retention_guard_seed63407_next_objective",
-      "summary": "下一轮应把 seed 63407 的 60-180s route/path retention 信号转成训练期 constrained objective；不要继续扩大 180s 后 low-health-only guard。任何 follow-up 仍必须同时保留 10 seed caramel target follow-up、60/180/300s high-pressure no-regression 和 adapter provenance。"
+      "summary": "mid-path-retention reward profile 已把 seed 63407 的 60-180s route/path retention 信号转成训练入口；下一轮应先用该 profile 做小步 closed-loop probe，再跑 10 seed caramel target follow-up、60/180/300s high-pressure no-regression 和 adapter provenance。不要继续扩大 180s 后 low-health-only guard。"
     }
   ]
 }

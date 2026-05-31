@@ -5819,6 +5819,7 @@ def main():
             "standard",
             "late-survival",
             "long-run-retention",
+            "mid-path-retention",
             "late-route-recovery",
             "late-win-conversion",
             "terminal-sequence-recovery",
