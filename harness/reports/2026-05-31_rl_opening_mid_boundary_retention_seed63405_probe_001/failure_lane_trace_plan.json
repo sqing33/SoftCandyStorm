@@ -1,0 +1,154 @@
+{
+  "report_version": 1,
+  "decision": "rl_failure_lane_trace_plan_ready",
+  "source": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.json",
+  "source_model_path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_opening_mid_boundary_retention_seed63405_probe.zip",
+  "trace_root": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces",
+  "lane_count": 2,
+  "task_count": 2,
+  "lane_ids": [
+    "late_terminal_survival_conversion",
+    "opening_repair"
+  ],
+  "tasks": [
+    {
+      "lane_id": "late_terminal_survival_conversion",
+      "map_id": "caramel-workshop",
+      "task_type": "late_terminal_trace_preflight",
+      "priority": 1,
+      "failure_count": 8,
+      "ratio": 0.8889,
+      "seeds": [
+        63400,
+        63401,
+        63403,
+        63404,
+        63405,
+        63406,
+        63408,
+        63409
+      ],
+      "time_buckets": [
+        "late_180_to_300"
+      ],
+      "failure_time_seconds": {
+        "min": 210.8827,
+        "max": 225.8193,
+        "average": 216.6965
+      },
+      "dominant_action_counts": {
+        "5": 3,
+        "7": 3,
+        "3": 1,
+        "8": 1
+      },
+      "trace_window_seconds": {
+        "start": 180.0,
+        "end": 240.8193
+      },
+      "dispatch_window_seconds": {
+        "start": 205.8827,
+        "end": 240.8193
+      },
+      "trace_dir": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop",
+      "evaluation_range": {
+        "seed_start": 63400,
+        "eval_episodes": 10,
+        "contiguous": false,
+        "extra_scan_seeds": [
+          63402,
+          63407
+        ]
+      },
+      "trace_goal": "capture late low-health, hazard, and terminal conversion failures",
+      "required_preflight": "late terminal conversion probe plus 300s caramel no-regression gate",
+      "repair_shape": "state-conditioned terminal conversion branch",
+      "suggested_train_sb3_args": [
+        "--algorithm",
+        "ppo",
+        "--compare-rule-bots",
+        "--map-id",
+        "caramel-workshop",
+        "--eval-seconds",
+        "300",
+        "--trace-dir",
+        "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/late_terminal_survival_conversion/caramel-workshop",
+        "--trace-failed-only",
+        "--trace-sample-stride",
+        "15",
+        "--trace-include-observation",
+        "--model",
+        "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_opening_mid_boundary_retention_seed63405_probe.zip",
+        "--seed-start",
+        "63400",
+        "--eval-episodes",
+        "10"
+      ],
+      "source_failure_analysis": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.json"
+    },
+    {
+      "lane_id": "opening_repair",
+      "map_id": "caramel-workshop",
+      "task_type": "opening_trace_preflight",
+      "priority": 1,
+      "failure_count": 1,
+      "ratio": 0.1111,
+      "seeds": [
+        63402
+      ],
+      "time_buckets": [
+        "opening_lt_60"
+      ],
+      "failure_time_seconds": {
+        "min": 40.0997,
+        "max": 40.0997,
+        "average": 40.0997
+      },
+      "dominant_action_counts": {
+        "5": 1
+      },
+      "trace_window_seconds": {
+        "start": 0.0,
+        "end": 60.0
+      },
+      "trace_dir": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/opening_repair/caramel-workshop",
+      "evaluation_range": {
+        "seed_start": 63402,
+        "eval_episodes": 1,
+        "contiguous": true,
+        "extra_scan_seeds": []
+      },
+      "trace_goal": "capture target opening defeat and parent/candidate divergence before more PPO",
+      "required_preflight": "60s caramel window target preflight plus target seed trace comparison",
+      "repair_shape": "opening boundary escape or early-route branch",
+      "suggested_train_sb3_args": [
+        "--algorithm",
+        "ppo",
+        "--compare-rule-bots",
+        "--map-id",
+        "caramel-workshop",
+        "--eval-seconds",
+        "300",
+        "--trace-dir",
+        "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_traces/opening_repair/caramel-workshop",
+        "--trace-failed-only",
+        "--trace-sample-stride",
+        "15",
+        "--trace-include-observation",
+        "--model",
+        "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_opening_mid_boundary_retention_seed63405_probe.zip",
+        "--seed-start",
+        "63402",
+        "--eval-episodes",
+        "1"
+      ],
+      "source_failure_analysis": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.json"
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "This report creates trace and preflight tasks only; it does not run simulation or train a policy.",
+    "Non-contiguous lane seeds may require scanning extra seeds because train_sb3 comparison uses seed_start plus eval_episodes.",
+    "A trace plan is repair routing evidence, not RL acceptance or candidate promotion evidence."
+  ]
+}

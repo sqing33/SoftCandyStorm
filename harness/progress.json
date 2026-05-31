@@ -1521,6 +1521,11 @@
       "id": "rl_failure_analysis_lane_buckets",
       "summary": "扩展 analyze_rl_policy_failures.py，使失败分析报告直接输出 failure_lanes。对 63405 probe 的 10 seed caramel follow-up 复跑后，报告把 9 个失败局拆为 opening_repair（seed 63402，40.0997s）和 late_terminal_survival_conversion（8 个 late seeds，平均失败 216.6965s），为后续分开取样和分开 preflight 提供机器可读证据。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.md"
+    },
+    {
+      "id": "rl_failure_lane_trace_plan",
+      "summary": "新增 create_rl_failure_lane_trace_plan.py，把 failure_lanes 转成 trace/preflight 调度计划。63405 probe 当前生成 opening_repair（seed 63402，0-60s trace）和 late_terminal_survival_conversion（扫描 63400-63409 以覆盖 8 个 late seeds，额外扫到 63402/63407）两条 priority 1 任务；该计划只批准采样和诊断，不批准继续训练。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.md"
     }
   ],
   "current_findings": [
@@ -3318,6 +3323,11 @@
       "id": "rl_failure_analysis_lane_buckets_findings",
       "summary": "failure_analysis_caramel_300s_10seed 已拆出两条实际子 lane：opening_repair 只包含 seed 63402 的 40.0997s opening defeat；late_terminal_survival_conversion 包含 8 个 180-300s 低血量死亡局，平均失败时间 216.6965s。下一步不应把 caramel 失败统一交给一个 shared PPO objective。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.md"
+    },
+    {
+      "id": "rl_failure_lane_trace_plan_findings",
+      "summary": "failure_lane_trace_plan 已把 failure_analysis lane 拆成可执行 trace 任务：opening_repair 可单 seed 采样；late_terminal_survival_conversion 因 eval 接口只支持连续 seed range，需要扫描 63400-63409 并在后续分析中过滤非 late lane seed。下一步先跑 trace 与 route hotspot，再做 terminal branch 或 opening branch preflight。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_trace_plan.md"
     }
   ],
   "next_recommended": [
