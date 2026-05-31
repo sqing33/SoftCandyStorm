@@ -148,3 +148,33 @@ def test_max_total_samples_updates_episode_sample_count(tmp_path):
             "filtered_sample_count": 2,
         }
     ]
+
+
+def test_filters_by_seed_and_bot(tmp_path):
+    source = tmp_path / "trajectories.jsonl"
+    out = tmp_path / "filtered.jsonl"
+    write_jsonl(
+        source,
+        [
+            sample(1, 220.0, 2),
+            episode(1, "victory"),
+            sample(2, 220.0, 3),
+            episode(2, "victory"),
+        ],
+    )
+
+    report = build_report(
+        [source],
+        out=out,
+        seeds={"2"},
+        bots={"kite"},
+    )
+    records = read_jsonl(out)
+    samples = [record for record in records if record["record_type"] == "sample"]
+    metadata = records[0]
+
+    assert report["kept_sample_count"] == 1
+    assert report["kept_episode_count"] == 1
+    assert report["filters"]["seeds"] == ["2"]
+    assert metadata["seeds"] == ["2"]
+    assert samples[0]["seed"] == 2

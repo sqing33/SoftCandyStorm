@@ -57,8 +57,28 @@ The combined top episodes are:
 
 The ranking suggests that a selective weighting experiment should start from high-match episodes such as `greedy@63417`, `greedy@63489`, `greedy@63488`, `route@63333`, `route@63412`, or `route@63348`, rather than blindly using all `45853` wide samples. `greedy@63463` has the most hits, but its match ratio is only `0.6335`, so it should be treated as a coverage-heavy but risky source.
 
+## Selective Ranked Samples
+
+Using the ranked high-match episodes produced a committed selective dataset:
+
+- Output: `caramel_selective_ranked_victory_210_300_samples.jsonl`
+- Episodes: `greedy@63417`, `greedy@63488`, `greedy@63489`, `route@63333`, `route@63348`, `route@63412`
+- Samples: `3237`
+- Behavior-clone dry-run: `dataset_validated_not_training_gate`
+- Watch flag: `high_action_persistence`
+
+Compared with the prior neighbor set and the full wide set:
+
+| Trace | Old match | Old avg distance | Wide match | Wide avg distance | Selective match | Selective avg distance |
+|---|---:|---:|---:|---:|---:|---:|
+| `seed63400` | `0.5527` | `2.528792` | `0.4176` | `2.401258` | `0.8509` | `2.550705` |
+| `seed63401` | `0.5605` | `2.416173` | `0.5534` | `2.252513` | `0.8627` | `2.425806` |
+| `seed63402` | `0.4182` | `2.456220` | `0.4915` | `2.319987` | `0.8058` | `2.492100` |
+
+The selective set gives much stronger nearest action agreement for all three failed traces, but at the cost of slightly higher average distance than the full wide pool. It is a better training-input candidate than the all-wide sample pool, but still requires a small branch probe, action-distribution guard, and fixed-window no-regression before any promotion.
+
 ## Conclusion
 
-This is mixed diagnostic evidence, not a training gate. The wider scan is useful for understanding the failure surface, but it does not justify another plain supervised terminal-path imitation branch by itself.
+This is mixed diagnostic evidence, not a training gate. The wider scan is useful for understanding the failure surface, and the ranked subset gives a more credible selective weighting input than the full wide pool. It still does not approve a plain supervised terminal-path imitation branch by itself.
 
 Next repair should shift toward a constrained online / sequence objective, or a more selective trajectory weighting strategy that preserves the current per-map edge branch plus all-map late filter no-regression baseline. The rejected `ppo_caramel_rule_victory_terminal_branch.zip` remains rejected and must not be promoted as a policy candidate, stage 03 model, RL test Bot, balance gate, or release evidence.

@@ -1,0 +1,58 @@
+{
+  "report_version": 1,
+  "decision": "bot_trajectory_samples_filtered",
+  "output_file": "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/caramel_selective_ranked_victory_210_300_samples.jsonl",
+  "source_files": [
+    "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/caramel_rule_bot_wide_victory_210_300_samples.jsonl"
+  ],
+  "source_file_count": 1,
+  "source_sample_count": 45853,
+  "source_episode_count": 85,
+  "source_summary_count": 1,
+  "kept_sample_count": 3237,
+  "kept_episode_count": 6,
+  "orphan_sample_count": 0,
+  "dropped_episode_count": 79,
+  "dropped_samples": {},
+  "map_counts": {
+    "caramel-workshop": 6
+  },
+  "bot_counts": {
+    "greedy": 3,
+    "route": 3
+  },
+  "terminal_counts": {
+    "victory": 6
+  },
+  "filters": {
+    "terminal": "victory",
+    "map_ids": [
+      "caramel-workshop"
+    ],
+    "seeds": [
+      "63333",
+      "63348",
+      "63412",
+      "63417",
+      "63488",
+      "63489"
+    ],
+    "bots": [
+      "greedy",
+      "route"
+    ],
+    "min_seconds": 210.0,
+    "max_seconds": 300.0,
+    "min_health_ratio": null,
+    "max_health_ratio": null,
+    "actions": null,
+    "max_samples_per_episode": null,
+    "max_total_samples": null
+  },
+  "errors": [],
+  "limitations": [
+    "This filter only preserves existing bot trajectory movement samples.",
+    "Victory-window samples are training input, not policy acceptance evidence.",
+    "Filtered samples still require behavior-clone or SB3 training plus fixed-window high-pressure gates."
+  ]
+}

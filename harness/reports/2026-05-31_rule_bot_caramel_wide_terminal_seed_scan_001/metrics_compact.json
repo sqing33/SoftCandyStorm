@@ -66,6 +66,24 @@
     "committed_output": false,
     "not_committed_reason": "The wide filtered JSONL is diagnostic input only and is large. The committed report records the generation commands, sample counts, and nearest-neighbor coverage instead."
   },
+  "selective_ranked_samples": {
+    "decision": "bot_trajectory_samples_filtered",
+    "kept_sample_count": 3237,
+    "kept_episode_count": 6,
+    "episodes": [
+      "greedy@63417",
+      "greedy@63488",
+      "greedy@63489",
+      "route@63333",
+      "route@63348",
+      "route@63412"
+    ],
+    "behavior_clone_dry_run_gate": "dataset_validated_not_training_gate",
+    "diagnosis_flags": [
+      "high_action_persistence"
+    ],
+    "output_file": "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/caramel_selective_ranked_victory_210_300_samples.jsonl"
+  },
   "nearest_coverage": {
     "seed63400": {
       "old_neighbor_samples": {
@@ -77,6 +95,11 @@
         "candidate_count": 45853,
         "nearest_target_matches_online_action_ratio": 0.4176,
         "average_nearest_distance": 2.401258
+      },
+      "selective_ranked_samples": {
+        "candidate_count": 3237,
+        "nearest_target_matches_online_action_ratio": 0.8509,
+        "average_nearest_distance": 2.550705
       }
     },
     "seed63401": {
@@ -89,6 +112,11 @@
         "candidate_count": 45853,
         "nearest_target_matches_online_action_ratio": 0.5534,
         "average_nearest_distance": 2.252513
+      },
+      "selective_ranked_samples": {
+        "candidate_count": 3237,
+        "nearest_target_matches_online_action_ratio": 0.8627,
+        "average_nearest_distance": 2.425806
       }
     },
     "seed63402": {
@@ -101,13 +129,18 @@
         "candidate_count": 45853,
         "nearest_target_matches_online_action_ratio": 0.4915,
         "average_nearest_distance": 2.319987
+      },
+      "selective_ranked_samples": {
+        "candidate_count": 3237,
+        "nearest_target_matches_online_action_ratio": 0.8058,
+        "average_nearest_distance": 2.4921
       }
     }
   },
   "conclusion": {
     "direct_target_success": false,
     "closest_useful_victory": "boss-hunter@63399",
-    "coverage_assessment": "mixed",
-    "summary": "The wider scan increases same-map victory samples from 8630 to 45853 and reduces nearest-neighbor distance for all three failing traces, but action-target agreement regresses for seed 63400, is effectively flat for seed 63401, and only improves for seed 63402. This is not strong enough evidence for another simple supervised terminal-path imitation branch."
+    "coverage_assessment": "selective_candidate_watch",
+    "summary": "The full wide scan increases same-map victory samples from 8630 to 45853 and reduces nearest-neighbor distance for all three failing traces, but action-target agreement regresses for seed 63400, is effectively flat for seed 63401, and only improves for seed 63402. The ranked six-episode subset improves action agreement to 0.8509, 0.8627, and 0.8058, but with higher average distance than the full wide pool. It is a better selective weighting candidate than the full wide pool, not policy acceptance evidence."
   }
 }

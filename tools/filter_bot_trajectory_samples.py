@@ -110,6 +110,7 @@ def merged_metadata(
     source_files: list[Path],
     terminal_filter: str,
     map_ids: set[str] | None,
+    seeds: set[str] | None,
     bots: set[str] | None,
     min_seconds: float | None,
     max_seconds: float | None,
@@ -133,6 +134,7 @@ def merged_metadata(
         "source_files": [str(path) for path in source_files],
         "terminal_filter": terminal_filter,
         "map_ids": sorted(map_ids) if map_ids else None,
+        "seeds": sorted(seeds) if seeds else None,
         "bots": sorted(bots) if bots else None,
         "min_seconds": min_seconds,
         "max_seconds": max_seconds,
@@ -156,6 +158,7 @@ def build_report(
     out: Path,
     terminal_filter: str = "victory",
     map_ids: set[str] | None = None,
+    seeds: set[str] | None = None,
     bots: set[str] | None = None,
     min_seconds: float | None = None,
     max_seconds: float | None = None,
@@ -219,6 +222,9 @@ def build_report(
         if map_ids is not None and str(episode.get("map_id")) not in map_ids:
             dropped_episode_count += 1
             continue
+        if seeds is not None and str(episode.get("seed")) not in seeds:
+            dropped_episode_count += 1
+            continue
         if bots is not None and str(episode.get("bot")) not in bots:
             dropped_episode_count += 1
             continue
@@ -278,6 +284,7 @@ def build_report(
                         source_files=paths,
                         terminal_filter=terminal_filter,
                         map_ids=map_ids,
+                        seeds=seeds,
                         bots=bots,
                         min_seconds=min_seconds,
                         max_seconds=max_seconds,
@@ -343,6 +350,7 @@ def build_report(
         "filters": {
             "terminal": terminal_filter,
             "map_ids": sorted(map_ids) if map_ids else None,
+            "seeds": sorted(seeds) if seeds else None,
             "bots": sorted(bots) if bots else None,
             "min_seconds": min_seconds,
             "max_seconds": max_seconds,
@@ -400,6 +408,7 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--terminal", choices=["victory", "non_victory", "any"], default="victory")
     parser.add_argument("--map-id", action="append", default=None)
+    parser.add_argument("--seed", action="append", default=None)
     parser.add_argument("--bot", action="append", default=None)
     parser.add_argument("--min-seconds", type=float, default=None)
     parser.add_argument("--max-seconds", type=float, default=None)
@@ -448,6 +457,7 @@ def main() -> int:
         out=args.out,
         terminal_filter=args.terminal,
         map_ids=parse_csv_filter(args.map_id),
+        seeds=parse_csv_filter(args.seed),
         bots=parse_csv_filter(args.bot),
         min_seconds=args.min_seconds,
         max_seconds=args.max_seconds,
