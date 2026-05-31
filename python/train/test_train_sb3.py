@@ -8,6 +8,7 @@ import python.train.train_sb3 as train_sb3
 from python.train.train_sb3 import (
     EdgeRecoveryBranchPolicy,
     EdgeRecoveryFilterPolicy,
+    HealthRetentionGuardPolicy,
     LateRecoveryFilterPolicy,
     MapLateSplitPolicy,
     StagedOpeningPolicy,
@@ -32,6 +33,7 @@ from python.train.train_sb3 import (
     parse_anchor_time_bucket_list,
     parse_anchor_time_bucket_weights,
     parse_edge_recovery_branch_map_overrides,
+    parse_health_retention_targets,
     parse_opening_model_targets,
     parse_terminal_conversion_map_overrides,
     policy_quality_findings,
@@ -1319,6 +1321,84 @@ def test_parse_opening_model_targets_accepts_map_seed_pairs():
         parse_opening_model_targets("caramel-workshop")
 
 
+def test_parse_health_retention_targets_accepts_map_seed_pairs():
+    assert parse_health_retention_targets("caramel-workshop:63407") == frozenset(
+        {("caramel-workshop", 63407)}
+    )
+
+    with pytest.raises(ValueError, match="--health-retention-targets"):
+        parse_health_retention_targets("caramel-workshop")
+
+
+def test_health_retention_guard_switches_for_target_low_health_window():
+    base = DummyPolicy(8)
+    retention = DummyPolicy(5)
+    policy = HealthRetentionGuardPolicy(
+        base,
+        retention,
+        180.0,
+        300.0,
+        0.0,
+        0.5,
+        "candidate.zip",
+        "baseline.zip",
+        targets=[("caramel-workshop", 63407)],
+    )
+
+    policy.reset()
+    policy.set_map_id("caramel-workshop")
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "seed": 63407,
+            "time_seconds": 179.9,
+            "diagnostics": {"low_health_risk": 1.0},
+        }
+    )
+    early_action, _ = policy.predict(None)
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "seed": 63408,
+            "time_seconds": 226.0,
+            "diagnostics": {"low_health_risk": 1.0},
+        }
+    )
+    other_seed_action, _ = policy.predict(None)
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "seed": 63407,
+            "time_seconds": 226.0,
+            "diagnostics": {"low_health_risk": 0.4},
+        }
+    )
+    low_risk_action, _ = policy.predict(None)
+    policy.set_step_context(
+        {
+            "map_id": "caramel-workshop",
+            "seed": 63407,
+            "time_seconds": 226.0,
+            "diagnostics": {"low_health_risk": 0.75},
+        }
+    )
+    retention_action, _ = policy.predict(None)
+    decision = policy.consume_recovery_decision()
+    report = policy.policy_adapter_report()
+
+    assert early_action == 8
+    assert other_seed_action == 8
+    assert low_risk_action == 8
+    assert retention_action == 5
+    assert decision["mode"] == "health_retention_guard"
+    assert decision["original_action"] == 8
+    assert decision["target_action"] == 5
+    assert report["mode"] == "health_retention_guard"
+    assert report["targets"] == [{"map_id": "caramel-workshop", "seed": 63407}]
+    assert report["usage"]["branch_decisions"] == 1
+    assert report["usage"]["base_decisions"] == 3
+
+
 def test_map_late_split_policy_switches_only_on_target_map_late_window():
     base = DummyPolicy(1)
     late = DummyPolicy(5)
@@ -1942,6 +2022,68 @@ def test_multimap_policy_adapter_report_aggregates_edge_branch_usage():
     assert report["usage"]["by_map"]["soda-creek"]["branch_decisions"] == 3
 
 
+def test_multimap_policy_adapter_report_aggregates_health_retention_usage():
+    adapter_a = {
+        "mode": "health_retention_guard",
+        "usage": {
+            "total_decisions": 10,
+            "base_decisions": 8,
+            "branch_decisions": 2,
+            "branch_ratio": 0.2,
+            "by_map": {
+                "caramel-workshop": {
+                    "total_decisions": 10,
+                    "base_decisions": 8,
+                    "branch_decisions": 2,
+                    "branch_ratio": 0.2,
+                }
+            },
+            "by_time_bucket": {
+                "late_180_to_300": {
+                    "total_decisions": 10,
+                    "base_decisions": 8,
+                    "branch_decisions": 2,
+                    "branch_ratio": 0.2,
+                }
+            },
+        },
+    }
+    adapter_b = {
+        "mode": "health_retention_guard",
+        "usage": {
+            "total_decisions": 5,
+            "base_decisions": 4,
+            "branch_decisions": 1,
+            "branch_ratio": 0.2,
+            "by_map": {
+                "caramel-workshop": {
+                    "total_decisions": 5,
+                    "base_decisions": 4,
+                    "branch_decisions": 1,
+                    "branch_ratio": 0.2,
+                }
+            },
+            "by_time_bucket": {
+                "late_180_to_300": {
+                    "total_decisions": 5,
+                    "base_decisions": 4,
+                    "branch_decisions": 1,
+                    "branch_ratio": 0.2,
+                }
+            },
+        },
+    }
+
+    report = train_sb3.summarize_multimap_policy_adapter(
+        [{"policy_adapter": adapter_a}, {"policy_adapter": adapter_b}]
+    )
+
+    assert report["usage_scope"] == "multimap_aggregate"
+    assert report["usage"]["branch_decisions"] == 3
+    assert report["usage"]["branch_ratio"] == 0.2
+    assert report["usage"]["by_map"]["caramel-workshop"]["branch_decisions"] == 3
+
+
 def test_compare_policy_to_rule_bots_forwards_late_recovery_options(monkeypatch):
     captured = {}
 
@@ -2200,6 +2342,68 @@ def test_compare_policy_to_rule_bots_forwards_edge_recovery_branch_options(monke
         },
     }
     assert report["policy_adapter"]["mode"] == "edge_recovery_branch"
+
+
+def test_compare_policy_to_rule_bots_forwards_health_retention_options(monkeypatch):
+    captured = {}
+
+    def fake_evaluate_policy_model(config, algorithm, **kwargs):
+        captured.update(kwargs)
+        return {
+            "policy_kind": "health_retention_guard",
+            "opening_policy": None,
+            "policy_adapter": {"mode": "health_retention_guard"},
+            "edge_recovery_samples": None,
+            "upgrade_policy": None,
+            "action_selection": "deterministic",
+            "summary": {
+                "episodes": 1,
+                "win_rate": 1.0,
+                "average_kills": 5.0,
+                "dominant_action_ratio": 0.1,
+                "normalized_action_entropy": 1.0,
+            },
+        }
+
+    monkeypatch.setattr(train_sb3, "evaluate_policy_model", fake_evaluate_policy_model)
+    monkeypatch.setattr(
+        train_sb3,
+        "run_rule_bot_matrix",
+        lambda config, bots, seed_start, episodes, seconds, map_id: {
+            "stdout": {"bots": []},
+            "command": ["game_harness", "matrix"],
+            "stderr": "",
+        },
+    )
+
+    report = train_sb3.compare_policy_to_rule_bots(
+        {
+            "phase": "test",
+            "evaluation": {"episodes": 1, "seconds": 5, "seed_start": 10},
+            "environment": {"tick_rate": 30},
+            "models": {"ppo": "unused.zip"},
+            "outputs": {"model_dir": "python/train/models"},
+        },
+        "ppo",
+        health_retention_model_path="baseline.zip",
+        health_retention_maps=["caramel-workshop"],
+        health_retention_targets=frozenset({("caramel-workshop", 63407)}),
+        health_retention_min_seconds=180.0,
+        health_retention_max_seconds=300.0,
+        health_retention_min_pressure=0.2,
+        health_retention_min_low_health_risk=0.5,
+    )
+
+    assert captured["health_retention_model_path"] == "baseline.zip"
+    assert captured["health_retention_maps"] == ["caramel-workshop"]
+    assert captured["health_retention_targets"] == frozenset(
+        {("caramel-workshop", 63407)}
+    )
+    assert captured["health_retention_min_seconds"] == 180.0
+    assert captured["health_retention_max_seconds"] == 300.0
+    assert captured["health_retention_min_pressure"] == 0.2
+    assert captured["health_retention_min_low_health_risk"] == 0.5
+    assert report["policy_adapter"]["mode"] == "health_retention_guard"
 
 
 def test_evaluation_gate_flags_deterministic_action_collapse():

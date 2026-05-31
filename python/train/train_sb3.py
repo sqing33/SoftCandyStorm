@@ -316,6 +316,243 @@ class StagedOpeningPolicy:
         }
 
 
+class HealthRetentionGuardPolicy:
+    policy_kind = "health_retention_guard"
+
+    def __init__(
+        self,
+        base_model,
+        retention_model,
+        min_seconds,
+        max_seconds,
+        min_pressure,
+        min_low_health_risk,
+        base_model_path,
+        retention_model_path,
+        target_maps=None,
+        targets=None,
+    ):
+        if min_seconds < 0.0:
+            raise ValueError("min_seconds must be non-negative")
+        if max_seconds is not None and max_seconds <= min_seconds:
+            raise ValueError("max_seconds must be greater than min_seconds")
+        for name, value in (
+            ("min_pressure", min_pressure),
+            ("min_low_health_risk", min_low_health_risk),
+        ):
+            if not (0.0 <= value <= 1.0):
+                raise ValueError(f"{name} must be between 0 and 1")
+        if target_maps is not None and not target_maps:
+            raise ValueError("target_maps must include at least one map id")
+        self.targets = normalize_opening_model_targets(targets)
+        self.target_maps = (
+            frozenset(str(map_id) for map_id in target_maps)
+            if target_maps is not None
+            else None
+        )
+        if self.targets is None and self.target_maps is None:
+            raise ValueError("health retention guard requires target_maps or targets")
+        self.base_model = base_model
+        self.retention_model = retention_model
+        self.min_seconds = float(min_seconds)
+        self.max_seconds = float(max_seconds) if max_seconds is not None else None
+        self.min_pressure = float(min_pressure)
+        self.min_low_health_risk = float(min_low_health_risk)
+        self.base_model_path = str(base_model_path)
+        self.retention_model_path = str(retention_model_path)
+        self._map_id = None
+        self._seed = None
+        self._time_seconds = 0.0
+        self._pressure_context = terminal_pressure_context({})
+        self._last_retention_decision = None
+        self._last_action_source = "base"
+        self._usage_stats = new_policy_branch_usage_stats()
+
+    def reset(self):
+        self._time_seconds = 0.0
+        self._seed = None
+        self._pressure_context = terminal_pressure_context({})
+        self._last_retention_decision = None
+        self._last_action_source = "base"
+        for model in (self.base_model, self.retention_model):
+            reset = getattr(model, "reset", None)
+            if callable(reset):
+                reset()
+
+    def set_map_id(self, map_id):
+        self._map_id = map_id
+        for model in (self.base_model, self.retention_model):
+            set_map_id = getattr(model, "set_map_id", None)
+            if callable(set_map_id):
+                set_map_id(map_id)
+
+    def set_step_context(self, info):
+        info = info or {}
+        self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+        if info.get("map_id") is not None:
+            self._map_id = info.get("map_id")
+        if info.get("seed") is not None:
+            self._seed = info.get("seed")
+        self._pressure_context = terminal_pressure_context(info.get("diagnostics", {}))
+        for model in (self.base_model, self.retention_model):
+            set_step_context = getattr(model, "set_step_context", None)
+            if callable(set_step_context):
+                set_step_context(info)
+
+    def matches_target(self):
+        if self.target_maps is not None and self._map_id not in self.target_maps:
+            return False
+        if self.targets is None:
+            return True
+        if self._map_id is None or self._seed is None:
+            return False
+        try:
+            seed = int(self._seed)
+        except (TypeError, ValueError):
+            return False
+        return (str(self._map_id), seed) in self.targets
+
+    def should_use_retention_model(self):
+        if not self.matches_target():
+            return False
+        if self._time_seconds < self.min_seconds:
+            return False
+        if self.max_seconds is not None and self._time_seconds > self.max_seconds:
+            return False
+        if self.min_pressure <= 0.0 and self.min_low_health_risk <= 0.0:
+            return True
+        pressure = self._pressure_context
+        return (
+            (
+                self.min_pressure > 0.0
+                and pressure["combined_pressure"] >= self.min_pressure
+            )
+            or (
+                self.min_low_health_risk > 0.0
+                and pressure["low_health_risk"] >= self.min_low_health_risk
+            )
+        )
+
+    def predict(self, observation, deterministic=True):
+        self._last_retention_decision = None
+        self._last_action_source = "base"
+        base_action, base_state = self.base_model.predict(
+            observation,
+            deterministic=deterministic,
+        )
+        base_action_index = action_to_int(base_action)
+        use_retention = self.should_use_retention_model()
+        record_policy_branch_usage(
+            self._usage_stats,
+            self._map_id,
+            self._time_seconds,
+            use_retention,
+        )
+        if not use_retention:
+            return base_action, base_state
+        retention_action, retention_state = self.retention_model.predict(
+            observation,
+            deterministic=deterministic,
+        )
+        retention_action_index = action_to_int(retention_action)
+        self._last_action_source = "retention"
+        self._last_retention_decision = self.build_retention_decision(
+            base_action_index,
+            retention_action_index,
+            observation,
+        )
+        return retention_action, retention_state
+
+    def build_retention_decision(self, base_action, retention_action, observation):
+        base_scores = policy_action_scores(self.base_model, observation)
+        retention_scores = policy_action_scores(self.retention_model, observation)
+        base_score_values = (
+            base_scores.get("scores", []) if isinstance(base_scores, dict) else []
+        )
+        retention_score_values = (
+            retention_scores.get("scores", [])
+            if isinstance(retention_scores, dict)
+            else []
+        )
+        return {
+            "mode": "health_retention_guard",
+            "min_seconds": self.min_seconds,
+            "max_seconds": self.max_seconds,
+            "min_pressure": self.min_pressure,
+            "min_low_health_risk": self.min_low_health_risk,
+            "target_maps": (
+                sorted(self.target_maps) if self.target_maps is not None else None
+            ),
+            "targets": opening_targets_report(self.targets),
+            "original_action": int(base_action),
+            "target_action": int(retention_action),
+            "pressure_context": dict(self._pressure_context),
+            "base_score_kind": (
+                base_scores.get("kind") if isinstance(base_scores, dict) else None
+            ),
+            "retention_score_kind": (
+                retention_scores.get("kind")
+                if isinstance(retention_scores, dict)
+                else None
+            ),
+            "original_action_score": score_at(base_score_values, base_action),
+            "target_action_score": score_at(retention_score_values, retention_action),
+        }
+
+    def consume_recovery_decision(self):
+        decision = self._last_retention_decision
+        self._last_retention_decision = None
+        if decision is not None:
+            consume_policy_adapter_decision(self.base_model)
+            consume_policy_adapter_decision(self.retention_model)
+            return decision
+        return consume_policy_adapter_decision(self.base_model)
+
+    def set_random_seed(self, seed):
+        for model in (self.base_model, self.retention_model):
+            set_random_seed = getattr(model, "set_random_seed", None)
+            if callable(set_random_seed):
+                set_random_seed(seed)
+
+    def action_scores(self, observation):
+        if self._last_action_source == "retention":
+            return policy_action_scores(self.retention_model, observation)
+        return policy_action_scores(self.base_model, observation)
+
+    def opening_policy_report(self):
+        return opening_policy_report(self.base_model)
+
+    def policy_adapter_report(self):
+        report = {
+            "mode": "health_retention_guard",
+            "min_seconds": self.min_seconds,
+            "max_seconds": self.max_seconds,
+            "min_pressure": self.min_pressure,
+            "min_low_health_risk": self.min_low_health_risk,
+            "target_maps": (
+                sorted(self.target_maps) if self.target_maps is not None else None
+            ),
+            "targets": opening_targets_report(self.targets),
+            "base_model_path": self.base_model_path,
+            "retention_model_path": self.retention_model_path,
+            "base_policy_kind": getattr(self.base_model, "policy_kind", "sb3"),
+            "retention_policy_kind": getattr(self.retention_model, "policy_kind", "sb3"),
+            "usage": policy_branch_usage_report(self._usage_stats),
+            "limitations": [
+                "This wrapper is for baseline-winning health-retention diagnostics only.",
+                "It routes to a retention model only within configured map/seed/time/pressure conditions.",
+                "It is not policy acceptance evidence and still requires multi-seed no-regression gates.",
+            ],
+        }
+        base_adapter = policy_adapter_report(self.base_model)
+        if base_adapter is not None:
+            report["base_policy_adapter"] = base_adapter
+        retention_adapter = policy_adapter_report(self.retention_model)
+        if retention_adapter is not None:
+            report["retention_policy_adapter"] = retention_adapter
+        return report
+
+
 class MapLateSplitPolicy:
     policy_kind = "map_late_split"
 
@@ -1764,6 +2001,35 @@ def wrap_late_recovery_filter(
     )
 
 
+def wrap_health_retention_guard_policy(
+    policy,
+    model_class,
+    health_retention_model_path=None,
+    health_retention_maps=None,
+    health_retention_targets=None,
+    health_retention_min_seconds=180.0,
+    health_retention_max_seconds=300.0,
+    health_retention_min_pressure=0.0,
+    health_retention_min_low_health_risk=0.25,
+    base_model_path=None,
+):
+    if health_retention_model_path is None:
+        return policy
+    retention_model = model_class.load(health_retention_model_path)
+    return HealthRetentionGuardPolicy(
+        policy,
+        retention_model,
+        health_retention_min_seconds,
+        health_retention_max_seconds,
+        health_retention_min_pressure,
+        health_retention_min_low_health_risk,
+        base_model_path or "base_policy",
+        health_retention_model_path,
+        target_maps=health_retention_maps,
+        targets=health_retention_targets,
+    )
+
+
 def wrap_recovery_filter_for_eval(
     policy,
     *,
@@ -1828,6 +2094,17 @@ def parse_opening_model_targets(value):
             raise ValueError("--opening-model-targets seed must be an integer") from exc
         targets.append((map_id, seed))
     return normalize_opening_model_targets(targets)
+
+
+def parse_health_retention_targets(value):
+    if value is None:
+        return None
+    try:
+        return parse_opening_model_targets(value)
+    except ValueError as exc:
+        message = str(exc).replace("--opening-model-targets", "--health-retention-targets")
+        message = message.replace("opening model", "health retention")
+        raise ValueError(message) from exc
 
 
 def parse_terminal_conversion_map_overrides(value):
@@ -3332,6 +3609,13 @@ def evaluate_saved_policy(
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
     edge_recovery_branch_map_overrides=None,
+    health_retention_model_path=None,
+    health_retention_maps=None,
+    health_retention_targets=None,
+    health_retention_min_seconds=180.0,
+    health_retention_max_seconds=300.0,
+    health_retention_min_pressure=0.0,
+    health_retention_min_low_health_risk=0.25,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -3407,6 +3691,20 @@ def evaluate_saved_policy(
         edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
         base_model_path=fallback_model_path,
     )
+    model = wrap_health_retention_guard_policy(
+        model,
+        model_class,
+        health_retention_model_path=health_retention_model_path,
+        health_retention_maps=health_retention_maps,
+        health_retention_targets=health_retention_targets,
+        health_retention_min_seconds=health_retention_min_seconds,
+        health_retention_max_seconds=health_retention_max_seconds,
+        health_retention_min_pressure=health_retention_min_pressure,
+        health_retention_min_low_health_risk=(
+            health_retention_min_low_health_risk
+        ),
+        base_model_path=fallback_model_path,
+    )
     model = wrap_recovery_filter_for_eval(
         model,
         edge_recovery_filter=edge_recovery_filter,
@@ -3468,6 +3766,13 @@ def evaluate_policy_model(
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
     edge_recovery_branch_map_overrides=None,
+    health_retention_model_path=None,
+    health_retention_maps=None,
+    health_retention_targets=None,
+    health_retention_min_seconds=180.0,
+    health_retention_max_seconds=300.0,
+    health_retention_min_pressure=0.0,
+    health_retention_min_low_health_risk=0.25,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -3529,6 +3834,15 @@ def evaluate_policy_model(
                 edge_recovery_branch_min_boundary_risk
             ),
             edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
+            health_retention_model_path=health_retention_model_path,
+            health_retention_maps=health_retention_maps,
+            health_retention_targets=health_retention_targets,
+            health_retention_min_seconds=health_retention_min_seconds,
+            health_retention_max_seconds=health_retention_max_seconds,
+            health_retention_min_pressure=health_retention_min_pressure,
+            health_retention_min_low_health_risk=(
+                health_retention_min_low_health_risk
+            ),
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
             seed_start=seed_start,
@@ -3581,6 +3895,13 @@ def evaluate_policy_model(
         ),
         edge_recovery_branch_min_boundary_risk=edge_recovery_branch_min_boundary_risk,
         edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
+        health_retention_model_path=health_retention_model_path,
+        health_retention_maps=health_retention_maps,
+        health_retention_targets=health_retention_targets,
+        health_retention_min_seconds=health_retention_min_seconds,
+        health_retention_max_seconds=health_retention_max_seconds,
+        health_retention_min_pressure=health_retention_min_pressure,
+        health_retention_min_low_health_risk=health_retention_min_low_health_risk,
         eval_episodes=eval_episodes,
         eval_seconds=eval_seconds,
         seed_start=seed_start,
@@ -3633,6 +3954,13 @@ def evaluate_behavior_clone_policy(
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
     edge_recovery_branch_map_overrides=None,
+    health_retention_model_path=None,
+    health_retention_maps=None,
+    health_retention_targets=None,
+    health_retention_min_seconds=180.0,
+    health_retention_max_seconds=300.0,
+    health_retention_min_pressure=0.0,
+    health_retention_min_low_health_risk=0.25,
     eval_episodes=None,
     eval_seconds=None,
     seed_start=None,
@@ -3709,6 +4037,22 @@ def evaluate_behavior_clone_policy(
             edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
             base_model_path=model_path,
         )
+    if health_retention_model_path is not None:
+        model_class = stable_baselines_model_classes()[algorithm]
+        policy = wrap_health_retention_guard_policy(
+            policy,
+            model_class,
+            health_retention_model_path=health_retention_model_path,
+            health_retention_maps=health_retention_maps,
+            health_retention_targets=health_retention_targets,
+            health_retention_min_seconds=health_retention_min_seconds,
+            health_retention_max_seconds=health_retention_max_seconds,
+            health_retention_min_pressure=health_retention_min_pressure,
+            health_retention_min_low_health_risk=(
+                health_retention_min_low_health_risk
+            ),
+            base_model_path=model_path,
+        )
     policy = wrap_recovery_filter_for_eval(
         policy,
         edge_recovery_filter=edge_recovery_filter,
@@ -3739,7 +4083,9 @@ def evaluate_behavior_clone_policy(
         trace_include_observation=trace_include_observation,
         edge_recovery_samples_out=edge_recovery_samples_out,
     )
-    if edge_recovery_branch_model_path is not None:
+    if health_retention_model_path is not None:
+        evaluation["policy_kind"] = "health_retention_guard"
+    elif edge_recovery_branch_model_path is not None:
         evaluation["policy_kind"] = "edge_recovery_branch"
     elif terminal_conversion_model_path is not None:
         evaluation["policy_kind"] = "terminal_conversion_branch"
@@ -4107,26 +4453,28 @@ def build_edge_recovery_sample(
     mode = adapter_decision.get("mode")
     is_late_recovery = mode == "late_recovery_filter"
     is_edge_branch = mode == "edge_recovery_branch"
+    is_health_retention = mode == "health_retention_guard"
     record_type = (
         "risk_recovery_supervision_sample"
-        if is_late_recovery
+        if is_late_recovery or is_health_retention
         else "edge_recovery_supervision_sample"
     )
     if is_late_recovery:
         target_source = "late_recovery_filter"
+    elif is_health_retention:
+        target_source = "health_retention_guard"
     elif is_edge_branch:
         target_source = "edge_recovery_branch"
     else:
         target_source = "edge_recovery_filter"
-    target_label = (
-        "highest_scored_late_safe_action"
-        if is_late_recovery
-        else (
-            "branch_conditioned_non_wallward_action"
-            if is_edge_branch
-            else "highest_scored_non_wallward_action"
-        )
-    )
+    if is_late_recovery:
+        target_label = "highest_scored_late_safe_action"
+    elif is_health_retention:
+        target_label = "baseline_retention_action"
+    elif is_edge_branch:
+        target_label = "branch_conditioned_non_wallward_action"
+    else:
+        target_label = "highest_scored_non_wallward_action"
     return {
         "record_type": record_type,
         "schema_version": 1,
@@ -4654,6 +5002,13 @@ def compare_policy_to_rule_bots(
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
     edge_recovery_branch_map_overrides=None,
+    health_retention_model_path=None,
+    health_retention_maps=None,
+    health_retention_targets=None,
+    health_retention_min_seconds=180.0,
+    health_retention_max_seconds=300.0,
+    health_retention_min_pressure=0.0,
+    health_retention_min_low_health_risk=0.25,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -4713,6 +5068,13 @@ def compare_policy_to_rule_bots(
         ),
         edge_recovery_branch_min_boundary_risk=edge_recovery_branch_min_boundary_risk,
         edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
+        health_retention_model_path=health_retention_model_path,
+        health_retention_maps=health_retention_maps,
+        health_retention_targets=health_retention_targets,
+        health_retention_min_seconds=health_retention_min_seconds,
+        health_retention_max_seconds=health_retention_max_seconds,
+        health_retention_min_pressure=health_retention_min_pressure,
+        health_retention_min_low_health_risk=health_retention_min_low_health_risk,
         behavior_clone_model=behavior_clone_model,
         eval_episodes=episodes,
         eval_seconds=seconds,
@@ -4805,6 +5167,13 @@ def compare_policy_to_rule_bots_across_maps(
     edge_recovery_branch_min_low_health_risk=0.0,
     edge_recovery_branch_min_boundary_risk=0.0,
     edge_recovery_branch_map_overrides=None,
+    health_retention_model_path=None,
+    health_retention_maps=None,
+    health_retention_targets=None,
+    health_retention_min_seconds=180.0,
+    health_retention_max_seconds=300.0,
+    health_retention_min_pressure=0.0,
+    health_retention_min_low_health_risk=0.25,
     behavior_clone_model=None,
     eval_episodes=None,
     eval_seconds=None,
@@ -4862,6 +5231,15 @@ def compare_policy_to_rule_bots_across_maps(
                 edge_recovery_branch_min_boundary_risk
             ),
             edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
+            health_retention_model_path=health_retention_model_path,
+            health_retention_maps=health_retention_maps,
+            health_retention_targets=health_retention_targets,
+            health_retention_min_seconds=health_retention_min_seconds,
+            health_retention_max_seconds=health_retention_max_seconds,
+            health_retention_min_pressure=health_retention_min_pressure,
+            health_retention_min_low_health_risk=(
+                health_retention_min_low_health_risk
+            ),
             behavior_clone_model=behavior_clone_model,
             eval_episodes=eval_episodes,
             eval_seconds=eval_seconds,
@@ -5021,7 +5399,7 @@ def summarize_multimap_policy_adapter(comparisons):
     if not usage_reports:
         return first
     report = dict(first)
-    if mode == "edge_recovery_branch":
+    if mode in {"edge_recovery_branch", "health_retention_guard"}:
         report["usage"] = merge_policy_branch_usage_reports(usage_reports)
     else:
         report["usage"] = merge_terminal_branch_usage_reports(usage_reports)
@@ -5341,6 +5719,29 @@ def main():
         default=0.0,
     )
     parser.add_argument(
+        "--health-retention-model",
+        default=None,
+        help="Optional SB3 zip used as a baseline-winning health-retention fallback during evaluation/comparison.",
+    )
+    parser.add_argument(
+        "--health-retention-maps",
+        default=None,
+        help="Comma-separated map ids where --health-retention-model may replace the base policy.",
+    )
+    parser.add_argument(
+        "--health-retention-targets",
+        default=None,
+        help="Optional comma-separated map:seed targets where --health-retention-model may replace the base policy.",
+    )
+    parser.add_argument("--health-retention-min-seconds", type=float, default=180.0)
+    parser.add_argument("--health-retention-max-seconds", type=float, default=300.0)
+    parser.add_argument("--health-retention-min-pressure", type=float, default=0.0)
+    parser.add_argument(
+        "--health-retention-min-low-health-risk",
+        type=float,
+        default=0.25,
+    )
+    parser.add_argument(
         "--behavior-clone-model",
         default=None,
         help="Evaluate or compare a train_behavior_clone.py checkpoint instead of an SB3 zip.",
@@ -5609,6 +6010,22 @@ def main():
             and edge_recovery_branch_map_overrides is not None
         ):
             edge_recovery_branch_maps = sorted(edge_recovery_branch_map_overrides)
+        health_retention_maps = parse_map_list(args.health_retention_maps)
+        health_retention_targets = parse_health_retention_targets(
+            args.health_retention_targets
+        )
+        health_retention_min_seconds = validate_non_negative_seconds(
+            args.health_retention_min_seconds,
+            "--health-retention-min-seconds",
+        )
+        health_retention_max_seconds = validate_positive_seconds(
+            args.health_retention_max_seconds,
+            "--health-retention-max-seconds",
+        )
+        if health_retention_maps is None and health_retention_targets is not None:
+            health_retention_maps = sorted(
+                {map_id for map_id, _seed in health_retention_targets}
+            )
         late_recovery_maps = parse_map_list(args.late_recovery_maps)
         anchor_include_time_buckets = parse_anchor_time_bucket_list(
             args.anchor_include_time_buckets,
@@ -5658,12 +6075,19 @@ def main():
                 "--edge-recovery-branch-max-seconds must be greater than "
                 "--edge-recovery-branch-min-seconds"
             )
+        if health_retention_max_seconds <= health_retention_min_seconds:
+            raise ValueError(
+                "--health-retention-max-seconds must be greater than "
+                "--health-retention-min-seconds"
+            )
         for name in (
             "terminal_conversion_min_pressure",
             "terminal_conversion_min_low_health_risk",
             "edge_recovery_branch_min_pressure",
             "edge_recovery_branch_min_low_health_risk",
             "edge_recovery_branch_min_boundary_risk",
+            "health_retention_min_pressure",
+            "health_retention_min_low_health_risk",
         ):
             value = getattr(args, name)
             if not (0.0 <= value <= 1.0):
@@ -5751,6 +6175,14 @@ def main():
                 "--edge-recovery-branch-maps: "
                 + ", ".join(unknown_override_maps)
             )
+    if args.health_retention_model and not (args.evaluate_model or args.compare_rule_bots):
+        parser.error("--health-retention-model requires --evaluate-model or --compare-rule-bots")
+    if args.health_retention_model and health_retention_maps is None:
+        parser.error("--health-retention-model requires --health-retention-maps or --health-retention-targets")
+    if args.health_retention_maps and not args.health_retention_model:
+        parser.error("--health-retention-maps requires --health-retention-model")
+    if args.health_retention_targets and not args.health_retention_model:
+        parser.error("--health-retention-targets requires --health-retention-model")
     if args.behavior_clone_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--behavior-clone-model requires --evaluate-model or --compare-rule-bots")
     if args.edge_recovery_filter and not (args.evaluate_model or args.compare_rule_bots):
@@ -5781,8 +6213,9 @@ def main():
         args.edge_recovery_filter
         or args.late_recovery_filter
         or args.edge_recovery_branch_model
+        or args.health_retention_model
     ):
-        parser.error("--edge-recovery-samples-out requires a recovery filter or branch")
+        parser.error("--edge-recovery-samples-out requires a recovery filter, branch, or health-retention guard")
     if args.trace_sample_stride <= 0:
         parser.error("--trace-sample-stride must be greater than 0")
 
@@ -5867,6 +6300,19 @@ def main():
                     args.edge_recovery_branch_min_boundary_risk
                 ),
                 edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
+                health_retention_model_path=(
+                    Path(args.health_retention_model)
+                    if args.health_retention_model
+                    else None
+                ),
+                health_retention_maps=health_retention_maps,
+                health_retention_targets=health_retention_targets,
+                health_retention_min_seconds=health_retention_min_seconds,
+                health_retention_max_seconds=health_retention_max_seconds,
+                health_retention_min_pressure=args.health_retention_min_pressure,
+                health_retention_min_low_health_risk=(
+                    args.health_retention_min_low_health_risk
+                ),
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
@@ -5957,6 +6403,19 @@ def main():
                     edge_recovery_branch_map_overrides=(
                         edge_recovery_branch_map_overrides
                     ),
+                    health_retention_model_path=(
+                        Path(args.health_retention_model)
+                        if args.health_retention_model
+                        else None
+                    ),
+                    health_retention_maps=health_retention_maps,
+                    health_retention_targets=health_retention_targets,
+                    health_retention_min_seconds=health_retention_min_seconds,
+                    health_retention_max_seconds=health_retention_max_seconds,
+                    health_retention_min_pressure=args.health_retention_min_pressure,
+                    health_retention_min_low_health_risk=(
+                        args.health_retention_min_low_health_risk
+                    ),
                     behavior_clone_model=(
                         Path(args.behavior_clone_model)
                         if args.behavior_clone_model
@@ -6041,6 +6500,19 @@ def main():
                     args.edge_recovery_branch_min_boundary_risk
                 ),
                 edge_recovery_branch_map_overrides=edge_recovery_branch_map_overrides,
+                health_retention_model_path=(
+                    Path(args.health_retention_model)
+                    if args.health_retention_model
+                    else None
+                ),
+                health_retention_maps=health_retention_maps,
+                health_retention_targets=health_retention_targets,
+                health_retention_min_seconds=health_retention_min_seconds,
+                health_retention_max_seconds=health_retention_max_seconds,
+                health_retention_min_pressure=args.health_retention_min_pressure,
+                health_retention_min_low_health_risk=(
+                    args.health_retention_min_low_health_risk
+                ),
                 behavior_clone_model=(
                     Path(args.behavior_clone_model)
                     if args.behavior_clone_model
