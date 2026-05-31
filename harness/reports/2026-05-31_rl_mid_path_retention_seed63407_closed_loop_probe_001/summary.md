@@ -73,6 +73,8 @@
 
 `repair_split_plan.json` / `repair_split_plan.md` 已把 hard preflight 的 `9` 个 blockers 拆成 `5` 条 lane：`target63407` 通过；`opening63402` 失败于 `40.0997s` defeat；`retention63405` 失败于 `138.6673s` defeat；`short60` 失败于 `60s/caramel-workshop` 胜率 `0.3333` 与平均存活 `49.2774s`；`parent` 失败于 high-pressure parent-preservation 的 `3` 个回归。该拆分只路由现有证据，不重新仿真，也不放行 checkpoint。
 
+`repair_lane_inventory.json` / `repair_lane_inventory.md` 进一步盘点既有证据：`opening63402` 可复用 `caramel-workshop` narrow opening branch 作为 evaluation-only 诊断，但仍需单独验收；`retention63405` 没有可复用正向 lane，需要先做 parent-vs-candidate trace compare；`short60` 和 `parent` 应保持 required hard gate。
+
 ## 结论
 
 结论：`repair`，但拒绝推进为 policy candidate、stage 03 或 RL test Bot。
@@ -84,3 +86,4 @@
 - 不要继续加长该 checkpoint。
 - 下一轮必须按 `repair_split_plan` 分 lane 推进：`63402` opening repair、`63405` retention repair、`60s/caramel-workshop` short-window preflight 和 parent-preservation 分开验收。
 - 需要保留 `target63407` 作为已通过的 required evidence，但不能用它掩盖其他 lane 的失败。
+- 优先补 seed `63405` trace compare，因为它目前没有像 `63402` narrow opening branch 那样的正向诊断证据。

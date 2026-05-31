@@ -1486,6 +1486,11 @@
       "id": "rl_repair_split_plan_gate_routing",
       "summary": "新增 create_rl_repair_split_plan.py 与单测，将 repair probe hard preflight 的 blockers 按 evidence lane 拆分。真实 mid-path-retention seed 63407 报告显示 target63407 通过，opening63402、retention63405、short60 和 parent 四条 lane 失败，后续不能继续单一 shared PPO continuation。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.md"
+    },
+    {
+      "id": "rl_repair_lane_inventory",
+      "summary": "补充 seed 63407 split-plan 后续 lane 证据盘点：target63407 保留为已通过 evidence；opening63402 可复用 caramel narrow opening branch 诊断但仍需单独验收；retention63405 缺少正向修复证据，需先做 trace compare；short60 与 parent 继续作为 required hard gate。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_lane_inventory.md"
     }
   ],
   "current_findings": [
@@ -3248,6 +3253,11 @@
       "id": "rl_mid_path_retention_seed63407_repair_split_plan",
       "summary": "repair_split_plan 已把 seed 63407 closed-loop hard preflight 的 9 个 blockers 拆成 5 条 lane：target63407 作为已通过 required evidence 保留；opening63402、retention63405、short60 与 parent 分别要求 target seed repair、短窗 hard preflight 和 parent-preservation 修复。该计划只路由既有证据，不重新仿真，也不放行 checkpoint。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.md"
+    },
+    {
+      "id": "rl_mid_path_retention_seed63407_repair_lane_inventory",
+      "summary": "repair_lane_inventory 将 split-plan 的五条 lane 对齐到已有报告：63402 有 evaluation-only narrow opening branch 与 selective opening guard 诊断，但存在 seed tradeoff；63405 只有失败 preflight 和历史回归证据，没有正向 repair；60s/caramel 与 parent preservation 必须保留为硬门禁。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_lane_inventory.md"
     }
   ],
   "next_recommended": [
@@ -3348,9 +3358,9 @@
       "summary": "edge_recovery_branch 已完成首个 63400-63402 三 seed 60 秒预检并修复 target seed，同时未复现 global action 7 collapse；下一步必须扩大到 parent no-regression 和 high-pressure 60/180/300 秒窗口，确认分支 usage、动作分布和平均存活不会引入新的跨图回归。"
     },
     {
-      "id": "rl_mid_path_retention_seed63407_split_repair_next",
-      "summary": "下一轮 seed 63407 相关 RL repair 必须按 repair_split_plan 分 lane 推进：先独立处理 63402 opening repair、63405 retention repair、60s/caramel-workshop short-window preflight 和 parent-preservation，再用 target63407 passed evidence 复核，不要把这些失败面塞进同一个 shared PPO continuation。",
-      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.md"
+      "id": "rl_mid_path_retention_seed63405_trace_compare_next",
+      "summary": "下一步优先为 retention63405 lane 生成 parent-vs-candidate trace compare，定位 seed 63405 的 138.6673s defeat 是中窗 path retention、late health retention 还是 opening debt；没有该诊断前不要把 63405 混入 63407 continuation。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_lane_inventory.md"
     }
   ]
 }

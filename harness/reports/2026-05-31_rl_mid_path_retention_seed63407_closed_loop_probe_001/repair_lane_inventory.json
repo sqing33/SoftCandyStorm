@@ -1,0 +1,102 @@
+{
+  "report_version": 1,
+  "decision": "rl_repair_lane_inventory_recorded",
+  "source_split_plan": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.json",
+  "source_gate": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_probe_gate_hard_preflight.json",
+  "lane_count": 5,
+  "lanes": [
+    {
+      "label": "target63407",
+      "split_status": "passed",
+      "reuse_decision": "keep_as_required_evidence",
+      "existing_evidence": [
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/target_seed_preflight_seed63407.json",
+          "summary": "target seed 63407 reached 300.0150s victory in the current closed-loop probe."
+        },
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_split_plan.json",
+          "summary": "split plan keeps target63407 as the only passed lane."
+        }
+      ],
+      "next_action": "Retain this lane as required evidence, but do not use it to override failed lanes."
+    },
+    {
+      "label": "opening63402",
+      "split_status": "failed",
+      "reuse_decision": "reuse_narrow_opening_branch_as_diagnostic_only",
+      "existing_evidence": [
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/target_seed_preflight_seed63402_opening.json",
+          "summary": "current mid-path-retention checkpoint leaves caramel-workshop:63402 at 40.0997s defeat."
+        },
+        {
+          "path": "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md",
+          "summary": "the narrow 30-45s caramel opening edge branch passed target seed preflight and parent no-regression, but remains evaluation-only."
+        },
+        {
+          "path": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md",
+          "summary": "selective opening guard turned seed 63402 into a 300.0150s duration_reached run, but traded off seed 63407 and failed the 10-seed follow-up."
+        }
+      ],
+      "next_action": "Handle as a separate opening repair lane using narrow state-conditioned dispatch or learned branch evidence, then rerun target preflight and parent no-regression before combining with retention work."
+    },
+    {
+      "label": "retention63405",
+      "split_status": "failed",
+      "reuse_decision": "needs_new_lane_specific_diagnostic",
+      "existing_evidence": [
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/target_seed_preflight_seed63405_retention.json",
+          "summary": "current mid-path-retention checkpoint leaves caramel-workshop:63405 at 138.6673s defeat against the 180s retention preflight."
+        },
+        {
+          "path": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md",
+          "summary": "earlier selective opening guard follow-up also regressed seed 63405 by 23.9718s, so this is not covered by the 63407 guard evidence."
+        }
+      ],
+      "next_action": "Create a parent-vs-candidate trace comparison for seed 63405 before training; define whether the blocker is mid-window path retention, late health retention, or opening debt."
+    },
+    {
+      "label": "short60",
+      "split_status": "failed",
+      "reuse_decision": "keep_as_hard_preflight",
+      "existing_evidence": [
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/window_target_preflight_60s_caramel.json",
+          "summary": "current 60s caramel-workshop preflight failed with win_rate 0.3333 and average_survival_seconds 49.2774."
+        },
+        {
+          "path": "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md",
+          "summary": "narrow opening branch previously reached 60s caramel-workshop win_rate 1.0, proving the short-window target can be protected when handled separately."
+        }
+      ],
+      "next_action": "Require the 60s caramel-workshop preflight as an early-stop hard gate for any future 63407 or 63405 continuation."
+    },
+    {
+      "label": "parent",
+      "split_status": "failed",
+      "reuse_decision": "keep_as_required_no_regression",
+      "existing_evidence": [
+        {
+          "path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/window_regression_high_pressure_vs_parent.json",
+          "summary": "current closed-loop checkpoint failed parent preservation on 60s/caramel-workshop win rate and two action-distribution L1 blockers."
+        },
+        {
+          "path": "harness/reports/2026-05-30_rl_stage01_seed63402_edge_recovery_branch_high_pressure_001/summary.md",
+          "summary": "soda seed 63402 edge branch passed 60/180/300s parent no-regression, showing narrow branches can be checked without relaxing the gate."
+        },
+        {
+          "path": "harness/reports/2026-05-30_rl_caramel_opening_edge_branch_probe_001/summary.md",
+          "summary": "caramel narrow opening branch passed parent no-regression, but did not solve 300s late conversion."
+        }
+      ],
+      "next_action": "Keep parent preservation as a required lane for every follow-up; failed parent preservation should stop further training extension even when a target seed improves."
+    }
+  ],
+  "limitations": [
+    "This inventory only reuses existing reports and does not rerun simulations.",
+    "Evaluation-only wrappers remain diagnostics and cannot become policy candidates without learned-policy gates.",
+    "Lane evidence must be revalidated together before any combined follow-up can proceed."
+  ]
+}
