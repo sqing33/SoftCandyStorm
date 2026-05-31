@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260531_001",
+  "category": "rl_policy",
+  "content_id": "caramel-rule-victory-terminal-branch-no-conversion",
+  "seed": "63400-63402",
+  "bot": "per-map-edge-recovery-branch-plus-caramel-rule-victory-terminal-conversion-branch-plus-all-map-late-recovery-filter",
+  "time_seconds": 300.0,
+  "symptom": "A caramel-workshop-specific terminal branch distilled from 8630 same-map rule-bot victory samples plus 164 low-weight clean risk rows passed the offline action-distribution guard, but did not convert caramel-workshop in the 300s high-pressure comparison. The fixed-window result stayed soda-creek 1.0, caramel-workshop 0.0, cracked-star-jar 0.3333, and caramel-workshop average survival dropped from the per-map chain baseline 231.2871s to 231.0093s.",
+  "root_cause": "The new same-map neighbor victory samples are closer to the current failure surface than the old seed62301-only victory target, and the terminal branch was dispatched 839 times on caramel-workshop during the 300s comparison. However, supervised terminal-path imitation still does not produce a robust online late conversion sequence for the actual low-health 210-300s states on seeds 63400-63402, and it introduces a small survival regression.",
+  "fix": "Do not promote this checkpoint as a policy candidate, stage 03 model, RL test Bot, or acceptance evidence. Keep the per-map edge branch plus all-map late filter as the current diagnostic baseline, and treat the rule-bot victory terminal branch as rejected repair evidence. The next repair should either collect closer successful caramel-workshop terminal trajectories or use a more constrained online/sequence objective that is checked against the same 60/180/300s no-regression gate.",
+  "validation": "Distilled ppo_caramel_rule_victory_terminal_branch.zip with dataset action overrides for caramel_rule_bot_victory_210_300_samples.jsonl and top_k_scores soft targets for caramel_per_map_chain_clean_risk_samples.jsonl at sample weight 0.25. The distillation report passed action_distribution_guard with validation dominant action ratio 0.1887 and normalized entropy 0.9189. High-pressure comparisons on seeds 63400-63402 preserved 60s and 180s win rates at 1.0 across all three maps, but 300s remained soda-creek 1.0, caramel-workshop 0.0, cracked-star-jar 0.3333. window_regression_vs_per_map_chain.json failed with one blocker: 300s/caramel-workshop average survival dropped 0.2778s.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_caramel_rule_victory_terminal_branch_001/summary.md",
+    "harness/reports/2026-05-31_rl_caramel_rule_victory_terminal_branch_001/distillation_report.json",
+    "harness/reports/2026-05-31_rl_caramel_rule_victory_terminal_branch_001/comparison_60s.json",
+    "harness/reports/2026-05-31_rl_caramel_rule_victory_terminal_branch_001/comparison_180s.json",
+    "harness/reports/2026-05-31_rl_caramel_rule_victory_terminal_branch_001/comparison_300s.json",
+    "harness/reports/2026-05-31_rl_caramel_rule_victory_terminal_branch_001/window_regression_vs_per_map_chain.json",
+    "harness/reports/2026-05-31_rl_caramel_rule_victory_terminal_branch_001/repair_probe_gate.json"
+  ]
+}
