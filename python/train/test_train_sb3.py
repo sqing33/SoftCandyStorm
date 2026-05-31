@@ -32,6 +32,7 @@ from python.train.train_sb3 import (
     parse_anchor_time_bucket_list,
     parse_anchor_time_bucket_weights,
     parse_edge_recovery_branch_map_overrides,
+    parse_opening_model_targets,
     parse_terminal_conversion_map_overrides,
     policy_quality_findings,
     resolve_train_seed_values,
@@ -1269,6 +1270,53 @@ def test_staged_opening_policy_switches_after_opening_seconds():
     assert opening_scores["scores"][7] == 1.0
     assert fallback_action == 4
     assert policy.opening_policy_report()["mode"] == "staged_sb3_opening"
+
+
+def test_staged_opening_policy_can_target_map_seed():
+    opening = DummyPolicy(7)
+    fallback = DummyPolicy(4)
+    policy = StagedOpeningPolicy(
+        opening,
+        fallback,
+        60.0,
+        "opening.zip",
+        "fallback.zip",
+        opening_targets=[("caramel-workshop", 63400)],
+    )
+
+    policy.reset()
+    policy.set_map_id("caramel-workshop")
+    policy.set_step_context(
+        {"map_id": "caramel-workshop", "seed": 63400, "time_seconds": 30.0}
+    )
+    target_action, _ = policy.predict(None)
+    policy.set_step_context(
+        {"map_id": "caramel-workshop", "seed": 63402, "time_seconds": 30.0}
+    )
+    other_seed_action, _ = policy.predict(None)
+    policy.set_step_context(
+        {"map_id": "soda-creek", "seed": 63400, "time_seconds": 30.0}
+    )
+    other_map_action, _ = policy.predict(None)
+
+    assert target_action == 7
+    assert other_seed_action == 4
+    assert other_map_action == 4
+    assert policy.opening_policy_report()["opening_targets"] == [
+        {"map_id": "caramel-workshop", "seed": 63400}
+    ]
+
+
+def test_parse_opening_model_targets_accepts_map_seed_pairs():
+    assert parse_opening_model_targets("caramel-workshop:63400,soda-creek:63402") == frozenset(
+        {
+            ("caramel-workshop", 63400),
+            ("soda-creek", 63402),
+        }
+    )
+
+    with pytest.raises(ValueError, match="map:seed"):
+        parse_opening_model_targets("caramel-workshop")
 
 
 def test_map_late_split_policy_switches_only_on_target_map_late_window():

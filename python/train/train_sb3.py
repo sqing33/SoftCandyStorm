@@ -195,6 +195,33 @@ def seed_stochastic_action_sampling(eval_random_seed, model=None):
     }
 
 
+def normalize_opening_model_targets(opening_targets):
+    if opening_targets is None:
+        return None
+    normalized = set()
+    for map_id, seed in opening_targets:
+        map_id = str(map_id).strip()
+        if not map_id:
+            raise ValueError("opening model target map id must be non-empty")
+        try:
+            seed = int(seed)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("opening model target seed must be an integer") from exc
+        normalized.add((map_id, seed))
+    if not normalized:
+        raise ValueError("opening model targets must include at least one map:seed")
+    return frozenset(normalized)
+
+
+def opening_targets_report(opening_targets):
+    if opening_targets is None:
+        return None
+    return [
+        {"map_id": map_id, "seed": seed}
+        for map_id, seed in sorted(opening_targets)
+    ]
+
+
 class StagedOpeningPolicy:
     policy_kind = "staged_sb3_opening"
 
@@ -205,6 +232,7 @@ class StagedOpeningPolicy:
         opening_seconds,
         opening_model_path,
         fallback_model_path,
+        opening_targets=None,
     ):
         if opening_seconds <= 0.0:
             raise ValueError("opening_seconds must be greater than 0")
@@ -213,30 +241,51 @@ class StagedOpeningPolicy:
         self.opening_seconds = opening_seconds
         self.opening_model_path = str(opening_model_path)
         self.fallback_model_path = str(fallback_model_path)
+        self.opening_targets = normalize_opening_model_targets(opening_targets)
+        self._map_id = None
+        self._seed = None
         self._time_seconds = 0.0
 
     def reset(self):
         self._time_seconds = 0.0
+        self._seed = None
         for model in (self.opening_model, self.fallback_model):
             reset = getattr(model, "reset", None)
             if callable(reset):
                 reset()
 
     def set_map_id(self, map_id):
+        self._map_id = map_id
         for model in (self.opening_model, self.fallback_model):
             set_map_id = getattr(model, "set_map_id", None)
             if callable(set_map_id):
                 set_map_id(map_id)
 
     def set_step_context(self, info):
+        info = info or {}
         self._time_seconds = float(info.get("time_seconds", 0.0) or 0.0)
+        if info.get("map_id") is not None:
+            self._map_id = info.get("map_id")
+        if info.get("seed") is not None:
+            self._seed = info.get("seed")
         for model in (self.opening_model, self.fallback_model):
             set_step_context = getattr(model, "set_step_context", None)
             if callable(set_step_context):
                 set_step_context(info)
 
+    def matches_opening_target(self):
+        if self.opening_targets is None:
+            return True
+        if self._map_id is None or self._seed is None:
+            return False
+        try:
+            seed = int(self._seed)
+        except (TypeError, ValueError):
+            return False
+        return (str(self._map_id), seed) in self.opening_targets
+
     def active_model(self):
-        if self._time_seconds < self.opening_seconds:
+        if self._time_seconds < self.opening_seconds and self.matches_opening_target():
             return self.opening_model
         return self.fallback_model
 
@@ -258,8 +307,10 @@ class StagedOpeningPolicy:
             "opening_model_path": self.opening_model_path,
             "fallback_model_path": self.fallback_model_path,
             "opening_seconds": self.opening_seconds,
+            "opening_targets": opening_targets_report(self.opening_targets),
             "limitations": [
                 "The opening model is used only during evaluation/comparison before opening_seconds.",
+                "When opening_targets is set, the opening model applies only to those map/seed episodes.",
                 "This wrapper does not train a new policy and is not policy acceptance evidence by itself.",
             ],
         }
@@ -1756,6 +1807,29 @@ def parse_map_list(value):
     return maps
 
 
+def parse_opening_model_targets(value):
+    if value is None:
+        return None
+    targets = []
+    for raw_item in value.split(","):
+        raw_item = raw_item.strip()
+        if not raw_item:
+            continue
+        if ":" not in raw_item:
+            raise ValueError("--opening-model-targets entries must use map:seed")
+        map_id, seed_text = raw_item.split(":", 1)
+        map_id = map_id.strip()
+        seed_text = seed_text.strip()
+        if not map_id:
+            raise ValueError("--opening-model-targets map id is required")
+        try:
+            seed = int(seed_text)
+        except ValueError as exc:
+            raise ValueError("--opening-model-targets seed must be an integer") from exc
+        targets.append((map_id, seed))
+    return normalize_opening_model_targets(targets)
+
+
 def parse_terminal_conversion_map_overrides(value):
     if value is None:
         return None
@@ -3238,6 +3312,7 @@ def evaluate_saved_policy(
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    opening_targets=None,
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
@@ -3292,6 +3367,7 @@ def evaluate_saved_policy(
             opening_seconds,
             opening_model_path,
             fallback_model_path,
+            opening_targets=opening_targets,
         )
     model = wrap_map_late_split_policy(
         model,
@@ -3372,6 +3448,7 @@ def evaluate_policy_model(
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    opening_targets=None,
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
@@ -3428,6 +3505,7 @@ def evaluate_policy_model(
             behavior_clone_model,
             opening_model_path=opening_model_path,
             opening_seconds=opening_seconds,
+            opening_targets=opening_targets,
             late_split_model_path=late_split_model_path,
             late_split_seconds=late_split_seconds,
             late_split_maps=late_split_maps,
@@ -3481,6 +3559,7 @@ def evaluate_policy_model(
         model_path=model_path,
         opening_model_path=opening_model_path,
         opening_seconds=opening_seconds,
+        opening_targets=opening_targets,
         late_split_model_path=late_split_model_path,
         late_split_seconds=late_split_seconds,
         late_split_maps=late_split_maps,
@@ -3534,6 +3613,7 @@ def evaluate_behavior_clone_policy(
     model_path,
     opening_model_path=None,
     opening_seconds=60.0,
+    opening_targets=None,
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
@@ -3583,6 +3663,7 @@ def evaluate_behavior_clone_policy(
         model_path,
         opening_model_path=opening_model_path,
         opening_seconds=opening_seconds,
+        opening_targets=opening_targets,
     )
     if late_split_model_path is not None:
         model_class = stable_baselines_model_classes()[algorithm]
@@ -3687,6 +3768,7 @@ def load_behavior_clone_policy_with_optional_opening(
     behavior_clone_model_path,
     opening_model_path=None,
     opening_seconds=60.0,
+    opening_targets=None,
 ):
     fallback_policy = load_behavior_clone_policy(behavior_clone_model_path)
     if opening_model_path is None:
@@ -3698,6 +3780,7 @@ def load_behavior_clone_policy_with_optional_opening(
         opening_seconds,
         opening_model_path,
         behavior_clone_model_path,
+        opening_targets=opening_targets,
     )
 
 
@@ -4551,6 +4634,7 @@ def compare_policy_to_rule_bots(
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    opening_targets=None,
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
@@ -4607,6 +4691,7 @@ def compare_policy_to_rule_bots(
         model_path=model_path,
         opening_model_path=opening_model_path,
         opening_seconds=opening_seconds,
+        opening_targets=opening_targets,
         late_split_model_path=late_split_model_path,
         late_split_seconds=late_split_seconds,
         late_split_maps=late_split_maps,
@@ -4700,6 +4785,7 @@ def compare_policy_to_rule_bots_across_maps(
     model_path=None,
     opening_model_path=None,
     opening_seconds=60.0,
+    opening_targets=None,
     late_split_model_path=None,
     late_split_seconds=240.0,
     late_split_maps=None,
@@ -4752,6 +4838,7 @@ def compare_policy_to_rule_bots_across_maps(
             model_path=model_path,
             opening_model_path=opening_model_path,
             opening_seconds=opening_seconds,
+            opening_targets=opening_targets,
             late_split_model_path=late_split_model_path,
             late_split_seconds=late_split_seconds,
             late_split_maps=late_split_maps,
@@ -5155,6 +5242,14 @@ def main():
         help="Duration for --opening-model before falling back to --model.",
     )
     parser.add_argument(
+        "--opening-model-targets",
+        default=None,
+        help=(
+            "Optional comma-separated map:seed targets where --opening-model applies. "
+            "When omitted, the opening model applies to every evaluated episode before --opening-seconds."
+        ),
+    )
+    parser.add_argument(
         "--late-split-model",
         default=None,
         help="Optional SB3 zip used after --late-split-seconds on --late-split-maps during evaluation/comparison.",
@@ -5474,6 +5569,7 @@ def main():
             args.opening_seconds,
             "--opening-seconds",
         )
+        opening_targets = parse_opening_model_targets(args.opening_model_targets)
         late_split_seconds = validate_positive_seconds(
             args.late_split_seconds,
             "--late-split-seconds",
@@ -5599,6 +5695,8 @@ def main():
         parser.error("--behavior-clone-model cannot be combined with --model")
     if args.opening_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--opening-model requires --evaluate-model or --compare-rule-bots")
+    if args.opening_model_targets and not args.opening_model:
+        parser.error("--opening-model-targets requires --opening-model")
     if args.late_split_model and not (args.evaluate_model or args.compare_rule_bots):
         parser.error("--late-split-model requires --evaluate-model or --compare-rule-bots")
     if args.late_split_model and late_split_maps is None:
@@ -5733,6 +5831,7 @@ def main():
                     else None
                 ),
                 opening_seconds=opening_seconds,
+                opening_targets=opening_targets,
                 late_split_model_path=(
                     Path(args.late_split_model)
                     if args.late_split_model
@@ -5820,6 +5919,7 @@ def main():
                         else None
                     ),
                     opening_seconds=opening_seconds,
+                    opening_targets=opening_targets,
                     late_split_model_path=(
                         Path(args.late_split_model)
                         if args.late_split_model
@@ -5905,6 +6005,7 @@ def main():
                     else None
                 ),
                 opening_seconds=opening_seconds,
+                opening_targets=opening_targets,
                 late_split_model_path=(
                     Path(args.late_split_model)
                     if args.late_split_model
