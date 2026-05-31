@@ -14,6 +14,51 @@
   "repair_maps": [
     "caramel-workshop"
   ],
+  "failure_lanes": {
+    "late_terminal_survival_conversion": {
+      "lane_id": "late_terminal_survival_conversion",
+      "summary": "Failure in 180-300s; inspect low-health, hazard, and terminal conversion behavior.",
+      "recommendation": "collect late trace diagnostics before training or dispatching terminal conversion",
+      "count": 8,
+      "ratio": 0.8889,
+      "maps": [
+        "caramel-workshop"
+      ],
+      "seeds_by_map": {
+        "caramel-workshop": [
+          63400,
+          63401,
+          63403,
+          63404,
+          63405,
+          63406,
+          63408,
+          63409
+        ]
+      },
+      "time_buckets": [
+        "late_180_to_300"
+      ]
+    },
+    "opening_repair": {
+      "lane_id": "opening_repair",
+      "summary": "Failure before 60s; inspect opening branch, boundary escape, or target-seed preflight first.",
+      "recommendation": "repair opening survival before rerunning full 180/300s matrices",
+      "count": 1,
+      "ratio": 0.1111,
+      "maps": [
+        "caramel-workshop"
+      ],
+      "seeds_by_map": {
+        "caramel-workshop": [
+          63402
+        ]
+      },
+      "time_buckets": [
+        "opening_lt_60"
+      ]
+    }
+  },
   "findings": [],
   "maps": [
     {
@@ -47,6 +92,43 @@
         "post_300": {
           "count": 0,
           "ratio": 0.0
+        }
+      },
+      "failure_lanes": {
+        "late_terminal_survival_conversion": {
+          "lane_id": "late_terminal_survival_conversion",
+          "summary": "Failure in 180-300s; inspect low-health, hazard, and terminal conversion behavior.",
+          "recommendation": "collect late trace diagnostics before training or dispatching terminal conversion",
+          "count": 8,
+          "ratio": 0.8889,
+          "time_buckets": [
+            "late_180_to_300"
+          ],
+          "seeds": [
+            63400,
+            63401,
+            63403,
+            63404,
+            63405,
+            63406,
+            63408,
+            63409
+          ],
+          "average_survival_seconds": 216.6965
+        },
+        "opening_repair": {
+          "lane_id": "opening_repair",
+          "summary": "Failure before 60s; inspect opening branch, boundary escape, or target-seed preflight first.",
+          "recommendation": "repair opening survival before rerunning full 180/300s matrices",
+          "count": 1,
+          "ratio": 0.1111,
+          "time_buckets": [
+            "opening_lt_60"
+          ],
+          "seeds": [
+            63402
+          ],
+          "average_survival_seconds": 40.0997
         }
       },
       "policy_normalized_action_entropy": 0.8435,

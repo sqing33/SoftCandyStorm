@@ -117,6 +117,14 @@ class RlPolicyFailureAnalysisTests(unittest.TestCase):
             self.assertEqual(soda["failure_time_bucket_distribution"]["opening_lt_60"]["count"], 1)
             self.assertEqual(soda["failure_time_bucket_distribution"]["mid_60_to_180"]["count"], 1)
             self.assertEqual(soda["failure_time_bucket_distribution"]["late_180_to_300"]["count"], 1)
+            self.assertEqual(soda["failure_lanes"]["opening_repair"]["seeds"], [100])
+            self.assertEqual(soda["failure_lanes"]["mid_retention_repair"]["seeds"], [101])
+            self.assertEqual(soda["failure_lanes"]["late_terminal_survival_conversion"]["seeds"], [102])
+            self.assertEqual(report["failure_lanes"]["late_terminal_survival_conversion"]["count"], 2)
+            self.assertEqual(
+                report["failure_lanes"]["late_terminal_survival_conversion"]["maps"],
+                ["cracked-star-jar", "soda-creek"],
+            )
             self.assertEqual(soda["policy_dominant_action"]["action"], "3")
 
     def test_build_report_accepts_single_policy_evaluation(self) -> None:
@@ -160,6 +168,7 @@ class RlPolicyFailureAnalysisTests(unittest.TestCase):
         self.assertEqual(report["repair_maps"], ["soda-creek"])
         self.assertEqual(report["maps"][0]["map_id"], "soda-creek")
         self.assertEqual(report["maps"][0]["failure_time_bucket_distribution"]["opening_lt_60"]["count"], 1)
+        self.assertEqual(report["maps"][0]["failure_lanes"]["opening_repair"]["count"], 1)
 
 
 if __name__ == "__main__":

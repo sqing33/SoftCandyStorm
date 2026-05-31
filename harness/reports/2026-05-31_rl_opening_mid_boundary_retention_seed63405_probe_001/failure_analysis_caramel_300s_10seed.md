@@ -13,6 +13,16 @@
 |---|---:|---:|---:|---|---:|
 | `caramel-workshop` | 0.1 | 9 | 197.0746 | `5` / 25.54% | 0.8435 |
 
+## Failure Lanes
+
+### `caramel-workshop`
+
+| Lane | Count | Ratio | Avg Survival | Seeds | Recommendation |
+|---|---:|---:|---:|---|---|
+| `late_terminal_survival_conversion` | 8 | 88.89% | 216.6965 | 63400, 63401, 63403, 63404, 63405, 63406, 63408, 63409 | collect late trace diagnostics before training or dispatching terminal conversion |
+| `opening_repair` | 1 | 11.11% | 40.0997 | 63402 | repair opening survival before rerunning full 180/300s matrices |
+
+
 ## Failure Buckets
 
 ### `caramel-workshop`

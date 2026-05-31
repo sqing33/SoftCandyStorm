@@ -1516,6 +1516,11 @@
       "id": "rl_repair_split_plan_failure_analysis_lane",
       "summary": "扩展 create_rl_repair_split_plan.py，使 repair gate 中的 failure_analysis.total_failures 也会进入 split-plan lane。对 63405 opening-mid-boundary-retention probe 复跑后，split plan 保留 caramel10 passed evidence，并把失败面拆为 retention63405、short60、parent 和 failure_analysis 四条 lane；failure_analysis lane 记录 9 个剩余 caramel-workshop 失败局，要求继续拆 trace diagnostics。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/repair_split_plan.md"
+    },
+    {
+      "id": "rl_failure_analysis_lane_buckets",
+      "summary": "扩展 analyze_rl_policy_failures.py，使失败分析报告直接输出 failure_lanes。对 63405 probe 的 10 seed caramel follow-up 复跑后，报告把 9 个失败局拆为 opening_repair（seed 63402，40.0997s）和 late_terminal_survival_conversion（8 个 late seeds，平均失败 216.6965s），为后续分开取样和分开 preflight 提供机器可读证据。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.md"
     }
   ],
   "current_findings": [
@@ -3308,6 +3313,11 @@
       "id": "rl_repair_split_plan_failure_analysis_lane_findings",
       "summary": "最新 split plan 明确 63405 probe 不是单一 target seed 问题：caramel10 10 seed follow-up 可保留为 passed evidence，但 retention63405、short60、parent 和 failure_analysis 四条 lane 仍失败；其中 failure_analysis lane 把 9 个剩余 caramel-workshop 失败局显式列出，下一步需要拆 opening/late trace 后再决定 branch 或 staged gate。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/repair_split_plan.md"
+    },
+    {
+      "id": "rl_failure_analysis_lane_buckets_findings",
+      "summary": "failure_analysis_caramel_300s_10seed 已拆出两条实际子 lane：opening_repair 只包含 seed 63402 的 40.0997s opening defeat；late_terminal_survival_conversion 包含 8 个 180-300s 低血量死亡局，平均失败时间 216.6965s。下一步不应把 caramel 失败统一交给一个 shared PPO objective。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.md"
     }
   ],
   "next_recommended": [
