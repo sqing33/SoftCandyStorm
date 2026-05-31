@@ -2776,7 +2776,7 @@
     },
     {
       "id": "rl_repair_probe_target_preflight_gate",
-      "summary": "扩展 validate_rl_repair_probe_gate.py，新增 --target-seed-preflight 与 --required-target-seed-preflight，用于把 target seed online preflight 纳入 repair probe 包级硬门禁。已用 mid-path-retention seed 63407 closed-loop probe 复跑：target63407 通过，但 opening63402 与 retention63405 失败，再加 parent high-pressure window regression 失败，最终 rl_repair_probe_gate_failed 并记录 7 个 blockers。",
+      "summary": "扩展 validate_rl_repair_probe_gate.py，新增 --target-seed-preflight 与 --required-target-seed-preflight，用于把 target seed online preflight 纳入 repair probe 包级硬门禁；同时会读取训练报告内的 anchor validation guard failure，直接阻止 aborted continuation 被误判为可继续。已用 mid-path-retention seed 63407 closed-loop probe 复跑：target63407 通过，但 opening63402 与 retention63405 失败，再加 parent high-pressure window regression 失败，最终 rl_repair_probe_gate_failed 并记录 7 个 blockers。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/repair_probe_gate_hard_preflight.md"
     },
     {

@@ -104,7 +104,12 @@ def collect_gate_wording_errors(label: str, report: dict[str, Any], errors: list
             errors.append(f"{label}: {field} overclaims repair evidence: {report.get(field)}")
 
 
-def summarize_training_report(path: Path, errors: list[str], warnings: list[str]) -> dict[str, Any]:
+def summarize_training_report(
+    path: Path,
+    errors: list[str],
+    blockers: list[str],
+    warnings: list[str],
+) -> dict[str, Any]:
     try:
         report = load_json_object(path)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
@@ -116,6 +121,13 @@ def summarize_training_report(path: Path, errors: list[str], warnings: list[str]
     gate_decision = report.get("gate_decision")
     if status != "trained":
         warnings.append(f"training_report: status is `{status}`, expected `trained`")
+    anchor_guard = training_anchor_guard_summary(report)
+    if gate_decision == "trained_anchor_validation_guard_failed_not_policy_gate":
+        guard_blockers = anchor_guard.get("blockers") if isinstance(anchor_guard, dict) else []
+        if guard_blockers:
+            blockers.extend(f"training_report anchor guard: {item}" for item in guard_blockers)
+        else:
+            blockers.append("training_report: anchor validation guard failed")
     return {
         "path": str(path),
         "loaded": True,
@@ -123,6 +135,32 @@ def summarize_training_report(path: Path, errors: list[str], warnings: list[str]
         "gate_decision": gate_decision,
         "model_path": report.get("model_path"),
         "reward_profile": report.get("reward_profile"),
+        "anchor_validation_guard": anchor_guard,
+    }
+
+
+def training_anchor_guard_summary(report: dict[str, Any]) -> dict[str, Any] | None:
+    anchor_regularization = report.get("anchor_regularization")
+    if not isinstance(anchor_regularization, dict):
+        training = report.get("training")
+        if isinstance(training, dict):
+            anchor_regularization = training.get("anchor_regularization")
+    if not isinstance(anchor_regularization, dict):
+        return None
+
+    guard_payload = anchor_regularization.get("guard_failure")
+    if not isinstance(guard_payload, dict):
+        guard_payload = anchor_regularization.get("final_validation_guard")
+    if not isinstance(guard_payload, dict):
+        guard_payload = {}
+    blockers = [str(item) for item in guard_payload.get("blockers", [])]
+    return {
+        "status": anchor_regularization.get("status"),
+        "guard_decision": anchor_regularization.get("guard_decision"),
+        "final_decision": guard_payload.get("decision"),
+        "blockers": blockers,
+        "metrics": guard_payload.get("metrics"),
+        "thresholds": guard_payload.get("thresholds"),
     }
 
 
@@ -387,7 +425,7 @@ def build_report(
     blockers: list[str] = []
     warnings: list[str] = []
 
-    training_summary = summarize_training_report(training_report, errors, warnings)
+    training_summary = summarize_training_report(training_report, errors, blockers, warnings)
     anchor_summary = summarize_anchor_alignment(anchor_alignment, errors, blockers)
     regression_inputs = normalize_window_regression_inputs(
         window_regressions,

@@ -29,6 +29,24 @@ def training_payload(gate_decision: str = "trained_needs_rule_bot_comparison") -
     }
 
 
+def anchor_guard_failed_training_payload() -> dict:
+    payload = training_payload("trained_anchor_validation_guard_failed_not_policy_gate")
+    payload["anchor_regularization"] = {
+        "status": "aborted_by_anchor_validation_guard",
+        "guard_decision": "anchor_validation_guard_failed",
+        "final_validation_guard": {
+            "decision": "anchor_validation_guard_failed",
+            "blockers": [
+                "validation_mean_kl 2.155758 exceeds max 0.25",
+                "validation_argmax_agreement 0.6 below min 0.85",
+            ],
+            "metrics": {"mean_kl": 2.155758, "argmax_agreement": 0.6},
+            "thresholds": {"max_validation_kl": 0.25, "min_argmax_agreement": 0.85},
+        },
+    }
+    return payload
+
+
 def alignment_payload(*, blockers: list[str] | None = None) -> dict:
     blockers = blockers or []
     return {
@@ -152,6 +170,26 @@ class RlRepairProbeGateTests(unittest.TestCase):
 
         self.assertEqual(report["decision"], "rl_repair_probe_gate_failed")
         self.assertTrue(any("survival dropped" in blocker for blocker in report["blockers"]))
+
+    def test_training_anchor_guard_failure_blocks_followup(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            training = root / "training.json"
+            regression = root / "regression.json"
+            write_json(training, anchor_guard_failed_training_payload())
+            write_json(regression, regression_payload())
+
+            report = build_report(
+                training_report=training,
+                window_regressions=[regression],
+            )
+
+        self.assertEqual(report["decision"], "rl_repair_probe_gate_failed")
+        self.assertEqual(
+            report["training_report"]["anchor_validation_guard"]["guard_decision"],
+            "anchor_validation_guard_failed",
+        )
+        self.assertTrue(any("validation_mean_kl" in blocker for blocker in report["blockers"]))
 
     def test_required_multibaseline_regressions_are_reported(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
