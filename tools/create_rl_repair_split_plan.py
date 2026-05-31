@@ -21,6 +21,7 @@ SECTION_SPECS = [
     ("window_regressions", "window_regression"),
     ("policy_adapter_scopes", "policy_adapter_scope"),
 ]
+FAILURE_ANALYSIS_LABEL = "failure_analysis"
 
 
 def load_json_object(path: Path) -> dict[str, Any]:
@@ -71,12 +72,47 @@ def recommendation_for_lane(source_type: str, status: str) -> str:
         return "restore parent/no-regression preservation before extending training"
     if source_type == "policy_adapter_scope":
         return "fix adapter provenance or dispatch scope before using wrapper evidence"
+    if source_type == "failure_analysis":
+        return "split remaining failures into separate trace diagnostics before continuing"
     return "inspect this lane before continuing"
 
 
 def blockers_for_label(blockers: list[str], label: str) -> list[str]:
     prefix = f"{label}/"
     return [item for item in blockers if item.startswith(prefix)]
+
+
+def failure_analysis_lane(summary: dict[str, Any], errors: list[str]) -> dict[str, Any]:
+    label = str(summary.get("label") or FAILURE_ANALYSIS_LABEL)
+    loaded = summary.get("loaded", True)
+    total_failures = nonnegative_int(
+        summary.get("total_failures"),
+        0,
+        errors,
+        label,
+        "total_failures",
+    )
+    error_count = 0 if loaded else 1
+    if not loaded:
+        status = "invalid"
+    elif total_failures > 0:
+        status = "failed"
+    else:
+        status = "passed"
+    return {
+        "label": label,
+        "source_type": "failure_analysis",
+        "path": summary.get("path"),
+        "required": False,
+        "decision": summary.get("decision"),
+        "status": status,
+        "blocker_count": total_failures,
+        "error_count": error_count,
+        "failure_count": total_failures,
+        "repair_maps": summary.get("repair_maps"),
+        "blockers": [],
+        "recommendation": recommendation_for_lane("failure_analysis", status),
+    }
 
 
 def build_plan(repair_gate: Path) -> dict[str, Any]:
@@ -142,6 +178,16 @@ def build_plan(repair_gate: Path) -> dict[str, Any]:
                 }
             )
 
+    failure_summary = gate.get("failure_analysis")
+    if isinstance(failure_summary, dict):
+        if FAILURE_ANALYSIS_LABEL in seen_labels:
+            errors.append(f"duplicate lane label `{FAILURE_ANALYSIS_LABEL}`")
+        else:
+            seen_labels.add(FAILURE_ANALYSIS_LABEL)
+            lanes.append(failure_analysis_lane(failure_summary, errors))
+    elif failure_summary is not None:
+        errors.append("failure_analysis must be an object when present")
+
     unassigned_blockers = [item for item in gate_blockers if item not in assigned_blockers]
     failed_lanes = [item["label"] for item in lanes if item["status"] == "failed"]
     invalid_lanes = [item["label"] for item in lanes if item["status"] == "invalid"]
@@ -203,6 +249,11 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         lines.append(f"### `{lane['label']}`")
         if lane["blockers"]:
             lines.extend(f"- {item}" for item in lane["blockers"])
+        elif lane["source_type"] == "failure_analysis" and lane.get("failure_count"):
+            lines.append(f"- Remaining failures: `{lane['failure_count']}`")
+            repair_maps = lane.get("repair_maps") or []
+            if repair_maps:
+                lines.append(f"- Repair maps: `{', '.join(str(item) for item in repair_maps)}`")
         else:
             lines.append("- None")
         lines.append("")

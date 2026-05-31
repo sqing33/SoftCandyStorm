@@ -149,6 +149,47 @@ class RlRepairSplitPlanTests(unittest.TestCase):
         self.assertEqual(report["decision"], "rl_repair_split_plan_invalid")
         self.assertIn("opening63402: blocker_count must be a non-negative integer", report["errors"])
 
+    def test_failure_analysis_becomes_remaining_failure_lane(self) -> None:
+        payload = sample_gate_payload()
+        payload["failure_analysis"] = {
+            "path": "reports/failure_analysis.json",
+            "loaded": True,
+            "decision": "rl_policy_failure_analysis_recorded",
+            "total_failures": 9,
+            "repair_maps": ["caramel-workshop"],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "repair_gate.json"
+            write_json(path, payload)
+
+            report = build_plan(path)
+
+        self.assertEqual(report["decision"], "rl_repair_split_plan_ready")
+        self.assertEqual(report["failed_lanes"], ["opening63402", "short60", "parent", "failure_analysis"])
+        lane = {item["label"]: item for item in report["lanes"]}["failure_analysis"]
+        self.assertEqual(lane["source_type"], "failure_analysis")
+        self.assertEqual(lane["status"], "failed")
+        self.assertEqual(lane["failure_count"], 9)
+        self.assertEqual(lane["repair_maps"], ["caramel-workshop"])
+
+    def test_zero_failure_analysis_is_passed_lane(self) -> None:
+        payload = sample_gate_payload()
+        payload["failure_analysis"] = {
+            "path": "reports/failure_analysis.json",
+            "loaded": True,
+            "decision": "rl_policy_failure_analysis_recorded",
+            "total_failures": 0,
+            "repair_maps": [],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "repair_gate.json"
+            write_json(path, payload)
+
+            report = build_plan(path)
+
+        self.assertEqual(report["decision"], "rl_repair_split_plan_ready")
+        self.assertIn("failure_analysis", report["passed_lanes"])
+
 
 if __name__ == "__main__":
     unittest.main()
