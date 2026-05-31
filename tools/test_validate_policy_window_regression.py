@@ -86,6 +86,37 @@ def comparison_payload(
     return payload
 
 
+def single_map_payload(
+    seconds: float,
+    map_id: str,
+    win_rate: float,
+    survival: float,
+    seed_start: int = 63400,
+    seeds: int = 10,
+) -> dict:
+    return {
+        "report_version": 1,
+        "status": "compared",
+        "seconds": seconds,
+        "seed_start": seed_start,
+        "seeds": seeds,
+        "map_id": map_id,
+        "action_selection": "deterministic",
+        "reward_profile": "standard",
+        "gate_decision": "comparison_recorded_not_balance_gate",
+        "policy": {
+            "summary": {
+                "win_rate": win_rate,
+                "average_survival_seconds": survival,
+                "action_distribution": distribution_from_ratios(
+                    {"1": 0.2, "5": 0.3, "7": 0.5}
+                ),
+                "normalized_action_entropy": 0.72,
+            }
+        },
+    }
+
+
 class PolicyWindowRegressionTests(unittest.TestCase):
     def test_candidate_matching_baseline_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -103,6 +134,28 @@ class PolicyWindowRegressionTests(unittest.TestCase):
 
         self.assertEqual(report["decision"], "policy_window_regression_passed")
         self.assertEqual(report["blockers"], [])
+
+    def test_single_map_policy_summary_reports_are_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            baseline = root / "baseline_300.json"
+            candidate = root / "candidate_300.json"
+            write_json(
+                baseline,
+                single_map_payload(300.0, "caramel-workshop", 0.1, 242.8409),
+            )
+            write_json(
+                candidate,
+                single_map_payload(300.0, "caramel-workshop", 0.1, 238.65),
+            )
+
+            report = build_report({"300s": baseline}, {"300s": candidate})
+
+        self.assertEqual(report["decision"], "policy_window_regression_failed")
+        self.assertEqual(report["errors"], [])
+        self.assertTrue(
+            any("average_survival_seconds" in blocker for blocker in report["blockers"])
+        )
 
     def test_win_rate_drop_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

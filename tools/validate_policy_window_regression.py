@@ -75,12 +75,44 @@ def summary_maps(report: dict[str, Any]) -> list[dict[str, Any]]:
     return [item for item in maps if isinstance(item, dict)]
 
 
+def dominant_action_from_policy_summary(summary: dict[str, Any]) -> dict[str, Any] | None:
+    distribution = normalize_action_distribution(summary.get("action_distribution"))
+    if not distribution:
+        return None
+    action, ratio = max(distribution.items(), key=lambda item: item[1])
+    raw_entry = summary.get("action_distribution", {}).get(action, {})
+    count = raw_entry.get("count") if isinstance(raw_entry, dict) else None
+    return {
+        "action": action,
+        "count": count if isinstance(count, int) else 0,
+        "ratio": ratio,
+    }
+
+
+def comparison_entry_from_policy_summary(map_id: str, summary: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "map_id": map_id,
+        "policy_win_rate": as_number(summary.get("win_rate")),
+        "policy_average_survival_seconds": as_number(
+            summary.get("average_survival_seconds")
+        ),
+        "policy_dominant_action": dominant_action_from_policy_summary(summary),
+        "policy_normalized_action_entropy": as_number(
+            summary.get("normalized_action_entropy")
+        ),
+    }
+
+
 def map_by_id(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     for item in summary_maps(report):
         map_id = item.get("map_id")
         if isinstance(map_id, str) and map_id:
             result[map_id] = item
+    if result:
+        return result
+    for map_id, summary in policy_summary_by_map(report).items():
+        result[map_id] = comparison_entry_from_policy_summary(map_id, summary)
     return result
 
 
