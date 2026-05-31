@@ -1506,6 +1506,11 @@
       "id": "rl_opening_mid_boundary_retention_profile",
       "summary": "新增 opening-mid-boundary-retention reward profile，并接入 Rust gym-bridge、Python Gym wrapper、train_sb3.py CLI、训练 README 和 RL 计划文档。该 profile 覆盖 0-180 秒，保留 0-60 秒 opening boundary escape 信号，同时放大 opening + mid-window route/path retention；单测与 dry-run 已通过，作为 seed 63405 lane-specific repair 的训练入口。",
       "report": "harness/reports/2026-05-31_opening_mid_boundary_retention_profile_001/summary.md"
+    },
+    {
+      "id": "rl_opening_mid_boundary_retention_seed63405_probe",
+      "summary": "从 e30 mid-anchor parent 出发，用 opening-mid-boundary-retention 在 caramel-workshop:63405 上做 256 timestep guarded PPO continuation；anchor guard 通过（final validation mean KL 0.106725、argmax agreement 0.8258）。该 profile 将 seed 63405 从上一轮 138.6673s defeat 拉到 220.6515s defeat，10 seed caramel follow-up 相对 parent 通过 no-regression（win_rate +0.1、average_survival_seconds +19.2282s），但 repair gate 仍失败：seed 63405 仍为 defeat，60s/caramel-workshop 短窗仍失败，high-pressure parent no-regression 还有 3 个 blockers。已记录 fail_20260531_008，不能继续加长或推进为 policy candidate。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3288,6 +3293,11 @@
       "id": "rl_opening_mid_boundary_retention_profile_findings",
       "summary": "opening-mid-boundary-retention 已具备可运行训练入口：0-180 秒 profile scale 生效、180 秒后关闭，opening_boundary_escape 仍只在 0-60 秒生效；dry-run 确认 caramel-workshop seed 63405 可通过该 reward_profile 跑通 Gym bridge。下一步可以做小步 checkpoint，但仍必须先固定 lane_action_plan_seed63405 的全部门禁。",
       "report": "harness/reports/2026-05-31_opening_mid_boundary_retention_profile_001/summary.md"
+    },
+    {
+      "id": "rl_opening_mid_boundary_retention_seed63405_probe_findings",
+      "summary": "opening-mid-boundary-retention 的首个真实 checkpoint 有局部正向信号但被 hard gate 拒绝：seed 63405 过了 180s retention 时间线但仍 defeat，10 seed caramel follow-up 通过 no-regression；同时 60s/caramel-workshop 短窗未修复，parent high-pressure action distribution drift 更严重。下一步应拆 short-window opening preservation、63402 opening repair 与 63405 late terminal survival/conversion，不能继续从该 checkpoint 加长。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/repair_probe_gate.md"
     }
   ],
   "next_recommended": [
@@ -3389,8 +3399,8 @@
     },
     {
       "id": "rl_mid_path_retention_seed63405_boundary_lane_candidate",
-      "summary": "opening-mid-boundary-retention profile 已提供 seed 63405 lane-specific 训练入口；下一步可从 e30 mid-anchor parent 做极小步 guarded PPO continuation，但必须同时预先绑定 seed 63405 180s retention preflight、60s/caramel-workshop hard preflight、parent no-regression、10 seed follow-up 和 failure-case review，失败则停止而不是继续加长。",
-      "report": "harness/reports/2026-05-31_opening_mid_boundary_retention_profile_001/summary.md"
+      "summary": "opening-mid-boundary-retention 首个 256 timestep guarded PPO probe 已把 seed 63405 从 138.6673s 拉到 220.6515s，但仍 defeat，并且 short60 与 parent no-regression gate 失败。下一步不要继续加长该 checkpoint；应先把 60s/caramel-workshop short-window opening preservation 和 seed 63402 opening repair 从 63405 late terminal survival/conversion 中拆开，考虑更窄的 state-conditioned branch 或 staged gate。",
+      "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/summary.md"
     }
   ]
 }

@@ -1,0 +1,117 @@
+{
+  "report_version": 1,
+  "decision": "rl_repair_probe_gate_failed",
+  "gate_decision": "rl_repair_probe_gate_failed",
+  "training_report": {
+    "path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_training_report.json",
+    "loaded": true,
+    "status": "trained",
+    "gate_decision": "trained_needs_rule_bot_comparison",
+    "model_path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_opening_mid_boundary_retention_seed63405_probe.zip",
+    "reward_profile": "opening-mid-boundary-retention",
+    "anchor_validation_guard": {
+      "status": "applied",
+      "guard_decision": "anchor_validation_guard_passed",
+      "final_decision": "anchor_validation_guard_passed",
+      "blockers": [],
+      "metrics": {
+        "mean_kl": 0.106725,
+        "cross_entropy": 1.075869,
+        "argmax_agreement": 0.8258,
+        "policy_entropy_nats": 1.162335
+      },
+      "thresholds": {
+        "max_validation_kl": 0.25,
+        "min_argmax_agreement": 0.8
+      }
+    }
+  },
+  "anchor_alignment": null,
+  "window_regression_requirement": "required_labeled_baselines",
+  "required_window_regression_labels": [
+    "parent",
+    "caramel10"
+  ],
+  "window_regressions": [
+    {
+      "label": "parent",
+      "path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/window_regression_high_pressure_vs_parent.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_window_regression_failed",
+      "blocker_count": 3,
+      "error_count": 0
+    },
+    {
+      "label": "caramel10",
+      "path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/window_regression_caramel_300s_10seed.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_window_regression_passed",
+      "blocker_count": 0,
+      "error_count": 0
+    }
+  ],
+  "target_seed_preflight_requirement": "required_labeled_preflights",
+  "required_target_seed_preflight_labels": [
+    "retention63405"
+  ],
+  "target_seed_preflights": [
+    {
+      "label": "retention63405",
+      "path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/target_seed_preflight_seed63405_retention.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_target_seed_preflight_failed",
+      "target_count": 1,
+      "blocker_count": 1,
+      "error_count": 0
+    }
+  ],
+  "window_target_preflight_requirement": "required_labeled_preflights",
+  "required_window_target_preflight_labels": [
+    "short60"
+  ],
+  "window_target_preflights": [
+    {
+      "label": "short60",
+      "path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/window_target_preflight_60s_caramel.json",
+      "required": true,
+      "loaded": true,
+      "decision": "policy_window_target_preflight_failed",
+      "target_count": 1,
+      "blocker_count": 2,
+      "error_count": 0
+    }
+  ],
+  "policy_adapter_scope_requirement": "not_required",
+  "required_policy_adapter_scope_labels": [],
+  "policy_adapter_scopes": [],
+  "failure_analysis": {
+    "path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.json",
+    "loaded": true,
+    "decision": "rl_policy_failure_analysis_recorded",
+    "gate_decision": "comparison_recorded_not_balance_gate",
+    "total_failures": 9,
+    "repair_maps": [
+      "caramel-workshop"
+    ]
+  },
+  "errors": [],
+  "blockers": [
+    "parent/window_regression_high_pressure_vs_parent: 180s/cracked-star-jar: action_distribution_l1_delta 0.7526 beyond allowed 0.45",
+    "parent/window_regression_high_pressure_vs_parent: 300s/caramel-workshop: action_distribution_l1_delta 0.6056 beyond allowed 0.45",
+    "parent/window_regression_high_pressure_vs_parent: 60s/caramel-workshop: win_rate_delta -0.3334 below required 0.0",
+    "retention63405/target_seed_preflight_seed63405_retention: caramel-workshop:63405: terminal_kind is `defeat`",
+    "short60/window_target_preflight_60s_caramel: 60s-caramel-short-window/caramel-workshop: win_rate 0.3333 below required 0.6667",
+    "short60/window_target_preflight_60s_caramel: 60s-caramel-short-window/caramel-workshop: average_survival_seconds 49.2774 below required 55.0000"
+  ],
+  "warnings": [
+    "failure_analysis: remaining failures mean this can only be limited repair evidence"
+  ],
+  "limitations": [
+    "This gate is for RL repair probes only; it is not policy acceptance.",
+    "Passing means a limited follow-up run may be considered, not that the policy is a candidate.",
+    "Release, playtest, and RL acceptance require their separate manifests and manual gates."
+  ]
+}

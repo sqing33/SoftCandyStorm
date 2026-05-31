@@ -1,0 +1,421 @@
+{
+  "report_version": 1,
+  "source": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/candidate_caramel_300s_10seed.json",
+  "decision": "rl_policy_failure_analysis_recorded",
+  "gate_decision": "comparison_recorded_not_balance_gate",
+  "algorithm": "ppo",
+  "model_path": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_opening_mid_boundary_retention_seed63405_probe.zip",
+  "map_preset": null,
+  "seconds": 300.0,
+  "seed_start": 63400,
+  "seeds": 10,
+  "map_count": 1,
+  "total_failures": 9,
+  "repair_maps": [
+    "caramel-workshop"
+  ],
+  "findings": [],
+  "maps": [
+    {
+      "map_id": "caramel-workshop",
+      "gate_decision": "evaluation_recorded_not_policy_gate",
+      "episodes": 10,
+      "failure_count": 9,
+      "win_rate": 0.1,
+      "average_survival_seconds": 207.3687,
+      "minimum_survival_seconds": 40.0997,
+      "average_failure_survival_seconds": 197.0746,
+      "terminal_reason_distribution": {
+        "player_health_depleted": {
+          "count": 9,
+          "ratio": 1.0
+        }
+      },
+      "failure_time_bucket_distribution": {
+        "opening_lt_60": {
+          "count": 1,
+          "ratio": 0.1111
+        },
+        "mid_60_to_180": {
+          "count": 0,
+          "ratio": 0.0
+        },
+        "late_180_to_300": {
+          "count": 8,
+          "ratio": 0.8889
+        },
+        "post_300": {
+          "count": 0,
+          "ratio": 0.0
+        }
+      },
+      "policy_normalized_action_entropy": 0.8435,
+      "policy_dominant_action": {
+        "action": "5",
+        "count": 15885,
+        "ratio": 0.2554
+      },
+      "reward_breakdown_average": {
+        "action_repeat": -22.6396,
+        "boss_pressure": -0.0157,
+        "boundary_risk": -2.2747,
+        "corner_action_risk": 0.0,
+        "corner_risk_delta": -0.0012,
+        "damage_taken": -9.4282,
+        "enemy_pressure": -0.1496,
+        "hazard_risk": -1.0993,
+        "kill": 25.824,
+        "level": 4.0,
+        "low_health": -0.5575,
+        "opening_boundary_escape": 0.0,
+        "opening_edge_risk_delta": -0.0008,
+        "route_recovery": -7.7295,
+        "safety_delta": -0.0112,
+        "survival": 2.0735,
+        "terminal": -2.6,
+        "total": 0.7361,
+        "xp": 15.346
+      },
+      "failures": [
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63400,
+          "time_seconds": 214.6502,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 7,
+          "kills": 331,
+          "damage_taken": 120.2667,
+          "dominant_action": {
+            "action": "8",
+            "count": 1562,
+            "ratio": 0.2426
+          },
+          "reward_breakdown": {
+            "action_repeat": -24.028,
+            "boss_pressure": 0.0,
+            "boundary_risk": -2.5284,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0,
+            "damage_taken": -9.6213,
+            "enemy_pressure": -0.1945,
+            "hazard_risk": -1.6743,
+            "kill": 26.48,
+            "level": 4.8,
+            "low_health": -0.8821,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": 0.0,
+            "route_recovery": -7.1045,
+            "safety_delta": -0.006,
+            "survival": 2.1463,
+            "terminal": -3.0,
+            "total": 3.3871,
+            "xp": 19.0
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63401,
+          "time_seconds": 212.3497,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 7,
+          "kills": 323,
+          "damage_taken": 121.0237,
+          "dominant_action": {
+            "action": "7",
+            "count": 1338,
+            "ratio": 0.21
+          },
+          "reward_breakdown": {
+            "action_repeat": -22.76,
+            "boss_pressure": 0.0,
+            "boundary_risk": -1.818,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0,
+            "damage_taken": -9.6819,
+            "enemy_pressure": -0.1362,
+            "hazard_risk": -1.4679,
+            "kill": 25.84,
+            "level": 4.8,
+            "low_health": -0.0174,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": -0.0,
+            "route_recovery": -5.902,
+            "safety_delta": -0.0116,
+            "survival": 2.1233,
+            "terminal": -3.0,
+            "total": 4.6084,
+            "xp": 16.64
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63402,
+          "time_seconds": 40.0997,
+          "time_bucket": "opening_lt_60",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 1,
+          "kills": 25,
+          "damage_taken": 120.4667,
+          "dominant_action": {
+            "action": "5",
+            "count": 829,
+            "ratio": 0.6891
+          },
+          "reward_breakdown": {
+            "action_repeat": -4.448,
+            "boss_pressure": 0.0,
+            "boundary_risk": -0.3964,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0119,
+            "damage_taken": -9.6373,
+            "enemy_pressure": -0.2157,
+            "hazard_risk": -0.3347,
+            "kill": 2.0,
+            "level": 0.0,
+            "low_health": -0.0301,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": -0.008,
+            "route_recovery": -0.7456,
+            "safety_delta": -0.0164,
+            "survival": 0.401,
+            "terminal": -3.0,
+            "total": -15.4832,
+            "xp": 0.96
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63403,
+          "time_seconds": 213.8167,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 6,
+          "kills": 328,
+          "damage_taken": 120.2801,
+          "dominant_action": {
+            "action": "5",
+            "count": 2735,
+            "ratio": 0.4264
+          },
+          "reward_breakdown": {
+            "action_repeat": -23.964,
+            "boss_pressure": 0.0,
+            "boundary_risk": -3.7795,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0,
+            "damage_taken": -9.6224,
+            "enemy_pressure": -0.2617,
+            "hazard_risk": -0.6548,
+            "kill": 26.24,
+            "level": 4.0,
+            "low_health": -2.7182,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": -0.0,
+            "route_recovery": -11.3062,
+            "safety_delta": -0.0106,
+            "survival": 2.138,
+            "terminal": -3.0,
+            "total": -9.4595,
+            "xp": 13.48
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63404,
+          "time_seconds": 218.5511,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 7,
+          "kills": 349,
+          "damage_taken": 121.0766,
+          "dominant_action": {
+            "action": "7",
+            "count": 1875,
+            "ratio": 0.286
+          },
+          "reward_breakdown": {
+            "action_repeat": -23.76,
+            "boss_pressure": -0.0074,
+            "boundary_risk": -2.0568,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0001,
+            "damage_taken": -9.6861,
+            "enemy_pressure": -0.0673,
+            "hazard_risk": -1.3378,
+            "kill": 27.92,
+            "level": 4.8,
+            "low_health": -0.0163,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": 0.0,
+            "route_recovery": -7.1023,
+            "safety_delta": -0.0125,
+            "survival": 2.1853,
+            "terminal": -3.0,
+            "total": 6.6028,
+            "xp": 18.744
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63405,
+          "time_seconds": 220.6515,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 5,
+          "kills": 335,
+          "damage_taken": 120.8466,
+          "dominant_action": {
+            "action": "5",
+            "count": 3556,
+            "ratio": 0.5372
+          },
+          "reward_breakdown": {
+            "action_repeat": -24.32,
+            "boss_pressure": -0.0382,
+            "boundary_risk": -2.2124,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0,
+            "damage_taken": -9.6677,
+            "enemy_pressure": -0.0753,
+            "hazard_risk": -1.1743,
+            "kill": 26.8,
+            "level": 3.2,
+            "low_health": -0.0257,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": -0.0,
+            "route_recovery": -8.9027,
+            "safety_delta": -0.0129,
+            "survival": 2.2063,
+            "terminal": -3.0,
+            "total": -7.303,
+            "xp": 9.92
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63406,
+          "time_seconds": 216.8507,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 7,
+          "kills": 335,
+          "damage_taken": 120.1167,
+          "dominant_action": {
+            "action": "3",
+            "count": 1669,
+            "ratio": 0.2566
+          },
+          "reward_breakdown": {
+            "action_repeat": -23.468,
+            "boss_pressure": -0.0168,
+            "boundary_risk": -2.102,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0,
+            "damage_taken": -9.6093,
+            "enemy_pressure": -0.1168,
+            "hazard_risk": -1.2688,
+            "kill": 26.8,
+            "level": 4.8,
+            "low_health": -0.0247,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": -0.0001,
+            "route_recovery": -7.2356,
+            "safety_delta": -0.0128,
+            "survival": 2.1683,
+            "terminal": -3.0,
+            "total": 7.3894,
+            "xp": 20.476
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63408,
+          "time_seconds": 225.8193,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 6,
+          "kills": 357,
+          "damage_taken": 120.3032,
+          "dominant_action": {
+            "action": "7",
+            "count": 4356,
+            "ratio": 0.643
+          },
+          "reward_breakdown": {
+            "action_repeat": -24.148,
+            "boss_pressure": -0.0072,
+            "boundary_risk": -2.1753,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": -0.0,
+            "damage_taken": -9.6243,
+            "enemy_pressure": -0.0768,
+            "hazard_risk": -1.1,
+            "kill": 28.56,
+            "level": 4.0,
+            "low_health": -0.1161,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": -0.0001,
+            "route_recovery": -9.9761,
+            "safety_delta": -0.0122,
+            "survival": 2.258,
+            "terminal": -3.0,
+            "total": -3.354,
+            "xp": 12.064
+          }
+        },
+        {
+          "map_id": "caramel-workshop",
+          "seed": 63409,
+          "time_seconds": 210.8827,
+          "time_bucket": "late_180_to_300",
+          "terminal_kind": "defeat",
+          "terminal_reason": "player_health_depleted",
+          "level": 6,
+          "kills": 323,
+          "damage_taken": 120.08,
+          "dominant_action": {
+            "action": "5",
+            "count": 3068,
+            "ratio": 0.485
+          },
+          "reward_breakdown": {
+            "action_repeat": -22.884,
+            "boss_pressure": -0.0528,
+            "boundary_risk": -2.3665,
+            "corner_action_risk": 0.0,
+            "corner_risk_delta": 0.0,
+            "damage_taken": -9.6064,
+            "enemy_pressure": -0.2354,
+            "hazard_risk": -1.0996,
+            "kill": 25.84,
+            "level": 4.0,
+            "low_health": -0.801,
+            "opening_boundary_escape": 0.0,
+            "opening_edge_risk_delta": -0.0001,
+            "route_recovery": -7.261,
+            "safety_delta": -0.0134,
+            "survival": 2.1087,
+            "terminal": -3.0,
+            "total": -0.4116,
+            "xp": 14.96
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "This report summarizes existing comparison output only.",
+    "It does not replay episodes or prove a fix.",
+    "Use it to choose the next curriculum, reward, or policy diagnostic target."
+  ]
+}

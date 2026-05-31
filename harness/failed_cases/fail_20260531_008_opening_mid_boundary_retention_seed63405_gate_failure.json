@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260531_008",
+  "category": "rl_policy",
+  "content_id": "opening-mid-boundary-retention-seed63405-probe",
+  "seed": "63400-63409",
+  "bot": "ppo-opening-mid-boundary-retention-seed63405-probe",
+  "time_seconds": 300.0,
+  "symptom": "The opening-mid-boundary-retention probe improved caramel-workshop seed 63405 from the previous candidate's 138.6673s defeat to 220.6515s defeat and passed the 10 seed caramel follow-up no-regression check against the parent with win_rate +0.1 and average_survival_seconds +19.2282s. However, the required repair probe gate still failed with 6 blockers: seed 63405 remained a defeat, 60s/caramel-workshop win_rate stayed at 0.3333 below the 0.6667 target, 60s/caramel-workshop average survival stayed at 49.2774s below 55.0s, and high-pressure parent preservation failed on 180s/cracked-star-jar action_distribution_l1_delta 0.7526, 300s/caramel-workshop action_distribution_l1_delta 0.6056, and 60s/caramel-workshop win_rate_delta -0.3334.",
+  "root_cause": "The lane-specific 0-180s boundary/path retention reward provided enough signal to keep seed 63405 alive past the original 180s retention threshold, but it did not solve the inherited short-window opening failure or the later terminal survival/conversion problem. The small PPO update also shifted cross-map action distributions relative to the e30 mid-anchor parent, especially on cracked-star-jar 180s and caramel-workshop 300s, so the local retention gain is not safe as a shared policy update.",
+  "fix": "Stop this checkpoint as repair-only evidence and do not continue training it. The next repair should split the remaining blockers: keep 60s/caramel-workshop and seed 63402 opening preservation as hard preflights, handle seed 63405 late survival/conversion separately from the opening/mid retention objective, and prefer a narrower state-conditioned branch or staged gate over another shared PPO continuation.",
+  "validation": "Trained a 256 timestep PPO continuation from the e30 mid-anchor parent with reward_profile opening-mid-boundary-retention on caramel-workshop seed 63405 and train_seconds 180. Anchor guard passed with final validation mean KL 0.106725 and argmax agreement 0.8258. Evaluated candidate_high_pressure_60s/180s/300s, candidate_caramel_300s_10seed, and a matching parent_caramel_300s_10seed. target_seed_preflight_seed63405_retention failed only because the 220.6515s run was still defeat; window_regression_caramel_300s_10seed passed; window_target_preflight_60s_caramel and window_regression_high_pressure_vs_parent failed. repair_probe_gate.json summarized the branch as rl_repair_probe_gate_failed with 6 blockers.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/summary.md",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/target_seed_preflight_seed63405_retention.json",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/window_target_preflight_60s_caramel.json",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/window_regression_high_pressure_vs_parent.json",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/window_regression_caramel_300s_10seed.json",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_caramel_300s_10seed.json",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_analysis_high_pressure_300s.json",
+    "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/repair_probe_gate.json"
+  ]
+}
