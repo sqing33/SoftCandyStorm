@@ -56,6 +56,14 @@ Candidate 把原 baseline 失败的 seed `63402` 转成胜利，但同时丢掉 
 - `candidate_failed_traces/caramel-workshop_seed63408_trace.json`
 - `candidate_failed_traces/caramel-workshop_seed63409_trace.json`
 
+补充 trace 对比后，seed `63407` 的退化更清楚：
+
+- baseline `63407`：`duration_reached @ 300.0150s`，最终仍有 `74.09999` damage taken，trace 中未进入 low-health 记录。
+- candidate `63407`：`player_health_depleted @ 231.0204s`，`226.0193s` 首次进入 low health，最终 top action 为 `8:0.7951`。
+- 同 seed trace comparison 位于 `trace_compare_seed63407_baseline_vs_candidate.md`。
+- `63402` 成功 vs `63407` 失败的跨 seed 对比位于 `trace_compare_63402_success_vs_63407_regression.md`。
+- route hotspot 报告显示 `63407` 的 opening boundary/action2 热点在 baseline 和 candidate 中都存在，因此下一步不能只修 opening action2；更应检查 mid/late health retention 和低血恢复分派。
+
 ## 结论
 
 结论：`repair`，但 10 seed follow-up 拒绝扩大推进。
@@ -65,5 +73,5 @@ Selective opening guard 的三 seed 信号是真实的，但目前像 seed-local
 ## 下一步
 
 - 对比 seed `63402` 成功 trace 与 seed `63407` 新失败 trace，确认 terminal-sequence checkpoint 是替换了胜利路径，还是把低血量 / hazard 恢复推迟到另一个失败面。
-- 将 selective opening guard 从单 seed 扩展为更细 state-conditioned dispatch 前，必须先设计 seed `63407` retention guard。
+- 将 selective opening guard 从单 seed 扩展为更细 state-conditioned dispatch 前，必须先设计 seed `63407` mid/late health-retention guard。
 - 后续复跑仍必须使用 10 seed target follow-up 加 60 / 180 / 300 秒 high-pressure no-regression。

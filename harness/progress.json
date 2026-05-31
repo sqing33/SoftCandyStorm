@@ -3191,14 +3191,14 @@
     },
     {
       "id": "rl_terminal_sequence_selective_opening_guard_10seed_followup",
-      "summary": "扩大到 caramel-workshop seeds 63400-63409 的 300 秒单图 follow-up 后，selective opening guard 未能继续推进：baseline 与 candidate 胜率同为 0.1，但 candidate 平均存活从 242.8409s 降到 238.65s，window_regression_caramel_300s_10seed 判定 policy_window_regression_failed，blocker 为 -4.1909s。candidate 修成 seed 63402，却丢掉 baseline 原本胜利的 seed 63407；已保存 9 条 failed-only trace 并记录 fail_20260531_006。",
+      "summary": "扩大到 caramel-workshop seeds 63400-63409 的 300 秒单图 follow-up 后，selective opening guard 未能继续推进：baseline 与 candidate 胜率同为 0.1，但 candidate 平均存活从 242.8409s 降到 238.65s，window_regression_caramel_300s_10seed 判定 policy_window_regression_failed，blocker 为 -4.1909s。candidate 修成 seed 63402，却丢掉 baseline 原本胜利的 seed 63407；已保存 9 条 failed-only trace、补跑 63402/63407 成功 trace 对比，并确认 63407 的关键差异不是单纯 opening action2，而是 candidate 在 226.0193s 进入 low health、231.0204s 死亡。已记录 fail_20260531_006。",
       "report": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "10 seed caramel target follow-up 已证明 selective opening guard 仍是 seed-local tradeoff：修成 63402 但丢掉 63407，平均存活 -4.1909s。下一步应对比 candidate 的 63402 成功 trace 与 63407 新失败 trace，给 baseline-winning terminal path 加 retention guard，再尝试更细的 seed/state dispatch 或训练期 60s/300s caramel preflight。该路线仍只能作为 repair evidence，不能跳到 RL test Bot、stage 03 或 acceptance；若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
+      "summary": "10 seed caramel target follow-up 已证明 selective opening guard 仍是 seed-local tradeoff：修成 63402 但丢掉 63407，平均存活 -4.1909s。trace 对比显示 baseline 与 candidate 的 63407 都有 opening boundary/action2 热点，真正差异是 candidate 在 226.0193s 进入 low health 并于 231.0204s 死亡；下一步应设计 mid/late health-retention guard，再尝试更细的 seed/state dispatch 或训练期 60s/300s caramel preflight。该路线仍只能作为 repair evidence，不能跳到 RL test Bot、stage 03 或 acceptance；若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
     },
     {
       "id": "runtime_manual_playtest_capture",

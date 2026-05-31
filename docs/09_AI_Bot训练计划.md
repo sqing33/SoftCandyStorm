@@ -368,6 +368,8 @@ edge recovery supervised init 已验证两种路线：`teacher_probs` 蒸馏能�
 
 10 seed `caramel-workshop` 300 秒 target follow-up 拒绝把该 repair 继续扩大。相对同一 per-map chain baseline，candidate 胜率仍为 `0.1`，平均存活从 `242.8409s` 降到 `238.65s`，`window_regression_caramel_300s_10seed` 因 `-4.1909s` survival blocker 失败。关键 tradeoff 是：candidate 把 seed `63402` 从 `245.2901s` 失败转成 `300.0150s` 胜利，但把 baseline 原本胜利的 seed `63407` 从 `300.0150s` 拉回 `231.0204s` 失败。报告位于 `harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md`，失败记录为 `fail_20260531_006`；下一步必须先对比 `63402` 成功 trace 与 `63407` 新失败 trace，并增加 baseline-winning terminal path retention，再考虑更细 seed/state dispatch。
 
+后续 trace 对比显示，`63407` 的 baseline 成功和 candidate 失败都存在 opening boundary/action2 热点，不能把 blocker 简化成开局动作问题。真正差异发生在 health retention：baseline `63407` 到 `300.0150s` 仍未出现 low-health trace 记录，而 candidate `63407` 在 `226.0193s` 首次进入 low health，并于 `231.0204s` 死亡，最终 top action 偏 `8:0.7951`。对比报告位于 `trace_compare_seed63407_baseline_vs_candidate.md` 与 `route_hotspots_seed63407_baseline_vs_candidate.md`；下一轮应优先设计 mid/late health-retention guard，而不是继续只加 opening guard。
+
 从该 mid-anchor parent 继续 `256` timestep 并把 `late_180_to_300` anchor 权重提高到 `1.5` 后，训练期 anchor guard 和离线 alignment 仍通过，相对原始 e30 baseline 的 no-regression 也通过；但相对 mid-anchor parent 的窗口回归失败：`soda-creek` 180 秒平均存活下降 `6.857s`，`caramel-workshop` 300 秒平均存活下降 `5.19s`，300 秒三图胜率仍全为 `0.0`。已记录 `fail_20260529_003`；下一轮必须把 parent-preservation 纳入硬门禁，不能只与旧 e30 baseline 比较。
 
 `validate_rl_repair_probe_gate.py` 已支持 `--required-window-regression e30=...` / `parent=...` 的多基线硬门禁写法；后续从 limited-followup parent 继续的 RL probe 必须同时提供原始 baseline 和 parent-preservation regression report，任何 parent 回归都应阻止继续加长或推进。
