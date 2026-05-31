@@ -3188,12 +3188,17 @@
       "id": "rl_terminal_sequence_selective_opening_guard_probe",
       "summary": "新增 --opening-model-targets 定向 opening guard，并用 caramel-workshop:63400 前 60 秒 e30 parent 保护 terminal-sequence checkpoint。嵌回 per-map edge branch + all-map late filter 后，60/180 秒 high-pressure 三图均为 1.0，300 秒为 soda-creek 1.0、caramel-workshop 0.3333、cracked-star-jar 1.0；相对 per-map chain baseline，caramel 300 秒平均存活 +17.0636s、cracked 300 秒平均存活 +10.2753s，window_regression_vs_per_map_chain 以 0 blocker 通过。该结果是 repair evidence，不是 RL test Bot、stage 03 或 acceptance。",
       "report": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_probe_001/summary.md"
+    },
+    {
+      "id": "rl_terminal_sequence_selective_opening_guard_10seed_followup",
+      "summary": "扩大到 caramel-workshop seeds 63400-63409 的 300 秒单图 follow-up 后，selective opening guard 未能继续推进：baseline 与 candidate 胜率同为 0.1，但 candidate 平均存活从 242.8409s 降到 238.65s，window_regression_caramel_300s_10seed 判定 policy_window_regression_failed，blocker 为 -4.1909s。candidate 修成 seed 63402，却丢掉 baseline 原本胜利的 seed 63407；已保存 9 条 failed-only trace 并记录 fail_20260531_006。",
+      "report": "harness/reports/2026-05-31_rl_terminal_sequence_selective_opening_guard_followup_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "定向 opening guard 已保住 terminal-sequence checkpoint 的 60/180/300 秒 no-regression，并把 300s/caramel-workshop 保持在 0.3333、cracked-star-jar 提升到 1.0；下一步应扩大 caramel-workshop target seed follow-up，保存剩余失败 seed trace，判断还缺低血量 / hazard conversion、opening debt 还是更细 seed/state dispatch。该路线仍只能作为 repair evidence，不能跳到 RL test Bot、stage 03 或 acceptance；若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
+      "summary": "10 seed caramel target follow-up 已证明 selective opening guard 仍是 seed-local tradeoff：修成 63402 但丢掉 63407，平均存活 -4.1909s。下一步应对比 candidate 的 63402 成功 trace 与 63407 新失败 trace，给 baseline-winning terminal path 加 retention guard，再尝试更细的 seed/state dispatch 或训练期 60s/300s caramel preflight。该路线仍只能作为 repair evidence，不能跳到 RL test Bot、stage 03 或 acceptance；若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
     },
     {
       "id": "runtime_manual_playtest_capture",
