@@ -460,6 +460,31 @@ def test_build_env_passes_mid_path_retention_reward_profile(monkeypatch):
     assert captured["reward_profile"] == "mid-path-retention"
 
 
+def test_build_env_passes_opening_mid_boundary_retention_reward_profile(monkeypatch):
+    captured = {}
+
+    class DummyEnv:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(train_sb3, "SoftCandyStormEnv", DummyEnv)
+    config = {
+        "environment": {
+            "seed": 12345,
+            "seconds": 300,
+            "tick_rate": 30,
+            "map_id": "soda-creek",
+            "observation_version": 2,
+            "content_dir": "content/base_demo",
+        }
+    }
+
+    env = build_env(config, reward_profile="opening-mid-boundary-retention")
+
+    assert isinstance(env, DummyEnv)
+    assert captured["reward_profile"] == "opening-mid-boundary-retention"
+
+
 def test_training_uses_upgrade_choice_model(monkeypatch, tmp_path):
     captured = {}
     upgrade_policy = object()

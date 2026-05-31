@@ -62,6 +62,10 @@ def test_reward_profile_accepts_repair_profiles():
     assert env._normalize_reward_profile("late-survival") == "late-survival"
     assert env._normalize_reward_profile("long-run-retention") == "long-run-retention"
     assert env._normalize_reward_profile("mid-path-retention") == "mid-path-retention"
+    assert (
+        env._normalize_reward_profile("opening-mid-boundary-retention")
+        == "opening-mid-boundary-retention"
+    )
     assert env._normalize_reward_profile("late-route-recovery") == "late-route-recovery"
     assert env._normalize_reward_profile("late-win-conversion") == "late-win-conversion"
     assert (
