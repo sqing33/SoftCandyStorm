@@ -1,0 +1,41 @@
+{
+  "decision": "policy_target_seed_preflight_failed",
+  "comparison": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_caramel_300s_10seed.json",
+  "seconds": null,
+  "gate_decision": "evaluation_recorded_not_policy_gate",
+  "action_selection": "deterministic",
+  "reward_profile": "standard",
+  "target_count": 1,
+  "target_results": [
+    {
+      "map_id": "caramel-workshop",
+      "seed": 63405,
+      "found": true,
+      "time_seconds": 138.66733,
+      "terminal_kind": "defeat",
+      "terminal_reason": "player_health_depleted",
+      "terminated": true,
+      "truncated": false,
+      "action_ratios": {}
+    }
+  ],
+  "checks": {
+    "min_survival_seconds": 180.0,
+    "require_window_survival": false,
+    "require_non_defeat": true,
+    "min_action_ratios": {},
+    "max_action_ratios": {},
+    "survival_tolerance_seconds": 0.05
+  },
+  "errors": [],
+  "blockers": [
+    "caramel-workshop:63405: time_seconds 138.6673 below required 180.0000",
+    "caramel-workshop:63405: terminal_kind is `defeat`"
+  ],
+  "warnings": [],
+  "limitations": [
+    "This preflight only validates target episodes already present in a comparison report.",
+    "A passing preflight does not replace fixed-window high-pressure comparison, no-regression validation, failure-case review, or RL acceptance.",
+    "Target action ratios are diagnostic checks; they should not be used alone as proof of good play."
+  ]
+}

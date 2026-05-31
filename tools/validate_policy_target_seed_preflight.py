@@ -80,6 +80,7 @@ def collect_policy_episodes(report: dict[str, Any]) -> list[dict[str, Any]]:
                 item["map_id"] = fallback_map_id
             episodes.append(item)
 
+    add_from_policy(report, report.get("map_id"))
     add_from_policy(report.get("policy"), report.get("map_id"))
     for map_entry in report.get("maps", []):
         if not isinstance(map_entry, dict):

@@ -1807,6 +1807,9 @@
             "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/ppo_training_report.json",
             "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_caramel_300s_10seed.json",
             "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/window_regression_caramel_300s_10seed.json",
+            "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/target_seed_preflight_seed63407.json",
+            "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/target_seed_preflight_seed63402_opening.json",
+            "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/target_seed_preflight_seed63405_retention.json",
             "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_high_pressure_60s.json",
             "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_high_pressure_180s.json",
             "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_high_pressure_300s.json",
@@ -1945,7 +1948,7 @@
             "per-map edge_recovery_branch map overrides 已支持同一分支模型按地图使用不同时间窗，并用 soda-creek:0-60s + caramel-workshop:30-45s + all-map late_recovery_filter 通过上一条 chained diagnostic 的 60/180/300 秒 no-regression（0 blockers）；但 caramel-workshop 300 秒胜率仍为 0.0，只是平均存活提升到 231.2871s，已记录 fail_20260530_021。下一步仍需 caramel-workshop late terminal conversion objective，不能把 deterministic wrapper chain 当成 policy candidate 或 acceptance。",
             "health-retention guard 诊断已完成：180-300s low-health-only guard 和 180-300s late-only path retention 都未救回 caramel-workshop seed 63407；只有 60-300s mid-path retention 恢复 seed 63407，并在 63400-63409 10 seed target follow-up 中把 win_rate 从 0.1 提到 0.2、average_survival_seconds 从 242.8409s 提到 245.5495s，window_regression_caramel_300s_10seed 以 0 blocker 通过。high-pressure 60/180/300s 三图复查相对 per-map chain 也 0 blocker，但 seed 63407 不在 63400-63402 窗口内，因此该结果仍是 target-specific repair evidence，不是 RL test Bot、stage 03 或 acceptance。",
             "mid-path retention high-pressure follow-up 只证明 target-specific wrapper 没有污染 seeds 63400-63402；由于 seed 63407 不在该 high-pressure 窗口内，它不能证明 health-retention guard 已泛化。后续已把 60-180s path retention 转为训练目标并重新跑 target follow-up 与三窗 no-regression，但首个 closed-loop probe 仍因 high-pressure parent-preservation 回归被拒绝。",
-            "mid-path-retention reward profile 已接入 Rust gym-bridge、Python Gym wrapper、train_sb3.py CLI、训练 README 和 RL 计划文档；该 profile 只在 60-180 秒窗口放大 path retention 相关训练信号，180 秒后关闭。首个 seed 63407 closed-loop probe 已把 target seed 转胜，并让 10 seed caramel follow-up 相对 parent 胜率 +0.1、平均存活 +10.5663s，但 high-pressure parent-preservation 失败：60s/caramel-workshop 胜率 -0.3334，180s/cracked-star-jar action L1 0.4646，300s/caramel-workshop action L1 0.5872。已记录 fail_20260531_007；该 checkpoint 只能作为训练信号诊断，不能推进为 policy candidate。"
+            "mid-path-retention reward profile 已接入 Rust gym-bridge、Python Gym wrapper、train_sb3.py CLI、训练 README 和 RL 计划文档；该 profile 只在 60-180 秒窗口放大 path retention 相关训练信号，180 秒后关闭。首个 seed 63407 closed-loop probe 已把 target seed 转胜，并让 10 seed caramel follow-up 相对 parent 胜率 +0.1、平均存活 +10.5663s；target-seed preflight 同时确认 63402 仍在 40.0997s opening defeat、63405 只到 138.6673s defeat。high-pressure parent-preservation 失败：60s/caramel-workshop 胜率 -0.3334，180s/cracked-star-jar action L1 0.4646，300s/caramel-workshop action L1 0.5872。已记录 fail_20260531_007；该 checkpoint 只能作为训练信号诊断，不能推进为 policy candidate。"
           ],
           "blockers": [
             "rl_policy_multimap_generalization_gap"

@@ -45,6 +45,8 @@
 
 修复确实命中 target seed `63407`，但没有修复 seed `63402` opening death，并且 seed `63405` 明显回退。
 
+补跑 target-seed preflight 后，`target_seed_preflight_seed63407.json` 判定通过：seed `63407` 达到 `300.0150s` victory。`target_seed_preflight_seed63402_opening.json` 判定失败：seed `63402` 只到 `40.0997s` defeat，未达到 `60s` opening preflight。`target_seed_preflight_seed63405_retention.json` 也失败：seed `63405` 只到 `138.6673s` defeat，未达到 `180s` retention preflight。
+
 ## High-Pressure Parent Preservation
 
 同 seed `63400-63402` high-pressure 三图 `60/180/300s` 对比显示，candidate 没有通过 parent-preservation gate：
