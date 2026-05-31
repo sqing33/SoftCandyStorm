@@ -3173,12 +3173,17 @@
       "id": "rl_terminal_sequence_recovery_reward_profile",
       "summary": "新增 terminal-sequence-recovery reward profile，并接通 Rust gym-bridge、Python Gym wrapper、train_sb3.py、RL 计划工具和训练文档。该 profile 在 180-210 秒 ramp up，覆盖 210-300 秒终局序列，强化路线恢复、安全风险下降、低血量、危险区、Boss 压力、重复动作惩罚和胜负终局信号，用于 selective terminal branch 证明 nearest action agreement 已高但在线不转胜后的 constrained online / sequence objective 探针。Rust 单测、Python wrapper / train_sb3 / plan 工具测试和 dry-run 均通过；该能力只是训练入口，尚未产生 policy checkpoint 或 terminal conversion 收益。",
       "report": "harness/reports/2026-05-31_rl_terminal_sequence_reward_profile_001/summary.md"
+    },
+    {
+      "id": "rl_caramel_terminal_sequence_recovery_probe",
+      "summary": "从 e30 mid-anchor checkpoint 出发，用 terminal-sequence-recovery 在 caramel-workshop seeds 63400-63402 上做 256 timestep guarded PPO continuation；anchor guard 通过（final validation mean KL 0.106769、argmax agreement 0.8251）。嵌回当前 per-map edge branch + all-map late filter 后，300 秒明显改善：soda-creek 1.0、caramel-workshop 0.3333、cracked-star-jar 1.0，caramel 平均存活相对 per-map chain +17.0636s。但 60 秒 caramel-workshop 从 1.0 回落到 0.6667，平均存活 -4.1111s，window_regression_vs_per_map_chain 判定 policy_window_regression_failed；已记录 fail_20260531_004，不能推进为候选。",
+      "report": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "新的 rule-bot victory terminal branch、wide sample scan、episode ranking、w0.5 selective ranked terminal branch、terminal_conversion_probe_gate、failed-only sequence diagnostic 和 terminal-sequence-recovery reward profile 都已完成；selective 小池虽让三条在线失败 trace 的 nearest action match ratio 维持在 0.8509、0.8634、0.8172，离线 action-distribution guard 也通过，但在线 300s/caramel-workshop 仍为 0 胜率并触发 -0.4223s parent survival blocker。下一步不要继续做 simple supervised terminal-path imitation 的样本池/权重微调；应基于 terminal-sequence-recovery 或直接目标 seed 成功轨迹做 guarded closed-loop probe，并继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression；任何新 terminal branch 进入 limited follow-up 前必须先通过 terminal conversion probe gate。"
+      "summary": "新的 rule-bot victory terminal branch、wide sample scan、episode ranking、w0.5 selective ranked terminal branch、terminal_conversion_probe_gate、failed-only sequence diagnostic、terminal-sequence-recovery reward profile 和首个 guarded closed-loop probe 都已完成。terminal-sequence-recovery 证明在线序列目标能把 300s/caramel-workshop 从 0.0 提到 0.3333，并把 cracked-star-jar 从 0.3333 提到 1.0，但它破坏了 60s/caramel-workshop opening gate（1.0 -> 0.6667），已记录 fail_20260531_004。下一步应保留 terminal-sequence objective，但必须加入 opening-preservation：例如 staged opening wrapper、terminal-only branch、或训练中 60s caramel hard guard；继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression，且任何 terminal branch 进入 limited follow-up 前必须通过 terminal conversion probe gate。"
     },
     {
       "id": "runtime_manual_playtest_capture",

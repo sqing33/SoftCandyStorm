@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260531_004",
+  "category": "rl_policy",
+  "content_id": "terminal-sequence-recovery-guarded-probe-opening-regression",
+  "seed": "63400-63402",
+  "bot": "terminal-sequence-recovery-ppo-plus-per-map-edge-branch-plus-all-map-late-recovery-filter",
+  "time_seconds": 60.0,
+  "symptom": "A guarded PPO continuation using the terminal-sequence-recovery reward profile improved the 300s high-pressure result after being wrapped with the current per-map edge branch plus all-map late recovery filter, but regressed the 60s caramel-workshop opening window. Against the per-map chain baseline, 300s caramel-workshop improved from 0.0 to 0.3333 win rate and average survival increased by 17.0636s, while cracked-star-jar improved from 0.3333 to 1.0. However, 60s caramel-workshop dropped from 1.0 to 0.6667 win rate and average survival dropped by 4.1111s.",
+  "root_cause": "The online sequence objective moved the base policy toward useful late-window survival/conversion behavior, but the small single-map continuation on seeds 63400-63402 did not preserve the narrow caramel opening repair. The anchor validation guard stayed within offline KL and argmax thresholds, showing that offline anchor agreement is not sufficient to protect the fixed 60s caramel-workshop gate during closed-loop reward shaping.",
+  "fix": "Do not promote the checkpoint as a policy candidate, stage 03 model, RL test Bot, or acceptance evidence. Keep terminal-sequence-recovery as a useful objective, but the next probe must add an explicit opening-preservation constraint, stage the policy so the known opening repair remains active, or train a terminal-only branch that cannot perturb the 0-60s caramel window. Any follow-up must rerun 60/180/300 no-regression against the per-map chain baseline before terminal conversion gate review.",
+  "validation": "Trained ppo_caramel_terminal_sequence_recovery_probe.zip for 256 timesteps from ppo_e30_mid_anchor_guarded_probe.zip with reward_profile terminal-sequence-recovery, train map caramel-workshop, target seeds 63400-63402, and behavior-clone anchor regularization. Anchor guard passed with final validation mean KL 0.106769 and argmax agreement 0.8251. High-pressure comparisons with the current per-map edge branch plus all-map late recovery filter produced 60s win rates soda-creek 1.0, caramel-workshop 0.6667, cracked-star-jar 1.0; 180s all maps 1.0; 300s soda-creek 1.0, caramel-workshop 0.3333, cracked-star-jar 1.0. window_regression_vs_per_map_chain.json failed with two blockers in 60s/caramel-workshop: win_rate_delta -0.3333 and average_survival_seconds -4.1111s.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/ppo_training_report.json",
+    "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/comparison_60s.json",
+    "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/comparison_180s.json",
+    "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/comparison_300s.json",
+    "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/window_regression_vs_per_map_chain.json"
+  ]
+}
