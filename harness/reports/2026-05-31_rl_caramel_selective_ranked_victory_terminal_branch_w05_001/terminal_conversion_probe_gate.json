@@ -1,0 +1,71 @@
+{
+  "report_version": 1,
+  "decision": "terminal_conversion_probe_failed",
+  "gate_decision": "terminal_conversion_probe_failed",
+  "target": {
+    "map_id": "caramel-workshop",
+    "window": "300s",
+    "terminal_time_bucket": "late_180_to_300"
+  },
+  "criteria": {
+    "min_target_win_rate": 0.3333,
+    "min_win_rate_delta": 0.3333,
+    "min_survival_delta": 0.0,
+    "min_terminal_decisions": 1,
+    "min_terminal_ratio": 0.01,
+    "min_bucket_terminal_decisions": 1,
+    "min_bucket_terminal_ratio": 0.01
+  },
+  "baseline_windows": {
+    "180s": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_comparison_180s.json",
+    "300s": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_comparison_300s.json",
+    "60s": "harness/reports/2026-05-30_rl_per_map_edge_branch_late_all_high_pressure_001/per_map_chain_comparison_60s.json"
+  },
+  "candidate_windows": {
+    "180s": "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/comparison_180s.json",
+    "300s": "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/comparison_300s.json",
+    "60s": "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/comparison_60s.json"
+  },
+  "window_regression": {
+    "path": "harness/reports/2026-05-31_rl_caramel_selective_ranked_victory_terminal_branch_w05_001/window_regression_vs_per_map_chain.json",
+    "decision": "policy_window_regression_failed",
+    "blocker_count": 1
+  },
+  "target_metrics": {
+    "baseline_win_rate": 0.0,
+    "candidate_win_rate": 0.0,
+    "win_rate_delta": 0.0,
+    "baseline_average_survival_seconds": 231.2871,
+    "candidate_average_survival_seconds": 230.8648,
+    "survival_delta_seconds": -0.4223
+  },
+  "terminal_usage": {
+    "found": true,
+    "mode": "terminal_conversion_branch",
+    "target_maps": [
+      "caramel-workshop"
+    ],
+    "map_total_decisions": 20776,
+    "map_terminal_decisions": 832,
+    "map_terminal_ratio": 0.04,
+    "bucket": "late_180_to_300",
+    "bucket_total_decisions": 4576,
+    "bucket_terminal_decisions": 832,
+    "bucket_terminal_ratio": 0.1818
+  },
+  "errors": [],
+  "blockers": [
+    "300s/caramel-workshop: win_rate 0.0000 below required 0.3333",
+    "300s/caramel-workshop: win_rate delta 0.0000 below required 0.3333",
+    "300s/caramel-workshop: survival delta -0.4223s below required 0.0000s",
+    "window_regression: expected policy_window_regression_passed, got policy_window_regression_failed"
+  ],
+  "warnings": [
+    "300s/caramel-workshop: terminal branch was used but produced no victories"
+  ],
+  "limitations": [
+    "This gate validates terminal-conversion repair evidence only.",
+    "Passing allows limited follow-up consideration, not RL acceptance or release promotion.",
+    "It depends on supplied comparison and no-regression reports; it does not replay episodes by itself."
+  ]
+}
