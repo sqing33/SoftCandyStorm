@@ -1,0 +1,113 @@
+{
+  "report_version": 1,
+  "item_id": "rule_bot_caramel_wide_terminal_seed_scan",
+  "gate_decision": "rule_bot_wide_terminal_seed_scan_recorded_not_training_gate",
+  "scope": {
+    "map_id": "caramel-workshop",
+    "seed_start": 63300,
+    "seeds": 201,
+    "seconds": 300.0,
+    "tick_rate": 30,
+    "bots": [
+      "random",
+      "greedy",
+      "kite",
+      "boss-hunter",
+      "zone-control",
+      "route"
+    ]
+  },
+  "matrix": {
+    "random": {
+      "victories": 4,
+      "win_rate": 0.02,
+      "average_duration_seconds": 167.361,
+      "victory_seeds": [63329, 63353, 63393, 63417]
+    },
+    "greedy": {
+      "victories": 11,
+      "win_rate": 0.055,
+      "average_duration_seconds": 213.128,
+      "victory_seeds": [63355, 63356, 63362, 63395, 63417, 63431, 63463, 63479, 63488, 63489, 63495]
+    },
+    "kite": {
+      "victories": 48,
+      "win_rate": 0.239,
+      "average_duration_seconds": 229.336,
+      "victory_seeds": [63304, 63308, 63309, 63312, 63314, 63317, 63318, 63321, 63322, 63324, 63326, 63328, 63333, 63334, 63337, 63339, 63342, 63349, 63353, 63360, 63363, 63369, 63380, 63390, 63391, 63392, 63395, 63397, 63406, 63414, 63418, 63427, 63438, 63439, 63443, 63447, 63448, 63459, 63464, 63467, 63468, 63471, 63473, 63475, 63479, 63490, 63497, 63498]
+    },
+    "boss-hunter": {
+      "victories": 12,
+      "win_rate": 0.06,
+      "average_duration_seconds": 214.155,
+      "victory_seeds": [63321, 63359, 63370, 63374, 63375, 63399, 63435, 63451, 63472, 63473, 63476, 63495]
+    },
+    "zone-control": {
+      "victories": 5,
+      "win_rate": 0.025,
+      "average_duration_seconds": 225.722,
+      "victory_seeds": [63326, 63343, 63415, 63447, 63484]
+    },
+    "route": {
+      "victories": 5,
+      "win_rate": 0.025,
+      "average_duration_seconds": 202.983,
+      "victory_seeds": [63302, 63333, 63348, 63412, 63492]
+    }
+  },
+  "filtered_samples": {
+    "decision": "bot_trajectory_samples_filtered",
+    "kept_sample_count": 45853,
+    "kept_episode_count": 85,
+    "source_sample_count": 107661,
+    "source_episode_count": 1206,
+    "output_file": "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/caramel_rule_bot_wide_victory_210_300_samples.jsonl",
+    "output_file_size": "61M",
+    "committed_output": false,
+    "not_committed_reason": "The wide filtered JSONL is diagnostic input only and is large. The committed report records the generation commands, sample counts, and nearest-neighbor coverage instead."
+  },
+  "nearest_coverage": {
+    "seed63400": {
+      "old_neighbor_samples": {
+        "candidate_count": 8630,
+        "nearest_target_matches_online_action_ratio": 0.5527,
+        "average_nearest_distance": 2.528792
+      },
+      "wide_samples": {
+        "candidate_count": 45853,
+        "nearest_target_matches_online_action_ratio": 0.4176,
+        "average_nearest_distance": 2.401258
+      }
+    },
+    "seed63401": {
+      "old_neighbor_samples": {
+        "candidate_count": 8630,
+        "nearest_target_matches_online_action_ratio": 0.5605,
+        "average_nearest_distance": 2.416173
+      },
+      "wide_samples": {
+        "candidate_count": 45853,
+        "nearest_target_matches_online_action_ratio": 0.5534,
+        "average_nearest_distance": 2.252513
+      }
+    },
+    "seed63402": {
+      "old_neighbor_samples": {
+        "candidate_count": 8630,
+        "nearest_target_matches_online_action_ratio": 0.4182,
+        "average_nearest_distance": 2.45622
+      },
+      "wide_samples": {
+        "candidate_count": 45853,
+        "nearest_target_matches_online_action_ratio": 0.4915,
+        "average_nearest_distance": 2.319987
+      }
+    }
+  },
+  "conclusion": {
+    "direct_target_success": false,
+    "closest_useful_victory": "boss-hunter@63399",
+    "coverage_assessment": "mixed",
+    "summary": "The wider scan increases same-map victory samples from 8630 to 45853 and reduces nearest-neighbor distance for all three failing traces, but action-target agreement regresses for seed 63400, is effectively flat for seed 63401, and only improves for seed 63402. This is not strong enough evidence for another simple supervised terminal-path imitation branch."
+  }
+}

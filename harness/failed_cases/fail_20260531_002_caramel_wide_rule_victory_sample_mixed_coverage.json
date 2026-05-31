@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260531_002",
+  "category": "rl_policy",
+  "content_id": "caramel-wide-rule-victory-sample-mixed-coverage",
+  "seed": "63300-63500; target 63400-63402",
+  "bot": "random,greedy,kite,boss-hunter,zone-control,route",
+  "time_seconds": 300.0,
+  "symptom": "A wider caramel-workshop rule-bot scan found 85 victory episodes and 45853 usable 210-300s victory movement samples, but still found no direct victory on target seeds 63400-63402. Nearest-neighbor distance improved for all three failing traces, but target action agreement was mixed: seed63400 regressed from 0.5527 to 0.4176, seed63401 was effectively flat from 0.5605 to 0.5534, and seed63402 improved from 0.4182 to 0.4915.",
+  "root_cause": "Expanding the rule-bot success window adds more same-map terminal states, but many are farther in seed space and do not align with the target traces' online action needs. The additional samples improve geometric observation proximity without consistently improving the action target that a supervised terminal branch would imitate.",
+  "fix": "Do not train or promote another plain supervised caramel terminal branch solely from the wide victory sample pool. Keep the current per-map edge branch plus all-map late filter as the diagnostic baseline, and shift the next repair toward a constrained online or sequence objective, or a selective weighting strategy that first proves action-target coverage without hurting seeds 63400 and 63401.",
+  "validation": "Ran cargo game_harness matrix for caramel-workshop seeds 63300-63500 at 300s with random, greedy, kite, boss-hunter, zone-control, and route bots. Exported observation v2 trajectories for all six bots, filtered victory samples with tools/filter_bot_trajectory_samples.py, and compared the current failed traces for seeds 63400, 63401, and 63402 using compare_behavior_clone_trace_to_dataset.py with the training requirements environment. The compact reports are committed while the 61M temporary JSONL remains in /private/tmp because the sample pool is not accepted as durable training evidence.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/summary.md",
+    "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/metrics_compact.json",
+    "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/wide_victory_sample_filter.json",
+    "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/nearest_wide_rule_victory_seed63400.json",
+    "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/nearest_wide_rule_victory_seed63401.json",
+    "harness/reports/2026-05-31_rule_bot_caramel_wide_terminal_seed_scan_001/nearest_wide_rule_victory_seed63402.json"
+  ]
+}

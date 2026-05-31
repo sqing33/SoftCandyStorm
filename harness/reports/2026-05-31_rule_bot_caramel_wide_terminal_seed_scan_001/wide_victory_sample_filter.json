@@ -1,0 +1,56 @@
+{
+  "report_version": 1,
+  "decision": "bot_trajectory_samples_filtered",
+  "output_file": "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/caramel_rule_bot_wide_victory_210_300_samples.jsonl",
+  "source_files": [
+    "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/boss-hunter_63300_63500_210_300.jsonl",
+    "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/greedy_63300_63500_210_300.jsonl",
+    "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/kite_63300_63500_210_300.jsonl",
+    "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/random_63300_63500_210_300.jsonl",
+    "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/route_63300_63500_210_300.jsonl",
+    "/private/tmp/soft-candy-caramel-wide-trajectories-63300-63500/zone-control_63300_63500_210_300.jsonl"
+  ],
+  "source_file_count": 6,
+  "source_sample_count": 107661,
+  "source_episode_count": 1206,
+  "source_summary_count": 6,
+  "kept_sample_count": 45853,
+  "kept_episode_count": 85,
+  "orphan_sample_count": 0,
+  "dropped_episode_count": 943,
+  "dropped_samples": {},
+  "map_counts": {
+    "caramel-workshop": 85
+  },
+  "bot_counts": {
+    "boss-hunter": 12,
+    "greedy": 11,
+    "kite": 48,
+    "random": 4,
+    "route": 5,
+    "zone-control": 5
+  },
+  "terminal_counts": {
+    "victory": 85
+  },
+  "filters": {
+    "terminal": "victory",
+    "map_ids": [
+      "caramel-workshop"
+    ],
+    "bots": null,
+    "min_seconds": 210.0,
+    "max_seconds": 300.0,
+    "min_health_ratio": null,
+    "max_health_ratio": null,
+    "actions": null,
+    "max_samples_per_episode": null,
+    "max_total_samples": null
+  },
+  "errors": [],
+  "limitations": [
+    "This filter only preserves existing bot trajectory movement samples.",
+    "Victory-window samples are training input, not policy acceptance evidence.",
+    "Filtered samples still require behavior-clone or SB3 training plus fixed-window high-pressure gates."
+  ]
+}
