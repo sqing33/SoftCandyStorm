@@ -3178,12 +3178,17 @@
       "id": "rl_caramel_terminal_sequence_recovery_probe",
       "summary": "从 e30 mid-anchor checkpoint 出发，用 terminal-sequence-recovery 在 caramel-workshop seeds 63400-63402 上做 256 timestep guarded PPO continuation；anchor guard 通过（final validation mean KL 0.106769、argmax agreement 0.8251）。嵌回当前 per-map edge branch + all-map late filter 后，300 秒明显改善：soda-creek 1.0、caramel-workshop 0.3333、cracked-star-jar 1.0，caramel 平均存活相对 per-map chain +17.0636s。但 60 秒 caramel-workshop 从 1.0 回落到 0.6667，平均存活 -4.1111s，window_regression_vs_per_map_chain 判定 policy_window_regression_failed；已记录 fail_20260531_004，不能推进为候选。",
       "report": "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/summary.md"
+    },
+    {
+      "id": "rl_terminal_sequence_opening_preservation_diagnostic",
+      "summary": "补跑两条 terminal-sequence-recovery opening-preservation 诊断。粗粒度 staged opening wrapper 用 e30 mid-anchor parent 保护前 60 秒，能把 60/180 秒三图保持为 1.0，但 300 秒 caramel 回到 0.0、cracked 回到 0.3333，且相对 per-map chain 有 caramel -1.6003s 与 cracked -19.3985s survival blockers。更窄的 caramel-workshop 180 秒 late split 保住 60/180 秒和 soda/cracked 300 秒基线，但 caramel 仍为 0.0，平均存活 -2.4116s。已记录 fail_20260531_005；结论是 terminal-sequence 收益依赖更早闭环轨迹，不能靠简单 0-60 wrapper 或 180+ split 隔离。",
+      "report": "harness/reports/2026-05-31_rl_terminal_sequence_staged_opening_probe_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "新的 rule-bot victory terminal branch、wide sample scan、episode ranking、w0.5 selective ranked terminal branch、terminal_conversion_probe_gate、failed-only sequence diagnostic、terminal-sequence-recovery reward profile 和首个 guarded closed-loop probe 都已完成。terminal-sequence-recovery 证明在线序列目标能把 300s/caramel-workshop 从 0.0 提到 0.3333，并把 cracked-star-jar 从 0.3333 提到 1.0，但它破坏了 60s/caramel-workshop opening gate（1.0 -> 0.6667），已记录 fail_20260531_004。下一步应保留 terminal-sequence objective，但必须加入 opening-preservation：例如 staged opening wrapper、terminal-only branch、或训练中 60s caramel hard guard；继续以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression，且任何 terminal branch 进入 limited follow-up 前必须通过 terminal conversion probe gate。"
+      "summary": "新的 rule-bot victory terminal branch、wide sample scan、episode ranking、w0.5 selective ranked terminal branch、terminal_conversion_probe_gate、failed-only sequence diagnostic、terminal-sequence-recovery reward profile、首个 guarded closed-loop probe 和两条 opening-preservation 诊断都已完成。terminal-sequence-recovery 能把 300s/caramel-workshop 从 0.0 提到 0.3333，但完整 checkpoint 破坏 60s caramel；粗粒度 0-60 staged opening 又会抹掉 300s conversion，180s terminal-only late split 也不能单独转胜。下一步应做 selective opening hard guard / seed-state dispatch / 训练中 60s caramel preflight，而不是继续调单一时间阈值；仍需以 per-map edge branch + all-map late filter 为 baseline 跑 60/180/300 秒 no-regression，并在进入 limited follow-up 前通过 terminal conversion probe gate。"
     },
     {
       "id": "runtime_manual_playtest_capture",

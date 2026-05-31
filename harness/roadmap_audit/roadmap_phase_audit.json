@@ -822,10 +822,13 @@
         "harness/reports/2026-05-31_rl_terminal_sequence_reward_profile_001/summary.md",
         "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/summary.md",
         "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/window_regression_vs_per_map_chain.json",
-        "harness/failed_cases/fail_20260531_004_terminal_sequence_recovery_opening_regression.json"
+        "harness/failed_cases/fail_20260531_004_terminal_sequence_recovery_opening_regression.json",
+        "harness/reports/2026-05-31_rl_terminal_sequence_staged_opening_probe_001/summary.md",
+        "harness/reports/2026-05-31_rl_terminal_sequence_late_split_probe_001/summary.md",
+        "harness/failed_cases/fail_20260531_005_terminal_sequence_opening_preservation_tradeoff.json"
       ],
       "gaps": [
-        "terminal-sequence-recovery reward profile 已提供 constrained online / sequence objective 的训练入口，首个 guarded closed-loop probe 也证明它能改善 300 秒转换：caramel-workshop 从 0.0 提升到 0.3333，cracked-star-jar 从 0.3333 提升到 1.0；但同一模型让 60s/caramel-workshop 从 1.0 回落到 0.6667，已记录 fail_20260531_004。Phase 6 下一步必须加入 opening-preservation 或 terminal-only isolation，不能直接推进该 checkpoint。",
+        "terminal-sequence-recovery reward profile 已提供 constrained online / sequence objective 的训练入口，首个 guarded closed-loop probe 也证明它能改善 300 秒转换：caramel-workshop 从 0.0 提升到 0.3333，cracked-star-jar 从 0.3333 提升到 1.0；但同一模型让 60s/caramel-workshop 从 1.0 回落到 0.6667，已记录 fail_20260531_004。随后 0-60 staged opening 与 caramel 180s late split 都未能同时保住短窗和 300 秒 conversion，已记录 fail_20260531_005。Phase 6 下一步必须改成 selective opening hard guard、seed/state-conditioned dispatch 或训练中 60s caramel preflight，不能直接推进该 checkpoint，也不能继续只调简单时间切分。",
         "caramel-workshop 专属 terminal_conversion_branch 诊断已证明旧 multimap victory terminal model 在目标 late bucket 实际触发 796/4404 次仍不能转胜，并相对 per-map chain baseline 造成 300 秒平均存活 -2.3338s 回归；当前已导出最新 per-map chain 下 164 条 180-300s clean risk rows 和 387 条 210-300s failure policy rows，且 same-map nearest check 显示旧 victory terminal dataset 对 seeds 63400-63402 的匹配率只有 0.0/0.1569/0.169。下一步需要收集更贴近这些失败态的成功 caramel terminal trajectories 或训练新的 per-map terminal objective，而不是继续调同一 terminal model 的分派阈值。",
         "terminal conversion probe gate 已把 w0.5 selective ranked terminal branch 判定为 terminal_conversion_probe_failed：terminal branch 在 caramel-workshop 300 秒目标窗口触发 832/20776 次、late bucket 触发 832/4576 次，但胜率仍为 0.0、相对 baseline 胜率增量 0.0、平均存活 -0.4223s 且 window_regression 失败；Phase 6 后续 terminal branch 必须证明目标窗口在线胜利转换和 no-regression 同时成立，不能只凭离线 action agreement 或 branch usage 推进。",
         "selective ranked terminal branch failed-only sequence diagnostic 显示三条 caramel target seed 的 nearest action match ratio 仍有 0.8509/0.8634/0.8172，部分 terminal window 甚至达到 0.9048 或 0.9231，但三局仍全部 player_health_depleted；Phase 6 不能继续把 simple supervised terminal-path imitation 当作主要路线，下一步必须改成直接成功轨迹或 constrained online / sequence objective。",
@@ -916,7 +919,7 @@
         "caramel narrow opening branch 与 late filter 的统一链路虽然通过 60/180 秒 no-regression 并把 caramel-workshop 300 秒平均存活提高到 231.2871s，但 300 秒 soda-creek 从 1.0 回落到 0.6667，已记录 fail_20260530_018；下一轮不能把 caramel 分支直接并入上一版 soda-winning chain，应改做 per-map 或更强 state-conditioned late conversion，并把 soda-creek 300 秒 no-regression 设为硬门槛。",
         "`--late-recovery-maps caramel-workshop` 已验证参数和 provenance 生效，但 300 秒窗口从上一版 chained diagnostic 回归为 soda-creek 0.0、caramel-workshop 0.0、cracked-star-jar 0.0，已记录 fail_20260530_019；下一步应保留 soda/cracked late safety repair，另起 caramel late conversion objective，不能用 caramel-only late filter 作为候选链路。",
         "保留 all-map late_recovery_filter 并只启用 caramel-workshop edge branch 的隔离探针保住 cracked-star-jar 300 秒 0.3333，但 soda-creek 300 秒降到 0.3333 且 seed 63402 在 37.6664s opening 死亡，已记录 fail_20260530_020；下一步需要 per-map branch composition 或等价 manifest，保留 soda opening branch 与 all-map late safety 后再追加 caramel conversion。",
-        "保留 terminal-sequence-recovery 的 300 秒 conversion 信号，但下一轮必须用 staged opening wrapper、terminal-only branch 或训练中 60s caramel hard guard 隔离 opening regression；任何候选都必须保留 60/180/300 秒 no-regression、adapter provenance，并在进入 limited follow-up 前通过 terminal conversion probe gate。"
+        "保留 terminal-sequence-recovery 的 300 秒 conversion 信号，但下一轮必须用 selective opening hard guard、seed/state-conditioned dispatch 或训练中 60s caramel preflight 隔离 opening regression；0-60 staged wrapper 和 180s terminal-only split 已证明单一时间阈值不足。任何候选都必须保留 60/180/300 秒 no-regression、adapter provenance，并在进入 limited follow-up 前通过 terminal conversion probe gate。"
       ]
     },
     {

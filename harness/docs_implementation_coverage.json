@@ -1769,10 +1769,15 @@
             "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/comparison_180s.json",
             "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/comparison_300s.json",
             "harness/reports/2026-05-31_rl_caramel_terminal_sequence_recovery_probe_001/window_regression_vs_per_map_chain.json",
-            "harness/failed_cases/fail_20260531_004_terminal_sequence_recovery_opening_regression.json"
+            "harness/failed_cases/fail_20260531_004_terminal_sequence_recovery_opening_regression.json",
+            "harness/reports/2026-05-31_rl_terminal_sequence_staged_opening_probe_001/summary.md",
+            "harness/reports/2026-05-31_rl_terminal_sequence_staged_opening_probe_001/window_regression_vs_per_map_chain.json",
+            "harness/reports/2026-05-31_rl_terminal_sequence_late_split_probe_001/summary.md",
+            "harness/reports/2026-05-31_rl_terminal_sequence_late_split_probe_001/window_regression_vs_per_map_chain.json",
+            "harness/failed_cases/fail_20260531_005_terminal_sequence_opening_preservation_tradeoff.json"
           ],
           "gaps": [
-            "首个 terminal-sequence-recovery guarded closed-loop probe 证明该在线序列目标能改善 300 秒转换：caramel-workshop 从 0.0 提升到 0.3333 胜率、平均存活 +17.0636s，cracked-star-jar 从 0.3333 提升到 1.0；但同一 checkpoint 让 60s/caramel-workshop 从 1.0 回落到 0.6667，window_regression_vs_per_map_chain 因 opening 回归失败。已记录 fail_20260531_004；下一轮必须加入 opening-preservation 或 terminal-only isolation，不能直接推进该模型。",
+            "首个 terminal-sequence-recovery guarded closed-loop probe 证明该在线序列目标能改善 300 秒转换：caramel-workshop 从 0.0 提升到 0.3333 胜率、平均存活 +17.0636s，cracked-star-jar 从 0.3333 提升到 1.0；但同一 checkpoint 让 60s/caramel-workshop 从 1.0 回落到 0.6667，window_regression_vs_per_map_chain 因 opening 回归失败。随后两条 opening-preservation 诊断继续失败：0-60 staged opening 保住 60/180 秒却抹掉 300 秒 conversion，并造成 caramel -1.6003s、cracked -19.3985s survival blockers；caramel 180s late split 保住短窗和 soda/cracked 300 秒基线，但 caramel 仍 0.0 且 survival -2.4116s。已记录 fail_20260531_004 和 fail_20260531_005；下一轮必须做 selective opening hard guard / seed-state dispatch / 训练中 60s caramel preflight，不能直接推进该模型或继续只调时间阈值。",
             "terminal-sequence-recovery reward profile 已接入 Rust gym-bridge、Python Gym wrapper、train_sb3.py 和 RL 计划工具，能在 180-210 秒 ramp up 后覆盖 210-300 秒终局序列，并通过 Rust 单测、Python targeted pytest 与 dry-run；但该 profile 仍只是训练入口，首个 checkpoint 已因 60s/caramel-workshop opening regression 被拒绝，尚未产生可推进的 no-regression policy 或通过 terminal conversion probe gate。",
             "w0.5 selective ranked terminal branch 的 failed-only sequence diagnostic 显示三条 caramel target seed 的 nearest action match ratio 仍高达 0.8509/0.8634/0.8172，且部分 terminal window match ratio 达到 0.9048 或 0.9231，但三局仍全部 player_health_depleted；这进一步证明失败不是 branch usage 或 nearest action agreement 不足，而是在线低血量 / hazard 恢复和终局序列目标没有被 simple supervised imitation 解决。",
             "terminal conversion probe gate 已把 w0.5 selective ranked terminal branch 判定为 terminal_conversion_probe_failed：terminal branch 在 caramel-workshop 300 秒目标窗口触发 832/20776 次、late bucket 触发 832/4576 次，但胜率仍为 0.0、相对 baseline 胜率增量 0.0、平均存活 -0.4223s 且 window_regression 失败。下一轮不能只用离线 action agreement、nearest match 或 branch usage 次数推进，必须证明目标窗口在线胜利转换和 no-regression 同时成立。",

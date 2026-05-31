@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260531_005",
+  "category": "rl_policy",
+  "content_id": "terminal-sequence-recovery-opening-preservation-tradeoff",
+  "seed": "63400-63402",
+  "bot": "terminal-sequence-recovery-staged-opening-and-late-split-diagnostics",
+  "time_seconds": 300.0,
+  "symptom": "Two opening-preservation diagnostics failed to turn the terminal-sequence-recovery signal into a no-regression policy. A coarse staged opening wrapper repaired the 60s caramel-workshop regression and kept 60s/180s high-pressure win rates at 1.0 on all maps, but removed the raw checkpoint's 300s conversion signal: caramel-workshop returned to 0.0 win rate and cracked-star-jar returned to 0.3333, with 300s survival regressions of 1.6003s on caramel-workshop and 19.3985s on cracked-star-jar. A narrower caramel-workshop late split at 180s preserved 60s/180s and kept soda-creek/cracked-star-jar at their baseline 300s results, but caramel-workshop still stayed at 0.0 win rate and survival dropped 2.4116s.",
+  "root_cause": "The terminal-sequence-recovery checkpoint contains a real online sequence signal, but its useful 300s conversion depends on earlier closed-loop state evolution. Full replacement damages the 60s caramel opening seed, while replacing only the opening or only the post-180s terminal window removes the trajectory that made seed 63402 convertible. Offline anchor agreement and coarse time slicing are therefore insufficient to isolate this repair.",
+  "fix": "Do not promote the staged opening or late split diagnostic as a policy candidate. The next attempt should use a selective opening-preservation hard guard, seed/state-conditioned dispatch, or training-time 60s caramel preflight that rejects the checkpoint before full fixed-window evaluation. It must preserve the raw terminal-sequence trajectory where it wins seed 63402 while protecting the 60s seed 63400 opening failure.",
+  "validation": "Ran 60s/180s/300s high-pressure comparisons for both diagnostics against the per-map edge branch plus all-map late recovery baseline. The staged opening wrapper produced 60s and 180s all-map win rate 1.0, but window_regression_vs_per_map_chain failed on 300s caramel-workshop survival -1.6003s and cracked-star-jar survival -19.3985s. The caramel-workshop 180s late split produced 60s and 180s all-map win rate 1.0 and preserved soda-creek/cracked-star-jar 300s baseline results, but window_regression_vs_per_map_chain failed on 300s caramel-workshop survival -2.4116s.",
+  "diagnostics": [
+    "harness/reports/2026-05-31_rl_terminal_sequence_staged_opening_probe_001/summary.md",
+    "harness/reports/2026-05-31_rl_terminal_sequence_staged_opening_probe_001/window_regression_vs_per_map_chain.json",
+    "harness/reports/2026-05-31_rl_terminal_sequence_late_split_probe_001/summary.md",
+    "harness/reports/2026-05-31_rl_terminal_sequence_late_split_probe_001/window_regression_vs_per_map_chain.json"
+  ]
+}
