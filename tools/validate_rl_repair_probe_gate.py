@@ -34,6 +34,13 @@ class WindowRegressionInput:
     required: bool = False
 
 
+@dataclass(frozen=True)
+class TargetSeedPreflightInput:
+    label: str
+    path: Path
+    required: bool = False
+
+
 def load_json_object(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
@@ -68,6 +75,26 @@ def parse_required_window_regression(value: str) -> tuple[str, Path]:
     label, path = parse_optional_window_regression(value)
     if label is None:
         raise argparse.ArgumentTypeError("required window regression must use LABEL=PATH")
+    return label, path
+
+
+def parse_optional_target_seed_preflight(value: str) -> tuple[str | None, Path]:
+    if "=" not in value:
+        return None, Path(value)
+    label, path_text = value.split("=", 1)
+    label = label.strip()
+    path_text = path_text.strip()
+    if not label:
+        raise argparse.ArgumentTypeError("target seed preflight label must be non-empty")
+    if not path_text:
+        raise argparse.ArgumentTypeError("target seed preflight path must be non-empty")
+    return label, Path(path_text)
+
+
+def parse_required_target_seed_preflight(value: str) -> tuple[str, Path]:
+    label, path = parse_optional_target_seed_preflight(value)
+    if label is None:
+        raise argparse.ArgumentTypeError("required target seed preflight must use LABEL=PATH")
     return label, path
 
 
@@ -183,6 +210,65 @@ def summarize_window_regression(
     return summaries
 
 
+def summarize_target_seed_preflight(
+    preflight_inputs: list[TargetSeedPreflightInput],
+    errors: list[str],
+    blockers: list[str],
+) -> list[dict[str, Any]]:
+    summaries: list[dict[str, Any]] = []
+    for preflight_input in preflight_inputs:
+        path = preflight_input.path
+        path_label = report_label(path)
+        display_label = (
+            path_label
+            if preflight_input.label == path_label
+            else f"{preflight_input.label}/{path_label}"
+        )
+        try:
+            report = load_json_object(path)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            errors.append(f"{display_label}: unable to load {path}: {exc}")
+            summaries.append(
+                {
+                    "label": preflight_input.label,
+                    "path": str(path),
+                    "required": preflight_input.required,
+                    "loaded": False,
+                }
+            )
+            continue
+
+        collect_gate_wording_errors(display_label, report, errors)
+        decision = report.get("decision")
+        report_blockers = [str(item) for item in report.get("blockers", [])]
+        report_errors = [str(item) for item in report.get("errors", [])]
+        if decision == "policy_target_seed_preflight_invalid":
+            errors.extend(
+                f"{display_label}: {item}"
+                for item in report_errors or ["invalid target seed preflight report"]
+            )
+        elif decision == "policy_target_seed_preflight_failed":
+            blockers.extend(
+                f"{display_label}: {item}"
+                for item in report_blockers or ["target seed preflight failed"]
+            )
+        elif decision != "policy_target_seed_preflight_passed":
+            errors.append(f"{display_label}: unknown target seed preflight decision `{decision}`")
+        summaries.append(
+            {
+                "label": preflight_input.label,
+                "path": str(path),
+                "required": preflight_input.required,
+                "loaded": True,
+                "decision": decision,
+                "target_count": report.get("target_count"),
+                "blocker_count": len(report_blockers),
+                "error_count": len(report_errors),
+            }
+        )
+    return summaries
+
+
 def summarize_failure_analysis(path: Path | None, errors: list[str]) -> dict[str, Any] | None:
     if path is None:
         return None
@@ -246,11 +332,54 @@ def normalize_window_regression_inputs(
     return inputs
 
 
+def normalize_target_seed_preflight_inputs(
+    target_seed_preflights: list[Path | tuple[str, Path] | TargetSeedPreflightInput] | None,
+    required_target_seed_preflights: list[tuple[str, Path]] | dict[str, Path] | None,
+    errors: list[str],
+) -> list[TargetSeedPreflightInput]:
+    inputs: list[TargetSeedPreflightInput] = []
+    seen_labels: dict[str, Path] = {}
+
+    def add_input(label: str, path: Path, *, required: bool) -> None:
+        if not label:
+            errors.append(f"target_seed_preflight: label for {path} must be non-empty")
+            return
+        existing = seen_labels.get(label)
+        if existing is not None:
+            errors.append(
+                "target_seed_preflight: duplicate label "
+                f"`{label}` for {existing} and {path}"
+            )
+            return
+        seen_labels[label] = path
+        inputs.append(TargetSeedPreflightInput(label=label, path=path, required=required))
+
+    for item in target_seed_preflights or []:
+        if isinstance(item, TargetSeedPreflightInput):
+            add_input(item.label, item.path, required=item.required)
+        elif isinstance(item, tuple):
+            label, path = item
+            add_input(label, path, required=False)
+        else:
+            add_input(report_label(item), item, required=False)
+
+    if isinstance(required_target_seed_preflights, dict):
+        required_items = list(required_target_seed_preflights.items())
+    else:
+        required_items = required_target_seed_preflights or []
+    for label, path in required_items:
+        add_input(label, path, required=True)
+
+    return inputs
+
+
 def build_report(
     *,
     training_report: Path,
     window_regressions: list[Path | tuple[str, Path] | WindowRegressionInput],
     required_window_regressions: list[tuple[str, Path]] | dict[str, Path] | None = None,
+    target_seed_preflights: list[Path | tuple[str, Path] | TargetSeedPreflightInput] | None = None,
+    required_target_seed_preflights: list[tuple[str, Path]] | dict[str, Path] | None = None,
     anchor_alignment: Path | None = None,
     failure_analysis: Path | None = None,
 ) -> dict[str, Any]:
@@ -266,6 +395,12 @@ def build_report(
         errors,
     )
     regression_summaries = summarize_window_regression(regression_inputs, errors, blockers)
+    preflight_inputs = normalize_target_seed_preflight_inputs(
+        target_seed_preflights,
+        required_target_seed_preflights,
+        errors,
+    )
+    preflight_summaries = summarize_target_seed_preflight(preflight_inputs, errors, blockers)
     failure_summary = summarize_failure_analysis(failure_analysis, errors)
 
     if failure_summary is not None and failure_summary.get("total_failures"):
@@ -295,6 +430,17 @@ def build_report(
             item.label for item in regression_inputs if item.required
         ],
         "window_regressions": regression_summaries,
+        "target_seed_preflight_requirement": (
+            "required_labeled_preflights"
+            if any(item.required for item in preflight_inputs)
+            else "provided_reports_only"
+            if preflight_inputs
+            else "not_required"
+        ),
+        "required_target_seed_preflight_labels": [
+            item.label for item in preflight_inputs if item.required
+        ],
+        "target_seed_preflights": preflight_summaries,
         "failure_analysis": failure_summary,
         "errors": errors,
         "blockers": blockers,
@@ -326,6 +472,11 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         required = "required" if item.get("required") else "provided"
         lines.append(
             f"- Window regression ({required}, `{item.get('label')}`): `{item.get('path')}`"
+        )
+    for item in report["target_seed_preflights"]:
+        required = "required" if item.get("required") else "provided"
+        lines.append(
+            f"- Target seed preflight ({required}, `{item.get('label')}`): `{item.get('path')}`"
         )
     if report.get("failure_analysis"):
         lines.append(f"- Failure analysis: `{report['failure_analysis'].get('path')}`")
@@ -361,6 +512,20 @@ def main() -> int:
         default=[],
         help="Required baseline-preservation report as LABEL=PATH.",
     )
+    parser.add_argument(
+        "--target-seed-preflight",
+        type=parse_optional_target_seed_preflight,
+        action="append",
+        default=[],
+        help="Target seed preflight report as PATH or LABEL=PATH.",
+    )
+    parser.add_argument(
+        "--required-target-seed-preflight",
+        type=parse_required_target_seed_preflight,
+        action="append",
+        default=[],
+        help="Required target seed preflight report as LABEL=PATH.",
+    )
     parser.add_argument("--anchor-alignment", type=Path, default=None)
     parser.add_argument("--failure-analysis", type=Path, default=None)
     parser.add_argument("--report", type=Path, default=None)
@@ -377,6 +542,11 @@ def main() -> int:
             for label, path in args.window_regression
         ],
         required_window_regressions=args.required_window_regression,
+        target_seed_preflights=[
+            (label or report_label(path), path)
+            for label, path in args.target_seed_preflight
+        ],
+        required_target_seed_preflights=args.required_target_seed_preflight,
         anchor_alignment=args.anchor_alignment,
         failure_analysis=args.failure_analysis,
     )
