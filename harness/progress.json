@@ -3213,12 +3213,17 @@
       "id": "rl_mid_path_retention_reward_profile",
       "summary": "新增 mid-path-retention reward profile，并接通 Rust gym-bridge、Python Gym wrapper、train_sb3.py CLI、训练 README 和 RL 计划文档。该 profile 只在 60-180 秒窗口放大 route recovery、安全风险下降、低血量、边界、敌群、危险区、Boss 压力和重复动作惩罚，180 秒后关闭，用于把 seed 63407 的中窗 path retention 信号转成训练期 constrained objective。当前仅通过单元测试和 dry-run，尚未产生新 checkpoint、target follow-up 或 high-pressure no-regression 证据。",
       "report": "harness/reports/2026-05-31_rl_mid_path_retention_reward_profile_001/summary.md"
+    },
+    {
+      "id": "rl_mid_path_retention_seed63407_closed_loop_probe",
+      "summary": "从 e30 mid-anchor parent 出发，用 mid-path-retention 在 caramel-workshop:63407 上做 256 timestep guarded PPO continuation；anchor guard 通过（final validation mean KL 0.10678、argmax agreement 0.8255）。裸 SB3 10 seed caramel follow-up 相对 parent 从 0.0 胜率提升到 0.1、平均存活 +10.5663s，并把 seed 63407 转为 300.0150s victory；但同 seed high-pressure parent no-regression 失败，blockers 为 60s/caramel-workshop 胜率 -0.3334、180s/cracked-star-jar action L1 0.4646、300s/caramel-workshop action L1 0.5872。已记录 fail_20260531_007，不能推进为 policy candidate。",
+      "report": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/summary.md"
     }
   ],
   "next_recommended": [
     {
       "id": "rl_caramel_terminal_conversion_target",
-      "summary": "10 seed caramel target follow-up 已证明 selective opening guard 仍是 seed-local tradeoff：修成 63402 但丢掉 63407，平均存活 -4.1909s。trace 对比显示 baseline 与 candidate 的 63407 都有 opening boundary/action2 热点，真正差异是 candidate 在 226.0193s 进入 low health 并于 231.0204s 死亡；下一步应设计 mid/late health-retention guard，再尝试更细的 seed/state dispatch 或训练期 60s/300s caramel preflight。该路线仍只能作为 repair evidence，不能跳到 RL test Bot、stage 03 或 acceptance；若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
+      "summary": "mid-path-retention closed-loop probe 已证明 seed 63407 的 60-180s path-retention signal 能训练出局部收益，但单 seed continuation 会破坏 high-pressure parent preservation。下一步不要继续加长该 checkpoint；应把 seed 63402 opening repair 和 seed 63407 mid-path retention 分开约束，并加入 60s caramel-workshop hard preflight / early stop，再重新跑 10 seed target follow-up 与 60/180/300s parent no-regression。若回到 terminal_conversion_branch 路线，仍必须单独通过 terminal conversion probe gate。"
     },
     {
       "id": "runtime_manual_playtest_capture",

@@ -1,0 +1,599 @@
+{
+  "report_version": 1,
+  "decision": "policy_window_regression_failed",
+  "gate_decision": "policy_window_regression_failed",
+  "baseline_window_count": 3,
+  "candidate_window_count": 3,
+  "criteria": {
+    "min_win_rate_delta": 0.0,
+    "max_survival_drop_seconds": 5.0,
+    "max_dominant_ratio_increase": 0.2,
+    "max_action_ratio_increase": 0.2,
+    "max_action_distribution_l1_delta": 0.45,
+    "max_normalized_entropy_drop": 0.15
+  },
+  "errors": [],
+  "warnings": [],
+  "blockers": [
+    "180s/cracked-star-jar: action_distribution_l1_delta 0.4646 beyond allowed 0.45",
+    "300s/caramel-workshop: action_distribution_l1_delta 0.5872 beyond allowed 0.45",
+    "60s/caramel-workshop: win_rate_delta -0.3334 below required 0.0"
+  ],
+  "windows": [
+    {
+      "label": "180s",
+      "baseline_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/parent_high_pressure_180s.json",
+      "candidate_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_high_pressure_180s.json",
+      "baseline_seconds": 180.0,
+      "candidate_seconds": 180.0,
+      "baseline_gate_decision": "multimap_comparison_recorded_watch",
+      "candidate_gate_decision": "multimap_comparison_recorded_not_balance_gate",
+      "map_results": [
+        {
+          "window": "180s",
+          "map_id": "caramel-workshop",
+          "baseline": {
+            "policy_win_rate": 0.3333,
+            "policy_average_survival_seconds": 112.6137,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 3816,
+              "ratio": 0.3765
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 133.3729,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 5726,
+              "ratio": 0.477
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.3334,
+            "policy_average_survival_seconds": 20.7592,
+            "policy_dominant_action_ratio": 0.1005
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7927,
+            "candidate_normalized_action_entropy": 0.7229,
+            "normalized_action_entropy_delta": -0.0698,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": -0.0058,
+              "2": -0.0183,
+              "3": -0.0319,
+              "4": -0.0228,
+              "5": -0.0169,
+              "6": -0.0035,
+              "7": 0.1005,
+              "8": -0.0013
+            },
+            "action_distribution_l1_delta": 0.201,
+            "max_action_ratio_increase": {
+              "action": "7",
+              "delta": 0.1005,
+              "baseline_ratio": 0.3765,
+              "candidate_ratio": 0.477
+            },
+            "max_action_ratio_decrease": {
+              "action": "3",
+              "delta": -0.0319,
+              "baseline_ratio": 0.1959,
+              "candidate_ratio": 0.164
+            }
+          },
+          "status": "pass",
+          "blockers": []
+        },
+        {
+          "window": "180s",
+          "map_id": "cracked-star-jar",
+          "baseline": {
+            "policy_win_rate": 1.0,
+            "policy_average_survival_seconds": 180.0095,
+            "policy_dominant_action": {
+              "action": "3",
+              "count": 5152,
+              "ratio": 0.318
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 1.0,
+            "policy_average_survival_seconds": 180.0095,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 3933,
+              "ratio": 0.2428
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.0,
+            "policy_dominant_action_ratio": -0.0752
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.8099,
+            "candidate_normalized_action_entropy": 0.8431,
+            "normalized_action_entropy_delta": 0.0332,
+            "action_ratio_deltas": {
+              "0": 0.0001,
+              "1": 0.0612,
+              "2": 0.0168,
+              "3": -0.1387,
+              "4": 0.0275,
+              "5": 0.1268,
+              "6": 0.0,
+              "7": -0.055,
+              "8": -0.0385
+            },
+            "action_distribution_l1_delta": 0.4646,
+            "max_action_ratio_increase": {
+              "action": "5",
+              "delta": 0.1268,
+              "baseline_ratio": 0.116,
+              "candidate_ratio": 0.2428
+            },
+            "max_action_ratio_decrease": {
+              "action": "3",
+              "delta": -0.1387,
+              "baseline_ratio": 0.318,
+              "candidate_ratio": 0.1793
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action_distribution_l1_delta 0.4646 beyond allowed 0.45"
+          ]
+        },
+        {
+          "window": "180s",
+          "map_id": "soda-creek",
+          "baseline": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 132.5396,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 5083,
+              "ratio": 0.4261
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 132.6062,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 5464,
+              "ratio": 0.4579
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.0666,
+            "policy_dominant_action_ratio": 0.0318
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7221,
+            "candidate_normalized_action_entropy": 0.756,
+            "normalized_action_entropy_delta": 0.0339,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": -0.1468,
+              "2": 0.0011,
+              "3": 0.0075,
+              "4": 0.003,
+              "5": 0.0318,
+              "6": 0.0143,
+              "7": -0.0001,
+              "8": 0.0893
+            },
+            "action_distribution_l1_delta": 0.2939,
+            "max_action_ratio_increase": {
+              "action": "8",
+              "delta": 0.0893,
+              "baseline_ratio": 0.0499,
+              "candidate_ratio": 0.1392
+            },
+            "max_action_ratio_decrease": {
+              "action": "1",
+              "delta": -0.1468,
+              "baseline_ratio": 0.2344,
+              "candidate_ratio": 0.0876
+            }
+          },
+          "status": "pass",
+          "blockers": []
+        }
+      ]
+    },
+    {
+      "label": "300s",
+      "baseline_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/parent_high_pressure_300s.json",
+      "candidate_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_high_pressure_300s.json",
+      "baseline_seconds": 300.0,
+      "candidate_seconds": 300.0,
+      "baseline_gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+      "candidate_gate_decision": "multimap_comparison_recorded_needs_policy_repair",
+      "map_results": [
+        {
+          "window": "300s",
+          "map_id": "caramel-workshop",
+          "baseline": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 120.1944,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 4226,
+              "ratio": 0.3907
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 155.3109,
+            "policy_dominant_action": {
+              "action": "3",
+              "count": 3306,
+              "ratio": 0.2365
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 35.1165,
+            "policy_dominant_action_ratio": -0.1542
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.741,
+            "candidate_normalized_action_entropy": 0.8813,
+            "normalized_action_entropy_delta": 0.1403,
+            "action_ratio_deltas": {
+              "0": 0.0001,
+              "1": -0.2523,
+              "2": -0.0247,
+              "3": 0.1192,
+              "4": 0.016,
+              "5": 0.0472,
+              "6": 0.0295,
+              "7": -0.0166,
+              "8": 0.0816
+            },
+            "action_distribution_l1_delta": 0.5872,
+            "max_action_ratio_increase": {
+              "action": "3",
+              "delta": 0.1192,
+              "baseline_ratio": 0.1173,
+              "candidate_ratio": 0.2365
+            },
+            "max_action_ratio_decrease": {
+              "action": "1",
+              "delta": -0.2523,
+              "baseline_ratio": 0.3907,
+              "candidate_ratio": 0.1384
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "action_distribution_l1_delta 0.5872 beyond allowed 0.45"
+          ]
+        },
+        {
+          "window": "300s",
+          "map_id": "cracked-star-jar",
+          "baseline": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 220.9516,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 4184,
+              "ratio": 0.2104
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 221.2627,
+            "policy_dominant_action": {
+              "action": "1",
+              "count": 6250,
+              "ratio": 0.3139
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.3111,
+            "policy_dominant_action_ratio": 0.1035
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.8536,
+            "candidate_normalized_action_entropy": 0.8157,
+            "normalized_action_entropy_delta": -0.0379,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": 0.1964,
+              "2": -0.0135,
+              "3": -0.0981,
+              "4": 0.0063,
+              "5": 0.0081,
+              "6": 0.0,
+              "7": -0.0374,
+              "8": -0.062
+            },
+            "action_distribution_l1_delta": 0.4218,
+            "max_action_ratio_increase": {
+              "action": "1",
+              "delta": 0.1964,
+              "baseline_ratio": 0.1175,
+              "candidate_ratio": 0.3139
+            },
+            "max_action_ratio_decrease": {
+              "action": "3",
+              "delta": -0.0981,
+              "baseline_ratio": 0.188,
+              "candidate_ratio": 0.0899
+            }
+          },
+          "status": "pass",
+          "blockers": []
+        },
+        {
+          "window": "300s",
+          "map_id": "soda-creek",
+          "baseline": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 143.0974,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 4742,
+              "ratio": 0.3682
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 144.0198,
+            "policy_dominant_action": {
+              "action": "5",
+              "count": 5281,
+              "ratio": 0.4075
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.9224,
+            "policy_dominant_action_ratio": 0.0393
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7891,
+            "candidate_normalized_action_entropy": 0.761,
+            "normalized_action_entropy_delta": -0.0281,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": 0.0153,
+              "2": -0.0121,
+              "3": -0.002,
+              "4": -0.0192,
+              "5": 0.0393,
+              "6": 0.0,
+              "7": -0.0006,
+              "8": -0.0206
+            },
+            "action_distribution_l1_delta": 0.1091,
+            "max_action_ratio_increase": {
+              "action": "5",
+              "delta": 0.0393,
+              "baseline_ratio": 0.3682,
+              "candidate_ratio": 0.4075
+            },
+            "max_action_ratio_decrease": {
+              "action": "8",
+              "delta": -0.0206,
+              "baseline_ratio": 0.1269,
+              "candidate_ratio": 0.1063
+            }
+          },
+          "status": "pass",
+          "blockers": []
+        }
+      ]
+    },
+    {
+      "label": "60s",
+      "baseline_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/parent_high_pressure_60s.json",
+      "candidate_path": "harness/reports/2026-05-31_rl_mid_path_retention_seed63407_closed_loop_probe_001/candidate_high_pressure_60s.json",
+      "baseline_seconds": 60.0,
+      "candidate_seconds": 60.0,
+      "baseline_gate_decision": "multimap_comparison_recorded_not_balance_gate",
+      "candidate_gate_decision": "multimap_comparison_recorded_watch",
+      "map_results": [
+        {
+          "window": "60s",
+          "map_id": "caramel-workshop",
+          "baseline": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 53.8329,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2377,
+              "ratio": 0.4906
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.3333,
+            "policy_average_survival_seconds": 49.2774,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2428,
+              "ratio": 0.5475
+            }
+          },
+          "deltas": {
+            "policy_win_rate": -0.3334,
+            "policy_average_survival_seconds": -4.5555,
+            "policy_dominant_action_ratio": 0.0569
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.6396,
+            "candidate_normalized_action_entropy": 0.5385,
+            "normalized_action_entropy_delta": -0.1011,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": -0.0004,
+              "2": 0.0152,
+              "3": -0.1015,
+              "4": -0.0066,
+              "5": 0.046,
+              "6": 0.0,
+              "7": 0.0569,
+              "8": -0.0095
+            },
+            "action_distribution_l1_delta": 0.2361,
+            "max_action_ratio_increase": {
+              "action": "7",
+              "delta": 0.0569,
+              "baseline_ratio": 0.4906,
+              "candidate_ratio": 0.5475
+            },
+            "max_action_ratio_decrease": {
+              "action": "3",
+              "delta": -0.1015,
+              "baseline_ratio": 0.1166,
+              "candidate_ratio": 0.0151
+            }
+          },
+          "status": "regression",
+          "blockers": [
+            "win_rate_delta -0.3334 below required 0.0"
+          ]
+        },
+        {
+          "window": "60s",
+          "map_id": "cracked-star-jar",
+          "baseline": {
+            "policy_win_rate": 1.0,
+            "policy_average_survival_seconds": 60.0328,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2076,
+              "ratio": 0.3842
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 1.0,
+            "policy_average_survival_seconds": 60.0328,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2074,
+              "ratio": 0.3839
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.0,
+            "policy_dominant_action_ratio": -0.0003
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.7159,
+            "candidate_normalized_action_entropy": 0.6226,
+            "normalized_action_entropy_delta": -0.0933,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": -0.0017,
+              "2": 0.0009,
+              "3": 0.0,
+              "4": -0.0583,
+              "5": 0.0957,
+              "6": 0.0,
+              "7": -0.0003,
+              "8": -0.0363
+            },
+            "action_distribution_l1_delta": 0.1932,
+            "max_action_ratio_increase": {
+              "action": "5",
+              "delta": 0.0957,
+              "baseline_ratio": 0.1481,
+              "candidate_ratio": 0.2438
+            },
+            "max_action_ratio_decrease": {
+              "action": "4",
+              "delta": -0.0583,
+              "baseline_ratio": 0.0646,
+              "candidate_ratio": 0.0063
+            }
+          },
+          "status": "pass",
+          "blockers": []
+        },
+        {
+          "window": "60s",
+          "map_id": "soda-creek",
+          "baseline": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 52.4662,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2069,
+              "ratio": 0.4382
+            }
+          },
+          "candidate": {
+            "policy_win_rate": 0.6667,
+            "policy_average_survival_seconds": 52.4995,
+            "policy_dominant_action": {
+              "action": "7",
+              "count": 2116,
+              "ratio": 0.4478
+            }
+          },
+          "deltas": {
+            "policy_win_rate": 0.0,
+            "policy_average_survival_seconds": 0.0333,
+            "policy_dominant_action_ratio": 0.0096
+          },
+          "action_distribution_delta": {
+            "enabled": true,
+            "baseline_normalized_action_entropy": 0.6176,
+            "candidate_normalized_action_entropy": 0.6094,
+            "normalized_action_entropy_delta": -0.0082,
+            "action_ratio_deltas": {
+              "0": 0.0,
+              "1": 0.0,
+              "2": 0.0022,
+              "3": -0.0119,
+              "4": -0.0013,
+              "5": 0.0013,
+              "6": 0.0,
+              "7": 0.0096,
+              "8": 0.0
+            },
+            "action_distribution_l1_delta": 0.0263,
+            "max_action_ratio_increase": {
+              "action": "7",
+              "delta": 0.0096,
+              "baseline_ratio": 0.4382,
+              "candidate_ratio": 0.4478
+            },
+            "max_action_ratio_decrease": {
+              "action": "3",
+              "delta": -0.0119,
+              "baseline_ratio": 0.1137,
+              "candidate_ratio": 0.1018
+            }
+          },
+          "status": "pass",
+          "blockers": []
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "This validator checks no-regression against supplied comparison reports only.",
+    "A passing no-regression result is repair evidence, not RL policy acceptance.",
+    "Final policies still require deterministic high-pressure, failure-case, and acceptance manifest review."
+  ]
+}
