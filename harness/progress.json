@@ -1671,6 +1671,16 @@
       "id": "demo_buildcraft_repair_v13_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v13 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Coward 保持 33.3%，但 Greedy 仍为 0.0%，排除了投射节奏作为主要原因。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v13_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v14_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v14 候选包，在 v13 投射节奏基础上把 sprinkle-spitter 的 XP / score 提高到 6 / 18；该包通过候选静态链路、GameCore validate-content 和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v14_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v14_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v14 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Greedy 仍为 0.0%，说明单纯提高 sprinkle-spitter 奖励不能修复失败窗口。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v14_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3578,6 +3588,11 @@
       "id": "demo_buildcraft_repair_v13_findings",
       "summary": "Demo buildcraft repair v13 静态链路通过但 3 seed 烟测仍失败：Coward 33.3% 保持目标区间，Greedy 仍为 0.0%。恢复 v10 投射节奏没有修复 Greedy，下一步 v14 应测试更高 sprinkle-spitter XP 是否能让 Greedy 在死亡窗口前完成关键升级。",
       "report": "harness/failed_cases/fail_20260601_014_demo_buildcraft_repair_v13_greedy_gap.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v14_findings",
+      "summary": "Demo buildcraft repair v14 静态链路通过但 3 seed 烟测仍失败：Coward 保持 33.3%，Greedy 仍为 0.0%。XP=6 没有改变 Greedy 225-229 秒死亡窗口，下一步 v15 应把 Coward 恢复收益从 Greedy 会追逐的远程压力风险中拆出来。",
+      "report": "harness/failed_cases/fail_20260601_015_demo_buildcraft_repair_v14_reward_threshold_gap.json"
     }
   ],
   "next_recommended": [
@@ -3698,8 +3713,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v13 排除了 sprinkle-spitter 投射节奏作为 Greedy 低胜率主因。下一步创建 v14：在特殊敌人预算内提高 sprinkle-spitter XP，测试 Greedy 是否只是差一个升级阈值，同时监控 Coward 和高技能 Bot 是否过强。",
-      "report": "harness/failed_cases/fail_20260601_014_demo_buildcraft_repair_v13_greedy_gap.json"
+      "summary": "Demo buildcraft repair v14 排除了单纯提高 sprinkle-spitter XP 的奖励阈值假设。下一步创建 v15：把 Coward 需要的恢复收益从 Greedy 会追逐的远程压力风险中拆开，优先测试更安全的 XP 来源或 210-300 秒糖霜草地路线压力微调。",
+      "report": "harness/failed_cases/fail_20260601_015_demo_buildcraft_repair_v14_reward_threshold_gap.json"
     }
   ]
 }
