@@ -1726,6 +1726,16 @@
       "id": "demo_buildcraft_repair_v18_seed_expansion",
       "summary": "完成 Demo buildcraft repair v18 的 300 秒 / 10 seed / all Bot 扩样；结果为 repair，Greedy 70.0%、Kite 80.0%、Route 40.0% 高于目标上限，说明 v18 的 3 seed 通过不够稳定。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_10seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v19_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v19 候选包，把糖霜草地 210-300 秒段 0.02 基础软糖权重转给 sugar-moth 侧翼压力；该包通过候选静态链路、GameCore validate-content 和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v19_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v19_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v19 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Coward 降到 0.0%，Greedy 和 Route 均升到 66.7%，说明 sugar-moth 侧翼替换方向失败。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v19_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3658,6 +3668,11 @@
       "id": "demo_buildcraft_repair_v18_findings",
       "summary": "Demo buildcraft repair v18 静态链路和 3 seed all Bot 烟测通过，但 10 seed 扩样失败：Greedy 70.0%、Kite 80.0%、Route 40.0% 高于目标上限，Coward 仅守在 10.0% 下限。下一步 v19 需要更窄的 anti-route / anti-kite 压力，而不是 broad pressure。",
       "report": "harness/failed_cases/fail_20260601_019_demo_buildcraft_repair_v18_seed_expansion.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v19_findings",
+      "summary": "Demo buildcraft repair v19 静态链路通过但 3 seed 烟测失败：把 bouncy-gummy 权重转给 sugar-moth 后，Coward 掉到 0.0%，Greedy 和 Route 均为 66.7%。下一步应回到 v18 波次基线，不继续走 sugar-moth 侧翼替换方向。",
+      "report": "harness/failed_cases/fail_20260601_020_demo_buildcraft_repair_v19_side_pressure_regression.json"
     }
   ],
   "next_recommended": [
@@ -3778,8 +3793,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v18 通过 3 seed 但未通过 10 seed 扩样：Greedy、Kite、Route 偏高，Coward 仅在下限。下一步创建 v19，做更窄的 210-300 秒 anti-route / anti-kite 压力修复，完成静态链路后重新跑 3 seed 和 10 seed。",
-      "report": "harness/failed_cases/fail_20260601_019_demo_buildcraft_repair_v18_seed_expansion.json"
+      "summary": "Demo buildcraft repair v19 证明 sugar-moth 侧翼替换方向失败：Coward 低于目标，Greedy 和 Route 反而偏高。下一步创建 v20：回到 v18 波次基线，优先尝试更细的经济 / 构筑调整，或带低技能补偿的窄压力修复。",
+      "report": "harness/failed_cases/fail_20260601_020_demo_buildcraft_repair_v19_side_pressure_regression.json"
     }
   ]
 }

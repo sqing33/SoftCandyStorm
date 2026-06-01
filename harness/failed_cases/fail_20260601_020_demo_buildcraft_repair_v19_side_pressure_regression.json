@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260601_020",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v19_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v19 passed the static candidate chain, GameCore validate-content, and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. Coward dropped to 0.0%, Greedy rose to 66.7%, and Route rose to 66.7%. Idle, Random, Kite, Tank, BossHunter, and ZoneControl stayed inside target bands.",
+  "root_cause": "Moving 0.02 of bouncy-gummy weight into sugar-moth side pressure was not an effective anti-route / anti-kite repair. It removed some safe baseline enemies that Coward needed for recovery while adding low-health flankers that overperforming XP-driven bots could still convert into growth. The result made low-skill survival worse without reducing Greedy or Route enough.",
+  "fix": "Do not promote v19 or run the 10-seed expansion. The next repair should return to the v18 wave baseline and avoid the sugar-moth side-pressure replacement. Prefer a narrower buildcraft or economy adjustment, or pair any small pressure increase with a low-skill recovery compensation that does not broadly buff Greedy, Kite, or Route.",
+  "validation": "Create v20 as a generated candidate only, rerun the full candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. Passing requires Coward 10%-35%, Greedy 25%-55%, Route 10%-35%, and all other bots remaining in their configured target bands before any 10-seed expansion.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v19_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v19_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v19_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v19_validate_candidates_001/summary.md",
+    "harness/failed_cases/fail_20260601_019_demo_buildcraft_repair_v18_seed_expansion.json"
+  ]
+}
