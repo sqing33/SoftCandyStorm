@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_003",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v2_full_pack",
+  "seed": "70000-70002",
+  "bot": "boss-hunter",
+  "time_seconds": 300.0,
+  "symptom": "A diagnostic BossHunterBot priority patch that ranked generic `boss-killer` and `high-risk` tags ahead of its original item ids made the repair v2 300s / 3-seed probe worse for the boss-focused lane. BossHunterBot fell from 33.3% win rate in the repair v2 baseline to 0.0%, while GreedyXpBot and KiteBot stayed at 100.0% and TankBot / ZoneControlBot stayed at 66.7%.",
+  "root_cause": "The diagnostic patch made BossHunterBot pick high-risk burst identity earlier, but the current Demo buildcraft pool does not provide enough survival, mobility, cooldown, or crowd-control prerequisites before those picks. This turns boss-focus into early fragility instead of a reliable boss-killer build. The remaining mid-skill overperformance is also independent, so a generic tag-priority patch cannot solve both sides of the repair.",
+  "fix": "Do not keep or promote the diagnostic BossHunterBot priority patch. The next repair should keep boss-killer recognition survival-aware: preserve early mobility/cooldown/safety prerequisites, only prefer high-risk burst after the build has enough survivability, and separately tune Greedy/Kite/Tank/ZoneControl over-stability through candidate numbers or wave pressure.",
+  "validation": "After the next repair, rerun the same 300s all-bot matrix on frosting-grassland seeds 70000-70002 and compare against the repair v2 baseline and this boss-tag diagnostic. BossHunterBot should return to the high-skill target band without pushing GreedyXpBot, KiteBot, TankBot, or ZoneControlBot outside their target ranges.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v2_boss_tag_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v2_boss_tag_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v2_boss_tag_matrix_300s_3seed_001/failure_cases.json",
+    "harness/failed_cases/fail_20260601_002_demo_buildcraft_repair_v2_probe_balance.json"
+  ]
+}

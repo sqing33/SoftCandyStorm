@@ -1561,6 +1561,11 @@
       "id": "demo_buildcraft_repair_v2_candidate_pack",
       "summary": "新增 Demo buildcraft repair v2 候选包，只在 generated candidate 内削弱安全输出、拾取成长、护盾容错和冷却丝滑，并补充高风险爆发的 boss-killer 标签；该包通过候选校验、物化预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates，但 300 秒小矩阵仍为 repair。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v2_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_boss_tag_diagnostic",
+      "summary": "完成 Demo buildcraft repair v2 的 BossHunter 标签优先级诊断：直接把 `boss-killer` / `high-risk` 放到 BossHunter 升级优先级前列会让 BossHunterBot 从 33.3% 胜率降到 0.0%，因此诊断代码不保留，结果记录为 failure case。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v2_boss_tag_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3408,6 +3413,11 @@
       "id": "demo_buildcraft_repair_v2_findings",
       "summary": "Demo buildcraft repair v2 把 RandomBot 和 CowardBot 拉回目标区间，说明削弱安全路线是正确方向；但 GreedyXpBot/KiteBot 仍 100.0%，TankBot/ZoneControlBot 仍 66.7%，BossHunterBot 仍 33.3%。下一轮应分开处理 boss-killer 识别和中高技能 Bot 过稳，不应继续只削弱通用安全数值。",
       "report": "harness/failed_cases/fail_20260601_002_demo_buildcraft_repair_v2_probe_balance.json"
+    },
+    {
+      "id": "demo_buildcraft_boss_tag_diagnostic_findings",
+      "summary": "BossHunter 标签优先级诊断显示，单纯让 BossHunterBot 提前选择 `boss-killer` / `high-risk` 会把 BossHunter 胜率压到 0.0%，并不会修复 Greedy/Kite/Tank/ZoneControl 的过稳问题。下一轮应做带生存前置的 boss-killer 选择，而不是保留这次通用标签优先级改动。",
+      "report": "harness/failed_cases/fail_20260601_003_demo_buildcraft_boss_tag_probe_regression.json"
     }
   ],
   "next_recommended": [
@@ -3528,8 +3538,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v2 仍未通过 300 秒小矩阵：下一步应先让 BossHunterBot 能识别 `boss-killer` 构筑候选，再单独压 Greedy/Kite/Tank/ZoneControl 的过稳路径；修后继续用 seeds 70000-70002 的同口径小矩阵验证，全部入目标后再扩大 seed 和 Replay 回归。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v2_matrix_300s_3seed_001/summary.md"
+      "summary": "Demo buildcraft repair v2 仍未通过 300 秒小矩阵，且 BossHunter 标签优先级诊断已证明直接偏向 `boss-killer` / `high-risk` 会让 BossHunter 更差。下一步应实现带机动、冷却或防御前置的 Boss 路线，同时单独压 Greedy/Kite/Tank/ZoneControl 的过稳路径；修后继续用 seeds 70000-70002 的同口径小矩阵验证，全部入目标后再扩大 seed 和 Replay 回归。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v2_boss_tag_matrix_300s_3seed_001/summary.md"
     }
   ]
 }
