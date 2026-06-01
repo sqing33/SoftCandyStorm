@@ -1,0 +1,53 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v5_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v5",
+    "goal": "在不继续全局削弱武器的前提下，针对 repair v4 的 Greedy / Kite 过稳与 Route 偏弱问题做窄修：规则 Bot 负责修正构筑选择标尺，内容侧只给 210-300 秒 Boss 后窗口加入少量可读远程压力。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "在 210-300 秒 Boss 后阶段加入少量 ranged / projectile-pressure，约束过稳风筝和贪经验路线"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v5，只覆盖 v4 full pack 的局部波次内容。",
+      "v5 不调整武器基础伤害、冷却或成长曲线，避免重现 v3 的过度削弱。",
+      "该批次必须继续通过 Bot 矩阵、Replay 回归和人工试玩，不能直接进入 accepted_content。"
+    ]
+  }
+}
