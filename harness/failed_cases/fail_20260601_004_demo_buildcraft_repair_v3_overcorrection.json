@@ -1,0 +1,17 @@
+{
+  "case_id": "fail_20260601_004",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v3_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v3 passed static candidate gates but overcorrected the 300s / 3-seed Bot matrix. CowardBot, GreedyXpBot, TankBot, ZoneControlBot, and RouteBot all fell to 0.0% win rate, while KiteBot still stayed at 100.0% and BossHunterBot stayed below target at 33.3%.",
+  "root_cause": "The v3 patch combined base-stat nerfs to starter and safe weapons with a stronger 210-300s wave pressure increase. This reduced broad survivability too much without addressing KiteBot's movement advantage. The result made low and mid skill baselines too weak while leaving the persistent Kite overperformance untouched.",
+  "fix": "Do not promote v3. Use it as an upper bound for how much content-side nerfing is too much. The next repair should keep base weapon stats close to v2, tune only growth curves and small pressure changes, and handle Kite overperformance separately instead of trying to solve it through global damage reductions.",
+  "validation": "Repair v4 was created from this finding by reverting base-stat nerfs, keeping only mild scaling reductions, slight boss-killer buffs, and a smaller 210-300s pressure increase. Continue comparing future repairs against v2, v3, and v4 on the same 300s seeds 70000-70002 matrix.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v3_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v3_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v3_validate_candidates_001/summary.md"
+  ]
+}
