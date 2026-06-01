@@ -1536,6 +1536,11 @@
       "id": "rl_failure_lane_repair_preflight",
       "summary": "新增 create_rl_failure_lane_repair_preflight.py 与单测，将 failure lane trace 诊断转成下一轮修复前的硬门槛契约：opening_repair 要求 seed 63402 target preflight、60s/caramel hard preflight 和 high-pressure parent no-regression；late_terminal_survival_conversion 要求 10 seed caramel follow-up、short60 hard preflight 和 parent no-regression，并禁止纯 late low-health continuation 或未过滤连续 seed hotspot 作为 late-only 证据。",
       "report": "harness/reports/2026-05-31_rl_opening_mid_boundary_retention_seed63405_probe_001/failure_lane_repair_preflight.md"
+    },
+    {
+      "id": "rl_opening_micro_window_branch_probe",
+      "summary": "将 broad 0-60s opening branch 按 drift trace 收窄为 caramel-workshop 专属 19.0-19.8s micro-window dispatch，并要求 min_pressure 0.2 与 min_boundary_edge_risk 0.75；target seed 63402、60s/caramel hard preflight、high-pressure 60/180/300s parent no-regression、adapter scope 和 63400-63409 caramel 300s follow-up 全部通过。10 seed follow-up 胜率维持 0.1、平均存活 +17.195s、action L1 0.037；该结果是 repair evidence，不是 RL acceptance。",
+      "report": "harness/reports/2026-05-31_rl_opening_micro_window_branch_probe_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3358,6 +3363,11 @@
       "id": "rl_failure_lane_opening_broad_branch_no_regression_findings",
       "summary": "0-60s broad opening branch 的 full parent no-regression 已失败：60s/caramel-workshop 仍通过并保持胜率 +0.3334、平均存活 +6.6443s，但 180s/caramel-workshop action_distribution_l1_delta 为 0.4813、300s/caramel-workshop 为 0.5787，均超过 0.45 阈值，主要漂移是 action 5 在 180s +0.1270、300s +0.1940。该 broad branch 不应进入 10 seed follow-up；已记录 fail_20260531_010。",
       "report": "harness/reports/2026-05-31_rl_failure_lane_opening_repair_branch_preflight_001/window_regression_high_pressure_window0_60_vs_base.md"
+    },
+    {
+      "id": "rl_opening_micro_window_branch_probe_findings",
+      "summary": "micro-window opening branch 修复了 broad branch 的主要问题：19.0-19.8s dispatch 只在 opening_lt_60 中触发极少分支，policy_adapter_scope_passed 记录 3 次 branch decision、总 ratio 0.000027。target seed 63402 转为 60.0328s victory，60s/caramel hard preflight 通过，high-pressure 60/180/300s parent no-regression 0 blockers，10 seed caramel follow-up 也通过且 seed 63407 胜局未丢失。该结果只能作为 evaluation-only repair evidence，下一步要转成真实 constrained policy / branch objective。",
+      "report": "harness/reports/2026-05-31_rl_opening_micro_window_branch_probe_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3470,6 +3480,11 @@
       "id": "rl_opening_broad_branch_drift_diagnostic",
       "summary": "0-60s broad opening branch drift 已复盘：caramel-workshop seeds 63400-63402 的 300 秒 trace 显示 branch 仅触发 3 次，但 seed 63401 的 2 次早期开局分派足以把后续 sampled action 5 ratio 推高 +0.5199；seed 63402 虽从 40.0997s death 拉到 212.0497s，但仍未转胜。下一步不要跑该 broad branch 的 10 seed follow-up，应改为更窄 state-conditioned dispatch 或在线 action-distribution/path-retention guard。",
       "report": "harness/reports/2026-05-31_rl_failure_lane_opening_branch_drift_diagnostic_001/summary.md"
+    },
+    {
+      "id": "rl_opening_micro_window_branch_policy_objective",
+      "summary": "micro-window branch 已在 evaluation-only 层面同时满足 target seed、short60、parent no-regression、adapter scope 和 10 seed caramel follow-up；下一步应把 19.0-19.8s / pressure / boundary-risk dispatch 转成真实 constrained policy 或 branch objective，并用同一组 gates 复跑，不能直接把 wrapper 当作 stage 03 或 acceptance。",
+      "report": "harness/reports/2026-05-31_rl_opening_micro_window_branch_probe_001/summary.md"
     }
   ]
 }
