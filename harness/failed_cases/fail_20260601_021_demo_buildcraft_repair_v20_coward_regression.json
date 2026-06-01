@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260601_021",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v20_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v20 passed the static candidate chain, GameCore validate-content, and isolated validate-candidates, but failed the formal 300s / 3-seed all-Bot smoke matrix. Idle 0.0%, Random 0.0%, Greedy 33.3%, Kite 66.7%, Tank 33.3%, BossHunter 66.7%, ZoneControl 33.3%, and Route 33.3% stayed inside their target bands, while Coward dropped to 0.0% against a required 10%-35% low-skill target.",
+  "root_cause": "Returning to the v18 baseline and moving an additional 0.01 of sandwich-cookie-creep weight into sprinkle-spitter ranged pressure repaired Greedy and Route on the first three seeds, but it also removed too much readable slow-blocker recovery space from Coward. The 210-300 second window became just harsh enough that low-skill survival lost its single required recovery win, so broad or direct ranged-pressure increases are no longer safe.",
+  "fix": "Do not promote v20 or run the 10-seed expansion. Create v21 as a generated candidate only, starting from v18 or a v20-adjacent baseline, and avoid further simple sugar-moth or sprinkle-spitter pressure increases. The next repair should preserve Coward's lower-bound survival while reducing Greedy / Kite / Route seed expansion overperformance through narrower buildcraft, economy, or timing changes.",
+  "validation": "Rerun the candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. A viable v21 must keep Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before any 10-seed expansion, Replay regression, or human review.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v20_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v20_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v20_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v20_validate_candidates_001/summary.md",
+    "harness/failed_cases/fail_20260601_019_demo_buildcraft_repair_v18_seed_expansion.json",
+    "harness/failed_cases/fail_20260601_020_demo_buildcraft_repair_v19_side_pressure_regression.json"
+  ]
+}

@@ -1741,6 +1741,11 @@
       "id": "demo_buildcraft_repair_v20_candidate_pack",
       "summary": "新增 Demo buildcraft repair v20 候选包，回到 v18 波次基线并只把 210-300 秒段 0.01 sandwich-cookie-creep 权重转给 sprinkle-spitter；该包通过候选静态链路、GameCore validate-content 和隔离 validate-candidates。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v20_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v20 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Greedy、Kite、Route 回到目标区间，但 Coward 降到 0.0%，说明继续提高 sprinkle-spitter 远程压力会打掉低技能恢复窗口。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3803,8 +3808,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v20 已完成候选静态链路；下一步跑 300 秒 / 3 seed / all Bot 烟测。若通过，应继续做 10 seed 扩样并准备 v21 修复 Greedy / Kite 过高安全收益。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_validate_candidates_001/summary.md"
+      "summary": "Demo buildcraft repair v20 已完成正式 300 秒 / 3 seed / all Bot 烟测但结论为 repair：Coward 0.0% 低于 10%-35% 目标。下一步创建 v21 generated candidate，不继续简单增加 sugar-moth 或 sprinkle-spitter 压力，改用更窄的构筑、经济或压力时序修复。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_matrix_300s_3seed_001/summary.md"
     }
   ]
 }
