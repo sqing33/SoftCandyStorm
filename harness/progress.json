@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-05-31",
-  "phase": "goal-phase-2-runtime-prototype",
+  "updated_at": "2026-06-01",
+  "phase": "goal-phase-3-playable-content",
   "completed": [
     {
       "id": "workspace_and_game_core",
@@ -1541,6 +1541,11 @@
       "id": "rl_opening_micro_window_branch_probe",
       "summary": "将 broad 0-60s opening branch 按 drift trace 收窄为 caramel-workshop 专属 19.0-19.8s micro-window dispatch，并要求 min_pressure 0.2 与 min_boundary_edge_risk 0.75；target seed 63402、60s/caramel hard preflight、high-pressure 60/180/300s parent no-regression、adapter scope 和 63400-63409 caramel 300s follow-up 全部通过。10 seed follow-up 胜率维持 0.1、平均存活 +17.195s、action L1 0.037；该结果是 repair evidence，不是 RL acceptance。",
       "report": "harness/reports/2026-05-31_rl_opening_micro_window_branch_probe_001/summary.md"
+    },
+    {
+      "id": "demo_wave_identity_candidate_pack",
+      "summary": "新增 Demo wave identity 内容候选包：复用 Phase 4 的 4 个被动和 4 个普通敌人候选，并用 6 个 v2 wave 覆盖 base_demo 同名标准波次，让 6 张地图在 90 秒后逐步形成更明显的遭遇差异。当前包已完成局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；仍不是 accepted_content，也未进入 Runtime 正式内容。",
+      "report": "harness/reports/2026-06-01_demo_wave_identity_validate_candidates_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3368,6 +3373,11 @@
       "id": "rl_opening_micro_window_branch_probe_findings",
       "summary": "micro-window opening branch 修复了 broad branch 的主要问题：19.0-19.8s dispatch 只在 opening_lt_60 中触发极少分支，policy_adapter_scope_passed 记录 3 次 branch decision、总 ratio 0.000027。target seed 63402 转为 60.0328s victory，60s/caramel hard preflight 通过，high-pressure 60/180/300s parent no-regression 0 blockers，10 seed caramel follow-up 也通过且 seed 63407 胜局未丢失。该结果只能作为 evaluation-only repair evidence，下一步要转成真实 constrained policy / branch objective。",
       "report": "harness/reports/2026-05-31_rl_opening_micro_window_branch_probe_001/summary.md"
+    },
+    {
+      "id": "demo_wave_identity_candidate_findings",
+      "summary": "玩家可玩内容方向已从 RL 训练转回内容包密度：Demo wave identity full pack 当前有 72 个对象，包含 12 个被动、12 个普通敌人和 6 条地图标准波次；物化工具已记录 waves 为 6 overlay / 6 override，避免同名 wave 覆盖后计数翻倍。隔离 validate-candidates 为 1 validated / 0 rejected；静态预算为 valid，但 sprinkle-spitter 的远程弹幕压力使声明威胁高于基础接触公式计算威胁，后续人工审查和 Bot 仿真需要重点看中后期可读性与压力。",
+      "report": "harness/reports/2026-06-01_demo_wave_identity_static_budget_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3485,6 +3495,11 @@
       "id": "rl_opening_micro_window_branch_policy_objective",
       "summary": "micro-window branch 已在 evaluation-only 层面同时满足 target seed、short60、parent no-regression、adapter scope 和 10 seed caramel follow-up；下一步应把 19.0-19.8s / pressure / boundary-risk dispatch 转成真实 constrained policy 或 branch objective，并用同一组 gates 复跑，不能直接把 wrapper 当作 stage 03 或 acceptance。",
       "report": "harness/reports/2026-05-31_rl_opening_micro_window_branch_probe_001/summary.md"
+    },
+    {
+      "id": "demo_content_buildcraft_candidate_next",
+      "summary": "先暂停 AI/RL 训练线，下一步应围绕玩家能感受到的构筑差异补一批武器 / 被动 / 进化候选，目标是形成范围清场、减速控制、拾取成长、护盾容错和高风险爆发等可读流派；所有新增内容仍必须先进入 generated candidate patch，经 Schema、静态预算、GameCore 加载、Bot 仿真、Replay 和人工试玩后才能考虑 accepted_content。",
+      "report": "docs/04_内容系统与素材库.md"
     }
   ]
 }
