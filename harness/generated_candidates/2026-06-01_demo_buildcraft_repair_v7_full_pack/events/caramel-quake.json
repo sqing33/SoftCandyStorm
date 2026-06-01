@@ -1,0 +1,30 @@
+{
+  "id": "caramel-quake",
+  "name": "焦糖地震",
+  "version": 1,
+  "rarity": "rare",
+  "tags": ["event", "hazard", "movement", "control"],
+  "description": "地面短暂震动并出现焦糖危险区，要求玩家持续改变路线。",
+  "trigger": {
+    "type": "time_window",
+    "start_second": 240,
+    "end_second": 560,
+    "chance": 0.06
+  },
+  "effects": [
+    {
+      "type": "spawn_hazard",
+      "value": 5,
+      "duration_seconds": 10,
+      "radius": 72,
+      "slow_multiplier": 0.55
+    },
+    {
+      "type": "spawn_enemy",
+      "value": 2,
+      "enemy_id": "caramel-slime"
+    }
+  ],
+  "visual_description": "金棕焦糖裂纹从地面冒出，随后形成数个亮面黏糖圈。",
+  "sfx_description": "低频地面震动、焦糖冒泡和黏糖铺开的声音。"
+}
