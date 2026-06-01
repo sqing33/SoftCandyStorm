@@ -1,0 +1,78 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v8_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v8",
+    "goal": "修复 repair v7 在 3 seed 烟测中暴露的混合回归：恢复早中期低技能稳定性，降低 ZoneControl 焦糖收益，并压低 Greedy 经济滚雪球。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "bubble-shoes",
+      "type": "passive",
+      "path": "passives/bubble-shoes.json",
+      "role": "恢复每级移速收益，避免 BossHunter 和普通移动手感被 v6 牵连"
+    },
+    {
+      "id": "candy-crystal-lens",
+      "type": "passive",
+      "path": "passives/candy-crystal-lens.json",
+      "role": "小幅降低 XP 乘区，压住 Greedy 经济滚雪球"
+    },
+    {
+      "id": "sprinkle-spitter",
+      "type": "enemy",
+      "path": "enemies/sprinkle-spitter.json",
+      "role": "降低 XP 回报并保持可读远程压力，避免 Greedy / Kite 经济滚雪球"
+    },
+    {
+      "id": "caramel-sticky-ground",
+      "type": "weapon",
+      "path": "weapons/caramel-sticky-ground.json",
+      "role": "将区域控制收益从 v6 强度降到 v5/v6 中间值"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "恢复 90-210 秒节奏，并在 210-300 秒保留低 XP 远程压力"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v8，基于 v7 full pack 做局部覆盖。",
+      "v8 不削弱 rainbow-candy-shot、soda-bubble-pop 等 starter 武器，主要调整经济、焦糖控制和波次节奏。",
+      "该批次必须先跑 3 seed smoke；若通过再跑 10 seed 扩样，不能直接进入 accepted_content。"
+    ]
+  }
+}
