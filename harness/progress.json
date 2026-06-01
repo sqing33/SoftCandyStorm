@@ -1691,6 +1691,16 @@
       "id": "demo_buildcraft_repair_v15_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v15 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Greedy 仍为 0.0%，说明小额防御控制选项没有触达 225-229 秒失败窗口。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v15_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v16_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v16 候选包，只覆盖糖霜草地 210-300 秒波次，把一小部分高速 / 远程路线压力转成更慢、更可读的压力；该包通过候选静态链路、GameCore validate-content 和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v16_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v16_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v16 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Greedy 被过度救回到 100.0%，Route 也升到 66.7%，说明路线压力软化幅度和回填对象需要重做。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v16_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3608,6 +3618,11 @@
       "id": "demo_buildcraft_repair_v15_findings",
       "summary": "Demo buildcraft repair v15 静态链路通过但 3 seed 烟测仍失败：Coward 保持 33.3%，Greedy 仍为 0.0%。给 frosty-straw 增加轻量防御控制身份没有改变 Greedy 225-229 秒死亡窗口，下一步 v16 应直接微调糖霜草地 210-300 秒路线压力。",
       "report": "harness/failed_cases/fail_20260601_016_demo_buildcraft_repair_v15_defense_option_gap.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v16_findings",
+      "summary": "Demo buildcraft repair v16 静态链路通过但 3 seed 烟测仍失败：Greedy 从 0.0% 过度提升到 100.0%，Route 从 33.3% 提升到 66.7%。直接把路线压力转软会同时救回捡经验路线和固定路线，下一步 v17 应减少远程 / 侧翼压力，但把回填压力集中到慢速阻挡敌人。",
+      "report": "harness/failed_cases/fail_20260601_017_demo_buildcraft_repair_v16_route_overcorrection.json"
     }
   ],
   "next_recommended": [
@@ -3728,8 +3743,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v15 排除了防御标签 / 小额生存选项修复 Greedy 的假设。下一步创建 v16：直接微调糖霜草地 210-300 秒路线压力，把 225-229 秒失败窗口的一小部分快速/远程压力转成更安全的可读压力。",
-      "report": "harness/failed_cases/fail_20260601_016_demo_buildcraft_repair_v15_defense_option_gap.json"
+      "summary": "Demo buildcraft repair v16 证明路线压力可以救回 Greedy，但当前幅度让 Greedy 与 Route 同时过强。下一步创建 v17：不要继续增加基础软糖安全权重，而是降低远程 / 侧翼压力并用慢速阻挡敌人回填，争取让 Greedy 回到 25%-55%、Route 回到 10%-35%。",
+      "report": "harness/failed_cases/fail_20260601_017_demo_buildcraft_repair_v16_route_overcorrection.json"
     }
   ]
 }

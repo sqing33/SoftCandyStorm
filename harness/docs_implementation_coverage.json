@@ -170,7 +170,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v15 证明防御标签 / 小额生存选项仍未修复 Greedy。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
+      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v16 证明直接软化路线压力会让 Greedy 与 Route 同时过强。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -317,7 +317,12 @@
             "harness/generated_candidates/2026-06-01_demo_buildcraft_repair_v15_full_pack/metadata/materialization.json",
             "harness/reports/2026-06-01_demo_buildcraft_repair_v15_validate_candidates_001/summary.md",
             "harness/reports/2026-06-01_demo_buildcraft_repair_v15_matrix_300s_3seed_001/summary.md",
-            "harness/failed_cases/fail_20260601_016_demo_buildcraft_repair_v15_defense_option_gap.json"
+            "harness/failed_cases/fail_20260601_016_demo_buildcraft_repair_v15_defense_option_gap.json",
+            "harness/generated_candidate_patches/2026-06-01_demo_buildcraft_repair_v16_candidates/metadata/manifest.json",
+            "harness/generated_candidates/2026-06-01_demo_buildcraft_repair_v16_full_pack/metadata/materialization.json",
+            "harness/reports/2026-06-01_demo_buildcraft_repair_v16_validate_candidates_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_repair_v16_matrix_300s_3seed_001/summary.md",
+            "harness/failed_cases/fail_20260601_017_demo_buildcraft_repair_v16_route_overcorrection.json"
           ],
           "gaps": [
             "Phase 4 full pack 已通过当前会话 Harness validate-candidates、5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归，进入 simulated_candidates；20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0% 过强，现已通过 Bot 策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部 gate pass。",
@@ -334,6 +339,7 @@
             "Demo buildcraft repair v13 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；300 秒 / 3 seed / all Bot 烟测中 Coward 回到目标区间但 Greedy 仍为 0.0%，因此需要 v14 继续修复，且尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过 Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
             "Demo buildcraft repair v14 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；300 秒 / 3 seed / all Bot 烟测中 Coward 保持目标区间但 Greedy 仍为 0.0%，因此需要 v15 继续修复，且尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过 Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
             "Demo buildcraft repair v15 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；300 秒 / 3 seed / all Bot 烟测中 Coward 保持目标区间但 Greedy 仍为 0.0%，因此需要 v16 继续修复，且尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过 Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
+            "Demo buildcraft repair v16 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；300 秒 / 3 seed / all Bot 烟测中 Greedy 过度提升到 100.0%、Route 提升到 66.7%，因此需要 v17 继续修复，且尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过 Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
             "候选后续应进入人工设计审查和 9 局人工试玩；不得仅凭 Bot gate 或静态预算通过直接接入 Runtime 正式内容或发布候选。"
           ],
           "blockers": [
