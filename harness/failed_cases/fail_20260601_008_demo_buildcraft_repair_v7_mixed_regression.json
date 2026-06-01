@@ -1,0 +1,17 @@
+{
+  "case_id": "fail_20260601_008",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v7_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v7 passed the candidate static chain and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. KiteBot and TankBot returned to target bands, but RandomBot stayed high at 33.3%, CowardBot stayed low at 0.0%, GreedyXpBot stayed high at 100.0%, BossHunterBot fell to 0.0%, ZoneControlBot rose to 66.7%, and RouteBot stayed high at 66.7%.",
+  "root_cause": "Lowering sprinkle-spitter XP fixed only part of the v6 economy problem. The restored bubble-shoes mobility helped high-skill kiting but did not recover BossHunter's early stability, while v6's caramel-sticky-ground buff became too favorable for ZoneControl. Greedy and Route still convert the 210-300s wave into safe kills, so the current repair does not separate low-skill survivability, mid-skill economy, and control payoff cleanly enough.",
+  "fix": "Do not promote v7. The next repair should ease the 90-210s opening pressure back toward v5 to recover Coward and BossHunter, reduce caramel-sticky-ground to a midpoint between v5 and v6, and keep ranged pressure as low-XP challenge rather than high-value economy.",
+  "validation": "The next candidate must rerun the full candidate static chain and 300s / 3-seed all-Bot smoke before any 10-seed expansion. Passing requires RandomBot 0%-15%, CowardBot and RouteBot 10%-35%, Greedy/Tank/ZoneControl 25%-55%, and Kite/BossHunter 45%-75%.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v7_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v7_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v7_static_budget_001/summary.md"
+  ]
+}

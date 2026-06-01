@@ -1601,6 +1601,16 @@
       "id": "demo_buildcraft_repair_v6_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v6 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，暴露高 XP 远程压力敌人反而喂强 Greedy / Kite 的问题。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v6_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v7_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v7 候选包，恢复 bubble-shoes 移动手感，降低 sprinkle-spitter XP，并把 210-300 秒远程压力回落到中间值；该包通过候选静态链路和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v7_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v7_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v7 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Kite / Tank 回到目标区间，但 Random、Coward、Greedy、BossHunter、ZoneControl、Route 仍越界。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v7_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3473,6 +3483,11 @@
       "id": "demo_buildcraft_repair_v6_findings",
       "summary": "Demo buildcraft repair v6 静态链路通过但 3 seed 烟测失败：Random 33.3%、Coward 0.0%、Greedy 100.0%、Kite 100.0%、BossHunter 33.3%、Route 66.7%。下一步 v7 应降低远程压力敌人 XP 回报，避免把反风筝压力转化为高技能经济滚雪球。",
       "report": "harness/failed_cases/fail_20260601_007_demo_buildcraft_repair_v6_overcorrection.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v7_findings",
+      "summary": "Demo buildcraft repair v7 静态链路通过但 3 seed 烟测仍失败：Random 33.3%、Coward 0.0%、Greedy 100.0%、BossHunter 0.0%、ZoneControl 66.7%、Route 66.7%。下一步 v8 应恢复 90-210 秒开局压力到 v5 附近，并把焦糖控制收益降到 v5/v6 中间值。",
+      "report": "harness/failed_cases/fail_20260601_008_demo_buildcraft_repair_v7_mixed_regression.json"
     }
   ],
   "next_recommended": [
@@ -3593,8 +3608,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v6 已在 300 秒 / 3 seed / all Bot 烟测中失败。下一步创建 v7：保留 ZoneControl 焦糖收益，恢复移动手感，降低 sprinkle-spitter XP，并用不喂经济的远程压力重新测试。",
-      "report": "harness/failed_cases/fail_20260601_007_demo_buildcraft_repair_v6_overcorrection.json"
+      "summary": "Demo buildcraft repair v7 已在 300 秒 / 3 seed / all Bot 烟测中失败。下一步创建 v8：恢复 90-210 秒开局压力到 v5 附近，降低 caramel-sticky-ground 到 v5/v6 中间值，继续保持 sprinkle-spitter 低 XP 远程压力。",
+      "report": "harness/failed_cases/fail_20260601_008_demo_buildcraft_repair_v7_mixed_regression.json"
     }
   ]
 }
