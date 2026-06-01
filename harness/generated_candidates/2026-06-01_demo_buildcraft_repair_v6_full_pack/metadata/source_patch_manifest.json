@@ -1,0 +1,72 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v6_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v6",
+    "goal": "修复 repair v5 在 10 seed 扩样中暴露的 Coward / Greedy / Kite / Route 偏高和 ZoneControl 偏低问题，同时避免继续全局削弱 starter 武器。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "bubble-shoes",
+      "type": "passive",
+      "path": "passives/bubble-shoes.json",
+      "role": "温和降低每级移速收益，压低机动构筑过强"
+    },
+    {
+      "id": "sprinkle-spitter",
+      "type": "enemy",
+      "path": "enemies/sprinkle-spitter.json",
+      "role": "增强可读远程压力，用于约束过稳风筝和贪经验路线"
+    },
+    {
+      "id": "caramel-sticky-ground",
+      "type": "weapon",
+      "path": "weapons/caramel-sticky-ground.json",
+      "role": "增强 ZoneControl 偏好的区域控制收益"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "在 210-300 秒提高 ranged / projectile-pressure 权重"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v6，基于 v5 full pack 做局部覆盖。",
+      "v6 不削弱 rainbow-candy-shot、soda-bubble-pop 等 starter 武器，避免伤害普通玩家基础手感。",
+      "该批次必须先跑 3 seed smoke，再跑 10 seed 扩样，不能直接进入 accepted_content。"
+    ]
+  }
+}
