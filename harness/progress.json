@@ -1736,6 +1736,11 @@
       "id": "demo_buildcraft_repair_v19_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v19 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Coward 降到 0.0%，Greedy 和 Route 均升到 66.7%，说明 sugar-moth 侧翼替换方向失败。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v19_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v20_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v20 候选包，回到 v18 波次基线并只把 210-300 秒段 0.01 sandwich-cookie-creep 权重转给 sprinkle-spitter；该包通过候选静态链路、GameCore validate-content 和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_validate_candidates_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3673,6 +3678,11 @@
       "id": "demo_buildcraft_repair_v19_findings",
       "summary": "Demo buildcraft repair v19 静态链路通过但 3 seed 烟测失败：把 bouncy-gummy 权重转给 sugar-moth 后，Coward 掉到 0.0%，Greedy 和 Route 均为 66.7%。下一步应回到 v18 波次基线，不继续走 sugar-moth 侧翼替换方向。",
       "report": "harness/failed_cases/fail_20260601_020_demo_buildcraft_repair_v19_side_pressure_regression.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v20_findings",
+      "summary": "Demo buildcraft repair v20 已通过静态链路、GameCore validate-content 和隔离 validate-candidates。临时 10 seed 探针显示它可把 Route 拉回目标并保住 Coward 下限，但 Greedy 与 Kite 仍偏高；下一步跑正式 3 seed 烟测，再决定是否记录扩样失败并进入 v21。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_validate_candidates_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3793,8 +3803,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v19 证明 sugar-moth 侧翼替换方向失败：Coward 低于目标，Greedy 和 Route 反而偏高。下一步创建 v20：回到 v18 波次基线，优先尝试更细的经济 / 构筑调整，或带低技能补偿的窄压力修复。",
-      "report": "harness/failed_cases/fail_20260601_020_demo_buildcraft_repair_v19_side_pressure_regression.json"
+      "summary": "Demo buildcraft repair v20 已完成候选静态链路；下一步跑 300 秒 / 3 seed / all Bot 烟测。若通过，应继续做 10 seed 扩样并准备 v21 修复 Greedy / Kite 过高安全收益。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_validate_candidates_001/summary.md"
     }
   ]
 }

@@ -1,0 +1,55 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v20_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v20",
+    "goal": "基于 v18 full pack 回避 v19 侧翼替换失败方向，先把 Route 的 10 seed 胜率拉回目标区间，同时保住 Coward 低技能下限。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "在 v18 Boss 后窗口基础上继续小幅提高糖针吐吐远程压力，优先修复固定路线安全收益。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v20，基于 v18 full pack 只覆盖糖霜草地标准波次。",
+      "v20 不沿用 v19 的 sugar-moth 侧翼替换；它只把 210-300 秒段的 sandwich-cookie-creep 权重从 0.17 降到 0.16，并把 sprinkle-spitter 从 0.07 提到 0.08。",
+      "临时 300 秒 / 10 seed / all Bot 探针显示 Route 从 v18 的 40.0% 回到 30.0%，Coward 保持 10.0%；Greedy 70.0% 和 Kite 80.0% 仍需后续 v21 继续修复。",
+      "该批次必须先跑正式静态链路和 3 seed smoke；若通过再记录 10 seed 扩样结论，不能直接进入 accepted_content。"
+    ]
+  }
+}
