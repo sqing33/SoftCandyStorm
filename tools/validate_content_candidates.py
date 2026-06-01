@@ -370,18 +370,28 @@ def validate_evolution(
     if not isinstance(targeting, dict):
         errors.append(f"evolution `{item_id}` weapon_definition.targeting must be an object")
     else:
-        if not is_nonempty_string(targeting.get("mode")):
-            errors.append(f"evolution `{item_id}` weapon_definition.targeting.mode must be non-empty")
+        if targeting.get("mode") not in ALLOWED_TARGETING_MODES:
+            errors.append(f"evolution `{item_id}` weapon_definition.targeting.mode is invalid: {targeting.get('mode')}")
         if not is_number(targeting.get("range")) or targeting["range"] < 0:
             errors.append(f"evolution `{item_id}` weapon_definition.targeting.range must be non-negative")
     base_stats = weapon_definition.get("base_stats")
     if not isinstance(base_stats, dict):
         errors.append(f"evolution `{item_id}` weapon_definition.base_stats must be an object")
     else:
-        if not is_number(base_stats.get("damage")) or base_stats["damage"] < 0:
-            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.damage must be non-negative")
+        if not is_number(base_stats.get("damage")) or base_stats["damage"] <= 0:
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.damage must be positive")
         if not is_number(base_stats.get("cooldown_ms")) or base_stats["cooldown_ms"] <= 0:
             errors.append(f"evolution `{item_id}` weapon_definition.base_stats.cooldown_ms must be positive")
+        if not isinstance(base_stats.get("projectile_count"), int) or isinstance(base_stats.get("projectile_count"), bool) or base_stats["projectile_count"] <= 0:
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.projectile_count must be positive integer")
+        if not is_number(base_stats.get("area_radius")) or base_stats["area_radius"] <= 0:
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.area_radius must be positive")
+        if "projectile_speed" in base_stats and (not is_number(base_stats.get("projectile_speed")) or base_stats["projectile_speed"] <= 0):
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.projectile_speed must be positive when present")
+        if "pierce" in base_stats and (not isinstance(base_stats.get("pierce"), int) or isinstance(base_stats.get("pierce"), bool) or base_stats["pierce"] <= 0):
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.pierce must be positive integer when present")
+        if "duration_ms" in base_stats and (not is_number(base_stats.get("duration_ms")) or base_stats["duration_ms"] < 0):
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.duration_ms must be non-negative when present")
 
     return errors, warnings
 
