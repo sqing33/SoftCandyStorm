@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260601_019",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v18_full_pack",
+  "seed": "70000-70009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v18 passed the 300s / 3-seed all-Bot smoke matrix, but failed the 300s / 10-seed expansion. Idle 0.0%, Random 0.0%, Coward 10.0%, Tank 50.0%, BossHunter 50.0%, and ZoneControl 30.0% stayed inside target bands. Greedy reached 70.0%, Kite reached 80.0%, and Route reached 40.0%, all above their configured upper bounds.",
+  "root_cause": "The v18 0.01 ranged-pressure restoration was enough to make the first three seeds look healthy, but the wider seed range still leaves the 210-300 second recovery window too safe for greedy pickup, high-skill kiting, and fixed-route movement. Coward sits exactly at the 10.0% lower bound, so the next repair cannot simply add broad pressure everywhere without risking low-skill underperformance.",
+  "fix": "Do not promote v18 to simulated or playtest candidates. Create v19 as a generated candidate that adds a narrower anti-route / anti-kite pressure adjustment, preferably by moving a small amount of safe or slow-blocker weight in the 210-300 second segment into readable ranged or side-pressure enemies while preserving Coward's single recovery win. Avoid changing player weapons, passives, boss stats, early segments, or Harness gate thresholds.",
+  "validation": "Rerun the candidate static chain, then rerun the 300s / 3-seed all-Bot smoke matrix and the 300s / 10-seed all-Bot expansion. A viable repair must keep Coward between 10%-35%, Greedy and Tank between 25%-55%, Kite and BossHunter between 45%-75%, Route between 10%-35%, and Idle / Random within their floor bands before Replay regression or human review.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_10seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_10seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v18_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v18_validate_candidates_001/summary.md"
+  ]
+}
