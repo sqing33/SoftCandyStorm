@@ -1,0 +1,54 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v19_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v19",
+    "goal": "基于 v18 的 10 seed 扩样失败，增加更窄的侧翼路线压力，压低 Greedy、Kite 和 Route 的过高胜率，同时避免 Coward 跌破 10% 下限。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "在 210-300 秒段减少基础软糖安全权重，并小幅增加糖粉飞蛾侧翼压力。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v19，基于 v18 full pack 只覆盖糖霜草地标准波次。",
+      "v19 只把 210-300 秒段的 bouncy-gummy 权重从 0.30 降到 0.28，并把 sugar-moth 从 0.07 提到 0.09。",
+      "该批次必须先跑 3 seed smoke；若通过再跑 10 seed 扩样，不能直接进入 accepted_content。"
+    ]
+  }
+}
