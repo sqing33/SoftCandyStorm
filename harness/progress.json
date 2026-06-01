@@ -1586,6 +1586,11 @@
       "id": "demo_buildcraft_repair_v5_bot_matrix",
       "summary": "完成 Demo buildcraft repair v5 的 300 秒 / 3 seed / all Bot 小矩阵；配合 Kite fallback 与 Route 彩虹糖弹成型优先级校准后，9 个规则 Bot 全部进入当前目标区间。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v5_seed_expansion_matrix",
+      "summary": "完成 Demo buildcraft repair v5 的 300 秒 / 10 seed / all Bot 扩样矩阵；扩样暴露 Coward、Greedy、Kite、ZoneControl、Route 越过目标区间，结论回到 repair。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_10seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3451,8 +3456,8 @@
     },
     {
       "id": "demo_buildcraft_repair_v5_findings",
-      "summary": "Demo buildcraft repair v5 小矩阵已把 Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 全部拉回目标区间；下一步应扩大 seed、跑 Replay 回归，并准备人工设计审查和 9 局人工试玩，不能直接进入 accepted_content。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
+      "summary": "Demo buildcraft repair v5 的 3 seed 小矩阵曾全 Bot 进目标区间，但 10 seed 扩样失败：Coward 60.0%、Greedy 60.0%、Kite 90.0%、ZoneControl 20.0%、Route 40.0%。v5 不能推进，下一步应做 v6 窄修。",
+      "report": "harness/failed_cases/fail_20260601_006_demo_buildcraft_repair_v5_seed_expansion.json"
     }
   ],
   "next_recommended": [
@@ -3573,8 +3578,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v5 已通过 300 秒 / 3 seed / all Bot 小矩阵，下一步应扩大 seed 数并跑 Replay 回归，同时创建人工设计审查草稿和 9 局试玩计划。所有内容仍不得进入 accepted_content，直到真人设计审查、人工试玩、final acceptance 和 accepted content lockfile 通过。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
+      "summary": "Demo buildcraft repair v5 已在 300 秒 / 10 seed / all Bot 扩样中失败。下一步创建 v6：提升 210-300 秒可读反风筝压力，温和压低机动构筑过强，并增强 ZoneControl 的控制收益；修后先跑 3 seed smoke，再跑 10 seed 扩样。",
+      "report": "harness/failed_cases/fail_20260601_006_demo_buildcraft_repair_v5_seed_expansion.json"
     }
   ]
 }

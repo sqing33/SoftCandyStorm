@@ -1,0 +1,17 @@
+{
+  "case_id": "fail_20260601_006",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v5_full_pack",
+  "seed": "71000-71009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v5 passed the 300s / 3-seed small matrix, but failed the 300s / 10-seed expansion. IdleBot and RandomBot stayed at 0.0%, TankBot stayed in range at 40.0%, and BossHunterBot stayed in range at 70.0%. CowardBot rose to 60.0%, GreedyXpBot rose to 60.0%, KiteBot rose to 90.0%, ZoneControlBot dropped to 20.0%, and RouteBot rose to 40.0%, so the candidate is not promotable.",
+  "root_cause": "The v5 210-300s ranged pressure was enough to make the 3-seed probe look healthy but not enough across wider seeds. Safe movement and mobility-biased builds still avoid or outgrow most midgame pressure, while ZoneControlBot does not gain enough control payoff from caramel / sour control weapons to stay inside the mid-skill target band.",
+  "fix": "Keep v5 as a failed repair candidate and create a v6 patch. The v6 direction should increase readable 210-300s anti-kite pressure, mildly reduce mobility-overperformance, and improve the ZoneControl-specific control payoff without broadly nerfing starter weapons or lowering Harness gates.",
+  "validation": "Rerun frosting-grassland 300s all-Bot matrices after v6. A viable repair must pass the 3-seed smoke matrix and then stay inside target bands on the 10-seed expansion before Replay regression, design review, manual playtest, final acceptance, or accepted content lockfile work.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_10seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_10seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
+  ]
+}
