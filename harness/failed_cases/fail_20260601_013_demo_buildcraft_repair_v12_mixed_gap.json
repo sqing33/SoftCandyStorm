@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_013",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v12_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v12 passed the candidate static chain and isolated validate-candidates, but the 300s / 3-seed all-Bot smoke matrix still failed. Idle, Random, Kite, Tank, BossHunter, ZoneControl, and Route were inside their target bands. CowardBot fell back to 0.0%, below the 10%-35% low-skill target, and GreedyXpBot stayed at 0.0%, below the 25%-55% mid-skill target.",
+  "root_cause": "v12 set sprinkle-spitter XP to an intermediate value of 4 while keeping v11's readable projectile parameters. That was not enough reward to preserve v11's Coward recovery seed, but it also did not restore v10's Greedy seed 70001 victory. The result suggests Coward needs the full reward recovery, while Greedy's v11/v12 regression is more likely tied to the changed ranged-spit timing/readability path divergence than to the exact XP value alone.",
+  "fix": "Do not promote v12 or run the 10-seed expansion. The next repair should keep the v11 Coward reward recovery, but restore sprinkle-spitter's projectile timing/spread to the v10 values to test whether Greedy's v10 route survives with full Coward-facing XP. Avoid changing wave composition, player weapons, or passives until this single-axis hypothesis is tested.",
+  "validation": "Create v13 as a generated candidate only, rerun the full candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. Passing requires CowardBot 10%-35%, GreedyXpBot 25%-55%, RouteBot 10%-35%, and all other bots remaining in their configured target bands before any 10-seed expansion.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v12_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v12_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v12_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v12_validate_candidates_001/summary.md"
+  ]
+}
