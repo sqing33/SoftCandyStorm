@@ -1,0 +1,84 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v9_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v9",
+    "goal": "窄修 repair v8 剩余的 Greedy / Route 偏高问题：降低 XP 与拾取收益，同时避免破坏 v8 已通过的 Coward、BossHunter、ZoneControl 等标尺。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "bubble-shoes",
+      "type": "passive",
+      "path": "passives/bubble-shoes.json",
+      "role": "恢复每级移速收益，避免 BossHunter 和普通移动手感被 v6 牵连"
+    },
+    {
+      "id": "candy-crystal-lens",
+      "type": "passive",
+      "path": "passives/candy-crystal-lens.json",
+      "role": "进一步降低 XP 乘区，压住 Greedy 经济滚雪球"
+    },
+    {
+      "id": "star-spoon",
+      "type": "passive",
+      "path": "passives/star-spoon.json",
+      "role": "小幅降低拾取半径，减少 Route 固定路线安全收益"
+    },
+    {
+      "id": "sprinkle-spitter",
+      "type": "enemy",
+      "path": "enemies/sprinkle-spitter.json",
+      "role": "降低 XP 回报并保持可读远程压力，避免 Greedy / Kite 经济滚雪球"
+    },
+    {
+      "id": "caramel-sticky-ground",
+      "type": "weapon",
+      "path": "weapons/caramel-sticky-ground.json",
+      "role": "将区域控制收益从 v6 强度降到 v5/v6 中间值"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "恢复 90-210 秒节奏，并在 210-300 秒保留低 XP 远程压力"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v9，基于 v8 full pack 做局部覆盖。",
+      "v9 不改 starter 武器、Boss 血量或大范围波次压力，只窄调经济收益。",
+      "该批次必须先跑 3 seed smoke；若通过再跑 10 seed 扩样，不能直接进入 accepted_content。"
+    ]
+  }
+}
