@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_010",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v9_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v9 passed the candidate static chain and isolated validate-candidates, but its 300s / 3-seed all-Bot smoke matrix still failed: CowardBot was too low at 0.0%, GreedyXpBot remained too high at 100.0%, and RouteBot remained too high at 66.7%. Idle, Random, Kite, Tank, BossHunter, and ZoneControl stayed within target bands.",
+  "root_cause": "The narrow economy nerf reduced candy-crystal-lens and star-spoon scaling but did not remove the safe Greedy/Route survival pattern. At the same time, the weaker pickup/XP economy hurt Coward's ability to recover from early and mid pressure. This indicates the remaining problem is not just passive economy magnitude; it likely involves fixed-route safety, XP access geometry, or localized wave pressure windows that allow Greedy and Route to survive while punishing lower-skill pathing.",
+  "fix": "Do not promote v9 or run the 10-seed expansion. The next candidate should avoid further broad economy nerfs and instead target the safe-route exploit more directly: adjust localized wave timing, enemy mix, or map/route pressure so Greedy and Route lose guaranteed safe collection paths while Coward keeps at least one recoverable seed. Preserve v9's passes for Idle, Random, Kite, Tank, BossHunter, and ZoneControl.",
+  "validation": "Create v10 as a generated candidate only, rerun the full candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. Passing requires CowardBot 10%-35%, GreedyXpBot 25%-55%, and RouteBot 10%-35% without regressing Idle, Random, Kite, Tank, BossHunter, or ZoneControl out of their target bands.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v9_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v9_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v9_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v9_validate_candidates_001/summary.md"
+  ]
+}

@@ -170,7 +170,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v5 已通过 300 秒 / 3 seed / all Bot 小矩阵，9 个规则 Bot 全部进入目标区间。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
+      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v5 曾通过 300 秒 / 3 seed / all Bot 小矩阵但 10 seed 扩样失败，repair v9 仍在 3 seed 烟测中暴露 Coward 偏低、Greedy / Route 偏高。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -282,7 +282,12 @@
             "harness/generated_candidates/2026-06-01_demo_buildcraft_repair_v8_full_pack/metadata/materialization.json",
             "harness/reports/2026-06-01_demo_buildcraft_repair_v8_validate_candidates_001/summary.md",
             "harness/reports/2026-06-01_demo_buildcraft_repair_v8_matrix_300s_3seed_001/summary.md",
-            "harness/failed_cases/fail_20260601_009_demo_buildcraft_repair_v8_greedy_route_gap.json"
+            "harness/failed_cases/fail_20260601_009_demo_buildcraft_repair_v8_greedy_route_gap.json",
+            "harness/generated_candidate_patches/2026-06-01_demo_buildcraft_repair_v9_candidates/metadata/manifest.json",
+            "harness/generated_candidates/2026-06-01_demo_buildcraft_repair_v9_full_pack/metadata/materialization.json",
+            "harness/reports/2026-06-01_demo_buildcraft_repair_v9_validate_candidates_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_repair_v9_matrix_300s_3seed_001/summary.md",
+            "harness/failed_cases/fail_20260601_010_demo_buildcraft_repair_v9_mixed_economy_gap.json"
           ],
           "gaps": [
             "Phase 4 full pack 已通过当前会话 Harness validate-candidates、5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归，进入 simulated_candidates；20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0% 过强，现已通过 Bot 策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部 gate pass。",
@@ -291,7 +296,8 @@
             "Demo buildcraft repair v5 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates 和 300 秒 / 3 seed / all Bot 小矩阵；但 300 秒 / 10 seed / all Bot 扩样失败，Coward、Greedy、Kite、ZoneControl、Route 越过目标区间，因此需要继续修复。",
             "Demo buildcraft repair v6 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；但 300 秒 / 3 seed / all Bot 烟测失败，Random、Coward、Greedy、Kite、BossHunter、Route 越过目标区间，因此需要继续修复。",
             "Demo buildcraft repair v7 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；但 300 秒 / 3 seed / all Bot 烟测失败，Random、Coward、Greedy、BossHunter、ZoneControl、Route 越过目标区间，因此需要继续修复。",
-            "Demo buildcraft repair v8 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；300 秒 / 3 seed / all Bot 烟测让 7 个 Bot 进入目标区间，但 Greedy、Route 仍越过目标区间，因此需要 v9 修复，且尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过 Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
+            "Demo buildcraft repair v8 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；300 秒 / 3 seed / all Bot 烟测让 7 个 Bot 进入目标区间，但 Greedy、Route 仍越过目标区间，因此需要继续修复，且尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过 Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
+            "Demo buildcraft repair v9 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；但 300 秒 / 3 seed / all Bot 烟测失败，Coward 低于目标区间，Greedy、Route 仍高于目标区间，因此需要 v10 修复，且尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过 Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
             "候选后续应进入人工设计审查和 9 局人工试玩；不得仅凭 Bot gate 或静态预算通过直接接入 Runtime 正式内容或发布候选。"
           ],
           "blockers": [
