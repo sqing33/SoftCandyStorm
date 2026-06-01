@@ -19,6 +19,9 @@ from typing import Any
 
 ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ALLOWED_RARITIES = {"common", "rare", "epic", "legendary", "boss", "debug"}
+BASE_ID_CATEGORIES = ("passives", "enemies", "waves", "maps", "bosses")
+SUPPORTED_CONTENT_CATEGORIES = ("passives", "enemies", "waves")
+
 ALLOWED_PASSIVE_STATS = {
     "max_health",
     "move_speed",
@@ -78,7 +81,7 @@ def discover_candidates(root: Path) -> list[Path]:
 
 
 def collect_base_ids(base_content_dir: Path | None) -> dict[str, set[str]]:
-    ids: dict[str, set[str]] = {"passives": set(), "enemies": set()}
+    ids: dict[str, set[str]] = {category: set() for category in BASE_ID_CATEGORIES}
     if base_content_dir is None or not base_content_dir.exists():
         return ids
     for category in ids:
@@ -93,6 +96,23 @@ def collect_base_ids(base_content_dir: Path | None) -> dict[str, set[str]]:
             item_id = payload.get("id")
             if is_nonempty_string(item_id):
                 ids[category].add(item_id)
+    return ids
+
+
+def collect_candidate_ids(candidate_dir: Path) -> dict[str, set[str]]:
+    ids: dict[str, set[str]] = {category: set() for category in SUPPORTED_CONTENT_CATEGORIES}
+    for category in SUPPORTED_CONTENT_CATEGORIES:
+        category_dir = candidate_dir / category
+        if not category_dir.exists():
+            continue
+        for path in sorted(category_dir.glob("*.json")):
+            try:
+                payload = load_json(path)
+            except (OSError, ValueError, json.JSONDecodeError):
+                continue
+            item_id = payload.get("id")
+            if is_nonempty_string(item_id):
+                ids[category].add(str(item_id))
     return ids
 
 
@@ -218,6 +238,89 @@ def validate_enemy(
     return errors, warnings
 
 
+def validate_wave(
+    path: Path,
+    payload: dict[str, Any],
+    base_ids: dict[str, set[str]],
+    candidate_ids: dict[str, set[str]],
+    allow_overrides: bool,
+) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    item_id = payload.get("id")
+    display_id = item_id if is_nonempty_string(item_id) else path.stem
+
+    if not is_nonempty_string(item_id) or not ID_PATTERN.match(str(item_id)):
+        errors.append(f"wave `{display_id}` has invalid kebab-case id")
+    elif item_id != path.stem:
+        warnings.append(f"wave `{item_id}` id does not match file stem `{path.stem}`")
+
+    if is_nonempty_string(item_id) and item_id in base_ids["waves"] and not allow_overrides:
+        errors.append(f"wave `{item_id}` duplicates base content id")
+
+    if not is_nonempty_string(payload.get("name")):
+        errors.append(f"wave `{display_id}` missing non-empty `name`")
+    if not isinstance(payload.get("version"), int) or payload["version"] <= 0:
+        errors.append(f"wave `{display_id}` version must be a positive integer")
+
+    map_id = payload.get("map_id")
+    if not is_nonempty_string(map_id) or map_id not in base_ids["maps"]:
+        errors.append(f"wave `{display_id}` references unknown map `{map_id}`")
+
+    if not is_number(payload.get("duration_seconds")) or payload["duration_seconds"] <= 0:
+        errors.append(f"wave `{display_id}` duration_seconds must be positive")
+
+    known_enemies = base_ids["enemies"] | candidate_ids["enemies"]
+    segments = payload.get("segments")
+    if not isinstance(segments, list) or not segments:
+        errors.append(f"wave `{display_id}` segments must be a non-empty list")
+    else:
+        for segment_index, segment in enumerate(segments):
+            if not isinstance(segment, dict):
+                errors.append(f"wave `{display_id}` segments[{segment_index}] must be an object")
+                continue
+            start_second = segment.get("start_second")
+            end_second = segment.get("end_second")
+            if not is_number(start_second) or not is_number(end_second) or start_second >= end_second:
+                errors.append(f"wave `{display_id}` segments[{segment_index}] must have start_second < end_second")
+            for field in ("spawn_interval_ms", "spawn_count", "max_alive"):
+                if not is_number(segment.get(field)) or segment[field] <= 0:
+                    errors.append(f"wave `{display_id}` segments[{segment_index}].{field} must be positive")
+            enemy_pool = segment.get("enemy_pool")
+            if not isinstance(enemy_pool, list) or not enemy_pool:
+                errors.append(f"wave `{display_id}` segments[{segment_index}].enemy_pool must be non-empty")
+                continue
+            for entry_index, entry in enumerate(enemy_pool):
+                if not isinstance(entry, dict):
+                    errors.append(f"wave `{display_id}` enemy_pool[{entry_index}] must be an object")
+                    continue
+                enemy_id = entry.get("enemy_id")
+                if not is_nonempty_string(enemy_id) or enemy_id not in known_enemies:
+                    errors.append(f"wave `{display_id}` references unknown enemy `{enemy_id}`")
+                if not is_number(entry.get("weight")) or entry["weight"] <= 0:
+                    errors.append(f"wave `{display_id}` enemy `{enemy_id}` weight must be positive")
+
+    boss_events = payload.get("boss_events", [])
+    if not isinstance(boss_events, list):
+        errors.append(f"wave `{display_id}` boss_events must be a list when present")
+    else:
+        for event_index, event in enumerate(boss_events):
+            if not isinstance(event, dict):
+                errors.append(f"wave `{display_id}` boss_events[{event_index}] must be an object")
+                continue
+            boss_id = event.get("boss_id")
+            if not is_nonempty_string(boss_id) or boss_id not in base_ids["bosses"]:
+                errors.append(f"wave `{display_id}` references unknown boss `{boss_id}`")
+            if not is_number(event.get("time_second")) or event["time_second"] < 0:
+                errors.append(f"wave `{display_id}` boss_events[{event_index}].time_second must be non-negative")
+
+    pressure_budget = payload.get("pressure_budget")
+    if not isinstance(pressure_budget, dict):
+        warnings.append(f"wave `{display_id}` should include pressure_budget for review")
+
+    return errors, warnings
+
+
 def validate_manifest(candidate_dir: Path) -> tuple[list[str], list[str]]:
     manifest_path = candidate_dir / "metadata" / "manifest.json"
     errors: list[str] = []
@@ -257,6 +360,7 @@ def validate_candidate(
     allow_overrides: bool,
 ) -> dict[str, Any]:
     errors, warnings = validate_manifest(candidate_dir)
+    candidate_ids = collect_candidate_ids(candidate_dir)
     content_count = 0
 
     for category, validator in (
@@ -279,6 +383,19 @@ def validate_candidate(
                 base_ids[category],
                 allow_overrides,
             )
+            errors.extend(item_errors)
+            warnings.extend(item_warnings)
+
+    category_dir = candidate_dir / "waves"
+    if category_dir.exists():
+        for path in sorted(category_dir.glob("*.json")):
+            content_count += 1
+            try:
+                payload = load_json(path)
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                errors.append(f"{path.relative_to(candidate_dir)} is invalid JSON: {error}")
+                continue
+            item_errors, item_warnings = validate_wave(path, payload, base_ids, candidate_ids, allow_overrides)
             errors.extend(item_errors)
             warnings.extend(item_warnings)
 

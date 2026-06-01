@@ -89,6 +89,36 @@ def make_candidate(root: Path, *, duplicate_id: bool = False, runtime_integrated
             "unlock": {"type": "discover"},
         },
     )
+    write_json(
+        candidate_dir / "waves" / "frosting-grassland-standard.json",
+        {
+            "id": "frosting-grassland-standard",
+            "name": "糖霜草地候选波次",
+            "version": 1,
+            "map_id": "frosting-grassland",
+            "duration_seconds": 600,
+            "segments": [
+                {
+                    "start_second": 0,
+                    "end_second": 90,
+                    "spawn_interval_ms": 1250,
+                    "spawn_count": 1,
+                    "max_alive": 35,
+                    "enemy_pool": [{"enemy_id": "bouncy-gummy", "weight": 1.0}],
+                },
+                {
+                    "start_second": 90,
+                    "end_second": 210,
+                    "spawn_interval_ms": 1000,
+                    "spawn_count": 2,
+                    "max_alive": 50,
+                    "enemy_pool": [{"enemy_id": "licorice-skipper", "weight": 0.2}, {"enemy_id": "bouncy-gummy", "weight": 0.8}],
+                },
+            ],
+            "boss_events": [{"time_second": 210, "boss_id": "runaway-sugar-mixer"}],
+            "pressure_budget": {"early": "low", "middle": "medium", "late": "high"},
+        },
+    )
     return candidate_dir
 
 
@@ -97,11 +127,11 @@ class ContentCandidateValidatorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir) / "generated_candidate_patches"
             candidate = make_candidate(root)
-            report = build_report(candidate, base_content_dir=Path("content/base_demo"), allow_overrides=False)
+            report = build_report(candidate, base_content_dir=Path("content/base_demo"), allow_overrides=True)
 
             self.assertEqual(report["decision"], "content_candidates_valid")
             self.assertEqual(report["candidate_count"], 1)
-            self.assertEqual(report["content_count"], 2)
+            self.assertEqual(report["content_count"], 3)
 
     def test_duplicate_base_id_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -135,6 +165,7 @@ class ContentCandidateValidatorTests(unittest.TestCase):
                     str(candidate),
                     "--base-content-dir",
                     "content/base_demo",
+                    "--allow-overrides",
                     "--report",
                     str(report_path),
                     "--markdown",

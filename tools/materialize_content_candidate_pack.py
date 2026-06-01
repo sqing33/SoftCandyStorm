@@ -27,7 +27,7 @@ CONTENT_CATEGORIES = [
     "maps",
     "events",
 ]
-SUPPORTED_PATCH_CATEGORIES = {"passives", "enemies"}
+SUPPORTED_PATCH_CATEGORIES = {"passives", "enemies", "waves"}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -65,24 +65,27 @@ def overlay_category(
     output_dir: Path,
     category: str,
     allow_overrides: bool,
-) -> tuple[int, list[str]]:
+) -> tuple[int, int, list[str]]:
     source_dir = patch_dir / category
     target_dir = output_dir / category
     errors: list[str] = []
     overlaid = 0
+    overridden = 0
     if not source_dir.exists():
-        return overlaid, errors
+        return overlaid, overridden, errors
     target_dir.mkdir(parents=True, exist_ok=True)
     for source_path in content_files(source_dir):
         target_path = target_dir / source_path.name
-        if target_path.exists() and not allow_overrides:
-            errors.append(
-                f"{category}/{source_path.name} already exists in base pack; use --allow-overrides only for explicit repairs"
-            )
-            continue
+        if target_path.exists():
+            if not allow_overrides:
+                errors.append(
+                    f"{category}/{source_path.name} already exists in base pack; use --allow-overrides only for explicit repairs"
+                )
+                continue
+            overridden += 1
         shutil.copy2(source_path, target_path)
         overlaid += 1
-    return overlaid, errors
+    return overlaid, overridden, errors
 
 
 def manifest_batch_id(candidate_dir: Path) -> str:
@@ -117,10 +120,12 @@ def materialize_pack(
     }
 
     overlay_counts: dict[str, int] = {}
+    overridden_counts: dict[str, int] = {}
     errors: list[str] = []
     for category in sorted(SUPPORTED_PATCH_CATEGORIES):
-        count, category_errors = overlay_category(patch_dir, output_dir, category, allow_overrides)
+        count, overridden, category_errors = overlay_category(patch_dir, output_dir, category, allow_overrides)
         overlay_counts[category] = count
+        overridden_counts[category] = overridden
         errors.extend(category_errors)
 
     if errors:
@@ -142,6 +147,7 @@ def materialize_pack(
         "allow_overrides": allow_overrides,
         "copied_counts": copied_counts,
         "overlay_counts": overlay_counts,
+        "overridden_counts": overridden_counts,
         "project_rules": {
             "candidate_only": True,
             "accepted_content": False,
@@ -205,7 +211,9 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         "",
     ]
     for category, count in sorted(report["overlay_counts"].items()):
-        lines.append(f"- `{category}`: {count}")
+        overridden = report.get("overridden_counts", {}).get(category, 0)
+        suffix = f" ({overridden} overrides)" if overridden else ""
+        lines.append(f"- `{category}`: {count}{suffix}")
     lines.extend(["", "## Copied Base Counts", ""])
     for category, count in sorted(report["copied_counts"].items()):
         lines.append(f"- `{category}`: {count}")

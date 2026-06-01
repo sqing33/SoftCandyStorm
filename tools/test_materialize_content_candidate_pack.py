@@ -55,6 +55,7 @@ def make_patch(root: Path, *, duplicate_passive: bool = False) -> Path:
     )
     write_json(patch / "passives" / f"{passive_id}.json", {"id": passive_id})
     write_json(patch / "enemies" / "licorice-skipper.json", {"id": "licorice-skipper"})
+    write_json(patch / "waves" / "frosting-grassland-standard.json", {"id": "frosting-grassland-standard"})
     return patch
 
 
@@ -68,7 +69,8 @@ class MaterializeContentCandidatePackTests(unittest.TestCase):
 
             report = materialize_pack(patch, base, output, allow_overrides=False)
 
-            self.assertEqual(report["overlay_counts"], {"enemies": 1, "passives": 1})
+            self.assertEqual(report["overlay_counts"], {"enemies": 1, "passives": 1, "waves": 1})
+            self.assertEqual(report["overridden_counts"], {"enemies": 0, "passives": 0, "waves": 0})
             self.assertTrue((output / "passives" / "big-candy-jar.json").exists())
             self.assertTrue((output / "passives" / "honey-heart.json").exists())
             self.assertTrue((output / "enemies" / "bouncy-gummy.json").exists())

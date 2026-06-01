@@ -186,13 +186,17 @@ def validate_materialization(pack_dir: Path, content_counts: dict[str, int]) -> 
 
     copied_counts = materialization.get("copied_counts")
     overlay_counts = materialization.get("overlay_counts")
+    overridden_counts = materialization.get("overridden_counts", {})
     if not isinstance(copied_counts, dict):
         errors.append("materialization copied_counts must be an object")
     if not isinstance(overlay_counts, dict):
         errors.append("materialization overlay_counts must be an object")
+    if not isinstance(overridden_counts, dict):
+        errors.append("materialization overridden_counts must be an object when present")
     if isinstance(copied_counts, dict) and isinstance(overlay_counts, dict):
         for category, actual_count in content_counts.items():
-            expected_count = copied_counts.get(category, 0) + overlay_counts.get(category, 0)
+            overridden_count = overridden_counts.get(category, 0) if isinstance(overridden_counts, dict) else 0
+            expected_count = copied_counts.get(category, 0) + overlay_counts.get(category, 0) - overridden_count
             if expected_count != actual_count:
                 errors.append(
                     f"materialization counts for {category} total {expected_count}, expected {actual_count}"
