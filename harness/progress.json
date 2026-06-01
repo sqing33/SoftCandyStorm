@@ -1711,6 +1711,16 @@
       "id": "demo_buildcraft_repair_v17_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v17 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Route 回到 33.3% 目标区间，但 Greedy 仍为 66.7% 偏高。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v17_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v18_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v18 候选包，只在糖霜草地 210-300 秒段把 0.01 慢速阻挡权重还给 sprinkle-spitter；该包通过候选静态链路、GameCore validate-content 和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v18_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v18_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v18 的 300 秒 / 3 seed / all Bot 烟测；结果为 pass，9 个 Bot 胜率均在目标区间，Greedy 回到 33.3%，Route 保持 33.3%。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3638,6 +3648,11 @@
       "id": "demo_buildcraft_repair_v17_findings",
       "summary": "Demo buildcraft repair v17 静态链路通过但 3 seed 烟测仍失败：Route 回到 33.3% 目标区间，Greedy 仍为 66.7% 偏高。慢速阻挡回填方向有效，下一步 v18 只需小幅加回远程压力，避免破坏 Route。",
       "report": "harness/failed_cases/fail_20260601_018_demo_buildcraft_repair_v17_greedy_slight_high.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v18_findings",
+      "summary": "Demo buildcraft repair v18 静态链路和 3 seed all Bot 烟测通过：Greedy 从 66.7% 回到 33.3%，Route 保持 33.3%，其余 Bot 也均在原型目标区间。下一步应跑 10 seed 扩样，确认不是小样本偶然通过。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_3seed_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3758,8 +3773,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v17 已把 Route 拉回 33.3%，但 Greedy 仍为 66.7%。下一步创建 v18：只把少量慢速阻挡权重还给 sprinkle-spitter 或等价远程压力，目标是让 Greedy 从 2/3 胜降到 1/3 胜，同时保住 Route 1/3。",
-      "report": "harness/failed_cases/fail_20260601_018_demo_buildcraft_repair_v17_greedy_slight_high.json"
+      "summary": "Demo buildcraft repair v18 已通过 300 秒 / 3 seed / all Bot 烟测，Greedy、Route 和其他 Bot 均在目标区间。下一步跑 300 秒 / 10 seed 扩样；若通过，再进入 Replay 回归、设计审查和人工试玩候选。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_3seed_001/summary.md"
     }
   ]
 }
