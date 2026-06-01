@@ -1661,6 +1661,16 @@
       "id": "demo_buildcraft_repair_v12_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v12 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Coward 与 Greedy 同为 0.0%，说明中间档 XP 未保留 Coward 恢复，也没有修复 Greedy 路线。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v12_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v13_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v13 候选包，保留 sprinkle-spitter 的 XP=5 恢复空间，同时恢复 v10 的冷却、持续时间和散布；该包通过候选静态链路和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v13_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v13_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v13 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Coward 保持 33.3%，但 Greedy 仍为 0.0%，排除了投射节奏作为主要原因。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v13_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3563,6 +3573,11 @@
       "id": "demo_buildcraft_repair_v12_findings",
       "summary": "Demo buildcraft repair v12 静态链路通过但 3 seed 烟测仍失败：Coward 0.0%、Greedy 0.0%。XP=4 既不足以保留 Coward 的恢复种子，也没有恢复 Greedy 的 v10 胜利路线；下一步 v13 应保留 XP=5 并只恢复 v10 的 sprinkle-spitter 投射节奏。",
       "report": "harness/failed_cases/fail_20260601_013_demo_buildcraft_repair_v12_mixed_gap.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v13_findings",
+      "summary": "Demo buildcraft repair v13 静态链路通过但 3 seed 烟测仍失败：Coward 33.3% 保持目标区间，Greedy 仍为 0.0%。恢复 v10 投射节奏没有修复 Greedy，下一步 v14 应测试更高 sprinkle-spitter XP 是否能让 Greedy 在死亡窗口前完成关键升级。",
+      "report": "harness/failed_cases/fail_20260601_014_demo_buildcraft_repair_v13_greedy_gap.json"
     }
   ],
   "next_recommended": [
@@ -3683,8 +3698,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v12 证明中间档 XP 无法同时修复 Coward 和 Greedy。下一步创建 v13：保留 v11 的 XP=5 恢复 Coward，恢复 v10 的 sprinkle-spitter 冷却、持续时间和散布，单轴验证 Greedy 路线是否回归。",
-      "report": "harness/failed_cases/fail_20260601_013_demo_buildcraft_repair_v12_mixed_gap.json"
+      "summary": "Demo buildcraft repair v13 排除了 sprinkle-spitter 投射节奏作为 Greedy 低胜率主因。下一步创建 v14：在特殊敌人预算内提高 sprinkle-spitter XP，测试 Greedy 是否只是差一个升级阈值，同时监控 Coward 和高技能 Bot 是否过强。",
+      "report": "harness/failed_cases/fail_20260601_014_demo_buildcraft_repair_v13_greedy_gap.json"
     }
   ]
 }
