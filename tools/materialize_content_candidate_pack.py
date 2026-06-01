@@ -100,6 +100,18 @@ def manifest_batch_id(candidate_dir: Path) -> str:
     return batch_id if isinstance(batch_id, str) and batch_id.strip() else candidate_dir.name
 
 
+def manifest_generated_at(candidate_dir: Path) -> str:
+    manifest_path = candidate_dir / "metadata" / "manifest.json"
+    if not manifest_path.exists():
+        return "unknown"
+    try:
+        manifest = load_json(manifest_path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return "unknown"
+    generated_at = manifest.get("generated_at")
+    return generated_at if isinstance(generated_at, str) and generated_at.strip() else "unknown"
+
+
 def materialize_pack(
     patch_dir: Path,
     base_content_dir: Path,
@@ -139,6 +151,7 @@ def materialize_pack(
         shutil.copy2(source_manifest_path, metadata_dir / "source_patch_manifest.json")
 
     source_batch_id = manifest_batch_id(patch_dir)
+    generated_at = manifest_generated_at(patch_dir)
     materialization = {
         "source_patch": str(patch_dir),
         "source_patch_batch_id": source_batch_id,
@@ -167,7 +180,7 @@ def materialize_pack(
         {
             "batch_id": output_dir.name,
             "candidate_kind": "full_content_pack",
-            "generated_at": "2026-05-26",
+            "generated_at": generated_at,
             "source_patch": source_batch_id,
             "base_content_dir": str(base_content_dir),
             "project_rules": materialization["project_rules"],
@@ -176,6 +189,7 @@ def materialize_pack(
                 for category in CONTENT_CATEGORIES
             },
             "overlay_counts": overlay_counts,
+            "overridden_counts": overridden_counts,
         },
     )
     (output_dir / "README.md").write_text(
