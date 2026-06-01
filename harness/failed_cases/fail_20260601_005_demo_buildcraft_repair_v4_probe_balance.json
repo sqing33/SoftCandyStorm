@@ -1,0 +1,17 @@
+{
+  "case_id": "fail_20260601_005",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v4_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v4 is the closest Demo buildcraft repair so far, but the 300s / 3-seed all-Bot matrix is still not promotable. IdleBot, RandomBot, CowardBot, TankBot, BossHunterBot, and ZoneControlBot are inside target bands; GreedyXpBot remains high at 66.7%, KiteBot remains high at 100.0%, and RouteBot is low at 0.0%.",
+  "root_cause": "The mild scaling and Boss weapon changes successfully recovered BossHunterBot to the high-skill target band and brought TankBot / ZoneControlBot into range. GreedyXpBot still converts economy and starter upgrades into two wins, KiteBot's movement and safe pickup pattern remain too strong for content-side number tuning, and RouteBot lost its one v2 win under the slightly higher 210-300s pressure.",
+  "fix": "Keep v4 as the current best repair candidate but do not promote it. The next step should be narrow: inspect Greedy, Kite, and Route representative replays, avoid broad weapon nerfs, consider a small Route-friendly content adjustment or rule-bot calibration, and isolate Kite's overperformance from content balance before changing more player-facing numbers.",
+  "validation": "Future repair candidates must rerun frosting-grassland seeds 70000-70002 for all rule Bots. A promotable small-matrix candidate should keep Idle and Random at 0.0%, Coward and Route at 33.3%, Greedy/Tank/ZoneControl around 33.3%, and Kite/BossHunter around 66.7% before expanding seed counts and Replay regression.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v4_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v4_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v4_validate_candidates_001/summary.md"
+  ]
+}

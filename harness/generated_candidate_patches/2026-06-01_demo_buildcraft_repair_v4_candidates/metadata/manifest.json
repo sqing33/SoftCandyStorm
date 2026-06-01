@@ -1,0 +1,93 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v4_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v4",
+    "goal": "基于 v3 过度削弱结果回退到温和修复：只削弱强安全路线的成长曲线，轻微增强原有 Boss 单体武器，并小幅提高 210-300 秒 Boss 后压力。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "game_harness validate-candidates",
+      "Bot simulation",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "rainbow-candy-shot",
+      "type": "weapon",
+      "path": "weapons/rainbow-candy-shot.json",
+      "role": "温和降低 starter 后期成长"
+    },
+    {
+      "id": "soda-bubble-pop",
+      "type": "weapon",
+      "path": "weapons/soda-bubble-pop.json",
+      "role": "温和降低高机动安全清怪成长"
+    },
+    {
+      "id": "pudding-turret",
+      "type": "weapon",
+      "path": "weapons/pudding-turret.json",
+      "role": "温和降低炮台安全区成长"
+    },
+    {
+      "id": "sour-plum-spray",
+      "type": "weapon",
+      "path": "weapons/sour-plum-spray.json",
+      "role": "保留控场身份，减少后期伤害成长"
+    },
+    {
+      "id": "marshmallow-shield",
+      "type": "weapon",
+      "path": "weapons/marshmallow-shield.json",
+      "role": "保留防御容错，减少清场成长"
+    },
+    {
+      "id": "star-sugar-ray",
+      "type": "weapon",
+      "path": "weapons/star-sugar-ray.json",
+      "role": "轻微增强 Boss 单体输出和射程"
+    },
+    {
+      "id": "candy-crystal-lance",
+      "type": "weapon",
+      "path": "weapons/candy-crystal-lance.json",
+      "role": "轻微增强 Boss 单体输出和射程"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "小幅提高 210-300 秒 Boss 后压力，不压低 90-210 秒构筑窗口"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v4，只覆盖 v2 full pack 的局部内容。",
+      "v4 避免 v3 的基础数值重削弱，重点测试成长曲线和 Boss 后压力。",
+      "该批次必须继续通过 Bot 矩阵和人工试玩，不能直接进入 accepted_content。"
+    ]
+  }
+}
