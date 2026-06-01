@@ -1,0 +1,135 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v2_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容补强"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft identity",
+    "goal": "在保留 5 条玩家可读构筑路线的前提下，修正首轮 300 秒小矩阵暴露的安全路线过稳和 BossHunter 偏弱问题。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "game_harness validate-candidates",
+      "Bot simulation",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "sugar-drum",
+      "type": "weapon",
+      "path": "weapons/sugar-drum.json",
+      "role": "近身节奏清场，鼓励玩家绕怪群边缘走位"
+    },
+    {
+      "id": "rhythm-ribbon",
+      "type": "passive",
+      "path": "passives/rhythm-ribbon.json",
+      "role": "冷却和持续时间平滑，服务节奏型清场"
+    },
+    {
+      "id": "sugar-drum-crescendo",
+      "type": "evolution",
+      "path": "evolutions/sugar-drum-crescendo.json",
+      "role": "把糖鼓升级为多圈扩散糖波"
+    },
+    {
+      "id": "snowcone-fan",
+      "type": "weapon",
+      "path": "weapons/snowcone-fan.json",
+      "role": "扇形减速控制，帮助玩家切开追击路线"
+    },
+    {
+      "id": "frosty-straw",
+      "type": "passive",
+      "path": "passives/frosty-straw.json",
+      "role": "延长控制持续时间，并给一点机动补偿"
+    },
+    {
+      "id": "snowcone-blizzard",
+      "type": "evolution",
+      "path": "evolutions/snowcone-blizzard.json",
+      "role": "把控制路线升级为大范围雪花糖暴风"
+    },
+    {
+      "id": "jellybean-magnet",
+      "type": "weapon",
+      "path": "weapons/jellybean-magnet.json",
+      "role": "低压环绕输出，配合拾取成长流"
+    },
+    {
+      "id": "taffy-pocket-map",
+      "type": "passive",
+      "path": "passives/taffy-pocket-map.json",
+      "role": "扩大拾取半径并提高经验收益"
+    },
+    {
+      "id": "jellybean-treasure-orbit",
+      "type": "evolution",
+      "path": "evolutions/jellybean-treasure-orbit.json",
+      "role": "把拾取成长流转化为稳定环绕压制"
+    },
+    {
+      "id": "wafer-guard-rail",
+      "type": "weapon",
+      "path": "weapons/wafer-guard-rail.json",
+      "role": "防御型环绕轨道，给近身失误提供缓冲"
+    },
+    {
+      "id": "marshmallow-vest",
+      "type": "passive",
+      "path": "passives/marshmallow-vest.json",
+      "role": "生命和减伤容错"
+    },
+    {
+      "id": "wafer-castle-rail",
+      "type": "evolution",
+      "path": "evolutions/wafer-castle-rail.json",
+      "role": "把防御环绕升级为城墙式护轨"
+    },
+    {
+      "id": "fizzy-fuse-pop",
+      "type": "weapon",
+      "path": "weapons/fizzy-fuse-pop.json",
+      "role": "高风险爆发，低频高范围"
+    },
+    {
+      "id": "crackling-sugar-fuse",
+      "type": "passive",
+      "path": "passives/crackling-sugar-fuse.json",
+      "role": "提高伤害但牺牲拾取舒适度"
+    },
+    {
+      "id": "fizzy-grand-finale",
+      "type": "evolution",
+      "path": "evolutions/fizzy-grand-finale.json",
+      "role": "把爆发路线升级为终局大范围连爆"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 buildcraft repair v2，不直接进入正式内容。",
+      "所有数值仍为候选，后续必须重新经过静态预算、Bot 仿真、Replay 和人工试玩。",
+      "高风险路线不得因爆发强而压过其他路线；人工审查需关注升级选择可读性。"
+    ]
+  }
+}

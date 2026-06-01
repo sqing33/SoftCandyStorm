@@ -1556,6 +1556,11 @@
       "id": "demo_buildcraft_300s_probe",
       "summary": "完成 Demo buildcraft full pack 的首轮 300 秒 / 3 seed / all Bot 小规模矩阵探针；Idle、Random、Route 在目标内，但 Coward、Greedy、Kite、Tank、ZoneControl 胜率偏高，BossHunter 偏低，当前候选结论为 repair，已记录 failure case。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v2_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v2 候选包，只在 generated candidate 内削弱安全输出、拾取成长、护盾容错和冷却丝滑，并补充高风险爆发的 boss-killer 标签；该包通过候选校验、物化预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates，但 300 秒小矩阵仍为 repair。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v2_validate_candidates_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3398,6 +3403,11 @@
       "id": "demo_buildcraft_300s_probe_findings",
       "summary": "Demo buildcraft full pack 的 300 秒 / 3 seed 小矩阵显示当前不能晋级：CowardBot 66.7%、GreedyXpBot 100.0%、KiteBot 100.0%、TankBot 66.7%、ZoneControlBot 66.7% 均高于对应目标，BossHunterBot 33.3% 低于高技能目标。下一步应先看 representative replays 和 metrics，再做候选内构筑风险与波次压力修正。",
       "report": "harness/failed_cases/fail_20260601_001_demo_buildcraft_300s_probe_balance.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v2_findings",
+      "summary": "Demo buildcraft repair v2 把 RandomBot 和 CowardBot 拉回目标区间，说明削弱安全路线是正确方向；但 GreedyXpBot/KiteBot 仍 100.0%，TankBot/ZoneControlBot 仍 66.7%，BossHunterBot 仍 33.3%。下一轮应分开处理 boss-killer 识别和中高技能 Bot 过稳，不应继续只削弱通用安全数值。",
+      "report": "harness/failed_cases/fail_20260601_002_demo_buildcraft_repair_v2_probe_balance.json"
     }
   ],
   "next_recommended": [
@@ -3518,8 +3528,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft 候选首轮 300 秒小矩阵已进入 repair：下一步先读取 metrics 与 representative replays，判断强度偏差来自新增构筑过稳、波次压力不足、升级选择分布偏斜还是 BossHunter 目标不适配；修复必须只改候选包，修后重跑同一 300 秒 / 3 seed / all Bot 探针，再逐步扩大 seed 和 Replay 回归。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/summary.md"
+      "summary": "Demo buildcraft repair v2 仍未通过 300 秒小矩阵：下一步应先让 BossHunterBot 能识别 `boss-killer` 构筑候选，再单独压 Greedy/Kite/Tank/ZoneControl 的过稳路径；修后继续用 seeds 70000-70002 的同口径小矩阵验证，全部入目标后再扩大 seed 和 Replay 回归。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v2_matrix_300s_3seed_001/summary.md"
     }
   ]
 }

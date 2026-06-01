@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_002",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v2_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "The Demo buildcraft repair v2 candidate improved the low-skill side of the 300s / 3-seed probe, but it still failed the bot matrix. RandomBot and CowardBot moved into their target bands, while GreedyXpBot and KiteBot stayed at 100% win rate, TankBot and ZoneControlBot stayed at 66.7%, and BossHunterBot stayed below target at 33.3%.",
+  "root_cause": "The first repair pass reduced safety and economy values, which was enough to remove RandomBot and CowardBot overperformance. The remaining failures are more specific: GreedyXpBot still reaches very efficient starter-weapon upgrade paths, KiteBot still converts broad weapon pools into safe wins, TankBot still survives two seeds with base defensive choices, and BossHunterBot still loses when the larger upgrade pool delays or displaces boss-focused choices.",
+  "fix": "Keep repair v2 as a failed repair attempt and do not promote it. The next repair should split two concerns: add a content or bot-tag pathway so BossHunterBot can recognize boss-killer candidates, and separately tune Greedy/Kite/Tank/ZoneControl pressure without breaking Random/Coward/Route. Candidate changes must remain outside accepted_content.",
+  "validation": "After the next repair, rerun the same 300s all-bot matrix on seeds 70000-70002 and compare against v1 and v2. Only proceed to larger seed counts if RandomBot, CowardBot, RouteBot, GreedyXpBot, KiteBot, TankBot, BossHunterBot, and ZoneControlBot are all inside target bands.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v2_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v2_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v2_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v2_static_budget_001/summary.md"
+  ]
+}
