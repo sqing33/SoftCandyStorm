@@ -1576,6 +1576,16 @@
       "id": "demo_buildcraft_repair_v4_candidate_pack",
       "summary": "新增 Demo buildcraft repair v4 候选包，基于 v3 过度削弱结果回退到温和成长调整、小幅 Boss 单体增强和小幅 Boss 后压力；该包通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v4_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v5_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v5 候选包，只覆盖 frosting-grassland 的 210-300 秒 Boss 后波次压力，不再削弱玩家武器；该包通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v5_bot_matrix",
+      "summary": "完成 Demo buildcraft repair v5 的 300 秒 / 3 seed / all Bot 小矩阵；配合 Kite fallback 与 Route 彩虹糖弹成型优先级校准后，9 个规则 Bot 全部进入当前目标区间。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3438,6 +3448,11 @@
       "id": "demo_buildcraft_repair_v4_findings",
       "summary": "Demo buildcraft repair v4 是当前最接近目标的一版：Idle、Random、Coward、Tank、BossHunter、ZoneControl 已在目标区间；Greedy 仍 66.7%、Kite 仍 100.0%、Route 0.0%。下一步应窄修 Greedy/Kite/Route，避免再次全局削弱玩家可见武器。",
       "report": "harness/failed_cases/fail_20260601_005_demo_buildcraft_repair_v4_probe_balance.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v5_findings",
+      "summary": "Demo buildcraft repair v5 小矩阵已把 Idle、Random、Coward、Greedy、Kite、Tank、BossHunter、ZoneControl、Route 全部拉回目标区间；下一步应扩大 seed、跑 Replay 回归，并准备人工设计审查和 9 局人工试玩，不能直接进入 accepted_content。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3558,8 +3573,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v4 已把 6/9 个规则 Bot 拉回目标区间，但 Greedy 仍偏强、Kite 仍明显过强、Route 偏弱。下一步不要继续全局武器削弱，应先读 Greedy/Kite/Route 的 v4 representative replays，判断是内容数值、波次压力还是规则 Bot 门槛问题；修后继续用 seeds 70000-70002 同口径小矩阵验证，再扩大 seed 和 Replay 回归。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v4_matrix_300s_3seed_001/summary.md"
+      "summary": "Demo buildcraft repair v5 已通过 300 秒 / 3 seed / all Bot 小矩阵，下一步应扩大 seed 数并跑 Replay 回归，同时创建人工设计审查草稿和 9 局试玩计划。所有内容仍不得进入 accepted_content，直到真人设计审查、人工试玩、final acceptance 和 accepted content lockfile 通过。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
     }
   ]
 }

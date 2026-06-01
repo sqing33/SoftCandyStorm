@@ -170,7 +170,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v2 已改善 Random/Coward，但 300 秒 / 3 seed 小矩阵仍为 repair；BossHunter 标签优先级诊断证明直接偏向 boss-killer/high-risk 会恶化 BossHunter；repair v4 已把 6/9 个规则 Bot 拉回目标但仍需窄修 Greedy/Kite/Route。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
+      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v5 已通过 300 秒 / 3 seed / all Bot 小矩阵，9 个规则 Bot 全部进入目标区间。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -261,13 +261,17 @@
             "harness/generated_candidates/2026-06-01_demo_buildcraft_repair_v4_full_pack/metadata/materialization.json",
             "harness/reports/2026-06-01_demo_buildcraft_repair_v4_validate_candidates_001/summary.md",
             "harness/reports/2026-06-01_demo_buildcraft_repair_v4_matrix_300s_3seed_001/summary.md",
-            "harness/failed_cases/fail_20260601_005_demo_buildcraft_repair_v4_probe_balance.json"
+            "harness/failed_cases/fail_20260601_005_demo_buildcraft_repair_v4_probe_balance.json",
+            "harness/generated_candidate_patches/2026-06-01_demo_buildcraft_repair_v5_candidates/metadata/manifest.json",
+            "harness/generated_candidates/2026-06-01_demo_buildcraft_repair_v5_full_pack/metadata/materialization.json",
+            "harness/reports/2026-06-01_demo_buildcraft_repair_v5_validate_candidates_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_3seed_001/summary.md"
           ],
           "gaps": [
             "Phase 4 full pack 已通过当前会话 Harness validate-candidates、5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归，进入 simulated_candidates；20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0% 过强，现已通过 Bot 策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部 gate pass。",
             "该候选仍不是正式 accepted_content：设计审查草稿和审查包待真人填写，9 局人工试玩、final acceptance 与 acceptance manifest 均未通过，accepted content lockfile 仍为空/blocked。",
             "Demo wave identity full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates，但尚未进入仓库内 validated_candidates，也尚未通过 Bot 仿真、Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
-            "Demo buildcraft full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；首轮 300 秒 / 3 seed / all Bot 小矩阵已运行但结论为 repair，Coward、Greedy、Kite、Tank、ZoneControl 偏强且 BossHunter 偏弱。repair v2 已通过同级静态门禁，并把 Random/Coward 拉回目标，但 Greedy、Kite、Tank、ZoneControl 仍偏强且 BossHunter 仍偏弱；BossHunter 标签优先级诊断又证明直接提前选择 boss-killer/high-risk 会让 BossHunter 降到 0.0% 胜率。repair v3 过度削弱，repair v4 已把 Idle、Random、Coward、Tank、BossHunter、ZoneControl 拉回目标，但 Greedy、Kite、Route 仍需修复。因此尚未进入仓库内 validated_candidates，也尚未通过 Bot 仿真、Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
+            "Demo buildcraft repair v5 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates 和 300 秒 / 3 seed / all Bot 小矩阵；但尚未扩大 seed，尚未跑 Replay 回归，尚未进入仓库内 validated_candidates / simulated_candidates，也尚未通过真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
             "候选后续应进入人工设计审查和 9 局人工试玩；不得仅凭 Bot gate 或静态预算通过直接接入 Runtime 正式内容或发布候选。"
           ],
           "blockers": [
