@@ -1641,6 +1641,16 @@
       "id": "demo_buildcraft_repair_v10_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v10 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Greedy 与 Route 已回到目标区间，但 Coward 仍偏低。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v10_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v11_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v11 候选包，只覆盖 sprinkle-spitter，将奖励和可读性恢复到 v5 小矩阵通过时的形态，用于验证 Coward 成长恢复空间；该包通过候选静态链路和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v11_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v11_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v11 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Coward 已回到目标区间，但 Greedy 下降到 0.0%，说明完整恢复 sprinkle-spitter 奖励会破坏 Greedy 风险/收益节奏。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v11_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3533,6 +3543,11 @@
       "id": "demo_buildcraft_repair_v10_findings",
       "summary": "Demo buildcraft repair v10 静态链路通过且 3 seed 烟测已让 Greedy 33.3%、Route 33.3% 回到目标区间，但 Coward 0.0% 仍偏低。下一步 v11 应极窄恢复 Coward 成长恢复空间，避免破坏 v10 的 Greedy / Route 修复结果。",
       "report": "harness/failed_cases/fail_20260601_011_demo_buildcraft_repair_v10_coward_gap.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v11_findings",
+      "summary": "Demo buildcraft repair v11 静态链路通过且 3 seed 烟测已把 Coward 拉回 33.3%，但 Greedy 降到 0.0%。完整恢复 sprinkle-spitter 的 v5 奖励/可读性会让 Greedy 在 210-300 秒压力窗口追 XP 后稳定死亡；下一步 v12 应做更窄的风险/收益修复，而不是直接推广 v11。",
+      "report": "harness/failed_cases/fail_20260601_012_demo_buildcraft_repair_v11_greedy_gap.json"
     }
   ],
   "next_recommended": [
@@ -3653,8 +3668,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v10 已修复 Greedy / Route 偏高，但 Coward 仍为 0.0%。下一步创建 v11：围绕 sprinkle-spitter 的 XP / 可读性或等价低技能恢复空间做极窄修复，保留 v10 的 Greedy / Route 结果。",
-      "report": "harness/failed_cases/fail_20260601_011_demo_buildcraft_repair_v10_coward_gap.json"
+      "summary": "Demo buildcraft repair v11 已修复 Coward 偏低，但 Greedy 降到 0.0%。下一步创建 v12：在 v10 与 v11 的 sprinkle-spitter 奖励/压力之间做更窄修复，保留 Coward 恢复空间，同时让 Greedy 回到 25%-55% 目标区间。",
+      "report": "harness/failed_cases/fail_20260601_012_demo_buildcraft_repair_v11_greedy_gap.json"
     }
   ]
 }

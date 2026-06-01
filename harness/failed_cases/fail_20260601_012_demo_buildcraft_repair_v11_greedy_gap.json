@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_012",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v11_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v11 passed the candidate static chain and isolated validate-candidates, then restored CowardBot to the low-skill target band at 33.3%. Idle, Random, Coward, Kite, Tank, BossHunter, ZoneControl, and Route all landed inside their target bands. However GreedyXpBot fell to 0.0%, below the mid-skill target band of 25%-55%, with all three Greedy runs dying around 225-229 seconds despite reaching levels 8-10.",
+  "root_cause": "v11 copied the v5 sprinkle-spitter reward/readability profile back into the v10 wave shape. That restored enough XP opportunity for Coward to survive one seed, but it did not preserve Greedy's v10 recovery line: Greedy continued to chase XP into the 210-300 second pressure window and converted the added reward into level gains without enough survivability, dying consistently near the Boss-afterpressure phase. The remaining gap is not raw economy shortage; it is Greedy-specific risk/reward timing around sprinkle-spitter and the 210-300 second route pressure.",
+  "fix": "Do not promote v11 or run the 10-seed expansion. The next repair should be narrower than a full v5 sprinkle-spitter restore: keep Coward's recovery space, but reduce Greedy's late pressure exposure or smooth the reward timing. Candidate directions include partial sprinkle-spitter XP between v10 and v11, lower 210-300 second ranged pressure density for Greedy routes, or a map/wave adjustment that makes XP recovery safer only after the immediate ranged pressure window has been survived. Avoid broad player buffs and avoid undoing v10's Greedy/Route wave-shape repair.",
+  "validation": "Create v12 as a generated candidate only, rerun the full candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. Passing requires GreedyXpBot 25%-55%, CowardBot 10%-35%, RouteBot 10%-35%, and all other bots remaining in their configured target bands before any 10-seed expansion.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v11_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v11_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v11_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v11_validate_candidates_001/summary.md"
+  ]
+}
