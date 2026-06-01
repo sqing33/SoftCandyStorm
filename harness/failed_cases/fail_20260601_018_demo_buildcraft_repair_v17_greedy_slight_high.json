@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_018",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v17_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v17 passed the candidate static chain, GameCore validate-content, and isolated validate-candidates. The 300s / 3-seed smoke matrix still failed only on GreedyXpBot: Greedy reached 66.7%, above the 25%-55% mid-skill target. Idle, Random, Coward, Kite, Tank, BossHunter, ZoneControl, and Route stayed inside target bands; Route returned to 33.3%.",
+  "root_cause": "v17 corrected the v16 fixed-route overcorrection by moving safety fill from bouncy-gummy into slower blocker / control enemies. That kept RouteBot inside target, but the 210-300 second window is now slightly too forgiving for Greedy on seeds 70001 and 70002. Greedy seed 70000 still dies around 225.9 seconds, so the repair direction is close rather than fundamentally wrong.",
+  "fix": "Do not promote v17 or run the 10-seed expansion. The next repair should make a very small pressure increase, preferably moving about 0.01 of 210-300 second sandwich-cookie-creep blocker weight back into sprinkle-spitter ranged pressure. Avoid changing early segments, player weapons, passives, boss stats, or bouncy-gummy safety weight.",
+  "validation": "Create v18 as a generated candidate only, rerun the full candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. Passing requires GreedyXpBot 25%-55%, RouteBot 10%-35%, CowardBot 10%-35%, and all other bots remaining in their configured target bands before any 10-seed expansion.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v17_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v17_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v17_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v17_validate_candidates_001/summary.md"
+  ]
+}

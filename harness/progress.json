@@ -1701,6 +1701,16 @@
       "id": "demo_buildcraft_repair_v16_smoke_matrix",
       "summary": "完成 Demo buildcraft repair v16 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Greedy 被过度救回到 100.0%，Route 也升到 66.7%，说明路线压力软化幅度和回填对象需要重做。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v16_matrix_300s_3seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v17_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v17 候选包，把 v16 的基础软糖安全回填改成慢速阻挡 / 轻控制回填；该包通过候选静态链路、GameCore validate-content 和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v17_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v17_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v17 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，Route 回到 33.3% 目标区间，但 Greedy 仍为 66.7% 偏高。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v17_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3623,6 +3633,11 @@
       "id": "demo_buildcraft_repair_v16_findings",
       "summary": "Demo buildcraft repair v16 静态链路通过但 3 seed 烟测仍失败：Greedy 从 0.0% 过度提升到 100.0%，Route 从 33.3% 提升到 66.7%。直接把路线压力转软会同时救回捡经验路线和固定路线，下一步 v17 应减少远程 / 侧翼压力，但把回填压力集中到慢速阻挡敌人。",
       "report": "harness/failed_cases/fail_20260601_017_demo_buildcraft_repair_v16_route_overcorrection.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v17_findings",
+      "summary": "Demo buildcraft repair v17 静态链路通过但 3 seed 烟测仍失败：Route 回到 33.3% 目标区间，Greedy 仍为 66.7% 偏高。慢速阻挡回填方向有效，下一步 v18 只需小幅加回远程压力，避免破坏 Route。",
+      "report": "harness/failed_cases/fail_20260601_018_demo_buildcraft_repair_v17_greedy_slight_high.json"
     }
   ],
   "next_recommended": [
@@ -3743,8 +3758,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v16 证明路线压力可以救回 Greedy，但当前幅度让 Greedy 与 Route 同时过强。下一步创建 v17：不要继续增加基础软糖安全权重，而是降低远程 / 侧翼压力并用慢速阻挡敌人回填，争取让 Greedy 回到 25%-55%、Route 回到 10%-35%。",
-      "report": "harness/failed_cases/fail_20260601_017_demo_buildcraft_repair_v16_route_overcorrection.json"
+      "summary": "Demo buildcraft repair v17 已把 Route 拉回 33.3%，但 Greedy 仍为 66.7%。下一步创建 v18：只把少量慢速阻挡权重还给 sprinkle-spitter 或等价远程压力，目标是让 Greedy 从 2/3 胜降到 1/3 胜，同时保住 Route 1/3。",
+      "report": "harness/failed_cases/fail_20260601_018_demo_buildcraft_repair_v17_greedy_slight_high.json"
     }
   ]
 }
