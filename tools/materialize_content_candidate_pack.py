@@ -27,7 +27,7 @@ CONTENT_CATEGORIES = [
     "maps",
     "events",
 ]
-SUPPORTED_PATCH_CATEGORIES = {"passives", "enemies", "waves"}
+SUPPORTED_PATCH_CATEGORIES = {"weapons", "passives", "evolutions", "enemies", "waves"}
 
 
 def load_json(path: Path) -> dict[str, Any]:

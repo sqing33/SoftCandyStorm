@@ -19,8 +19,20 @@ from typing import Any
 
 ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ALLOWED_RARITIES = {"common", "rare", "epic", "legendary", "boss", "debug"}
-BASE_ID_CATEGORIES = ("passives", "enemies", "waves", "maps", "bosses")
-SUPPORTED_CONTENT_CATEGORIES = ("passives", "enemies", "waves")
+BASE_ID_CATEGORIES = ("weapons", "passives", "evolutions", "enemies", "waves", "maps", "bosses")
+SUPPORTED_CONTENT_CATEGORIES = ("weapons", "passives", "evolutions", "enemies", "waves")
+ALLOWED_WEAPON_TYPES = {"projectile", "orbit", "burst", "zone", "summon", "beam", "special"}
+ALLOWED_TARGETING_MODES = {
+    "nearest_enemy",
+    "highest_health_enemy",
+    "boss_priority",
+    "random_enemy",
+    "random_direction",
+    "movement_direction",
+    "self_centered",
+    "ground_near_player",
+}
+ALLOWED_PERFORMANCE_COSTS = {"low", "medium", "high"}
 
 ALLOWED_PASSIVE_STATS = {
     "max_health",
@@ -192,6 +204,73 @@ def validate_passive(
     return errors, warnings
 
 
+def validate_weapon(
+    path: Path,
+    payload: dict[str, Any],
+    base_ids: set[str],
+    allow_overrides: bool,
+) -> tuple[list[str], list[str]]:
+    item_id, errors, warnings = validate_common("weapon", payload, path, base_ids, allow_overrides)
+
+    if payload.get("type") not in ALLOWED_WEAPON_TYPES:
+        errors.append(f"weapon `{item_id}` type is invalid: {payload.get('type')}")
+
+    targeting = payload.get("targeting")
+    if not isinstance(targeting, dict):
+        errors.append(f"weapon `{item_id}` targeting must be an object")
+    else:
+        if targeting.get("mode") not in ALLOWED_TARGETING_MODES:
+            errors.append(f"weapon `{item_id}` targeting.mode is invalid: {targeting.get('mode')}")
+        if not is_number(targeting.get("range")) or targeting["range"] < 0:
+            errors.append(f"weapon `{item_id}` targeting.range must be non-negative")
+
+    base_stats = payload.get("base_stats")
+    if not isinstance(base_stats, dict):
+        errors.append(f"weapon `{item_id}` base_stats must be an object")
+    else:
+        for field in ("damage", "projectile_speed", "area_radius", "duration_ms"):
+            if not is_number(base_stats.get(field)) or base_stats[field] < 0:
+                errors.append(f"weapon `{item_id}` base_stats.{field} must be non-negative")
+        if not is_number(base_stats.get("cooldown_ms")) or base_stats["cooldown_ms"] <= 0:
+            errors.append(f"weapon `{item_id}` base_stats.cooldown_ms must be positive")
+        for field in ("projectile_count", "pierce"):
+            if not isinstance(base_stats.get(field), int) or isinstance(base_stats.get(field), bool) or base_stats[field] < 0:
+                errors.append(f"weapon `{item_id}` base_stats.{field} must be a non-negative integer")
+
+    scaling = payload.get("scaling")
+    if not isinstance(scaling, dict):
+        errors.append(f"weapon `{item_id}` scaling must be an object")
+    else:
+        if not isinstance(scaling.get("max_level"), int) or scaling["max_level"] <= 0:
+            errors.append(f"weapon `{item_id}` scaling.max_level must be a positive integer")
+        for field in ("damage_per_level", "range_per_level", "area_per_level"):
+            if not is_number(scaling.get(field)) or scaling[field] < 0:
+                errors.append(f"weapon `{item_id}` scaling.{field} must be non-negative")
+        if not is_number(scaling.get("cooldown_multiplier_per_level")) or scaling["cooldown_multiplier_per_level"] <= 0:
+            errors.append(f"weapon `{item_id}` scaling.cooldown_multiplier_per_level must be positive")
+        bonus_levels = scaling.get("projectile_count_bonus_levels")
+        if not isinstance(bonus_levels, list):
+            errors.append(f"weapon `{item_id}` scaling.projectile_count_bonus_levels must be a list")
+        else:
+            for index, level in enumerate(bonus_levels):
+                if not isinstance(level, int) or isinstance(level, bool) or level <= 0:
+                    errors.append(f"weapon `{item_id}` scaling.projectile_count_bonus_levels[{index}] must be positive integer")
+
+    balance_budget = payload.get("balance_budget")
+    if not isinstance(balance_budget, dict):
+        errors.append(f"weapon `{item_id}` balance_budget must be an object")
+    else:
+        if not is_nonempty_string(balance_budget.get("role")):
+            errors.append(f"weapon `{item_id}` balance_budget.role must be non-empty")
+        for field in ("single_target_dps", "group_dps"):
+            if not is_number(balance_budget.get(field)) or balance_budget[field] < 0:
+                errors.append(f"weapon `{item_id}` balance_budget.{field} must be non-negative")
+        if balance_budget.get("performance_cost") not in ALLOWED_PERFORMANCE_COSTS:
+            errors.append(f"weapon `{item_id}` balance_budget.performance_cost is invalid: {balance_budget.get('performance_cost')}")
+
+    return errors, warnings
+
+
 def validate_enemy(
     path: Path,
     payload: dict[str, Any],
@@ -234,6 +313,75 @@ def validate_enemy(
         for field in ("threat", "performance_cost"):
             if not is_number(spawn_budget.get(field)) or spawn_budget[field] <= 0:
                 errors.append(f"enemy `{item_id}` spawn_budget.{field} must be positive")
+
+    return errors, warnings
+
+
+def validate_evolution(
+    path: Path,
+    payload: dict[str, Any],
+    base_ids: dict[str, set[str]],
+    candidate_ids: dict[str, set[str]],
+    allow_overrides: bool,
+) -> tuple[list[str], list[str]]:
+    item_id, errors, warnings = validate_common("evolution", payload, path, base_ids["evolutions"], allow_overrides)
+    known_weapons = base_ids["weapons"] | candidate_ids["weapons"]
+    known_passives = base_ids["passives"] | candidate_ids["passives"]
+
+    requirements = payload.get("requirements")
+    weapon_id: Any = None
+    if not isinstance(requirements, dict):
+        errors.append(f"evolution `{item_id}` requirements must be an object")
+    else:
+        weapon_req = requirements.get("weapon")
+        if not isinstance(weapon_req, dict):
+            errors.append(f"evolution `{item_id}` requirements.weapon must be an object")
+        else:
+            weapon_id = weapon_req.get("id")
+            if not is_nonempty_string(weapon_id) or weapon_id not in known_weapons:
+                errors.append(f"evolution `{item_id}` references unknown weapon `{weapon_id}`")
+            if not isinstance(weapon_req.get("min_level"), int) or weapon_req["min_level"] <= 0:
+                errors.append(f"evolution `{item_id}` requirements.weapon.min_level must be positive integer")
+        passive_req = requirements.get("passive")
+        if not isinstance(passive_req, dict):
+            errors.append(f"evolution `{item_id}` requirements.passive must be an object")
+        else:
+            passive_id = passive_req.get("id")
+            if not is_nonempty_string(passive_id) or passive_id not in known_passives:
+                errors.append(f"evolution `{item_id}` references unknown passive `{passive_id}`")
+            if not isinstance(passive_req.get("min_level"), int) or passive_req["min_level"] <= 0:
+                errors.append(f"evolution `{item_id}` requirements.passive.min_level must be positive integer")
+        if not is_nonempty_string(requirements.get("trigger")):
+            errors.append(f"evolution `{item_id}` requirements.trigger must be non-empty")
+
+    replaces_weapon = payload.get("replaces_weapon")
+    if not is_nonempty_string(replaces_weapon) or replaces_weapon not in known_weapons:
+        errors.append(f"evolution `{item_id}` replaces unknown weapon `{replaces_weapon}`")
+    if is_nonempty_string(weapon_id) and is_nonempty_string(replaces_weapon) and weapon_id != replaces_weapon:
+        errors.append(f"evolution `{item_id}` replaces_weapon must match requirements.weapon.id")
+
+    weapon_definition = payload.get("weapon_definition")
+    if not isinstance(weapon_definition, dict):
+        errors.append(f"evolution `{item_id}` weapon_definition must be an object")
+        return errors, warnings
+    if weapon_definition.get("type") not in ALLOWED_WEAPON_TYPES:
+        errors.append(f"evolution `{item_id}` weapon_definition.type is invalid: {weapon_definition.get('type')}")
+    targeting = weapon_definition.get("targeting")
+    if not isinstance(targeting, dict):
+        errors.append(f"evolution `{item_id}` weapon_definition.targeting must be an object")
+    else:
+        if not is_nonempty_string(targeting.get("mode")):
+            errors.append(f"evolution `{item_id}` weapon_definition.targeting.mode must be non-empty")
+        if not is_number(targeting.get("range")) or targeting["range"] < 0:
+            errors.append(f"evolution `{item_id}` weapon_definition.targeting.range must be non-negative")
+    base_stats = weapon_definition.get("base_stats")
+    if not isinstance(base_stats, dict):
+        errors.append(f"evolution `{item_id}` weapon_definition.base_stats must be an object")
+    else:
+        if not is_number(base_stats.get("damage")) or base_stats["damage"] < 0:
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.damage must be non-negative")
+        if not is_number(base_stats.get("cooldown_ms")) or base_stats["cooldown_ms"] <= 0:
+            errors.append(f"evolution `{item_id}` weapon_definition.base_stats.cooldown_ms must be positive")
 
     return errors, warnings
 
@@ -364,6 +512,7 @@ def validate_candidate(
     content_count = 0
 
     for category, validator in (
+        ("weapons", validate_weapon),
         ("passives", validate_passive),
         ("enemies", validate_enemy),
     ):
@@ -383,6 +532,19 @@ def validate_candidate(
                 base_ids[category],
                 allow_overrides,
             )
+            errors.extend(item_errors)
+            warnings.extend(item_warnings)
+
+    category_dir = candidate_dir / "evolutions"
+    if category_dir.exists():
+        for path in sorted(category_dir.glob("*.json")):
+            content_count += 1
+            try:
+                payload = load_json(path)
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                errors.append(f"{path.relative_to(candidate_dir)} is invalid JSON: {error}")
+                continue
+            item_errors, item_warnings = validate_evolution(path, payload, base_ids, candidate_ids, allow_overrides)
             errors.extend(item_errors)
             warnings.extend(item_warnings)
 

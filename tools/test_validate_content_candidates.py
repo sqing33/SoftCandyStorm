@@ -47,6 +47,45 @@ def make_candidate(root: Path, *, duplicate_id: bool = False, runtime_integrated
     )
     (candidate_dir / "README.md").write_text("# Fixture Candidate\n", encoding="utf-8")
     write_json(
+        candidate_dir / "weapons" / "sugar-drum.json",
+        {
+            "id": "sugar-drum",
+            "name": "糖鼓",
+            "version": 1,
+            "rarity": "common",
+            "type": "burst",
+            "tags": ["burst", "aoe", "rhythm"],
+            "description": "按节拍敲出小范围糖波。",
+            "targeting": {"mode": "self_centered", "range": 180},
+            "base_stats": {
+                "damage": 20,
+                "cooldown_ms": 780,
+                "projectile_speed": 0,
+                "projectile_count": 1,
+                "pierce": 0,
+                "area_radius": 54,
+                "duration_ms": 120,
+            },
+            "scaling": {
+                "max_level": 5,
+                "damage_per_level": 5,
+                "cooldown_multiplier_per_level": 0.93,
+                "range_per_level": 6,
+                "area_per_level": 3,
+                "projectile_count_bonus_levels": [4],
+            },
+            "balance_budget": {
+                "role": "aoe-clear",
+                "single_target_dps": 26,
+                "group_dps": 54,
+                "performance_cost": "medium",
+            },
+            "visual_description": "圆形糖鼓敲出粉色糖波。",
+            "sfx_description": "轻快鼓点和糖屑弹跳声。",
+            "unlock": {"type": "discover"},
+        },
+    )
+    write_json(
         candidate_dir / "passives" / f"{passive_id}.json",
         {
             "id": passive_id,
@@ -59,6 +98,31 @@ def make_candidate(root: Path, *, duplicate_id: bool = False, runtime_integrated
             "max_level": 5,
             "visual_description": "发光蜂蜜心形糖。",
             "sfx_description": "温暖糖浆滴落声。",
+            "unlock": {"type": "discover"},
+        },
+    )
+    write_json(
+        candidate_dir / "evolutions" / "sugar-drum-crescendo.json",
+        {
+            "id": "sugar-drum-crescendo",
+            "name": "糖鼓终曲",
+            "version": 1,
+            "rarity": "epic",
+            "tags": ["burst", "aoe", "evolution"],
+            "description": "糖鼓进化为连续扩散的终曲糖波。",
+            "requirements": {
+                "weapon": {"id": "sugar-drum", "min_level": 5},
+                "passive": {"id": passive_id, "min_level": 3},
+                "trigger": "boss_chest",
+            },
+            "replaces_weapon": "sugar-drum",
+            "weapon_definition": {
+                "type": "burst",
+                "targeting": {"mode": "self_centered", "range": 260},
+                "base_stats": {"damage": 48, "cooldown_ms": 920, "projectile_count": 3, "area_radius": 92},
+            },
+            "visual_description": "多圈糖波像节拍一样向外扩散。",
+            "sfx_description": "层叠糖鼓终曲声。",
             "unlock": {"type": "discover"},
         },
     )
@@ -131,7 +195,7 @@ class ContentCandidateValidatorTests(unittest.TestCase):
 
             self.assertEqual(report["decision"], "content_candidates_valid")
             self.assertEqual(report["candidate_count"], 1)
-            self.assertEqual(report["content_count"], 3)
+            self.assertEqual(report["content_count"], 5)
 
     def test_duplicate_base_id_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
