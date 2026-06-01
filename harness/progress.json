@@ -1551,6 +1551,11 @@
       "id": "demo_buildcraft_candidate_pack",
       "summary": "新增 Demo buildcraft 内容候选包：在 wave identity full pack 上叠加 5 把武器、5 个被动和 5 个进化，形成范围清场、减速控制、拾取成长、护盾容错和高风险爆发 5 条构筑路线。当前包已完成局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；仍不是 accepted_content，也未进入 Runtime 正式内容。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_300s_probe",
+      "summary": "完成 Demo buildcraft full pack 的首轮 300 秒 / 3 seed / all Bot 小规模矩阵探针；Idle、Random、Route 在目标内，但 Coward、Greedy、Kite、Tank、ZoneControl 胜率偏高，BossHunter 偏低，当前候选结论为 repair，已记录 failure case。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3388,6 +3393,11 @@
       "id": "demo_buildcraft_candidate_findings",
       "summary": "Demo buildcraft full pack 当前有 87 个对象：17 武器、17 被动、13 进化、12 普通敌人和 6 条地图标准波次。新增 5 条构筑路线已通过 partial candidate validation、Schema contract、静态预算、GameCore validate-content 和隔离 validate-candidates；新增武器预算无新增 warning，现有 warning 仍来自 sprinkle-spitter 的远程压力声明。后续重点应跑 Bot 仿真和 Replay，看升级选择是否真的形成多流派，而不是只增加内容数量。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_static_budget_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_300s_probe_findings",
+      "summary": "Demo buildcraft full pack 的 300 秒 / 3 seed 小矩阵显示当前不能晋级：CowardBot 66.7%、GreedyXpBot 100.0%、KiteBot 100.0%、TankBot 66.7%、ZoneControlBot 66.7% 均高于对应目标，BossHunterBot 33.3% 低于高技能目标。下一步应先看 representative replays 和 metrics，再做候选内构筑风险与波次压力修正。",
+      "report": "harness/failed_cases/fail_20260601_001_demo_buildcraft_300s_probe_balance.json"
     }
   ],
   "next_recommended": [
@@ -3508,8 +3518,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft 候选已补齐 5 条可读构筑路线；下一步应先对该 full pack 跑小规模 Bot 仿真和 Replay 回归，检查升级选择分布、进化达成率、胜率区间和高风险爆发是否压过其它路线。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_validate_candidates_001/summary.md"
+      "summary": "Demo buildcraft 候选首轮 300 秒小矩阵已进入 repair：下一步先读取 metrics 与 representative replays，判断强度偏差来自新增构筑过稳、波次压力不足、升级选择分布偏斜还是 BossHunter 目标不适配；修复必须只改候选包，修后重跑同一 300 秒 / 3 seed / all Bot 探针，再逐步扩大 seed 和 Replay 回归。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/summary.md"
     }
   ]
 }

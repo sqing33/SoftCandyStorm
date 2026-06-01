@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_001",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "The first 300s / 3-seed all-bot probe for the Demo buildcraft full pack did not meet the current bot matrix targets. CowardBot, GreedyXpBot, KiteBot, TankBot, and ZoneControlBot were above their target win-rate bands, while BossHunterBot was below its high-skill target band. IdleBot, RandomBot, and RouteBot stayed within target.",
+  "root_cause": "The candidate pack adds five build routes on top of the wave-identity candidate pack before those routes have been tuned against bot behavior. Early and mid-game stability appears too high for several generalist and defensive bots, while the boss-focused route is not converting enough 300s runs. The result is a repair-level balance spread rather than a simulated/playtest-ready content pack.",
+  "fix": "Keep the Demo buildcraft full pack in generated candidate status. Review representative replays and metrics before changing accepted content. Prefer candidate-only adjustments that add clearer tradeoffs to the safest routes, reduce over-stable defensive or pickup-growth scaling if replays confirm it, and avoid weakening BossHunterBot indirectly before its low win rate is understood.",
+  "validation": "Rerun game_harness matrix with the same content dir, map, seed range, duration, and all bots after candidate tuning. Only advance the pack toward simulated_candidates if the repaired 300s probe enters target bands, then repeat with a larger seed count and replay regression.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/failure_cases.json",
+    "harness/reports/2026-06-01_demo_buildcraft_matrix_300s_3seed_001/representative_replays/"
+  ]
+}
