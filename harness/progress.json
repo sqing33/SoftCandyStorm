@@ -3686,8 +3686,13 @@
     },
     {
       "id": "demo_buildcraft_repair_v20_findings",
-      "summary": "Demo buildcraft repair v20 已通过静态链路、GameCore validate-content 和隔离 validate-candidates。临时 10 seed 探针显示它可把 Route 拉回目标并保住 Coward 下限，但 Greedy 与 Kite 仍偏高；下一步跑正式 3 seed 烟测，再决定是否记录扩样失败并进入 v21。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_validate_candidates_001/summary.md"
+      "summary": "Demo buildcraft repair v20 已通过静态链路、GameCore validate-content 和隔离 validate-candidates，但正式 3 seed 烟测失败：Coward 0.0% 低于低技能目标下限。继续增加 sprinkle-spitter 远程压力会压掉低技能恢复窗口，下一步不应沿用简单加压方向。",
+      "report": "harness/failed_cases/fail_20260601_021_demo_buildcraft_repair_v20_coward_regression.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v21_probe_findings",
+      "summary": "Demo buildcraft repair v21 临时探针的 3 seed 烟测通过，但 10 seed 扩样失败：star-spoon 17 + pudding-turret 0.935 保住 Coward 10.0%、Kite 70.0%、Route 30.0%，但 Greedy 70.0% 仍高于 25%-55% 目标。下一步 v22 应保留 star-spoon 17 方向，同时用更窄的 Greedy 后期安全构筑、奖励分布或时序压力修复。",
+      "report": "harness/failed_cases/fail_20260601_022_demo_buildcraft_repair_v21_probe_greedy_gap.json"
     }
   ],
   "next_recommended": [
@@ -3808,8 +3813,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v20 已完成正式 300 秒 / 3 seed / all Bot 烟测但结论为 repair：Coward 0.0% 低于 10%-35% 目标。下一步创建 v21 generated candidate，不继续简单增加 sugar-moth 或 sprinkle-spitter 压力，改用更窄的构筑、经济或压力时序修复。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v20_matrix_300s_3seed_001/summary.md"
+      "summary": "Demo buildcraft repair v21 临时探针已完成 300 秒 / 10 seed / all Bot 扩样但结论为 repair：star-spoon 17 + pudding-turret 0.935 保住 Coward 10.0%、Kite 70.0%、Route 30.0%，但 Greedy 70.0% 仍高于 25%-55% 目标。下一步创建 v22，不再压低早期拾取经济或增加广谱远程压力，改用更窄的 Greedy 后期安全构筑、奖励分布或时序压力修复。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v21_probe_matrix_300s_10seed_001/summary.md"
     }
   ]
 }

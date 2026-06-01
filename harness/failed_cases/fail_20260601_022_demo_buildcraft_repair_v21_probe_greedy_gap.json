@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260601_022",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v21_probe",
+  "seed": "70000-70009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v21 temp probe kept the v18 wave baseline, reduced star-spoon pickup_radius value_per_level from 18 to 17, and softened pudding-turret cooldown growth from 0.92 to 0.935. The 300s / 3-seed all-Bot smoke matrix passed, but the 300s / 10-seed expansion failed because GreedyXpBot reached 70.0% against the required 25%-55% mid-skill target. Idle 0.0%, Random 0.0%, Coward 10.0%, Kite 70.0%, Tank 50.0%, BossHunter 50.0%, ZoneControl 30.0%, and Route 30.0% stayed inside their target bands.",
+  "root_cause": "The star-spoon pickup-radius trim repaired Route and Kite seed expansion, while the 0.935 turret growth kept Coward exactly at the 10% lower bound. However, Greedy still converts the extra XP route into too many late-window wins: 7/10 victories, average level 10.6, and 484.0 average kills. Directly reducing pickup economy further is unsafe because Coward is already at the lower bound, and broad ranged-pressure increases previously broke Coward in v19/v20.",
+  "fix": "Do not promote this v21 probe into a generated candidate pack. Create v22 from the same v18 baseline and keep star-spoon at 17, then use a narrower Greedy-facing adjustment that avoids further early pickup or broad wave pressure cuts. Candidate directions include a very small late-scaling reduction on Greedy's dominant safe build path, a timing-only pressure change after low-skill recovery windows, or a reward/XP distribution change that does not reduce Coward's only surviving seed.",
+  "validation": "Rerun a 300s / 3-seed all-Bot smoke matrix first, then rerun the 300s / 10-seed expansion if the smoke matrix passes. A viable v22 must keep Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before any Replay regression, design review, or human playtest evidence can be claimed.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v21_probe_matrix_300s_10seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v21_probe_matrix_300s_10seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v18_matrix_300s_10seed_001/summary.md",
+    "harness/failed_cases/fail_20260601_019_demo_buildcraft_repair_v18_seed_expansion.json",
+    "harness/failed_cases/fail_20260601_021_demo_buildcraft_repair_v20_coward_regression.json"
+  ]
+}
