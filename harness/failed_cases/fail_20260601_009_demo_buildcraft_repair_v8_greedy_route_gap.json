@@ -1,0 +1,17 @@
+{
+  "case_id": "fail_20260601_009",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v8_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v8 passed the candidate static chain and improved the 300s / 3-seed all-Bot smoke matrix: Random, Coward, Kite, Tank, BossHunter, and ZoneControl all reached target bands. However GreedyXpBot remained too high at 100.0%, and RouteBot remained too high at 66.7%.",
+  "root_cause": "The v8 opening and caramel repairs fixed the low-skill, boss-hunter, and control regressions, but the economy route remains too forgiving. Greedy still reaches level 11-12 and survives all three seeds, while Route can win two seeds with low-to-moderate damage taken, indicating that pickup/XP efficiency and fixed-route safety still exceed the low/mid skill target bands.",
+  "fix": "Do not promote v8. The next repair should be narrow: reduce economy scaling that benefits Greedy and Route, such as candy-crystal-lens and/or star-spoon, and consider a very small mobility reduction only if BossHunter and Coward remain in target. Avoid increasing broad wave pressure because v8 just restored Coward and BossHunter.",
+  "validation": "The next candidate must rerun the full candidate static chain and 300s / 3-seed all-Bot smoke before any 10-seed expansion. Passing requires GreedyXpBot 25%-55% and RouteBot 10%-35% while preserving the v8 passes for Random, Coward, Kite, Tank, BossHunter, and ZoneControl.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v8_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v8_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v8_static_budget_001/summary.md"
+  ]
+}
