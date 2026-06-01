@@ -170,7 +170,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
+      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检。正式 accepted_content 仍受真人审查、人工试玩和最终接受门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -229,12 +229,21 @@
             "harness/reports/2026-06-01_demo_wave_identity_full_pack_preflight_001/summary.md",
             "harness/reports/2026-06-01_demo_wave_identity_static_budget_001/summary.md",
             "harness/reports/2026-06-01_demo_wave_identity_schema_contract_001/summary.md",
-            "harness/reports/2026-06-01_demo_wave_identity_validate_candidates_001/summary.md"
+            "harness/reports/2026-06-01_demo_wave_identity_validate_candidates_001/summary.md",
+            "harness/generated_candidate_patches/2026-06-01_demo_buildcraft_candidates/metadata/manifest.json",
+            "harness/generated_candidates/2026-06-01_demo_buildcraft_full_pack/metadata/materialization.json",
+            "harness/reports/2026-06-01_demo_buildcraft_candidate_validation_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_materialization_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_full_pack_preflight_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_static_budget_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_schema_contract_001/summary.md",
+            "harness/reports/2026-06-01_demo_buildcraft_validate_candidates_001/summary.md"
           ],
           "gaps": [
             "Phase 4 full pack 已通过当前会话 Harness validate-candidates、5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归，进入 simulated_candidates；20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0% 过强，现已通过 Bot 策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部 gate pass。",
             "该候选仍不是正式 accepted_content：设计审查草稿和审查包待真人填写，9 局人工试玩、final acceptance 与 acceptance manifest 均未通过，accepted content lockfile 仍为空/blocked。",
             "Demo wave identity full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates，但尚未进入仓库内 validated_candidates，也尚未通过 Bot 仿真、Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
+            "Demo buildcraft full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates，但尚未进入仓库内 validated_candidates，也尚未通过 Bot 仿真、Replay 回归、真人设计审查、9 局人工试玩、final acceptance 或 accepted content lockfile。",
             "候选后续应进入人工设计审查和 9 局人工试玩；不得仅凭 Bot gate 或静态预算通过直接接入 Runtime 正式内容或发布候选。"
           ],
           "blockers": [

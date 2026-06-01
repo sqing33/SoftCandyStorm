@@ -1546,6 +1546,11 @@
       "id": "demo_wave_identity_candidate_pack",
       "summary": "新增 Demo wave identity 内容候选包：复用 Phase 4 的 4 个被动和 4 个普通敌人候选，并用 6 个 v2 wave 覆盖 base_demo 同名标准波次，让 6 张地图在 90 秒后逐步形成更明显的遭遇差异。当前包已完成局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；仍不是 accepted_content，也未进入 Runtime 正式内容。",
       "report": "harness/reports/2026-06-01_demo_wave_identity_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_candidate_pack",
+      "summary": "新增 Demo buildcraft 内容候选包：在 wave identity full pack 上叠加 5 把武器、5 个被动和 5 个进化，形成范围清场、减速控制、拾取成长、护盾容错和高风险爆发 5 条构筑路线。当前包已完成局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content 和隔离 validate-candidates；仍不是 accepted_content，也未进入 Runtime 正式内容。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_validate_candidates_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3378,6 +3383,11 @@
       "id": "demo_wave_identity_candidate_findings",
       "summary": "玩家可玩内容方向已从 RL 训练转回内容包密度：Demo wave identity full pack 当前有 72 个对象，包含 12 个被动、12 个普通敌人和 6 条地图标准波次；物化工具已记录 waves 为 6 overlay / 6 override，避免同名 wave 覆盖后计数翻倍。隔离 validate-candidates 为 1 validated / 0 rejected；静态预算为 valid，但 sprinkle-spitter 的远程弹幕压力使声明威胁高于基础接触公式计算威胁，后续人工审查和 Bot 仿真需要重点看中后期可读性与压力。",
       "report": "harness/reports/2026-06-01_demo_wave_identity_static_budget_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_candidate_findings",
+      "summary": "Demo buildcraft full pack 当前有 87 个对象：17 武器、17 被动、13 进化、12 普通敌人和 6 条地图标准波次。新增 5 条构筑路线已通过 partial candidate validation、Schema contract、静态预算、GameCore validate-content 和隔离 validate-candidates；新增武器预算无新增 warning，现有 warning 仍来自 sprinkle-spitter 的远程压力声明。后续重点应跑 Bot 仿真和 Replay，看升级选择是否真的形成多流派，而不是只增加内容数量。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_static_budget_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3498,8 +3508,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "先暂停 AI/RL 训练线，下一步应围绕玩家能感受到的构筑差异补一批武器 / 被动 / 进化候选，目标是形成范围清场、减速控制、拾取成长、护盾容错和高风险爆发等可读流派；所有新增内容仍必须先进入 generated candidate patch，经 Schema、静态预算、GameCore 加载、Bot 仿真、Replay 和人工试玩后才能考虑 accepted_content。",
-      "report": "docs/04_内容系统与素材库.md"
+      "summary": "Demo buildcraft 候选已补齐 5 条可读构筑路线；下一步应先对该 full pack 跑小规模 Bot 仿真和 Replay 回归，检查升级选择分布、进化达成率、胜率区间和高风险爆发是否压过其它路线。所有内容仍不得进入 accepted_content，直到真人设计审查和 9 局人工试玩通过。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_validate_candidates_001/summary.md"
     }
   ]
 }
