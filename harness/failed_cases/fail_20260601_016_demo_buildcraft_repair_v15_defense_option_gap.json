@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_016",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v15_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v15 passed the candidate static chain, GameCore validate-content, and isolated validate-candidates. Idle, Random, Coward, Kite, Tank, BossHunter, ZoneControl, and Route stayed inside their target bands, but GreedyXpBot remained at 0.0%, below the 25%-55% mid-skill target. Greedy still died around 225-229 seconds at levels 8-10.",
+  "root_cause": "v15 reverted sprinkle-spitter to v13 XP / score and made frosty-straw a light defensive-control option. The unchanged Greedy result shows that adding a small defensive upgrade option does not address the failure. The remaining problem is more likely the 210-300 second route pressure itself: Greedy continues to follow pickup paths into a lethal late-Boss window before it can convert build power into survival.",
+  "fix": "Do not promote v15 or run the 10-seed expansion. The next repair should stop tuning reward or upgrade labels and instead test a narrow frosting-grassland 210-300 second wave adjustment. Prefer reducing the specific route-pressure spike around the 225-229 second failure window, such as shifting a small amount of fast/ranged pressure into slower, safer enemies, while keeping Coward within 10%-35% and not weakening player weapons or passives.",
+  "validation": "Create v16 as a generated candidate only, rerun the full candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. Passing requires CowardBot 10%-35%, GreedyXpBot 25%-55%, RouteBot 10%-35%, and all other bots remaining in their configured target bands before any 10-seed expansion.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v15_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v15_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v15_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v15_validate_candidates_001/summary.md"
+  ]
+}
