@@ -1591,6 +1591,16 @@
       "id": "demo_buildcraft_repair_v5_seed_expansion_matrix",
       "summary": "完成 Demo buildcraft repair v5 的 300 秒 / 10 seed / all Bot 扩样矩阵；扩样暴露 Coward、Greedy、Kite、ZoneControl、Route 越过目标区间，结论回到 repair。",
       "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v5_matrix_300s_10seed_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v6_candidate_pack",
+      "summary": "新增 Demo buildcraft repair v6 候选包，尝试用更高 210-300 秒远程压力、温和机动削弱和焦糖控制增强修复 v5 扩样失败；该包通过候选静态链路和隔离 validate-candidates。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v6_validate_candidates_001/summary.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v6_smoke_matrix",
+      "summary": "完成 Demo buildcraft repair v6 的 300 秒 / 3 seed / all Bot 烟测；结果为 repair，暴露高 XP 远程压力敌人反而喂强 Greedy / Kite 的问题。",
+      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v6_matrix_300s_3seed_001/summary.md"
     }
   ],
   "current_findings": [
@@ -3458,6 +3468,11 @@
       "id": "demo_buildcraft_repair_v5_findings",
       "summary": "Demo buildcraft repair v5 的 3 seed 小矩阵曾全 Bot 进目标区间，但 10 seed 扩样失败：Coward 60.0%、Greedy 60.0%、Kite 90.0%、ZoneControl 20.0%、Route 40.0%。v5 不能推进，下一步应做 v6 窄修。",
       "report": "harness/failed_cases/fail_20260601_006_demo_buildcraft_repair_v5_seed_expansion.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v6_findings",
+      "summary": "Demo buildcraft repair v6 静态链路通过但 3 seed 烟测失败：Random 33.3%、Coward 0.0%、Greedy 100.0%、Kite 100.0%、BossHunter 33.3%、Route 66.7%。下一步 v7 应降低远程压力敌人 XP 回报，避免把反风筝压力转化为高技能经济滚雪球。",
+      "report": "harness/failed_cases/fail_20260601_007_demo_buildcraft_repair_v6_overcorrection.json"
     }
   ],
   "next_recommended": [
@@ -3578,8 +3593,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v5 已在 300 秒 / 10 seed / all Bot 扩样中失败。下一步创建 v6：提升 210-300 秒可读反风筝压力，温和压低机动构筑过强，并增强 ZoneControl 的控制收益；修后先跑 3 seed smoke，再跑 10 seed 扩样。",
-      "report": "harness/failed_cases/fail_20260601_006_demo_buildcraft_repair_v5_seed_expansion.json"
+      "summary": "Demo buildcraft repair v6 已在 300 秒 / 3 seed / all Bot 烟测中失败。下一步创建 v7：保留 ZoneControl 焦糖收益，恢复移动手感，降低 sprinkle-spitter XP，并用不喂经济的远程压力重新测试。",
+      "report": "harness/failed_cases/fail_20260601_007_demo_buildcraft_repair_v6_overcorrection.json"
     }
   ]
 }
