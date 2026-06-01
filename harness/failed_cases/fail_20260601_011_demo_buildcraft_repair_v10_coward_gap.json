@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260601_011",
+  "category": "balance",
+  "content_id": "2026-06-01_demo_buildcraft_repair_v10_full_pack",
+  "seed": "70000-70002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v10 passed the candidate static chain and isolated validate-candidates, and its 300s / 3-seed all-Bot smoke matrix fixed the previous GreedyXpBot and RouteBot overperformance: Greedy was 33.3% and Route was 33.3%. However CowardBot remained too low at 0.0%. Idle, Random, Kite, Tank, BossHunter, ZoneControl, Greedy, and Route all stayed inside target bands.",
+  "root_cause": "v10 restored passive economy and the v5 210-300s wave shape, but kept the v9 low-XP sprinkle-spitter. Compared with the earlier v5 passing smoke, Coward seed 70001 collected much less XP, reached only level 8 instead of level 10, missed later single-target upgrades, and died at 248.6 seconds. The remaining gap is low-skill recovery economy, not Greedy or Route safety.",
+  "fix": "Do not promote v10 or run the 10-seed expansion. The next repair should be very narrow: partially restore sprinkle-spitter's reward/readability toward v5, or otherwise give Coward enough growth recovery, while preserving v10's Greedy 33.3% and Route 33.3% smoke result. Avoid broad wave nerfs or broad player buffs.",
+  "validation": "Create v11 as a generated candidate only, rerun the full candidate static chain, then rerun the same 300s / 3-seed all-Bot smoke matrix. Passing requires CowardBot 10%-35% while GreedyXpBot remains 25%-55% and RouteBot remains 10%-35%.",
+  "diagnostics": [
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v10_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v10_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v10_static_budget_001/summary.md",
+    "harness/reports/2026-06-01_demo_buildcraft_repair_v10_validate_candidates_001/summary.md"
+  ]
+}
