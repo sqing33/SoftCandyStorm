@@ -1,0 +1,54 @@
+{
+  "batch_id": "2026-06-01_demo_buildcraft_repair_v14_candidates",
+  "generated_at": "2026-06-01",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v14",
+    "goal": "验证 repair v13 中 Greedy 仍偏低是否来自 sprinkle-spitter 奖励阈值不足，同时保持 Coward 与其他 Bot 目标区间。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "sprinkle-spitter",
+      "type": "enemy",
+      "path": "enemies/sprinkle-spitter.json",
+      "role": "在 v13 投射节奏基础上小幅提高 XP / score，验证 Greedy 能否在 225-229 秒失败窗口前获得关键升级"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v14，基于 v13 full pack 做单项覆盖。",
+      "v14 不改波次、武器或被动，只小幅提高 sprinkle-spitter 的 XP 与 score。",
+      "该批次必须先跑 3 seed smoke；若通过再跑 10 seed 扩样，不能直接进入 accepted_content。"
+    ]
+  }
+}
