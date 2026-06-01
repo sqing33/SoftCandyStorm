@@ -302,6 +302,61 @@ mod tests {
         snapshot.build.weapons[0].level = 3;
         assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(0));
     }
+
+    #[test]
+    fn route_finishes_basic_weapon_before_mobility_bias() {
+        let mut snapshot = empty_snapshot();
+        snapshot.build.weapons.push(game_core::BuildItemSnapshot {
+            id: "rainbow-candy-shot".to_string(),
+            level: 3,
+        });
+        snapshot.upgrade_options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "bubble-shoes".to_string(),
+                name: "泡泡鞋".to_string(),
+                tags: vec!["mobility".to_string()],
+                description: "提升移动速度。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-4".to_string(),
+                name: "彩虹糖弹 Lv4".to_string(),
+                tags: vec!["projectile".to_string()],
+                description: "提升彩虹糖弹。".to_string(),
+            },
+        ];
+
+        let mut bot = BotController::new(BotKind::Route, 6);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+
+        snapshot.build.weapons[0].level = 4;
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(0));
+    }
+
+    #[test]
+    fn kite_prefers_mint_but_falls_back_to_existing_upgrade() {
+        let mut snapshot = empty_snapshot();
+        snapshot.upgrade_options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-2".to_string(),
+                name: "彩虹糖弹 Lv2".to_string(),
+                tags: vec!["projectile".to_string()],
+                description: "提升彩虹糖弹。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "caramel-sticky-ground".to_string(),
+                name: "焦糖黏地".to_string(),
+                tags: vec!["control".to_string()],
+                description: "放置焦糖地面。".to_string(),
+            },
+        ];
+
+        let mut bot = BotController::new(BotKind::Kite, 7);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(0));
+
+        snapshot.upgrade_options[1].id = "mint-cyclone".to_string();
+        snapshot.upgrade_options[1].tags = vec!["control".to_string()];
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+    }
 }
 
 fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut PolicyRng) -> usize {
@@ -328,6 +383,12 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
     }
 
     if kind == BotKind::ZoneControl && weapon_level(snapshot, "rainbow-candy-shot") < 3 {
+        if let Some(index) = find_option(snapshot, &["rainbow-candy-shot"]) {
+            return index;
+        }
+    }
+
+    if kind == BotKind::Route && weapon_level(snapshot, "rainbow-candy-shot") < 4 {
         if let Some(index) = find_option(snapshot, &["rainbow-candy-shot"]) {
             return index;
         }
@@ -380,6 +441,7 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
             "bubble-shoes",
             "soda-bubble-pop",
             "sour-plum-spray",
+            "mint-cyclone",
             "star-spoon",
             "cream-clockwork",
         ],
@@ -418,7 +480,8 @@ fn upgrade_priorities(kind: BotKind) -> &'static [&'static str] {
 
 fn fallback_upgrade_choice(kind: BotKind, option_count: usize) -> usize {
     let preferred = match kind {
-        BotKind::Greedy | BotKind::Kite | BotKind::BossHunter => 1,
+        BotKind::Greedy | BotKind::BossHunter => 1,
+        BotKind::Kite => 0,
         BotKind::Tank | BotKind::ZoneControl | BotKind::Route => 2,
         BotKind::Idle | BotKind::Random | BotKind::Coward => 0,
     };
