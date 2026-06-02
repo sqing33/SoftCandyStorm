@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_011",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v36_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v36 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates. The 300s / 3-seed all-Bot smoke matrix still failed because BossHunterBot overcorrected to 100.0% against a 45%-75% target, while RouteBot remained too high at 66.7% against a 10%-35% target. CowardBot, GreedyXpBot, KiteBot, TankBot, and ZoneControlBot all stayed inside target.",
+  "root_cause": "The v36 repair tested Candy Crystal Lance at 30 damage / 1075ms while keeping projectile speed and range at v31 values. This still let all three BossHunter seeds survive to 300 seconds, proving the useful threshold is narrower than the v34 1080ms failure and v36 1075ms overrepair gap. Because GameCore carries weapon cooldown remainder across fixed ticks, a few milliseconds can still change late boss-window shot timing enough to flip all three BossHunter outcomes.",
+  "fix": "Do not promote v36 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. For v37, keep v31 as the base, keep waves unchanged, and test an even finer Candy Crystal Lance cooldown threshold such as 1078ms with damage 30, projectile speed 620, and range 550. Continue treating RouteBot as a separate unresolved issue because RouteBot's two winning seeds remain unchanged across v31, v34, v35, and v36.",
+  "validation": "v36 validation reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v36_* and the failing smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v36_matrix_300s_3seed_71000_001/summary.md. The next candidate should first rerun the same 71000-71002 smoke matrix. Passing requires Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before any 10-seed expansion or Replay regression.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v36_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v36_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v36_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}
