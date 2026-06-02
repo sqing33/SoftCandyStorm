@@ -17,6 +17,7 @@ Each run should be played manually. Do not use `--demo-input` or `--simulation-s
 Recommended launcher:
 
 ```bash
+python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
 python3 harness/playtest/run_v25_manual_playtest.py --list
 python3 harness/playtest/run_v25_manual_playtest.py --status
 python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
@@ -39,6 +40,8 @@ cargo run -p game_runtime -- \
 ```
 
 After each run, replace the matching `TODO` section in the review draft with concrete observations, 1-5 ratings, tags, and next actions.
+
+Use `check_v25_candidate_readiness.py --allow-incomplete` for the combined design-review and manual-playtest status, including the next missing playtest command.
 
 Use `run_v25_manual_playtest.py --status` to see report progress and `--next` to launch the first missing local report run. These launcher shortcuts only inspect report files; use the status checker below before strict validation.
 

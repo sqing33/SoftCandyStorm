@@ -1,0 +1,74 @@
+{
+  "report_version": 1,
+  "candidate_id": "2026-06-02_demo_buildcraft_repair_v25_full_pack",
+  "content_hash": "fnv1a64:aab110776109609d",
+  "decision": "candidate_waiting_for_human_evidence",
+  "summary": {
+    "design_review_decision": "design_review_incomplete",
+    "manual_playtest_decision": "manual_playtest_incomplete",
+    "design_review_ready": false,
+    "manual_playtest_ready": false,
+    "manual_reports": 0,
+    "manual_required_reports": 9,
+    "next_manual_command": "python3 harness/playtest/run_v25_manual_playtest.py new_001",
+    "next_manual_runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25001 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_001.json --capture-interval 2"
+  },
+  "blockers": [
+    "design_review_incomplete",
+    "manual_playtest_incomplete"
+  ],
+  "next_actions": [
+    "Fill the v25 design review draft for pudding-turret, then run `python3 harness/content_review/check_v25_design_review_status.py --allow-incomplete`.",
+    "Run the next human playtest with `python3 harness/playtest/run_v25_manual_playtest.py new_001`."
+  ],
+  "design_review": {
+    "decision": "design_review_incomplete",
+    "draft_has_placeholder": true,
+    "expected_content_ids": [
+      "pudding-turret"
+    ],
+    "placeholder_reviews": [
+      "pudding-turret"
+    ],
+    "errors": [
+      "review draft still contains TODO or placeholder markers"
+    ]
+  },
+  "manual_playtest": {
+    "decision": "manual_playtest_incomplete",
+    "existing_report_count": 0,
+    "required_run_count": 9,
+    "draft_has_todo": true,
+    "missing_reports": [
+      "harness/telemetry/local/v25_manual_playtest_new_001.json",
+      "harness/telemetry/local/v25_manual_playtest_new_002.json",
+      "harness/telemetry/local/v25_manual_playtest_new_003.json",
+      "harness/telemetry/local/v25_manual_playtest_skilled_001.json",
+      "harness/telemetry/local/v25_manual_playtest_skilled_002.json",
+      "harness/telemetry/local/v25_manual_playtest_skilled_003.json",
+      "harness/telemetry/local/v25_manual_playtest_build_001.json",
+      "harness/telemetry/local/v25_manual_playtest_build_002.json",
+      "harness/telemetry/local/v25_manual_playtest_build_003.json"
+    ],
+    "draft_todo_runs": [
+      "new_001",
+      "new_002",
+      "new_003",
+      "skilled_001",
+      "skilled_002",
+      "skilled_003",
+      "build_001",
+      "build_002",
+      "build_003"
+    ],
+    "errors": [
+      "9 playtest reports are missing",
+      "review draft still contains TODO placeholders"
+    ]
+  },
+  "limitations": [
+    "This readiness report only combines local status checks.",
+    "It does not fill human review evidence, play the game, judge fun, or promote content.",
+    "v25 must not be copied into content/base_demo, accepted_content, or Runtime official content before human gates pass."
+  ]
+}

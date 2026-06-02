@@ -405,6 +405,9 @@
             "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_runbook_001/summary.md",
             "harness/playtest/run_v25_manual_playtest.py",
             "harness/playtest/test_run_v25_manual_playtest.py",
+            "harness/playtest/check_v25_candidate_readiness.py",
+            "harness/playtest/test_check_v25_candidate_readiness.py",
+            "harness/reports/2026-06-02_demo_buildcraft_repair_v25_candidate_readiness_001/summary.md",
             "harness/playtest/check_v25_manual_playtest_status.py",
             "harness/playtest/test_check_v25_manual_playtest_status.py",
             "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_status_001/summary.md",
@@ -434,7 +437,7 @@
             "Demo buildcraft repair v22 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates 和 300 秒 / 3 seed / all Bot 烟测；但 300 秒 / 10 seed / all Bot 扩样失败，Greedy 60.0% 高于目标上限，因此由 v23 继续修复，且不得进入仓库内 validated_candidates / simulated_candidates、playtest_candidates、accepted_content 或 Runtime 正式内容。",
             "Demo buildcraft repair v23 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates 和 300 秒 / 3 seed / all Bot 烟测；但 300 秒 / 10 seed / all Bot 扩样仍失败，Greedy 60.0% 高于目标上限，因此由 v24 继续修复，且不得进入仓库内 validated_candidates / simulated_candidates、playtest_candidates、accepted_content 或 Runtime 正式内容。",
             "Demo buildcraft repair v24 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates 和 300 秒 / 3 seed / all Bot 烟测；但 300 秒 / 10 seed / all Bot 扩样仍失败，Greedy 60.0% 高于目标上限，因此已由 v25 继续修复，且不得进入仓库内 validated_candidates / simulated_candidates、playtest_candidates、accepted_content 或 Runtime 正式内容。",
-            "Demo buildcraft repair v25 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates、300 秒 / 3 seed / all Bot、300 秒 / 10 seed / all Bot 和 90 条 Replay 回归；10 seed 扩样中 9 个 Bot 均在目标区间，Replay 90/90 通过。该候选已生成内容设计审查草稿 / 审查包、设计审查状态检查器、9 局人工试玩草稿 / 审查包、人工试玩 runbook、支持 `--status` / `--next` 的专用 launcher 和状态检查器，并通过一次 90 秒 Runtime 候选加载 smoke；但当前设计审查状态仍为 design_review_incomplete，pudding-turret 审查条目仍含 TODO / 占位符；人工试玩状态仍为 manual_playtest_incomplete，0 / 9 本地试玩报告存在，试玩草稿仍为 needs_more_runs / draft_todo，尚未由真人填写并通过对应校验；它也尚未进入仓库内 validated_candidates / simulated_candidates / playtest_candidates，未通过 final acceptance 或 accepted content lockfile。",
+            "Demo buildcraft repair v25 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates、300 秒 / 3 seed / all Bot、300 秒 / 10 seed / all Bot 和 90 条 Replay 回归；10 seed 扩样中 9 个 Bot 均在目标区间，Replay 90/90 通过。该候选已生成内容设计审查草稿 / 审查包、设计审查状态检查器、9 局人工试玩草稿 / 审查包、人工试玩 runbook、支持 `--status` / `--next` 的专用 launcher、试玩状态检查器和候选 readiness 总览，并通过一次 90 秒 Runtime 候选加载 smoke；readiness 当前为 candidate_waiting_for_human_evidence，blockers 为 design_review_incomplete 与 manual_playtest_incomplete。当前设计审查状态仍为 design_review_incomplete，pudding-turret 审查条目仍含 TODO / 占位符；人工试玩状态仍为 manual_playtest_incomplete，0 / 9 本地试玩报告存在，试玩草稿仍为 needs_more_runs / draft_todo，尚未由真人填写并通过对应校验；它也尚未进入仓库内 validated_candidates / simulated_candidates / playtest_candidates，未通过 final acceptance 或 accepted content lockfile。",
             "候选后续应由真人完成内容设计审查和 9 局人工试玩；不得仅凭 Bot gate、Replay 回归、Runtime smoke 或草稿审查包直接接入 Runtime 正式内容或发布候选。"
           ],
           "blockers": [
