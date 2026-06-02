@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_006",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v31_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v31 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates. The 300s / 3-seed all-Bot smoke matrix improved v30's broad overcorrection, but still failed: BossHunterBot was too low at 0.0% against a 45%-75% target, and RouteBot remained too high at 66.7% against a 10%-35% target. CowardBot, GreedyXpBot, KiteBot, TankBot, and ZoneControlBot were all inside their target bands.",
+  "root_cause": "The v31 repair narrowed the change to Bubble Shoes and Star Sugar Ray. Reducing Bubble Shoes from +10 to +9 move speed per level was enough to pull CowardBot and KiteBot back into range, but RouteBot still survives two of three seeds because the fixed route can repeatedly recover through the same low-risk movement pattern. Star Sugar Ray's small damage and cooldown improvement was too conservative for BossHunterBot; it did not provide enough boss-window reliability or safety before the 210-300s pressure spike.",
+  "fix": "Do not promote v31 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. For v32, preserve the parts that worked in v31: avoid v30's Caramel Sticky Ground buff and avoid broad control/defense buffs. Keep Bubble Shoes at +9 unless later evidence says otherwise. Repair RouteBot with a narrow route-disruption pressure shape or fixed-route pickup risk that does not broadly increase pressure on GreedyXpBot and TankBot. Repair BossHunterBot with a targeted boss-killer reliability change, likely by improving Star Sugar Ray or boss-window reward timing, rather than globally lowering enemy pressure.",
+  "validation": "v31 validation reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v31_* and the failing smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v31_matrix_300s_3seed_71000_001/summary.md. The next candidate should first rerun the same 71000-71002 smoke matrix. Passing requires Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before any 10-seed expansion or Replay regression.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v31_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v31_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v31_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}

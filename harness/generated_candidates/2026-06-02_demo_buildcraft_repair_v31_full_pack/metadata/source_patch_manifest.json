@@ -1,0 +1,60 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v31_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 mobility/boss 窄修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v29_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo mobility and boss reliability repair v31",
+    "goal": "修复 v29/v30 在 71000-71002 smoke 中 Kite/Coward/Route 过稳和 BossHunter 偏低的问题，同时避免 v30 对控制与防御构筑的过修。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "bubble-shoes",
+      "type": "passive",
+      "path": "passives/bubble-shoes.json",
+      "role": "小幅压低移动收益，降低风筝和固定路线稳定性。"
+    },
+    {
+      "id": "star-sugar-ray",
+      "type": "weapon",
+      "path": "weapons/star-sugar-ray.json",
+      "role": "BossHunter 第一优先级武器小幅可靠性修复。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次不继承 v30 的 caramel-sticky-ground buff 或 210-300s caramel-slime 注入。",
+      "bubble-shoes 只做每级 -1 move_speed 的轻修，避免复现 v6 的重移动削弱。",
+      "star-sugar-ray 只小幅提高 Boss 单体可靠性，不修改 Candy Crystal Lance 或 Boss 血量。",
+      "候选必须先通过 71000-71002 smoke，再考虑 10-seed 扩样。"
+    ]
+  }
+}
