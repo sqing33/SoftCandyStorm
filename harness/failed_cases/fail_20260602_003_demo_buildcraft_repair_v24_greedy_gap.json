@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_003",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v24_full_pack",
+  "seed": "70000-70009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v24 moved the v23 narrow ranged-pressure transfer earlier, preserving 210-225s as a Boss-after recovery window and applying sandwich-cookie-creep 0.15 plus sprinkle-spitter 0.09 from 225-300s. It passed partial candidate validation, materialization, full-pack preflight, static balance budget, schema contract, GameCore validate-content, isolated validate-candidates, and the 300s / 3-seed all-Bot smoke matrix. The 300s / 10-seed expansion still failed because GreedyXpBot remained at 60.0%, above the required 25%-55% mid-skill target. Idle 0.0%, Random 0.0%, Coward 20.0%, Kite 70.0%, Tank 50.0%, BossHunter 50.0%, ZoneControl 30.0%, and Route 30.0% stayed inside their target bands.",
+  "root_cause": "Moving the same 0.01 sandwich-to-sprinkle pressure transfer from 255s to 225s did not change Greedy's decisive outcomes. Greedy still won seeds 70001, 70003, 70004, 70005, 70007, and 70008, while loss seeds remained clustered near 225-232s. This indicates the remaining Greedy gap is no longer well-addressed by tiny wave-pool weight shifts inside the Boss-after segment; the safe completed builds can absorb that pressure without dropping an additional seed.",
+  "fix": "Do not promote v24 into validated_candidates, simulated_candidates, playtest_candidates, accepted_content, or Runtime content. Create v25 as another generated candidate, but stop iterating the same 0.01 sprinkle-spitter weight transfer. Prefer a direct late safety-payoff repair such as narrowing the strongest safe secondary-build payoff, adding a more targeted post-Boss pressure rule that affects completed safe builds, or adjusting late economy conversion. Avoid broad weapon nerfs, early pickup cuts, or sugar-moth side-pressure swaps because prior probes showed those break other Bot gates or player-facing build feel.",
+  "validation": "Rerun the full candidate static chain, 300s / 3-seed all-Bot smoke matrix, and 300s / 10-seed all-Bot expansion. A viable v25 must keep Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before Replay regression, design review, manual playtest, or final acceptance evidence can be claimed.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v24_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v24_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_schema_contract_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_matrix_300s_10seed_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v24_matrix_300s_10seed_001/metrics.json"
+  ]
+}
