@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260603_001",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v48_full_pack",
+  "seed": "72000-72009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "After GameCore filters discover-locked weapons and passives out of first-run upgrade offers, the v48 300s / 10-seed matrix on seeds 72000-72009 improves substantially but still fails promotion. IdleBot remains at 0.0%, RandomBot returns to 10.0%, CowardBot returns to 10.0%, GreedyXpBot returns to 50.0%, and TankBot returns to 40.0%, all inside their target intervals. KiteBot remains high at 80.0% against a 45%-75% target, BossHunterBot rises too high at 90.0% against a 45%-75% target, ZoneControlBot remains low at 10.0% against a 25%-55% target, and RouteBot remains high at 40.0% against a 10%-35% target.",
+  "root_cause": "The discover unlock filter removes a major source of first-demo upgrade-pool variance: content intended to be found later no longer enters ordinary run upgrades before discovery. This corrects several low- and mid-skill policy outcomes, but the remaining failure pattern is content balance rather than unlock leakage. The default starter pool still lets high-mobility and boss-focused policies stabilize too reliably, ZoneControlBot lacks a reliable midgame control/survival path, and fixed-route play still benefits from some 210-300 second layouts.",
+  "fix": "Keep the GameCore unlock filter because it enforces the content contract, but do not promote v48 to simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content. The next v49 repair should stay in the content candidate layer and rebalance the default first-demo pool and frosting-grassland-standard's 210-300 second pressure: lightly reduce high-skill and boss-focused certainty, improve control-route reliability, and trim fixed-route overperformance without repeating the broad side effects seen in earlier v45-v48 wave repairs.",
+  "validation": "The unlock-filter matrix is recorded in harness/reports/2026-06-03_demo_buildcraft_unlock_filter_v48_matrix_300s_10seed_72000_001/summary.md and metrics.json. The repair is validated as a GameCore rule fix by cargo fmt --check and cargo test -p game_core, but content promotion remains blocked by the four out-of-target Bot families. Future v49 candidates should rerun at least the 300s / 10-seed all-Bot matrix on seeds 72000-72009 and should also validate against a second seed window before any human playtest recommendation.",
+  "diagnostics": [
+    "crates/game_core/src/lib.rs",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v48_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_10seed_72000_001/metrics.json",
+    "harness/reports/2026-06-03_demo_buildcraft_unlock_filter_v48_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-03_demo_buildcraft_unlock_filter_v48_matrix_300s_10seed_72000_001/metrics.json",
+    "harness/reports/2026-06-03_demo_buildcraft_unlock_filter_v48_matrix_300s_10seed_72000_001/failure_cases.json"
+  ]
+}

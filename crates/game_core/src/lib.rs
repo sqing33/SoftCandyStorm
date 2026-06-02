@@ -1716,6 +1716,9 @@ impl GameCore {
             if self.weapons.iter().any(|state| state.id == weapon.id) {
                 continue;
             }
+            if !is_default_unlock(&weapon.unlock.unlock_type) {
+                continue;
+            }
             new_weapon_candidates.push(UpgradeOffer {
                 snapshot: UpgradeOptionSnapshot {
                     id: weapon.id.clone(),
@@ -1731,6 +1734,9 @@ impl GameCore {
 
         let mut passive_candidates = Vec::new();
         for passive in self.content.passives.values() {
+            if !is_default_unlock(&passive.unlock.unlock_type) {
+                continue;
+            }
             if self
                 .passives
                 .iter()
@@ -2004,6 +2010,10 @@ impl GameCore {
             .map(|evolution| evolution.id.clone())
             .collect()
     }
+}
+
+fn is_default_unlock(unlock_type: &str) -> bool {
+    unlock_type == "default"
 }
 
 fn xp_required(level: u32) -> f32 {
@@ -3143,6 +3153,31 @@ mod tests {
             .iter()
             .any(|option| matches!(option.effect, UpgradeEffect::Passive { .. })));
         assert_eq!(options.len(), 3);
+    }
+
+    #[test]
+    fn upgrade_options_skip_discover_locked_weapons_and_passives() {
+        let mut content = ContentPack::base_demo();
+        for (weapon_id, weapon) in content.weapons.iter_mut() {
+            if weapon_id != "rainbow-candy-shot" {
+                weapon.unlock.unlock_type = "discover".to_string();
+            }
+        }
+        for passive in content.passives.values_mut() {
+            passive.unlock.unlock_type = "discover".to_string();
+        }
+
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("content with discover-locked upgrades should initialize");
+        let options = core.generate_upgrade_options();
+
+        assert!(!options.is_empty());
+        assert!(options
+            .iter()
+            .all(|option| matches!(option.effect, UpgradeEffect::WeaponLevel { .. })));
+        assert!(options
+            .iter()
+            .all(|option| option.snapshot.id.starts_with("rainbow-candy-shot-level-")));
     }
 
     #[test]
