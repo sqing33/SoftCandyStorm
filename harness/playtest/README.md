@@ -71,6 +71,7 @@ python3 harness/playtest/run_v25_manual_playtest.py --next
 python3 harness/playtest/run_v25_manual_playtest.py new_001 --dry-run
 python3 harness/playtest/run_v25_manual_playtest.py new_001
 python3 harness/playtest/summarize_v25_manual_playtest_reports.py --allow-incomplete
+python3 harness/playtest/create_v25_content_repair_action_plan.py
 python3 harness/playtest/check_v25_manual_playtest_status.py --allow-incomplete
 ```
 
@@ -142,6 +143,13 @@ level, kills, damage taken, upgrade count, average FPS, and automation flags.
 It is only a helper for filling the review draft; it does not replace human
 ratings, notes, tags, next actions, or strict acceptance validation.
 
+Use `create_v25_content_repair_action_plan.py` after quick-play, content-tour,
+or manual report summaries are refreshed. It merges missing reports, invalid
+report attention, and objective metric risks into a candidate-only repair
+checklist for the v25 playable content surface. It does not run Runtime, judge
+fun, fill human review fields, accept content, or move v25 out of
+`generated_candidates`.
+
 After running manual sessions and filling the draft, use
 `check_v25_manual_playtest_status.py` to confirm that all 9 local reports exist
 and the draft no longer contains TODO placeholders before running strict
@@ -187,6 +195,7 @@ python3 harness/playtest/test_summarize_v25_quick_play_reports.py
 python3 harness/playtest/test_run_v25_content_tour.py
 python3 harness/playtest/test_summarize_v25_content_tour_reports.py
 python3 harness/playtest/test_summarize_v25_manual_playtest_reports.py
+python3 harness/playtest/test_create_v25_content_repair_action_plan.py
 python3 harness/playtest/test_check_v25_manual_playtest_status.py
 python3 harness/playtest/test_run_v25_manual_playtest.py
 python3 harness/playtest/test_validate_manual_review.py
