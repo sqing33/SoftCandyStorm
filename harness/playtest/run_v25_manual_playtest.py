@@ -100,25 +100,68 @@ def validate_manual_command(command: list[str]) -> None:
         raise ValueError(f"manual playtest command must not include automation flags: {', '.join(forbidden)}")
 
 
-def list_runs() -> str:
+def report_exists(repo_root: Path, run: PlaytestRun) -> bool:
+    return (repo_root / run.report_path).exists()
+
+
+def first_missing_run(repo_root: Path) -> PlaytestRun | None:
+    for run in RUNS:
+        if not report_exists(repo_root, run):
+            return run
+    return None
+
+
+def list_runs(repo_root: Path | None = None) -> str:
     lines = [
         f"Candidate: {CANDIDATE_ID}",
         f"Content hash: {CONTENT_HASH}",
         "",
-        "Run id | Skill | Seed | Intent | Report",
-        "---|---|---:|---|---",
     ]
+    if repo_root is None:
+        lines.extend(["Run id | Skill | Seed | Intent | Report", "---|---|---:|---|---"])
+    else:
+        lines.extend(["Run id | Skill | Seed | Intent | Report | Status", "---|---|---:|---|---|---"])
     for run in RUNS:
-        lines.append(f"{run.run_id} | {run.skill} | {run.seed} | {run.intent} | {run.report_path}")
+        status = ""
+        if repo_root is not None:
+            status = " | done" if report_exists(repo_root, run) else " | missing"
+        lines.append(f"{run.run_id} | {run.skill} | {run.seed} | {run.intent} | {run.report_path}{status}")
+    return "\n".join(lines)
+
+
+def status_text(repo_root: Path) -> str:
+    existing_count = sum(1 for run in RUNS if report_exists(repo_root, run))
+    next_run = first_missing_run(repo_root)
+    lines = [
+        f"Candidate: {CANDIDATE_ID}",
+        f"Content hash: {CONTENT_HASH}",
+        f"Reports: {existing_count} / {len(RUNS)}",
+    ]
+    if next_run is None:
+        lines.append("Next run: none, all local reports exist")
+        lines.append("Next check: run check_v25_manual_playtest_status.py and strict manual review validation")
+    else:
+        lines.append(f"Next run: {next_run.run_id} ({next_run.skill}, seed {next_run.seed})")
+        lines.append(f"Intent: {next_run.intent}")
+        lines.append(f"Report: {next_run.report_path}")
+        lines.append("Launch: python3 harness/playtest/run_v25_manual_playtest.py --next")
     return "\n".join(lines)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Launch a v25 manual playtest Runtime run.")
-    parser.add_argument("run_id", nargs="?", choices=sorted(RUN_BY_ID), help="Required run id unless --list is used")
+    parser.add_argument(
+        "run_id",
+        nargs="?",
+        choices=sorted(RUN_BY_ID),
+        help="Required run id unless --list, --status, or --next is used",
+    )
     parser.add_argument("--list", action="store_true", help="List the 9 required manual runs")
+    parser.add_argument("--status", action="store_true", help="Print local report progress and the next missing run")
+    parser.add_argument("--next", action="store_true", help="Launch the first run whose local report is missing")
     parser.add_argument("--dry-run", action="store_true", help="Print the command without launching Runtime")
     parser.add_argument("--release", action="store_true", help="Use cargo run --release")
+    parser.add_argument("--repo-root", type=Path, default=REPO_ROOT, help=argparse.SUPPRESS)
     parser.add_argument("--seconds", type=int, default=DEFAULT_SECONDS, help="Target run duration in seconds")
     parser.add_argument(
         "--capture-interval",
@@ -131,17 +174,30 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    repo_root = args.repo_root
     if args.list:
-        print(list_runs())
+        print(list_runs(repo_root))
         return 0
-    if args.run_id is None:
-        raise SystemExit("run_id is required unless --list is used")
+    if args.status:
+        print(status_text(repo_root))
+        return 0
+    if args.next and args.run_id is not None:
+        raise SystemExit("run_id cannot be combined with --next")
+    if args.next:
+        run = first_missing_run(repo_root)
+        if run is None:
+            print("All 9 local v25 manual playtest reports already exist.")
+            print("Run check_v25_manual_playtest_status.py before strict manual review validation.")
+            return 0
+    elif args.run_id is None:
+        raise SystemExit("run_id is required unless --list, --status, or --next is used")
+    else:
+        run = RUN_BY_ID[args.run_id]
     if args.seconds <= 0:
         raise SystemExit("--seconds must be positive")
     if args.capture_interval <= 0:
         raise SystemExit("--capture-interval must be positive")
 
-    run = RUN_BY_ID[args.run_id]
     command = build_runtime_command(
         run,
         seconds=args.seconds,
@@ -149,12 +205,12 @@ def main() -> int:
         release=args.release,
     )
     validate_manual_command(command)
-    run.report_path.parent.mkdir(parents=True, exist_ok=True)
+    (repo_root / run.report_path).parent.mkdir(parents=True, exist_ok=True)
 
     print(shell_quote(command))
     if args.dry_run:
         return 0
-    completed = subprocess.run(command, cwd=REPO_ROOT, check=False)
+    completed = subprocess.run(command, cwd=repo_root, check=False)
     return completed.returncode
 
 

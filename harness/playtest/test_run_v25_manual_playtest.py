@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -21,6 +22,8 @@ from run_v25_manual_playtest import (  # noqa: E402
     RUNS,
     RUN_BY_ID,
     build_runtime_command,
+    first_missing_run,
+    status_text,
     validate_manual_command,
 )
 
@@ -89,6 +92,54 @@ class V25ManualPlaytestLauncherTests(unittest.TestCase):
         self.assertIn("Candidate: 2026-06-02_demo_buildcraft_repair_v25_full_pack", result.stdout)
         self.assertIn("new_001", result.stdout)
         self.assertIn("build_003", result.stdout)
+
+    def test_first_missing_run_uses_local_report_presence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+
+            self.assertEqual(first_missing_run(root).run_id, "new_001")
+            for run in RUNS[:2]:
+                path = root / run.report_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}\n", encoding="utf-8")
+
+            self.assertEqual(first_missing_run(root).run_id, "new_003")
+            self.assertIn("Reports: 2 / 9", status_text(root))
+
+    def test_next_dry_run_launches_first_missing_report(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for run in RUNS[:2]:
+                path = root / run.report_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(LAUNCHER), "--repo-root", str(root), "--next", "--dry-run"],
+                cwd=REPO_ROOT,
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("--seed 25003", result.stdout)
+            self.assertIn("v25_manual_playtest_new_003.json", result.stdout)
+            self.assertNotIn("--demo-input", result.stdout)
+
+    def test_status_prints_next_missing_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = subprocess.run(
+                [sys.executable, str(LAUNCHER), "--repo-root", temp_dir, "--status"],
+                cwd=REPO_ROOT,
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Reports: 0 / 9", result.stdout)
+            self.assertIn("Next run: new_001", result.stdout)
 
 
 if __name__ == "__main__":

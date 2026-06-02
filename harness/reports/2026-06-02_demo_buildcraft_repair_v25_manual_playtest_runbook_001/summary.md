@@ -18,6 +18,9 @@ Recommended launcher:
 
 ```bash
 python3 harness/playtest/run_v25_manual_playtest.py --list
+python3 harness/playtest/run_v25_manual_playtest.py --status
+python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
+python3 harness/playtest/run_v25_manual_playtest.py --next
 python3 harness/playtest/run_v25_manual_playtest.py <run_id> --dry-run
 python3 harness/playtest/run_v25_manual_playtest.py <run_id>
 python3 harness/playtest/check_v25_manual_playtest_status.py --allow-incomplete
@@ -36,6 +39,8 @@ cargo run -p game_runtime -- \
 ```
 
 After each run, replace the matching `TODO` section in the review draft with concrete observations, 1-5 ratings, tags, and next actions.
+
+Use `run_v25_manual_playtest.py --status` to see report progress and `--next` to launch the first missing local report run. These launcher shortcuts only inspect report files; use the status checker below before strict validation.
 
 Use the status checker after a batch of runs to confirm which local reports are still missing and whether the draft still contains `TODO` placeholders.
 

@@ -54,6 +54,9 @@ launcher:
 
 ```bash
 python3 harness/playtest/run_v25_manual_playtest.py --list
+python3 harness/playtest/run_v25_manual_playtest.py --status
+python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
+python3 harness/playtest/run_v25_manual_playtest.py --next
 python3 harness/playtest/run_v25_manual_playtest.py new_001 --dry-run
 python3 harness/playtest/run_v25_manual_playtest.py new_001
 python3 harness/playtest/check_v25_manual_playtest_status.py --allow-incomplete
@@ -65,6 +68,11 @@ and writes reports under `harness/telemetry/local/`. It intentionally does not
 add `--demo-input`, `--simulation-speed`, or `--auto-exit-after-report`, because
 those flags would make the evidence automated rather than human playtest
 evidence.
+
+Use `--status` to see local report progress and `--next` to launch the first
+run whose local report is still missing. These shortcuts only inspect local
+report files; the stricter status checker still verifies draft TODOs and
+candidate metadata.
 
 After running manual sessions and filling the draft, use
 `check_v25_manual_playtest_status.py` to confirm that all 9 local reports exist
