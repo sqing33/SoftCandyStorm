@@ -5,6 +5,7 @@
 - Content hash: `fnv1a64:aab110776109609d`
 - Review draft: `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`
 - Review packet: `harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_packet_001/summary.md`
+- Human worksheet: `harness/reports/2026-06-02_demo_buildcraft_repair_v25_human_review_worksheet_001/worksheet.md`
 
 ## Purpose
 
@@ -19,6 +20,7 @@ Recommended launcher:
 ```bash
 python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
 python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos
+python3 harness/playtest/create_v25_human_review_worksheet.py
 python3 harness/playtest/run_v25_manual_playtest.py --list
 python3 harness/playtest/run_v25_manual_playtest.py --status
 python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
@@ -45,6 +47,12 @@ After each run, replace the matching `TODO` section in the review draft with con
 Use `check_v25_candidate_readiness.py --allow-incomplete` for the combined design-review and manual-playtest status, including the next missing playtest command.
 
 Use `list_v25_human_evidence_todos.py --allow-todos` to list every field that still needs concrete human evidence.
+
+Use `create_v25_human_review_worksheet.py` to create a Markdown worksheet with
+the design-review fields, all 9 playtest commands, required observations,
+rating slots, and validation commands. The worksheet helps the human reviewer
+avoid missed fields, but it is not acceptance evidence by itself; the JSON
+drafts remain the source of truth.
 
 Use `run_v25_manual_playtest.py --status` to see report progress and `--next` to launch the first missing local report run. These launcher shortcuts only inspect report files; use the status checker below before strict validation.
 
