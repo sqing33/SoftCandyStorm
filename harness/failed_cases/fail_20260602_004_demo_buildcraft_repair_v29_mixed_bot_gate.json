@@ -1,0 +1,24 @@
+{
+  "case_id": "fail_20260602_004",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v29_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "v29 passed candidate validation, materialization, full-pack preflight, static balance budget without warnings, playable coverage audit, and GameCore validate-content, but the 300s / 3-seed all-Bot smoke matrix still returned repair. CowardBot and RouteBot were too successful at 66.7% against the low-skill 10%-35% target, KiteBot was too stable at 100.0% against the high-skill 45%-75% target, and BossHunterBot was too weak at 0.0% against the high-skill 45%-75% target. IdleBot 0.0%, RandomBot 0.0%, GreedyXpBot 33.3%, TankBot 33.3%, and ZoneControlBot 33.3% stayed inside their target bands.",
+  "root_cause": "The v27-v29 content repairs improved playable coverage and static budget hygiene but did not rebalance the 300s Frosting Grassland rule-Bot outcomes. The current wave/build environment appears too safe for avoidance-style bots while not giving BossHunterBot enough reliable boss-focused payoff before the 210-300s pressure window. This is likely a mixed wave pressure and build-route payoff issue rather than a schema or static-budget issue.",
+  "fix": "Do not promote v29 into validated_candidates, simulated_candidates, playtest_candidates, accepted_content, or Runtime content. Create a v30 generated candidate focused on the 300s rule-Bot gate: add targeted pressure against passive avoidance routes without raising Idle/Random viability, and improve boss-killer route reliability without broadly buffing every high-skill bot. Prefer small wave timing/enemy-pool adjustments or targeted boss-killer support over global weapon or XP changes.",
+  "validation": "Rerun partial candidate validation, materialization, full-pack preflight, static balance budget, playable coverage audit, GameCore validate-content, and a 300s / 3-seed all-Bot smoke matrix on v30. A viable repair should keep Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before wider seed expansion, Replay regression, design review, manual playtest, or acceptance can be claimed.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v29_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v29_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_matrix_300s_3seed_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v29_matrix_300s_3seed_001/failure_cases.json"
+  ]
+}
