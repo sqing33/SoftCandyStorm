@@ -14,9 +14,10 @@ import math
 from pathlib import Path
 from typing import Any
 
+from audit_v25_playable_content_coverage import build_audit as build_playable_content_coverage_audit
 from play_v25_candidate import QUICK_PLAY_PRESETS
 from run_v25_content_tour import TOUR_RUNS
-from run_v25_manual_playtest import CANDIDATE_ID, CONTENT_HASH, RUNS
+from run_v25_manual_playtest import CANDIDATE_ID, CONTENT_DIR, CONTENT_HASH, RUNS
 from summarize_v25_content_tour_reports import build_report as build_content_tour_summary
 from summarize_v25_manual_playtest_reports import build_report as build_manual_summary
 from summarize_v25_quick_play_reports import build_report as build_quick_play_summary
@@ -31,7 +32,7 @@ DEFAULT_MARKDOWN = Path(
 )
 
 PRIORITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
-DOMAIN_ORDER = {"quick_play": 0, "manual_playtest": 1, "content_tour": 2}
+DOMAIN_ORDER = {"quick_play": 0, "manual_playtest": 1, "content_tour": 2, "coverage_audit": 3}
 RUN_ORDER = {
     "quick_play": {preset.preset_id: index for index, preset in enumerate(QUICK_PLAY_PRESETS)},
     "content_tour": {run.run_id: index for index, run in enumerate(TOUR_RUNS)},
@@ -93,6 +94,31 @@ def source_summary(name: str, summary: dict[str, Any]) -> dict[str, Any]:
         "missing_report_count": int(raw.get("missing_report_count", 0) or 0),
         "attention_count": int(raw.get("attention_count", 0) or 0),
     }
+
+
+def coverage_source_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    raw = summary.get("summary") if isinstance(summary.get("summary"), dict) else {}
+    return {
+        "name": "coverage_audit",
+        "decision": str(summary.get("decision", "")),
+        "existing_report_count": 0,
+        "missing_report_count": 0,
+        "attention_count": int(raw.get("action_item_count", 0) or 0),
+    }
+
+
+def coverage_audit_or_skip(repo_root: Path) -> dict[str, Any]:
+    if not (repo_root / CONTENT_DIR).exists():
+        return {
+            "decision": "v25_playable_content_coverage_skipped_missing_content_dir",
+            "summary": {
+                "action_item_count": 0,
+                "priority_counts": {},
+                "category_counts": {},
+            },
+            "action_items": [],
+        }
+    return build_playable_content_coverage_audit(repo_root)
 
 
 def missing_quick_play_items(summary: dict[str, Any]) -> list[dict[str, Any]]:
@@ -340,10 +366,40 @@ def metric_risk_items(summary: dict[str, Any], domain: str, run_key: str) -> lis
     return items
 
 
+def coverage_audit_items(coverage_audit: dict[str, Any]) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for item in coverage_audit.get("action_items", []):
+        if not isinstance(item, dict):
+            continue
+        affected = item.get("affected_ids")
+        if not isinstance(affected, list):
+            affected = []
+        affected_ids = [str(value) for value in affected if isinstance(value, str)]
+        item_id = str(item.get("id", "unknown"))
+        items.append(
+            {
+                "id": f"coverage_{item_id}",
+                "domain": "coverage_audit",
+                "category": "content_coverage_gap",
+                "priority": str(item.get("priority", "P2")),
+                "title": str(item.get("title", item_id)),
+                "focus": ", ".join(affected_ids),
+                "affected_ids": affected_ids,
+                "evidence_gap": str(item.get("evidence", "")),
+                "action": str(item.get("action", "")),
+                "command": "python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair",
+                "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_playable_content_coverage_001/playable_content_coverage.json",
+                "candidate_only": True,
+            }
+        )
+    return items
+
+
 def build_action_items(
     quick_summary: dict[str, Any],
     tour_summary: dict[str, Any],
     manual_summary: dict[str, Any],
+    coverage_audit: dict[str, Any],
 ) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     items.extend(missing_quick_play_items(quick_summary))
@@ -355,6 +411,7 @@ def build_action_items(
     items.extend(metric_risk_items(quick_summary, "quick_play", "preset_id"))
     items.extend(metric_risk_items(tour_summary, "content_tour", "run_id"))
     items.extend(metric_risk_items(manual_summary, "manual_playtest", "run_id"))
+    items.extend(coverage_audit_items(coverage_audit))
     items.sort(key=priority_sort_key)
     return items
 
@@ -363,7 +420,10 @@ def plan_decision(source_summaries: list[dict[str, Any]], action_items: list[dic
     total_existing = sum(source["existing_report_count"] for source in source_summaries)
     if total_existing == 0:
         return "v25_content_repair_action_plan_needs_playtest_reports"
-    if any(item["category"] in {"report_attention", "objective_metric_risk"} for item in action_items):
+    if any(
+        item["category"] in {"report_attention", "objective_metric_risk", "content_coverage_gap"}
+        for item in action_items
+    ):
         return "v25_content_repair_action_plan_needs_repair_triage"
     if any(item["category"] == "missing_report" for item in action_items):
         return "v25_content_repair_action_plan_has_remaining_coverage"
@@ -379,6 +439,7 @@ def next_commands(action_items: list[dict[str, Any]]) -> list[str]:
         if len(commands) >= 5:
             break
     for command in [
+        "python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair",
         "python3 harness/playtest/summarize_v25_quick_play_reports.py --allow-incomplete",
         "python3 harness/playtest/summarize_v25_content_tour_reports.py --allow-incomplete",
         "python3 harness/playtest/summarize_v25_manual_playtest_reports.py --allow-incomplete",
@@ -393,12 +454,14 @@ def build_plan(repo_root: Path) -> dict[str, Any]:
     quick_summary = build_quick_play_summary(repo_root)
     tour_summary = build_content_tour_summary(repo_root)
     manual_summary = build_manual_summary(repo_root)
+    coverage_audit = coverage_audit_or_skip(repo_root)
     sources = [
         source_summary("quick_play", quick_summary),
         source_summary("content_tour", tour_summary),
         source_summary("manual_playtest", manual_summary),
+        coverage_source_summary(coverage_audit),
     ]
-    action_items = build_action_items(quick_summary, tour_summary, manual_summary)
+    action_items = build_action_items(quick_summary, tour_summary, manual_summary, coverage_audit)
     category_counts: dict[str, int] = {}
     priority_counts: dict[str, int] = {}
     domain_counts: dict[str, int] = {}
@@ -418,6 +481,7 @@ def build_plan(repo_root: Path) -> dict[str, Any]:
             "missing_report_count": category_counts.get("missing_report", 0),
             "report_attention_count": category_counts.get("report_attention", 0),
             "objective_metric_risk_count": category_counts.get("objective_metric_risk", 0),
+            "content_coverage_gap_count": category_counts.get("content_coverage_gap", 0),
             "priority_counts": priority_counts,
             "domain_counts": domain_counts,
         },
@@ -444,6 +508,7 @@ def write_markdown(plan: dict[str, Any], path: Path) -> None:
         f"- Missing reports: `{summary['missing_report_count']}`",
         f"- Report attention: `{summary['report_attention_count']}`",
         f"- Objective metric risks: `{summary['objective_metric_risk_count']}`",
+        f"- Content coverage gaps: `{summary['content_coverage_gap_count']}`",
         "",
         "## 来源摘要",
         "",

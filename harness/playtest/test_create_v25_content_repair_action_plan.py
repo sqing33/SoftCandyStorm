@@ -128,10 +128,17 @@ class V25ContentRepairActionPlanTests(unittest.TestCase):
         plan = build_plan(REPO_ROOT)
 
         self.assertEqual(plan["decision"], "v25_content_repair_action_plan_needs_playtest_reports")
+        self.assertEqual(plan["summary"]["action_item_count"], 26)
         self.assertEqual(plan["summary"]["missing_report_count"], 21)
+        self.assertEqual(plan["summary"]["content_coverage_gap_count"], 5)
         self.assertEqual(plan["summary"]["domain_counts"]["manual_playtest"], 9)
+        self.assertEqual(plan["summary"]["domain_counts"]["coverage_audit"], 5)
         self.assertTrue(
             any("play_v25_candidate.py default" in item["command"] for item in plan["action_items"])
+        )
+        self.assertIn(
+            "coverage_character_starter_without_evolution_bubble-courier",
+            {item["id"] for item in plan["action_items"]},
         )
         self.assertIn("不批准", " ".join(plan["limitations"]))
 

@@ -104,6 +104,7 @@ def build_report(repo_root: Path) -> dict[str, Any]:
             "content_repair_plan_decision": repair_plan["decision"],
             "content_repair_action_items": repair_plan["summary"]["action_item_count"],
             "content_repair_missing_reports": repair_plan["summary"]["missing_report_count"],
+            "content_repair_coverage_gaps": repair_plan["summary"].get("content_coverage_gap_count", 0),
             "next_repair_commands": repair_plan["next_commands"][:5],
         },
         "blockers": blockers,
@@ -130,6 +131,7 @@ def build_report(repo_root: Path) -> dict[str, Any]:
             "missing_report_count": repair_plan["summary"]["missing_report_count"],
             "report_attention_count": repair_plan["summary"]["report_attention_count"],
             "objective_metric_risk_count": repair_plan["summary"]["objective_metric_risk_count"],
+            "content_coverage_gap_count": repair_plan["summary"].get("content_coverage_gap_count", 0),
             "next_commands": repair_plan["next_commands"][:5],
         },
         "limitations": [
@@ -190,6 +192,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
     lines.append(f"- Missing reports: `{repair['missing_report_count']}`")
     lines.append(f"- Report attention: `{repair['report_attention_count']}`")
     lines.append(f"- Objective metric risks: `{repair['objective_metric_risk_count']}`")
+    lines.append(f"- Content coverage gaps: `{repair['content_coverage_gap_count']}`")
     lines.append("- Next commands:")
     if repair["next_commands"]:
         lines.extend(f"  - `{item}`" for item in repair["next_commands"])

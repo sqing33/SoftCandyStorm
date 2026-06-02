@@ -118,7 +118,8 @@ class V25CandidateReadinessTests(unittest.TestCase):
             report["summary"]["content_repair_plan_decision"],
             "v25_content_repair_action_plan_needs_playtest_reports",
         )
-        self.assertEqual(report["summary"]["content_repair_action_items"], 21)
+        self.assertEqual(report["summary"]["content_repair_action_items"], 26)
+        self.assertEqual(report["summary"]["content_repair_coverage_gaps"], 5)
         self.assertEqual(
             report["summary"]["next_repair_commands"][0],
             "python3 harness/playtest/play_v25_candidate.py default",

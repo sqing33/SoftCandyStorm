@@ -3,10 +3,11 @@
 - Candidate id: `2026-06-02_demo_buildcraft_repair_v25_full_pack`
 - Content hash: `fnv1a64:aab110776109609d`
 - Decision: `v25_content_repair_action_plan_needs_playtest_reports`
-- Action items: `21`
+- Action items: `26`
 - Missing reports: `21`
 - Report attention: `0`
 - Objective metric risks: `0`
+- Content coverage gaps: `5`
 
 ## 来源摘要
 
@@ -15,6 +16,7 @@
 | `quick_play` | `quick_play_summary_no_reports` | 0 | 6 | 0 |
 | `content_tour` | `content_tour_summary_no_reports` | 0 | 6 | 0 |
 | `manual_playtest` | `manual_report_summary_no_reports` | 0 | 9 | 0 |
+| `coverage_audit` | `v25_playable_content_coverage_needs_content_repair` | 0 | 0 | 5 |
 
 ## 优先修复项
 
@@ -41,6 +43,11 @@
 | `P1` | `content_tour` | `missing_report` | `content_tour_missing_caramel_sour_plum_doctor` | 控制角色和焦糖工坊路线干扰 | 运行对应 content-tour 局，覆盖地图、角色和局内内容表面。 | `python3 harness/playtest/run_v25_content_tour.py caramel_sour_plum_doctor` |
 | `P1` | `content_tour` | `missing_report` | `content_tour_missing_jelly_cream_knight` | 防御角色和果冻月台环形路线 | 运行对应 content-tour 局，覆盖地图、角色和局内内容表面。 | `python3 harness/playtest/run_v25_content_tour.py jelly_cream_knight` |
 | `P1` | `content_tour` | `missing_report` | `content_tour_missing_cracked_jar_keeper` | 最终地图混合怪潮压力 | 运行对应 content-tour 局，覆盖地图、角色和局内内容表面。 | `python3 harness/playtest/run_v25_content_tour.py cracked_jar_keeper` |
+| `P1` | `coverage_audit` | `content_coverage_gap` | `coverage_character_starter_without_evolution_bubble-courier` | bubble-courier, soda-bubble-pop | 为该初始武器补一条进化路线，或明确改成短期无进化的候选风险并安排试玩验证。 | `python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair` |
+| `P1` | `coverage_audit` | `content_coverage_gap` | `coverage_character_starter_without_evolution_sour-plum-doctor` | sour-plum-doctor, sour-plum-spray | 为该初始武器补一条进化路线，或明确改成短期无进化的候选风险并安排试玩验证。 | `python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair` |
+| `P2` | `coverage_audit` | `content_coverage_gap` | `coverage_passives_missing_playable_descriptors` | big-candy-jar.balance_budget, bubble-shoes.balance_budget, candy-crystal-lens.balance_budget, cocoa-safety-badge.balance_budget, crackling-sugar-fuse.balance_budget, cream-clockwork.balance_budget, frosting-gloves.balance_budget, frosty-straw.balance_budget, honey-heart.balance_budget, jelly-lens-polish.balance_budget, marshmallow-vest.balance_budget, nonstick-apron.balance_budget, peppermint-pocket-watch.balance_budget, rhythm-ribbon.balance_budget, sour-tuner.balance_budget, star-spoon.balance_budget, taffy-pocket-map.balance_budget | 补齐描述、视觉、音效、预算或需求字段，方便人工试玩前理解内容身份。 | `python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair` |
+| `P2` | `coverage_audit` | `content_coverage_gap` | `coverage_passives_without_evolution_usage` | cocoa-safety-badge, honey-heart, jelly-lens-polish, peppermint-pocket-watch | 判断这些被动是否只是数值补强，还是需要绑定新进化以提高升级选择纠结感。 | `python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair` |
+| `P2` | `coverage_audit` | `content_coverage_gap` | `coverage_weapons_without_evolution_routes` | candy-crystal-lance, mint-cyclone, soda-bubble-pop, sour-plum-spray | 评估这些武器是否应补进化，尤其是玩家初始武器和主要流派入口。 | `python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair` |
 
 ## 下一组命令
 
@@ -49,6 +56,7 @@
 - `python3 harness/playtest/run_v25_manual_playtest.py new_002`
 - `python3 harness/playtest/run_v25_manual_playtest.py new_003`
 - `python3 harness/playtest/run_v25_manual_playtest.py skilled_001`
+- `python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair`
 - `python3 harness/playtest/summarize_v25_quick_play_reports.py --allow-incomplete`
 - `python3 harness/playtest/summarize_v25_content_tour_reports.py --allow-incomplete`
 - `python3 harness/playtest/summarize_v25_manual_playtest_reports.py --allow-incomplete`

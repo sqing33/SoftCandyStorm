@@ -46,10 +46,11 @@
 ## Content Repair Plan
 
 - Decision: `v25_content_repair_action_plan_needs_playtest_reports`
-- Action items: `21`
+- Action items: `26`
 - Missing reports: `21`
 - Report attention: `0`
 - Objective metric risks: `0`
+- Content coverage gaps: `5`
 - Next commands:
   - `python3 harness/playtest/play_v25_candidate.py default`
   - `python3 harness/playtest/run_v25_manual_playtest.py new_001`
