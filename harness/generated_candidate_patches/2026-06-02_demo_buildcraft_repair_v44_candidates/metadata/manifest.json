@@ -1,0 +1,57 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v44_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 RouteBot 固定路线远程压力窗口修复验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v38_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo RouteBot fixed-route repair v44",
+    "goal": "在 v43 证明 Boss 后短窗口跳跃和环绕敌人池重分配不足以压低 RouteBot，且会把 ZoneControlBot 抬高后，只测试 225-255 秒短窗口 sprinkle-spitter 远程 hazard 压力是否能打断 RouteBot 的固定椭圆路线。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "RouteBot 固定椭圆路线远程压力窗口修复；只调整 225-255 秒敌人池权重，不改刷怪间隔、数量、地图、武器、敌人参数或 Boss 数值。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v38 full pack 为基线，保留 v38 已收住的 BossHunter 修复。",
+      "本批次不修改 frosting-grassland 地图尺寸，避免复现 v41/v42 的主动 Bot 广泛过强。",
+      "本批次不修改 spawn_rules，避免复现 v39 的全局刷怪距离扰动。",
+      "本批次不修改 rainbow-candy-shot 或其他 starter 武器，避免复现 v40 的广泛构筑扰动。",
+      "本批次不继续提高 licorice-skipper 或 sugar-moth，避免复现 v43 对 ZoneControlBot 的正向副作用。",
+      "RouteBot 不主动规避 active_hazards；sprinkle-spitter 的远程糖针 pressure 是比普通追逐敌人更直接的 anti-route 单变量。"
+    ]
+  }
+}

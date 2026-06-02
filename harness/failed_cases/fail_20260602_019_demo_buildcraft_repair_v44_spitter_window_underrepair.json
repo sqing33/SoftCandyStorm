@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_019",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v44_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v44 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. RouteBot stayed too high at 66.7% against a 10%-35% target, and ZoneControlBot stayed too high at 66.7% against a 25%-55% target. IdleBot, RandomBot, CowardBot, GreedyXpBot, KiteBot, TankBot, and BossHunterBot remained inside target.",
+  "root_cause": "The v44 repair only split the 225-300 second segment and raised sprinkle-spitter weight during 225-255 seconds. This was too weak and too late to break RouteBot's two stable winning seeds: both still survived to 300 seconds at level 6, with RouteBot seed 71000 taking 112.7 damage and seed 71001 taking 93.0 damage. The extra ranged hazard pressure also did not remove ZoneControlBot's second winning seed, showing that a narrow post-Boss ranged enemy-pool shift is not a clean anti-route lever.",
+  "fix": "Do not promote v44 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. Keep v38 as the current BossHunter-repaired base until a candidate passes the all-Bot smoke matrix. For the next repair, avoid small 225-255 enemy-pool-only shifts. Use a more direct content-side lever before RouteBot stabilizes after full rainbow-candy-shot, or target RouteBot's economy/upgrade timing rather than only adding late pressure after the Boss has spawned.",
+  "validation": "v44 reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v44_* and the failed smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v44_matrix_300s_3seed_71000_001/summary.md. The same matrix shows IdleBot 0/3, RandomBot 0/3, CowardBot 1/3, GreedyXpBot 1/3, KiteBot 2/3, TankBot 1/3, and BossHunterBot 2/3 passing, but ZoneControlBot 2/3 and RouteBot 2/3 outside target. The next candidate must rerun the same 71000-71002 all-Bot smoke matrix and should be rejected if RouteBot remains 2/3 or another Bot is pushed outside target.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v44_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v44_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v44_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}
