@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_005",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v30_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v30 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates. The 300s / 3-seed all-Bot smoke matrix on the v29 failure window still failed: CowardBot was too high at 66.7%, KiteBot remained too high at 100.0%, TankBot was too high at 66.7%, BossHunterBot was too low at 33.3%, ZoneControlBot overcorrected high at 66.7%, and RouteBot remained too high at 66.7%. GreedyXpBot returned to target at 33.3%.",
+  "root_cause": "The v30 repair used two coupled changes: a small Caramel Sticky Ground area/duration buff and a small 210-300s Caramel Slime injection. This helped ZoneControlBot too much and also made CowardBot, TankBot, and RouteBot more stable against a slow, controllable pressure shape. The change did not address KiteBot's core over-stability, and the added slow-route pressure slightly hurt BossHunterBot's already narrow boss-window survivability.",
+  "fix": "Do not promote v30 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. For v31, revert or sharply reduce the Caramel Sticky Ground buff and avoid using slow controllable Caramel Slime as the primary anti-kite tool. Prefer a narrower anti-kite pressure shape that targets pickup-safe movement and fixed-route recoveries without broadly improving control or defense builds; keep GreedyXpBot's v30 improvement as a useful signal but do not preserve v30's control overcorrection.",
+  "validation": "v30 validation reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v30_* and the failing smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v30_matrix_300s_3seed_71000_001/summary.md. The next candidate should first rerun the same 71000-71002 smoke matrix. Passing requires Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before any 10-seed expansion or Replay regression.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v30_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v30_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v30_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}

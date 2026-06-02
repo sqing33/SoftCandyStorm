@@ -1,0 +1,60 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v30_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 seed-window 稳定性修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v29_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo seed-window robustness repair v30",
+    "goal": "修复 v29 在 71000-71009 追加扩样中 KiteBot 过稳、RouteBot 略高、ZoneControlBot 略低的问题，同时保留 70000-70009 标准窗口已通过的主平衡形态。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "caramel-sticky-ground",
+      "type": "weapon",
+      "path": "weapons/caramel-sticky-ground.json",
+      "role": "控制路线专属收益窄修复，小幅提高焦糖区域持续控场能力。"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "210-300 秒 Boss 后窗口稳定性修复，用少量焦糖史莱姆制造可读地面路线风险。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次只覆盖一个控制武器和糖霜草地标准波次，不修改正式内容池。",
+      "焦糖黏地只小幅增加区域与持续时间，不做直接大幅伤害增强。",
+      "波次只在 210-300 秒加入少量 caramel-slime，避免把早期教学窗口变难。",
+      "该候选必须通过 v29 同等静态链路和 Bot 矩阵后，才能考虑 Replay 或人工试玩候选。"
+    ]
+  }
+}
