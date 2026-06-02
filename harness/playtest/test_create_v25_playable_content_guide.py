@@ -60,6 +60,10 @@ class V25PlayableContentGuideTests(unittest.TestCase):
 
         self.assertEqual(len(guide["quick_play_presets"]), 6)
         self.assertIn("python3 harness/playtest/play_v25_candidate.py", guide["quick_play_entrypoints"])
+        self.assertIn(
+            "python3 harness/playtest/summarize_v25_quick_play_reports.py --allow-incomplete",
+            guide["quick_play_entrypoints"],
+        )
         quick_by_id = {preset["preset_id"]: preset for preset in guide["quick_play_presets"]}
         self.assertEqual(quick_by_id["default"]["character_id"], "jar-keeper")
         self.assertEqual(quick_by_id["default"]["map_id"], "frosting-grassland")
@@ -85,6 +89,7 @@ class V25PlayableContentGuideTests(unittest.TestCase):
             self.assertIn("# v25 可玩内容导览", text)
             self.assertIn("糖鼓终曲", text)
             self.assertIn("python3 harness/playtest/play_v25_candidate.py", text)
+            self.assertIn("summarize_v25_quick_play_reports.py", text)
             self.assertIn("python3 harness/playtest/run_v25_manual_playtest.py --next", text)
             self.assertIn("python3 harness/playtest/run_v25_content_tour.py --next", text)
             self.assertIn("summarize_v25_content_tour_reports.py", text)

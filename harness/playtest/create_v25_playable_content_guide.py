@@ -319,6 +319,7 @@ def build_guide(repo_root: Path, content_dir: Path = CONTENT_DIR) -> dict[str, A
             "python3 harness/playtest/play_v25_candidate.py --dry-run",
             "python3 harness/playtest/play_v25_candidate.py",
             "python3 harness/playtest/play_v25_candidate.py --list",
+            "python3 harness/playtest/summarize_v25_quick_play_reports.py --allow-incomplete",
         ],
         "quick_play_presets": [
             {
