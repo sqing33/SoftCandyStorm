@@ -1,0 +1,56 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v41_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 RouteBot 固定路径半径修复验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v38_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo RouteBot fixed-route repair v41",
+    "goal": "在 v39 证明全局刷怪距离调整过度扰动、v40 证明 starter 射程成长过于间接后，只测试 frosting-grassland 地图尺寸微调是否能直接压缩 RouteBot 固定椭圆路线的安全半径，同时保持其他 Bot 结果不被明显扰动。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland",
+      "type": "map",
+      "path": "maps/frosting-grassland.json",
+      "role": "RouteBot 固定椭圆路线半径修复；只微调地图尺寸，不改刷怪距离、波次或武器数值。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v38 full pack 为基线，保留 v38 已收住的 BossHunter 修复。",
+      "本批次不修改 frosting-grassland-standard 波次，避免复现 v32 的波次组合扰动。",
+      "本批次不修改 spawn_rules，避免复现 v39 的全局刷怪距离扰动。",
+      "本批次不修改 rainbow-candy-shot 或其他 starter 武器，避免复现 v40 的广泛构筑扰动。",
+      "RouteBot 的固定路线半径由 map.width 和 map.height 计算，因此本批次直接测试地图尺寸是否是更窄的 anti-route 杠杆。"
+    ]
+  }
+}

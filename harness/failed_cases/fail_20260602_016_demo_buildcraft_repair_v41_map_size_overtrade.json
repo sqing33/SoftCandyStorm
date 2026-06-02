@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_016",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v41_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v41 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. RouteBot dropped into target at 33.3% against a 10%-35% target, but CowardBot rose to 100.0% against a 10%-35% target, KiteBot rose to 100.0% against a 45%-75% target, and GreedyXpBot, TankBot, and ZoneControlBot each rose to 66.7% against a 25%-55% target.",
+  "root_cause": "The v41 repair reduced frosting-grassland size from 2600x1700 to 2300x1500. This directly reduced RouteBot's fixed ellipse radius enough to break two of its three winning routes, proving map dimensions can affect the fixed-route exploit. However, the same reduction also compressed traversal, XP pickup, and enemy engagement distances for most active movement policies. The map became broadly easier for low-, mid-, and high-skill rule Bots instead of narrowly correcting RouteBot.",
+  "fix": "Do not promote v41 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. Keep v38 as the current BossHunter-repaired base until a candidate passes the all-Bot smoke matrix. For the next repair, avoid large map-size reductions. If map dimensions remain the repair lever, test a softer midpoint such as 2450x1600 or combine a smaller size change with a targeted lane-pressure adjustment that does not shorten the whole play space as aggressively.",
+  "validation": "v41 reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v41_* and the failed smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v41_matrix_300s_3seed_71000_001/summary.md. The same matrix shows IdleBot 0/3, RandomBot 0/3, BossHunterBot 2/3, and RouteBot 1/3 passing, but CowardBot 3/3, GreedyXpBot 2/3, KiteBot 3/3, TankBot 2/3, and ZoneControlBot 2/3 outside target. The next candidate must rerun the same 71000-71002 all-Bot smoke matrix and should be rejected if broad active-Bot win rates remain above target.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v41_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v41_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v41_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}
