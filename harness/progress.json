@@ -3698,6 +3698,11 @@
       "id": "demo_buildcraft_repair_v22_findings",
       "summary": "Demo buildcraft repair v22 已正式物化为 generated candidate：基于 v18 full pack 保留 star-spoon 17、pudding-turret 0.935，并叠加 v20 的 210-300 秒 sandwich-cookie-creep 0.16 / sprinkle-spitter 0.08 波次形状。静态链路、GameCore validate-content、隔离 validate-candidates 和 3 seed all Bot 烟测通过，但 10 seed 扩样仍为 repair：Greedy 60.0% 高于 25%-55% 中技能目标上限，其余 8 个 Bot 均在目标区间。v22 不能晋级，下一步 v23 应先分析 Greedy 胜局的构筑和 225-300 秒状态，再做窄修。",
       "report": "harness/failed_cases/fail_20260602_001_demo_buildcraft_repair_v22_greedy_gap.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v25_findings",
+      "summary": "Demo buildcraft repair v25 已形成 generated candidate 并通过完整自动验证链路：局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates、300 秒 / 3 seed / all Bot、300 秒 / 10 seed / all Bot 和 90 条 Replay 回归。v25 只收窄 pudding-turret 后段自动安全构筑收益；10 seed 扩样中 9 个 Bot 全部进入目标区间，Replay 回归 90 passed / 0 failed。该结果可进入人工设计审查与人工试玩候选准备，但仍不是 accepted_content。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_replay_regression_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3818,8 +3823,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v24 已形成正式候选并完成静态链路、隔离 validate-candidates、300 秒 / 3 seed 和 300 秒 / 10 seed / all Bot 扩样，但结论仍为 repair：Greedy 60.0% 仍高于 25%-55% 目标上限，其余 Bot 均在目标区间。v24 证明把同一个 0.01 sandwich-cookie-creep -> sprinkle-spitter 权重换位从 255 秒前移到 225 秒仍不足以改变 Greedy 胜局；下一步 v25 应停止继续平移该权重，改为直接处理后段安全构筑收益、经济转化或已成型 Build 的定向压力。",
-      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v24_matrix_300s_10seed_001/summary.md"
+      "summary": "Demo buildcraft repair v25 已通过静态链路、隔离 validate-candidates、300 秒 / 10 seed / all Bot 扩样和 90 条 Replay 回归：Idle 0.0%、Random 0.0%、Coward 20.0%、Greedy 50.0%、Kite 70.0%、Tank 50.0%、BossHunter 50.0%、ZoneControl 30.0%、Route 30.0%，Replay 90/90 通过。下一步应生成 v25 人工设计审查草稿和审查包，并准备 9 局人工试玩候选；真人证据通过前不得进入 accepted_content、content/base_demo 或 Runtime 正式内容。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_replay_regression_001/summary.md"
     }
   ]
 }

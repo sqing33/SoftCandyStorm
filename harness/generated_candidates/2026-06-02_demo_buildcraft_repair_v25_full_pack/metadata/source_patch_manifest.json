@@ -1,0 +1,54 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v25_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v25",
+    "goal": "基于 v24 full pack 停止继续平移同一组波次权重，改为收窄 GreedyXpBot 后段安全召唤构筑收益，使 300 秒 / 10 seed 扩样从 Greedy 60.0% 回到 25%-55% 目标区间，同时保留其他 Bot 目标区间。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "pudding-turret",
+      "type": "weapon",
+      "path": "weapons/pudding-turret.json",
+      "role": "收窄彩虹糖弹满级后接布丁炮台的自动安全构筑收益，针对 Greedy 70001 / 70003 胜局而不做全局波次加压。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v25，只覆盖 1 个召唤武器，并基于 v24 full pack 继承 star-spoon、pudding-turret 当前边界和 v24 波次结构。",
+      "v25 不再继续移动 sandwich-cookie-creep 与 sprinkle-spitter 权重，而是降低满级 pudding-turret 的后段自动火力收益。",
+      "该批次必须通过完整候选流水线和 Bot seed 扩样后，才可进入 Replay 回归和人工试玩候选。"
+    ]
+  }
+}
