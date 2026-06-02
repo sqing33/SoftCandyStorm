@@ -1,0 +1,27 @@
+{
+  "case_id": "fail_20260602_022",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v47_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v47 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. IdleBot, RandomBot, and KiteBot were inside target. CowardBot rose to 66.7%, GreedyXpBot rose to 66.7%, TankBot rose to 66.7%, BossHunterBot rose to 100.0%, ZoneControlBot fell to 0.0%, and RouteBot returned to 66.7%.",
+  "root_cause": "The v47 repair replaced v46's 105-135 second spicy-gummy 0.05 window with a new low-XP pepper-spark-gummy at the same weight. The new enemy passed static budget with declared threat 1.30, computed threat 1.27, XP value 2, and lower dash intensity, but the lower-impact dash no longer disrupted RouteBot seeds 71001 and 71002. At the same time, the early window still changed the seed topology enough for CowardBot, GreedyXpBot, TankBot, and BossHunterBot to overperform while ZoneControlBot underperformed. This shows that reducing XP alone does not isolate the RouteBot fixed-route issue.",
+  "fix": "Do not promote v47 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. Keep v38 as the current BossHunter-repaired base. The next repair should not simply keep the same 105-135 dash window with lower XP. Instead, test a narrower route-specific pressure shape, such as a lower-frequency non-XP route blocker, a later short window closer to RouteBot's unsafe transition, or a wave/timing adjustment that changes fixed elliptical safety without feeding mobile or defensive Bot policies. Any new enemy must remain candidate-only and pass the same schema, static budget, and GameCore gates before matrix testing.",
+  "validation": "v47 reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v47_* and the failed smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v47_matrix_300s_3seed_71000_001/summary.md. The same matrix shows IdleBot 0/3, RandomBot 0/3, and KiteBot 2/3 passing, but CowardBot 2/3, GreedyXpBot 2/3, TankBot 2/3, BossHunterBot 3/3, ZoneControlBot 0/3, and RouteBot 2/3 outside target. The next candidate must rerun the same 71000-71002 all-Bot smoke matrix and should be rejected if RouteBot remains 2/3 or if any other Bot remains outside its target interval.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v47_candidates/metadata/manifest.json",
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v47_candidates/enemies/pepper-spark-gummy.json",
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v47_candidates/waves/frosting-grassland-standard.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v47_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v47_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}
