@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_012",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v37_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v37 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates. The 300s / 3-seed all-Bot smoke matrix still failed because BossHunterBot stayed over target at 100.0% against a 45%-75% target, while RouteBot remained too high at 66.7% against a 10%-35% target. IdleBot, RandomBot, CowardBot, GreedyXpBot, KiteBot, TankBot, and ZoneControlBot all stayed inside target.",
+  "root_cause": "The v37 repair tested Candy Crystal Lance at 30 damage / 1078ms while keeping projectile speed and range at v31 values. BossHunterBot still won all three seeds, while v34 at 30 damage / 1080ms won zero seeds. This narrows the observed cooldown threshold to the 1078ms-1080ms gap and shows that this weapon timing currently behaves like a brittle switch in the 300s boss window. RouteBot remains a separate fixed-route pressure issue because its two winning seeds are unchanged by these boss weapon tweaks.",
+  "fix": "Do not promote v37 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. For v38, keep v31 as the base, keep waves unchanged, and test Candy Crystal Lance at 30 damage / 1079ms with projectile speed 620 and range 550. If 1079ms still flips all three BossHunter seeds to either 0/3 or 3/3, stop relying only on cooldown and move to a less binary repair lever such as boss-window pressure, boss health timing, or BossHunter upgrade weighting evidence.",
+  "validation": "v37 validation reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v37_* and the failing smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v37_matrix_300s_3seed_71000_001/summary.md. The next candidate should first rerun the same 71000-71002 smoke matrix. Passing requires Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before any 10-seed expansion or Replay regression.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v37_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v37_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v37_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}

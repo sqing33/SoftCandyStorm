@@ -1,0 +1,55 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v37_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 BossHunter 精细阈值修复验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v31_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo boss reliability fine threshold repair v37",
+    "goal": "在 v34 的 1080ms 修复不足和 v36 的 1075ms 过修之间测试 candy-crystal-lance 冷却 1078ms，确认 BossHunterBot 是否能进入目标区间，同时保持其他 Bot 不被扰动。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "candy-crystal-lance",
+      "type": "weapon",
+      "path": "weapons/candy-crystal-lance.json",
+      "role": "BossHunter 未稳定抽到星糖射线时的精细阈值单体可靠性修复。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次保留 v31 的 bubble-shoes +9 move_speed 和 star-sugar-ray v5。",
+      "本批次将 candy-crystal-lance 基础伤害从 29 提到 30，并把冷却从 1080ms 小幅降到 1078ms；射速、射程和成长保持 v31。",
+      "本批次不修改 frosting-grassland-standard，避免复现 v32 的 Coward/Tank/ZoneControl 扰动。",
+      "RouteBot 仍预计需要单独修复；本批次的主要目标是找到 BossHunter 修复的精细冷却阈值。",
+      "候选必须先通过 71000-71002 smoke，再考虑任何 10-seed 扩样或 RouteBot 独立修复。"
+    ]
+  }
+}
