@@ -54,6 +54,7 @@ launcher:
 
 ```bash
 python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
+python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos
 python3 harness/playtest/run_v25_manual_playtest.py --list
 python3 harness/playtest/run_v25_manual_playtest.py --status
 python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
@@ -73,6 +74,9 @@ evidence.
 Use `check_v25_candidate_readiness.py` for the combined current-state summary:
 design-review TODO status, manual report counts, blockers, and the next manual
 playtest command.
+
+Use `list_v25_human_evidence_todos.py` to list every design-review and
+manual-playtest TODO field that must be replaced by concrete human evidence.
 
 Use `--status` to see local report progress and `--next` to launch the first
 run whose local report is still missing. These shortcuts only inspect local
@@ -116,6 +120,7 @@ python3 harness/playtest/test_create_manual_playtest_review_draft.py
 python3 harness/playtest/test_create_manual_playtest_review_packet.py
 python3 harness/playtest/test_create_manual_playtest_acceptance_review_packet.py
 python3 harness/playtest/test_check_v25_candidate_readiness.py
+python3 harness/playtest/test_list_v25_human_evidence_todos.py
 python3 harness/playtest/test_check_v25_manual_playtest_status.py
 python3 harness/playtest/test_run_v25_manual_playtest.py
 python3 harness/playtest/test_validate_manual_review.py
