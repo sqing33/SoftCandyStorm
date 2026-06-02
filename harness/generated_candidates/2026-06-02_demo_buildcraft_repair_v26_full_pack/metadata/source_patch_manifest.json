@@ -1,0 +1,59 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v26_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容覆盖修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo content coverage repair v26",
+    "goal": "修复 v25 可玩内容覆盖审计中的 P1 初始武器进化缺口，为 bubble-courier 的 soda-bubble-pop 与 sour-plum-doctor 的 sour-plum-spray 各补一条候选进化路线。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "soda-bubble-clock-parade",
+      "type": "evolution",
+      "path": "evolutions/soda-bubble-clock-parade.json",
+      "role": "给泡泡邮差初始武器补一条节奏型移动投射物进化。"
+    },
+    {
+      "id": "sour-plum-clinic-cloud",
+      "type": "evolution",
+      "path": "evolutions/sour-plum-clinic-cloud.json",
+      "role": "给酸梅博士初始武器补一条控场云团进化。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次只补 P1 初始武器进化覆盖缺口，不调整波次、敌人、角色属性或正式内容池。",
+      "两条进化使用 v25 已存在但尚未参与进化配方的被动，目标是提高玩家升级选择的路线感。",
+      "数值为首轮候选预算，必须经过静态预算、Bot 仿真、Replay 和人工试玩后才可讨论晋级。"
+    ]
+  }
+}
