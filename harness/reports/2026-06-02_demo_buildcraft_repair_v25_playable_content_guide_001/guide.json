@@ -1,0 +1,962 @@
+{
+  "report_version": 1,
+  "candidate_id": "2026-06-02_demo_buildcraft_repair_v25_full_pack",
+  "content_hash": "fnv1a64:aab110776109609d",
+  "content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack",
+  "decision": "playable_content_guide_candidate_only",
+  "candidate_state": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "source_patch": "2026-06-02_demo_buildcraft_repair_v25_candidates",
+    "overlay_counts": {
+      "enemies": 0,
+      "evolutions": 0,
+      "passives": 0,
+      "waves": 0,
+      "weapons": 1
+    },
+    "overridden_counts": {
+      "enemies": 0,
+      "evolutions": 0,
+      "passives": 0,
+      "waves": 0,
+      "weapons": 1
+    },
+    "source_patch_contents": [
+      {
+        "id": "pudding-turret",
+        "type": "weapon",
+        "path": "weapons/pudding-turret.json",
+        "role": "收窄彩虹糖弹满级后接布丁炮台的自动安全构筑收益，针对 Greedy 70001 / 70003 胜局而不做全局波次加压。"
+      }
+    ]
+  },
+  "counts": {
+    "characters": 5,
+    "maps": 6,
+    "weapons": 17,
+    "passives": 17,
+    "evolutions": 13,
+    "enemies": 12,
+    "bosses": 6,
+    "waves": 6,
+    "events": 5
+  },
+  "demo_targets": {
+    "characters": {
+      "actual": 5,
+      "target": 1,
+      "meets_target": true
+    },
+    "maps": {
+      "actual": 6,
+      "target": 1,
+      "meets_target": true
+    },
+    "weapons": {
+      "actual": 17,
+      "target": 12,
+      "meets_target": true
+    },
+    "passives": {
+      "actual": 17,
+      "target": 8,
+      "meets_target": true
+    },
+    "enemies": {
+      "actual": 12,
+      "target": 12,
+      "meets_target": true
+    },
+    "bosses": {
+      "actual": 6,
+      "target": 3,
+      "meets_target": true
+    },
+    "waves": {
+      "actual": 6,
+      "target": 1,
+      "meets_target": true
+    }
+  },
+  "summary": {
+    "character_count": 5,
+    "map_count": 6,
+    "weapon_count": 17,
+    "passive_count": 17,
+    "evolution_count": 13,
+    "enemy_count": 12,
+    "boss_count": 6,
+    "wave_count": 6,
+    "event_count": 5,
+    "build_route_count": 13,
+    "target_count_failures": [],
+    "error_count": 0
+  },
+  "characters": [
+    {
+      "id": "bubble-courier",
+      "name": "泡泡邮差",
+      "tags": [
+        "mobility",
+        "pickup",
+        "intermediate"
+      ],
+      "initial_weapons": [
+        "汽水泡泡 (`soda-bubble-pop`)"
+      ],
+      "initial_passives": [],
+      "trait": "移动后短时间提升拾取范围。",
+      "description": "穿梭在糖果王国邮路上的泡泡邮差，擅长高速移动和捡取糖晶。"
+    },
+    {
+      "id": "cream-knight",
+      "name": "奶油骑士",
+      "tags": [
+        "defense",
+        "beginner",
+        "close"
+      ],
+      "initial_weapons": [
+        "棉花糖护盾 (`marshmallow-shield`)"
+      ],
+      "initial_passives": [],
+      "trait": "受击后获得短暂减伤。",
+      "description": "举着奶油纹章的小骑士，生命更高但移动略慢。"
+    },
+    {
+      "id": "jar-keeper",
+      "name": "糖罐守护员",
+      "tags": [
+        "balanced",
+        "beginner"
+      ],
+      "initial_weapons": [
+        "彩虹糖弹 (`rainbow-candy-shot`)"
+      ],
+      "initial_passives": [],
+      "trait": "每 5 级额外获得少量糖晶。",
+      "description": "新上任的糖罐守护员。"
+    },
+    {
+      "id": "pudding-crafter",
+      "name": "布丁工匠",
+      "tags": [
+        "summon",
+        "area-control",
+        "intermediate"
+      ],
+      "initial_weapons": [
+        "布丁炮台 (`pudding-turret`)"
+      ],
+      "initial_passives": [],
+      "trait": "召唤物持续时间增加。",
+      "description": "会搭建布丁炮台的工匠，适合围绕安全区域经营火力。"
+    },
+    {
+      "id": "sour-plum-doctor",
+      "name": "酸梅博士",
+      "tags": [
+        "control",
+        "boss-safe",
+        "advanced"
+      ],
+      "initial_weapons": [
+        "酸梅喷雾 (`sour-plum-spray`)"
+      ],
+      "initial_passives": [],
+      "trait": "减速效果增强。",
+      "description": "研究酸味糖雾的博士，输出略低但更擅长控场。"
+    }
+  ],
+  "build_routes": [
+    {
+      "id": "caramel-vortex",
+      "name": "焦糖漩涡",
+      "weapon": "焦糖黏地 (`caramel-sticky-ground`)",
+      "weapon_id": "caramel-sticky-ground",
+      "weapon_min_level": 5,
+      "passive": "酸味调节器 (`sour-tuner`)",
+      "passive_id": "sour-tuner",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "control",
+      "tags": [
+        "slow",
+        "zone",
+        "control",
+        "evolution"
+      ],
+      "description": "焦糖黏地进化为更大的焦糖漩涡，长期封锁危险路线。"
+    },
+    {
+      "id": "fizzy-grand-finale",
+      "name": "汽泡终场烟花",
+      "weapon": "汽泡引线糖 (`fizzy-fuse-pop`)",
+      "weapon_id": "fizzy-fuse-pop",
+      "weapon_min_level": 5,
+      "passive": "跳跳糖引线 (`crackling-sugar-fuse`)",
+      "passive_id": "crackling-sugar-fuse",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "aoe-clear",
+      "tags": [
+        "burst",
+        "high-risk",
+        "aoe",
+        "boss-killer",
+        "evolution"
+      ],
+      "description": "汽泡引线糖进化为终场烟花，爆发范围更大但节奏仍有空窗。"
+    },
+    {
+      "id": "jellybean-treasure-orbit",
+      "name": "宝藏果豆星环",
+      "weapon": "果豆磁环 (`jellybean-magnet`)",
+      "weapon_id": "jellybean-magnet",
+      "weapon_min_level": 5,
+      "passive": "太妃口袋地图 (`taffy-pocket-map`)",
+      "passive_id": "taffy-pocket-map",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "economy",
+      "tags": [
+        "orbit",
+        "economy",
+        "evolution"
+      ],
+      "description": "果豆磁环进化为宝藏星环，稳定清理靠近的敌人。"
+    },
+    {
+      "id": "marshmallow-fortress",
+      "name": "棉花堡垒",
+      "weapon": "棉花糖护盾 (`marshmallow-shield`)",
+      "weapon_id": "marshmallow-shield",
+      "weapon_min_level": 5,
+      "passive": "大号糖罐 (`big-candy-jar`)",
+      "passive_id": "big-candy-jar",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "defense",
+      "tags": [
+        "defense",
+        "orbit",
+        "evolution"
+      ],
+      "description": "棉花糖护盾进化为持续护城环，扩大近身安全区。"
+    },
+    {
+      "id": "popping-candy-chain-reaction",
+      "name": "跳跳糖连锁反应",
+      "weapon": "跳跳糖地雷 (`popping-candy-mine`)",
+      "weapon_id": "popping-candy-mine",
+      "weapon_min_level": 5,
+      "passive": "星星勺子 (`star-spoon`)",
+      "passive_id": "star-spoon",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "aoe-clear",
+      "tags": [
+        "trap",
+        "burst",
+        "evolution"
+      ],
+      "description": "跳跳糖地雷进化为连锁爆点，在守护员附近连续爆裂。"
+    },
+    {
+      "id": "pudding-bastion",
+      "name": "布丁要塞",
+      "weapon": "布丁炮台 (`pudding-turret`)",
+      "weapon_id": "pudding-turret",
+      "weapon_min_level": 5,
+      "passive": "防粘围裙 (`nonstick-apron`)",
+      "passive_id": "nonstick-apron",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "summon",
+      "tags": [
+        "summon",
+        "turret",
+        "evolution"
+      ],
+      "description": "布丁炮台进化为布丁要塞，生成多点自动火力。"
+    },
+    {
+      "id": "rainbow-candy-meteor",
+      "name": "彩虹糖流星雨",
+      "weapon": "彩虹糖弹 (`rainbow-candy-shot`)",
+      "weapon_id": "rainbow-candy-shot",
+      "weapon_min_level": 5,
+      "passive": "糖晶放大镜 (`candy-crystal-lens`)",
+      "passive_id": "candy-crystal-lens",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "starter",
+      "tags": [
+        "projectile",
+        "aoe",
+        "evolution"
+      ],
+      "description": "彩虹糖弹进化为周期性流星雨。"
+    },
+    {
+      "id": "snowcone-blizzard",
+      "name": "雪花糖暴风",
+      "weapon": "雪花糖扇 (`snowcone-fan`)",
+      "weapon_id": "snowcone-fan",
+      "weapon_min_level": 5,
+      "passive": "冰霜吸管 (`frosty-straw`)",
+      "passive_id": "frosty-straw",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "control",
+      "tags": [
+        "zone",
+        "control",
+        "slow",
+        "evolution"
+      ],
+      "description": "雪花糖扇进化为更持久的暴风控制区。"
+    },
+    {
+      "id": "soda-volcano",
+      "name": "汽水火山",
+      "weapon": "汽水喷泉 (`soda-fountain`)",
+      "weapon_id": "soda-fountain",
+      "weapon_min_level": 5,
+      "passive": "泡泡鞋 (`bubble-shoes`)",
+      "passive_id": "bubble-shoes",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "aoe-clear",
+      "tags": [
+        "aoe",
+        "burst",
+        "evolution"
+      ],
+      "description": "汽水喷泉进化为连续喷发的汽水火山，覆盖更大敌群。"
+    },
+    {
+      "id": "star-sugar-prism",
+      "name": "星糖棱镜",
+      "weapon": "星糖射线 (`star-sugar-ray`)",
+      "weapon_id": "star-sugar-ray",
+      "weapon_min_level": 5,
+      "passive": "糖霜手套 (`frosting-gloves`)",
+      "passive_id": "frosting-gloves",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "boss-killer",
+      "tags": [
+        "beam",
+        "boss-killer",
+        "evolution"
+      ],
+      "description": "星糖射线进化为棱镜折射光束，同时锁定多个高血目标。"
+    },
+    {
+      "id": "sugar-drum-crescendo",
+      "name": "糖鼓终曲",
+      "weapon": "糖鼓 (`sugar-drum`)",
+      "weapon_id": "sugar-drum",
+      "weapon_min_level": 5,
+      "passive": "节拍丝带 (`rhythm-ribbon`)",
+      "passive_id": "rhythm-ribbon",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "aoe-clear",
+      "tags": [
+        "burst",
+        "aoe",
+        "rhythm",
+        "evolution"
+      ],
+      "description": "糖鼓进化为连续扩散的终曲糖波。"
+    },
+    {
+      "id": "sugar-windmill",
+      "name": "旋糖风车",
+      "weapon": "棒棒糖回旋镖 (`lollipop-boomerang`)",
+      "weapon_id": "lollipop-boomerang",
+      "weapon_min_level": 5,
+      "passive": "奶油发条 (`cream-clockwork`)",
+      "passive_id": "cream-clockwork",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "pierce-clear",
+      "tags": [
+        "boomerang",
+        "pierce",
+        "evolution"
+      ],
+      "description": "棒棒糖回旋镖进化为旋糖风车，长时间切穿敌群。"
+    },
+    {
+      "id": "wafer-castle-rail",
+      "name": "威化城墙护轨",
+      "weapon": "威化护轨 (`wafer-guard-rail`)",
+      "weapon_id": "wafer-guard-rail",
+      "weapon_min_level": 5,
+      "passive": "棉花糖背心 (`marshmallow-vest`)",
+      "passive_id": "marshmallow-vest",
+      "passive_min_level": 3,
+      "trigger": "boss_chest",
+      "role": "defense",
+      "tags": [
+        "orbit",
+        "defense",
+        "evolution"
+      ],
+      "description": "威化护轨进化为城墙式护轨，强化贴身保护。"
+    }
+  ],
+  "maps": [
+    {
+      "id": "caramel-workshop",
+      "name": "焦糖工坊",
+      "tags": [
+        "hazard",
+        "industrial",
+        "control"
+      ],
+      "description": "生产焦糖机关的甜点工坊，障碍和地面危险更频繁。",
+      "music_theme": "sticky_factory_groove",
+      "duration_seconds": 600,
+      "segment_count": 5,
+      "boss_events": [
+        {
+          "time_second": 210,
+          "boss": "焦糖熔炉 (`caramel-furnace`)",
+          "boss_id": "caramel-furnace"
+        }
+      ],
+      "early_enemies": [
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "焦糖史莱姆 (`caramel-slime`)"
+      ],
+      "late_enemies": [
+        "焦糖史莱姆 (`caramel-slime`)",
+        "夹心饼怪 (`sandwich-cookie-creep`)",
+        "辣味软糖 (`spicy-gummy`)",
+        "汽水泡泡 (`soda-bubble`)",
+        "粘粘熊糖 (`sticky-bear-gummy`)",
+        "酸酸软糖 (`sour-gummy`)",
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "甘草跳跳 (`licorice-skipper`)",
+        "太妃盾糖 (`taffy-shieldling`)",
+        "糖针吐吐 (`sprinkle-spitter`)"
+      ]
+    },
+    {
+      "id": "cotton-cloud-pasture",
+      "name": "棉花云牧场",
+      "tags": [
+        "soft",
+        "swarm",
+        "aoe-check"
+      ],
+      "description": "漂浮在低空的棉花云牧场，视野柔和但敌群密度更高。",
+      "music_theme": "soft_cloud_music_box",
+      "duration_seconds": 600,
+      "segment_count": 5,
+      "boss_events": [
+        {
+          "time_second": 210,
+          "boss": "巨型棉花团 (`giant-cotton-clump`)",
+          "boss_id": "giant-cotton-clump"
+        }
+      ],
+      "early_enemies": [
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "棉花糖团 (`cotton-candy-clump`)"
+      ],
+      "late_enemies": [
+        "棉花糖团 (`cotton-candy-clump`)",
+        "粘粘熊糖 (`sticky-bear-gummy`)",
+        "汽水泡泡 (`soda-bubble`)",
+        "夹心饼怪 (`sandwich-cookie-creep`)",
+        "焦糖史莱姆 (`caramel-slime`)",
+        "酸酸软糖 (`sour-gummy`)",
+        "糖粉飞蛾 (`sugar-moth`)",
+        "糖针吐吐 (`sprinkle-spitter`)",
+        "太妃盾糖 (`taffy-shieldling`)"
+      ]
+    },
+    {
+      "id": "cracked-star-jar",
+      "name": "裂星糖罐",
+      "tags": [
+        "final",
+        "phase-shift",
+        "storm"
+      ],
+      "description": "最终地图，破裂糖罐中不断转色的风暴眼会改变战斗节奏。",
+      "music_theme": "final_storm_celesta",
+      "duration_seconds": 600,
+      "segment_count": 5,
+      "boss_events": [
+        {
+          "time_second": 210,
+          "boss": "裂星糖罐核心 (`cracked-star-jar-core`)",
+          "boss_id": "cracked-star-jar-core"
+        }
+      ],
+      "early_enemies": [
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "酸酸软糖 (`sour-gummy`)",
+        "汽水泡泡 (`soda-bubble`)",
+        "棉花糖团 (`cotton-candy-clump`)",
+        "糖粉飞蛾 (`sugar-moth`)",
+        "甘草跳跳 (`licorice-skipper`)"
+      ],
+      "late_enemies": [
+        "夹心饼怪 (`sandwich-cookie-creep`)",
+        "辣味软糖 (`spicy-gummy`)",
+        "焦糖史莱姆 (`caramel-slime`)",
+        "汽水泡泡 (`soda-bubble`)",
+        "粘粘熊糖 (`sticky-bear-gummy`)",
+        "酸酸软糖 (`sour-gummy`)",
+        "棉花糖团 (`cotton-candy-clump`)",
+        "糖粉飞蛾 (`sugar-moth`)",
+        "甘草跳跳 (`licorice-skipper`)",
+        "太妃盾糖 (`taffy-shieldling`)",
+        "糖针吐吐 (`sprinkle-spitter`)"
+      ]
+    },
+    {
+      "id": "frosting-grassland",
+      "name": "糖霜草地",
+      "tags": [
+        "beginner",
+        "open"
+      ],
+      "description": "覆盖糖霜的开阔草地，新手守护员第一次面对软糖风暴的地方。",
+      "music_theme": "bright_xylophone",
+      "duration_seconds": 600,
+      "segment_count": 6,
+      "boss_events": [
+        {
+          "time_second": 210,
+          "boss": "暴走搅糖机 (`runaway-sugar-mixer`)",
+          "boss_id": "runaway-sugar-mixer"
+        }
+      ],
+      "early_enemies": [
+        "蹦蹦软糖 (`bouncy-gummy`)"
+      ],
+      "late_enemies": [
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "酸酸软糖 (`sour-gummy`)",
+        "夹心饼怪 (`sandwich-cookie-creep`)",
+        "焦糖史莱姆 (`caramel-slime`)",
+        "粘粘熊糖 (`sticky-bear-gummy`)",
+        "汽水泡泡 (`soda-bubble`)",
+        "甘草跳跳 (`licorice-skipper`)",
+        "糖粉飞蛾 (`sugar-moth`)",
+        "太妃盾糖 (`taffy-shieldling`)",
+        "糖针吐吐 (`sprinkle-spitter`)"
+      ]
+    },
+    {
+      "id": "jelly-platform",
+      "name": "果冻月台",
+      "tags": [
+        "route",
+        "loop",
+        "bot-test"
+      ],
+      "description": "狭长又带环形路线的果冻月台，适合固定路线 Bot 与走位策略测试。",
+      "music_theme": "jelly_station_pulse",
+      "duration_seconds": 600,
+      "segment_count": 5,
+      "boss_events": [
+        {
+          "time_second": 210,
+          "boss": "巨型熊糖王 (`giant-gummy-bear-king`)",
+          "boss_id": "giant-gummy-bear-king"
+        }
+      ],
+      "early_enemies": [
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "粘粘熊糖 (`sticky-bear-gummy`)"
+      ],
+      "late_enemies": [
+        "粘粘熊糖 (`sticky-bear-gummy`)",
+        "夹心饼怪 (`sandwich-cookie-creep`)",
+        "辣味软糖 (`spicy-gummy`)",
+        "汽水泡泡 (`soda-bubble`)",
+        "焦糖史莱姆 (`caramel-slime`)",
+        "酸酸软糖 (`sour-gummy`)",
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "糖粉飞蛾 (`sugar-moth`)",
+        "甘草跳跳 (`licorice-skipper`)",
+        "太妃盾糖 (`taffy-shieldling`)"
+      ]
+    },
+    {
+      "id": "soda-creek",
+      "name": "汽水溪谷",
+      "tags": [
+        "mobility",
+        "bubbles",
+        "midgame"
+      ],
+      "description": "流淌着汽水的小溪谷，泡泡地形和弹跳视觉让移动判断更忙碌。",
+      "music_theme": "sparkling_soda_marimba",
+      "duration_seconds": 600,
+      "segment_count": 5,
+      "boss_events": [
+        {
+          "time_second": 210,
+          "boss": "汽水喷泉龙 (`soda-fountain-dragon`)",
+          "boss_id": "soda-fountain-dragon"
+        }
+      ],
+      "early_enemies": [
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "汽水泡泡 (`soda-bubble`)"
+      ],
+      "late_enemies": [
+        "汽水泡泡 (`soda-bubble`)",
+        "辣味软糖 (`spicy-gummy`)",
+        "夹心饼怪 (`sandwich-cookie-creep`)",
+        "焦糖史莱姆 (`caramel-slime`)",
+        "酸酸软糖 (`sour-gummy`)",
+        "蹦蹦软糖 (`bouncy-gummy`)",
+        "粘粘熊糖 (`sticky-bear-gummy`)",
+        "糖针吐吐 (`sprinkle-spitter`)",
+        "糖粉飞蛾 (`sugar-moth`)",
+        "甘草跳跳 (`licorice-skipper`)"
+      ]
+    }
+  ],
+  "enemies": [
+    {
+      "id": "bouncy-gummy",
+      "name": "蹦蹦软糖",
+      "tags": [
+        "basic",
+        "swarm"
+      ],
+      "behavior": "chase",
+      "health": 18,
+      "move_speed": 60,
+      "counterplay": "保持移动即可摆脱，适合用基础投射物清理。"
+    },
+    {
+      "id": "caramel-slime",
+      "name": "焦糖史莱姆",
+      "tags": [
+        "control",
+        "sticky"
+      ],
+      "behavior": "leave_hazard",
+      "health": 35,
+      "move_speed": 45,
+      "counterplay": "保持移动并优先清掉路线附近的焦糖怪。"
+    },
+    {
+      "id": "cotton-candy-clump",
+      "name": "棉花糖团",
+      "tags": [
+        "swarm",
+        "aoe-check",
+        "soft"
+      ],
+      "behavior": "chase",
+      "health": 20,
+      "move_speed": 44,
+      "counterplay": "用汽水喷泉等范围武器清理成团目标，避免被慢慢挤到地图边缘。"
+    },
+    {
+      "id": "licorice-skipper",
+      "name": "甘草跳跳",
+      "tags": [
+        "jump",
+        "disruptor",
+        "midgame"
+      ],
+      "behavior": "jump",
+      "health": 38,
+      "move_speed": 76,
+      "counterplay": "跳跃前会压低身体并亮起糖粉，横向移动可以躲开落点。"
+    },
+    {
+      "id": "sandwich-cookie-creep",
+      "name": "夹心饼怪",
+      "tags": [
+        "tank",
+        "blocker"
+      ],
+      "behavior": "chase",
+      "health": 65,
+      "move_speed": 38,
+      "counterplay": "用穿透或范围武器提前削血，不要让它堵住退路。"
+    },
+    {
+      "id": "soda-bubble",
+      "name": "汽水泡泡",
+      "tags": [
+        "split",
+        "swarm",
+        "soda"
+      ],
+      "behavior": "split",
+      "health": 26,
+      "move_speed": 70,
+      "counterplay": "不要把泡泡怪集中在身边击杀，尽量用范围伤害提前清掉分裂压力。"
+    },
+    {
+      "id": "sour-gummy",
+      "name": "酸酸软糖",
+      "tags": [
+        "fast",
+        "sour"
+      ],
+      "behavior": "chase",
+      "health": 12,
+      "move_speed": 92,
+      "counterplay": "提前拉开距离，避免被快速贴身。"
+    },
+    {
+      "id": "spicy-gummy",
+      "name": "辣味软糖",
+      "tags": [
+        "dash",
+        "burst-danger",
+        "spicy"
+      ],
+      "behavior": "dash",
+      "health": 22,
+      "move_speed": 78,
+      "counterplay": "观察蓄力后横向躲开，避免直线后撤被冲刺追上。"
+    },
+    {
+      "id": "sprinkle-spitter",
+      "name": "糖针吐吐",
+      "tags": [
+        "ranged",
+        "warning",
+        "projectile-pressure"
+      ],
+      "behavior": "ranged_spit",
+      "health": 34,
+      "move_speed": 50,
+      "counterplay": "吐糖针前会鼓起身体并对准玩家，保持横向移动即可规避。"
+    },
+    {
+      "id": "sticky-bear-gummy",
+      "name": "粘粘熊糖",
+      "tags": [
+        "control",
+        "slow",
+        "bear"
+      ],
+      "behavior": "chase",
+      "health": 28,
+      "move_speed": 52,
+      "counterplay": "优先保持距离或用控制武器打断贴身，不要在窄路被熊糖围住。"
+    },
+    {
+      "id": "sugar-moth",
+      "name": "糖粉飞蛾",
+      "tags": [
+        "orbit",
+        "flanker",
+        "visual-clarity"
+      ],
+      "behavior": "orbit_player",
+      "health": 28,
+      "move_speed": 92,
+      "counterplay": "生命很低，环绕半径稳定，玩家向内切或用范围武器可清理。"
+    },
+    {
+      "id": "taffy-shieldling",
+      "name": "太妃盾糖",
+      "tags": [
+        "shielded",
+        "blocker",
+        "tank"
+      ],
+      "behavior": "shielded",
+      "health": 102,
+      "move_speed": 42,
+      "counterplay": "移动慢且背面更脆，玩家绕开正面或用范围伤害处理。"
+    }
+  ],
+  "bosses": [
+    {
+      "id": "caramel-furnace",
+      "name": "焦糖熔炉",
+      "tags": [
+        "boss",
+        "hazard",
+        "control",
+        "zone"
+      ],
+      "abilities": [
+        "caramel_floor_cycle",
+        "lay_caramel_tracks",
+        "slow_pulse",
+        "summon_caramel_slime"
+      ],
+      "counterplay": "焦糖地面会压缩路线，需要持续移动并提前绕开亮面预警区。"
+    },
+    {
+      "id": "cracked-star-jar-core",
+      "name": "裂星糖罐核心",
+      "tags": [
+        "boss",
+        "final",
+        "phase-shift",
+        "storm"
+      ],
+      "abilities": [
+        "bubble_phase_barrage",
+        "multi_flavor_storm",
+        "phase_shift_vulnerability",
+        "sour_phase_storm",
+        "spicy_phase_burst",
+        "sweet_phase_shield"
+      ],
+      "counterplay": "每次阶段切换都会短暂暴露核心，需要根据当前风暴颜色调整输出距离。"
+    },
+    {
+      "id": "giant-cotton-clump",
+      "name": "巨型棉花团",
+      "tags": [
+        "boss",
+        "split",
+        "merge",
+        "swarm"
+      ],
+      "abilities": [
+        "recombine_heal",
+        "soft_roll",
+        "split_cotton_clumps"
+      ],
+      "counterplay": "分裂阶段单体较弱，优先清掉小团可以降低重新合体后的压力。"
+    },
+    {
+      "id": "giant-gummy-bear-king",
+      "name": "巨型熊糖王",
+      "tags": [
+        "boss",
+        "jump",
+        "summon",
+        "shockwave"
+      ],
+      "abilities": [
+        "double_jump_shockwave",
+        "jump_shockwave",
+        "summon_guard_wave",
+        "summon_sticky_bear_gummy"
+      ],
+      "counterplay": "起跳阴影会提前出现，落地后短暂硬直是主要输出窗口。"
+    },
+    {
+      "id": "runaway-sugar-mixer",
+      "name": "暴走搅糖机",
+      "tags": [
+        "boss",
+        "dash",
+        "summon"
+      ],
+      "abilities": [
+        "dash_charge",
+        "sugar_splash",
+        "summon_bouncy_gummy"
+      ],
+      "counterplay": "冲撞前会出现红色预警线，冲撞后短暂硬直。"
+    },
+    {
+      "id": "soda-fountain-dragon",
+      "name": "汽水喷泉龙",
+      "tags": [
+        "boss",
+        "ranged",
+        "summon",
+        "bubbles"
+      ],
+      "abilities": [
+        "bubble_barrage",
+        "charged_fountain",
+        "summon_soda_bubble"
+      ],
+      "counterplay": "喷射前有明显蓄力，绕到侧面移动可以避开主要弹幕。"
+    }
+  ],
+  "events": [
+    {
+      "id": "caramel-quake",
+      "name": "焦糖地震",
+      "tags": [
+        "event",
+        "hazard",
+        "movement",
+        "control"
+      ],
+      "description": "地面短暂震动并出现焦糖危险区，要求玩家持续改变路线。"
+    },
+    {
+      "id": "cotton-cloud-cover",
+      "name": "棉花云遮挡",
+      "tags": [
+        "event",
+        "vision",
+        "pickup",
+        "swarm"
+      ],
+      "description": "软云短暂遮挡战场边缘，玩家输出节奏降低但拾取收益更高。"
+    },
+    {
+      "id": "rainbow-candy-rush",
+      "name": "彩虹糖潮",
+      "tags": [
+        "event",
+        "risk-reward",
+        "xp"
+      ],
+      "description": "短时间内糖晶掉落增加，但敌人生成也会加快。"
+    },
+    {
+      "id": "sour-rain",
+      "name": "酸味雨",
+      "tags": [
+        "event",
+        "risk-reward",
+        "xp",
+        "swarm"
+      ],
+      "description": "短时间敌人生成更急促，但糖晶收益也会提高。"
+    },
+    {
+      "id": "sugar-jar-supply",
+      "name": "糖罐补给",
+      "tags": [
+        "event",
+        "supply",
+        "upgrade"
+      ],
+      "description": "限时出现糖罐补给，触发一次额外升级三选一奖励。"
+    }
+  ],
+  "playtest_entrypoints": [
+    "python3 harness/playtest/run_v25_manual_playtest.py --status",
+    "python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run",
+    "python3 harness/playtest/run_v25_manual_playtest.py --next"
+  ],
+  "human_review_blockers": [
+    "design_review_incomplete",
+    "manual_playtest_incomplete",
+    "final_acceptance_missing",
+    "accepted_content_lockfile_blocked"
+  ],
+  "errors": [],
+  "limitations": [
+    "This guide summarizes generated candidate content for human playtest preparation only.",
+    "It does not approve content, fill human review fields, or move files into accepted_content.",
+    "v25 must remain out of content/base_demo and Runtime official content until human gates pass."
+  ]
+}

@@ -56,6 +56,7 @@ launcher:
 python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
 python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos
 python3 harness/playtest/create_v25_human_review_worksheet.py
+python3 harness/playtest/create_v25_playable_content_guide.py
 python3 harness/playtest/run_v25_manual_playtest.py --list
 python3 harness/playtest/run_v25_manual_playtest.py --status
 python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
@@ -83,6 +84,12 @@ manual-playtest TODO field that must be replaced by concrete human evidence.
 Use `create_v25_human_review_worksheet.py` to generate a human-fillable
 Markdown worksheet with design-review fields, all 9 playtest commands,
 required observations, rating slots, and validation commands.
+
+Use `create_v25_playable_content_guide.py` before a human playtest session to
+summarize the v25 candidate's characters, maps, build routes, enemies, bosses,
+events, demo target counts, and playtest entrypoints. It reads the generated
+candidate pack and marks the output as candidate-only; it does not approve
+content, fill review fields, or move files into `accepted_content`.
 
 Use `--status` to see local report progress and `--next` to launch the first
 run whose local report is still missing. These shortcuts only inspect local
@@ -142,6 +149,7 @@ python3 harness/playtest/test_create_manual_playtest_acceptance_review_packet.py
 python3 harness/playtest/test_check_v25_candidate_readiness.py
 python3 harness/playtest/test_list_v25_human_evidence_todos.py
 python3 harness/playtest/test_create_v25_human_review_worksheet.py
+python3 harness/playtest/test_create_v25_playable_content_guide.py
 python3 harness/playtest/test_summarize_v25_manual_playtest_reports.py
 python3 harness/playtest/test_check_v25_manual_playtest_status.py
 python3 harness/playtest/test_run_v25_manual_playtest.py
