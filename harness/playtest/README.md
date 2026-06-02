@@ -47,6 +47,24 @@ rating fields, allowed tags, and gate labels into one Markdown file. It does
 not run Runtime, fill ratings, approve a candidate, or replace the strict
 acceptance validator.
 
+## Launch The v25 Manual Playtest Candidate
+
+The current Demo buildcraft repair v25 candidate has a dedicated manual
+launcher:
+
+```bash
+python3 harness/playtest/run_v25_manual_playtest.py --list
+python3 harness/playtest/run_v25_manual_playtest.py new_001 --dry-run
+python3 harness/playtest/run_v25_manual_playtest.py new_001
+```
+
+The launcher targets
+`harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack`
+and writes reports under `harness/telemetry/local/`. It intentionally does not
+add `--demo-input`, `--simulation-speed`, or `--auto-exit-after-report`, because
+those flags would make the evidence automated rather than human playtest
+evidence.
+
 ## Create An Acceptance Evidence Packet
 
 ```bash
@@ -78,6 +96,7 @@ candidate `manual_playtest` gate remains `waiting`.
 python3 harness/playtest/test_create_manual_playtest_review_draft.py
 python3 harness/playtest/test_create_manual_playtest_review_packet.py
 python3 harness/playtest/test_create_manual_playtest_acceptance_review_packet.py
+python3 harness/playtest/test_run_v25_manual_playtest.py
 python3 harness/playtest/test_validate_manual_review.py
 ```
 

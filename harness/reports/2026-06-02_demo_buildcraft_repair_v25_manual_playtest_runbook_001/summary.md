@@ -14,6 +14,16 @@ Each run should be played manually. Do not use `--demo-input` or `--simulation-s
 
 ## Common Command Shape
 
+Recommended launcher:
+
+```bash
+python3 harness/playtest/run_v25_manual_playtest.py --list
+python3 harness/playtest/run_v25_manual_playtest.py <run_id> --dry-run
+python3 harness/playtest/run_v25_manual_playtest.py <run_id>
+```
+
+Expanded Runtime command shape:
+
 ```bash
 cargo run -p game_runtime -- \
   --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack \
@@ -45,54 +55,63 @@ After each run, replace the matching `TODO` section in the review draft with con
 ### new_001
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py new_001
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25001 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_001.json --capture-interval 2
 ```
 
 ### new_002
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py new_002
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25002 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_002.json --capture-interval 2
 ```
 
 ### new_003
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py new_003
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25003 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_003.json --capture-interval 2
 ```
 
 ### skilled_001
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py skilled_001
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25011 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_001.json --capture-interval 2
 ```
 
 ### skilled_002
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py skilled_002
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25012 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_002.json --capture-interval 2
 ```
 
 ### skilled_003
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py skilled_003
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25013 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_003.json --capture-interval 2
 ```
 
 ### build_001
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py build_001
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25021 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_001.json --capture-interval 2
 ```
 
 ### build_002
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py build_002
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25022 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_002.json --capture-interval 2
 ```
 
 ### build_003
 
 ```bash
+python3 harness/playtest/run_v25_manual_playtest.py build_003
 cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25023 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_003.json --capture-interval 2
 ```
 
