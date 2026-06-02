@@ -20,7 +20,7 @@ from typing import Any
 ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ALLOWED_RARITIES = {"common", "rare", "epic", "legendary", "boss", "debug"}
 BASE_ID_CATEGORIES = ("weapons", "passives", "evolutions", "enemies", "waves", "maps", "bosses")
-SUPPORTED_CONTENT_CATEGORIES = ("weapons", "passives", "evolutions", "enemies", "waves")
+SUPPORTED_CONTENT_CATEGORIES = ("weapons", "passives", "evolutions", "enemies", "waves", "maps")
 ALLOWED_WEAPON_TYPES = {"projectile", "orbit", "burst", "zone", "summon", "beam", "special"}
 ALLOWED_TARGETING_MODES = {
     "nearest_enemy",
@@ -33,6 +33,8 @@ ALLOWED_TARGETING_MODES = {
     "ground_near_player",
 }
 ALLOWED_PERFORMANCE_COSTS = {"low", "medium", "high"}
+ALLOWED_MAP_BOUNDS = {"rectangle"}
+ALLOWED_MAP_SPAWN_MODES = {"around_player"}
 
 ALLOWED_PASSIVE_STATS = {
     "max_health",
@@ -421,8 +423,9 @@ def validate_wave(
     if not isinstance(payload.get("version"), int) or payload["version"] <= 0:
         errors.append(f"wave `{display_id}` version must be a positive integer")
 
+    known_maps = base_ids["maps"] | candidate_ids["maps"]
     map_id = payload.get("map_id")
-    if not is_nonempty_string(map_id) or map_id not in base_ids["maps"]:
+    if not is_nonempty_string(map_id) or map_id not in known_maps:
         errors.append(f"wave `{display_id}` references unknown map `{map_id}`")
 
     if not is_number(payload.get("duration_seconds")) or payload["duration_seconds"] <= 0:
@@ -475,6 +478,72 @@ def validate_wave(
     pressure_budget = payload.get("pressure_budget")
     if not isinstance(pressure_budget, dict):
         warnings.append(f"wave `{display_id}` should include pressure_budget for review")
+
+    return errors, warnings
+
+
+def validate_map(
+    path: Path,
+    payload: dict[str, Any],
+    base_ids: set[str],
+    allow_overrides: bool,
+) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    item_id = payload.get("id")
+    display_id = item_id if is_nonempty_string(item_id) else path.stem
+
+    if not is_nonempty_string(item_id) or not ID_PATTERN.match(str(item_id)):
+        errors.append(f"map `{display_id}` has invalid kebab-case id")
+    elif item_id != path.stem:
+        warnings.append(f"map `{item_id}` id does not match file stem `{path.stem}`")
+
+    if is_nonempty_string(item_id) and item_id in base_ids and not allow_overrides:
+        errors.append(f"map `{item_id}` duplicates base content id")
+
+    for field in ("name", "description", "visual_description", "music_theme"):
+        if not is_nonempty_string(payload.get(field)):
+            errors.append(f"map `{display_id}` missing non-empty `{field}`")
+
+    if not isinstance(payload.get("version"), int) or payload["version"] <= 0:
+        errors.append(f"map `{display_id}` version must be a positive integer")
+
+    tags = string_list(payload.get("tags"))
+    if not tags or len(tags) != len(payload.get("tags", [])):
+        errors.append(f"map `{display_id}` tags must be a non-empty list of strings")
+
+    size = payload.get("size")
+    if not isinstance(size, dict):
+        errors.append(f"map `{display_id}` size must be an object")
+    else:
+        for field in ("width", "height"):
+            if not is_number(size.get(field)) or size[field] <= 0:
+                errors.append(f"map `{display_id}` size.{field} must be positive")
+
+    bounds = payload.get("bounds")
+    if not isinstance(bounds, dict):
+        errors.append(f"map `{display_id}` bounds must be an object")
+    elif bounds.get("type") not in ALLOWED_MAP_BOUNDS:
+        errors.append(f"map `{display_id}` bounds.type is invalid: {bounds.get('type')}")
+
+    spawn_rules = payload.get("spawn_rules")
+    if not isinstance(spawn_rules, dict):
+        errors.append(f"map `{display_id}` spawn_rules must be an object")
+    else:
+        if spawn_rules.get("mode") not in ALLOWED_MAP_SPAWN_MODES:
+            errors.append(f"map `{display_id}` spawn_rules.mode is invalid: {spawn_rules.get('mode')}")
+        min_distance = spawn_rules.get("min_distance")
+        max_distance = spawn_rules.get("max_distance")
+        if not is_number(min_distance) or min_distance <= 0:
+            errors.append(f"map `{display_id}` spawn_rules.min_distance must be positive")
+        if not is_number(max_distance) or max_distance <= 0:
+            errors.append(f"map `{display_id}` spawn_rules.max_distance must be positive")
+        if is_number(min_distance) and is_number(max_distance) and min_distance >= max_distance:
+            errors.append(f"map `{display_id}` spawn_rules must have min_distance < max_distance")
+
+    hazards = payload.get("hazards")
+    if not isinstance(hazards, list):
+        errors.append(f"map `{display_id}` hazards must be a list")
 
     return errors, warnings
 
@@ -568,6 +637,19 @@ def validate_candidate(
                 errors.append(f"{path.relative_to(candidate_dir)} is invalid JSON: {error}")
                 continue
             item_errors, item_warnings = validate_wave(path, payload, base_ids, candidate_ids, allow_overrides)
+            errors.extend(item_errors)
+            warnings.extend(item_warnings)
+
+    category_dir = candidate_dir / "maps"
+    if category_dir.exists():
+        for path in sorted(category_dir.glob("*.json")):
+            content_count += 1
+            try:
+                payload = load_json(path)
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                errors.append(f"{path.relative_to(candidate_dir)} is invalid JSON: {error}")
+                continue
+            item_errors, item_warnings = validate_map(path, payload, base_ids["maps"], allow_overrides)
             errors.extend(item_errors)
             warnings.extend(item_warnings)
 

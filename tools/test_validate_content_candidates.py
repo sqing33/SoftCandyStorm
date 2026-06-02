@@ -183,6 +183,22 @@ def make_candidate(root: Path, *, duplicate_id: bool = False, runtime_integrated
             "pressure_budget": {"early": "low", "middle": "medium", "late": "high"},
         },
     )
+    write_json(
+        candidate_dir / "maps" / "frosting-grassland.json",
+        {
+            "id": "frosting-grassland",
+            "name": "糖霜草地",
+            "version": 1,
+            "tags": ["beginner", "open"],
+            "description": "覆盖糖霜的开阔草地。",
+            "size": {"width": 2600, "height": 1700},
+            "bounds": {"type": "rectangle"},
+            "spawn_rules": {"mode": "around_player", "min_distance": 300, "max_distance": 500},
+            "hazards": [],
+            "visual_description": "奶白糖霜草地、棒棒糖路标、饼干小路。",
+            "music_theme": "bright_xylophone",
+        },
+    )
     return candidate_dir
 
 
@@ -195,7 +211,7 @@ class ContentCandidateValidatorTests(unittest.TestCase):
 
             self.assertEqual(report["decision"], "content_candidates_valid")
             self.assertEqual(report["candidate_count"], 1)
-            self.assertEqual(report["content_count"], 5)
+            self.assertEqual(report["content_count"], 6)
 
     def test_duplicate_base_id_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
