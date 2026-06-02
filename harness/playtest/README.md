@@ -57,6 +57,9 @@ python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
 python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos
 python3 harness/playtest/create_v25_human_review_worksheet.py
 python3 harness/playtest/create_v25_playable_content_guide.py
+python3 harness/playtest/play_v25_candidate.py --dry-run
+python3 harness/playtest/play_v25_candidate.py
+python3 harness/playtest/play_v25_candidate.py --list
 python3 harness/playtest/run_v25_content_tour.py --list
 python3 harness/playtest/run_v25_content_tour.py --next --dry-run
 python3 harness/playtest/summarize_v25_content_tour_reports.py --allow-incomplete
@@ -93,6 +96,13 @@ summarize the v25 candidate's characters, maps, build routes, enemies, bosses,
 events, demo target counts, and playtest entrypoints. It reads the generated
 candidate pack and marks the output as candidate-only; it does not approve
 content, fill review fields, or move files into `accepted_content`.
+
+Use `play_v25_candidate.py` for the easiest local start. With no preset it
+launches the beginner baseline, `jar-keeper` on `frosting-grassland`, using the
+v25 generated candidate pack and a local `v25_quick_play_default` report. The
+`--list` output shows optional presets for speed, summon, control, defense, and
+final-pressure runs. These quick-play reports are convenience notes only; they
+are not design review, not 9-run acceptance evidence, and do not promote v25.
 
 Use `run_v25_content_tour.py` when the goal is simply to try the v25 candidate's
 content surface: it provides 6 optional human-run sessions covering all 6 maps
@@ -165,7 +175,9 @@ python3 harness/playtest/test_check_v25_candidate_readiness.py
 python3 harness/playtest/test_list_v25_human_evidence_todos.py
 python3 harness/playtest/test_create_v25_human_review_worksheet.py
 python3 harness/playtest/test_create_v25_playable_content_guide.py
+python3 harness/playtest/test_play_v25_candidate.py
 python3 harness/playtest/test_run_v25_content_tour.py
+python3 harness/playtest/test_summarize_v25_content_tour_reports.py
 python3 harness/playtest/test_summarize_v25_manual_playtest_reports.py
 python3 harness/playtest/test_check_v25_manual_playtest_status.py
 python3 harness/playtest/test_run_v25_manual_playtest.py

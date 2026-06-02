@@ -58,6 +58,12 @@ class V25PlayableContentGuideTests(unittest.TestCase):
     def test_guide_includes_optional_content_tour_runs(self) -> None:
         guide = build_guide(REPO_ROOT)
 
+        self.assertEqual(len(guide["quick_play_presets"]), 6)
+        self.assertIn("python3 harness/playtest/play_v25_candidate.py", guide["quick_play_entrypoints"])
+        quick_by_id = {preset["preset_id"]: preset for preset in guide["quick_play_presets"]}
+        self.assertEqual(quick_by_id["default"]["character_id"], "jar-keeper")
+        self.assertEqual(quick_by_id["default"]["map_id"], "frosting-grassland")
+        self.assertIn("--player-skill quickplay", quick_by_id["default"]["runtime_command"])
         self.assertEqual(len(guide["content_tour_runs"]), 6)
         self.assertIn("python3 harness/playtest/run_v25_content_tour.py --next", guide["content_tour_entrypoints"])
         self.assertIn(
@@ -78,6 +84,7 @@ class V25PlayableContentGuideTests(unittest.TestCase):
             text = markdown.read_text(encoding="utf-8")
             self.assertIn("# v25 可玩内容导览", text)
             self.assertIn("糖鼓终曲", text)
+            self.assertIn("python3 harness/playtest/play_v25_candidate.py", text)
             self.assertIn("python3 harness/playtest/run_v25_manual_playtest.py --next", text)
             self.assertIn("python3 harness/playtest/run_v25_content_tour.py --next", text)
             self.assertIn("summarize_v25_content_tour_reports.py", text)

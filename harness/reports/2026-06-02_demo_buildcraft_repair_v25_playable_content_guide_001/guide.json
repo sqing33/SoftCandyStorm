@@ -942,6 +942,79 @@
       "description": "限时出现糖罐补给，触发一次额外升级三选一奖励。"
     }
   ],
+  "quick_play_entrypoints": [
+    "python3 harness/playtest/play_v25_candidate.py --dry-run",
+    "python3 harness/playtest/play_v25_candidate.py",
+    "python3 harness/playtest/play_v25_candidate.py --list"
+  ],
+  "quick_play_presets": [
+    {
+      "preset_id": "default",
+      "title": "默认新手局",
+      "character_id": "jar-keeper",
+      "map_id": "frosting-grassland",
+      "seed": 25301,
+      "focus": "糖罐守护员和糖霜草地基准体验",
+      "report": "harness/telemetry/local/v25_quick_play_default.json",
+      "command": "python3 harness/playtest/play_v25_candidate.py default",
+      "runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --character-id jar-keeper --map-id frosting-grassland --seed 25301 --seconds 600 --player-skill quickplay --playtest-report harness/telemetry/local/v25_quick_play_default.json --capture-interval 2"
+    },
+    {
+      "preset_id": "speed",
+      "title": "速度拾取局",
+      "character_id": "bubble-courier",
+      "map_id": "soda-creek",
+      "seed": 25302,
+      "focus": "泡泡邮差和汽水溪谷移动压力",
+      "report": "harness/telemetry/local/v25_quick_play_speed.json",
+      "command": "python3 harness/playtest/play_v25_candidate.py speed",
+      "runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --character-id bubble-courier --map-id soda-creek --seed 25302 --seconds 600 --player-skill quickplay --playtest-report harness/telemetry/local/v25_quick_play_speed.json --capture-interval 2"
+    },
+    {
+      "preset_id": "summon",
+      "title": "召唤经营局",
+      "character_id": "pudding-crafter",
+      "map_id": "cotton-cloud-pasture",
+      "seed": 25303,
+      "focus": "布丁工匠和棉花云群体压力",
+      "report": "harness/telemetry/local/v25_quick_play_summon.json",
+      "command": "python3 harness/playtest/play_v25_candidate.py summon",
+      "runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --character-id pudding-crafter --map-id cotton-cloud-pasture --seed 25303 --seconds 600 --player-skill quickplay --playtest-report harness/telemetry/local/v25_quick_play_summon.json --capture-interval 2"
+    },
+    {
+      "preset_id": "control",
+      "title": "控场路线局",
+      "character_id": "sour-plum-doctor",
+      "map_id": "caramel-workshop",
+      "seed": 25304,
+      "focus": "酸梅博士和焦糖工坊路线干扰",
+      "report": "harness/telemetry/local/v25_quick_play_control.json",
+      "command": "python3 harness/playtest/play_v25_candidate.py control",
+      "runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --character-id sour-plum-doctor --map-id caramel-workshop --seed 25304 --seconds 600 --player-skill quickplay --playtest-report harness/telemetry/local/v25_quick_play_control.json --capture-interval 2"
+    },
+    {
+      "preset_id": "defense",
+      "title": "防御近身局",
+      "character_id": "cream-knight",
+      "map_id": "jelly-platform",
+      "seed": 25305,
+      "focus": "奶油骑士和果冻月台环形路线",
+      "report": "harness/telemetry/local/v25_quick_play_defense.json",
+      "command": "python3 harness/playtest/play_v25_candidate.py defense",
+      "runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --character-id cream-knight --map-id jelly-platform --seed 25305 --seconds 600 --player-skill quickplay --playtest-report harness/telemetry/local/v25_quick_play_defense.json --capture-interval 2"
+    },
+    {
+      "preset_id": "final",
+      "title": "终局压力局",
+      "character_id": "jar-keeper",
+      "map_id": "cracked-star-jar",
+      "seed": 25306,
+      "focus": "裂星糖罐混合怪潮压力",
+      "report": "harness/telemetry/local/v25_quick_play_final.json",
+      "command": "python3 harness/playtest/play_v25_candidate.py final",
+      "runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --character-id jar-keeper --map-id cracked-star-jar --seed 25306 --seconds 600 --player-skill quickplay --playtest-report harness/telemetry/local/v25_quick_play_final.json --capture-interval 2"
+    }
+  ],
   "playtest_entrypoints": [
     "python3 harness/playtest/run_v25_manual_playtest.py --status",
     "python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run",

@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from play_v25_candidate import QUICK_PLAY_PRESETS, build_quick_play_command
 from run_v25_content_tour import TOUR_RUNS, build_tour_command, shell_quote
 from run_v25_manual_playtest import CANDIDATE_ID, CONTENT_DIR, CONTENT_HASH
 
@@ -314,6 +315,25 @@ def build_guide(repo_root: Path, content_dir: Path = CONTENT_DIR) -> dict[str, A
         "enemies": summarize_enemies(records),
         "bosses": summarize_bosses(records),
         "events": summarize_events(records),
+        "quick_play_entrypoints": [
+            "python3 harness/playtest/play_v25_candidate.py --dry-run",
+            "python3 harness/playtest/play_v25_candidate.py",
+            "python3 harness/playtest/play_v25_candidate.py --list",
+        ],
+        "quick_play_presets": [
+            {
+                "preset_id": preset.preset_id,
+                "title": preset.title,
+                "character_id": preset.character_id,
+                "map_id": preset.map_id,
+                "seed": preset.seed,
+                "focus": preset.focus,
+                "report": str(preset.report_path),
+                "command": f"python3 harness/playtest/play_v25_candidate.py {preset.preset_id}",
+                "runtime_command": shell_quote(build_quick_play_command(preset)),
+            }
+            for preset in QUICK_PLAY_PRESETS
+        ],
         "playtest_entrypoints": [
             "python3 harness/playtest/run_v25_manual_playtest.py --status",
             "python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run",
@@ -385,6 +405,21 @@ def write_markdown(guide: dict[str, Any], path: Path) -> None:
         [
             f"| `evolutions` | {summary['evolution_count']} | - | - |",
             f"| `events` | {summary['event_count']} | - | - |",
+            "",
+            "## 快速试玩入口",
+            "",
+        ]
+    )
+    lines.extend(f"- `{command}`" for command in guide["quick_play_entrypoints"])
+    lines.extend(["", "| Preset | Character | Map | Seed | Focus | Launcher |", "|---|---|---|---:|---|---|"])
+    for preset in guide["quick_play_presets"]:
+        lines.append(
+            f"| `{preset['preset_id']}` | `{preset['character_id']}` | `{preset['map_id']}` | "
+            f"{preset['seed']} | {preset['focus']} | `{preset['command']}` |"
+        )
+
+    lines.extend(
+        [
             "",
             "## 9 局人工试玩入口",
             "",

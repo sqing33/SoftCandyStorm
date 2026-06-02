@@ -22,6 +22,21 @@
 | `evolutions` | 13 | - | - |
 | `events` | 5 | - | - |
 
+## 快速试玩入口
+
+- `python3 harness/playtest/play_v25_candidate.py --dry-run`
+- `python3 harness/playtest/play_v25_candidate.py`
+- `python3 harness/playtest/play_v25_candidate.py --list`
+
+| Preset | Character | Map | Seed | Focus | Launcher |
+|---|---|---|---:|---|---|
+| `default` | `jar-keeper` | `frosting-grassland` | 25301 | 糖罐守护员和糖霜草地基准体验 | `python3 harness/playtest/play_v25_candidate.py default` |
+| `speed` | `bubble-courier` | `soda-creek` | 25302 | 泡泡邮差和汽水溪谷移动压力 | `python3 harness/playtest/play_v25_candidate.py speed` |
+| `summon` | `pudding-crafter` | `cotton-cloud-pasture` | 25303 | 布丁工匠和棉花云群体压力 | `python3 harness/playtest/play_v25_candidate.py summon` |
+| `control` | `sour-plum-doctor` | `caramel-workshop` | 25304 | 酸梅博士和焦糖工坊路线干扰 | `python3 harness/playtest/play_v25_candidate.py control` |
+| `defense` | `cream-knight` | `jelly-platform` | 25305 | 奶油骑士和果冻月台环形路线 | `python3 harness/playtest/play_v25_candidate.py defense` |
+| `final` | `jar-keeper` | `cracked-star-jar` | 25306 | 裂星糖罐混合怪潮压力 | `python3 harness/playtest/play_v25_candidate.py final` |
+
 ## 9 局人工试玩入口
 
 - `python3 harness/playtest/run_v25_manual_playtest.py --status`
