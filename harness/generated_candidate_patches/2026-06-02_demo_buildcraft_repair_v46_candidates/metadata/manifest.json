@@ -1,0 +1,57 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v46_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 RouteBot 成型前温和冲刺扰动修复验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v38_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo RouteBot fixed-route repair v46",
+    "goal": "在 v45 证明 90-150 秒 dash/jump 组合能把 RouteBot 降到 1/3 但过度扰动其他 Bot 后，只测试 105-135 秒更短、更低权重、仅 spicy-gummy 的早期冲刺压力。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "RouteBot 固定椭圆路线温和早期冲刺扰动；只调整 105-135 秒敌人池权重，不改刷怪间隔、数量、地图、武器、敌人参数、Boss 或事件。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v38 full pack 为基线，保留 v38 已收住的 BossHunter 修复。",
+      "本批次不修改 frosting-grassland 地图尺寸，避免复现 v41/v42 的主动 Bot 广泛过强。",
+      "本批次不修改 spawn_rules，避免复现 v39 的全局刷怪距离扰动。",
+      "本批次不修改 rainbow-candy-shot 或其他 starter 武器，避免复现 v40 的广泛构筑扰动。",
+      "本批次保留 v45 的早期扰动方向，但把窗口从 60 秒缩短到 30 秒，并移除 licorice-skipper 增权。",
+      "v46 的目标不是直接晋级，而是验证更温和的单一 dash 压力是否能避免 v45 的多 Bot 过度修正。"
+    ]
+  }
+}
