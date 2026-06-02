@@ -62,6 +62,7 @@ python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
 python3 harness/playtest/run_v25_manual_playtest.py --next
 python3 harness/playtest/run_v25_manual_playtest.py new_001 --dry-run
 python3 harness/playtest/run_v25_manual_playtest.py new_001
+python3 harness/playtest/summarize_v25_manual_playtest_reports.py --allow-incomplete
 python3 harness/playtest/check_v25_manual_playtest_status.py --allow-incomplete
 ```
 
@@ -87,6 +88,12 @@ Use `--status` to see local report progress and `--next` to launch the first
 run whose local report is still missing. These shortcuts only inspect local
 report files; the stricter status checker still verifies draft TODOs and
 candidate metadata.
+
+Use `summarize_v25_manual_playtest_reports.py` after any local report is
+created. It extracts objective Runtime metrics such as terminal state, duration,
+level, kills, damage taken, upgrade count, average FPS, and automation flags.
+It is only a helper for filling the review draft; it does not replace human
+ratings, notes, tags, next actions, or strict acceptance validation.
 
 After running manual sessions and filling the draft, use
 `check_v25_manual_playtest_status.py` to confirm that all 9 local reports exist
@@ -127,6 +134,7 @@ python3 harness/playtest/test_create_manual_playtest_acceptance_review_packet.py
 python3 harness/playtest/test_check_v25_candidate_readiness.py
 python3 harness/playtest/test_list_v25_human_evidence_todos.py
 python3 harness/playtest/test_create_v25_human_review_worksheet.py
+python3 harness/playtest/test_summarize_v25_manual_playtest_reports.py
 python3 harness/playtest/test_check_v25_manual_playtest_status.py
 python3 harness/playtest/test_run_v25_manual_playtest.py
 python3 harness/playtest/test_validate_manual_review.py

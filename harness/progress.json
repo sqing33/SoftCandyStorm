@@ -3753,6 +3753,11 @@
       "id": "demo_buildcraft_repair_v25_human_review_worksheet",
       "summary": "增加 v25 人工审查表生成器，把 pudding-turret 设计评分栏、9 局人工试玩命令、每局必看观察项、评分栏和校验命令汇总到 Markdown worksheet。该表方便真人审查和试玩时不漏字段，但不是 acceptance evidence，填写后仍必须把具体观察写回 JSON 草稿并运行对应校验。",
       "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_human_review_worksheet_001/worksheet.md"
+    },
+    {
+      "id": "demo_buildcraft_repair_v25_manual_report_summary",
+      "summary": "增加 v25 人工试玩 Runtime report 客观摘要工具，可从本地 9 局 playtest report 提取终局、时长、等级、击杀、受伤、升级次数、平均 FPS 和自动化标记，帮助真人回填审查草稿。当前报告为 manual_report_summary_no_reports：0/9 本地 report 存在；该摘要不填写评分、不判断乐趣、不替代人工证据。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_report_summary_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3873,8 +3878,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成内容设计审查包、设计审查状态检查器、9 局人工试玩包、Runtime 候选加载 smoke、人工试玩 runbook、支持 `--status` / `--next` 的专用 launcher、试玩状态检查器、readiness 总览、人工证据 TODO 清单和 Markdown 人工审查表。下一步应由真人用 worksheet 辅助填写设计审查草稿中的 pudding-turret 字段，并按 readiness / launcher 跑 9 局、填写试玩草稿 `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`；两段真人证据通过前不得进入 accepted_content、content/base_demo 或 Runtime 正式内容。",
-      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_human_review_worksheet_001/worksheet.md"
+      "summary": "Demo buildcraft repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成内容设计审查包、设计审查状态检查器、9 局人工试玩包、Runtime 候选加载 smoke、人工试玩 runbook、支持 `--status` / `--next` 的专用 launcher、试玩状态检查器、readiness 总览、人工证据 TODO 清单、Markdown 人工审查表和人工 report 客观摘要。下一步应由真人用 worksheet 辅助填写设计审查草稿中的 pudding-turret 字段，并按 readiness / launcher 跑 9 局；每产生一份本地 report 后用摘要工具提取客观指标，再填写试玩草稿 `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`。两段真人证据通过前不得进入 accepted_content、content/base_demo 或 Runtime 正式内容。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_report_summary_001/summary.md"
     }
   ]
 }
