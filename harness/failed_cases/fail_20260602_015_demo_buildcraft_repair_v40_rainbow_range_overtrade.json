@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_015",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v40_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v40 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. RouteBot stayed too high at 66.7% against a 10%-35% target. CowardBot fell to 0.0% against a 10%-35% target, while GreedyXpBot and TankBot rose to 66.7% against a 25%-55% target.",
+  "root_cause": "The v40 repair only reduced rainbow-candy-shot scaling.range_per_level from 18 to 10. This did not remove RouteBot's two winning seeds: RouteBot still won seeds 71000 and 71001 with level 6 and rainbow-candy-shot reaching level 5. The change also shifted unrelated Bot outcomes, likely because shorter starter range changed enemy proximity, XP pickup timing, and survivability thresholds differently for CowardBot, GreedyXpBot, and TankBot. This proves rainbow-candy-shot range growth is too broad and indirect for the remaining fixed-route exploit.",
+  "fix": "Do not promote v40 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. Keep v38 as the current BossHunter-repaired base. For the next RouteBot repair, avoid starter weapon range nerfs and broad player-facing feel changes. Inspect v32, v39, and v40 failures together and choose a narrower variable that affects RouteBot's fixed late-route safety without changing early starter reliability or broad map pressure.",
+  "validation": "v40 reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v40_* and the failed smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v40_matrix_300s_3seed_71000_001/summary.md. The same matrix shows IdleBot 0/3, RandomBot 0/3, KiteBot 2/3, BossHunterBot 2/3, ZoneControlBot 1/3, but CowardBot 0/3, GreedyXpBot 2/3, TankBot 2/3, and RouteBot 2/3. The next candidate must rerun the same 71000-71002 all-Bot smoke matrix and should not use rainbow-candy-shot range growth as the main repair lever.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v40_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v40_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v40_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}

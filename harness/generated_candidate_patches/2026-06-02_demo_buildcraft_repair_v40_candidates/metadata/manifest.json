@@ -1,0 +1,56 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v40_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 RouteBot 固定路线收益修复验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v38_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo RouteBot fixed-route repair v40",
+    "goal": "在 v39 证明全局刷怪距离调整过度扰动后，只测试 rainbow-candy-shot 射程成长削弱是否能压低 RouteBot 固定椭圆路线的远距离清怪收益，同时保持其他 Bot 结果不被明显扰动。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "rainbow-candy-shot",
+      "type": "weapon",
+      "path": "weapons/rainbow-candy-shot.json",
+      "role": "RouteBot 固定路线远距离清怪收益修复；只削弱射程成长，不改基础伤害、冷却、弹体数或波次。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v38 full pack 为基线，保留 v38 已收住的 BossHunter 修复。",
+      "本批次不修改 frosting-grassland 地图或 frosting-grassland-standard 波次，避免复现 v39 的多 Bot 扰动。",
+      "本批次不降低 rainbow-candy-shot 的基础伤害、冷却或 5 级弹体节点，避免复现 v3 的基础武器过砍。",
+      "RouteBot 胜利 seed 71000 和 71001 都依赖彩虹糖弹快速升到 5 级，本批次只测试更克制的射程成长是否足够打断固定路线舒适区。",
+      "如果 CowardBot、GreedyXpBot、KiteBot、TankBot 或 ZoneControlBot 跌出目标区间，应停止该方向，不推广到后续候选。"
+    ]
+  }
+}
