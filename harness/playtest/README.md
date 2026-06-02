@@ -57,6 +57,7 @@ python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
 python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos
 python3 harness/playtest/create_v25_human_review_worksheet.py
 python3 harness/playtest/create_v25_playable_content_guide.py
+python3 harness/playtest/audit_v25_playable_content_coverage.py --allow-repair
 python3 harness/playtest/play_v25_candidate.py --dry-run
 python3 harness/playtest/play_v25_candidate.py
 python3 harness/playtest/play_v25_candidate.py --list
@@ -98,6 +99,13 @@ summarize the v25 candidate's characters, maps, build routes, enemies, bosses,
 events, demo target counts, and playtest entrypoints. It reads the generated
 candidate pack and marks the output as candidate-only; it does not approve
 content, fill review fields, or move files into `accepted_content`.
+
+Use `audit_v25_playable_content_coverage.py --allow-repair` after the guide to
+check the playable surface for coverage gaps: role coverage, quick-play and
+content-tour entrypoints, character starter weapons, evolution routes, map
+waves, Boss/counterplay readability, and required playable descriptors. A
+`needs_content_repair` result is a candidate repair signal, not acceptance
+failure and not permission to promote v25.
 
 Use `play_v25_candidate.py` for the easiest local start. With no preset it
 launches the beginner baseline, `jar-keeper` on `frosting-grassland`, using the
@@ -190,6 +198,7 @@ python3 harness/playtest/test_check_v25_candidate_readiness.py
 python3 harness/playtest/test_list_v25_human_evidence_todos.py
 python3 harness/playtest/test_create_v25_human_review_worksheet.py
 python3 harness/playtest/test_create_v25_playable_content_guide.py
+python3 harness/playtest/test_audit_v25_playable_content_coverage.py
 python3 harness/playtest/test_play_v25_candidate.py
 python3 harness/playtest/test_summarize_v25_quick_play_reports.py
 python3 harness/playtest/test_run_v25_content_tour.py
