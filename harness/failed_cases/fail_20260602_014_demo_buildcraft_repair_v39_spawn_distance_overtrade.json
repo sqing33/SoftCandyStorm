@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_014",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v39_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v39 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. RouteBot stayed too high at 66.7% against a 10%-35% target, KiteBot rose to 100.0% against a 45%-75% target, TankBot rose to 66.7% against a 25%-55% target, and ZoneControlBot fell to 0.0% against a 25%-55% target.",
+  "root_cause": "The v39 repair only shortened frosting-grassland spawn_rules from min/max 320/520 to 300/500. This did not break RouteBot's fixed ellipse lane: RouteBot still won seeds 71000 and 71001 with level 6 and high kill counts. The same global spawn-distance pressure also changed nearby combat pacing for other movement styles, helping KiteBot and TankBot while starving or punishing ZoneControlBot. This shows that broad around_player spawn-distance tightening is too blunt for the remaining RouteBot fixed-route problem.",
+  "fix": "Do not promote v39 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. Keep v38 as the current BossHunter-repaired base. For the next RouteBot repair, avoid global map spawn-distance changes and inspect RouteBot winning replays for seeds 71000 and 71001. Prefer a narrower content-side variable that targets fixed-route build reliability or a specific late-window lane pressure without changing the whole map's spawn envelope.",
+  "validation": "v39 reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v39_* and the failed smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v39_matrix_300s_3seed_71000_001/summary.md. The same matrix shows IdleBot 0/3, RandomBot 0/3, CowardBot 1/3, GreedyXpBot 1/3, BossHunterBot 2/3, but KiteBot 3/3, TankBot 2/3, ZoneControlBot 0/3, and RouteBot 2/3. The next candidate must rerun the same 71000-71002 all-Bot smoke matrix and should be rejected if it repeats any multi-Bot overtrade.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v39_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v39_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v39_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}

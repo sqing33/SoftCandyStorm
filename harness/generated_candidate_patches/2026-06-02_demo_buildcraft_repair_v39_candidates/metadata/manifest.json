@@ -1,0 +1,56 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v39_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 RouteBot 固定路线漏洞修复验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v38_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo RouteBot fixed-route repair v39",
+    "goal": "在 v38 已经收住 BossHunter 后，只测试 frosting-grassland 刷怪距离轻微贴近玩家是否能把 RouteBot 从 2/3 降到 1/3，同时保持其他 Bot 结果不被明显扰动。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland",
+      "type": "map",
+      "path": "maps/frosting-grassland.json",
+      "role": "RouteBot 固定椭圆路线压力修复；轻微缩短 around_player 刷怪距离，不改敌人池和武器数值。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v38 full pack 为基线，保留 candy-crystal-lance 30 damage / 1079ms 的 BossHunter 阈值修复。",
+      "本批次不修改 frosting-grassland-standard 波次，避免复现 v32 的 Coward/Tank/ZoneControl 扰动。",
+      "本批次只把 spawn_rules.min_distance 从 320 调到 300，max_distance 从 520 调到 500。",
+      "如果 RouteBot 仍然 2/3 或更高，说明单靠轻微贴近刷怪距离不足以修复固定路线漏洞。",
+      "如果 CowardBot、TankBot 或 ZoneControlBot 跌出目标区间，应停止该方向，不推广到后续候选。"
+    ]
+  }
+}
