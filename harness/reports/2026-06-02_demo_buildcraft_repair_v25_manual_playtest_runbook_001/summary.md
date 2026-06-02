@@ -20,6 +20,7 @@ Recommended launcher:
 python3 harness/playtest/run_v25_manual_playtest.py --list
 python3 harness/playtest/run_v25_manual_playtest.py <run_id> --dry-run
 python3 harness/playtest/run_v25_manual_playtest.py <run_id>
+python3 harness/playtest/check_v25_manual_playtest_status.py --allow-incomplete
 ```
 
 Expanded Runtime command shape:
@@ -35,6 +36,8 @@ cargo run -p game_runtime -- \
 ```
 
 After each run, replace the matching `TODO` section in the review draft with concrete observations, 1-5 ratings, tags, and next actions.
+
+Use the status checker after a batch of runs to confirm which local reports are still missing and whether the draft still contains `TODO` placeholders.
 
 ## Run Matrix
 
@@ -128,6 +131,16 @@ python3 harness/playtest/validate_manual_review.py \
 ```
 
 Expected current state before human review: validation should fail because the draft still contains `TODO` fields and `acceptance_decision` is `needs_more_runs`.
+
+Before strict validation, check local evidence status with:
+
+```bash
+python3 harness/playtest/check_v25_manual_playtest_status.py \
+  --report harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_status_001/manual_playtest_status.json \
+  --markdown harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_status_001/summary.md
+```
+
+The current pre-human state is `manual_playtest_incomplete`: 0 / 9 local reports exist and the review draft still contains `TODO` placeholders.
 
 ## Limitations
 

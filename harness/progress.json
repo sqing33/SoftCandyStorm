@@ -3728,6 +3728,11 @@
       "id": "demo_buildcraft_repair_v25_manual_playtest_launcher",
       "summary": "增加 v25 人工试玩 launcher，可用 `--list` 查看 9 局矩阵、`--dry-run` 预览命令、按 run id 启动对应 Runtime 人工试玩；工具固定使用 v25 full pack、固定 seed 和本地 playtest-report 路径，并通过回归测试确认不会加入 demo input、simulation speed 或 auto-exit。",
       "report": "harness/playtest/run_v25_manual_playtest.py"
+    },
+    {
+      "id": "demo_buildcraft_repair_v25_manual_playtest_status_checker",
+      "summary": "增加 v25 人工试玩状态检查器，可核对 9 个本地 playtest report 是否存在、审查草稿是否仍含 TODO，并生成 JSON/Markdown 状态报告。当前报告为 manual_playtest_incomplete：0/9 本地报告存在，草稿仍含 TODO；该检查器不替代 strict acceptance 或人工判断。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_status_001/summary.md"
     }
   ],
   "next_recommended": [
@@ -3848,8 +3853,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成内容设计审查包、9 局人工试玩包、Runtime 候选加载 smoke、人工试玩 runbook 和专用 launcher。下一步应由真人按 launcher / runbook 跑 9 局，并填写设计审查草稿 `harness/content_review/drafts/2026-06-02_demo_buildcraft_repair_v25_full_pack_design_review_draft.json` 和试玩草稿 `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`；两段真人证据通过前不得进入 accepted_content、content/base_demo 或 Runtime 正式内容。",
-      "report": "harness/playtest/run_v25_manual_playtest.py"
+      "summary": "Demo buildcraft repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成内容设计审查包、9 局人工试玩包、Runtime 候选加载 smoke、人工试玩 runbook、专用 launcher 和状态检查器。下一步应由真人按 launcher / runbook 跑 9 局，并填写设计审查草稿 `harness/content_review/drafts/2026-06-02_demo_buildcraft_repair_v25_full_pack_design_review_draft.json` 和试玩草稿 `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`；两段真人证据通过前不得进入 accepted_content、content/base_demo 或 Runtime 正式内容。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_status_001/summary.md"
     }
   ]
 }
