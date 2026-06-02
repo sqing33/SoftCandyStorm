@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260602_024",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v25_full_pack",
+  "seed": "72000-72009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v25 previously passed the 300s / 10-seed all-Bot matrix on seeds 70000-70009, but the same candidate fails when retested on seeds 72000-72009. RandomBot rises to 20.0% against a 0%-15% target, CowardBot rises to 40.0% against a 10%-35% target, KiteBot rises to 80.0% against a 45%-75% target, TankBot rises to 60.0% against a 25%-55% target, BossHunterBot falls to 20.0% against a 45%-75% target, ZoneControlBot falls to 10.0% against a 25%-55% target, and RouteBot rises to 40.0% against a 10%-35% target. IdleBot and GreedyXpBot remain inside target.",
+  "root_cause": "The v25 candidate is a playable-surface and single-window balance improvement, but it is not seed-stable enough to serve as the current first playable baseline. The 72000-72009 replay set shows upgrade-pool sensitivity: some seeds let high-mobility, defensive, or fixed-route policies stabilize into late victories, while BossHunterBot and ZoneControlBot often die around the 210-225 second Boss entry and 225-300 second post-Boss transition. The issue is therefore broader than v48's Boss-entry wave tweak and points to first-demo build variance across a large upgrade pool.",
+  "fix": "Do not restore v25 as the accepted baseline or treat the 70000-70009 pass as sufficient playtest evidence. The next content repair should validate across at least two seed windows before promotion: keep the v25 playability coverage and Runtime loadability evidence as useful context, but repair the first-demo upgrade and wave structure so BossHunterBot and ZoneControlBot have reliable midgame paths without making KiteBot, TankBot, CowardBot, or RouteBot exceed their target ranges. Prefer content-candidate changes and Harness evidence over Bot policy edits while the user-facing playable content pack is being stabilized.",
+  "validation": "The original passing matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v25_matrix_300s_10seed_001/summary.md. The cross-seed regression report is harness/reports/2026-06-02_demo_buildcraft_repair_v25_matrix_300s_10seed_72000_001/summary.md. Future repairs should run 300s / 3-seed smoke and 300s / 10-seed expansion on at least the 72000-72009 window, and should be rejected if the repair only shifts the same seed sensitivity to another Bot family.",
+  "diagnostics": [
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack/README.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v25_matrix_300s_10seed_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v25_matrix_300s_10seed_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v25_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v25_matrix_300s_10seed_72000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v25_matrix_300s_10seed_72000_001/failure_cases.json"
+  ]
+}
