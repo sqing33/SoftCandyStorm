@@ -1,0 +1,52 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v29_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容静态预算修复"
+  },
+  "source_docs": [
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v28_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo enemy budget warning repair v29",
+    "goal": "修复 v28 静态预算报告中 sprinkle-spitter 声明威胁与计算威胁偏差过大的 warning。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "sprinkle-spitter",
+      "type": "enemy",
+      "path": "enemies/sprinkle-spitter.json",
+      "role": "远程吐糖针压力敌人，修正声明威胁预算但保留可读弹幕定位。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次只调整 spawn_budget.threat，不修改敌人行为、生命、速度、接触伤害或正式内容池。",
+      "威胁值从 2.05 调整为 1.75，保留远程压力加成，同时满足静态预算允许偏差。",
+      "该调整需要后续 Bot 仿真确认波次压力没有变得过轻。"
+    ]
+  }
+}
