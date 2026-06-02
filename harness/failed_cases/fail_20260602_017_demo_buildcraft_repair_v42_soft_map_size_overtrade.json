@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_017",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v42_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v42 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates, but failed the 300s / 3-seed all-Bot smoke matrix. RouteBot remained inside target at 33.3% against a 10%-35% target and CowardBot recovered to 33.3% against a 10%-35% target, but GreedyXpBot and ZoneControlBot stayed high at 66.7% against a 25%-55% target, KiteBot stayed high at 100.0% against a 45%-75% target, and TankBot rose to 100.0% against a 25%-55% target.",
+  "root_cause": "The v42 repair softened v41's map-size reduction from 2300x1500 to 2450x1600. This preserved the useful RouteBot pressure from smaller fixed-route radius and reduced the CowardBot overcorrection, but it still compressed active movement, XP collection, and kill pacing enough to make most non-idle active policies too reliable. The failure confirms that map-size reduction is a broad global lever: even a softer midpoint changes too many movement policies at once.",
+  "fix": "Do not promote v42 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. Keep v38 as the current BossHunter-repaired base until a candidate passes the all-Bot smoke matrix. Stop using broad map-size reductions as the primary RouteBot repair lever. For the next repair, use a narrower content-side lever that targets RouteBot's safe fixed route or late-route sustain without globally shortening traversal, such as a lane-pressure enemy mix adjustment in a narrow time window, a map hazard candidate with explicit counterplay, or a targeted wave pressure redistribution that avoids changing starter weapon feel.",
+  "validation": "v42 reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v42_* and the failed smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v42_matrix_300s_3seed_71000_001/summary.md. The same matrix shows IdleBot 0/3, RandomBot 0/3, CowardBot 1/3, BossHunterBot 2/3, and RouteBot 1/3 passing, but GreedyXpBot 2/3, KiteBot 3/3, TankBot 3/3, and ZoneControlBot 2/3 outside target. The next candidate must rerun the same 71000-71002 all-Bot smoke matrix and should be rejected if broad active-Bot win rates remain above target.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v42_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v42_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v42_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}
