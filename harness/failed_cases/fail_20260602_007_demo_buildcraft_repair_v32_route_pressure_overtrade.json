@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_007",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v32_full_pack",
+  "seed": "71000-71002",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v32 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, and isolated validate-candidates. The 300s / 3-seed all-Bot smoke matrix fixed BossHunterBot, which rose to 66.7% and entered the 45%-75% target band. However the same candidate still failed overall: RouteBot remained too high at 66.7%, CowardBot became too high at 66.7%, ZoneControlBot became too high at 66.7%, and TankBot fell too low at 0.0%. GreedyXpBot and KiteBot stayed inside target.",
+  "root_cause": "The v32 repair combined a global Candy Crystal Lance reliability buff with a 225-300s Frosting Grassland route-pressure composition change. Candy Crystal Lance did help BossHunterBot, especially when it was actually offered, but it is still a normal weapon and can perturb upgrade and kill timing for other builds. The 225-300s wave adjustment did not meaningfully reduce RouteBot's fixed ellipse survival: the two winning RouteBot seeds kept almost identical damage taken and duration to v31. The composition shift also changed late pickup, level, and survival timing enough to push CowardBot and ZoneControlBot high while making TankBot lose its previous 71000 victory.",
+  "fix": "Do not promote v32 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. For v33, roll back the Candy Crystal Lance global buff and the v32 225-300s wave composition change. Preserve v31's successful pieces: Bubble Shoes at +9 and the v31 Star Sugar Ray tuning. Repair BossHunter through a narrower mechanism that does not broadly buff common weapon outcomes, such as a smaller boss-killer adjustment or boss-window-specific content after confirming offers. Repair RouteBot separately; the v32 225-300s composition swap is not an effective anti-route lever.",
+  "validation": "v32 validation reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v32_* and the failing smoke matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v32_matrix_300s_3seed_71000_001/summary.md. The next candidate should first rerun the same 71000-71002 smoke matrix. Passing requires Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before any 10-seed expansion or Replay regression.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v32_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v32_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v32_matrix_300s_3seed_71000_001/failure_cases.json"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "soda-bubble-clock-parade",
+  "name": "汽泡怀表巡游",
+  "version": 1,
+  "rarity": "epic",
+  "tags": ["starter", "projectile", "bubble", "timing", "evolution"],
+  "description": "汽水泡泡进化为按节拍排队出发的泡泡巡游，移动角色能更稳定地清理身侧小怪。",
+  "requirements": {
+    "weapon": {
+      "id": "soda-bubble-pop",
+      "min_level": 5
+    },
+    "passive": {
+      "id": "peppermint-pocket-watch",
+      "min_level": 3
+    },
+    "trigger": "boss_chest"
+  },
+  "replaces_weapon": "soda-bubble-pop",
+  "weapon_definition": {
+    "type": "projectile",
+    "targeting": {
+      "mode": "nearest_enemy",
+      "range": 560
+    },
+    "base_stats": {
+      "damage": 24,
+      "cooldown_ms": 760,
+      "projectile_speed": 540,
+      "projectile_count": 4,
+      "pierce": 2,
+      "area_radius": 34,
+      "duration_ms": 0
+    }
+  },
+  "balance_budget": {
+    "role": "starter",
+    "single_target_dps": 126,
+    "group_dps": 178,
+    "performance_cost": "medium",
+    "risk": "移动角色会更稳定地清小怪，但仍依赖自动瞄准和中等射程，不能替代高爆发清场。"
+  },
+  "visual_description": "一串浅蓝汽水泡泡沿着怀表刻度排队飞出，每颗泡泡边缘有薄荷色小指针高光。",
+  "sfx_description": "滴答两声后接连续 bubble pop，节奏轻快但不尖锐。",
+  "unlock": {
+    "type": "discover"
+  }
+}

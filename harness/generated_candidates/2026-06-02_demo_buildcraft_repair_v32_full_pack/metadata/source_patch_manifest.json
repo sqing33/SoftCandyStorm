@@ -1,0 +1,60 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v32_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 route/boss 窄修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v31_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo route and boss reliability repair v32",
+    "goal": "修复 v31 在 71000-71002 smoke 中 BossHunterBot 过低和 RouteBot 过高的问题，同时保留 Coward/Kite/Tank/ZoneControl 已回到目标区间的结果。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "candy-crystal-lance",
+      "type": "weapon",
+      "path": "weapons/candy-crystal-lance.json",
+      "role": "BossHunter 未稳定抽到星糖射线时的 Boss 单体可靠性修复。"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "225-300 秒轻量路线打断，降低固定路线拖局稳定性。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次保留 v31 的 bubble-shoes +9 move_speed，不再重复覆盖该被动。",
+      "candy-crystal-lance 是 BossHunter 71000-71002 中更常见的实际选择，因此优先修复它而不是继续只增强 star-sugar-ray。",
+      "波次只修改 225-300 秒，不影响 210-225 秒 Boss 入场窗口，避免进一步压低 BossHunterBot 71001/71002。",
+      "候选必须先通过 71000-71002 smoke，再考虑 10-seed 扩样。"
+    ]
+  }
+}
