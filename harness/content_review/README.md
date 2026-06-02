@@ -52,6 +52,15 @@ python3 harness/content_review/validate_content_candidate_design_review.py \
 
 该门禁不会替代 Schema、静态预算、Bot 仿真、Replay 回归、人工试玩或 accepted content 锁定。
 
+v25 design review 状态检查示例：
+
+```bash
+python3 harness/content_review/check_v25_design_review_status.py --allow-incomplete
+```
+
+该检查器只确认 v25 草稿是否存在、是否仍含 TODO / 占位符、`source_patch_manifest` 中的新增内容是否都有审查条目。它不替代
+`validate_content_candidate_design_review.py`，也不推进候选。
+
 Simulation candidate staging 示例：
 
 ```bash
