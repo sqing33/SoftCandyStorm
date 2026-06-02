@@ -1,0 +1,54 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v23_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v23",
+    "goal": "基于 v22 full pack 继续修复 GreedyXpBot 在 300 秒 / 10 seed 扩样中 60.0% 胜率略高于 55.0% 上限的问题，同时保留 Coward、Route、Kite 和其他 Bot 的目标区间。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "拆分 255-300 秒后段压力窗口，轻微增加可读远程压力，压低 GreedyXpBot 安全成型后的自然通关率。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v23，只覆盖 1 条糖霜草地波次，并基于 v22 full pack 继承 star-spoon 与 pudding-turret 的修复。",
+      "v23 不改变 0-255 秒压力，不削弱基础武器和经济节奏，只在 255-300 秒把 sandwich-cookie-creep 0.16 换位到 sprinkle-spitter 0.09。",
+      "该批次必须通过完整候选流水线和 Bot seed 扩样后，才可进入 Replay 回归和人工试玩候选。"
+    ]
+  }
+}
