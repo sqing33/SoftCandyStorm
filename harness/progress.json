@@ -3765,6 +3765,11 @@
       "report": "harness/playtest/run_v25_content_tour.py"
     },
     {
+      "id": "demo_buildcraft_repair_v25_content_tour_summary",
+      "summary": "增加 v25 内容巡游 Runtime report 客观摘要工具，可从 6 条角色 / 地图巡游 report 提取终局、时长、等级、击杀、受伤、升级次数、平均 FPS、地图 / 角色匹配和自动化标记；content tour launcher 在非 dry-run Runtime 会话退出后会自动刷新该摘要。当前报告为 content_tour_summary_no_reports：0/6 本地 report 存在；该摘要只用于内容修复 triage，不计入 9 局人工接受证据。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_content_tour_summary_001/summary.md"
+    },
+    {
       "id": "demo_buildcraft_repair_v25_manual_report_summary",
       "summary": "增加 v25 人工试玩 Runtime report 客观摘要工具，可从本地 9 局 playtest report 提取终局、时长、等级、击杀、受伤、升级次数、平均 FPS 和自动化标记，帮助真人回填审查草稿。当前报告为 manual_report_summary_no_reports：0/9 本地 report 存在；该摘要不填写评分、不判断乐趣、不替代人工证据。",
       "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_report_summary_001/summary.md"
@@ -3776,6 +3781,11 @@
     }
   ],
   "next_recommended": [
+    {
+      "id": "demo_content_human_tour_and_repair_triage",
+      "summary": "当前目标优先推进用户能玩到的内容，AI/RL 训练线先暂停。下一步应先阅读 v25 可玩内容导览，再用 `python3 harness/playtest/run_v25_content_tour.py --next` 运行 6 条可选角色 / 地图巡游中的缺失局；非 dry-run 退出后会自动刷新 `summarize_v25_content_tour_reports.py --allow-incomplete`。巡游摘要只用于整理地图节奏、角色构筑、Boss 可读性、敌人反制和性能修复清单，不作为 9 局人工 acceptance 证据。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_content_tour_summary_001/summary.md"
+    },
     {
       "id": "rl_after_failure_lane_repair_preflight",
       "summary": "下一步按 preflight 分两条线推进：opening_repair 的 0-60s broad branch 已被 full parent no-regression 拒绝，后续应设计更窄 state-conditioned branch 或在线 action-distribution guard，而不是进入 10 seed follow-up。late_terminal_survival_conversion 只能在保留 60-180s path retention 的前提下尝试 terminal conversion。任一新 branch 或 checkpoint 都必须回到 failure_lane_repair_preflight 的 10 seed caramel follow-up、60s/caramel hard preflight 和 high-pressure parent no-regression。"
@@ -3893,8 +3903,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成内容设计审查包、设计审查状态检查器、9 局人工试玩包、Runtime 候选加载 smoke、人工试玩 runbook、支持 `--status` / `--next` 的专用 launcher、试玩状态检查器、readiness 总览、人工证据 TODO 清单、Markdown 人工审查表、可玩内容导览、角色 / 地图内容巡游入口和人工 report 客观摘要。下一步应先阅读可玩内容导览确认角色、地图、构筑、敌人和 Boss 试玩关注点，可用 `run_v25_content_tour.py --next` 试一轮角色 / 地图表面，再由真人用 worksheet 辅助填写设计审查草稿中的 pudding-turret 字段，并按 readiness / launcher 跑 9 局；非 dry-run 试玩结束后 launcher 会自动刷新客观摘要，然后真人把具体观察和评分填写回 `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`。两段真人证据通过前不得进入 accepted_content、content/base_demo 或 Runtime 正式内容。",
-      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_manual_report_summary_001/summary.md"
+      "summary": "Demo buildcraft repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成内容设计审查包、设计审查状态检查器、9 局人工试玩包、Runtime 候选加载 smoke、人工试玩 runbook、支持 `--status` / `--next` 的专用 launcher、试玩状态检查器、readiness 总览、人工证据 TODO 清单、Markdown 人工审查表、可玩内容导览、角色 / 地图内容巡游入口、内容巡游 report 客观摘要和人工 report 客观摘要。下一步应先阅读可玩内容导览确认角色、地图、构筑、敌人和 Boss 试玩关注点，可用 `run_v25_content_tour.py --next` 试一轮角色 / 地图表面，非 dry-run 巡游结束后 launcher 会自动刷新内容巡游摘要；再由真人用 worksheet 辅助填写设计审查草稿中的 pudding-turret 字段，并按 readiness / launcher 跑 9 局；非 dry-run 人工试玩结束后 launcher 会自动刷新人工试玩客观摘要，然后真人把具体观察和评分填写回 `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`。两段真人证据通过前不得进入 accepted_content、content/base_demo 或 Runtime 正式内容。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v25_content_tour_summary_001/summary.md"
     }
   ]
 }

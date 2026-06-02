@@ -19,6 +19,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from run_v25_content_tour import (  # noqa: E402
     RUN_BY_ID,
     TOUR_RUNS,
+    build_summary_command,
     build_tour_command,
     first_missing_run,
     status_text,
@@ -65,6 +66,12 @@ class V25ContentTourLauncherTests(unittest.TestCase):
         for flag in FORBIDDEN_MANUAL_FLAGS:
             self.assertNotIn(flag, command)
         validate_tour_command(command)
+
+    def test_summary_command_refreshes_content_tour_summary(self) -> None:
+        command = build_summary_command()
+
+        self.assertIn("harness/playtest/summarize_v25_content_tour_reports.py", command)
+        self.assertIn("--allow-incomplete", command)
 
     def test_first_missing_run_uses_tour_report_presence(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

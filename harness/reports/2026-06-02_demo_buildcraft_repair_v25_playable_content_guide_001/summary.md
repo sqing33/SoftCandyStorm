@@ -33,6 +33,7 @@
 - `python3 harness/playtest/run_v25_content_tour.py --list`
 - `python3 harness/playtest/run_v25_content_tour.py --next --dry-run`
 - `python3 harness/playtest/run_v25_content_tour.py --next`
+- `python3 harness/playtest/summarize_v25_content_tour_reports.py --allow-incomplete`
 
 | Run | Character | Map | Seed | Focus | Launcher |
 |---|---|---|---:|---|---|

@@ -60,6 +60,10 @@ class V25PlayableContentGuideTests(unittest.TestCase):
 
         self.assertEqual(len(guide["content_tour_runs"]), 6)
         self.assertIn("python3 harness/playtest/run_v25_content_tour.py --next", guide["content_tour_entrypoints"])
+        self.assertIn(
+            "python3 harness/playtest/summarize_v25_content_tour_reports.py --allow-incomplete",
+            guide["content_tour_entrypoints"],
+        )
         run_by_id = {run["run_id"]: run for run in guide["content_tour_runs"]}
         self.assertEqual(run_by_id["soda_bubble_courier"]["character_id"], "bubble-courier")
         self.assertEqual(run_by_id["soda_bubble_courier"]["map_id"], "soda-creek")
@@ -76,6 +80,7 @@ class V25PlayableContentGuideTests(unittest.TestCase):
             self.assertIn("糖鼓终曲", text)
             self.assertIn("python3 harness/playtest/run_v25_manual_playtest.py --next", text)
             self.assertIn("python3 harness/playtest/run_v25_content_tour.py --next", text)
+            self.assertIn("summarize_v25_content_tour_reports.py", text)
             self.assertIn("Accepted content: `False`", text)
 
     def test_cli_writes_report_and_markdown(self) -> None:

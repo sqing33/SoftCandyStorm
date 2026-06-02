@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import shlex
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -27,6 +28,7 @@ from run_v25_manual_playtest import (
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
 REPORT_PREFIX = "harness/telemetry/local/v25_content_tour"
+SUMMARY_SCRIPT = Path("harness/playtest/summarize_v25_content_tour_reports.py")
 
 
 @dataclass(frozen=True)
@@ -100,6 +102,30 @@ def validate_tour_command(command: list[str]) -> None:
         raise ValueError(f"content tour command must not include automation flags: {', '.join(forbidden)}")
 
 
+def build_summary_command() -> list[str]:
+    executable = sys.executable or "python3"
+    return [executable, str(SUMMARY_SCRIPT), "--allow-incomplete"]
+
+
+def run_tour_and_maybe_summarize(
+    command: list[str],
+    *,
+    repo_root: Path,
+    summarize_after: bool = True,
+) -> int:
+    completed = subprocess.run(command, cwd=repo_root, check=False)
+    runtime_returncode = completed.returncode
+    if not summarize_after:
+        return runtime_returncode
+
+    summary_command = build_summary_command()
+    print(f"Summary: {shell_quote(summary_command)}")
+    summary_completed = subprocess.run(summary_command, cwd=repo_root, check=False)
+    if runtime_returncode != 0:
+        return runtime_returncode
+    return summary_completed.returncode
+
+
 def report_exists(repo_root: Path, run: ContentTourRun) -> bool:
     return (repo_root / run.report_path).exists()
 
@@ -166,6 +192,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--next", action="store_true", help="Launch the first tour run whose report is missing")
     parser.add_argument("--dry-run", action="store_true", help="Print the command without launching Runtime")
     parser.add_argument("--release", action="store_true", help="Use cargo run --release")
+    parser.add_argument(
+        "--no-summary-after",
+        action="store_true",
+        help="Do not refresh the objective content-tour summary after Runtime exits",
+    )
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT, help=argparse.SUPPRESS)
     parser.add_argument("--seconds", type=int, default=DEFAULT_SECONDS, help="Target run duration in seconds")
     parser.add_argument(
@@ -213,8 +244,11 @@ def main() -> int:
     print(shell_quote(command))
     if args.dry_run:
         return 0
-    completed = subprocess.run(command, cwd=repo_root, check=False)
-    return completed.returncode
+    return run_tour_and_maybe_summarize(
+        command,
+        repo_root=repo_root,
+        summarize_after=not args.no_summary_after,
+    )
 
 
 if __name__ == "__main__":

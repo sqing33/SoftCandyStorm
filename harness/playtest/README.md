@@ -59,6 +59,7 @@ python3 harness/playtest/create_v25_human_review_worksheet.py
 python3 harness/playtest/create_v25_playable_content_guide.py
 python3 harness/playtest/run_v25_content_tour.py --list
 python3 harness/playtest/run_v25_content_tour.py --next --dry-run
+python3 harness/playtest/summarize_v25_content_tour_reports.py --allow-incomplete
 python3 harness/playtest/run_v25_manual_playtest.py --list
 python3 harness/playtest/run_v25_manual_playtest.py --status
 python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
@@ -97,6 +98,13 @@ Use `run_v25_content_tour.py` when the goal is simply to try the v25 candidate's
 content surface: it provides 6 optional human-run sessions covering all 6 maps
 and all 5 characters. These runs write separate `v25_content_tour_*` reports and
 are not counted as the required 9 manual acceptance reports.
+
+After a non-dry-run content tour exits, `run_v25_content_tour.py`
+automatically runs `summarize_v25_content_tour_reports.py --allow-incomplete`
+to refresh the objective content-tour summary. That summary is only a repair
+triage helper for maps, characters, pacing, upgrade flow, Boss readability, and
+performance; it is not acceptance evidence and does not promote the candidate.
+Use `--no-summary-after` only when recovering from summary-tool failures.
 
 Use `--status` to see local report progress and `--next` to launch the first
 run whose local report is still missing. These shortcuts only inspect local
