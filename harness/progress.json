@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-01",
+  "updated_at": "2026-06-02",
   "phase": "goal-phase-3-playable-content",
   "completed": [
     {
@@ -3693,6 +3693,11 @@
       "id": "demo_buildcraft_repair_v21_probe_findings",
       "summary": "Demo buildcraft repair v21 临时探针的 3 seed 烟测通过，但 10 seed 扩样失败：star-spoon 17 + pudding-turret 0.935 保住 Coward 10.0%、Kite 70.0%、Route 30.0%，但 Greedy 70.0% 仍高于 25%-55% 目标。下一步 v22 应保留 star-spoon 17 方向，同时用更窄的 Greedy 后期安全构筑、奖励分布或时序压力修复。",
       "report": "harness/failed_cases/fail_20260601_022_demo_buildcraft_repair_v21_probe_greedy_gap.json"
+    },
+    {
+      "id": "demo_buildcraft_repair_v22_findings",
+      "summary": "Demo buildcraft repair v22 已正式物化为 generated candidate：基于 v18 full pack 保留 star-spoon 17、pudding-turret 0.935，并叠加 v20 的 210-300 秒 sandwich-cookie-creep 0.16 / sprinkle-spitter 0.08 波次形状。静态链路、GameCore validate-content、隔离 validate-candidates 和 3 seed all Bot 烟测通过，但 10 seed 扩样仍为 repair：Greedy 60.0% 高于 25%-55% 中技能目标上限，其余 8 个 Bot 均在目标区间。v22 不能晋级，下一步 v23 应先分析 Greedy 胜局的构筑和 225-300 秒状态，再做窄修。",
+      "report": "harness/failed_cases/fail_20260602_001_demo_buildcraft_repair_v22_greedy_gap.json"
     }
   ],
   "next_recommended": [
@@ -3813,8 +3818,8 @@
     },
     {
       "id": "demo_content_buildcraft_candidate_next",
-      "summary": "Demo buildcraft repair v21 临时探针已完成 300 秒 / 10 seed / all Bot 扩样但结论为 repair：star-spoon 17 + pudding-turret 0.935 保住 Coward 10.0%、Kite 70.0%、Route 30.0%，但 Greedy 70.0% 仍高于 25%-55% 目标。下一步创建 v22，不再压低早期拾取经济或增加广谱远程压力，改用更窄的 Greedy 后期安全构筑、奖励分布或时序压力修复。",
-      "report": "harness/reports/2026-06-01_demo_buildcraft_repair_v21_probe_matrix_300s_10seed_001/summary.md"
+      "summary": "Demo buildcraft repair v22 已形成正式候选并完成 300 秒 / 10 seed / all Bot 扩样，但结论仍为 repair：Greedy 60.0% 仍高于 25%-55% 目标上限，其余 Bot 均在目标区间。下一步创建 v23，先分析 Greedy 胜局 seeds 70001/70003/70004/70005/70007/70008 的构筑、等级、受伤和 225-300 秒状态，再做窄修；不要大削 rainbow-candy-shot、早期拾取经济或继续单纯提高 sprinkle-spitter 压力。",
+      "report": "harness/reports/2026-06-02_demo_buildcraft_repair_v22_matrix_300s_10seed_001/summary.md"
     }
   ]
 }

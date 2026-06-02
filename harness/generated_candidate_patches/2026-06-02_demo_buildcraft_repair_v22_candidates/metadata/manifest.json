@@ -1,0 +1,67 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v22_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式内容修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo buildcraft repair v22",
+    "goal": "基于 v18 full pack 结合 v21 经济 / 召唤微调与 v20 Boss 后波次微调，继续压低 GreedyXpBot 的 10 seed 胜率，同时保住 Coward、Route、Kite 和其他 Bot 的目标区间。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Bot matrix seed expansion",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "star-spoon",
+      "type": "passive",
+      "path": "passives/star-spoon.json",
+      "role": "降低拾取半径成长，压低贪经验路线的安全转化。"
+    },
+    {
+      "id": "pudding-turret",
+      "type": "weapon",
+      "path": "weapons/pudding-turret.json",
+      "role": "放缓召唤炮台冷却成长，削弱安全自动火力成型后的稳定性。"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "在 210-300 秒 Boss 后窗口增加少量可读远程压力，修复 Greedy / Route 的安全收益。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次是 repair v22，基于 v18 full pack 覆盖 1 个被动、1 个武器和 1 条糖霜草地波次。",
+      "v22 保留 v21 探针中 star-spoon 17 与 pudding-turret 0.935 的方向，并叠加 v20 的 210-300 秒 sandwich / sprinkle 权重换位。",
+      "临时 300 秒 / 10 seed / all Bot 探针显示 Coward 20.0%、Kite 70.0%、Tank 50.0%、BossHunter 50.0%、ZoneControl 30.0%、Route 30.0% 均在目标区间，但 Greedy 60.0% 仍高于 55.0% 上限。",
+      "该批次必须记录为 repair，不得直接进入 accepted_content；后续 v23 应继续围绕 Greedy 胜局差一局的问题做窄修。"
+    ]
+  }
+}

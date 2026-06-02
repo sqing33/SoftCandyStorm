@@ -1,0 +1,25 @@
+{
+  "case_id": "fail_20260602_001",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v22_full_pack",
+  "seed": "70000-70009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v22 formalized the useful v21 probe adjustments and added the v20 210-300s frosting-grassland wave shape. It passed the static candidate chain, GameCore validate-content, isolated validate-candidates, and the 300s / 3-seed all-Bot smoke matrix, but failed the 300s / 10-seed expansion. Idle 0.0%, Random 0.0%, Coward 20.0%, Kite 70.0%, Tank 50.0%, BossHunter 50.0%, ZoneControl 30.0%, and Route 30.0% stayed inside their target bands, while Greedy reached 60.0% against the required 25%-55% mid-skill target.",
+  "root_cause": "The star-spoon pickup-radius trim to 17, pudding-turret cooldown growth softening to 0.935, and small sandwich-cookie-creep to sprinkle-spitter pressure transfer are enough to keep low-skill, route, kite, tank, boss-hunter, and zone-control probes inside target ranges. However, Greedy still converts six of ten seeds into safe 300s wins, averaging level 10.3 and 467.7 kills. The remaining gap is narrow: v22 is only one Greedy victory above the target ceiling, so broad weapon nerfs, early pickup cuts, or simple ranged-pressure increases are likely to break Coward, Route, or the player-facing build feel.",
+  "fix": "Do not promote v22 into validated_candidates, simulated_candidates, playtest_candidates, accepted_content, or Runtime content. Create v23 as another generated candidate and focus on a Greedy-facing narrow repair: inspect Greedy victory seeds 70001, 70003, 70004, 70005, 70007, and 70008 for build choices and 225-300s state, then adjust only late safety payoff, reward distribution, or post-recovery timing pressure. Avoid broad reductions to rainbow-candy-shot, early pickup economy, or blanket sprinkle-spitter pressure increases because earlier probes already showed those directions breaking other Bot gates.",
+  "validation": "Rerun the candidate static chain, 300s / 3-seed all-Bot smoke matrix, and 300s / 10-seed all-Bot expansion. A viable v23 must keep Coward and Route between 10%-35%, Greedy / Tank / ZoneControl between 25%-55%, Kite / BossHunter between 45%-75%, and Idle / Random inside their floor bands before Replay regression, design review, manual playtest, or final acceptance evidence can be claimed.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v22_candidates/metadata/manifest.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v22_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_schema_contract_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_matrix_300s_3seed_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_matrix_300s_10seed_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v22_matrix_300s_10seed_001/metrics.json"
+  ]
+}
