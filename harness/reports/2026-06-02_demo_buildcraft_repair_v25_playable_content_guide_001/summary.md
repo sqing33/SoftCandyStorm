@@ -22,11 +22,26 @@
 | `evolutions` | 13 | - | - |
 | `events` | 5 | - | - |
 
-## 试玩入口
+## 9 局人工试玩入口
 
 - `python3 harness/playtest/run_v25_manual_playtest.py --status`
 - `python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run`
 - `python3 harness/playtest/run_v25_manual_playtest.py --next`
+
+## 角色 / 地图巡游入口
+
+- `python3 harness/playtest/run_v25_content_tour.py --list`
+- `python3 harness/playtest/run_v25_content_tour.py --next --dry-run`
+- `python3 harness/playtest/run_v25_content_tour.py --next`
+
+| Run | Character | Map | Seed | Focus | Launcher |
+|---|---|---|---:|---|---|
+| `frosting_jar_keeper` | `jar-keeper` | `frosting-grassland` | 25201 | 新手基准角色和糖霜草地开局 | `python3 harness/playtest/run_v25_content_tour.py frosting_jar_keeper` |
+| `soda_bubble_courier` | `bubble-courier` | `soda-creek` | 25202 | 速度角色和汽水溪谷泡泡压力 | `python3 harness/playtest/run_v25_content_tour.py soda_bubble_courier` |
+| `cotton_pudding_crafter` | `pudding-crafter` | `cotton-cloud-pasture` | 25203 | 召唤角色和棉花云群体压力 | `python3 harness/playtest/run_v25_content_tour.py cotton_pudding_crafter` |
+| `caramel_sour_plum_doctor` | `sour-plum-doctor` | `caramel-workshop` | 25204 | 控制角色和焦糖工坊路线干扰 | `python3 harness/playtest/run_v25_content_tour.py caramel_sour_plum_doctor` |
+| `jelly_cream_knight` | `cream-knight` | `jelly-platform` | 25205 | 防御角色和果冻月台环形路线 | `python3 harness/playtest/run_v25_content_tour.py jelly_cream_knight` |
+| `cracked_jar_keeper` | `jar-keeper` | `cracked-star-jar` | 25206 | 最终地图混合怪潮压力 | `python3 harness/playtest/run_v25_content_tour.py cracked_jar_keeper` |
 
 ## 角色入口
 

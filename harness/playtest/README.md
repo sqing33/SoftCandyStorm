@@ -57,6 +57,8 @@ python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
 python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos
 python3 harness/playtest/create_v25_human_review_worksheet.py
 python3 harness/playtest/create_v25_playable_content_guide.py
+python3 harness/playtest/run_v25_content_tour.py --list
+python3 harness/playtest/run_v25_content_tour.py --next --dry-run
 python3 harness/playtest/run_v25_manual_playtest.py --list
 python3 harness/playtest/run_v25_manual_playtest.py --status
 python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run
@@ -90,6 +92,11 @@ summarize the v25 candidate's characters, maps, build routes, enemies, bosses,
 events, demo target counts, and playtest entrypoints. It reads the generated
 candidate pack and marks the output as candidate-only; it does not approve
 content, fill review fields, or move files into `accepted_content`.
+
+Use `run_v25_content_tour.py` when the goal is simply to try the v25 candidate's
+content surface: it provides 6 optional human-run sessions covering all 6 maps
+and all 5 characters. These runs write separate `v25_content_tour_*` reports and
+are not counted as the required 9 manual acceptance reports.
 
 Use `--status` to see local report progress and `--next` to launch the first
 run whose local report is still missing. These shortcuts only inspect local
@@ -150,6 +157,7 @@ python3 harness/playtest/test_check_v25_candidate_readiness.py
 python3 harness/playtest/test_list_v25_human_evidence_todos.py
 python3 harness/playtest/test_create_v25_human_review_worksheet.py
 python3 harness/playtest/test_create_v25_playable_content_guide.py
+python3 harness/playtest/test_run_v25_content_tour.py
 python3 harness/playtest/test_summarize_v25_manual_playtest_reports.py
 python3 harness/playtest/test_check_v25_manual_playtest_status.py
 python3 harness/playtest/test_run_v25_manual_playtest.py

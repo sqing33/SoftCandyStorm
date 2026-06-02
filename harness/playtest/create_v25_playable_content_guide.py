@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from run_v25_content_tour import TOUR_RUNS, build_tour_command, shell_quote
 from run_v25_manual_playtest import CANDIDATE_ID, CONTENT_DIR, CONTENT_HASH
 
 
@@ -318,6 +319,24 @@ def build_guide(repo_root: Path, content_dir: Path = CONTENT_DIR) -> dict[str, A
             "python3 harness/playtest/run_v25_manual_playtest.py --next --dry-run",
             "python3 harness/playtest/run_v25_manual_playtest.py --next",
         ],
+        "content_tour_entrypoints": [
+            "python3 harness/playtest/run_v25_content_tour.py --list",
+            "python3 harness/playtest/run_v25_content_tour.py --next --dry-run",
+            "python3 harness/playtest/run_v25_content_tour.py --next",
+        ],
+        "content_tour_runs": [
+            {
+                "run_id": run.run_id,
+                "character_id": run.character_id,
+                "map_id": run.map_id,
+                "seed": run.seed,
+                "focus": run.focus,
+                "report": str(run.report_path),
+                "command": f"python3 harness/playtest/run_v25_content_tour.py {run.run_id}",
+                "runtime_command": shell_quote(build_tour_command(run)),
+            }
+            for run in TOUR_RUNS
+        ],
         "human_review_blockers": [
             "design_review_incomplete",
             "manual_playtest_incomplete",
@@ -366,11 +385,20 @@ def write_markdown(guide: dict[str, Any], path: Path) -> None:
             f"| `evolutions` | {summary['evolution_count']} | - | - |",
             f"| `events` | {summary['event_count']} | - | - |",
             "",
-            "## 试玩入口",
+            "## 9 局人工试玩入口",
             "",
         ]
     )
     lines.extend(f"- `{command}`" for command in guide["playtest_entrypoints"])
+
+    lines.extend(["", "## 角色 / 地图巡游入口", ""])
+    lines.extend(f"- `{command}`" for command in guide["content_tour_entrypoints"])
+    lines.extend(["", "| Run | Character | Map | Seed | Focus | Launcher |", "|---|---|---|---:|---|---|"])
+    for run in guide["content_tour_runs"]:
+        lines.append(
+            f"| `{run['run_id']}` | `{run['character_id']}` | `{run['map_id']}` | "
+            f"{run['seed']} | {run['focus']} | `{run['command']}` |"
+        )
 
     lines.extend(["", "## 角色入口", "", "| 角色 | 标签 | 初始武器 | 初始被动 | 特性 |", "|---|---|---|---|---|"])
     for character in guide["characters"]:

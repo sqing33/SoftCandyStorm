@@ -55,6 +55,16 @@ class V25PlayableContentGuideTests(unittest.TestCase):
         self.assertFalse(guide["candidate_state"]["runtime_integrated"])
         self.assertIn("design_review_incomplete", guide["human_review_blockers"])
 
+    def test_guide_includes_optional_content_tour_runs(self) -> None:
+        guide = build_guide(REPO_ROOT)
+
+        self.assertEqual(len(guide["content_tour_runs"]), 6)
+        self.assertIn("python3 harness/playtest/run_v25_content_tour.py --next", guide["content_tour_entrypoints"])
+        run_by_id = {run["run_id"]: run for run in guide["content_tour_runs"]}
+        self.assertEqual(run_by_id["soda_bubble_courier"]["character_id"], "bubble-courier")
+        self.assertEqual(run_by_id["soda_bubble_courier"]["map_id"], "soda-creek")
+        self.assertIn("--character-id bubble-courier", run_by_id["soda_bubble_courier"]["runtime_command"])
+
     def test_markdown_contains_human_playtest_entrypoints(self) -> None:
         guide = build_guide(REPO_ROOT)
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -65,6 +75,7 @@ class V25PlayableContentGuideTests(unittest.TestCase):
             self.assertIn("# v25 可玩内容导览", text)
             self.assertIn("糖鼓终曲", text)
             self.assertIn("python3 harness/playtest/run_v25_manual_playtest.py --next", text)
+            self.assertIn("python3 harness/playtest/run_v25_content_tour.py --next", text)
             self.assertIn("Accepted content: `False`", text)
 
     def test_cli_writes_report_and_markdown(self) -> None:
