@@ -1,0 +1,54 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v33_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 BossHunter 窄修复隔离验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v31_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo boss reliability isolation repair v33",
+    "goal": "隔离验证小幅 candy-crystal-lance 可靠性修复是否能改善 BossHunterBot，同时不继承 v32 的波次扰动。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "candy-crystal-lance",
+      "type": "weapon",
+      "path": "weapons/candy-crystal-lance.json",
+      "role": "BossHunter 未稳定抽到星糖射线时的轻量 Boss 单体可靠性修复。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次保留 v31 的 bubble-shoes +9 move_speed 和 star-sugar-ray v5。",
+      "本批次不修改 frosting-grassland-standard，避免复现 v32 的 Coward/Tank/ZoneControl 扰动。",
+      "RouteBot 仍预计需要单独修复；本批次的主要目标是隔离 BossHunter 修复变量。",
+      "候选必须先通过 71000-71002 smoke，再考虑 10-seed 扩样。"
+    ]
+  }
+}
