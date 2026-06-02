@@ -11,7 +11,17 @@
     "manual_reports": 0,
     "manual_required_reports": 9,
     "next_manual_command": "python3 harness/playtest/run_v25_manual_playtest.py new_001",
-    "next_manual_runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25001 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_001.json --capture-interval 2"
+    "next_manual_runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25001 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_001.json --capture-interval 2",
+    "content_repair_plan_decision": "v25_content_repair_action_plan_needs_playtest_reports",
+    "content_repair_action_items": 21,
+    "content_repair_missing_reports": 21,
+    "next_repair_commands": [
+      "python3 harness/playtest/play_v25_candidate.py default",
+      "python3 harness/playtest/run_v25_manual_playtest.py new_001",
+      "python3 harness/playtest/run_v25_manual_playtest.py new_002",
+      "python3 harness/playtest/run_v25_manual_playtest.py new_003",
+      "python3 harness/playtest/run_v25_manual_playtest.py skilled_001"
+    ]
   },
   "blockers": [
     "design_review_incomplete",
@@ -19,7 +29,9 @@
   ],
   "next_actions": [
     "Fill the v25 design review draft for pudding-turret, then run `python3 harness/content_review/check_v25_design_review_status.py --allow-incomplete`.",
-    "Run the next human playtest with `python3 harness/playtest/run_v25_manual_playtest.py new_001`."
+    "Run the next human playtest with `python3 harness/playtest/run_v25_manual_playtest.py new_001`.",
+    "Start v25 playable-content repair triage with `python3 harness/playtest/play_v25_candidate.py default`.",
+    "Refresh the repair triage packet with `python3 harness/playtest/create_v25_content_repair_action_plan.py` after new local reports."
   ],
   "design_review": {
     "decision": "design_review_incomplete",
@@ -66,9 +78,24 @@
       "review draft still contains TODO placeholders"
     ]
   },
+  "content_repair_plan": {
+    "decision": "v25_content_repair_action_plan_needs_playtest_reports",
+    "action_item_count": 21,
+    "missing_report_count": 21,
+    "report_attention_count": 0,
+    "objective_metric_risk_count": 0,
+    "next_commands": [
+      "python3 harness/playtest/play_v25_candidate.py default",
+      "python3 harness/playtest/run_v25_manual_playtest.py new_001",
+      "python3 harness/playtest/run_v25_manual_playtest.py new_002",
+      "python3 harness/playtest/run_v25_manual_playtest.py new_003",
+      "python3 harness/playtest/run_v25_manual_playtest.py skilled_001"
+    ]
+  },
   "limitations": [
     "This readiness report only combines local status checks.",
     "It does not fill human review evidence, play the game, judge fun, or promote content.",
+    "The content repair plan is triage only; it does not add acceptance evidence or promote v25.",
     "v25 must not be copied into content/base_demo, accepted_content, or Runtime official content before human gates pass."
   ]
 }

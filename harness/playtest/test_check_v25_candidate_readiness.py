@@ -114,6 +114,15 @@ class V25CandidateReadinessTests(unittest.TestCase):
         self.assertIn("design_review_incomplete", report["blockers"])
         self.assertIn("manual_playtest_incomplete", report["blockers"])
         self.assertEqual(report["summary"]["next_manual_command"], "python3 harness/playtest/run_v25_manual_playtest.py new_001")
+        self.assertEqual(
+            report["summary"]["content_repair_plan_decision"],
+            "v25_content_repair_action_plan_needs_playtest_reports",
+        )
+        self.assertEqual(report["summary"]["content_repair_action_items"], 21)
+        self.assertEqual(
+            report["summary"]["next_repair_commands"][0],
+            "python3 harness/playtest/play_v25_candidate.py default",
+        )
 
     def test_complete_local_evidence_is_ready(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -129,6 +138,7 @@ class V25CandidateReadinessTests(unittest.TestCase):
             self.assertEqual(report["decision"], "candidate_ready_for_human_validation")
             self.assertEqual(report["blockers"], [])
             self.assertIsNone(report["summary"]["next_manual_command"])
+            self.assertIn("content_repair_plan_decision", report["summary"])
 
     def test_cli_allows_current_incomplete_status_when_requested(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -153,7 +163,9 @@ class V25CandidateReadinessTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             payload = json.loads(out.read_text(encoding="utf-8"))
             self.assertEqual(payload["decision"], "candidate_waiting_for_human_evidence")
-            self.assertIn("# v25 Candidate Readiness", summary.read_text(encoding="utf-8"))
+            markdown = summary.read_text(encoding="utf-8")
+            self.assertIn("# v25 Candidate Readiness", markdown)
+            self.assertIn("## Content Repair Plan", markdown)
 
 
 if __name__ == "__main__":

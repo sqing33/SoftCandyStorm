@@ -17,6 +17,7 @@ if str(CONTENT_REVIEW_DIR) not in sys.path:
 
 from check_v25_design_review_status import build_report as build_design_review_report  # noqa: E402
 from check_v25_manual_playtest_status import build_report as build_manual_playtest_report  # noqa: E402
+from create_v25_content_repair_action_plan import build_plan as build_content_repair_plan  # noqa: E402
 from run_v25_manual_playtest import CANDIDATE_ID, CONTENT_HASH, first_missing_run, shell_quote, build_runtime_command  # noqa: E402
 
 
@@ -37,6 +38,7 @@ def next_manual_runtime_command(repo_root: Path) -> str | None:
 def build_report(repo_root: Path) -> dict[str, Any]:
     design = build_design_review_report(repo_root)
     manual = build_manual_playtest_report(repo_root)
+    repair_plan = build_content_repair_plan(repo_root)
 
     design_ready = design["decision"] == "design_review_ready_for_validation"
     manual_ready = manual["decision"] == "manual_playtest_ready_for_strict_validation"
@@ -71,6 +73,14 @@ def build_report(repo_root: Path) -> dict[str, Any]:
             "harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json "
             "--strict-acceptance`."
         )
+    if repair_plan["action_items"]:
+        first_repair_command = repair_plan["next_commands"][0] if repair_plan["next_commands"] else None
+        if first_repair_command:
+            next_actions.append(f"Start v25 playable-content repair triage with `{first_repair_command}`.")
+        next_actions.append(
+            "Refresh the repair triage packet with "
+            "`python3 harness/playtest/create_v25_content_repair_action_plan.py` after new local reports."
+        )
 
     decision = (
         "candidate_ready_for_human_validation"
@@ -91,6 +101,10 @@ def build_report(repo_root: Path) -> dict[str, Any]:
             "manual_required_reports": manual["summary"]["required_run_count"],
             "next_manual_command": missing_command,
             "next_manual_runtime_command": next_manual_runtime_command(repo_root),
+            "content_repair_plan_decision": repair_plan["decision"],
+            "content_repair_action_items": repair_plan["summary"]["action_item_count"],
+            "content_repair_missing_reports": repair_plan["summary"]["missing_report_count"],
+            "next_repair_commands": repair_plan["next_commands"][:5],
         },
         "blockers": blockers,
         "next_actions": next_actions,
@@ -110,9 +124,18 @@ def build_report(repo_root: Path) -> dict[str, Any]:
             "draft_todo_runs": manual["draft_todo_runs"],
             "errors": manual["errors"],
         },
+        "content_repair_plan": {
+            "decision": repair_plan["decision"],
+            "action_item_count": repair_plan["summary"]["action_item_count"],
+            "missing_report_count": repair_plan["summary"]["missing_report_count"],
+            "report_attention_count": repair_plan["summary"]["report_attention_count"],
+            "objective_metric_risk_count": repair_plan["summary"]["objective_metric_risk_count"],
+            "next_commands": repair_plan["next_commands"][:5],
+        },
         "limitations": [
             "This readiness report only combines local status checks.",
             "It does not fill human review evidence, play the game, judge fun, or promote content.",
+            "The content repair plan is triage only; it does not add acceptance evidence or promote v25.",
             "v25 must not be copied into content/base_demo, accepted_content, or Runtime official content before human gates pass.",
         ],
     }
@@ -159,6 +182,19 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
     lines.append(f"- Missing reports: `{len(manual['missing_reports'])}`")
     if manual["missing_reports"]:
         lines.extend(f"- `{item}`" for item in manual["missing_reports"])
+
+    lines.extend(["", "## Content Repair Plan", ""])
+    repair = report["content_repair_plan"]
+    lines.append(f"- Decision: `{repair['decision']}`")
+    lines.append(f"- Action items: `{repair['action_item_count']}`")
+    lines.append(f"- Missing reports: `{repair['missing_report_count']}`")
+    lines.append(f"- Report attention: `{repair['report_attention_count']}`")
+    lines.append(f"- Objective metric risks: `{repair['objective_metric_risk_count']}`")
+    lines.append("- Next commands:")
+    if repair["next_commands"]:
+        lines.extend(f"  - `{item}`" for item in repair["next_commands"])
+    else:
+        lines.append("  - None")
 
     lines.extend(["", "## Limitations", ""])
     lines.extend(f"- {item}" for item in report["limitations"])
