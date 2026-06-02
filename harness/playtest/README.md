@@ -89,6 +89,14 @@ run whose local report is still missing. These shortcuts only inspect local
 report files; the stricter status checker still verifies draft TODOs and
 candidate metadata.
 
+After a non-dry-run Runtime session exits, `run_v25_manual_playtest.py`
+automatically runs `summarize_v25_manual_playtest_reports.py --allow-incomplete`
+to refresh the objective metric summary. This does not change the manual
+Runtime command and does not add automation flags. If Runtime exits with a
+non-zero code, the launcher keeps the Runtime exit code after attempting the
+summary refresh. Use `--no-summary-after` only when recovering from summary-tool
+failures; `--dry-run`, `--list`, and `--status` never refresh the summary.
+
 Use `summarize_v25_manual_playtest_reports.py` after any local report is
 created. It extracts objective Runtime metrics such as terminal state, duration,
 level, kills, damage taken, upgrade count, average FPS, and automation flags.

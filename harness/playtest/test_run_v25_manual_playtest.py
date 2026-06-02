@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -21,8 +22,10 @@ from run_v25_manual_playtest import (  # noqa: E402
     FORBIDDEN_MANUAL_FLAGS,
     RUNS,
     RUN_BY_ID,
+    build_summary_command,
     build_runtime_command,
     first_missing_run,
+    run_playtest_and_maybe_summarize,
     status_text,
     validate_manual_command,
 )
@@ -78,6 +81,7 @@ class V25ManualPlaytestLauncherTests(unittest.TestCase):
         self.assertIn("--content-dir", result.stdout)
         self.assertNotIn("--demo-input", result.stdout)
         self.assertNotIn("--simulation-speed", result.stdout)
+        self.assertNotIn("summarize_v25_manual_playtest_reports.py", result.stdout)
 
     def test_list_prints_all_runs(self) -> None:
         result = subprocess.run(
@@ -140,6 +144,54 @@ class V25ManualPlaytestLauncherTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("Reports: 0 / 9", result.stdout)
             self.assertIn("Next run: new_001", result.stdout)
+
+    def test_summary_command_uses_objective_summary_tool(self) -> None:
+        command = build_summary_command()
+
+        self.assertIn("summarize_v25_manual_playtest_reports.py", " ".join(command))
+        self.assertIn("--allow-incomplete", command)
+
+    def test_successful_runtime_refreshes_summary_after_run(self) -> None:
+        runtime_command = ["cargo", "run", "-p", "game_runtime"]
+        with patch("run_v25_manual_playtest.subprocess.run") as run_mock:
+            run_mock.side_effect = [
+                subprocess.CompletedProcess(runtime_command, 0),
+                subprocess.CompletedProcess(build_summary_command(), 0),
+            ]
+
+            returncode = run_playtest_and_maybe_summarize(runtime_command, repo_root=REPO_ROOT)
+
+        self.assertEqual(returncode, 0)
+        self.assertEqual(run_mock.call_count, 2)
+        self.assertEqual(run_mock.call_args_list[0].args[0], runtime_command)
+        self.assertIn("summarize_v25_manual_playtest_reports.py", " ".join(run_mock.call_args_list[1].args[0]))
+
+    def test_runtime_failure_keeps_runtime_exit_code_after_summary_attempt(self) -> None:
+        runtime_command = ["cargo", "run", "-p", "game_runtime"]
+        with patch("run_v25_manual_playtest.subprocess.run") as run_mock:
+            run_mock.side_effect = [
+                subprocess.CompletedProcess(runtime_command, 7),
+                subprocess.CompletedProcess(build_summary_command(), 0),
+            ]
+
+            returncode = run_playtest_and_maybe_summarize(runtime_command, repo_root=REPO_ROOT)
+
+        self.assertEqual(returncode, 7)
+        self.assertEqual(run_mock.call_count, 2)
+
+    def test_summary_can_be_skipped_for_launcher_recovery(self) -> None:
+        runtime_command = ["cargo", "run", "-p", "game_runtime"]
+        with patch("run_v25_manual_playtest.subprocess.run") as run_mock:
+            run_mock.return_value = subprocess.CompletedProcess(runtime_command, 0)
+
+            returncode = run_playtest_and_maybe_summarize(
+                runtime_command,
+                repo_root=REPO_ROOT,
+                summarize_after=False,
+            )
+
+        self.assertEqual(returncode, 0)
+        self.assertEqual(run_mock.call_count, 1)
 
 
 if __name__ == "__main__":
