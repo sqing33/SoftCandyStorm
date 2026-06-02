@@ -1,0 +1,166 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v28_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容覆盖修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v27_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo passive budget coverage repair v28",
+    "goal": "补齐 v27 可玩内容覆盖审计中剩余的 passives balance_budget 描述缺口，让每个被动都有可审查的定位、强度、反制和风险说明。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "playable content coverage audit",
+      "static balance budget review",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "big-candy-jar",
+      "type": "passive",
+      "path": "passives/big-candy-jar.json",
+      "role": "defense",
+      "target_strength": "standard survivability"
+    },
+    {
+      "id": "bubble-shoes",
+      "type": "passive",
+      "path": "passives/bubble-shoes.json",
+      "role": "mobility",
+      "target_strength": "standard positioning"
+    },
+    {
+      "id": "candy-crystal-lens",
+      "type": "passive",
+      "path": "passives/candy-crystal-lens.json",
+      "role": "economy",
+      "target_strength": "high growth with low immediate safety"
+    },
+    {
+      "id": "cocoa-safety-badge",
+      "type": "passive",
+      "path": "passives/cocoa-safety-badge.json",
+      "role": "defense",
+      "target_strength": "light low-health protection"
+    },
+    {
+      "id": "crackling-sugar-fuse",
+      "type": "passive",
+      "path": "passives/crackling-sugar-fuse.json",
+      "role": "high-risk damage",
+      "target_strength": "above-average damage with pickup tradeoff"
+    },
+    {
+      "id": "cream-clockwork",
+      "type": "passive",
+      "path": "passives/cream-clockwork.json",
+      "role": "cooldown",
+      "target_strength": "high universal output scaling"
+    },
+    {
+      "id": "frosting-gloves",
+      "type": "passive",
+      "path": "passives/frosting-gloves.json",
+      "role": "projectile support",
+      "target_strength": "standard hit reliability"
+    },
+    {
+      "id": "frosty-straw",
+      "type": "passive",
+      "path": "passives/frosty-straw.json",
+      "role": "control defense",
+      "target_strength": "mixed utility"
+    },
+    {
+      "id": "honey-heart",
+      "type": "passive",
+      "path": "passives/honey-heart.json",
+      "role": "recovery",
+      "target_strength": "light sustain"
+    },
+    {
+      "id": "jelly-lens-polish",
+      "type": "passive",
+      "path": "passives/jelly-lens-polish.json",
+      "role": "projectile readability support",
+      "target_strength": "light hit reliability"
+    },
+    {
+      "id": "marshmallow-vest",
+      "type": "passive",
+      "path": "passives/marshmallow-vest.json",
+      "role": "defense",
+      "target_strength": "mixed health and mitigation"
+    },
+    {
+      "id": "nonstick-apron",
+      "type": "passive",
+      "path": "passives/nonstick-apron.json",
+      "role": "beginner defense",
+      "target_strength": "strong contact mitigation"
+    },
+    {
+      "id": "peppermint-pocket-watch",
+      "type": "passive",
+      "path": "passives/peppermint-pocket-watch.json",
+      "role": "control cooldown",
+      "target_strength": "light cooldown support"
+    },
+    {
+      "id": "rhythm-ribbon",
+      "type": "passive",
+      "path": "passives/rhythm-ribbon.json",
+      "role": "rhythm utility",
+      "target_strength": "light hybrid timing support"
+    },
+    {
+      "id": "sour-tuner",
+      "type": "passive",
+      "path": "passives/sour-tuner.json",
+      "role": "control duration",
+      "target_strength": "focused duration support"
+    },
+    {
+      "id": "star-spoon",
+      "type": "passive",
+      "path": "passives/star-spoon.json",
+      "role": "economy",
+      "target_strength": "strong pickup comfort"
+    },
+    {
+      "id": "taffy-pocket-map",
+      "type": "passive",
+      "path": "passives/taffy-pocket-map.json",
+      "role": "economy",
+      "target_strength": "hybrid pickup and xp support"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次只覆盖被动预算描述，不修改数值、不调整正式内容池。",
+      "balance_budget 是试玩和审查用候选预算说明；不能替代 Bot 仿真、Replay 或人工试玩。",
+      "全部 passives 为显式 override，物化和候选校验必须使用 --allow-overrides。"
+    ]
+  }
+}
