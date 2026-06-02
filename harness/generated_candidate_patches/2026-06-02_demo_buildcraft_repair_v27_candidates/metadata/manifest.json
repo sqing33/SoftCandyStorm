@@ -1,0 +1,59 @@
+{
+  "batch_id": "2026-06-02_demo_buildcraft_repair_v27_candidates",
+  "generated_at": "2026-06-02",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩构筑覆盖修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "target_gap": {
+    "phase": "Playable Demo build route coverage repair v27",
+    "goal": "修复 v26 可玩内容覆盖审计中剩余的武器无进化与被动未参与进化配方缺口：candy-crystal-lance、mint-cyclone、cocoa-safety-badge 和 honey-heart。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation",
+      "materialize full content pack",
+      "materialized pack preflight",
+      "static balance budget review",
+      "schema contract validation",
+      "game_harness validate-content",
+      "isolated validate-candidates",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "cocoa-guard-crystal-lance",
+      "type": "evolution",
+      "path": "evolutions/cocoa-guard-crystal-lance.json",
+      "role": "给糖晶长枪补 Boss 单体 / 防御反击进化路线。"
+    },
+    {
+      "id": "honey-mint-comfort-storm",
+      "type": "evolution",
+      "path": "evolutions/honey-mint-comfort-storm.json",
+      "role": "给薄荷旋风补控场 / 恢复防御进化路线。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次只补 v26 覆盖审计中的 P2 构筑路线缺口，不调整角色、波次、敌人或正式内容池。",
+      "两条进化消化 v26 中未参与进化配方的 cocoa-safety-badge 与 honey-heart。",
+      "数值为候选预算，必须经过静态预算、Bot 仿真、Replay 和人工试玩后才可讨论晋级。"
+    ]
+  }
+}
