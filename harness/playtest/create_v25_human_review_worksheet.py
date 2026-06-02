@@ -39,11 +39,11 @@ def checkbox(label: str) -> str:
 def write_design_section(lines: list[str]) -> None:
     lines.extend(
         [
-            "## Design Review",
+            "## 设计审查",
             "",
-            "- Draft: `harness/content_review/drafts/2026-06-02_demo_buildcraft_repair_v25_full_pack_design_review_draft.json`",
-            "- Content item: `pudding-turret`",
-            "- Current gate decision: `needs_more_review`",
+            "- 草稿：`harness/content_review/drafts/2026-06-02_demo_buildcraft_repair_v25_full_pack_design_review_draft.json`",
+            "- 内容项：`pudding-turret`",
+            "- 当前门禁结论：`needs_more_review`",
             "",
             "### pudding-turret",
             "",
@@ -55,32 +55,32 @@ def write_design_section(lines: list[str]) -> None:
         [
             "- balance_risk: low / medium / high",
             "- decision: pass / revise / reject",
-            "- concrete design observation:",
+            "- 具体设计观察：",
             "",
             "```text",
             "",
             "```",
-            "- required changes or acceptance blocker:",
+            "- 必要修改或接受阻塞点：",
             "",
             "```text",
             "",
             "```",
             "",
-            "### Batch Notes",
+            "### 批次备注",
             "",
             "- reviewer: ____________________",
             "- reviewed_at: YYYY-MM-DD",
-            "- summary:",
+            "- 总结：",
             "",
             "```text",
             "",
             "```",
-            "- batch risks:",
+            "- 批次风险：",
             "",
             "```text",
             "",
             "```",
-            "- next actions:",
+            "- 后续行动：",
             "",
             "```text",
             "",
@@ -93,10 +93,10 @@ def write_design_section(lines: list[str]) -> None:
 def write_run_section(lines: list[str], repo_root: Path) -> None:
     lines.extend(
         [
-            "## Manual Playtest Runs",
+            "## 人工试玩局",
             "",
-            "- Draft: `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`",
-            "- Human evidence must not use `--demo-input`, `--simulation-speed`, or `--auto-exit-after-report`.",
+            "- 草稿：`harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`",
+            "- 人工证据不得使用 `--demo-input`、`--simulation-speed` 或 `--auto-exit-after-report`。",
             "",
         ]
     )
@@ -108,15 +108,15 @@ def write_run_section(lines: list[str], repo_root: Path) -> None:
             [
                 f"### {run.run_id}",
                 "",
-                f"- skill: `{run.skill}`",
-                f"- seed: `{run.seed}`",
-                f"- intent: {run.intent}",
-                f"- report: `{run.report_path}`",
-                f"- report exists: `{report_exists}`",
-                f"- launcher: `{command}`",
-                f"- runtime command: `{runtime_command}`",
+                f"- 玩家视角：`{run.skill}`",
+                f"- 固定 seed：`{run.seed}`",
+                f"- 试玩意图：{run.intent}",
+                f"- 报告路径：`{run.report_path}`",
+                f"- 本地报告已存在：`{report_exists}`",
+                f"- 启动器：`{command}`",
+                f"- Runtime 命令：`{runtime_command}`",
                 "",
-                "#### Required Observations",
+                "#### 必看观察项",
                 "",
             ]
         )
@@ -132,19 +132,19 @@ def write_run_section(lines: list[str], repo_root: Path) -> None:
             "build_003": ["地面效果可读性", "敌群可读性", "性能体感"],
         }[run.run_id]
         lines.extend(checkbox(item) for item in required_observations)
-        lines.extend(["", "#### Ratings", ""])
+        lines.extend(["", "#### 评分", ""])
         for field in RATING_FIELDS:
             lines.append(f"- {field}: ____ / 5")
         lines.extend(
             [
                 "- gate_decision: playtest_pass / repair / needs_more_runs",
                 "- tags: __________________________________",
-                "- concrete moment-to-moment observation:",
+                "- 具体局内观察：",
                 "",
                 "```text",
                 "",
                 "```",
-                "- next actions:",
+                "- 后续行动：",
                 "",
                 "```text",
                 "",
@@ -158,26 +158,26 @@ def build_markdown(repo_root: Path) -> str:
     todo_report = build_todo_report(repo_root)
     summary = todo_report["summary"]
     lines = [
-        "# v25 Human Review Worksheet",
+        "# v25 人工审查表",
         "",
-        f"- Candidate id: `{CANDIDATE_ID}`",
-        f"- Content hash: `{CONTENT_HASH}`",
-        f"- Design TODOs: `{summary['design_todo_count']}`",
-        f"- Playtest TODOs: `{summary['playtest_todo_count']}`",
-        f"- Playtest runs: `{summary['playtest_run_count']}`",
+        f"- 候选 id：`{CANDIDATE_ID}`",
+        f"- 内容 hash：`{CONTENT_HASH}`",
+        f"- 设计审查 TODO 数：`{summary['design_todo_count']}`",
+        f"- 人工试玩 TODO 数：`{summary['playtest_todo_count']}`",
+        f"- 人工试玩局数：`{summary['playtest_run_count']}`",
         "",
-        "## Rules",
+        "## 规则",
         "",
-        checkbox("Keep v25 in generated_candidates until human design review and manual playtest gates pass."),
-        checkbox("After filling this worksheet, copy concrete observations into the JSON drafts and run validators."),
-        checkbox("Do not replace human observations with automated demo-input evidence."),
+        checkbox("v25 必须留在 generated_candidates，直到真人设计审查和人工试玩门禁通过。"),
+        checkbox("填完这张表后，把具体观察写回 JSON 草稿，并运行对应校验。"),
+        checkbox("不要用自动 demo-input 证据替代真人观察。"),
         "",
     ]
     write_design_section(lines)
     write_run_section(lines, repo_root)
     lines.extend(
         [
-            "## Validation Commands",
+            "## 校验命令",
             "",
             "```bash",
             "python3 harness/content_review/check_v25_design_review_status.py --allow-incomplete",
@@ -186,7 +186,7 @@ def build_markdown(repo_root: Path) -> str:
             "python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos",
             "```",
             "",
-            "This worksheet is not acceptance evidence by itself; the JSON drafts remain the source of truth.",
+            "这张表本身不是接受证据；JSON 草稿仍是事实来源。",
             "",
         ]
     )

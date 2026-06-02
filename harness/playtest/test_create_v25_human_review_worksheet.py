@@ -34,9 +34,9 @@ class V25HumanReviewWorksheetTests(unittest.TestCase):
     def test_markdown_warns_against_automated_human_evidence(self) -> None:
         markdown = build_markdown(REPO_ROOT)
 
-        self.assertIn("Human evidence must not use `--demo-input`", markdown)
-        self.assertIn("Do not replace human observations with automated demo-input evidence.", markdown)
-        self.assertIn("This worksheet is not acceptance evidence by itself", markdown)
+        self.assertIn("人工证据不得使用 `--demo-input`", markdown)
+        self.assertIn("不要用自动 demo-input 证据替代真人观察。", markdown)
+        self.assertIn("这张表本身不是接受证据", markdown)
 
     def test_cli_writes_worksheet(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -52,8 +52,8 @@ class V25HumanReviewWorksheetTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(out.exists())
             text = out.read_text(encoding="utf-8")
-            self.assertIn("# v25 Human Review Worksheet", text)
-            self.assertIn("## Validation Commands", text)
+            self.assertIn("# v25 人工审查表", text)
+            self.assertIn("## 校验命令", text)
 
 
 if __name__ == "__main__":

@@ -1,22 +1,22 @@
-# v25 Human Review Worksheet
+# v25 人工审查表
 
-- Candidate id: `2026-06-02_demo_buildcraft_repair_v25_full_pack`
-- Content hash: `fnv1a64:aab110776109609d`
-- Design TODOs: `14`
-- Playtest TODOs: `101`
-- Playtest runs: `9`
+- 候选 id：`2026-06-02_demo_buildcraft_repair_v25_full_pack`
+- 内容 hash：`fnv1a64:aab110776109609d`
+- 设计审查 TODO 数：`14`
+- 人工试玩 TODO 数：`101`
+- 人工试玩局数：`9`
 
-## Rules
+## 规则
 
-- [ ] Keep v25 in generated_candidates until human design review and manual playtest gates pass.
-- [ ] After filling this worksheet, copy concrete observations into the JSON drafts and run validators.
-- [ ] Do not replace human observations with automated demo-input evidence.
+- [ ] v25 必须留在 generated_candidates，直到真人设计审查和人工试玩门禁通过。
+- [ ] 填完这张表后，把具体观察写回 JSON 草稿，并运行对应校验。
+- [ ] 不要用自动 demo-input 证据替代真人观察。
 
-## Design Review
+## 设计审查
 
-- Draft: `harness/content_review/drafts/2026-06-02_demo_buildcraft_repair_v25_full_pack_design_review_draft.json`
-- Content item: `pudding-turret`
-- Current gate decision: `needs_more_review`
+- 草稿：`harness/content_review/drafts/2026-06-02_demo_buildcraft_repair_v25_full_pack_design_review_draft.json`
+- 内容项：`pudding-turret`
+- 当前门禁结论：`needs_more_review`
 
 ### pudding-turret
 
@@ -27,59 +27,59 @@
 - visual_audio_fit: ____ / 5
 - balance_risk: low / medium / high
 - decision: pass / revise / reject
-- concrete design observation:
+- 具体设计观察：
 
 ```text
 
 ```
-- required changes or acceptance blocker:
+- 必要修改或接受阻塞点：
 
 ```text
 
 ```
 
-### Batch Notes
+### 批次备注
 
 - reviewer: ____________________
 - reviewed_at: YYYY-MM-DD
-- summary:
+- 总结：
 
 ```text
 
 ```
-- batch risks:
+- 批次风险：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
 ```
 
-## Manual Playtest Runs
+## 人工试玩局
 
-- Draft: `harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`
-- Human evidence must not use `--demo-input`, `--simulation-speed`, or `--auto-exit-after-report`.
+- 草稿：`harness/playtest/drafts/2026-06-02_demo_buildcraft_repair_v25_manual_playtest_review_draft.json`
+- 人工证据不得使用 `--demo-input`、`--simulation-speed` 或 `--auto-exit-after-report`。
 
 ### new_001
 
-- skill: `new`
-- seed: `25001`
-- intent: 不看说明直接开始
-- report: `harness/telemetry/local/v25_manual_playtest_new_001.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py new_001`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25001 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_001.json --capture-interval 2`
+- 玩家视角：`new`
+- 固定 seed：`25001`
+- 试玩意图：不看说明直接开始
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_new_001.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py new_001`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25001 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_001.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] 是否理解移动
 - [ ] 是否理解拾取糖晶
 - [ ] 是否理解升级三选一
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -91,12 +91,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -104,21 +104,21 @@
 
 ### new_002
 
-- skill: `new`
-- seed: `25002`
-- intent: 尝试贪 XP
-- report: `harness/telemetry/local/v25_manual_playtest_new_002.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py new_002`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25002 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_002.json --capture-interval 2`
+- 玩家视角：`new`
+- 固定 seed：`25002`
+- 试玩意图：尝试贪 XP
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_new_002.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py new_002`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25002 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_002.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] 是否知道为什么受伤
 - [ ] 如果死亡是否知道主要原因
 - [ ] XP 节奏是否诱导过度冒险
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -130,12 +130,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -143,21 +143,21 @@
 
 ### new_003
 
-- skill: `new`
-- seed: `25003`
-- intent: 保守绕圈
-- report: `harness/telemetry/local/v25_manual_playtest_new_003.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py new_003`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25003 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_003.json --capture-interval 2`
+- 玩家视角：`new`
+- 固定 seed：`25003`
+- 试玩意图：保守绕圈
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_new_003.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py new_003`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25003 --seconds 600 --player-skill new --playtest-report harness/telemetry/local/v25_manual_playtest_new_003.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] 前 2 分钟是否至少看到 2-3 次升级机会
 - [ ] 保守玩法是否太无聊
 - [ ] 怪潮压力是否逐步增加
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -169,12 +169,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -182,21 +182,21 @@
 
 ### skilled_001
 
-- skill: `skilled`
-- seed: `25011`
-- intent: 主动拉怪收 XP
-- report: `harness/telemetry/local/v25_manual_playtest_skilled_001.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py skilled_001`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25011 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_001.json --capture-interval 2`
+- 玩家视角：`skilled`
+- 固定 seed：`25011`
+- 试玩意图：主动拉怪收 XP
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_skilled_001.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py skilled_001`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25011 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_001.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] 命中反馈是否清楚
 - [ ] XP 拾取是否顺畅
 - [ ] 升级选择是否有纠结
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -208,12 +208,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -221,21 +221,21 @@
 
 ### skilled_002
 
-- skill: `skilled`
-- seed: `25012`
-- intent: 主动挑战 Boss
-- report: `harness/telemetry/local/v25_manual_playtest_skilled_002.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py skilled_002`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25012 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_002.json --capture-interval 2`
+- 玩家视角：`skilled`
+- 固定 seed：`25012`
+- 试玩意图：主动挑战 Boss
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_skilled_002.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py skilled_002`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25012 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_002.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] Boss 出场是否明显
 - [ ] Boss 威胁方向是否明确
 - [ ] Boss 战是否拖沓
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -247,12 +247,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -260,21 +260,21 @@
 
 ### skilled_003
 
-- skill: `skilled`
-- seed: `25013`
-- intent: 高压波次存活
-- report: `harness/telemetry/local/v25_manual_playtest_skilled_003.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py skilled_003`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25013 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_003.json --capture-interval 2`
+- 玩家视角：`skilled`
+- 固定 seed：`25013`
+- 试玩意图：高压波次存活
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_skilled_003.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py skilled_003`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25013 --seconds 600 --player-skill skilled --playtest-report harness/telemetry/local/v25_manual_playtest_skilled_003.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] 屏幕压力是否压迫但不烦
 - [ ] 受伤反馈是否及时
 - [ ] 性能体感是否稳定
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -286,12 +286,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -299,21 +299,21 @@
 
 ### build_001
 
-- skill: `build`
-- seed: `25021`
-- intent: 远程投射物优先
-- report: `harness/telemetry/local/v25_manual_playtest_build_001.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py build_001`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25021 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_001.json --capture-interval 2`
+- 玩家视角：`build`
+- 固定 seed：`25021`
+- 试玩意图：远程投射物优先
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_build_001.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py build_001`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25021 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_001.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] projectile 可读性
 - [ ] 单体输出反馈
 - [ ] 远程 Build 是否有明确优势和代价
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -325,12 +325,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -338,21 +338,21 @@
 
 ### build_002
 
-- skill: `build`
-- seed: `25022`
-- intent: 防御 / 移速优先
-- report: `harness/telemetry/local/v25_manual_playtest_build_002.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py build_002`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25022 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_002.json --capture-interval 2`
+- 玩家视角：`build`
+- 固定 seed：`25022`
+- 试玩意图：防御 / 移速优先
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_build_002.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py build_002`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25022 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_002.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] 受伤反馈
 - [ ] 逃生空间
 - [ ] 容错感
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -364,12 +364,12 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
@@ -377,21 +377,21 @@
 
 ### build_003
 
-- skill: `build`
-- seed: `25023`
-- intent: 控制 / 范围优先
-- report: `harness/telemetry/local/v25_manual_playtest_build_003.json`
-- report exists: `False`
-- launcher: `python3 harness/playtest/run_v25_manual_playtest.py build_003`
-- runtime command: `cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25023 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_003.json --capture-interval 2`
+- 玩家视角：`build`
+- 固定 seed：`25023`
+- 试玩意图：控制 / 范围优先
+- 报告路径：`harness/telemetry/local/v25_manual_playtest_build_003.json`
+- 本地报告已存在：`False`
+- 启动器：`python3 harness/playtest/run_v25_manual_playtest.py build_003`
+- Runtime 命令：`cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v25_full_pack --seed 25023 --seconds 600 --player-skill build --playtest-report harness/telemetry/local/v25_manual_playtest_build_003.json --capture-interval 2`
 
-#### Required Observations
+#### 必看观察项
 
 - [ ] 地面效果可读性
 - [ ] 敌群可读性
 - [ ] 性能体感
 
-#### Ratings
+#### 评分
 
 - fun_rating: ____ / 5
 - clarity_rating: ____ / 5
@@ -403,18 +403,18 @@
 - death_reason_clarity: ____ / 5
 - gate_decision: playtest_pass / repair / needs_more_runs
 - tags: __________________________________
-- concrete moment-to-moment observation:
+- 具体局内观察：
 
 ```text
 
 ```
-- next actions:
+- 后续行动：
 
 ```text
 
 ```
 
-## Validation Commands
+## 校验命令
 
 ```bash
 python3 harness/content_review/check_v25_design_review_status.py --allow-incomplete
@@ -423,4 +423,4 @@ python3 harness/playtest/check_v25_candidate_readiness.py --allow-incomplete
 python3 harness/playtest/list_v25_human_evidence_todos.py --allow-todos
 ```
 
-This worksheet is not acceptance evidence by itself; the JSON drafts remain the source of truth.
+这张表本身不是接受证据；JSON 草稿仍是事实来源。
