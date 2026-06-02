@@ -1,0 +1,28 @@
+{
+  "case_id": "fail_20260602_023",
+  "category": "balance",
+  "content_id": "2026-06-02_demo_buildcraft_repair_v48_full_pack",
+  "seed": "72000-72009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "Repair v48 passed partial candidate validation, materialization, full-pack preflight, static balance budget, playable content coverage audit, GameCore validate-content, isolated validate-candidates, and the 300s / 3-seed all-Bot smoke matrix. The 300s / 10-seed expansion failed: RandomBot rose to 20.0% against a 0%-15% target, CowardBot rose to 40.0% against a 10%-35% target, GreedyXpBot rose to 60.0% against a 25%-55% target, KiteBot rose to 90.0% against a 45%-75% target, TankBot rose to 60.0% against a 25%-55% target, BossHunterBot fell to 40.0% against a 45%-75% target, ZoneControlBot fell to 10.0% against a 25%-55% target, and RouteBot rose to 40.0% against a 10%-35% target. IdleBot stayed inside target at 0.0%.",
+  "root_cause": "The v48 repair only changed frosting-grassland-standard's 210-225 second Boss entry window. It reduced bouncy-gummy from 0.30 to 0.19 and increased sour-gummy, licorice-skipper, and sugar-moth pressure while keeping the post-Boss 225-300 second window unchanged. This passed the small 71000-71002 smoke sample, but the larger 72000-72009 sample shows seed-sensitive policy splits: mobile or direct XP-seeking policies overperform on several seeds while BossHunterBot and ZoneControlBot underperform around the 210-225 and 225-300 second transition. The content is therefore not stable enough for playtest promotion.",
+  "fix": "Do not promote v48 into accepted_content, Runtime content, simulated_candidates, or playtest_candidates. Keep v48 as the current best smoke-passing generated candidate, but treat it as failing extended validation. The next repair should stay content-only and focus on the 210-300 second wave rhythm: keep enough Boss-entry disruption to prevent RouteBot and random high-roll wins, reduce overfitting that makes KiteBot nearly guaranteed, and improve ZoneControlBot and BossHunterBot survivability without raising low-skill Bot win rates. Prefer a narrow wave-pool and max_alive adjustment over changes to weapons, characters, maps, GameCore, Runtime, or Bot policy.",
+  "validation": "v48 smoke reports are in harness/reports/2026-06-02_demo_buildcraft_repair_v48_* and the failed expansion matrix is harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_10seed_72000_001/summary.md. The next candidate must rerun the 300s / 3-seed all-Bot smoke matrix and should also rerun the 300s / 10-seed expansion before any design-review packet or human playtest recommendation. It should be rejected if most Bot policies remain outside their target intervals or if the repair merely shifts the split from one policy family to another.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v48_candidates/metadata/manifest.json",
+    "harness/generated_candidate_patches/2026-06-02_demo_buildcraft_repair_v48_candidates/waves/frosting-grassland-standard.json",
+    "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v48_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_materialization_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_static_budget_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_3seed_71000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_3seed_71000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_10seed_72000_001/metrics.json",
+    "harness/reports/2026-06-02_demo_buildcraft_repair_v48_matrix_300s_10seed_72000_001/failure_cases.json"
+  ]
+}
