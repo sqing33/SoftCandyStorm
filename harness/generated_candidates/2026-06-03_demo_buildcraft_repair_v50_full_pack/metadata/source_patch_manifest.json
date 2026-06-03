@@ -1,0 +1,69 @@
+{
+  "batch_id": "2026-06-03_demo_buildcraft_repair_v50_candidates",
+  "generated_at": "2026-06-03",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 v50 修复探针"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-03_demo_buildcraft_repair_v49_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo buildcraft default-pool repair v50",
+    "goal": "在 v49 基础上修复控场路线偏弱与风筝路线过稳问题，同时降低固定路线吃经验收益。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix 300s 10 seed",
+      "failure case update for residual repair gates",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "caramel-sticky-ground",
+      "type": "weapon",
+      "path": "weapons/caramel-sticky-ground.json",
+      "role": "控场路线可靠性修复，将焦糖区域落点调整到高威胁敌人附近。"
+    },
+    {
+      "id": "bubble-shoes",
+      "type": "passive",
+      "path": "passives/bubble-shoes.json",
+      "role": "风筝路线峰值机动修复，降低长期安全距离。"
+    },
+    {
+      "id": "star-spoon",
+      "type": "passive",
+      "path": "passives/star-spoon.json",
+      "role": "固定路线经济收益修复，小幅降低拾取范围峰值。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v49 full pack 为基线。",
+      "临时探针显示 nearest_enemy 焦糖会让控场过强并抬高泛用胜率，因此本批次采用 highest_health_enemy。",
+      "临时探针显示直接延后 rainbow-candy-shot 额外弹数会误伤 TankBot 和 ZoneControlBot，因此本批次不修改 rainbow-candy-shot。",
+      "临时探针显示 225 秒后波次加压会误伤 CowardBot，因此本批次不加入波次压力改动。",
+      "本批次不调整门禁阈值；若 Bot 矩阵仍失败，应记录 failure case 并继续 repair。"
+    ]
+  }
+}
+
