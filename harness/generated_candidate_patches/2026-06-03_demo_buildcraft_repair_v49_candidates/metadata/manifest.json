@@ -1,0 +1,60 @@
+{
+  "batch_id": "2026-06-03_demo_buildcraft_repair_v49_candidates",
+  "generated_at": "2026-06-03",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容默认池与控场路线修复验证"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-02_demo_buildcraft_repair_v48_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo buildcraft default-pool repair v49",
+    "goal": "在 v48 通过解锁过滤后仍出现 BossHunter / Kite 过稳、ZoneControl 偏弱的问题，本批次先修正首发默认升级池和控场覆盖，让 Boss 专用强武器不再过早进入普通升级选择，同时为控场构筑提供更可靠的中期区域收益。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "Bot matrix smoke",
+      "Replay regression",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "caramel-sticky-ground",
+      "type": "weapon",
+      "path": "weapons/caramel-sticky-ground.json",
+      "role": "控制路线专属收益窄修复，小幅提高焦糖区域持续控场能力。"
+    },
+    {
+      "id": "star-sugar-ray",
+      "type": "weapon",
+      "path": "weapons/star-sugar-ray.json",
+      "role": "Boss 专用强武器默认池修复，从首发普通升级选择移到发现解锁。"
+    }
+  ],
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v48 full pack 为基线，保留 v48 已验证的 Boss 入场窗口波次修复。",
+      "本批次不修改 soda-bubble-pop；临时探针显示移出它会压低 BossHunter 且不能稳定解决 Kite 过稳。",
+      "本批次不加入早期冲刺扰动；临时探针显示该方向容易误伤 Coward 或 BossHunter。",
+      "本批次不调整门禁阈值，若 Bot 矩阵仍失败，应记录 failure case 并继续 repair。"
+    ]
+  }
+}

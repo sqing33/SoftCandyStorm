@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260603_002",
+  "category": "balance",
+  "content_id": "2026-06-03_demo_buildcraft_repair_v49_full_pack",
+  "seed": "72000-72009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "v49 content repair passes partial candidate validation, materialized-pack preflight, static budget validation, playable-content coverage audit, GameCore validate-content, and isolated game_harness validate-candidates. In the 300s / 10-seed matrix on seeds 72000-72009, IdleBot, RandomBot, CowardBot, GreedyXpBot, TankBot, and BossHunterBot are inside target intervals. KiteBot remains high at 80.0% against a 45%-75% target, ZoneControlBot remains low at 10.0% against a 25%-55% target, and RouteBot remains slightly high at 40.0% against a 10%-35% target.",
+  "root_cause": "Moving star-sugar-ray out of the default upgrade pool fixes the largest BossHunter overperformance from v48 and keeps GreedyXpBot inside target, while the caramel-sticky-ground coverage bump is too small to make ZoneControlBot reliable. The remaining pattern is not schema or unlock leakage; it is a buildcraft pressure split. High-mobility KiteBot still stabilizes too often through starter projectile upgrades and movement-safe routing, ZoneControlBot still lacks enough midgame survival/control payoff, and fixed-route play still survives one extra seed above the low-skill target.",
+  "fix": "Keep v49 as a generated repair candidate only. Do not promote it to simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content. The next v50 repair should focus on a narrower interaction between KiteBot's starter-projectile stability, ZoneControlBot's control payoff, and RouteBot's 210-300 second path pressure. Avoid reusing the early dash-disruptor probe as a default fix because temporary v49 probes showed it can overcorrect CowardBot or BossHunterBot.",
+  "validation": "Evidence is recorded in harness/reports/2026-06-03_demo_buildcraft_repair_v49_candidate_validation_001/summary.md, harness/reports/2026-06-03_demo_buildcraft_repair_v49_full_pack_preflight_001/summary.md, harness/reports/2026-06-03_demo_buildcraft_repair_v49_static_budget_001/summary.md, harness/reports/2026-06-03_demo_buildcraft_repair_v49_playable_content_coverage_001/summary.md, harness/reports/2026-06-03_demo_buildcraft_repair_v49_validate_candidates_001/summary.md, and harness/reports/2026-06-03_demo_buildcraft_repair_v49_matrix_300s_10seed_72000_001/summary.md. Future v50 candidates should rerun the same 300s / 10-seed all-Bot matrix on seeds 72000-72009 and should add a second seed window before any human playtest recommendation.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-03_demo_buildcraft_repair_v49_candidates/README.md",
+    "harness/generated_candidates/2026-06-03_demo_buildcraft_repair_v49_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-03_demo_buildcraft_repair_v49_candidate_validation_001/summary.md",
+    "harness/reports/2026-06-03_demo_buildcraft_repair_v49_full_pack_preflight_001/summary.md",
+    "harness/reports/2026-06-03_demo_buildcraft_repair_v49_static_budget_001/summary.md",
+    "harness/reports/2026-06-03_demo_buildcraft_repair_v49_playable_content_coverage_001/summary.md",
+    "harness/reports/2026-06-03_demo_buildcraft_repair_v49_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-03_demo_buildcraft_repair_v49_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-03_demo_buildcraft_repair_v49_matrix_300s_10seed_72000_001/metrics.json"
+  ]
+}
