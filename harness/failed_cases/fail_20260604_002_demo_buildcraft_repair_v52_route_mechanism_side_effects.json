@@ -1,0 +1,22 @@
+{
+  "case_id": "fail_20260604_002",
+  "category": "balance",
+  "content_id": "2026-06-04_demo_buildcraft_repair_v52_route_diagnostics",
+  "seed": "72000-72009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "v52 temporary probes against v51 could not produce a promotable content-only repair for frosting-grassland RouteBot. Pure wave-pool probes A, B, D, and E kept RouteBot at 40.0%, above the 10%-35% low-skill target. Trail-hazard probes C and F reduced RouteBot to 20.0% or 30.0%, but C pushed RandomBot to 20.0% and GreedyXpBot to 10.0%, while F pushed RandomBot to 20.0% and GreedyXpBot to 20.0%.",
+  "root_cause": "The remaining RouteBot issue is not a simple spawn-pressure deficit. Fixed elliptical movement survives when the 210-300 second enemy mix remains readable to the route, but broad enough leave_hazard trail pressure to break the route also changes the seed topology for random movement and XP-seeking policies. The 210-225 Boss-entry window is especially sensitive: it can break RouteBot, but even a 2% weak trail-hazard mix changes RandomBot and GreedyXpBot outcomes.",
+  "fix": "Do not promote any v52 temporary probe to generated_candidate_patches, generated_candidates, simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content. Stop further weight-only micro-tuning for this repair loop. The next repair should be a narrower, readable route-lane disruption mechanism or event shape that targets repeated fixed-path safety without adding random high-roll wins or suppressing normal XP-seeking economy.",
+  "validation": "Evidence is summarized in harness/reports/2026-06-04_demo_buildcraft_repair_v52_route_diagnostics_001/summary.md and report.json. Temporary matrix reports remain under /private/tmp/soft_candy/v52_probe_*_matrix_300s_10seed_72000. The failure case structure was validated with python3 tools/validate_failure_cases.py harness/failed_cases.",
+  "diagnostics": [
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v52_route_diagnostics_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v52_route_diagnostics_001/report.json",
+    "/private/tmp/soft_candy/v52_probe_late_mix_a_matrix_300s_10seed_72000/summary.md",
+    "/private/tmp/soft_candy/v52_probe_boss_entry_blend_b_matrix_300s_10seed_72000/summary.md",
+    "/private/tmp/soft_candy/v52_probe_caramel_trail_c_matrix_300s_10seed_72000/summary.md",
+    "/private/tmp/soft_candy/v52_probe_caramel_trail_d_late_only_matrix_300s_10seed_72000/summary.md",
+    "/private/tmp/soft_candy/v52_probe_caramel_trail_e_late_mild_matrix_300s_10seed_72000/summary.md",
+    "/private/tmp/soft_candy/v52_probe_caramel_trail_f_entry_tiny_matrix_300s_10seed_72000/summary.md"
+  ]
+}

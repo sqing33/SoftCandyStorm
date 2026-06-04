@@ -1,0 +1,124 @@
+{
+  "report_version": 1,
+  "decision": "repair_diagnostic_no_candidate",
+  "base_content_dir": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "map_id": "frosting-grassland",
+  "matrix": {
+    "seconds": 300,
+    "tick_rate": 30,
+    "seed_start": 72000,
+    "seeds": 10,
+    "bots": "all"
+  },
+  "probes": [
+    {
+      "id": "late_mix_a",
+      "content_dir": "/private/tmp/soft_candy/v52_probe_late_mix_a",
+      "summary": "/private/tmp/soft_candy/v52_probe_late_mix_a_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.1,
+        "coward": 0.3,
+        "greedy": 0.3,
+        "kite": 0.6,
+        "tank": 0.3,
+        "boss-hunter": 0.7,
+        "zone-control": 0.4,
+        "route": 0.4
+      },
+      "decision": "rejected_route_underrepair"
+    },
+    {
+      "id": "boss_entry_blend_b",
+      "content_dir": "/private/tmp/soft_candy/v52_probe_boss_entry_blend_b",
+      "summary": "/private/tmp/soft_candy/v52_probe_boss_entry_blend_b_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.1,
+        "coward": 0.1,
+        "greedy": 0.3,
+        "kite": 0.6,
+        "tank": 0.3,
+        "boss-hunter": 0.7,
+        "zone-control": 0.4,
+        "route": 0.4
+      },
+      "decision": "rejected_route_underrepair"
+    },
+    {
+      "id": "caramel_trail_c",
+      "content_dir": "/private/tmp/soft_candy/v52_probe_caramel_trail_c",
+      "summary": "/private/tmp/soft_candy/v52_probe_caramel_trail_c_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.2,
+        "coward": 0.3,
+        "greedy": 0.1,
+        "kite": 0.6,
+        "tank": 0.3,
+        "boss-hunter": 0.6,
+        "zone-control": 0.4,
+        "route": 0.2
+      },
+      "decision": "rejected_random_and_greedy_side_effects"
+    },
+    {
+      "id": "caramel_trail_d_late_only",
+      "content_dir": "/private/tmp/soft_candy/v52_probe_caramel_trail_d_late_only",
+      "summary": "/private/tmp/soft_candy/v52_probe_caramel_trail_d_late_only_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.1,
+        "coward": 0.3,
+        "greedy": 0.3,
+        "kite": 0.6,
+        "tank": 0.3,
+        "boss-hunter": 0.7,
+        "zone-control": 0.4,
+        "route": 0.4
+      },
+      "decision": "rejected_route_underrepair"
+    },
+    {
+      "id": "caramel_trail_e_late_mild",
+      "content_dir": "/private/tmp/soft_candy/v52_probe_caramel_trail_e_late_mild",
+      "summary": "/private/tmp/soft_candy/v52_probe_caramel_trail_e_late_mild_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.0,
+        "coward": 0.3,
+        "greedy": 0.3,
+        "kite": 0.6,
+        "tank": 0.3,
+        "boss-hunter": 0.7,
+        "zone-control": 0.4,
+        "route": 0.4
+      },
+      "decision": "rejected_route_underrepair"
+    },
+    {
+      "id": "caramel_trail_f_entry_tiny",
+      "content_dir": "/private/tmp/soft_candy/v52_probe_caramel_trail_f_entry_tiny",
+      "summary": "/private/tmp/soft_candy/v52_probe_caramel_trail_f_entry_tiny_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.2,
+        "coward": 0.3,
+        "greedy": 0.2,
+        "kite": 0.7,
+        "tank": 0.4,
+        "boss-hunter": 0.6,
+        "zone-control": 0.4,
+        "route": 0.3
+      },
+      "decision": "rejected_random_and_greedy_side_effects"
+    }
+  ],
+  "findings": [
+    "Pure wave enemy-pool changes did not reliably lower RouteBot below 35%.",
+    "A leave_hazard trail enemy can lower RouteBot, but effective settings also disturb RandomBot or GreedyXpBot.",
+    "The 210-225 Boss-entry window is the most sensitive RouteBot intervention point.",
+    "No v52 probe should be promoted to generated_candidate_patches, generated_candidates, simulated_candidates, playtest_candidates, accepted_content, or Runtime content."
+  ],
+  "recommended_next_step": "Implement or design a narrower readable route-lane disruption mechanism before producing the next content candidate."
+}
