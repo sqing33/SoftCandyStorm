@@ -1,0 +1,99 @@
+{
+  "batch_id": "2026-06-04_demo_buildcraft_repair_v51_candidates",
+  "generated_at": "2026-06-04",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 v51 修复探针"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-03_demo_buildcraft_repair_v50_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo buildcraft default-pool repair v51",
+    "goal": "在 v50 基础上修复 CowardBot 低技能保守路线偏高问题，同时保留 KiteBot 与 ZoneControlBot 已回到目标区间的结果，并将 RouteBot 残留固定路线问题记录为下一轮专门修复对象。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "playable content coverage audit",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix 300s 10 seed",
+      "failure case update for residual RouteBot repair gate",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "Boss 后半段低技能保守路线修复，通过 225-300 秒窄窗口怪潮重分配提升路线扰动。"
+    }
+  ],
+  "probe_evidence": {
+    "source": "/private/tmp/soft_candy/v51_probe_a_matrix_300s_10seed_72000/summary.md",
+    "duration_seconds": 300,
+    "seed_range": "72000-72009",
+    "bot_results": {
+      "idle": {
+        "win_rate": 0.0,
+        "gate": "pass"
+      },
+      "random": {
+        "win_rate": 0.0,
+        "gate": "pass"
+      },
+      "coward": {
+        "win_rate": 0.3,
+        "gate": "pass"
+      },
+      "greedy": {
+        "win_rate": 0.3,
+        "gate": "pass"
+      },
+      "kite": {
+        "win_rate": 0.6,
+        "gate": "pass"
+      },
+      "tank": {
+        "win_rate": 0.3,
+        "gate": "pass"
+      },
+      "boss-hunter": {
+        "win_rate": 0.7,
+        "gate": "pass"
+      },
+      "zone-control": {
+        "win_rate": 0.4,
+        "gate": "pass"
+      },
+      "route": {
+        "win_rate": 0.4,
+        "gate": "repair"
+      }
+    }
+  },
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v50 full pack 为基线。",
+      "本批次只修改 frosting-grassland-standard 的 225-300 秒 Boss 后半段波次形状。",
+      "临时探针显示该改动可将 CowardBot 从 v50 的 40.0% 降到 30.0%，回到低技能 10%-35% 目标区间。",
+      "RouteBot 仍为 40.0%，高于 10%-35% 目标；历史探针显示削 bubble-shoes、削 star-spoon、缩小地图、加入轻量 route blocker 都会产生副作用或无效，因此 v51 不继续叠加高风险全局修复。",
+      "本批次不调整门禁阈值；RouteBot 残留应作为 failure case 进入下一轮专门 repair。"
+    ]
+  }
+}

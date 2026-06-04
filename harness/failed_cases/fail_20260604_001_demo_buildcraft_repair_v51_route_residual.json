@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260604_001",
+  "category": "balance",
+  "content_id": "2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "seed": "72000-72009",
+  "bot": "RouteBot",
+  "time_seconds": 300.0,
+  "symptom": "v51 content repair passes partial candidate validation, materialized-pack preflight, static budget validation, GameCore validate-content, and isolated game_harness validate-candidates. In the 300s / 10-seed matrix on seeds 72000-72009, IdleBot, RandomBot, CowardBot, GreedyXpBot, KiteBot, TankBot, BossHunterBot, and ZoneControlBot are inside target intervals. CowardBot improves from v50's 40.0% to 30.0%, which is inside the low-skill 10%-35% target. RouteBot remains high at 40.0% against a 10%-35% target.",
+  "root_cause": "v51 only reshapes the frosting-grassland 225-300 second Boss后半段波次 by splitting it into 225-255 and 255-300 segments, reducing basic bouncy-gummy weight and adding more licorice-skipper, sugar-moth, and sprinkle-spitter route disruption. This successfully removes the low-skill CowardBot overpass without disturbing high-skill, tank, greedy, or zone-control targets. The remaining issue is specifically RouteBot's fixed elliptical path: four seeds still allow enough safe XP and avoidance to survive to 300 seconds, so normal wave pressure alone is not sufficient.",
+  "fix": "Keep v51 as a generated repair candidate only and do not promote it to simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content yet. The next repair should target fixed-route behavior directly, likely through a route-aware but readable encounter mechanism, path-interrupting map event, or deterministic safe-lane disruption that is scoped to RouteBot's exploit pattern. Avoid repeating approaches already shown risky or ineffective: shrinking the map, further reducing bubble-shoes mobility, further reducing star-spoon pickup radius, adding light caramel-slime route pollution, or adding lightweight route blocker enemies without stronger placement logic.",
+  "validation": "Evidence is recorded in harness/reports/2026-06-04_demo_buildcraft_repair_v51_patch_validation_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v51_materialize_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v51_preflight_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v51_static_budget_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v51_validate_candidates_001/summary.md, and harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md. Future v52 candidates should rerun the same 300s / 10-seed all-Bot matrix on seeds 72000-72009 and should add a second seed window before any human playtest recommendation.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-04_demo_buildcraft_repair_v51_candidates/README.md",
+    "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_patch_validation_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_materialize_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_preflight_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_static_budget_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/metrics.json"
+  ]
+}
