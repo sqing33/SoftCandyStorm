@@ -81,6 +81,8 @@ const LOADOUT_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 2;
 const CHAPTER_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CHAPTER_POINTER_CONTROL_ZONE_COUNT: usize = 3;
+const LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT: usize = 8;
+const LOADOUT_UNLOCKED_MAP_LABEL_LIMIT: usize = 8;
 
 fn main() {
     let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -3030,12 +3032,12 @@ fn render_meta_loadout_panel(
         format_runtime_unlocked_labels(
             &runtime_unlocked_character_ids(progress, content),
             |id| runtime_character_label(content, id),
-            4,
+            LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT,
         ),
         format_runtime_unlocked_labels(
             &runtime_unlocked_map_ids(progress, content),
             |id| runtime_map_label(content, id),
-            4,
+            LOADOUT_UNLOCKED_MAP_LABEL_LIMIT,
         ),
     )
 }
@@ -7471,6 +7473,57 @@ mod tests {
         assert!(panel.contains("C 切换已解锁角色"));
         assert!(panel.contains("M 切换已解锁地图"));
         assert!(panel.contains("右下点击区: 角色  地图"));
+    }
+
+    #[test]
+    fn meta_panel_loadout_lists_full_demo_roster() {
+        let content = ContentPack::base_demo();
+        let mut progress = MetaProgress::demo_start();
+        for id in content.characters.keys() {
+            progress.unlocks.characters.insert(id.clone());
+        }
+        for id in content.maps.keys() {
+            progress.unlocks.maps.insert(id.clone());
+        }
+        let config = RunConfig {
+            character_id: "jar-keeper".to_string(),
+            map_id: "frosting-grassland".to_string(),
+            starting_loadout: runtime_character_starting_loadout(&content, "jar-keeper"),
+            ..RunConfig::default()
+        };
+
+        let panel = render_meta_progress_panel(
+            &progress,
+            None,
+            RuntimeMetaPanelView::Loadout,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &content,
+                &config,
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        for expected in [
+            "糖罐守护员",
+            "泡泡邮差",
+            "奶油骑士",
+            "酸梅博士",
+            "布丁工匠",
+            "糖霜草地",
+            "汽水溪谷",
+            "焦糖工坊",
+            "棉花云牧场",
+            "果冻月台",
+            "裂星糖罐",
+        ] {
+            assert!(panel.contains(expected), "missing loadout label {expected}");
+        }
+        assert!(!panel.contains("还有"));
     }
 
     #[test]
