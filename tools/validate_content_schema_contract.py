@@ -374,6 +374,35 @@ def validate_event_semantics(
                     checks += 1
                     if not is_number(duration) or duration <= 0:
                         errors.append(f"{label}.effects[{index}]: duration_seconds must be greater than 0")
+                if effect.get("type") == "spawn_hazard":
+                    placement = effect.get("placement")
+                    if placement is not None:
+                        checks += 1
+                        if placement not in {"near_player", "player_forward_lane"}:
+                            errors.append(
+                                f"{label}.effects[{index}]: placement `{placement}` is not supported"
+                            )
+                    min_distance = effect.get("min_distance")
+                    max_distance = effect.get("max_distance")
+                    if min_distance is not None:
+                        checks += 1
+                        if not is_number(min_distance) or min_distance < 0:
+                            errors.append(f"{label}.effects[{index}]: min_distance must be non-negative")
+                    if max_distance is not None:
+                        checks += 1
+                        if not is_number(max_distance) or max_distance <= 0:
+                            errors.append(f"{label}.effects[{index}]: max_distance must be greater than 0")
+                    if is_number(min_distance) and is_number(max_distance):
+                        checks += 1
+                        if max_distance < min_distance:
+                            errors.append(
+                                f"{label}.effects[{index}]: max_distance must be at least min_distance"
+                            )
+                    lane_width = effect.get("lane_width")
+                    if lane_width is not None:
+                        checks += 1
+                        if not is_number(lane_width) or lane_width < 0:
+                            errors.append(f"{label}.effects[{index}]: lane_width must be non-negative")
     return checks
 
 

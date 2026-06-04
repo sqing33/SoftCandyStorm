@@ -919,9 +919,13 @@ impl GameCore {
         let radius = effect.radius.unwrap_or(72.0).max(4.0);
         let duration_seconds = effect.duration_seconds.unwrap_or(6.0).max(0.1);
         let slow_multiplier = effect.slow_multiplier.unwrap_or(0.65).clamp(0.2, 1.0);
+        let placement = effect.placement.as_deref().unwrap_or("near_player");
 
-        for _ in 0..count {
-            let position = self.spawn_position_around_player(80.0, self.map.spawn_min.max(120.0));
+        for index in 0..count {
+            let position = match placement {
+                "player_forward_lane" => self.player_forward_lane_position(effect, index, count),
+                _ => self.spawn_position_around_player(80.0, self.map.spawn_min.max(120.0)),
+            };
             self.hazards.push(Hazard {
                 position,
                 radius,
@@ -930,6 +934,38 @@ impl GameCore {
                 damage_per_second: 0.0,
             });
         }
+    }
+
+    fn player_forward_lane_position(
+        &self,
+        effect: &content::EventEffectDefinition,
+        index: u32,
+        count: u32,
+    ) -> Vec2 {
+        let forward = if self.player.velocity.length() > 0.1 {
+            self.player.velocity.normalized_or_zero()
+        } else {
+            Vec2::new(1.0, 0.0)
+        };
+        let lateral = Vec2::new(-forward.y, forward.x);
+        let min_distance = effect.min_distance.unwrap_or(72.0).max(0.0);
+        let max_distance = effect
+            .max_distance
+            .unwrap_or(self.map.spawn_min.max(min_distance + 96.0))
+            .max(min_distance);
+        let lane_width = effect.lane_width.unwrap_or(56.0).max(0.0);
+        let t = if count <= 1 {
+            0.5
+        } else {
+            index as f32 / (count - 1) as f32
+        };
+        let distance = min_distance + (max_distance - min_distance) * t;
+        let side = match index % 3 {
+            0 => 0.0,
+            1 => 1.0,
+            _ => -1.0,
+        };
+        self.clamp_to_map(self.player.position + forward * distance + lateral * lane_width * side)
     }
 
     fn active_event_multiplier(&self, effect_type: &str) -> f32 {
@@ -3908,6 +3944,10 @@ mod tests {
                 enemy_id: None,
                 radius: None,
                 slow_multiplier: None,
+                placement: None,
+                min_distance: None,
+                max_distance: None,
+                lane_width: None,
             },
             content::EventEffectDefinition {
                 effect_type: "spawn_enemy".to_string(),
@@ -3916,6 +3956,10 @@ mod tests {
                 enemy_id: Some("bouncy-gummy".to_string()),
                 radius: None,
                 slow_multiplier: None,
+                placement: None,
+                min_distance: None,
+                max_distance: None,
+                lane_width: None,
             },
             content::EventEffectDefinition {
                 effect_type: "spawn_hazard".to_string(),
@@ -3924,6 +3968,10 @@ mod tests {
                 enemy_id: None,
                 radius: Some(48.0),
                 slow_multiplier: Some(0.55),
+                placement: None,
+                min_distance: None,
+                max_distance: None,
+                lane_width: None,
             },
         ];
         core.content.events.insert(event.id.clone(), event);
@@ -3939,5 +3987,43 @@ mod tests {
             .iter()
             .any(|enemy| enemy.enemy_id == "bouncy-gummy"));
         assert_eq!(core.hazards.len(), 2);
+    }
+
+    #[test]
+    fn content_event_can_spawn_forward_lane_hazards() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.player.velocity = Vec2::new(100.0, 0.0);
+        let mut event = core
+            .content
+            .events
+            .get("caramel-quake")
+            .expect("base demo event should exist")
+            .clone();
+        event.id = "test-forward-lane-quake".to_string();
+        event.trigger.start_second = Some(0.0);
+        event.trigger.end_second = Some(10.0);
+        event.trigger.chance = Some(1.0);
+        event.effects = vec![content::EventEffectDefinition {
+            effect_type: "spawn_hazard".to_string(),
+            value: 3.0,
+            duration_seconds: Some(2.0),
+            enemy_id: None,
+            radius: Some(36.0),
+            slow_multiplier: Some(0.7),
+            placement: Some("player_forward_lane".to_string()),
+            min_distance: Some(60.0),
+            max_distance: Some(120.0),
+            lane_width: Some(30.0),
+        }];
+        core.content.events.insert(event.id.clone(), event);
+
+        core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+
+        assert_eq!(core.hazards.len(), 3);
+        assert!(core.hazards.iter().all(|hazard| hazard.position.x > 0.0));
+        assert!(core
+            .hazards
+            .iter()
+            .any(|hazard| hazard.position.y.abs() >= 29.0));
     }
 }

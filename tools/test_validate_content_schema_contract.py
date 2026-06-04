@@ -164,6 +164,52 @@ class ContentSchemaContractValidatorTests(unittest.TestCase):
             self.assertTrue(any("references missing bosses id `missing-boss`" in error for error in report["errors"]))
             self.assertTrue(any("time_second 90 exceeds duration_seconds 60" in error for error in report["errors"]))
 
+    def test_spawn_hazard_forward_lane_semantics_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            schema_manifest = make_schema_fixture(root)
+            content_dir = make_content_fixture(root)
+            target = content_dir / "events" / "events-fixture.json"
+            payload = json.loads(target.read_text(encoding="utf-8"))
+            payload["effects"] = [
+                {
+                    "type": "spawn_hazard",
+                    "value": 2,
+                    "duration_seconds": 3,
+                    "placement": "player_forward_lane",
+                    "min_distance": 80,
+                    "max_distance": 160,
+                    "lane_width": 40,
+                }
+            ]
+            write_json(target, payload)
+
+            report = build_report(schema_manifest, [content_dir])
+
+            self.assertEqual(report["decision"], "content_schema_contract_valid")
+
+    def test_spawn_hazard_bad_placement_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            schema_manifest = make_schema_fixture(root)
+            content_dir = make_content_fixture(root)
+            target = content_dir / "events" / "events-fixture.json"
+            payload = json.loads(target.read_text(encoding="utf-8"))
+            payload["effects"] = [
+                {
+                    "type": "spawn_hazard",
+                    "value": 2,
+                    "duration_seconds": 3,
+                    "placement": "diagonal_soup",
+                }
+            ]
+            write_json(target, payload)
+
+            report = build_report(schema_manifest, [content_dir])
+
+            self.assertEqual(report["decision"], "content_schema_contract_invalid")
+            self.assertTrue(any("diagonal_soup" in error for error in report["errors"]))
+
     def test_evolution_level_semantics_fail(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

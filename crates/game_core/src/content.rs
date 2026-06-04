@@ -1920,8 +1920,43 @@ impl ContentPack {
                             event.id
                         ));
                     }
+                    if let Some(placement) = &effect.placement {
+                        validate_allowed(
+                            "event.effect.placement",
+                            placement,
+                            &["near_player", "player_forward_lane"],
+                            &mut errors,
+                        );
+                    }
                     if let Some(radius) = effect.radius {
                         validate_positive("event.effect.radius", radius, &mut errors);
+                    }
+                    if let Some(min_distance) = effect.min_distance {
+                        validate_non_negative_finite(
+                            "event.effect.min_distance",
+                            min_distance,
+                            &mut errors,
+                        );
+                    }
+                    if let Some(max_distance) = effect.max_distance {
+                        validate_positive("event.effect.max_distance", max_distance, &mut errors);
+                    }
+                    if let (Some(min_distance), Some(max_distance)) =
+                        (effect.min_distance, effect.max_distance)
+                    {
+                        if max_distance < min_distance {
+                            errors.push(format!(
+                                "event `{}` has spawn_hazard max_distance below min_distance",
+                                event.id
+                            ));
+                        }
+                    }
+                    if let Some(lane_width) = effect.lane_width {
+                        validate_non_negative_finite(
+                            "event.effect.lane_width",
+                            lane_width,
+                            &mut errors,
+                        );
                     }
                     if let Some(slow_multiplier) = effect.slow_multiplier {
                         validate_finite(
@@ -2393,6 +2428,10 @@ fn event_effect(
         enemy_id: None,
         radius: None,
         slow_multiplier: None,
+        placement: None,
+        min_distance: None,
+        max_distance: None,
+        lane_width: None,
     }
 }
 
@@ -3361,6 +3400,14 @@ pub struct EventEffectDefinition {
     pub radius: Option<f32>,
     #[serde(default)]
     pub slow_multiplier: Option<f32>,
+    #[serde(default)]
+    pub placement: Option<String>,
+    #[serde(default)]
+    pub min_distance: Option<f32>,
+    #[serde(default)]
+    pub max_distance: Option<f32>,
+    #[serde(default)]
+    pub lane_width: Option<f32>,
 }
 
 fn load_category<T>(path: &Path) -> Result<BTreeMap<String, T>, ContentError>

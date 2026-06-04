@@ -13,7 +13,7 @@
     "tags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
     "description": {"type": "string", "minLength": 1},
     "trigger": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}, "start_second": {"type": "number", "minimum": 0}, "end_second": {"type": "number", "minimum": 0}, "chance": {"type": "number", "minimum": 0}}},
-    "effects": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}}}},
+    "effects": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string", "minLength": 1}, "placement": {"type": "string", "enum": ["near_player", "player_forward_lane"]}, "min_distance": {"type": "number", "minimum": 0}, "max_distance": {"type": "number", "minimum": 0}, "lane_width": {"type": "number", "minimum": 0}}}},
     "visual_description": {"type": "string", "minLength": 1},
     "sfx_description": {"type": "string", "minLength": 1}
   }
