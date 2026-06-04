@@ -37,6 +37,7 @@ def make_base_content(root: Path) -> Path:
     write_json(base / "weapons" / "rainbow-candy-shot.json", {"id": "rainbow-candy-shot"})
     write_json(base / "evolutions" / "rainbow-candy-meteor.json", {"id": "rainbow-candy-meteor"})
     write_json(base / "characters" / "jar-keeper.json", {"id": "jar-keeper"})
+    write_json(base / "events" / "caramel-quake.json", {"id": "caramel-quake"})
     return base
 
 
@@ -61,6 +62,7 @@ def make_patch(root: Path, *, duplicate_passive: bool = False) -> Path:
     write_json(patch / "evolutions" / "sugar-drum-crescendo.json", {"id": "sugar-drum-crescendo"})
     write_json(patch / "waves" / "frosting-grassland-standard.json", {"id": "frosting-grassland-standard"})
     write_json(patch / "maps" / "frosting-grassland.json", {"id": "frosting-grassland"})
+    write_json(patch / "events" / "route-echo-caramel-mark.json", {"id": "route-echo-caramel-mark"})
     return patch
 
 
@@ -74,8 +76,30 @@ class MaterializeContentCandidatePackTests(unittest.TestCase):
 
             report = materialize_pack(patch, base, output, allow_overrides=False)
 
-            self.assertEqual(report["overlay_counts"], {"enemies": 1, "evolutions": 1, "maps": 1, "passives": 1, "waves": 1, "weapons": 1})
-            self.assertEqual(report["overridden_counts"], {"enemies": 0, "evolutions": 0, "maps": 0, "passives": 0, "waves": 0, "weapons": 0})
+            self.assertEqual(
+                report["overlay_counts"],
+                {
+                    "enemies": 1,
+                    "events": 1,
+                    "evolutions": 1,
+                    "maps": 1,
+                    "passives": 1,
+                    "waves": 1,
+                    "weapons": 1,
+                },
+            )
+            self.assertEqual(
+                report["overridden_counts"],
+                {
+                    "enemies": 0,
+                    "events": 0,
+                    "evolutions": 0,
+                    "maps": 0,
+                    "passives": 0,
+                    "waves": 0,
+                    "weapons": 0,
+                },
+            )
             self.assertTrue((output / "passives" / "big-candy-jar.json").exists())
             self.assertTrue((output / "passives" / "honey-heart.json").exists())
             self.assertTrue((output / "weapons" / "rainbow-candy-shot.json").exists())
@@ -83,6 +107,8 @@ class MaterializeContentCandidatePackTests(unittest.TestCase):
             self.assertTrue((output / "enemies" / "bouncy-gummy.json").exists())
             self.assertTrue((output / "enemies" / "licorice-skipper.json").exists())
             self.assertTrue((output / "maps" / "frosting-grassland.json").exists())
+            self.assertTrue((output / "events" / "caramel-quake.json").exists())
+            self.assertTrue((output / "events" / "route-echo-caramel-mark.json").exists())
             self.assertTrue((output / "metadata" / "materialization.json").exists())
 
     def test_duplicate_overlay_requires_explicit_override(self) -> None:
