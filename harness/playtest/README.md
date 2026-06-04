@@ -49,6 +49,43 @@ acceptance validator.
 
 ## Launch The v25 Manual Playtest Candidate
 
+## Launch The Current Playable Candidate
+
+The current playable content target is
+`harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack`.
+It remains a generated candidate and must not be copied into `content/base_demo`
+or `accepted_content` until human gates pass.
+
+```bash
+python3 harness/playtest/create_current_playable_content_guide.py
+python3 harness/playtest/audit_current_playable_content_coverage.py --allow-repair
+python3 harness/playtest/play_current_candidate.py --dry-run
+python3 harness/playtest/play_current_candidate.py
+python3 harness/playtest/play_current_candidate.py --list
+python3 harness/playtest/run_current_content_tour.py --list
+python3 harness/playtest/run_current_content_tour.py --next --dry-run
+python3 harness/playtest/run_current_content_tour.py --next
+```
+
+Use `play_current_candidate.py` for the easiest local start. With no preset it
+launches `jar-keeper` on `frosting-grassland` against the current candidate
+pack and writes a `v51_quick_play_default` report under
+`harness/telemetry/local/`. Use `--list` for speed, summon, control, defense,
+and final-pressure presets.
+
+Use `run_current_content_tour.py` to cover all 6 maps and all 5 playable
+characters through optional human-run sessions. These runs are repair triage
+and playtest preparation only; they are not acceptance evidence.
+
+Use `create_current_playable_content_guide.py` to summarize the current
+candidate's characters, maps, build routes, enemies, bosses, events, and
+candidate-only state.
+
+Use `audit_current_playable_content_coverage.py --allow-repair` to check that
+the current candidate has reachable playable entrypoints, build-role coverage,
+starter weapon routes, Boss/counterplay readability, map waves, and required
+playable descriptors.
+
 The current Demo buildcraft repair v25 candidate has a dedicated manual
 launcher:
 
@@ -207,6 +244,7 @@ python3 harness/playtest/test_summarize_v25_manual_playtest_reports.py
 python3 harness/playtest/test_create_v25_content_repair_action_plan.py
 python3 harness/playtest/test_check_v25_manual_playtest_status.py
 python3 harness/playtest/test_run_v25_manual_playtest.py
+python3 harness/playtest/test_current_candidate_playable_tools.py
 python3 harness/playtest/test_validate_manual_review.py
 ```
 
