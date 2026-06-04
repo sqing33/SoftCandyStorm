@@ -19,8 +19,25 @@ from typing import Any
 
 ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ALLOWED_RARITIES = {"common", "rare", "epic", "legendary", "boss", "debug"}
-BASE_ID_CATEGORIES = ("weapons", "passives", "evolutions", "enemies", "waves", "maps", "bosses")
-SUPPORTED_CONTENT_CATEGORIES = ("weapons", "passives", "evolutions", "enemies", "waves", "maps")
+BASE_ID_CATEGORIES = (
+    "weapons",
+    "passives",
+    "evolutions",
+    "enemies",
+    "waves",
+    "maps",
+    "bosses",
+    "events",
+)
+SUPPORTED_CONTENT_CATEGORIES = (
+    "weapons",
+    "passives",
+    "evolutions",
+    "enemies",
+    "waves",
+    "maps",
+    "events",
+)
 ALLOWED_WEAPON_TYPES = {"projectile", "orbit", "burst", "zone", "summon", "beam", "special"}
 ALLOWED_TARGETING_MODES = {
     "nearest_enemy",
@@ -35,6 +52,19 @@ ALLOWED_TARGETING_MODES = {
 ALLOWED_PERFORMANCE_COSTS = {"low", "medium", "high"}
 ALLOWED_MAP_BOUNDS = {"rectangle"}
 ALLOWED_MAP_SPAWN_MODES = {"around_player"}
+ALLOWED_EVENT_TRIGGER_TYPES = {"time_window", "boss_defeat", "level_up", "random", "map_entry"}
+ALLOWED_EVENT_EFFECT_TYPES = {
+    "xp_multiplier",
+    "spawn_rate_multiplier",
+    "pickup_radius_multiplier",
+    "damage_multiplier",
+    "heal",
+    "spawn_enemy",
+    "spawn_hazard",
+    "route_echo_hazard",
+    "offer_upgrade",
+}
+ALLOWED_EVENT_HAZARD_PLACEMENTS = {"near_player", "player_forward_lane"}
 
 ALLOWED_PASSIVE_STATS = {
     "max_health",
@@ -548,6 +578,126 @@ def validate_map(
     return errors, warnings
 
 
+def validate_event(
+    path: Path,
+    payload: dict[str, Any],
+    base_ids: dict[str, set[str]],
+    candidate_ids: dict[str, set[str]],
+    allow_overrides: bool,
+) -> tuple[list[str], list[str]]:
+    item_id, errors, warnings = validate_common(
+        "event",
+        payload,
+        path,
+        base_ids["events"],
+        allow_overrides,
+    )
+
+    trigger = payload.get("trigger")
+    if not isinstance(trigger, dict):
+        errors.append(f"event `{item_id}` trigger must be an object")
+    else:
+        trigger_type = trigger.get("type")
+        if trigger_type not in ALLOWED_EVENT_TRIGGER_TYPES:
+            errors.append(f"event `{item_id}` trigger.type is invalid: {trigger_type}")
+        start_second = trigger.get("start_second")
+        end_second = trigger.get("end_second")
+        if start_second is not None and (not is_number(start_second) or start_second < 0):
+            errors.append(f"event `{item_id}` trigger.start_second must be non-negative when present")
+        if end_second is not None and (not is_number(end_second) or end_second < 0):
+            errors.append(f"event `{item_id}` trigger.end_second must be non-negative when present")
+        if is_number(start_second) and is_number(end_second) and end_second <= start_second:
+            errors.append(f"event `{item_id}` trigger end_second must be greater than start_second")
+        chance = trigger.get("chance")
+        if chance is not None and (not is_number(chance) or chance < 0 or chance > 1):
+            errors.append(f"event `{item_id}` trigger.chance must be within 0..1 when present")
+
+    effects = payload.get("effects")
+    if not isinstance(effects, list) or not effects:
+        errors.append(f"event `{item_id}` effects must be a non-empty list")
+        return errors, warnings
+
+    known_enemies = base_ids["enemies"] | candidate_ids["enemies"]
+    for index, effect in enumerate(effects):
+        if not isinstance(effect, dict):
+            errors.append(f"event `{item_id}` effects[{index}] must be an object")
+            continue
+        effect_type = effect.get("type")
+        if effect_type not in ALLOWED_EVENT_EFFECT_TYPES:
+            errors.append(f"event `{item_id}` effects[{index}].type is invalid: {effect_type}")
+            continue
+        value = effect.get("value")
+        if not is_number(value):
+            errors.append(f"event `{item_id}` effects[{index}].value must be finite")
+        duration_seconds = effect.get("duration_seconds")
+        if duration_seconds is not None and (not is_number(duration_seconds) or duration_seconds <= 0):
+            errors.append(f"event `{item_id}` effects[{index}].duration_seconds must be positive when present")
+
+        if effect_type in {
+            "xp_multiplier",
+            "spawn_rate_multiplier",
+            "pickup_radius_multiplier",
+            "damage_multiplier",
+        }:
+            if duration_seconds is None:
+                errors.append(f"event `{item_id}` {effect_type} effect is missing duration_seconds")
+
+        if effect_type == "spawn_enemy":
+            if is_number(value) and value <= 0:
+                errors.append(f"event `{item_id}` spawn_enemy value must be positive")
+            enemy_id = effect.get("enemy_id")
+            if not is_nonempty_string(enemy_id) or enemy_id not in known_enemies:
+                errors.append(f"event `{item_id}` spawn_enemy references unknown enemy `{enemy_id}`")
+
+        if effect_type in {"spawn_hazard", "route_echo_hazard"}:
+            if is_number(value) and value <= 0:
+                errors.append(f"event `{item_id}` {effect_type} value must be positive")
+            if duration_seconds is None:
+                errors.append(f"event `{item_id}` {effect_type} effect is missing duration_seconds")
+            radius = effect.get("radius")
+            if radius is not None and (not is_number(radius) or radius <= 0):
+                errors.append(f"event `{item_id}` {effect_type} radius must be positive when present")
+            slow_multiplier = effect.get("slow_multiplier")
+            if slow_multiplier is not None and (
+                not is_number(slow_multiplier) or slow_multiplier < 0 or slow_multiplier > 1
+            ):
+                errors.append(f"event `{item_id}` {effect_type} slow_multiplier must be within 0..1")
+            damage_per_second = effect.get("damage_per_second")
+            if damage_per_second is not None and (
+                not is_number(damage_per_second) or damage_per_second < 0
+            ):
+                errors.append(f"event `{item_id}` {effect_type} damage_per_second must be non-negative")
+
+        if effect_type == "spawn_hazard":
+            placement = effect.get("placement")
+            if placement is not None and placement not in ALLOWED_EVENT_HAZARD_PLACEMENTS:
+                errors.append(f"event `{item_id}` spawn_hazard placement is invalid: {placement}")
+            min_distance = effect.get("min_distance")
+            max_distance = effect.get("max_distance")
+            if min_distance is not None and (not is_number(min_distance) or min_distance < 0):
+                errors.append(f"event `{item_id}` spawn_hazard min_distance must be non-negative")
+            if max_distance is not None and (not is_number(max_distance) or max_distance <= 0):
+                errors.append(f"event `{item_id}` spawn_hazard max_distance must be positive")
+            if is_number(min_distance) and is_number(max_distance) and max_distance < min_distance:
+                errors.append(f"event `{item_id}` spawn_hazard max_distance must be >= min_distance")
+            lane_width = effect.get("lane_width")
+            if lane_width is not None and (not is_number(lane_width) or lane_width < 0):
+                errors.append(f"event `{item_id}` spawn_hazard lane_width must be non-negative")
+
+        if effect_type == "route_echo_hazard":
+            hazard_duration_seconds = effect.get("hazard_duration_seconds")
+            if hazard_duration_seconds is None:
+                errors.append(f"event `{item_id}` route_echo_hazard effect is missing hazard_duration_seconds")
+            elif not is_number(hazard_duration_seconds) or hazard_duration_seconds <= 0:
+                errors.append(f"event `{item_id}` route_echo_hazard hazard_duration_seconds must be positive")
+            for field in ("sample_interval_seconds", "history_seconds", "trigger_radius"):
+                field_value = effect.get(field)
+                if field_value is not None and (not is_number(field_value) or field_value <= 0):
+                    errors.append(f"event `{item_id}` route_echo_hazard {field} must be positive when present")
+
+    return errors, warnings
+
+
 def validate_manifest(candidate_dir: Path) -> tuple[list[str], list[str]]:
     manifest_path = candidate_dir / "metadata" / "manifest.json"
     errors: list[str] = []
@@ -650,6 +800,25 @@ def validate_candidate(
                 errors.append(f"{path.relative_to(candidate_dir)} is invalid JSON: {error}")
                 continue
             item_errors, item_warnings = validate_map(path, payload, base_ids["maps"], allow_overrides)
+            errors.extend(item_errors)
+            warnings.extend(item_warnings)
+
+    category_dir = candidate_dir / "events"
+    if category_dir.exists():
+        for path in sorted(category_dir.glob("*.json")):
+            content_count += 1
+            try:
+                payload = load_json(path)
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                errors.append(f"{path.relative_to(candidate_dir)} is invalid JSON: {error}")
+                continue
+            item_errors, item_warnings = validate_event(
+                path,
+                payload,
+                base_ids,
+                candidate_ids,
+                allow_overrides,
+            )
             errors.extend(item_errors)
             warnings.extend(item_warnings)
 

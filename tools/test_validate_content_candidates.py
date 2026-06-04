@@ -199,6 +199,40 @@ def make_candidate(root: Path, *, duplicate_id: bool = False, runtime_integrated
             "music_theme": "bright_xylophone",
         },
     )
+    write_json(
+        candidate_dir / "events" / "route-echo-caramel-mark.json",
+        {
+            "id": "route-echo-caramel-mark",
+            "name": "焦糖回声印",
+            "version": 1,
+            "rarity": "rare",
+            "tags": ["event", "hazard", "movement", "route-counter"],
+            "description": "在玩家反复经过的旧路线附近留下短暂焦糖印，提醒玩家改变路线。",
+            "trigger": {
+                "type": "time_window",
+                "start_second": 190,
+                "end_second": 245,
+                "chance": 0.08,
+            },
+            "effects": [
+                {
+                    "type": "route_echo_hazard",
+                    "value": 2,
+                    "duration_seconds": 10,
+                    "hazard_duration_seconds": 3,
+                    "sample_interval_seconds": 2,
+                    "history_seconds": 18,
+                    "trigger_radius": 96,
+                    "radius": 52,
+                    "slow_multiplier": 0.8,
+                    "damage_per_second": 0,
+                }
+            ],
+            "visual_description": "半透明焦糖圈沿旧路线亮起，像被糖浆记住的脚印。",
+            "sfx_description": "轻微焦糖冒泡声和柔和提示铃声。",
+            "unlock": {"type": "discover"},
+        },
+    )
     return candidate_dir
 
 
@@ -211,7 +245,7 @@ class ContentCandidateValidatorTests(unittest.TestCase):
 
             self.assertEqual(report["decision"], "content_candidates_valid")
             self.assertEqual(report["candidate_count"], 1)
-            self.assertEqual(report["content_count"], 6)
+            self.assertEqual(report["content_count"], 7)
 
     def test_duplicate_base_id_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
