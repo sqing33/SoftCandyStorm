@@ -1,0 +1,56 @@
+{
+  "report_version": 1,
+  "decision": "repair_diagnostic_no_candidate",
+  "base_content_dir": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "map_id": "frosting-grassland",
+  "matrix": {
+    "seconds": 300,
+    "tick_rate": 30,
+    "seed_start": 72000,
+    "seeds": 10,
+    "bots": "all"
+  },
+  "probes": [
+    {
+      "id": "forward_lane_event_a",
+      "content_dir": "/private/tmp/soft_candy/v53_probe_forward_lane_event_a",
+      "summary": "/private/tmp/soft_candy/v53_probe_forward_lane_event_a_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.1,
+        "coward": 0.2,
+        "greedy": 0.3,
+        "kite": 0.7,
+        "tank": 0.2,
+        "boss-hunter": 0.6,
+        "zone-control": 0.2,
+        "route": 0.4
+      },
+      "decision": "rejected_route_underrepair_and_mid_skill_side_effects"
+    },
+    {
+      "id": "forward_lane_event_b_mild",
+      "content_dir": "/private/tmp/soft_candy/v53_probe_forward_lane_event_b_mild",
+      "summary": "/private/tmp/soft_candy/v53_probe_forward_lane_event_b_mild_matrix_300s_10seed_72000/summary.md",
+      "bot_results": {
+        "idle": 0.0,
+        "random": 0.1,
+        "coward": 0.3,
+        "greedy": 0.2,
+        "kite": 0.6,
+        "tank": 0.2,
+        "boss-hunter": 0.6,
+        "zone-control": 0.2,
+        "route": 0.4
+      },
+      "decision": "rejected_route_underrepair_and_mid_skill_side_effects"
+    }
+  ],
+  "findings": [
+    "The new player_forward_lane hazard placement is schema-valid and GameCore-valid.",
+    "Direct Boss-entry forward-lane hazards did not lower RouteBot below 35%.",
+    "The same event shape lowered TankBot, ZoneControlBot, or GreedyXpBot outside target intervals.",
+    "No v53 probe should be promoted to generated_candidate_patches, generated_candidates, simulated_candidates, playtest_candidates, accepted_content, or Runtime content."
+  ],
+  "recommended_next_step": "Export and compare RouteBot winning seed trajectories around 200-240 seconds before adding more hazard content."
+}

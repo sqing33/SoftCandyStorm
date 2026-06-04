@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260604_003",
+  "category": "balance",
+  "content_id": "2026-06-04_demo_buildcraft_repair_v53_forward_lane_diagnostics",
+  "seed": "72000-72009",
+  "bot": "all",
+  "time_seconds": 300.0,
+  "symptom": "v53 temporary probes using the new player_forward_lane spawn_hazard placement did not produce a promotable content repair. Probe A kept RouteBot at 40.0% while pushing TankBot and ZoneControlBot to 20.0%. Probe B also kept RouteBot at 40.0% while pushing GreedyXpBot, TankBot, and ZoneControlBot to 20.0%.",
+  "root_cause": "A forward-lane hazard placed at Boss entry acts as broad path pressure rather than a fixed-route-specific correction. It affects normal tank, control, and XP-seeking policies that also pass through or recover through the Boss-entry lane, while the remaining RouteBot winning seeds can still survive or recover after the event.",
+  "fix": "Do not promote v53 probes to generated_candidate_patches, generated_candidates, simulated_candidates, playtest_candidates, accepted_content, or Runtime content. Keep the GameCore forward-lane placement as a general content capability, but stop using it as the immediate frosting-grassland RouteBot repair. Next repair should first export 200-240 second RouteBot winning and failing trajectories, then design a more specific repeated-route or seed-state intervention.",
+  "validation": "Evidence is summarized in harness/reports/2026-06-04_demo_buildcraft_repair_v53_forward_lane_diagnostics_001/summary.md and report.json. Temporary matrix reports remain under /private/tmp/soft_candy/v53_probe_forward_lane_event_*_matrix_300s_10seed_72000. The failure case structure should be validated with python3 tools/validate_failure_cases.py harness/failed_cases.",
+  "diagnostics": [
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v53_forward_lane_diagnostics_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v53_forward_lane_diagnostics_001/report.json",
+    "/private/tmp/soft_candy/v53_probe_forward_lane_event_a_matrix_300s_10seed_72000/summary.md",
+    "/private/tmp/soft_candy/v53_probe_forward_lane_event_b_mild_matrix_300s_10seed_72000/summary.md"
+  ]
+}
