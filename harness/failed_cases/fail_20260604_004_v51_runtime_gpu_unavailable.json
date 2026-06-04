@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260604_004",
+  "category": "runtime_environment",
+  "content_id": "2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "seed": 55101,
+  "bot": "human-quickplay-launcher",
+  "time_seconds": 20.0,
+  "symptom": "The v51 quick-play Runtime launcher compiled game_runtime successfully but Bevy panicked during startup with `Unable to find a GPU! Make sure you have installed required drivers!` before writing the quick-play report.",
+  "root_cause": "The current command execution environment does not expose a usable GPU to Bevy/WGPU. Headless GameCore validation and simulation both load the v51 content pack successfully, so the observed failure is a GUI Runtime environment blocker rather than a generated-content schema or GameCore loading failure.",
+  "fix": "Keep v51 in generated_candidates and do not promote it based on this smoke. For local human quick play, rerun `python3 harness/playtest/play_current_candidate.py --seconds 20 --capture-interval 2` from a GPU-capable desktop session. Continue using headless Harness commands for content loading and balance checks in this environment.",
+  "validation": "Runtime smoke evidence is recorded in harness/reports/2026-06-04_demo_buildcraft_repair_v51_runtime_smoke_001/summary.md and report.json. Headless validation passed with `game_harness validate-content` status ok and a 20 second `game_harness simulate` run reached duration_reached.",
+  "diagnostics": [
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_runtime_smoke_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_runtime_smoke_001/report.json",
+    "harness/playtest/play_current_candidate.py",
+    "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack"
+  ]
+}

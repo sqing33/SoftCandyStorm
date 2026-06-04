@@ -1,0 +1,58 @@
+{
+  "report_version": 1,
+  "candidate_id": "2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "candidate_label": "v51",
+  "content_hash": "fnv1a64:50bd536bd0669e2b",
+  "content_dir": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "decision": "runtime_smoke_blocked_gpu_unavailable_headless_content_valid",
+  "runtime_quick_play": {
+    "command": "python3 harness/playtest/play_current_candidate.py --seconds 20 --capture-interval 2",
+    "runtime_command": "cargo run -p game_runtime -- --content-dir harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack --character-id jar-keeper --map-id frosting-grassland --seed 55101 --seconds 20 --player-skill quickplay --playtest-report harness/telemetry/local/v51_quick_play_default.json --capture-interval 2",
+    "exit_code": 101,
+    "compiled": true,
+    "report_written": false,
+    "failure": {
+      "kind": "gpu_unavailable",
+      "message": "Unable to find a GPU! Make sure you have installed required drivers!",
+      "source": "bevy_render renderer startup"
+    }
+  },
+  "headless_validation": {
+    "validate_content": {
+      "command": "cargo run -p game_harness -- validate-content --content-dir harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+      "status": "ok",
+      "object_count": 91,
+      "warnings": []
+    },
+    "simulate": {
+      "command": "cargo run -p game_harness -- simulate --content-dir harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack --map-id frosting-grassland --seconds 20 --tick-rate 30 --seed 55101 --bot kite",
+      "seed": 55101,
+      "bot": "kite",
+      "map_id": "frosting-grassland",
+      "tick_rate": 30,
+      "duration_seconds": 20.0,
+      "terminal": "victory",
+      "reason": "duration_reached",
+      "kills": 13,
+      "level": 1,
+      "xp_collected": 22.0,
+      "xp_dropped": 26.0,
+      "damage_dealt_by_weapon": 378.0,
+      "damage_taken": 0.0,
+      "max_enemy_count": 5,
+      "max_projectile_count": 5,
+      "upgrade_choices": []
+    }
+  },
+  "failure_case": "harness/failed_cases/fail_20260604_004_v51_runtime_gpu_unavailable.json",
+  "next_actions": [
+    "Rerun the quick-play Runtime command from a GPU-capable desktop session before using it as human playtest evidence.",
+    "Keep using headless Harness validation and simulation for generated-content checks in this environment.",
+    "Do not promote v51 into content/base_demo, playtest_candidates, accepted_content, or Runtime official content based on this smoke."
+  ],
+  "limitations": [
+    "This smoke proves that the current environment blocks GUI Runtime startup; it does not judge fun or human readability.",
+    "The headless checks prove content loading and short simulation only, not Bevy rendering, input, audio, manual playtest, or acceptance.",
+    "v51 remains a generated candidate."
+  ]
+}
