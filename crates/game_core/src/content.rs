@@ -1886,6 +1886,7 @@ impl ContentPack {
                         "heal",
                         "spawn_enemy",
                         "spawn_hazard",
+                        "route_echo_hazard",
                         "offer_upgrade",
                     ],
                     &mut errors,
@@ -1970,6 +1971,72 @@ impl ContentPack {
                                 event.id, slow_multiplier
                             ));
                         }
+                    }
+                }
+                if effect.effect_type == "route_echo_hazard" {
+                    validate_positive("event.effect.value", effect.value, &mut errors);
+                    if effect.duration_seconds.is_none() {
+                        errors.push(format!(
+                            "event `{}` route_echo_hazard effect is missing duration_seconds",
+                            event.id
+                        ));
+                    }
+                    if effect.hazard_duration_seconds.is_none() {
+                        errors.push(format!(
+                            "event `{}` route_echo_hazard effect is missing hazard_duration_seconds",
+                            event.id
+                        ));
+                    }
+                    if let Some(hazard_duration_seconds) = effect.hazard_duration_seconds {
+                        validate_positive(
+                            "event.effect.hazard_duration_seconds",
+                            hazard_duration_seconds,
+                            &mut errors,
+                        );
+                    }
+                    if let Some(radius) = effect.radius {
+                        validate_positive("event.effect.radius", radius, &mut errors);
+                    }
+                    if let Some(slow_multiplier) = effect.slow_multiplier {
+                        validate_finite(
+                            "event.effect.slow_multiplier",
+                            slow_multiplier,
+                            &mut errors,
+                        );
+                        if !(0.0..=1.0).contains(&slow_multiplier) {
+                            errors.push(format!(
+                                "event `{}` has slow_multiplier outside 0..=1: {}",
+                                event.id, slow_multiplier
+                            ));
+                        }
+                    }
+                    if let Some(sample_interval_seconds) = effect.sample_interval_seconds {
+                        validate_positive(
+                            "event.effect.sample_interval_seconds",
+                            sample_interval_seconds,
+                            &mut errors,
+                        );
+                    }
+                    if let Some(history_seconds) = effect.history_seconds {
+                        validate_positive(
+                            "event.effect.history_seconds",
+                            history_seconds,
+                            &mut errors,
+                        );
+                    }
+                    if let Some(trigger_radius) = effect.trigger_radius {
+                        validate_positive(
+                            "event.effect.trigger_radius",
+                            trigger_radius,
+                            &mut errors,
+                        );
+                    }
+                    if let Some(damage_per_second) = effect.damage_per_second {
+                        validate_non_negative_finite(
+                            "event.effect.damage_per_second",
+                            damage_per_second,
+                            &mut errors,
+                        );
                     }
                 }
             }
@@ -2432,6 +2499,11 @@ fn event_effect(
         min_distance: None,
         max_distance: None,
         lane_width: None,
+        sample_interval_seconds: None,
+        history_seconds: None,
+        trigger_radius: None,
+        hazard_duration_seconds: None,
+        damage_per_second: None,
     }
 }
 
@@ -3408,6 +3480,16 @@ pub struct EventEffectDefinition {
     pub max_distance: Option<f32>,
     #[serde(default)]
     pub lane_width: Option<f32>,
+    #[serde(default)]
+    pub sample_interval_seconds: Option<f32>,
+    #[serde(default)]
+    pub history_seconds: Option<f32>,
+    #[serde(default)]
+    pub trigger_radius: Option<f32>,
+    #[serde(default)]
+    pub hazard_duration_seconds: Option<f32>,
+    #[serde(default)]
+    pub damage_per_second: Option<f32>,
 }
 
 fn load_category<T>(path: &Path) -> Result<BTreeMap<String, T>, ContentError>

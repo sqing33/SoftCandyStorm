@@ -28,6 +28,8 @@ const HAZARD_DAMAGE_CAP_PER_SECOND: f32 = 42.0;
 const MAX_VISIBLE_ENEMIES: usize = 32;
 const MAX_VISIBLE_PICKUPS: usize = 16;
 const MAX_VISIBLE_PROJECTILES: usize = 48;
+const PLAYER_TRAIL_HISTORY_SECONDS: f32 = 90.0;
+const PLAYER_TRAIL_SAMPLE_INTERVAL_SECONDS: f32 = 0.5;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -404,6 +406,9 @@ pub struct GameCore {
     evolutions: Vec<EvolutionState>,
     evaluated_content_events: BTreeSet<String>,
     active_event_effects: Vec<ActiveEventEffect>,
+    active_route_echo_hazards: Vec<ActiveRouteEchoHazard>,
+    player_position_history: Vec<PlayerPositionSample>,
+    player_position_sample_timer: f32,
     player_slow_effects: Vec<ActiveSlowEffect>,
     enemies: Vec<Enemy>,
     hazards: Vec<Hazard>,
@@ -475,6 +480,7 @@ impl GameCore {
             })?;
             apply_passive_definition(&mut player, &mut passives, &passive_id, definition);
         }
+        let initial_player_position = player.position;
 
         Ok(Self {
             config,
@@ -491,6 +497,12 @@ impl GameCore {
             evolutions: Vec::new(),
             evaluated_content_events: BTreeSet::new(),
             active_event_effects: Vec::new(),
+            active_route_echo_hazards: Vec::new(),
+            player_position_history: vec![PlayerPositionSample {
+                time_seconds: 0.0,
+                position: initial_player_position,
+            }],
+            player_position_sample_timer: 0.0,
             player_slow_effects: Vec::new(),
             enemies: Vec::new(),
             hazards: Vec::new(),
@@ -576,6 +588,8 @@ impl GameCore {
         self.update_player_regen(dt_seconds);
         self.update_hazards(dt_seconds, &mut events, &mut reward_hint);
         self.update_player_movement(action.movement, dt_seconds);
+        self.record_player_position_history(dt_seconds);
+        self.update_route_echo_hazards(dt_seconds);
         self.update_wave_spawns(dt_seconds, &mut events);
         self.update_enemy_behavior(dt_seconds, &mut events);
         self.update_weapon_cooldowns(dt_seconds, &mut events);
@@ -777,6 +791,21 @@ impl GameCore {
             .clamp(-self.map.height * 0.5, self.map.height * 0.5);
     }
 
+    fn record_player_position_history(&mut self, dt: f32) {
+        self.player_position_sample_timer -= dt;
+        if self.player_position_sample_timer <= 0.0 {
+            self.player_position_history.push(PlayerPositionSample {
+                time_seconds: self.time_seconds,
+                position: self.player.position,
+            });
+            self.player_position_sample_timer += PLAYER_TRAIL_SAMPLE_INTERVAL_SECONDS;
+        }
+
+        let min_time = self.time_seconds - PLAYER_TRAIL_HISTORY_SECONDS;
+        self.player_position_history
+            .retain(|sample| sample.time_seconds >= min_time);
+    }
+
     fn active_player_slow_multiplier(&self) -> f32 {
         self.player_slow_effects
             .iter()
@@ -790,6 +819,13 @@ impl GameCore {
             effect.remaining_seconds -= dt;
         }
         self.active_event_effects
+            .retain(|effect| effect.remaining_seconds > 0.0);
+
+        for echo in &mut self.active_route_echo_hazards {
+            echo.remaining_seconds -= dt;
+            echo.next_spawn_seconds -= dt;
+        }
+        self.active_route_echo_hazards
             .retain(|effect| effect.remaining_seconds > 0.0);
 
         let event_ids = self.content.events.keys().cloned().collect::<Vec<_>>();
@@ -860,9 +896,81 @@ impl GameCore {
                 "spawn_hazard" => {
                     self.spawn_event_hazards(effect);
                 }
+                "route_echo_hazard" => {
+                    self.active_route_echo_hazards
+                        .push(ActiveRouteEchoHazard::from_effect(effect));
+                }
                 _ => {}
             }
         }
+    }
+
+    fn update_route_echo_hazards(&mut self, _dt: f32) {
+        let mut hazard_specs = Vec::new();
+        for echo in &mut self.active_route_echo_hazards {
+            while echo.next_spawn_seconds <= 0.0 && hazard_specs.len() < 16 {
+                hazard_specs.push(*echo);
+                echo.next_spawn_seconds += echo.sample_interval_seconds;
+            }
+        }
+
+        for spec in hazard_specs {
+            let positions = self.route_echo_positions(
+                spec.history_seconds,
+                spec.trigger_radius,
+                spec.spawn_count,
+            );
+            for position in positions {
+                self.hazards.push(Hazard {
+                    position,
+                    radius: spec.radius,
+                    remaining_seconds: spec.hazard_duration_seconds,
+                    slow_multiplier: spec.slow_multiplier,
+                    damage_per_second: spec.damage_per_second,
+                });
+            }
+        }
+    }
+
+    fn route_echo_positions(
+        &self,
+        history_seconds: f32,
+        trigger_radius: f32,
+        count: u32,
+    ) -> Vec<Vec2> {
+        let mut positions = Vec::new();
+        for index in 0..count {
+            let offset_seconds = index as f32 * history_seconds.max(0.5) * 0.35;
+            if let Some(position) =
+                self.route_echo_position(history_seconds + offset_seconds, trigger_radius)
+            {
+                if positions
+                    .iter()
+                    .all(|existing: &Vec2| existing.distance(position) > PLAYER_RADIUS)
+                {
+                    positions.push(position);
+                }
+            }
+        }
+        positions
+    }
+
+    fn route_echo_position(&self, history_seconds: f32, trigger_radius: f32) -> Option<Vec2> {
+        let target_time = self.time_seconds - history_seconds;
+        let sample = self.player_position_history.iter().min_by(|left, right| {
+            let left_delta = (left.time_seconds - target_time).abs();
+            let right_delta = (right.time_seconds - target_time).abs();
+            left_delta
+                .partial_cmp(&right_delta)
+                .unwrap_or(Ordering::Equal)
+        })?;
+        if (sample.time_seconds - target_time).abs() > PLAYER_TRAIL_SAMPLE_INTERVAL_SECONDS * 1.5 {
+            return None;
+        }
+        if self.player.position.distance(sample.position) > trigger_radius {
+            return None;
+        }
+        Some(sample.position)
     }
 
     fn offer_event_upgrade_options(&mut self, events: &mut Vec<GameEvent>) {
@@ -2322,6 +2430,43 @@ struct ActiveEventEffect {
     effect_type: String,
     value: f32,
     remaining_seconds: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct PlayerPositionSample {
+    time_seconds: f32,
+    position: Vec2,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ActiveRouteEchoHazard {
+    remaining_seconds: f32,
+    next_spawn_seconds: f32,
+    spawn_count: u32,
+    sample_interval_seconds: f32,
+    history_seconds: f32,
+    trigger_radius: f32,
+    hazard_duration_seconds: f32,
+    radius: f32,
+    slow_multiplier: f32,
+    damage_per_second: f32,
+}
+
+impl ActiveRouteEchoHazard {
+    fn from_effect(effect: &content::EventEffectDefinition) -> Self {
+        Self {
+            remaining_seconds: effect.duration_seconds.unwrap_or(8.0).max(0.1),
+            next_spawn_seconds: 0.0,
+            spawn_count: effect.value.round().clamp(1.0, 4.0) as u32,
+            sample_interval_seconds: effect.sample_interval_seconds.unwrap_or(2.0).max(0.1),
+            history_seconds: effect.history_seconds.unwrap_or(18.0).max(0.5),
+            trigger_radius: effect.trigger_radius.unwrap_or(96.0).max(1.0),
+            hazard_duration_seconds: effect.hazard_duration_seconds.unwrap_or(3.0).max(0.1),
+            radius: effect.radius.unwrap_or(56.0).max(4.0),
+            slow_multiplier: effect.slow_multiplier.unwrap_or(0.78).clamp(0.2, 1.0),
+            damage_per_second: effect.damage_per_second.unwrap_or(0.0).max(0.0),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -3948,6 +4093,11 @@ mod tests {
                 min_distance: None,
                 max_distance: None,
                 lane_width: None,
+                sample_interval_seconds: None,
+                history_seconds: None,
+                trigger_radius: None,
+                hazard_duration_seconds: None,
+                damage_per_second: None,
             },
             content::EventEffectDefinition {
                 effect_type: "spawn_enemy".to_string(),
@@ -3960,6 +4110,11 @@ mod tests {
                 min_distance: None,
                 max_distance: None,
                 lane_width: None,
+                sample_interval_seconds: None,
+                history_seconds: None,
+                trigger_radius: None,
+                hazard_duration_seconds: None,
+                damage_per_second: None,
             },
             content::EventEffectDefinition {
                 effect_type: "spawn_hazard".to_string(),
@@ -3972,6 +4127,11 @@ mod tests {
                 min_distance: None,
                 max_distance: None,
                 lane_width: None,
+                sample_interval_seconds: None,
+                history_seconds: None,
+                trigger_radius: None,
+                hazard_duration_seconds: None,
+                damage_per_second: None,
             },
         ];
         core.content.events.insert(event.id.clone(), event);
@@ -4014,6 +4174,11 @@ mod tests {
             min_distance: Some(60.0),
             max_distance: Some(120.0),
             lane_width: Some(30.0),
+            sample_interval_seconds: None,
+            history_seconds: None,
+            trigger_radius: None,
+            hazard_duration_seconds: None,
+            damage_per_second: None,
         }];
         core.content.events.insert(event.id.clone(), event);
 
@@ -4025,5 +4190,70 @@ mod tests {
             .hazards
             .iter()
             .any(|hazard| hazard.position.y.abs() >= 29.0));
+    }
+
+    #[test]
+    fn content_event_can_spawn_route_echo_hazards() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.time_seconds = 20.0;
+        core.player.position = Vec2::ZERO;
+        core.player_position_history = vec![
+            PlayerPositionSample {
+                time_seconds: 10.0,
+                position: Vec2::ZERO,
+            },
+            PlayerPositionSample {
+                time_seconds: 6.5,
+                position: Vec2::new(48.0, 0.0),
+            },
+        ];
+
+        let mut event = core
+            .content
+            .events
+            .get("caramel-quake")
+            .expect("base demo event should exist")
+            .clone();
+        event.id = "test-route-echo".to_string();
+        event.trigger.start_second = Some(core.time_seconds);
+        event.trigger.end_second = Some(core.time_seconds + 1.0);
+        event.trigger.chance = Some(1.0);
+        event.effects = vec![content::EventEffectDefinition {
+            effect_type: "route_echo_hazard".to_string(),
+            value: 2.0,
+            duration_seconds: Some(2.0),
+            enemy_id: None,
+            radius: Some(42.0),
+            slow_multiplier: Some(0.72),
+            placement: None,
+            min_distance: None,
+            max_distance: None,
+            lane_width: None,
+            sample_interval_seconds: Some(0.5),
+            history_seconds: Some(10.0),
+            trigger_radius: Some(90.0),
+            hazard_duration_seconds: Some(3.0),
+            damage_per_second: Some(0.0),
+        }];
+        core.content.events.insert(event.id.clone(), event);
+
+        let hazards_before = core.hazards.len();
+        let result = core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+        let spawned_hazards = &core.hazards[hazards_before..];
+
+        assert!(result
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::ContentEventTriggered { event_id } if event_id == "test-route-echo")));
+        assert!(!spawned_hazards.is_empty());
+        assert!(spawned_hazards
+            .iter()
+            .any(|hazard| hazard.position.distance(Vec2::ZERO) <= 18.0));
+        assert!(spawned_hazards
+            .iter()
+            .all(|hazard| (hazard.radius - 42.0).abs() < f32::EPSILON));
+        assert!(spawned_hazards
+            .iter()
+            .all(|hazard| (hazard.slow_multiplier - 0.72).abs() < f32::EPSILON));
     }
 }
