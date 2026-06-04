@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260604_005",
+  "category": "balance",
+  "content_id": "2026-06-04_demo_buildcraft_repair_v54_full_pack",
+  "seed": "72000-72009",
+  "bot": "RouteBot",
+  "time_seconds": 300.0,
+  "symptom": "v54 content repair passes partial candidate validation, materialized-pack preflight, static budget validation, GameCore validate-content, and isolated game_harness validate-candidates. In the 300s / 10-seed all-Bot matrix on seeds 72000-72009, IdleBot, RandomBot, CowardBot, GreedyXpBot, KiteBot, TankBot, BossHunterBot, and ZoneControlBot remain inside target intervals. RouteBot remains high at 40.0% against the low-skill 10%-35% target, matching the v51 residual win rate.",
+  "root_cause": "v54 only splits the v51 255-300 second terminal wave into 255-270 and 270-300 windows, then adds a small 270-300 second pressure increase with existing spicy-gummy and a slightly faster spawn interval. This stays inside the Boss-window static pressure budget and does not disturb normal Bot targets, but it does not affect the four RouteBot winning seeds. The remaining fixed-route exploit survives because the route has already stabilized before the terminal window, so late enemy-pool reshaping without placement or route-state logic is too weak.",
+  "fix": "Do not promote v54 to simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content. Stop pursuing terminal-only enemy-pool micro-tuning as the next primary repair direction. The next repair should use route trajectory evidence from the 200-240 second stabilization window and target repeated safe-lane behavior before the winning RouteBot seeds enter the final 240-300 second coast, while preserving RandomBot, GreedyXpBot, TankBot, and ZoneControlBot gates.",
+  "validation": "Evidence is recorded in harness/reports/2026-06-04_demo_buildcraft_repair_v54_patch_validation_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v54_materialize_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v54_preflight_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v54_static_budget_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v54_validate_candidates_001/summary.md, and harness/reports/2026-06-04_demo_buildcraft_repair_v54_matrix_300s_10seed_72000_001/summary.md. The failure case structure was validated with python3 tools/validate_failure_cases.py harness/failed_cases.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-04_demo_buildcraft_repair_v54_candidates/README.md",
+    "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v54_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v54_patch_validation_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v54_materialize_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v54_preflight_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v54_static_budget_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v54_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v54_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v54_matrix_300s_10seed_72000_001/metrics.json"
+  ]
+}

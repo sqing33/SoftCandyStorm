@@ -1,0 +1,63 @@
+{
+  "batch_id": "2026-06-04_demo_buildcraft_repair_v54_candidates",
+  "generated_at": "2026-06-04",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 v54 终局波次修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo buildcraft route terminal repair v54",
+    "goal": "在 v51 基础上只修复 frosting-grassland 240-300 秒终局收尾压力不足，降低固定路线 Bot 残留胜率，同时避免 v52/v53 的 Boss 入场与路线事件副作用。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with overrides",
+      "materialize full content pack with overrides",
+      "materialized pack preflight",
+      "static balance budget review",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix 300s 10 seed",
+      "playable content coverage audit after matrix pass",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "RouteBot 240-300 秒终局收尾压力修复，只调整 270-300 秒敌人组合和节奏。"
+    }
+  ],
+  "diagnostic_evidence": {
+    "baseline_candidate": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+    "baseline_matrix": "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md",
+    "terminal_window_diagnostics": "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_terminal_window_diagnostics_001/summary.md",
+    "known_failed_repairs": [
+      "harness/failed_cases/fail_20260604_002_demo_buildcraft_repair_v52_route_mechanism_side_effects.json",
+      "harness/failed_cases/fail_20260604_003_demo_buildcraft_repair_v53_forward_lane_underrepair.json"
+    ]
+  },
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v51 full pack 为基线。",
+      "本批次只修改 frosting-grassland-standard 的 270-300 秒终局波次形状。",
+      "本批次不新增敌人、不新增事件、不修改 Boss 入场、不修改地图尺寸或玩家构筑内容。",
+      "本批次不调整门禁阈值；若 Bot 矩阵仍失败，应记录 failure case 并继续 repair。"
+    ]
+  }
+}
