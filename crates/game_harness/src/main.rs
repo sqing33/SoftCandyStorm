@@ -1036,6 +1036,7 @@ struct BotTrajectorySampleRecord {
     kills: u32,
     action: usize,
     movement: [f32; 2],
+    diagnostics: GymSnapshotDiagnostics,
     observation: Vec<f32>,
 }
 
@@ -1053,6 +1054,7 @@ struct BotTrajectoryUpgradeSampleRecord {
     upgrade_options: Vec<String>,
     chosen_index: Option<usize>,
     chosen_upgrade_id: Option<String>,
+    diagnostics: GymSnapshotDiagnostics,
     observation: Vec<f32>,
 }
 
@@ -2623,6 +2625,7 @@ fn export_bot_trajectory_episode<W: Write>(
                         kills: snapshot.metrics_partial.kills,
                         action: gym_discrete_action_index(action.movement),
                         movement: [action.movement.x, action.movement.y],
+                        diagnostics: gym_snapshot_diagnostics(&snapshot),
                         observation,
                     },
                 )?;
@@ -2655,6 +2658,7 @@ fn export_bot_trajectory_episode<W: Write>(
                         upgrade_options,
                         chosen_index,
                         chosen_upgrade_id,
+                        diagnostics: gym_snapshot_diagnostics(&snapshot),
                         observation,
                     },
                 )?;
@@ -7250,17 +7254,17 @@ fn escape_json(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        content_hash_for_dir, evaluate_manual_acceptance_review_value, gym_discrete_action_index,
-        gym_discrete_movement, gym_observation, gym_observation_len,
+        content_hash_for_dir, evaluate_manual_acceptance_review_value, export_bot_trajectories,
+        gym_discrete_action_index, gym_discrete_movement, gym_observation, gym_observation_len,
         gym_opening_boundary_escape_action_reward, gym_opening_corner_pressure_risk,
         gym_opening_corner_risk_delta_reward, gym_opening_edge_pressure_risk,
         gym_opening_edge_risk_delta_reward, gym_reward_breakdown, gym_reward_profile_phase_scale,
         gym_route_recovery_action_reward, gym_safety_delta_reward, gym_safety_risk_score,
-        gym_snapshot_diagnostics, movement_changed, GymBridgeRequest, GymRewardProfile,
-        GymRewardShaping, ManualAcceptanceDecision, GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN,
-        GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT, GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT,
-        GYM_REWARD_ROUTE_RECOVERY_WEIGHT, GYM_REWARD_SAFETY_DELTA_WEIGHT,
-        REQUIRED_PLAYTEST_RUN_IDS,
+        gym_snapshot_diagnostics, load_content_or_exit, movement_changed, BotTrajectoryExportArgs,
+        GymBridgeRequest, GymRewardProfile, GymRewardShaping, ManualAcceptanceDecision,
+        GYM_OBSERVATION_V1_LEN, GYM_OBSERVATION_V2_LEN, GYM_REWARD_OPENING_CORNER_DELTA_WEIGHT,
+        GYM_REWARD_OPENING_EDGE_DELTA_WEIGHT, GYM_REWARD_ROUTE_RECOVERY_WEIGHT,
+        GYM_REWARD_SAFETY_DELTA_WEIGHT, REQUIRED_PLAYTEST_RUN_IDS,
     };
     use game_core::{
         BossSnapshot, EnemyBehavior, EnemySnapshot, GameCore, HazardSnapshot, RewardHint,
@@ -7268,6 +7272,7 @@ mod tests {
     };
     use serde_json::{json, Value};
     use std::fs;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn movement_changed_keeps_strict_replay_precision() {
@@ -8349,6 +8354,54 @@ mod tests {
         assert!(diagnostics.enemy_pressure_risk > 0.0);
         assert!(diagnostics.low_health_risk > 0.0);
         assert!(diagnostics.safety_risk_score > 0.0);
+    }
+
+    #[test]
+    fn exported_bot_trajectory_samples_include_named_diagnostics() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-trajectory-diagnostics-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let out_file = root.join("trajectories.jsonl");
+        let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(Path::parent)
+            .expect("repo root")
+            .to_path_buf();
+        let content_dir = repo_root.join("content/base_demo");
+        let content = load_content_or_exit(Some(&content_dir));
+        let args = BotTrajectoryExportArgs {
+            seed_start: 12_345,
+            seeds: 1,
+            map_id: "frosting-grassland".to_string(),
+            seconds: 2.0,
+            tick_rate: 30,
+            bot: bot_policies::BotKind::Kite,
+            content_dir: Some(content_dir),
+            out_file: out_file.clone(),
+            observation_version: 2,
+            sample_stride: 30,
+            sample_start_seconds: 0.0,
+            sample_end_seconds: Some(1.5),
+            include_upgrade_samples: false,
+        };
+
+        let report = export_bot_trajectories(&content, &args).expect("trajectory export succeeds");
+        assert!(report.sample_count > 0);
+
+        let text = fs::read_to_string(&out_file).unwrap();
+        let sample = text
+            .lines()
+            .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+            .find(|record| record.get("record_type") == Some(&json!("sample")))
+            .expect("sample record exists");
+
+        assert!(sample.get("diagnostics").is_some());
+        assert!(sample["diagnostics"].get("boundary").is_some());
+        assert!(sample["diagnostics"].get("safety_risk_score").is_some());
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]

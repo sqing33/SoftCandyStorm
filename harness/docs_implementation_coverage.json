@@ -170,7 +170,7 @@
       "doc_id": "04",
       "doc_path": "docs/04_内容系统与素材库.md",
       "status": "partial",
-      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成人工设计审查、9 局试玩、人工审查表入口、可玩内容导览、候选快速试玩入口、quick-play 客观摘要、角色 / 地图巡游入口、内容巡游客观摘要和人工试玩客观摘要刷新链路；当前 v51 已成为最新可玩内容候选，提供 5 角色、6 地图、17 武器、17 进化、12 敌人和 6 Boss 的可触达内容表面，已补齐当前候选入口、可玩内容导览、覆盖审计、设计审查包和 Runtime smoke 阻塞记录。正式 accepted_content 仍受真人设计审查、人工试玩、最终接受和 lockfile 门禁限制。",
+      "summary": "base_demo 与 generated / simulated candidate 已覆盖首批角色、武器、被动、进化、敌人、Boss、地图和波次名录；Phase 4 full pack 已通过 5 seed 候选仿真进入 simulated_candidates，20 seed 发布探针暴露的 GreedyXpBot / TankBot 中技能过强已通过 Bot 策略校准复测解除；Demo wave identity full pack 已补强 6 张地图的候选波次身份并通过候选预检、静态预算、Schema contract、GameCore 内容加载和隔离 validate-candidates；Demo buildcraft full pack 已补强 5 条武器 / 被动 / 进化构筑路线并通过同级预检，repair v25 已通过静态链路、10 seed all Bot 扩样和 90 条 Replay 回归，并已生成人工设计审查、9 局试玩、人工审查表入口、可玩内容导览、候选快速试玩入口、quick-play 客观摘要、角色 / 地图巡游入口、内容巡游客观摘要和人工试玩客观摘要刷新链路；当前 v51 已成为最新可玩内容候选，提供 5 角色、6 地图、17 武器、17 进化、12 敌人和 6 Boss 的可触达内容表面，已补齐当前候选入口、可玩内容导览、覆盖审计、设计审查包、Runtime smoke 阻塞记录和 RouteBot 窗口诊断。正式 accepted_content 仍受真人设计审查、人工试玩、最终接受和 lockfile 门禁限制。",
       "coverage": [
         {
           "id": "phase4-roster-content",
@@ -463,7 +463,11 @@
             "harness/playtest/drafts/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_review_draft.json",
             "harness/reports/2026-06-04_demo_buildcraft_repair_v51_human_review_worksheet_001/worksheet.md",
             "harness/reports/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_status_001/summary.md",
-            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_validation_001/summary.md"
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_validation_001/summary.md",
+            "harness/content_review/analyze_route_bot_trajectory_window.py",
+            "harness/content_review/test_analyze_route_bot_trajectory_window.py",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/report.json",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/summary.md"
           ],
           "gaps": [
             "Phase 4 full pack 已通过当前会话 Harness validate-candidates、5 seed / 600 秒 all Bot simulate-candidates 与 45 条代表 Replay 回归，进入 simulated_candidates；20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0% 过强，现已通过 Bot 策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot x 20 seed 全部 gate pass。",
@@ -490,7 +494,7 @@
             "Demo buildcraft repair v23 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates 和 300 秒 / 3 seed / all Bot 烟测；但 300 秒 / 10 seed / all Bot 扩样仍失败，Greedy 60.0% 高于目标上限，因此由 v24 继续修复，且不得进入仓库内 validated_candidates / simulated_candidates、playtest_candidates、accepted_content 或 Runtime 正式内容。",
             "Demo buildcraft repair v24 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates 和 300 秒 / 3 seed / all Bot 烟测；但 300 秒 / 10 seed / all Bot 扩样仍失败，Greedy 60.0% 高于目标上限，因此已由 v25 继续修复，且不得进入仓库内 validated_candidates / simulated_candidates、playtest_candidates、accepted_content 或 Runtime 正式内容。",
             "Demo buildcraft repair v25 full pack 当前是 generated candidate：它已通过局部候选校验、物化、full pack 预检、静态预算、Schema contract、GameCore validate-content、隔离 validate-candidates、300 秒 / 3 seed / all Bot、300 秒 / 10 seed / all Bot 和 90 条 Replay 回归；10 seed 扩样中 9 个 Bot 均在目标区间，Replay 90/90 通过。该候选已生成内容设计审查草稿 / 审查包、设计审查状态检查器、9 局人工试玩草稿 / 审查包、人工试玩 runbook、支持 `--status` / `--next` 的专用 launcher、试玩状态检查器、候选 readiness 总览、人工证据 TODO 清单、Markdown 人工审查表、候选快速试玩入口、quick-play 客观摘要、角色 / 地图巡游入口、内容巡游客观摘要和人工 report 客观摘要工具，并通过一次 90 秒 Runtime 候选加载 smoke；readiness 当前为 candidate_waiting_for_human_evidence，blockers 为 design_review_incomplete 与 manual_playtest_incomplete。当前 human_evidence_todos 为 pending，设计审查仍有 14 个 TODO，人工试玩仍有 101 个 TODO；快速试玩入口、quick-play 摘要、人工审查表、内容巡游摘要、人工试玩客观摘要只汇总命令、待填字段和 Runtime report 机器指标，不是 acceptance evidence；quick-play 状态为 quick_play_summary_no_reports，0 / 6 本地 quick-play 报告存在；pudding-turret 审查条目仍含 TODO / 占位符；内容巡游状态为 content_tour_summary_no_reports，0 / 6 本地巡游报告存在；人工试玩状态仍为 manual_playtest_incomplete，0 / 9 本地试玩报告存在，试玩草稿仍为 needs_more_runs / draft_todo，尚未由真人填写并通过对应校验；它也尚未进入仓库内 validated_candidates / simulated_candidates / playtest_candidates，未通过 final acceptance 或 accepted content lockfile。",
-            "Demo buildcraft repair v51 full pack 当前是最新 generated candidate：content hash 为 fnv1a64:50bd536bd0669e2b，静态预算、GameCore validate-content 和 20 秒 headless simulate 均可通过，可玩内容覆盖审计显示 5 个角色、6 张地图、17 条构筑路线、6 个 quick-play preset 和 6 个内容巡游 run 全部可触达，自动 action items 为 0；它已补齐 current candidate 入口、可玩内容导览、覆盖审计、设计审查草稿 / 审查包和设计审查校验报告。当前还新增 6 局 current manual playtest 矩阵、人工试玩草稿、人工审查表、状态检查和 strict manual review validation 报告；该矩阵覆盖首发 5 角色与 6 地图，当前状态为 manual_playtest_incomplete，0 / 6 Runtime 人工报告存在，草稿仍含 TODO，strict validation 预期 invalid。限制仍然明确：v51 只覆盖最新一次 frosting-grassland-standard 波次修复，300 秒 / 10 seed all Bot 矩阵仍有 Route 40.0% 残留，设计审查草稿仍是 draft_todo，Runtime GUI smoke 在当前环境因 Unable to find a GPU 阻塞，headless 证据不能替代真人试玩、渲染、音频或手感审查；v51 仍不得进入 validated_candidates / simulated_candidates / playtest_candidates / accepted_content 或 Runtime 正式内容。",
+            "Demo buildcraft repair v51 full pack 当前是最新 generated candidate：content hash 为 fnv1a64:50bd536bd0669e2b，静态预算、GameCore validate-content 和 20 秒 headless simulate 均可通过，可玩内容覆盖审计显示 5 个角色、6 张地图、17 条构筑路线、6 个 quick-play preset 和 6 个内容巡游 run 全部可触达，自动 action items 为 0；它已补齐 current candidate 入口、可玩内容导览、覆盖审计、设计审查草稿 / 审查包和设计审查校验报告。当前还新增 6 局 current manual playtest 矩阵、人工试玩草稿、人工审查表、状态检查和 strict manual review validation 报告；该矩阵覆盖首发 5 角色与 6 地图，当前状态为 manual_playtest_incomplete，0 / 6 Runtime 人工报告存在，草稿仍含 TODO，strict validation 预期 invalid。RouteBot 200-240 秒窗口诊断已导出 267 条 sample 和 9 条 upgrade sample，显示胜利组与失败组 enemy / boss / safety 压力差异不大，seed 72005 在窗口前死亡，因此下一步应做 seed-specific 内容修复或补 240-300 秒终局窗口诊断，不能继续盲目全局加压。限制仍然明确：v51 只覆盖最新一次 frosting-grassland-standard 波次修复，300 秒 / 10 seed all Bot 矩阵仍有 Route 40.0% 残留，设计审查草稿仍是 draft_todo，Runtime GUI smoke 在当前环境因 Unable to find a GPU 阻塞，headless 证据和窗口诊断不能替代真人试玩、渲染、音频或手感审查；v51 仍不得进入 validated_candidates / simulated_candidates / playtest_candidates / accepted_content 或 Runtime 正式内容。",
             "候选后续应由真人完成内容设计审查和 9 局人工试玩；不得仅凭 Bot gate、Replay 回归、Runtime smoke 或草稿审查包直接接入 Runtime 正式内容或发布候选。"
           ],
           "blockers": [
@@ -2665,7 +2669,7 @@
       "doc_id": "15",
       "doc_path": "docs/15_经济与数值平衡模型.md",
       "status": "partial",
-      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、20 seed Bot 策略校准复测、重启后 base_demo 600 秒 Bot gate 回归修复、地图平衡修复和多条 failure case；完整跨地图、长局、人类体验平衡仍需真人试玩。",
+      "summary": "已有纯 Python 静态预算校验器、base_demo 与 Phase 4 full pack 静态预算报告、恢复后的 600 秒候选 Bot 仿真、20 seed Bot 策略校准复测、重启后 base_demo 600 秒 Bot gate 回归修复、地图平衡修复、多条 failure case 和 v51 RouteBot 窗口诊断；完整跨地图、长局、人类体验平衡仍需真人试玩。",
       "coverage": [
         {
           "id": "balance-budget-and-regression",
@@ -2712,10 +2716,13 @@
             "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_001/summary.md",
             "harness/reports/2026-05-27_base_demo_bot_policy_calibration_600s_seed53000_20seed_replay_regression_001/summary.md",
             "harness/reports/2026-05-27_harness_performance_budget_base_demo_calibration_seed53000_20seed_001/summary.md",
-            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json"
+            "harness/failed_cases/fail_20260527_006_base_demo_600s_bot_gate_regression.json",
+            "harness/content_review/analyze_route_bot_trajectory_window.py",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/report.json",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/summary.md"
           ],
           "gaps": [
-            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0%，现已通过策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot 全部回到目标区间。重启后 base_demo 600 秒 20 seed all Bot 矩阵又暴露 6 个中高技能 Bot 与 RouteBot 偏高，后续已通过规则 Bot 长局策略校准修复：seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，Replay 各 180/180 和 headless 性能预算均 valid；这说明问题集中在 Bot 长局策略与目标区间失配，而不是确定性或实体预算。",
+            "纯 Python 静态预算已通过 base_demo 和 Phase 4 full pack；当前 full pack validation_005 仍有 sprinkle-spitter 声明威胁高于公式计算值的 warning，20 seed / 600 秒发布探针曾暴露 GreedyXpBot 65.0%、TankBot 80.0%，现已通过策略校准复测为 GreedyXpBot 50.0%、TankBot 25.0%，9 Bot 全部回到目标区间。重启后 base_demo 600 秒 20 seed all Bot 矩阵又暴露 6 个中高技能 Bot 与 RouteBot 偏高，后续已通过规则 Bot 长局策略校准修复：seed52000 与 seed53000 两个 20 seed 窗口均为 9 Bot gate pass，Replay 各 180/180 和 headless 性能预算均 valid；这说明问题集中在 Bot 长局策略与目标区间失配，而不是确定性或实体预算。v51 RouteBot 300 秒 / 10 seed all Bot 矩阵仍有 Route 40.0% 残留，200-240 秒窗口诊断显示胜利 seed 与失败 seed 的平均 enemy / boss / safety 压力差异不高，seed 72005 又在窗口前死亡，因此下一步应做 seed-specific 修复或补 240-300 秒终局窗口诊断，不能用全局加怪、全局提高 hazard 或放宽门禁来掩盖。",
             "平衡仍缺真人新手 / 熟练 / 流派视角试玩反馈；Bot 门禁通过也不能替代乐趣、可读性和疲劳度验收。"
           ],
           "blockers": [
@@ -2728,7 +2735,7 @@
       "doc_id": "16",
       "doc_path": "docs/16_Replay与遥测设计.md",
       "status": "partial",
-      "summary": "Replay strict 回归、Runtime capture、遥测样本、Runtime 本机资源探针、隐私策略校验模板、本地存档 v0/v1 数据控制契约、平台存档路径策略、人工平台路径审查模板 / 审查包、存档迁移计划契约、Runtime save migration smoke、Runtime 隐私设置契约、上传传输契约、Runtime surface 源码形状契约、人工隐私审查模板 / 审查包、人工法律 / 合规审查模板 / 审查包、CLI 级本地导出 / 显式删除能力、F4 E/X/L/K 本地数据控制入口、F4 右下七段点击区、F4 隐私设置页、Runtime 逻辑平台数据根默认绑定和显式原生平台数据根解析已有实现；真人法律审查、人工平台路径审查、Runtime 网络上传、真实遥测闭环、长时泄漏和 GPU profiling 尚未完成。",
+      "summary": "Replay strict 回归、Runtime capture、遥测样本、Runtime 本机资源探针、Bot trajectory 命名 diagnostics 导出、隐私策略校验模板、本地存档 v0/v1 数据控制契约、平台存档路径策略、人工平台路径审查模板 / 审查包、存档迁移计划契约、Runtime save migration smoke、Runtime 隐私设置契约、上传传输契约、Runtime surface 源码形状契约、人工隐私审查模板 / 审查包、人工法律 / 合规审查模板 / 审查包、CLI 级本地导出 / 显式删除能力、F4 E/X/L/K 本地数据控制入口、F4 右下七段点击区、F4 隐私设置页、Runtime 逻辑平台数据根默认绑定和显式原生平台数据根解析已有实现；真人法律审查、人工平台路径审查、Runtime 网络上传、真实遥测闭环、长时泄漏和 GPU profiling 尚未完成。",
       "coverage": [
         {
           "id": "replay-and-telemetry",
@@ -2823,6 +2830,12 @@
             "harness/telemetry/local/runtime_gym_current_smoke_001.json",
             "harness/reports/2026-05-29_runtime_gym_current_smoke_001/summary.md",
             "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_gym_current_smoke.json",
+            "crates/game_harness/src/main.rs",
+            "harness/content_review/analyze_route_bot_trajectory_window.py",
+            "harness/content_review/test_analyze_route_bot_trajectory_window.py",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/route_200_240_trajectories.jsonl",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/report.json",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/summary.md",
             "harness/reports/2026-05-29_runtime_gym_current_smoke_001/runtime_performance_capture.json",
             "tools/run_runtime_resource_probe.py",
             "tools/test_run_runtime_resource_probe.py",
@@ -2831,7 +2844,7 @@
             "harness/reports/2026-05-30_runtime_resource_probe_10min_001/runtime_resource_probe.json"
           ],
           "gaps": [
-            "当前恢复会话已重跑 base_demo 600 秒 all Bot representative replay-batch，20 seed 的 180/180 strict 回归通过；本次 Runtime / Gym current smoke 已刷新短局 Gym bridge 与 120 秒 Runtime demo-input capture 运行级证据；600 秒 Runtime 本机资源探针也已通过 release-local 性能校验和 RSS 阈值，记录峰值 RSS 164.14 MiB / 2048 MiB。仍需真人试玩、发布级多硬件性能、长时泄漏分析、GPU profiling 和 high-pressure Gym 对比。",
+            "当前恢复会话已重跑 base_demo 600 秒 all Bot representative replay-batch，20 seed 的 180/180 strict 回归通过；本次 Runtime / Gym current smoke 已刷新短局 Gym bridge 与 120 秒 Runtime demo-input capture 运行级证据；600 秒 Runtime 本机资源探针也已通过 release-local 性能校验和 RSS 阈值，记录峰值 RSS 164.14 MiB / 2048 MiB。Bot trajectory export 已能在 sample 与 upgrade_sample 中写出命名 diagnostics，并由 v51 RouteBot 200-240 秒窗口诊断验证可用于内容修复复盘；但该数据仍是采样诊断，不是逐帧 Replay、真实遥测上传闭环或真人体验证据。仍需真人试玩、发布级多硬件性能、长时泄漏分析、GPU profiling 和 high-pressure Gym 对比。",
             "隐私策略、Runtime 设置页契约、上传传输契约、Runtime surface 源码形状契约、v0/v1 存档契约、平台路径策略、存档迁移计划、人工隐私审查包、人工平台路径审查包和人工法律 / 合规审查包已有可校验模板，Runtime CLI 可读取隐私设置、打印隐私说明、导出本地遥测 / replay JSON，并在显式传入目录后删除目录内容；当前 Runtime 本地数据控制 smoke 已实际执行 prelaunch CLI，验证 --platform-data-root 绑定逻辑数据根、--export-save 生成 save-state-v1、隐式删除被拒绝、显式 --save-file / --local-data-dir 删除生效；Runtime save migration smoke 已实际执行 prelaunch CLI，验证一个 save-state-v0 样本可迁移并导出为 save-state-v1；新增 --native-platform-data-root 可显式绑定 macOS、Windows、Linux / Unix 原生数据目录，并由 game_runtime 单测和 Runtime surface 契约记录；F4 设置页可用 7/8/9 显式切换上传型遥测、raw replay 上传和崩溃报告上传，E/L 可导出当前 Runtime 配置下的存档或本地数据，X/K 需要同一按键二次确认才执行删除；右下七段点击区复用同一套 action，从左到右映射匿名遥测、raw replay、崩溃报告、导出存档、删除存档、导出本地数据和删除本地数据，删除段仍走同一确认机制；切换面板、切换隐私项或执行其他数据操作会取消确认态，并在配置 --runtime-settings-file 时写回 JSON。但真人填写的人工隐私审查、人工平台路径审查、法律 / 合规审查、发布级视觉导出 / 删除按钮、真实鼠标设备审查、历史真实用户存档批量迁移和 Runtime 网络上传实现仍未完成。"
           ],
           "blockers": []
@@ -3107,10 +3120,13 @@
             "harness/playtest/drafts/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_review_draft.json",
             "harness/reports/2026-06-04_demo_buildcraft_repair_v51_human_review_worksheet_001/worksheet.md",
             "harness/reports/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_status_001/summary.md",
-            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_validation_001/summary.md"
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_validation_001/summary.md",
+            "harness/content_review/analyze_route_bot_trajectory_window.py",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/report.json",
+            "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_window_diagnostics_001/summary.md"
           ],
           "gaps": [
-            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包、基地 UI 人工审查模板和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根、显式 --platform-data-root 或显式 --native-platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；当前 Runtime 本地数据控制 smoke 已在本机执行 CLI，验证隐私说明默认本地、save-state-v1 导出、隐式删除拒绝、显式存档删除、本地 telemetry/replay/crash 数据导出和显式目录删除；Runtime save migration smoke 已在本机执行 CLI，验证一个带资源、章节解锁和完成目标的 save-state-v0 样本可迁移并导出为 save-state-v1，且 migration_history、局外进度、隐私默认值、本地数据控制和 base_ui_state 符合预期；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度 / 分类条目浏览、F4 隐私设置和 F5 巡逻准备视图，F1-F5 顶部页签点击区可在五个页面之间切换，F1 也可显示素材 Runtime 候选 manifest 的待预览状态，并可用右下四段点击区跳转章节、图鉴、设置和巡逻准备页；F2 可用 Q/E 或右下三段点击区在 MetaProgress 章节名册中切换当前章节，显示地图、Boss、目标清单和锁定状态，G 或右下点击区第三段只允许已解锁章节重开巡逻，锁定章节会拒绝启动；F3 可用 Q/E 或手柄 LT/RT 切换分类，B/N、右下分段点击区或手柄十字键左 / 右切换条目，V、鼠标中键或手柄 Y 切换过滤，并显示剧情 / 图鉴 UI 候选 manifest 的安全状态；F2 最近章节、F3 分类/过滤和 F1-F5 当前面板会写回 save-state-v1 base_ui_state，Runtime 启动会恢复最近面板并对未知值回退到 F1 概览；F4 支持 7/8/9 显式切换上传同意项，E/L 会导出存档或本地数据，X/K 首次进入删除确认态，再按同一键才删除存档或本地数据，右下七段点击区复用同一套 action 映射三个上传同意项和四个数据控制项，删除段仍走同一确认机制，切换面板、切换隐私项或执行其他数据操作会取消确认态，并在配置 --runtime-settings-file 时写回 JSON；F5 显示当前角色、地图、初始装备和已解锁角色 / 地图，当前已将首发 5 角色与 6 地图列表完整展示在巡逻准备页，C/M 或右下两段点击区可循环已解锁角色和地图并重开当前巡逻，--character-id 可覆盖启动角色；当前 v51 候选已有 current_candidate 配置、quick-play launcher、content-tour launcher、manual playtest launcher、可玩内容导览、覆盖审计和人工审查表，覆盖审计确认 5 角色、6 地图、17 条构筑路线、6 个 quick-play preset 与 6 个 content-tour run 可触达，人工试玩矩阵确认 6 局覆盖首发 5 角色和 6 地图；当前人工试玩状态为 0 / 6 Runtime 报告存在、草稿仍含 TODO、strict manual review validation invalid；当前会话 Runtime demo capture 已验证 Runtime 能运行 240 秒，权限恢复后的 90 秒 demo-input capture 已验证自动退出和性能报告，最新 600 秒 demo-input capture 已验证本机能完成一个 10 分钟标准局并通过 runtime_performance_capture，release-local 档位进一步要求 600 秒目标、至少 20 个采样、demo input、victory、平均 FPS >=55 和 30 FPS 以下慢帧比例 <=1% 且当前通过；Runtime 本机资源探针进一步确认本次 600 秒 run 刷新 capture、平均 FPS 57.91、30 FPS 以下慢帧比例 0.54%、峰值 RSS 164.14 MiB / 2048 MiB；v51 Runtime GUI smoke 在当前环境编译成功但 WGPU 启动报 Unable to find a GPU，已记录 failure case，headless validate-content 与 20 秒 kite simulate 可通过；但仍缺真人平台路径审查通过、真人基地 UI 审查通过、完整视觉基地 UI、后续章节目标内容接受与多章平衡验证、完整可视化图鉴按钮布局、真实鼠标 / 手柄设备审查、已人工接受剧情正文图鉴、GPU 可用环境下的 v51 Runtime GUI 试玩证据、6 局 v51 真人试玩报告与填写后的人工草稿、发布级视觉导出 / 删除按钮、历史真实用户存档批量迁移、Steam Deck / 多硬件性能覆盖、GPU profiling、长时泄漏分析和真人 10 分钟完整局验证。",
+            "已有 Runtime surface 源码形状契约、v0/v1 存档 JSON 契约、平台存档路径策略、人工平台路径审查模板 / 审查包、基地 UI 人工审查模板和 v0 到 v1 迁移计划契约，Runtime 源码路径可通过默认 platform_user_data/soft-candy-storm 逻辑平台根、显式 --platform-data-root 或显式 --native-platform-data-root 绑定存档、设置、遥测、Replay 和崩溃报告目录，可读取或创建 v1 存档、将 v0 迁移到带 migration_history/base_ui_state 的 v1、局后写回 MetaProgress，并通过 --export-save / --delete-save 导出或显式删除；当前 Runtime 本地数据控制 smoke 已在本机执行 CLI，验证隐私说明默认本地、save-state-v1 导出、隐式删除拒绝、显式存档删除、本地 telemetry/replay/crash 数据导出和显式目录删除；Runtime save migration smoke 已在本机执行 CLI，验证一个带资源、章节解锁和完成目标的 save-state-v0 样本可迁移并导出为 save-state-v1，且 migration_history、局外进度、隐私默认值、本地数据控制和 base_ui_state 符合预期；GameCore 初始 MetaProgress 已保存六章主线骨架，糖霜草地达成条件后会同步解锁 soda-creek 地图和章节进度；右侧局外面板已有 F1 概览、F2 章节目标、F3 图鉴进度 / 分类条目浏览、F4 隐私设置和 F5 巡逻准备视图，F1-F5 顶部页签点击区可在五个页面之间切换，F1 也可显示素材 Runtime 候选 manifest 的待预览状态，并可用右下四段点击区跳转章节、图鉴、设置和巡逻准备页；F2 可用 Q/E 或右下三段点击区在 MetaProgress 章节名册中切换当前章节，显示地图、Boss、目标清单和锁定状态，G 或右下点击区第三段只允许已解锁章节重开巡逻，锁定章节会拒绝启动；F3 可用 Q/E 或手柄 LT/RT 切换分类，B/N、右下分段点击区或手柄十字键左 / 右切换条目，V、鼠标中键或手柄 Y 切换过滤，并显示剧情 / 图鉴 UI 候选 manifest 的安全状态；F2 最近章节、F3 分类/过滤和 F1-F5 当前面板会写回 save-state-v1 base_ui_state，Runtime 启动会恢复最近面板并对未知值回退到 F1 概览；F4 支持 7/8/9 显式切换上传同意项，E/L 会导出存档或本地数据，X/K 首次进入删除确认态，再按同一键才删除存档或本地数据，右下七段点击区复用同一套 action 映射三个上传同意项和四个数据控制项，删除段仍走同一确认机制，切换面板、切换隐私项或执行其他数据操作会取消确认态，并在配置 --runtime-settings-file 时写回 JSON；F5 显示当前角色、地图、初始装备和已解锁角色 / 地图，当前已将首发 5 角色与 6 地图列表完整展示在巡逻准备页，C/M 或右下两段点击区可循环已解锁角色和地图并重开当前巡逻，--character-id 可覆盖启动角色；当前 v51 候选已有 current_candidate 配置、quick-play launcher、content-tour launcher、manual playtest launcher、可玩内容导览、覆盖审计、人工审查表和 RouteBot 200-240 秒窗口诊断，覆盖审计确认 5 角色、6 地图、17 条构筑路线、6 个 quick-play preset 与 6 个 content-tour run 可触达，人工试玩矩阵确认 6 局覆盖首发 5 角色和 6 地图，RouteBot 诊断提示后续内容修复应 seed-specific 而不是全局加压；当前人工试玩状态为 0 / 6 Runtime 报告存在、草稿仍含 TODO、strict manual review validation invalid；当前会话 Runtime demo capture 已验证 Runtime 能运行 240 秒，权限恢复后的 90 秒 demo-input capture 已验证自动退出和性能报告，最新 600 秒 demo-input capture 已验证本机能完成一个 10 分钟标准局并通过 runtime_performance_capture，release-local 档位进一步要求 600 秒目标、至少 20 个采样、demo input、victory、平均 FPS >=55 和 30 FPS 以下慢帧比例 <=1% 且当前通过；Runtime 本机资源探针进一步确认本次 600 秒 run 刷新 capture、平均 FPS 57.91、30 FPS 以下慢帧比例 0.54%、峰值 RSS 164.14 MiB / 2048 MiB；v51 Runtime GUI smoke 在当前环境编译成功但 WGPU 启动报 Unable to find a GPU，已记录 failure case，headless validate-content 与 20 秒 kite simulate 可通过；但仍缺真人平台路径审查通过、真人基地 UI 审查通过、完整视觉基地 UI、后续章节目标内容接受与多章平衡验证、完整可视化图鉴按钮布局、真实鼠标 / 手柄设备审查、已人工接受剧情正文图鉴、GPU 可用环境下的 v51 Runtime GUI 试玩证据、6 局 v51 真人试玩报告与填写后的人工草稿、发布级视觉导出 / 删除按钮、历史真实用户存档批量迁移、Steam Deck / 多硬件性能覆盖、GPU profiling、长时泄漏分析和真人 10 分钟完整局验证。",
             "剧情 / 图鉴候选已有自动草稿防漏审、审校包、ui_candidate 晋级工具、UI 候选 manifest 门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审校记录、Runtime UI review 或 final human acceptance 并通过；Runtime 不读取或展示候选正文，也不把候选标记为 Runtime 集成或正式接受。",
             "素材候选已有人工审查草稿、审查包、asset_candidate 晋级工具、Runtime 候选 manifest 门禁、最终接受审查包、最终接受 manifest 门禁和 Runtime 安全状态入口，但尚未由真人填写审查记录、Runtime preview review、audio loudness review 或 final human acceptance 并通过；Runtime 不读取候选图片或音频，也不替换正式 Runtime 素材。",
             "accepted_content lockfile 当前为 blocked / empty，只记录暂无候选通过 9 局人工试玩、acceptance gate、内容 hash 复核和版本锁定；人工试玩接受证据包当前为 needs_evidence，严格校验为 manual_review_invalid，局外完整闭环仍缺少非空正式内容锁与真人接受证据。",
