@@ -94,6 +94,51 @@ class ManualReviewValidatorTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertEqual(json.loads(report_path.read_text(encoding="utf-8"))["decision"], "manual_review_invalid")
 
+    def test_custom_required_run_ids_allow_current_candidate_matrix(self) -> None:
+        run_ids = [
+            "new_frosting_jar_keeper",
+            "speed_soda_bubble_courier",
+            "summon_cotton_pudding_crafter",
+            "control_caramel_sour_plum_doctor",
+            "defense_jelly_cream_knight",
+            "final_cracked_jar_keeper",
+        ]
+        payload = {
+            "candidate_id": "2026-06-04_demo_buildcraft_repair_v51_full_pack",
+            "content_hash": "fnv1a64:50bd536bd0669e2b",
+            "reviewer": "human reviewer",
+            "reviewed_at": "2026-06-04",
+            "summary": "六局当前候选人工试玩完整。",
+            "acceptance_decision": "accept_candidate",
+            "required_run_ids": run_ids,
+            "runs": [
+                {
+                    "run_id": run_id,
+                    "gate_decision": "playtest_pass",
+                    "manual_review": {
+                        "fun_rating": 4,
+                        "clarity_rating": 4,
+                        "difficulty_rating": 3,
+                        "projectile_readability": 4,
+                        "hit_feedback": 4,
+                        "xp_pickup_rhythm": 4,
+                        "boss_spawn_clarity": 4,
+                        "death_reason_clarity": 4,
+                        "notes": f"{run_id} 有具体真人观察。",
+                        "tags": ["fun", "readable"],
+                        "next_actions": ["继续候选审查。"],
+                    },
+                }
+                for run_id in run_ids
+            ],
+        }
+
+        report = build_report(Path("current_candidate_fixture.json"), payload, strict_acceptance=True)
+
+        self.assertEqual(report["decision"], "manual_review_valid")
+        self.assertEqual(report["required_run_ids"], run_ids)
+        self.assertEqual(report["run_count"], 6)
+
 
 if __name__ == "__main__":
     raise SystemExit(unittest.main(verbosity=2))

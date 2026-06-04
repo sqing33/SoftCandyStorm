@@ -21,6 +21,7 @@ DEFAULT_SECONDS = 600
 DEFAULT_CAPTURE_INTERVAL = 2
 REPORT_PREFIX_QUICK_PLAY = "harness/telemetry/local/v51_quick_play"
 REPORT_PREFIX_CONTENT_TOUR = "harness/telemetry/local/v51_content_tour"
+REPORT_PREFIX_MANUAL_PLAYTEST = "harness/telemetry/local/v51_manual_playtest"
 
 FORBIDDEN_MANUAL_FLAGS = {
     "--demo-input",
@@ -56,6 +57,21 @@ class ContentTourRun:
         return Path(f"{REPORT_PREFIX_CONTENT_TOUR}_{self.run_id}.json")
 
 
+@dataclass(frozen=True)
+class ManualPlaytestRun:
+    run_id: str
+    skill: str
+    character_id: str
+    map_id: str
+    seed: int
+    intent: str
+    required_observations: tuple[str, ...]
+
+    @property
+    def report_path(self) -> Path:
+        return Path(f"{REPORT_PREFIX_MANUAL_PLAYTEST}_{self.run_id}.json")
+
+
 QUICK_PLAY_PRESETS: tuple[QuickPlayPreset, ...] = (
     QuickPlayPreset("default", "默认新手局", "jar-keeper", "frosting-grassland", 55101, "糖罐守护员和糖霜草地基准体验"),
     QuickPlayPreset("speed", "速度拾取局", "bubble-courier", "soda-creek", 55102, "泡泡邮差和汽水溪谷移动压力"),
@@ -72,6 +88,63 @@ CONTENT_TOUR_RUNS: tuple[ContentTourRun, ...] = (
     ContentTourRun("caramel_sour_plum_doctor", "sour-plum-doctor", "caramel-workshop", 55204, "控制角色和焦糖工坊路线干扰"),
     ContentTourRun("jelly_cream_knight", "cream-knight", "jelly-platform", 55205, "防御角色和果冻月台环形路线"),
     ContentTourRun("cracked_jar_keeper", "jar-keeper", "cracked-star-jar", 55206, "最终地图混合怪潮压力"),
+)
+
+MANUAL_PLAYTEST_RUNS: tuple[ManualPlaytestRun, ...] = (
+    ManualPlaytestRun(
+        "new_frosting_jar_keeper",
+        "new",
+        "jar-keeper",
+        "frosting-grassland",
+        55301,
+        "不看说明直接开局，确认新手是否理解移动、拾取糖晶和第一次升级",
+        ("是否理解移动", "是否理解拾取糖晶", "是否理解升级三选一"),
+    ),
+    ManualPlaytestRun(
+        "speed_soda_bubble_courier",
+        "skilled",
+        "bubble-courier",
+        "soda-creek",
+        55302,
+        "主动利用速度穿插收 XP，确认泡泡邮差和汽水溪谷的移动压力",
+        ("移动优势是否明显", "泡泡敌人压力是否清楚", "贪 XP 后是否知道受伤原因"),
+    ),
+    ManualPlaytestRun(
+        "summon_cotton_pudding_crafter",
+        "build",
+        "pudding-crafter",
+        "cotton-cloud-pasture",
+        55303,
+        "优先召唤和经济构筑，确认布丁工匠在群体压力下是否有成型目标",
+        ("召唤物反馈是否清楚", "经济构筑是否有成长感", "棉花云敌群是否可读"),
+    ),
+    ManualPlaytestRun(
+        "control_caramel_sour_plum_doctor",
+        "skilled",
+        "sour-plum-doctor",
+        "caramel-workshop",
+        55304,
+        "优先控场和减速路线，确认焦糖工坊路线干扰是否有趣而不烦",
+        ("控场效果是否看得懂", "路线干扰是否公平", "后半段压力是否过度"),
+    ),
+    ManualPlaytestRun(
+        "defense_jelly_cream_knight",
+        "build",
+        "cream-knight",
+        "jelly-platform",
+        55305,
+        "优先防御和近身容错，确认奶油骑士在环形路线中的受伤反馈",
+        ("防御成长是否能感受到", "近身受伤反馈是否及时", "果冻月台路线是否清晰"),
+    ),
+    ManualPlaytestRun(
+        "final_cracked_jar_keeper",
+        "skilled",
+        "jar-keeper",
+        "cracked-star-jar",
+        55306,
+        "挑战最终地图混合怪潮，确认首发包终局压力、Boss 出场和死亡原因",
+        ("Boss 出场是否明显", "混合怪潮是否可读", "死亡或胜利原因是否清楚"),
+    ),
 )
 
 

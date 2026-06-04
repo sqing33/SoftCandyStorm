@@ -42,6 +42,15 @@ ALLOWED_ACCEPTANCE_DECISIONS = {"accept_candidate", "repair", "needs_more_runs"}
 FORBIDDEN_GATE_DECISIONS = {"accept_release", "accept_content"}
 
 
+def required_run_ids(payload: dict[str, Any]) -> list[str]:
+    raw_ids = payload.get("required_run_ids")
+    if isinstance(raw_ids, list):
+        ids = [item for item in raw_ids if isinstance(item, str) and item.strip()]
+        if ids:
+            return ids
+    return REQUIRED_RUN_IDS
+
+
 def load_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
@@ -68,16 +77,17 @@ def validate_runs(payload: dict[str, Any], strict_acceptance: bool) -> tuple[lis
     if not isinstance(runs, list):
         return ["`runs` must be a list"], warnings
 
+    expected_run_ids = required_run_ids(payload)
     run_by_id = {
         run.get("run_id"): run
         for run in runs
         if isinstance(run, dict) and isinstance(run.get("run_id"), str)
     }
-    missing = [run_id for run_id in REQUIRED_RUN_IDS if run_id not in run_by_id]
+    missing = [run_id for run_id in expected_run_ids if run_id not in run_by_id]
     if missing:
         errors.append(f"missing required run ids: {', '.join(missing)}")
-    if len(runs) < len(REQUIRED_RUN_IDS):
-        errors.append(f"expected at least {len(REQUIRED_RUN_IDS)} runs, got {len(runs)}")
+    if len(runs) < len(expected_run_ids):
+        errors.append(f"expected at least {len(expected_run_ids)} runs, got {len(runs)}")
 
     for index, run in enumerate(runs):
         if not isinstance(run, dict):
@@ -148,6 +158,7 @@ def validate_runs(payload: dict[str, Any], strict_acceptance: bool) -> tuple[lis
 
 def build_report(path: Path, payload: dict[str, Any], strict_acceptance: bool) -> dict[str, Any]:
     errors, warnings = validate_runs(payload, strict_acceptance)
+    expected_run_ids = required_run_ids(payload)
     decision = "manual_review_valid" if not errors else "manual_review_invalid"
     return {
         "report_version": 1,
@@ -155,7 +166,7 @@ def build_report(path: Path, payload: dict[str, Any], strict_acceptance: bool) -
         "strict_acceptance": strict_acceptance,
         "decision": decision,
         "run_count": len(payload.get("runs", [])) if isinstance(payload.get("runs"), list) else 0,
-        "required_run_ids": REQUIRED_RUN_IDS,
+        "required_run_ids": expected_run_ids,
         "errors": errors,
         "warnings": warnings,
         "limitations": [
