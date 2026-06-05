@@ -3417,6 +3417,8 @@ fn projectile_visual_style(
         Color::srgba(1.0, 0.82, 0.28, 0.88)
     } else if projectile_is_fortress(projectile.weapon_id.as_str()) {
         Color::srgba(1.0, 0.78, 0.88, 0.88)
+    } else if projectile_is_soda_burst(projectile.weapon_id.as_str()) {
+        Color::srgba(0.42, 0.86, 1.0, 0.88)
     } else if projectile_is_bubble(projectile.weapon_id.as_str()) {
         Color::srgba(0.54, 0.90, 1.0, 0.86)
     } else if projectile_is_cold(projectile.weapon_id.as_str()) {
@@ -3453,6 +3455,10 @@ fn projectile_is_meteor(weapon_id: &str) -> bool {
 
 fn projectile_is_fortress(weapon_id: &str) -> bool {
     matches!(weapon_id, "marshmallow-fortress")
+}
+
+fn projectile_is_soda_burst(weapon_id: &str) -> bool {
+    matches!(weapon_id, "soda-fountain" | "soda-volcano")
 }
 
 fn projectile_is_bubble(weapon_id: &str) -> bool {
@@ -10451,6 +10457,26 @@ mod tests {
             assert_ne!(style.color, Color::WHITE);
             assert_eq!(style.center, projectile.position);
             assert_eq!(style.size, Vec2::splat(56.0));
+        }
+    }
+
+    #[test]
+    fn projectile_visual_style_tints_soda_bursts_blue() {
+        for (entity_id, weapon_id) in [(8, "soda-fountain"), (9, "soda-volcano")] {
+            let projectile = ProjectileSnapshot {
+                entity_id,
+                weapon_id: weapon_id.to_string(),
+                position: CoreVec2::new(-8.0, 20.0),
+                velocity: CoreVec2::ZERO,
+                radius: 30.0,
+            };
+
+            let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+            assert!(style.textured);
+            assert_ne!(style.color, Color::WHITE);
+            assert_eq!(style.center, projectile.position);
+            assert_eq!(style.size, Vec2::splat(60.0));
         }
     }
 
