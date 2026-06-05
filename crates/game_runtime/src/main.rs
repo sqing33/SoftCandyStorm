@@ -4504,12 +4504,10 @@ fn render_meta_loadout_panel(
             map.size.height,
             map.music_theme,
         ));
-        let hazard_summary = if map.hazards.is_empty() {
-            "无固定地形伤害".to_string()
-        } else {
-            format!("{} 项", map.hazards.len())
-        };
-        lines.push(format!("地图机制 {}", hazard_summary));
+        lines.push(format!(
+            "地图机制 {}",
+            format_runtime_map_hazard_preview(&map.hazards)
+        ));
     }
 
     if let Some(chapter_line) =
@@ -4539,6 +4537,14 @@ fn render_meta_loadout_panel(
     ));
 
     lines.join("\n")
+}
+
+fn format_runtime_map_hazard_preview(hazards: &[MapHazardDefinition]) -> String {
+    if hazards.is_empty() {
+        "无固定地形伤害".to_string()
+    } else {
+        format_map_hazards_for_codex(hazards)
+    }
 }
 
 fn format_runtime_starting_loadout(content: &ContentPack, loadout: &StartingLoadout) -> String {
@@ -10584,6 +10590,7 @@ mod tests {
         assert!(panel.contains("汽水溪谷"));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
+        assert!(panel.contains("地图机制 泡泡水流 每36s x2 5s 减速x0.78"));
         assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
@@ -10641,6 +10648,7 @@ mod tests {
         ] {
             assert!(panel.contains(expected), "missing loadout label {expected}");
         }
+        assert!(panel.contains("地图机制 无固定地形伤害"));
         assert!(!panel.contains("还有"));
     }
 
