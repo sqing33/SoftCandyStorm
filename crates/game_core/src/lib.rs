@@ -842,7 +842,7 @@ impl GameCore {
 
             self.evaluated_content_events.insert(event_id);
             let chance = event.trigger.chance.unwrap_or(1.0).clamp(0.0, 1.0);
-            if self.rng.next_f32() <= chance {
+            if chance >= 1.0 || (chance > 0.0 && self.rng.next_f32() <= chance) {
                 self.trigger_content_event(&event, events);
             }
         }
@@ -4066,6 +4066,33 @@ mod tests {
             .any(|event| matches!(event, GameEvent::ContentEventTriggered { event_id } if event_id == "rainbow-candy-rush")));
         assert!(result.reward_hint.xp_delta > 13.9);
         assert!(core.active_event_multiplier("spawn_rate_multiplier") > 1.0);
+    }
+
+    #[test]
+    fn guaranteed_content_event_does_not_advance_rng() {
+        let mut core = GameCore::reset(RunConfig::default());
+        let mut event = core
+            .content
+            .events
+            .get("rainbow-candy-rush")
+            .expect("base demo event should exist")
+            .clone();
+        event.id = "test-guaranteed-content-event".to_string();
+        event.trigger.start_second = Some(0.0);
+        event.trigger.end_second = Some(10.0);
+        event.trigger.chance = Some(1.0);
+        event.effects = Vec::new();
+        core.content.events.clear();
+        core.content.events.insert(event.id.clone(), event);
+
+        let mut expected_rng = core.rng.clone();
+        let mut events = Vec::new();
+        core.update_content_events(0.1, &mut events);
+
+        assert!(events.iter().any(
+            |event| matches!(event, GameEvent::ContentEventTriggered { event_id } if event_id == "test-guaranteed-content-event")
+        ));
+        assert_eq!(core.rng.next_u32(), expected_rng.next_u32());
     }
 
     #[test]
