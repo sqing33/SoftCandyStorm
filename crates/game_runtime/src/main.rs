@@ -2287,9 +2287,7 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     let evolutions = format_build_items(&build.evolutions, 2, |id| {
         runtime_evolution_label(content, id)
     });
-    let evolution_paths = format_evolution_path_items(&build.open_evolution_paths, 2, |id| {
-        runtime_evolution_label(content, id)
-    });
+    let evolution_paths = format_evolution_path_items(build, content, 2);
     let tags = format_tag_items(&build.tags, 4);
     format!(
         "Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  进化线 {evolution_paths}  标签 {tags}"
@@ -2419,23 +2417,65 @@ where
     visible.join(", ")
 }
 
-fn format_evolution_path_items<F>(items: &[String], limit: usize, label: F) -> String
-where
-    F: Fn(&str) -> String,
-{
-    if items.is_empty() {
+fn format_evolution_path_items(
+    build: &BuildSnapshot,
+    content: &ContentPack,
+    limit: usize,
+) -> String {
+    if build.open_evolution_paths.is_empty() {
         return "无".to_string();
     }
 
-    let mut visible = items
+    let mut visible = build
+        .open_evolution_paths
         .iter()
         .take(limit)
-        .map(|id| format!("{} ({id})", label(id)))
+        .map(|id| {
+            let Some(evolution) = content.evolutions.get(id) else {
+                return format!("{} ({id})", runtime_evolution_label(content, id));
+            };
+            let weapon_requirement = &evolution.requirements.weapon;
+            let weapon_level = build_item_level(&build.weapons, &weapon_requirement.id);
+            let weapon_progress = format!(
+                "{} {}/{}",
+                runtime_weapon_label(content, &weapon_requirement.id),
+                weapon_level,
+                weapon_requirement.min_level,
+            );
+            let passive_progress = evolution
+                .requirements
+                .passive
+                .as_ref()
+                .map(|requirement| {
+                    let passive_level = build_item_level(&build.passives, &requirement.id);
+                    format!(
+                        "{} {}/{}",
+                        runtime_passive_label(content, &requirement.id),
+                        passive_level,
+                        requirement.min_level,
+                    )
+                })
+                .unwrap_or_else(|| "无被动要求".to_string());
+            format!(
+                "{}: {} + {}",
+                runtime_evolution_label(content, id),
+                weapon_progress,
+                passive_progress,
+            )
+        })
         .collect::<Vec<_>>();
-    if items.len() > limit {
-        visible.push(format!("+{} 项", items.len() - limit));
+    if build.open_evolution_paths.len() > limit {
+        visible.push(format!("+{} 项", build.open_evolution_paths.len() - limit));
     }
     visible.join(", ")
+}
+
+fn build_item_level(items: &[BuildItemSnapshot], id: &str) -> u32 {
+    items
+        .iter()
+        .find(|item| item.id == id)
+        .map(|item| item.level)
+        .unwrap_or(0)
 }
 
 fn format_tag_items(tags: &[String], limit: usize) -> String {
@@ -7614,7 +7654,7 @@ mod tests {
                 level: 1,
             }],
             tags: vec!["projectile".to_string(), "economy".to_string()],
-            open_evolution_paths: vec!["soda-volcano".to_string()],
+            open_evolution_paths: vec!["rainbow-candy-meteor".to_string()],
         };
         let status = format_build_status(&build, &content);
 
@@ -7623,7 +7663,7 @@ mod tests {
         assert!(status.contains("汽水泡泡 Lv.1"));
         assert!(status.contains("糖晶放大镜 Lv.2"));
         assert!(status.contains("彩虹糖流星雨 Lv.1"));
-        assert!(status.contains("进化线 汽水火山 (soda-volcano)"));
+        assert!(status.contains("进化线 彩虹糖流星雨: 彩虹糖弹 3/5 + 糖晶放大镜 2/3"));
         assert!(status.contains("标签 弹幕, 经济"));
     }
 
