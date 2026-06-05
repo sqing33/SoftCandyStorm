@@ -52,6 +52,7 @@ const BUBBLE_BOUNCE_RANGE: f32 = 180.0;
 const BUBBLE_BOUNCE_DAMAGE_MULTIPLIER: f32 = 0.70;
 const VORTEX_PULL_RADIUS_MULTIPLIER: f32 = 2.5;
 const VORTEX_PULL_SPEED: f32 = 96.0;
+const CHAIN_REACTION_TRAP_RADIUS_MULTIPLIER: f32 = 2.5;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1626,6 +1627,14 @@ impl GameCore {
         let player_position = self.player.position;
         let half_width = self.map.width * 0.5;
         let half_height = self.map.height * 0.5;
+        let chain_trap_candidates = self
+            .projectiles
+            .iter()
+            .filter(|projectile| projectile.is_chain_reaction_trap())
+            .map(ChainTrapDetonation::from)
+            .collect::<Vec<_>>();
+        let mut chain_trap_detonations = Vec::new();
+        let mut chain_trap_detonated_ids = BTreeSet::new();
         for projectile in &mut self.projectiles {
             projectile.age_seconds += dt;
             if let Some(return_after_seconds) = projectile.boomerang_return_after_seconds {
@@ -1689,6 +1698,10 @@ impl GameCore {
 
             if projectile.is_trap() {
                 projectile.lifetime -= dt;
+                if chain_trap_detonated_ids.contains(&projectile.entity_id) {
+                    projectile.pierce_remaining = 0;
+                    continue;
+                }
                 if projectile.pierce_remaining == 0 {
                     continue;
                 }
@@ -1701,6 +1714,25 @@ impl GameCore {
 
                 if !triggered {
                     continue;
+                }
+
+                if projectile.is_chain_reaction_trap() {
+                    chain_trap_detonated_ids.insert(projectile.entity_id);
+                    let chain_radius = projectile.radius * CHAIN_REACTION_TRAP_RADIUS_MULTIPLIER;
+                    chain_trap_detonations.extend(
+                        chain_trap_candidates
+                            .iter()
+                            .filter(|candidate| {
+                                candidate.entity_id != projectile.entity_id
+                                    && candidate.weapon_id == projectile.weapon_id
+                                    && projectile.position.distance(candidate.position)
+                                        <= chain_radius + candidate.radius
+                            })
+                            .filter(|candidate| {
+                                chain_trap_detonated_ids.insert(candidate.entity_id)
+                            })
+                            .cloned(),
+                    );
                 }
 
                 for enemy in &mut self.enemies {
@@ -1904,6 +1936,48 @@ impl GameCore {
                         }
                         break;
                     }
+                }
+            }
+        }
+
+        for detonation in chain_trap_detonations {
+            for enemy in &mut self.enemies {
+                if enemy.health <= 0.0 {
+                    continue;
+                }
+
+                let blast_distance = detonation.radius + enemy.radius;
+                if detonation.position.distance(enemy.position) <= blast_distance {
+                    let damage = detonation.damage
+                        * enemy.projectile_damage_multiplier(detonation.position, player_position);
+                    enemy.health -= damage;
+                    self.metrics.damage_dealt_by_weapon += damage;
+                    if enemy.is_boss {
+                        self.metrics.boss_damage += damage;
+                    }
+                    enemy.apply_slow(
+                        detonation.enemy_slow_multiplier,
+                        detonation.enemy_slow_duration_seconds,
+                    );
+                    enemy.apply_knockback(
+                        player_position,
+                        detonation.enemy_knockback_distance,
+                        half_width,
+                        half_height,
+                    );
+                    events.push(GameEvent::EnemyHit {
+                        entity_id: enemy.entity_id,
+                        damage,
+                        weapon_id: detonation.weapon_id.clone(),
+                    });
+                }
+            }
+        }
+
+        if !chain_trap_detonated_ids.is_empty() {
+            for projectile in &mut self.projectiles {
+                if chain_trap_detonated_ids.contains(&projectile.entity_id) {
+                    projectile.pierce_remaining = 0;
                 }
             }
         }
@@ -2943,6 +3017,18 @@ struct ProjectileRuntime {
 }
 
 #[derive(Debug, Clone)]
+struct ChainTrapDetonation {
+    entity_id: u64,
+    weapon_id: String,
+    position: Vec2,
+    damage: f32,
+    radius: f32,
+    enemy_slow_multiplier: f32,
+    enemy_slow_duration_seconds: f32,
+    enemy_knockback_distance: f32,
+}
+
+#[derive(Debug, Clone)]
 struct PassiveState {
     id: String,
     level: u32,
@@ -3769,6 +3855,10 @@ impl Projectile {
     fn is_vortex(&self) -> bool {
         self.weapon_id == "caramel-vortex"
     }
+
+    fn is_chain_reaction_trap(&self) -> bool {
+        self.weapon_id == "popping-candy-chain-reaction"
+    }
 }
 
 impl From<Projectile> for ProjectileSnapshot {
@@ -3779,6 +3869,21 @@ impl From<Projectile> for ProjectileSnapshot {
             position: projectile.position,
             velocity: projectile.velocity,
             radius: projectile.radius,
+        }
+    }
+}
+
+impl From<&Projectile> for ChainTrapDetonation {
+    fn from(projectile: &Projectile) -> Self {
+        Self {
+            entity_id: projectile.entity_id,
+            weapon_id: projectile.weapon_id.clone(),
+            position: projectile.position,
+            damage: projectile.damage,
+            radius: projectile.radius,
+            enemy_slow_multiplier: projectile.enemy_slow_multiplier,
+            enemy_slow_duration_seconds: projectile.enemy_slow_duration_seconds,
+            enemy_knockback_distance: projectile.enemy_knockback_distance,
         }
     }
 }
@@ -4372,6 +4477,118 @@ mod tests {
                 GameEvent::EnemyHit { weapon_id, .. } if weapon_id == "popping-candy-mine"
             )
         }));
+    }
+
+    #[test]
+    fn chain_reaction_trap_detonates_nearby_traps() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+        core.projectiles.clear();
+
+        let weapon_id = "popping-candy-chain-reaction".to_string();
+        let mine_radius = 52.0;
+        let main_mine_id = core.allocate_entity_id();
+        let chained_mine_id = core.allocate_entity_id();
+        let far_mine_id = core.allocate_entity_id();
+        let make_mine = |entity_id, position| Projectile {
+            entity_id,
+            weapon_id: weapon_id.clone(),
+            position,
+            velocity: Vec2::ZERO,
+            damage: 46.0,
+            radius: mine_radius,
+            pierce_remaining: 1,
+            lifetime: 3.0,
+            enemy_slow_multiplier: 1.0,
+            enemy_slow_duration_seconds: 0.0,
+            enemy_knockback_distance: 0.0,
+            trap_trigger_radius: mine_radius,
+            bubble_bounces_remaining: 0,
+            bubble_bounce_range: 0.0,
+            age_seconds: 0.0,
+            boomerang_return_after_seconds: None,
+            boomerang_return_speed: 0.0,
+            turret_fire_interval_seconds: 0.0,
+            turret_fire_cooldown_seconds: 0.0,
+            turret_range: 0.0,
+            beam_tick_interval_seconds: 0.0,
+            beam_tick_cooldown_seconds: 0.0,
+            beam_damage_per_tick: 0.0,
+            beam_range: 0.0,
+            beam_target_rank: 0,
+        };
+        let main_position = Vec2::ZERO;
+        let chained_position = Vec2::new(112.0, 0.0);
+        let far_position = Vec2::new(280.0, 0.0);
+        let far_enemy_position = far_position + Vec2::new(100.0, 0.0);
+        core.projectiles
+            .push(make_mine(main_mine_id, main_position));
+        core.projectiles
+            .push(make_mine(chained_mine_id, chained_position));
+        core.projectiles.push(make_mine(far_mine_id, far_position));
+
+        let trigger_enemy_id = core.allocate_entity_id();
+        let chained_enemy_id = core.allocate_entity_id();
+        let far_enemy_id = core.allocate_entity_id();
+        let mut trigger_enemy =
+            Enemy::from_enemy_definition(trigger_enemy_id, main_position, &enemy_definition);
+        let mut chained_enemy =
+            Enemy::from_enemy_definition(chained_enemy_id, chained_position, &enemy_definition);
+        let mut far_enemy =
+            Enemy::from_enemy_definition(far_enemy_id, far_enemy_position, &enemy_definition);
+        trigger_enemy.health = 200.0;
+        trigger_enemy.max_health = 200.0;
+        chained_enemy.health = 200.0;
+        chained_enemy.max_health = 200.0;
+        far_enemy.health = 200.0;
+        far_enemy.max_health = 200.0;
+        core.enemies.push(trigger_enemy);
+        core.enemies.push(chained_enemy);
+        core.enemies.push(far_enemy);
+
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+
+        assert!(!core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.entity_id == main_mine_id));
+        assert!(!core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.entity_id == chained_mine_id));
+        assert!(core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.entity_id == far_mine_id));
+        assert!(core
+            .enemies
+            .iter()
+            .any(|enemy| enemy.entity_id == chained_enemy_id && enemy.health < 200.0));
+        assert!(core
+            .enemies
+            .iter()
+            .any(|enemy| enemy.entity_id == far_enemy_id && (enemy.health - 200.0).abs() < 0.01));
+        assert!(
+            events
+                .iter()
+                .filter(|event| {
+                    matches!(
+                        event,
+                        GameEvent::EnemyHit { weapon_id, .. }
+                            if weapon_id == "popping-candy-chain-reaction"
+                    )
+                })
+                .count()
+                >= 2
+        );
     }
 
     #[test]
