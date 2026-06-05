@@ -1,0 +1,68 @@
+{
+  "batch_id": "2026-06-05_demo_buildcraft_repair_v58_candidates",
+  "generated_at": "2026-06-05",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 v58 路线回声与后段压力组合修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo buildcraft route counter repair v58",
+    "goal": "在 v51 基础上组合 v55 独立路线回声事件与 v52 late_mix_a 后段波次压力，验证能否同时把 RouteBot、RandomBot 和 KiteBot 拉回目标区间。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with event and wave override coverage",
+      "materialize full content pack with events and waves overlay",
+      "materialized pack preflight",
+      "static balance budget review",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix 300s 10 seed",
+      "playable content coverage audit after matrix pass",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "route-echo-caramel-mark",
+      "type": "event",
+      "path": "events/route-echo-caramel-mark.json",
+      "role": "188-246 秒重复路线反制事件，沿用 v55 已证明可降低 RouteBot 的路线回声机制。"
+    },
+    {
+      "id": "frosting-grassland-standard",
+      "type": "wave",
+      "path": "waves/frosting-grassland-standard.json",
+      "role": "255-300 秒后段可读压力补强，沿用 v52 late_mix_a 中对 Random/Kite 安全的远程与机动敌人结构。"
+    }
+  ],
+  "diagnostic_evidence": {
+    "baseline_candidate": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+    "baseline_matrix": "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md",
+    "v52_late_mix_a_diagnostic": "harness/reports/2026-06-04_demo_buildcraft_repair_v52_route_diagnostics_001/summary.md",
+    "v55_matrix": "harness/reports/2026-06-04_demo_buildcraft_repair_v55_matrix_300s_10seed_72000_001/summary.md",
+    "v55_failure_case": "harness/failed_cases/fail_20260605_001_demo_buildcraft_repair_v55_random_kite_regression.json",
+    "v57_failure_case": "harness/failed_cases/fail_20260605_003_demo_buildcraft_repair_v57_route_underrepair.json"
+  },
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v51 full pack 为基线。",
+      "本批次新增事件 route-echo-caramel-mark，并覆盖波次 frosting-grassland-standard。",
+      "本批次不修改武器、被动、敌人、Boss、地图或 Runtime 正式内容。",
+      "本批次不调整门禁阈值；若 Bot 矩阵失败或误伤其他 Bot，应记录 failure case 并继续 repair。"
+    ]
+  }
+}
