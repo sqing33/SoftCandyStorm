@@ -2113,6 +2113,17 @@ where
     visible.join(", ")
 }
 
+fn format_terminal_overlay(terminal: &TerminalState) -> String {
+    format!(
+        "{}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n按 R 重新巡逻",
+        terminal_kind_label(terminal.kind),
+        terminal.time_seconds,
+        terminal.final_level,
+        terminal.kills,
+        format_terminal_reason(&terminal.reason),
+    )
+}
+
 fn update_hud(
     state: Res<RuntimeState>,
     mut hud_query: Query<&mut Text, With<HudText>>,
@@ -2168,19 +2179,7 @@ fn update_hud(
                 .metrics()
                 .terminal
                 .as_ref()
-                .map(|terminal| {
-                    let title = match terminal.kind {
-                        TerminalKind::Victory => "Victory",
-                        TerminalKind::Defeat => "Defeat",
-                        TerminalKind::Timeout => "Timeout",
-                        TerminalKind::Aborted => "Aborted",
-                        TerminalKind::InvalidState => "Invalid",
-                    };
-                    format!(
-                        "{title}  {:.1}s  Lv {}  Kills {}\nPress R to restart",
-                        terminal.time_seconds, terminal.final_level, terminal.kills
-                    )
-                })
+                .map(format_terminal_overlay)
                 .unwrap_or_default()
         };
     }
@@ -5206,7 +5205,7 @@ mod tests {
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
-        format_upgrade_options, load_runtime_asset_candidate_manifest,
+        format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
         make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
         persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
@@ -5247,7 +5246,7 @@ mod tests {
     use game_core::{
         BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, EnemyBehavior, EnemySnapshot,
         FixedDt, GameCore, GameEvent, MetaProgress, MetaRunSummary, PickupSnapshot, PickupType,
-        RunConfig, RunMode, Vec2 as CoreVec2,
+        RunConfig, RunMode, TerminalKind, TerminalState, Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
 
@@ -7031,6 +7030,25 @@ mod tests {
         assert!(status.contains("糖晶放大镜 Lv.2"));
         assert!(status.contains("彩虹糖流星雨 Lv.1"));
         assert!(status.contains("标签 弹幕, 经济"));
+    }
+
+    #[test]
+    fn terminal_overlay_renders_result_and_reason() {
+        let terminal = TerminalState {
+            kind: TerminalKind::Defeat,
+            time_seconds: 214.5,
+            reason: "player_health_depleted".to_string(),
+            final_level: 6,
+            kills: 128,
+        };
+        let overlay = format_terminal_overlay(&terminal);
+
+        assert!(overlay.contains("失败"));
+        assert!(overlay.contains("214.5s"));
+        assert!(overlay.contains("Lv 6"));
+        assert!(overlay.contains("击杀 128"));
+        assert!(overlay.contains("生命值归零"));
+        assert!(overlay.contains("按 R 重新巡逻"));
     }
 
     #[test]
