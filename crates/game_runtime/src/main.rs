@@ -4598,6 +4598,11 @@ fn render_meta_loadout_panel(
     {
         lines.push(chapter_line);
     }
+    if let Some(goal_line) =
+        format_runtime_loadout_chapter_goal_line(progress, content, &config.map_id)
+    {
+        lines.push(goal_line);
+    }
 
     lines.push("C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图".to_string());
     lines.push("右下点击区: 角色  地图".to_string());
@@ -4779,6 +4784,38 @@ fn format_runtime_loadout_chapter_line(
                     chapter.boss_id,
                     status,
                 )
+            }
+        })
+}
+
+fn format_runtime_loadout_chapter_goal_line(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    map_id: &str,
+) -> Option<String> {
+    progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == map_id)
+        .map(|chapter| {
+            let goals = runtime_chapter_goal_entries(&chapter.chapter_id, content);
+            let completed_count = goals
+                .iter()
+                .filter(|(goal_id, _, _)| chapter.completed_goals.contains(goal_id))
+                .count();
+            let status = if chapter.unlocked {
+                "本图目标"
+            } else {
+                "锁定目标预览"
+            };
+            let progress_label = format!("{completed_count}/{}", goals.len());
+            if let Some((_, label, reward)) = goals
+                .iter()
+                .find(|(goal_id, _, _)| !chapter.completed_goals.contains(goal_id))
+            {
+                format!("{status} {progress_label}  下一项 {label} -> {reward}")
+            } else {
+                format!("{status} {progress_label}  已完成全部章节目标")
             }
         })
 }
@@ -4965,6 +5002,23 @@ fn runtime_chapter_goal_lines(
     completed_goals: &std::collections::BTreeSet<String>,
     content: &ContentPack,
 ) -> Vec<String> {
+    runtime_chapter_goal_entries(chapter_id, content)
+        .into_iter()
+        .map(|(goal_id, label, reward)| {
+            let status = if completed_goals.contains(&goal_id) {
+                "[x]"
+            } else {
+                "[ ]"
+            };
+            format!("{status} {goal_id} - {label} -> {reward}")
+        })
+        .collect()
+}
+
+fn runtime_chapter_goal_entries(
+    chapter_id: &str,
+    content: &ContentPack,
+) -> Vec<(String, String, String)> {
     let boss_id = runtime_chapter_boss_id(chapter_id).unwrap_or(chapter_id);
     let boss_goal_id = format!("defeat-{boss_id}");
     let mut goals = vec![
@@ -4992,16 +5046,6 @@ fn runtime_chapter_goal_lines(
         ));
     }
     goals
-        .into_iter()
-        .map(|(goal_id, label, reward)| {
-            let status = if completed_goals.contains(&goal_id) {
-                "[x]"
-            } else {
-                "[ ]"
-            };
-            format!("{status} {goal_id} - {label} -> {reward}")
-        })
-        .collect()
 }
 
 fn runtime_chapter_boss_id(chapter_id: &str) -> Option<&'static str> {
@@ -10805,10 +10849,65 @@ mod tests {
         assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
+        assert!(panel.contains("锁定目标预览 0/3  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
         assert!(panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
         assert!(panel.contains("右下点击区: 角色  地图"));
+    }
+
+    #[test]
+    fn meta_panel_loadout_guides_next_chapter_goal_after_partial_progress() {
+        let content = ContentPack::base_demo();
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 600.0,
+            victory: true,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 95,
+            level: 4,
+            xp_collected: 80.0,
+            damage_dealt_by_weapon: 900.0,
+            damage_taken: 2.0,
+            damage_taken_by_source: BTreeMap::from([("contact".to_string(), 2.0)]),
+            boss_damage: 0.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 3)]),
+            passives_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        progress.apply_run_summary(&summary);
+        let config = RunConfig {
+            character_id: "jar-keeper".to_string(),
+            map_id: "frosting-grassland".to_string(),
+            starting_loadout: runtime_character_starting_loadout(&content, "jar-keeper"),
+            ..RunConfig::default()
+        };
+
+        let panel = render_meta_progress_panel(
+            &progress,
+            None,
+            RuntimeMetaPanelView::Loadout,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &content,
+                &config,
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        assert!(panel.contains("本图目标 1/4"));
+        assert!(panel.contains(
+            "下一项 击败暴走搅糖机 -> 奖励 星片 +1；解锁 棉花糖护盾、泡泡邮差；集齐 2 星片开放 汽水溪谷"
+        ));
     }
 
     #[test]
@@ -10862,6 +10961,7 @@ mod tests {
         assert!(panel.contains("地图机制 无固定地形伤害"));
         assert!(panel
             .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"));
+        assert!(panel.contains("本图目标 0/4  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
         assert!(!panel.contains("还有"));
     }
 
