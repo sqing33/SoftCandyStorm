@@ -43,6 +43,7 @@ const SOUR_CONTROL_ENEMY_SLOW_DURATION_MULTIPLIER: f32 = 1.45;
 const LONGER_SUMMONS_LIFETIME_MULTIPLIER: f32 = 1.45;
 const BOOMERANG_RETURN_AFTER_LIFETIME_RATIO: f32 = 0.42;
 const BOOMERANG_RETURN_SPEED_MULTIPLIER: f32 = 1.08;
+const WINDMILL_SPIN_ANGULAR_SPEED: f32 = 2.4;
 const KNOCKBACK_WEAPON_DISTANCE: f32 = 46.0;
 const SUMMON_TURRET_MIN_FIRE_INTERVAL_SECONDS: f32 = 0.24;
 const TRAP_TRIGGER_RADIUS_MULTIPLIER: f32 = 1.0;
@@ -1654,6 +1655,19 @@ impl GameCore {
                             return_direction * projectile.boomerang_return_speed.max(1.0);
                     }
                 }
+            }
+            if projectile.is_spinning_windmill()
+                && dt > 0.0
+                && projectile.velocity.length_squared() > 0.0
+            {
+                let spin_direction = if projectile.entity_id % 2 == 0 {
+                    1.0
+                } else {
+                    -1.0
+                };
+                projectile.velocity = projectile
+                    .velocity
+                    .rotated(WINDMILL_SPIN_ANGULAR_SPEED * dt * spin_direction);
             }
             if projectile.is_summon_turret() {
                 projectile.lifetime -= dt;
@@ -3911,6 +3925,10 @@ impl Projectile {
         self.weapon_id == "marshmallow-fortress"
     }
 
+    fn is_spinning_windmill(&self) -> bool {
+        self.weapon_id == "sugar-windmill"
+    }
+
     fn damage_multiplier_against(&self, enemy: &Enemy, player_position: Vec2) -> f32 {
         let multiplier = enemy.projectile_damage_multiplier(self.position, player_position);
         if self.weapon_id == "candy-crystal-judgment" {
@@ -4281,6 +4299,50 @@ mod tests {
             .expect("boomerang should still be active on return");
         assert!(returning.velocity.x < 0.0);
         assert!(returning.position.x < outbound_x);
+    }
+
+    #[test]
+    fn sugar_windmill_curves_into_spinning_cutting_path() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("sugar-windmill")
+            .expect("base demo should include sugar windmill")
+            .clone();
+        assert_eq!(evolution.replaces_weapon, "lollipop-boomerang");
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.projectiles.clear();
+        core.player.velocity = Vec2::new(core.player.move_speed, 0.0);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let projectile_id = core
+            .projectiles
+            .first()
+            .expect("sugar windmill should create spinning blades")
+            .entity_id;
+        let starting_velocity = core.projectiles[0].velocity;
+        let starting_speed = starting_velocity.length();
+        assert!(core.projectiles[0].is_spinning_windmill());
+
+        core.update_projectiles(0.2, &mut Vec::new());
+
+        let projectile = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.entity_id == projectile_id)
+            .expect("sugar windmill blade should stay active");
+        let starting_direction = starting_velocity.normalized_or_zero();
+        let current_direction = projectile.velocity.normalized_or_zero();
+        let direction_similarity =
+            starting_direction.x * current_direction.x + starting_direction.y * current_direction.y;
+        assert!(direction_similarity < 0.95);
+        assert!((projectile.velocity.length() - starting_speed).abs() < 0.01);
     }
 
     #[test]
