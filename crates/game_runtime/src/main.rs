@@ -2284,8 +2284,13 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     let evolutions = format_build_items(&build.evolutions, 2, |id| {
         runtime_evolution_label(content, id)
     });
+    let evolution_paths = format_evolution_path_items(&build.open_evolution_paths, 2, |id| {
+        runtime_evolution_label(content, id)
+    });
     let tags = format_tag_items(&build.tags, 4);
-    format!("Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  标签 {tags}")
+    format!(
+        "Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  进化线 {evolution_paths}  标签 {tags}"
+    )
 }
 
 fn format_hazard_status(
@@ -2363,6 +2368,25 @@ where
         .iter()
         .take(limit)
         .map(|item| format!("{} Lv.{}", label(&item.id), item.level))
+        .collect::<Vec<_>>();
+    if items.len() > limit {
+        visible.push(format!("+{} 项", items.len() - limit));
+    }
+    visible.join(", ")
+}
+
+fn format_evolution_path_items<F>(items: &[String], limit: usize, label: F) -> String
+where
+    F: Fn(&str) -> String,
+{
+    if items.is_empty() {
+        return "无".to_string();
+    }
+
+    let mut visible = items
+        .iter()
+        .take(limit)
+        .map(|id| format!("{} ({id})", label(id)))
         .collect::<Vec<_>>();
     if items.len() > limit {
         visible.push(format!("+{} 项", items.len() - limit));
@@ -7429,7 +7453,7 @@ mod tests {
                 level: 1,
             }],
             tags: vec!["projectile".to_string(), "economy".to_string()],
-            open_evolution_paths: Vec::new(),
+            open_evolution_paths: vec!["soda-volcano".to_string()],
         };
         let status = format_build_status(&build, &content);
 
@@ -7438,6 +7462,7 @@ mod tests {
         assert!(status.contains("汽水泡泡 Lv.1"));
         assert!(status.contains("糖晶放大镜 Lv.2"));
         assert!(status.contains("彩虹糖流星雨 Lv.1"));
+        assert!(status.contains("进化线 汽水火山 (soda-volcano)"));
         assert!(status.contains("标签 弹幕, 经济"));
     }
 
