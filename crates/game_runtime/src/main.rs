@@ -2575,6 +2575,7 @@ fn format_event_effect_status(
 fn runtime_event_effect_label(effect_type: &str) -> String {
     match effect_type {
         "damage_multiplier" => "伤害",
+        "offer_upgrade" => "升级选择",
         "pickup_radius_multiplier" => "拾取",
         "route_echo_hazard" => "路线回声危险区",
         "spawn_hazard" => "危险区",
@@ -3291,14 +3292,69 @@ fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
         GameEvent::UpgradeChosen { option_id } => Some(format!("选择 {option_id}")),
         GameEvent::PlayerDamaged { amount } => Some(format!("受伤 {amount:.1}")),
         GameEvent::ContentEventTriggered { event_id } => Some(format!(
-            "事件 {} ({event_id})",
-            runtime_event_label(content, event_id)
+            "事件 {}",
+            runtime_content_event_summary(content, event_id)
         )),
         GameEvent::RunEnded { terminal } => {
             Some(format!("本局结束 {}", terminal_kind_label(terminal.kind)))
         }
         GameEvent::EnemyHit { .. } | GameEvent::XpDropped { .. } => None,
     }
+}
+
+fn runtime_content_event_summary(content: &ContentPack, event_id: &str) -> String {
+    let Some(event) = content.events.get(event_id) else {
+        return event_id.to_string();
+    };
+    let effects = event
+        .effects
+        .iter()
+        .take(3)
+        .map(|effect| format_content_event_effect_for_feedback(effect, content))
+        .collect::<Vec<_>>();
+    if effects.is_empty() {
+        event.name.clone()
+    } else {
+        format!("{}：{}", event.name, effects.join("，"))
+    }
+}
+
+fn format_content_event_effect_for_feedback(
+    effect: &EventEffectDefinition,
+    content: &ContentPack,
+) -> String {
+    match effect.effect_type.as_str() {
+        "offer_upgrade" => format!("升级{:.0}选1", effect.value.max(1.0)),
+        "spawn_enemy" => format!(
+            "生成 {} x{:.0}",
+            effect
+                .enemy_id
+                .as_deref()
+                .map(|id| runtime_enemy_label(content, id))
+                .unwrap_or_else(|| "未知敌人".to_string()),
+            effect.value,
+        ),
+        "spawn_hazard" | "route_echo_hazard" => format!(
+            "{} x{:.0}{}",
+            runtime_event_effect_label(&effect.effect_type),
+            effect.value,
+            format_event_effect_duration_suffix(effect),
+        ),
+        other => format!(
+            "{} x{:.2}{}",
+            runtime_event_effect_label(other),
+            effect.value,
+            format_event_effect_duration_suffix(effect),
+        ),
+    }
+}
+
+fn format_event_effect_duration_suffix(effect: &EventEffectDefinition) -> String {
+    effect
+        .hazard_duration_seconds
+        .or(effect.duration_seconds)
+        .map(|seconds| format!(" {:.0}s", seconds))
+        .unwrap_or_default()
 }
 
 fn effects_for_events(events: &[GameEvent], snapshot: &RunSnapshot) -> Vec<RuntimeEffect> {
@@ -5015,6 +5071,7 @@ fn format_event_trigger_for_codex(trigger: &EventTriggerDefinition) -> String {
 
 fn format_event_effect_for_codex(effect: &EventEffectDefinition, content: &ContentPack) -> String {
     match effect.effect_type.as_str() {
+        "offer_upgrade" => format!("升级选择 {}选1", effect.value.max(1.0).round()),
         "spawn_enemy" => format!(
             "生成敌人 {} x{:.0}",
             effect
@@ -8943,6 +9000,24 @@ mod tests {
     }
 
     #[test]
+    fn event_codex_formats_upgrade_supply_effect() {
+        let content = ContentPack::base_demo();
+        let effect = content
+            .events
+            .get("sugar-jar-supply")
+            .expect("base demo event should include sugar-jar-supply")
+            .effects
+            .iter()
+            .find(|effect| effect.effect_type == "offer_upgrade")
+            .expect("sugar-jar-supply should include an upgrade effect");
+
+        assert_eq!(
+            format_event_effect_for_codex(effect, &content),
+            "升级选择 3选1"
+        );
+    }
+
+    #[test]
     fn build_status_renders_current_loadout_labels() {
         let content = ContentPack::base_demo();
         let build = BuildSnapshot {
@@ -10666,8 +10741,44 @@ mod tests {
                 }],
                 &content
             ),
-            "事件 彩虹糖潮 (rainbow-candy-rush)"
+            "事件 彩虹糖潮：XP x1.40 25s，刷怪 x1.25 25s"
         );
+    }
+
+    #[test]
+    fn runtime_feedback_summarizes_content_event_effects() {
+        let content = ContentPack::base_demo();
+        let cases = [
+            ("sugar-jar-supply", "事件 糖罐补给：升级3选1"),
+            (
+                "sour-rain",
+                "事件 酸味雨：刷怪 x1.18 28s，XP x1.30 28s，生成 辣味软糖 x2",
+            ),
+            (
+                "cotton-cloud-cover",
+                "事件 棉花云遮挡：拾取 x1.35 30s，伤害 x0.90 30s，生成 棉花糖团 x3",
+            ),
+            (
+                "caramel-quake",
+                "事件 焦糖地震：危险区 x5 10s，生成 焦糖史莱姆 x2",
+            ),
+            (
+                "rainbow-candy-rush",
+                "事件 彩虹糖潮：XP x1.40 25s，刷怪 x1.25 25s",
+            ),
+        ];
+
+        for (event_id, expected) in cases {
+            assert_eq!(
+                describe_events(
+                    &[GameEvent::ContentEventTriggered {
+                        event_id: event_id.to_string(),
+                    }],
+                    &content,
+                ),
+                expected,
+            );
+        }
     }
 
     #[test]
