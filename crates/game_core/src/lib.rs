@@ -34,6 +34,8 @@ const BUBBLE_RUNNER_PICKUP_BOOST_SECONDS: f32 = 1.4;
 const BUBBLE_RUNNER_PICKUP_MULTIPLIER: f32 = 1.35;
 const CREAM_GUARD_DAMAGE_REDUCTION_SECONDS: f32 = 2.5;
 const CREAM_GUARD_DAMAGE_REDUCTION_BONUS: f32 = 0.35;
+const BOSS_CORE_EXPOSED_SECONDS: f32 = 2.4;
+const BOSS_CORE_EXPOSED_DAMAGE_MULTIPLIER: f32 = 1.45;
 const SLOW_WEAPON_ENEMY_MULTIPLIER: f32 = 0.78;
 const SLOW_WEAPON_ENEMY_DURATION_SECONDS: f32 = 0.75;
 const COLD_WEAPON_ENEMY_MULTIPLIER: f32 = 0.86;
@@ -1310,6 +1312,12 @@ impl GameCore {
                                 boss_id: enemy.enemy_id.clone(),
                                 ability_id: ability_id.clone(),
                             });
+                            if ability_id == "phase_shift_vulnerability" {
+                                enemy.expose_core_to_projectiles(
+                                    BOSS_CORE_EXPOSED_SECONDS,
+                                    BOSS_CORE_EXPOSED_DAMAGE_MULTIPLIER,
+                                );
+                            }
                             boss_actions.extend(boss_ability_actions(
                                 &ability_id,
                                 enemy.position,
@@ -3384,6 +3392,8 @@ struct Enemy {
     boss_ability_cooldown_remaining: f32,
     slow_multiplier: f32,
     slow_remaining_seconds: f32,
+    projectile_damage_taken_multiplier: f32,
+    projectile_damage_taken_multiplier_remaining_seconds: f32,
 }
 
 impl Enemy {
@@ -3448,6 +3458,8 @@ impl Enemy {
             boss_ability_cooldown_remaining: 0.0,
             slow_multiplier: 1.0,
             slow_remaining_seconds: 0.0,
+            projectile_damage_taken_multiplier: 1.0,
+            projectile_damage_taken_multiplier_remaining_seconds: 0.0,
         }
     }
 
@@ -3455,6 +3467,11 @@ impl Enemy {
         self.slow_remaining_seconds = (self.slow_remaining_seconds - dt).max(0.0);
         if self.slow_remaining_seconds <= 0.0 {
             self.slow_multiplier = 1.0;
+        }
+        self.projectile_damage_taken_multiplier_remaining_seconds =
+            (self.projectile_damage_taken_multiplier_remaining_seconds - dt).max(0.0);
+        if self.projectile_damage_taken_multiplier_remaining_seconds <= 0.0 {
+            self.projectile_damage_taken_multiplier = 1.0;
         }
     }
 
@@ -3491,6 +3508,18 @@ impl Enemy {
         self.position += direction * distance;
         self.position.x = self.position.x.clamp(-half_width, half_width);
         self.position.y = self.position.y.clamp(-half_height, half_height);
+    }
+
+    fn expose_core_to_projectiles(&mut self, duration_seconds: f32, damage_multiplier: f32) {
+        if !self.is_boss || duration_seconds <= 0.0 || damage_multiplier <= 1.0 {
+            return;
+        }
+        self.projectile_damage_taken_multiplier = self
+            .projectile_damage_taken_multiplier
+            .max(damage_multiplier);
+        self.projectile_damage_taken_multiplier_remaining_seconds = self
+            .projectile_damage_taken_multiplier_remaining_seconds
+            .max(duration_seconds);
     }
 
     fn dash_velocity(&mut self, direction: Vec2, dt: f32) -> Vec2 {
@@ -3618,19 +3647,25 @@ impl Enemy {
         projectile_position: Vec2,
         player_position: Vec2,
     ) -> f32 {
+        let vulnerability_multiplier =
+            if self.projectile_damage_taken_multiplier_remaining_seconds > 0.0 {
+                self.projectile_damage_taken_multiplier.max(1.0)
+            } else {
+                1.0
+            };
         if self.behavior != EnemyBehavior::Shielded {
-            return 1.0;
+            return vulnerability_multiplier;
         }
 
         let front_direction = (player_position - self.position).normalized_or_zero();
         let hit_direction = (projectile_position - self.position).normalized_or_zero();
         if front_direction == Vec2::ZERO || hit_direction == Vec2::ZERO {
-            return self.behavior_state.shield_front_damage_multiplier;
+            return self.behavior_state.shield_front_damage_multiplier * vulnerability_multiplier;
         }
         if hit_direction.x * front_direction.x + hit_direction.y * front_direction.y >= 0.0 {
-            self.behavior_state.shield_front_damage_multiplier
+            self.behavior_state.shield_front_damage_multiplier * vulnerability_multiplier
         } else {
-            self.behavior_state.shield_rear_damage_multiplier
+            self.behavior_state.shield_rear_damage_multiplier * vulnerability_multiplier
         }
     }
 }
@@ -5637,6 +5672,64 @@ mod tests {
             .hazards
             .iter()
             .any(|hazard| hazard.damage_per_second > 0.0));
+    }
+
+    #[test]
+    fn cracked_star_jar_core_phase_shift_exposes_boss_core() {
+        let content = ContentPack::base_demo();
+        let boss_definition = content
+            .bosses
+            .get("cracked-star-jar-core")
+            .expect("base demo should include cracked-star-jar-core")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.enemies.clear();
+        let entity_id = core.allocate_entity_id();
+        let mut boss =
+            Enemy::from_boss_definition(entity_id, Vec2::new(120.0, 0.0), &boss_definition);
+        boss.health = boss.max_health * 0.20;
+        boss.boss_phase_index = 2;
+        boss.boss_ability_cursor = 1;
+        boss.boss_ability_cooldown_remaining = 0.0;
+        core.enemies.push(boss);
+
+        let mut events = Vec::new();
+        core.update_enemy_behavior(0.1, &mut events);
+
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::BossAbilityUsed {
+                    boss_id,
+                    ability_id,
+                    ..
+                } if boss_id == "cracked-star-jar-core"
+                    && ability_id == "phase_shift_vulnerability"
+            )
+        }));
+        let exposed_boss = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == entity_id)
+            .expect("boss should still be present");
+        assert!(exposed_boss.projectile_damage_multiplier(Vec2::ZERO, core.player.position) > 1.0);
+        assert!(
+            exposed_boss.projectile_damage_taken_multiplier_remaining_seconds
+                > BOSS_CORE_EXPOSED_SECONDS - 0.2
+        );
+
+        core.update_enemy_behavior(BOSS_CORE_EXPOSED_SECONDS + 0.1, &mut Vec::new());
+
+        let recovered_boss = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == entity_id)
+            .expect("boss should remain after exposure window");
+        assert_eq!(
+            recovered_boss.projectile_damage_multiplier(Vec2::ZERO, core.player.position),
+            1.0
+        );
     }
 
     #[test]

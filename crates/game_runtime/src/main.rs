@@ -4604,6 +4604,7 @@ fn runtime_boss_ability_label(ability_id: &str) -> String {
         "spicy_phase_storm" => "辣味风暴",
         "soda_phase_storm" => "汽水风暴",
         "multi_flavor_storm" => "多味风暴",
+        "phase_shift_vulnerability" => "核心暴露",
         other => return other.replace('_', " "),
     }
     .to_string()
@@ -10571,6 +10572,17 @@ mod tests {
                 &content
             ),
             "技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道"
+        );
+        assert_eq!(
+            describe_events(
+                &[GameEvent::BossAbilityUsed {
+                    entity_id: 31,
+                    boss_id: "cracked-star-jar-core".to_string(),
+                    ability_id: "phase_shift_vulnerability".to_string(),
+                }],
+                &content
+            ),
+            "技能预警 Boss 裂星糖罐核心 使用 核心暴露"
         );
         assert_eq!(
             describe_events(
