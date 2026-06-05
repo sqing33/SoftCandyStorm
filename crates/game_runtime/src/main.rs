@@ -11,7 +11,7 @@ use game_core::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     env, fs,
     path::{Path, PathBuf},
     sync::Arc,
@@ -2641,14 +2641,28 @@ fn render_meta_overview_panel(
     );
 
     if let Some(report) = settlement {
+        let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n+{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}",
+            "\n局后结算\n{}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            format_settlement_outcome(summary),
+            format_settlement_duration(summary.duration_seconds),
+            format_terminal_reason(&summary.terminal_reason),
+            summary.level,
+            summary.kills,
+            summary.xp_collected,
+            summary.damage_dealt_by_weapon,
+            summary.boss_damage,
+            summary.damage_taken,
+            format_damage_sources(&summary.damage_taken_by_source, 2),
+            format_weapon_levels(&summary.weapon_levels, 4),
+            format_passive_set(&summary.passives_used, 3),
             report.resources_gained.candy_crystal_shards,
             report.resources_gained.star_shards,
             report.resources_gained.storm_grains,
             format_string_slice(&report.completed_goals, 2),
             format_meta_unlocks(report, 2),
             format_string_slice(&report.codex_updates, 2),
+            format_settlement_next_step(report),
         ));
     } else {
         output.push_str("\n巡逻中：结算会在本局结束后更新");
@@ -3383,6 +3397,76 @@ fn format_meta_unlocks(report: &MetaSettlementReport, limit: usize) -> String {
         .map(|unlock| format!("{}:{}", unlock.kind, unlock.id))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
+}
+
+fn format_settlement_outcome(summary: &MetaRunSummary) -> &'static str {
+    if summary.victory {
+        "胜利"
+    } else {
+        "失败"
+    }
+}
+
+fn format_settlement_duration(seconds: f32) -> String {
+    format!("{:.0}s", seconds.max(0.0))
+}
+
+fn format_terminal_reason(reason: &str) -> String {
+    match reason {
+        "duration_reached" => "坚持到巡逻结束".to_string(),
+        "player_health_depleted" => "生命值归零".to_string(),
+        "not_terminal" => "仍在巡逻".to_string(),
+        other => other.to_string(),
+    }
+}
+
+fn format_weapon_levels(weapon_levels: &BTreeMap<String, u32>, limit: usize) -> String {
+    if weapon_levels.is_empty() {
+        return "无".to_string();
+    }
+
+    let values = weapon_levels
+        .iter()
+        .map(|(weapon_id, level)| format!("{weapon_id} Lv.{level}"))
+        .collect::<Vec<_>>();
+    format_string_items(&values, limit)
+}
+
+fn format_passive_set(passives: &BTreeSet<String>, limit: usize) -> String {
+    let values = passives.iter().cloned().collect::<Vec<_>>();
+    format_string_items(&values, limit)
+}
+
+fn format_damage_sources(sources: &BTreeMap<String, f32>, limit: usize) -> String {
+    if sources.is_empty() {
+        return "无".to_string();
+    }
+
+    let values = sources
+        .iter()
+        .map(|(source, damage)| format!("{} {:.1}", format_damage_source(source), damage))
+        .collect::<Vec<_>>();
+    format_string_items(&values, limit)
+}
+
+fn format_damage_source(source: &str) -> String {
+    match source {
+        "contact" => "接触".to_string(),
+        "hazard" => "风暴地面".to_string(),
+        other => other.to_string(),
+    }
+}
+
+fn format_settlement_next_step(report: &MetaSettlementReport) -> &'static str {
+    if !report.unlocked.is_empty() {
+        "F5 试试新角色或地图，F3 查看新增图鉴"
+    } else if !report.completed_goals.is_empty() {
+        "F2 查看章节目标，F5 开下一次巡逻"
+    } else if report.run_summary.victory {
+        "F2 挑战下一章，F5 换构筑继续巡逻"
+    } else {
+        "F5 调整角色或地图继续巡逻，F3 查看本局图鉴"
+    }
 }
 
 fn format_asset_candidate_type_counts(candidate: &RuntimeAssetCandidateManifest) -> String {
@@ -6808,6 +6892,13 @@ mod tests {
             kills: 95,
             level: 5,
             xp_collected: 210.0,
+            damage_dealt_by_weapon: 900.0,
+            damage_taken: 12.5,
+            damage_taken_by_source: BTreeMap::from([
+                ("contact".to_string(), 9.0),
+                ("hazard".to_string(), 3.5),
+            ]),
+            boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
             passives_used: Default::default(),
             enemies_defeated: Default::default(),
@@ -6832,8 +6923,18 @@ mod tests {
 
         assert!(panel.contains("糖罐守护站"));
         assert!(panel.contains("局后结算"));
+        assert!(panel.contains("失败"));
+        assert!(panel.contains("存活 120s"));
+        assert!(panel.contains("等级 5"));
+        assert!(panel.contains("击杀 95"));
+        assert!(panel.contains("XP 210"));
+        assert!(panel.contains("输出 900"));
+        assert!(panel.contains("受伤 12.5"));
+        assert!(panel.contains("接触 9.0"));
+        assert!(panel.contains("rainbow-candy-shot Lv.1"));
         assert!(panel.contains("collect-200-candy-crystals"));
         assert!(panel.contains("discovered:jar-keeper"));
+        assert!(panel.contains("下一步"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
         assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
     }
@@ -6852,6 +6953,10 @@ mod tests {
             kills: 95,
             level: 5,
             xp_collected: 210.0,
+            damage_dealt_by_weapon: 1_200.0,
+            damage_taken: 4.0,
+            damage_taken_by_source: BTreeMap::from([("contact".to_string(), 4.0)]),
+            boss_damage: 300.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 5)]),
             passives_used: Default::default(),
             enemies_defeated: Default::default(),
@@ -6929,6 +7034,10 @@ mod tests {
             kills: 95,
             level: 5,
             xp_collected: 210.0,
+            damage_dealt_by_weapon: 900.0,
+            damage_taken: 12.5,
+            damage_taken_by_source: BTreeMap::from([("contact".to_string(), 12.5)]),
+            boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
             passives_used: Default::default(),
             enemies_defeated: Default::default(),
@@ -6971,6 +7080,10 @@ mod tests {
             kills: 3,
             level: 2,
             xp_collected: 12.0,
+            damage_dealt_by_weapon: 40.0,
+            damage_taken: 2.0,
+            damage_taken_by_source: BTreeMap::from([("contact".to_string(), 2.0)]),
+            boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
             passives_used: Default::default(),
             enemies_defeated: BTreeMap::from([("bouncy-gummy".to_string(), 3)]),

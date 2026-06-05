@@ -108,6 +108,7 @@ impl MetaProgress {
         let mut report = MetaSettlementReport {
             run_id: summary.run_id.clone(),
             mode: summary.mode,
+            run_summary: summary.clone(),
             resources_gained: calculate_run_rewards(summary),
             completed_goals: Vec::new(),
             unlocked: Vec::new(),
@@ -180,6 +181,10 @@ pub struct MetaRunSummary {
     pub kills: u32,
     pub level: u32,
     pub xp_collected: f32,
+    pub damage_dealt_by_weapon: f32,
+    pub damage_taken: f32,
+    pub damage_taken_by_source: BTreeMap<String, f32>,
+    pub boss_damage: f32,
     pub weapon_levels: BTreeMap<String, u32>,
     pub passives_used: BTreeSet<String>,
     pub enemies_defeated: BTreeMap<String, u32>,
@@ -220,6 +225,10 @@ impl MetaRunSummary {
             kills: metrics.kills,
             level: metrics.level,
             xp_collected: metrics.xp_collected,
+            damage_dealt_by_weapon: metrics.damage_dealt_by_weapon,
+            damage_taken: metrics.damage_taken,
+            damage_taken_by_source: metrics.damage_taken_by_source.clone(),
+            boss_damage: metrics.boss_damage,
             weapon_levels,
             passives_used: BTreeSet::new(),
             enemies_defeated: BTreeMap::new(),
@@ -232,6 +241,7 @@ impl MetaRunSummary {
 pub struct MetaSettlementReport {
     pub run_id: String,
     pub mode: RunMode,
+    pub run_summary: MetaRunSummary,
     pub resources_gained: MetaResourceWallet,
     pub completed_goals: Vec<String>,
     pub unlocked: Vec<MetaUnlock>,
@@ -551,6 +561,10 @@ mod tests {
             kills: 30,
             level: 4,
             xp_collected: 80.0,
+            damage_dealt_by_weapon: 320.0,
+            damage_taken: 18.5,
+            damage_taken_by_source: BTreeMap::from([("contact".to_string(), 18.5)]),
+            boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 3)]),
             passives_used: BTreeSet::from(["big-candy-jar".to_string()]),
             enemies_defeated: BTreeMap::from([("bouncy-gummy".to_string(), 30)]),
@@ -580,6 +594,8 @@ mod tests {
 
         assert!(report.resources_gained.candy_crystal_shards > 0);
         assert_eq!(report.resources_gained.star_shards, 0);
+        assert_eq!(report.run_summary.duration_seconds, 180.0);
+        assert_eq!(report.run_summary.damage_taken, 18.5);
         assert_eq!(
             progress
                 .codex
@@ -677,6 +693,10 @@ mod tests {
 
         assert!(summary.victory);
         assert_eq!(summary.weapon_levels["rainbow-candy-shot"], 5);
+        assert_eq!(summary.damage_dealt_by_weapon, 1_000.0);
+        assert_eq!(summary.damage_taken, 10.0);
+        assert_eq!(summary.damage_taken_by_source["contact"], 10.0);
+        assert_eq!(summary.boss_damage, 250.0);
     }
 
     #[test]
