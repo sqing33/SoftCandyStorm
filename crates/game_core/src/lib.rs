@@ -36,6 +36,8 @@ const CREAM_GUARD_DAMAGE_REDUCTION_SECONDS: f32 = 2.5;
 const CREAM_GUARD_DAMAGE_REDUCTION_BONUS: f32 = 0.35;
 const SLOW_WEAPON_ENEMY_MULTIPLIER: f32 = 0.78;
 const SLOW_WEAPON_ENEMY_DURATION_SECONDS: f32 = 0.75;
+const COLD_WEAPON_ENEMY_MULTIPLIER: f32 = 0.86;
+const COLD_WEAPON_ENEMY_DURATION_SECONDS: f32 = 0.55;
 const SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER: f32 = 0.58;
 const SOUR_CONTROL_ENEMY_SLOW_DURATION_MULTIPLIER: f32 = 1.45;
 const LONGER_SUMMONS_LIFETIME_MULTIPLIER: f32 = 1.45;
@@ -1594,19 +1596,26 @@ impl GameCore {
     }
 
     fn enemy_slow_effect_for_weapon(&self, weapon_tags: &[String]) -> (f32, f32) {
-        if !weapon_tags.iter().any(|tag| tag == "slow") {
+        let has_slow_tag = weapon_tags.iter().any(|tag| tag == "slow");
+        let has_cold_tag = weapon_tags.iter().any(|tag| tag == "cold");
+        if !has_slow_tag && !has_cold_tag {
             return (1.0, 0.0);
         }
 
-        if self.character_trait_id.as_deref() == Some("sour-control") {
+        if has_slow_tag && self.character_trait_id.as_deref() == Some("sour-control") {
             (
                 SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER,
                 SLOW_WEAPON_ENEMY_DURATION_SECONDS * SOUR_CONTROL_ENEMY_SLOW_DURATION_MULTIPLIER,
             )
-        } else {
+        } else if has_slow_tag {
             (
                 SLOW_WEAPON_ENEMY_MULTIPLIER,
                 SLOW_WEAPON_ENEMY_DURATION_SECONDS,
+            )
+        } else {
+            (
+                COLD_WEAPON_ENEMY_MULTIPLIER,
+                COLD_WEAPON_ENEMY_DURATION_SECONDS,
             )
         }
     }
@@ -5168,6 +5177,47 @@ mod tests {
             moving_enemy.velocity.length()
                 <= moving_enemy.move_speed * SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER + 0.001
         );
+    }
+
+    #[test]
+    fn cold_orbit_weapon_lightly_slows_enemies() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["mint-cyclone".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+        core.weapons[0].cooldown_remaining = 0.0;
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let hit_position = core
+            .projectiles
+            .first()
+            .expect("mint cyclone should create an orbit projectile")
+            .position;
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy = Enemy::from_enemy_definition(enemy_id, hit_position, &enemy_definition);
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        core.enemies.push(enemy);
+
+        core.update_projectiles(0.0, &mut Vec::new());
+
+        let enemy = &core.enemies[0];
+        assert!((enemy.slow_multiplier - COLD_WEAPON_ENEMY_MULTIPLIER).abs() <= 0.001);
+        assert!((enemy.slow_remaining_seconds - COLD_WEAPON_ENEMY_DURATION_SECONDS).abs() <= 0.001);
     }
 
     #[test]
