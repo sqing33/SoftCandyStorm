@@ -82,6 +82,8 @@ const LOADOUT_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 2;
 const CHAPTER_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CHAPTER_POINTER_CONTROL_ZONE_COUNT: usize = 3;
+const UPGRADE_POINTER_CONTROL_HEIGHT: f32 = 190.0;
+const UPGRADE_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT: usize = 8;
 const LOADOUT_UNLOCKED_MAP_LABEL_LIMIT: usize = 8;
 
@@ -1323,7 +1325,19 @@ fn step_game_core(
     let upgrade_choice = if state.demo_input {
         demo_upgrade_choice(&snapshot)
     } else {
+        let pointer_choice = primary_window.get_single().ok().and_then(|window| {
+            upgrade_choice_from_pointer(
+                &mouse_buttons,
+                window.cursor_position(),
+                Vec2::new(window.resolution.width(), window.resolution.height()),
+                snapshot.upgrade_options.len(),
+            )
+        });
         upgrade_choice_from_keyboard(&keyboard, &snapshot)
+            .or(pointer_choice)
+            .or_else(|| {
+                upgrade_choice_from_gamepad(&gamepad_buttons, snapshot.upgrade_options.len())
+            })
     };
 
     if !snapshot.upgrade_options.is_empty() {
@@ -1470,6 +1484,60 @@ fn upgrade_choice_from_keyboard(
         (KeyCode::Digit3, 2usize),
     ] {
         if keyboard.just_pressed(key) && index < snapshot.upgrade_options.len() {
+            return Some(index);
+        }
+    }
+    None
+}
+
+fn upgrade_choice_from_pointer(
+    mouse_buttons: &ButtonInput<MouseButton>,
+    cursor_position: Option<Vec2>,
+    window_size: Vec2,
+    option_count: usize,
+) -> Option<usize> {
+    if !mouse_buttons.just_pressed(MouseButton::Left) {
+        return None;
+    }
+    upgrade_choice_from_pointer_zone(cursor_position?, window_size, option_count)
+}
+
+fn upgrade_choice_from_pointer_zone(
+    cursor_position: Vec2,
+    window_size: Vec2,
+    option_count: usize,
+) -> Option<usize> {
+    if option_count == 0 || window_size.x <= 0.0 || window_size.y <= 0.0 {
+        return None;
+    }
+
+    let control_right = (window_size.x - META_PANEL_WIDTH - META_PANEL_RIGHT_MARGIN * 2.0).max(1.0);
+    let in_control_x = cursor_position.x >= 0.0 && cursor_position.x <= control_right;
+    let in_control_y =
+        cursor_position.y >= 0.0 && cursor_position.y <= UPGRADE_POINTER_CONTROL_HEIGHT;
+    if !in_control_x || !in_control_y {
+        return None;
+    }
+
+    let normalized_x = (cursor_position.x / control_right).clamp(0.0, 0.999);
+    let zone = (normalized_x * UPGRADE_POINTER_CONTROL_ZONE_COUNT as f32).floor() as usize;
+    (zone < option_count).then_some(zone)
+}
+
+fn upgrade_choice_from_gamepad(
+    gamepad_buttons: &ButtonInput<GamepadButton>,
+    option_count: usize,
+) -> Option<usize> {
+    if option_count == 0 {
+        return None;
+    }
+
+    for (button, index) in [
+        (GamepadButtonType::South, 0usize),
+        (GamepadButtonType::East, 1usize),
+        (GamepadButtonType::North, 2usize),
+    ] {
+        if index < option_count && gamepad_button_type_just_pressed(gamepad_buttons, &[button]) {
             return Some(index);
         }
     }
@@ -2226,7 +2294,7 @@ fn update_hud(
             String::new()
         } else {
             format!(
-                "升级选择 - 按 1/2/3 选择\n{}",
+                "升级选择 - 按 1/2/3，点底部三段，或手柄下/右/上按钮\n{}",
                 format_upgrade_options(&snapshot.upgrade_options)
             )
         };
@@ -5286,6 +5354,7 @@ mod tests {
         runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
         runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
         sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
@@ -8083,6 +8152,78 @@ mod tests {
             });
 
         assert_eq!(demo_upgrade_choice(&snapshot), Some(0));
+    }
+
+    #[test]
+    fn upgrade_pointer_zone_maps_bottom_segments() {
+        let window_size = Vec2::new(1280.0, 720.0);
+
+        assert_eq!(
+            upgrade_choice_from_pointer_zone(Vec2::new(120.0, 40.0), window_size, 3),
+            Some(0)
+        );
+        assert_eq!(
+            upgrade_choice_from_pointer_zone(Vec2::new(420.0, 40.0), window_size, 3),
+            Some(1)
+        );
+        assert_eq!(
+            upgrade_choice_from_pointer_zone(Vec2::new(720.0, 40.0), window_size, 3),
+            Some(2)
+        );
+        assert_eq!(
+            upgrade_choice_from_pointer_zone(Vec2::new(720.0, 40.0), window_size, 2),
+            None
+        );
+        assert_eq!(
+            upgrade_choice_from_pointer_zone(Vec2::new(980.0, 40.0), window_size, 3),
+            None
+        );
+        assert_eq!(
+            upgrade_choice_from_pointer_zone(Vec2::new(120.0, 260.0), window_size, 3),
+            None
+        );
+    }
+
+    #[test]
+    fn upgrade_pointer_input_requires_left_click() {
+        let window_size = Vec2::new(1280.0, 720.0);
+        let mut left = ButtonInput::<MouseButton>::default();
+        left.press(MouseButton::Left);
+        let mut right = ButtonInput::<MouseButton>::default();
+        right.press(MouseButton::Right);
+
+        assert_eq!(
+            upgrade_choice_from_pointer(&left, Some(Vec2::new(120.0, 40.0)), window_size, 3),
+            Some(0)
+        );
+        assert_eq!(
+            upgrade_choice_from_pointer(&right, Some(Vec2::new(120.0, 40.0)), window_size, 3),
+            None
+        );
+        assert_eq!(
+            upgrade_choice_from_pointer(&left, None, window_size, 3),
+            None
+        );
+    }
+
+    #[test]
+    fn upgrade_gamepad_input_maps_face_buttons() {
+        let gamepad = Gamepad::new(0);
+        let mut south = ButtonInput::<GamepadButton>::default();
+        south.press(GamepadButton::new(gamepad, GamepadButtonType::South));
+        let mut east = ButtonInput::<GamepadButton>::default();
+        east.press(GamepadButton::new(gamepad, GamepadButtonType::East));
+        let mut north = ButtonInput::<GamepadButton>::default();
+        north.press(GamepadButton::new(gamepad, GamepadButtonType::North));
+
+        assert_eq!(upgrade_choice_from_gamepad(&south, 3), Some(0));
+        assert_eq!(upgrade_choice_from_gamepad(&east, 3), Some(1));
+        assert_eq!(upgrade_choice_from_gamepad(&north, 3), Some(2));
+        assert_eq!(upgrade_choice_from_gamepad(&north, 2), None);
+        assert_eq!(
+            upgrade_choice_from_gamepad(&ButtonInput::<GamepadButton>::default(), 3),
+            None
+        );
     }
 
     #[test]
