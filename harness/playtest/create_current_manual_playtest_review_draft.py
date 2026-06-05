@@ -11,7 +11,7 @@ from typing import Any
 from current_candidate import CANDIDATE_ID, CANDIDATE_LABEL, CONTENT_HASH, MANUAL_PLAYTEST_RUNS
 
 
-DEFAULT_OUT = Path("harness/playtest/drafts/2026-06-04_demo_buildcraft_repair_v51_manual_playtest_review_draft.json")
+DEFAULT_OUT = Path("harness/playtest/drafts/2026-06-05_demo_buildcraft_repair_v61_manual_playtest_review_draft.json")
 RATING_PLACEHOLDER = "TODO: 1-5"
 RATING_FIELDS = [
     "fun_rating",
@@ -37,7 +37,7 @@ def placeholder_manual_review() -> dict[str, Any]:
     return review
 
 
-def build_draft(*, reviewer: str = "TODO: human reviewer", reviewed_at: str = "2026-06-04") -> dict[str, Any]:
+def build_draft(*, reviewer: str = "TODO: human reviewer", reviewed_at: str = "2026-06-05") -> dict[str, Any]:
     return {
         "review_pack_version": 1,
         "draft_notice": "AUTO-GENERATED DRAFT ONLY. A human playtester must replace TODO placeholders before validation or promotion.",
@@ -77,7 +77,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=f"Create a {CANDIDATE_LABEL} manual playtest review draft.")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--reviewer", default="TODO: human reviewer")
-    parser.add_argument("--reviewed-at", default="2026-06-04")
+    parser.add_argument("--reviewed-at", default="2026-06-05")
     args = parser.parse_args()
 
     draft = build_draft(reviewer=args.reviewer, reviewed_at=args.reviewed_at)

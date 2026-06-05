@@ -52,7 +52,7 @@ acceptance validator.
 ## Launch The Current Playable Candidate
 
 The current playable content target is
-`harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack`.
+`harness/generated_candidates/2026-06-05_demo_buildcraft_repair_v61_full_pack`.
 It remains a generated candidate and must not be copied into `content/base_demo`
 or `accepted_content` until human gates pass.
 
@@ -69,7 +69,7 @@ python3 harness/playtest/run_current_content_tour.py --next
 
 Use `play_current_candidate.py` for the easiest local start. With no preset it
 launches `jar-keeper` on `frosting-grassland` against the current candidate
-pack and writes a `v51_quick_play_default` report under
+pack and writes a `v61_quick_play_default` report under
 `harness/telemetry/local/`. Use `--list` for speed, summon, control, defense,
 and final-pressure presets.
 

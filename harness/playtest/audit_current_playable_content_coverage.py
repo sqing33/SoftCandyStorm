@@ -13,11 +13,11 @@ from current_candidate import CANDIDATE_ID, CANDIDATE_LABEL, CONTENT_DIR, CONTEN
 
 
 DEFAULT_REPORT = Path(
-    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_playable_content_coverage_001/"
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v61_playable_content_coverage_001/"
     "playable_content_coverage.json"
 )
 DEFAULT_MARKDOWN = Path(
-    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_playable_content_coverage_001/summary.md"
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v61_playable_content_coverage_001/summary.md"
 )
 
 EXPECTED_BUILD_ROLES = {

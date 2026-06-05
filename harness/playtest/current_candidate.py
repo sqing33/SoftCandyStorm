@@ -13,15 +13,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-CANDIDATE_ID = "2026-06-04_demo_buildcraft_repair_v51_full_pack"
-CANDIDATE_LABEL = "v51"
-CONTENT_HASH = "fnv1a64:50bd536bd0669e2b"
-CONTENT_DIR = Path("harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack")
+CANDIDATE_ID = "2026-06-05_demo_buildcraft_repair_v61_full_pack"
+CANDIDATE_LABEL = "v61"
+CONTENT_HASH = "fnv1a64:66fa99c902f3af87"
+CONTENT_DIR = Path("harness/generated_candidates/2026-06-05_demo_buildcraft_repair_v61_full_pack")
 DEFAULT_SECONDS = 600
 DEFAULT_CAPTURE_INTERVAL = 2
-REPORT_PREFIX_QUICK_PLAY = "harness/telemetry/local/v51_quick_play"
-REPORT_PREFIX_CONTENT_TOUR = "harness/telemetry/local/v51_content_tour"
-REPORT_PREFIX_MANUAL_PLAYTEST = "harness/telemetry/local/v51_manual_playtest"
+REPORT_PREFIX_QUICK_PLAY = "harness/telemetry/local/v61_quick_play"
+REPORT_PREFIX_CONTENT_TOUR = "harness/telemetry/local/v61_content_tour"
+REPORT_PREFIX_MANUAL_PLAYTEST = "harness/telemetry/local/v61_manual_playtest"
 
 FORBIDDEN_MANUAL_FLAGS = {
     "--demo-input",

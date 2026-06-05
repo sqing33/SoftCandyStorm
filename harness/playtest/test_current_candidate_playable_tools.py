@@ -47,7 +47,7 @@ from run_current_manual_playtest import (  # noqa: E402
 
 
 class CurrentPlayableCandidateToolTests(unittest.TestCase):
-    def test_guide_targets_v51_candidate_counts(self) -> None:
+    def test_guide_targets_v61_candidate_counts(self) -> None:
         guide = build_guide(REPO_ROOT)
 
         self.assertEqual(guide["decision"], "playable_content_guide_candidate_only")
@@ -101,7 +101,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
             },
         )
 
-    def test_runtime_commands_target_v51_without_automation_flags(self) -> None:
+    def test_runtime_commands_target_v61_without_automation_flags(self) -> None:
         quick_command = build_quick_play_command(PRESET_BY_ID["default"])
         tour_command = build_tour_command(RUN_BY_ID["soda_bubble_courier"])
         manual_command = build_manual_playtest_command(MANUAL_RUN_BY_ID["speed_soda_bubble_courier"])
@@ -110,9 +110,9 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
             self.assertIn(str(CONTENT_DIR), command)
             for flag in FORBIDDEN_MANUAL_FLAGS:
                 self.assertNotIn(flag, command)
-        self.assertIn("harness/telemetry/local/v51_quick_play_default.json", quick_command)
-        self.assertIn("harness/telemetry/local/v51_content_tour_soda_bubble_courier.json", tour_command)
-        self.assertIn("harness/telemetry/local/v51_manual_playtest_speed_soda_bubble_courier.json", manual_command)
+        self.assertIn("harness/telemetry/local/v61_quick_play_default.json", quick_command)
+        self.assertIn("harness/telemetry/local/v61_content_tour_soda_bubble_courier.json", tour_command)
+        self.assertIn("harness/telemetry/local/v61_manual_playtest_speed_soda_bubble_courier.json", manual_command)
         validate_quick_play_command(quick_command)
         validate_tour_command(tour_command)
         validate_manual_playtest_command(manual_command)
@@ -127,7 +127,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
         )
         self.assertEqual(quick.returncode, 0, quick.stderr)
         self.assertIn("cargo run -p game_runtime", quick.stdout)
-        self.assertIn("--content-dir harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack", quick.stdout)
+        self.assertIn("--content-dir harness/generated_candidates/2026-06-05_demo_buildcraft_repair_v61_full_pack", quick.stdout)
         self.assertIn("--character-id jar-keeper", quick.stdout)
 
         tour = subprocess.run(
@@ -151,7 +151,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
         self.assertEqual(manual.returncode, 0, manual.stderr)
         self.assertIn("--character-id bubble-courier", manual.stdout)
         self.assertIn("--map-id soda-creek", manual.stdout)
-        self.assertIn("v51_manual_playtest_speed_soda_bubble_courier.json", manual.stdout)
+        self.assertIn("v61_manual_playtest_speed_soda_bubble_courier.json", manual.stdout)
 
     def test_audit_reports_current_entrypoint_coverage(self) -> None:
         audit = build_audit(REPO_ROOT)
@@ -202,7 +202,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
             )
             self.assertEqual(guide_result.returncode, 0, guide_result.stderr)
             self.assertEqual(json.loads(guide_report.read_text(encoding="utf-8"))["candidate_id"], CANDIDATE_ID)
-            self.assertIn("v51 可玩内容导览", guide_markdown.read_text(encoding="utf-8"))
+            self.assertIn("v61 可玩内容导览", guide_markdown.read_text(encoding="utf-8"))
 
             audit_result = subprocess.run(
                 [
@@ -221,7 +221,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
             )
             self.assertEqual(audit_result.returncode, 0, audit_result.stderr)
             self.assertEqual(json.loads(audit_report.read_text(encoding="utf-8"))["candidate_id"], CANDIDATE_ID)
-            self.assertIn("v51 可玩内容覆盖审计", audit_markdown.read_text(encoding="utf-8"))
+            self.assertIn("v61 可玩内容覆盖审计", audit_markdown.read_text(encoding="utf-8"))
 
     def test_manual_playtest_draft_and_status_are_current_candidate_only(self) -> None:
         draft = build_draft()
@@ -253,7 +253,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
 
         self.assertIn(CANDIDATE_ID, markdown)
         self.assertIn(CONTENT_HASH, markdown)
-        self.assertIn("frosting-grassland-standard", markdown)
+        self.assertIn("route-memory-caramel-ring", markdown)
         self.assertIn("人工证据不得使用 `--demo-input`", markdown)
         self.assertIn("Runtime GUI 当前环境如遇 GPU 不可用", markdown)
         for run in MANUAL_PLAYTEST_RUNS:
@@ -297,7 +297,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
             )
             self.assertEqual(status_result.returncode, 0, status_result.stderr)
             self.assertEqual(json.loads(status_report.read_text(encoding="utf-8"))["decision"], "manual_playtest_incomplete")
-            self.assertIn("# v51 Manual Playtest Status", status_markdown.read_text(encoding="utf-8"))
+            self.assertIn("# v61 Manual Playtest Status", status_markdown.read_text(encoding="utf-8"))
 
             worksheet_result = subprocess.run(
                 [sys.executable, str(WORKSHEET_SCRIPT), "--out", str(worksheet)],
@@ -307,7 +307,7 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
                 capture_output=True,
             )
             self.assertEqual(worksheet_result.returncode, 0, worksheet_result.stderr)
-            self.assertIn("# v51 人工审查表", worksheet.read_text(encoding="utf-8"))
+            self.assertIn("# v61 人工审查表", worksheet.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

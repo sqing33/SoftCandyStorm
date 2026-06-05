@@ -21,8 +21,8 @@ from play_current_candidate import build_quick_play_command
 from run_current_content_tour import build_tour_command
 
 
-DEFAULT_REPORT = Path("harness/reports/2026-06-04_demo_buildcraft_repair_v51_playable_content_guide_001/guide.json")
-DEFAULT_MARKDOWN = Path("harness/reports/2026-06-04_demo_buildcraft_repair_v51_playable_content_guide_001/summary.md")
+DEFAULT_REPORT = Path("harness/reports/2026-06-05_demo_buildcraft_repair_v61_playable_content_guide_001/guide.json")
+DEFAULT_MARKDOWN = Path("harness/reports/2026-06-05_demo_buildcraft_repair_v61_playable_content_guide_001/summary.md")
 
 CATEGORIES = ("characters", "maps", "weapons", "passives", "evolutions", "enemies", "bosses", "waves", "events")
 DEMO_TARGETS = {

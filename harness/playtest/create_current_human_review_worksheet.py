@@ -12,8 +12,8 @@ from current_candidate import CANDIDATE_ID, CANDIDATE_LABEL, CONTENT_HASH, MANUA
 from run_current_manual_playtest import build_manual_playtest_command
 
 
-DEFAULT_OUT = Path("harness/reports/2026-06-04_demo_buildcraft_repair_v51_human_review_worksheet_001/worksheet.md")
-DESIGN_DRAFT = Path("harness/content_review/drafts/2026-06-04_demo_buildcraft_repair_v51_full_pack_design_review_draft.json")
+DEFAULT_OUT = Path("harness/reports/2026-06-05_demo_buildcraft_repair_v61_human_review_worksheet_001/worksheet.md")
+DESIGN_DRAFT = Path("harness/content_review/drafts/2026-06-05_demo_buildcraft_repair_v61_full_pack_design_review_draft.json")
 RATING_FIELDS = [
     "fun_rating",
     "clarity_rating",
@@ -43,10 +43,10 @@ def write_design_section(lines: list[str]) -> None:
             "## 设计审查",
             "",
             f"- 草稿：`{DESIGN_DRAFT}`",
-            "- 内容项：`frosting-grassland-standard`",
+            "- 内容项：`route-memory-caramel-ring`",
             "- 当前门禁结论：`draft_todo`",
             "",
-            "### frosting-grassland-standard",
+            "### route-memory-caramel-ring",
             "",
         ]
     )
@@ -56,7 +56,7 @@ def write_design_section(lines: list[str]) -> None:
         [
             "- balance_risk: low / medium / high",
             "- decision: pass / revise / reject",
-            "- 重点观察：225-300 秒后半段路线扰动是否改善 Route 残留，同时不让新手觉得突然不公平。",
+            "- 重点观察：212-232 秒焦糖旧路环印是否能提示玩家换线，同时不让新手觉得突然不公平。",
             "- 具体设计观察：",
             "",
             "```text",
@@ -156,7 +156,7 @@ def build_markdown(repo_root: Path) -> str:
             "```bash",
             "python3 harness/playtest/check_current_manual_playtest_status.py --allow-incomplete",
             f"python3 harness/playtest/validate_manual_review.py {DEFAULT_PLAYTEST_DRAFT} --strict-acceptance",
-            "python3 harness/content_review/validate_content_candidate_design_review.py harness/content_review/drafts/2026-06-04_demo_buildcraft_repair_v51_full_pack_design_review_draft.json --repo-root .",
+            "python3 harness/content_review/validate_content_candidate_design_review.py harness/content_review/drafts/2026-06-05_demo_buildcraft_repair_v61_full_pack_design_review_draft.json --repo-root .",
             "```",
             "",
             "这张表本身不是接受证据；JSON 草稿和 Runtime 报告才是后续校验的事实来源。",
