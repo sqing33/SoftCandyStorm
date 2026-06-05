@@ -1659,7 +1659,8 @@ impl GameCore {
                 projectile.lifetime -= dt;
                 projectile.turret_fire_cooldown_seconds -= dt;
                 if projectile.turret_fire_cooldown_seconds <= 0.0 {
-                    if let Some((target_index, _)) = self
+                    let target_limit = projectile.pierce_remaining.max(1) as usize;
+                    let mut target_indices = self
                         .enemies
                         .iter()
                         .enumerate()
@@ -1669,34 +1670,37 @@ impl GameCore {
                                     <= projectile.turret_range
                         })
                         .map(|(index, enemy)| (index, enemy.position.distance(projectile.position)))
-                        .min_by(|left, right| {
-                            left.1.partial_cmp(&right.1).unwrap_or(Ordering::Equal)
-                        })
-                    {
-                        let enemy = &mut self.enemies[target_index];
-                        let damage = projectile.damage
-                            * enemy
-                                .projectile_damage_multiplier(projectile.position, player_position);
-                        enemy.health -= damage;
-                        self.metrics.damage_dealt_by_weapon += damage;
-                        if enemy.is_boss {
-                            self.metrics.boss_damage += damage;
+                        .collect::<Vec<_>>();
+                    target_indices.sort_by(|left, right| {
+                        left.1.partial_cmp(&right.1).unwrap_or(Ordering::Equal)
+                    });
+
+                    if !target_indices.is_empty() {
+                        for (target_index, _) in target_indices.into_iter().take(target_limit) {
+                            let enemy = &mut self.enemies[target_index];
+                            let damage = projectile.damage
+                                * projectile.damage_multiplier_against(enemy, player_position);
+                            enemy.health -= damage;
+                            self.metrics.damage_dealt_by_weapon += damage;
+                            if enemy.is_boss {
+                                self.metrics.boss_damage += damage;
+                            }
+                            enemy.apply_slow(
+                                projectile.enemy_slow_multiplier,
+                                projectile.enemy_slow_duration_seconds,
+                            );
+                            enemy.apply_knockback(
+                                player_position,
+                                projectile.enemy_knockback_distance,
+                                half_width,
+                                half_height,
+                            );
+                            events.push(GameEvent::EnemyHit {
+                                entity_id: enemy.entity_id,
+                                damage,
+                                weapon_id: projectile.weapon_id.clone(),
+                            });
                         }
-                        enemy.apply_slow(
-                            projectile.enemy_slow_multiplier,
-                            projectile.enemy_slow_duration_seconds,
-                        );
-                        enemy.apply_knockback(
-                            player_position,
-                            projectile.enemy_knockback_distance,
-                            half_width,
-                            half_height,
-                        );
-                        events.push(GameEvent::EnemyHit {
-                            entity_id: enemy.entity_id,
-                            damage,
-                            weapon_id: projectile.weapon_id.clone(),
-                        });
                         projectile.turret_fire_cooldown_seconds +=
                             projectile.turret_fire_interval_seconds;
                     }
@@ -4412,6 +4416,86 @@ mod tests {
                 GameEvent::EnemyHit { weapon_id, .. } if weapon_id == "pudding-turret"
             )
         }));
+    }
+
+    #[test]
+    fn pudding_bastion_turrets_fire_multi_target_bursts() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("pudding-bastion")
+            .expect("base demo should include pudding bastion")
+            .clone();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        assert_eq!(evolution.replaces_weapon, "pudding-turret");
+        assert_eq!(evolution.weapon_definition.base_stats.pierce, Some(2));
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.enemies.clear();
+        core.projectiles.clear();
+
+        let first_enemy_id = core.allocate_entity_id();
+        let second_enemy_id = core.allocate_entity_id();
+        let mut first_enemy =
+            Enemy::from_enemy_definition(first_enemy_id, Vec2::new(120.0, 0.0), &enemy_definition);
+        let mut second_enemy = Enemy::from_enemy_definition(
+            second_enemy_id,
+            Vec2::new(150.0, 12.0),
+            &enemy_definition,
+        );
+        first_enemy.health = 1000.0;
+        first_enemy.max_health = 1000.0;
+        second_enemy.health = 1000.0;
+        second_enemy.max_health = 1000.0;
+        core.enemies.push(first_enemy);
+        core.enemies.push(second_enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        assert_eq!(
+            core.projectiles
+                .iter()
+                .filter(|projectile| projectile.weapon_id == "pudding-bastion")
+                .count(),
+            3
+        );
+        assert!(core
+            .projectiles
+            .iter()
+            .all(|projectile| projectile.pierce_remaining >= 2));
+
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+
+        let first_enemy = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == first_enemy_id)
+            .expect("first enemy should still be present");
+        let second_enemy = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == second_enemy_id)
+            .expect("second enemy should still be present");
+        assert!(first_enemy.health < 1000.0);
+        assert!(second_enemy.health < 1000.0);
+        for enemy_id in [first_enemy_id, second_enemy_id] {
+            assert!(events.iter().any(|event| {
+                matches!(
+                    event,
+                    GameEvent::EnemyHit { entity_id, weapon_id, .. }
+                        if *entity_id == enemy_id && weapon_id == "pudding-bastion"
+                )
+            }));
+        }
     }
 
     #[test]
