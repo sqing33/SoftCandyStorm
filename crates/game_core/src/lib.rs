@@ -34,6 +34,11 @@ const BUBBLE_RUNNER_PICKUP_BOOST_SECONDS: f32 = 1.4;
 const BUBBLE_RUNNER_PICKUP_MULTIPLIER: f32 = 1.35;
 const CREAM_GUARD_DAMAGE_REDUCTION_SECONDS: f32 = 2.5;
 const CREAM_GUARD_DAMAGE_REDUCTION_BONUS: f32 = 0.35;
+const SLOW_WEAPON_ENEMY_MULTIPLIER: f32 = 0.78;
+const SLOW_WEAPON_ENEMY_DURATION_SECONDS: f32 = 0.75;
+const SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER: f32 = 0.58;
+const SOUR_CONTROL_ENEMY_SLOW_DURATION_MULTIPLIER: f32 = 1.45;
+const LONGER_SUMMONS_LIFETIME_MULTIPLIER: f32 = 1.45;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1220,9 +1225,10 @@ impl GameCore {
         let mut boss_actions = Vec::new();
 
         for enemy in &mut self.enemies {
+            enemy.update_slow(dt);
             let direction = (player_position - enemy.position).normalized_or_zero();
             let mut spawned_hazards = Vec::new();
-            enemy.velocity = match enemy.behavior {
+            let base_velocity = match enemy.behavior {
                 EnemyBehavior::Dash | EnemyBehavior::Jump => enemy.dash_velocity(direction, dt),
                 EnemyBehavior::OrbitPlayer => enemy.orbit_velocity(player_position, direction),
                 EnemyBehavior::RangedSpit => {
@@ -1233,6 +1239,7 @@ impl GameCore {
                 }
                 _ => direction * enemy.move_speed,
             };
+            enemy.velocity = base_velocity * enemy.active_slow_multiplier();
             enemy.position += enemy.velocity * dt;
             enemy.position.x = enemy.position.x.clamp(-half_width, half_width);
             enemy.position.y = enemy.position.y.clamp(-half_height, half_height);
@@ -1379,8 +1386,12 @@ impl GameCore {
             let pierce = self.weapons[weapon_index].pierce;
             let cooldown = self.weapons[weapon_index].cooldown * self.player.cooldown_multiplier;
             let duration = self.weapons[weapon_index].duration;
+            let weapon_tags = self.weapons[weapon_index].tags.clone();
             let lifetime = weapon_lifetime(&weapon_type, duration)
-                * self.player.effect_duration_multiplier.max(0.1);
+                * self.player.effect_duration_multiplier.max(0.1)
+                * self.character_weapon_lifetime_multiplier(&weapon_type);
+            let (enemy_slow_multiplier, enemy_slow_duration_seconds) =
+                self.enemy_slow_effect_for_weapon(&weapon_tags);
             let base_direction = (target_position - self.player.position).normalized_or_zero();
             let spread_step = if count > 1 { 0.18 } else { 0.0 };
             let spread_start = -spread_step * (count.saturating_sub(1) as f32) * 0.5;
@@ -1408,6 +1419,8 @@ impl GameCore {
                     radius,
                     pierce_remaining: runtime.pierce_remaining,
                     lifetime: runtime.lifetime,
+                    enemy_slow_multiplier,
+                    enemy_slow_duration_seconds,
                 };
                 self.projectiles.push(projectile);
             }
@@ -1496,6 +1509,32 @@ impl GameCore {
         (radius * 2.0 + PLAYER_RADIUS).min(96.0)
     }
 
+    fn character_weapon_lifetime_multiplier(&self, weapon_type: &str) -> f32 {
+        if self.character_trait_id.as_deref() == Some("longer-summons") && weapon_type == "summon" {
+            LONGER_SUMMONS_LIFETIME_MULTIPLIER
+        } else {
+            1.0
+        }
+    }
+
+    fn enemy_slow_effect_for_weapon(&self, weapon_tags: &[String]) -> (f32, f32) {
+        if !weapon_tags.iter().any(|tag| tag == "slow") {
+            return (1.0, 0.0);
+        }
+
+        if self.character_trait_id.as_deref() == Some("sour-control") {
+            (
+                SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER,
+                SLOW_WEAPON_ENEMY_DURATION_SECONDS * SOUR_CONTROL_ENEMY_SLOW_DURATION_MULTIPLIER,
+            )
+        } else {
+            (
+                SLOW_WEAPON_ENEMY_MULTIPLIER,
+                SLOW_WEAPON_ENEMY_DURATION_SECONDS,
+            )
+        }
+    }
+
     fn update_projectiles(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
         let player_position = self.player.position;
         for projectile in &mut self.projectiles {
@@ -1520,6 +1559,10 @@ impl GameCore {
                     if enemy.is_boss {
                         self.metrics.boss_damage += damage;
                     }
+                    enemy.apply_slow(
+                        projectile.enemy_slow_multiplier,
+                        projectile.enemy_slow_duration_seconds,
+                    );
                     projectile.pierce_remaining = projectile.pierce_remaining.saturating_sub(1);
                     events.push(GameEvent::EnemyHit {
                         entity_id: enemy.entity_id,
@@ -2829,6 +2872,8 @@ struct Enemy {
     boss_phase_index: usize,
     boss_ability_cursor: usize,
     boss_ability_cooldown_remaining: f32,
+    slow_multiplier: f32,
+    slow_remaining_seconds: f32,
 }
 
 impl Enemy {
@@ -2891,7 +2936,32 @@ impl Enemy {
             boss_phase_index: 0,
             boss_ability_cursor: 0,
             boss_ability_cooldown_remaining: 0.0,
+            slow_multiplier: 1.0,
+            slow_remaining_seconds: 0.0,
         }
+    }
+
+    fn update_slow(&mut self, dt: f32) {
+        self.slow_remaining_seconds = (self.slow_remaining_seconds - dt).max(0.0);
+        if self.slow_remaining_seconds <= 0.0 {
+            self.slow_multiplier = 1.0;
+        }
+    }
+
+    fn active_slow_multiplier(&self) -> f32 {
+        if self.slow_remaining_seconds > 0.0 {
+            self.slow_multiplier.clamp(0.2, 1.0)
+        } else {
+            1.0
+        }
+    }
+
+    fn apply_slow(&mut self, multiplier: f32, duration_seconds: f32) {
+        if multiplier >= 1.0 || duration_seconds <= 0.0 {
+            return;
+        }
+        self.slow_multiplier = self.slow_multiplier.min(multiplier.clamp(0.2, 1.0));
+        self.slow_remaining_seconds = self.slow_remaining_seconds.max(duration_seconds);
     }
 
     fn dash_velocity(&mut self, direction: Vec2, dt: f32) -> Vec2 {
@@ -3277,6 +3347,8 @@ struct Projectile {
     radius: f32,
     pierce_remaining: u32,
     lifetime: f32,
+    enemy_slow_multiplier: f32,
+    enemy_slow_duration_seconds: f32,
 }
 
 impl From<Projectile> for ProjectileSnapshot {
@@ -3393,6 +3465,22 @@ mod tests {
             guard += 1;
         }
         core.metrics()
+    }
+
+    fn fire_first_weapon_into_enemy(core: &mut GameCore, enemy_definition: &EnemyDefinition) {
+        core.enemies.clear();
+        core.projectiles.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(120.0, 0.0), enemy_definition);
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        core.enemies.push(enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+        assert!(!core.projectiles.is_empty());
+        core.update_projectiles(0.0, &mut Vec::new());
     }
 
     #[test]
@@ -3664,6 +3752,8 @@ mod tests {
             radius: 24.0,
             pierce_remaining: 1,
             lifetime: 1.0,
+            enemy_slow_multiplier: 1.0,
+            enemy_slow_duration_seconds: 0.0,
         });
 
         let mut events = Vec::new();
@@ -3825,6 +3915,8 @@ mod tests {
             radius: 12.0,
             pierce_remaining: 1,
             lifetime: 1.0,
+            enemy_slow_multiplier: 1.0,
+            enemy_slow_duration_seconds: 0.0,
         });
 
         core.update_projectiles(0.0, &mut Vec::new());
@@ -4161,6 +4253,89 @@ mod tests {
         assert!(core.snapshot().player.status_effects.iter().any(|effect| {
             effect.kind == "damage_reduction" && effect.effect_id == "cream-guard"
         }));
+    }
+
+    #[test]
+    fn sour_control_strengthens_slow_weapon_effects_on_enemies() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        let mut baseline_core = GameCore::reset_with_content(
+            RunConfig {
+                character_id: "jar-keeper".to_string(),
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["sour-plum-spray".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content.clone(),
+        )
+        .expect("base demo content should initialize GameCore");
+        let mut sour_core = GameCore::reset_with_content(
+            RunConfig {
+                character_id: "sour-plum-doctor".to_string(),
+                starting_loadout: StartingLoadout::default(),
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+
+        fire_first_weapon_into_enemy(&mut baseline_core, &enemy_definition);
+        fire_first_weapon_into_enemy(&mut sour_core, &enemy_definition);
+
+        let baseline_enemy = &baseline_core.enemies[0];
+        let sour_enemy = &sour_core.enemies[0];
+        assert!((baseline_enemy.slow_multiplier - SLOW_WEAPON_ENEMY_MULTIPLIER).abs() <= 0.001);
+        assert!((sour_enemy.slow_multiplier - SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER).abs() <= 0.001);
+        assert!(sour_enemy.slow_remaining_seconds > baseline_enemy.slow_remaining_seconds);
+
+        sour_core.update_enemy_behavior(0.1, &mut Vec::new());
+        let moving_enemy = &sour_core.enemies[0];
+        assert!(
+            moving_enemy.velocity.length()
+                <= moving_enemy.move_speed * SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER + 0.001
+        );
+    }
+
+    #[test]
+    fn pudding_crafter_extends_summon_projectile_lifetime() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                character_id: "pudding-crafter".to_string(),
+                starting_loadout: StartingLoadout::default(),
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        core.enemies.push(Enemy::from_enemy_definition(
+            enemy_id,
+            Vec2::new(120.0, 0.0),
+            &enemy_definition,
+        ));
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let projectile = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "pudding-turret")
+            .expect("pudding turret should fire a summon projectile");
+        assert!((projectile.lifetime - 5.0 * LONGER_SUMMONS_LIFETIME_MULTIPLIER).abs() <= 0.001);
     }
 
     #[test]
