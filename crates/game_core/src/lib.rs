@@ -53,6 +53,9 @@ const BUBBLE_BOUNCE_DAMAGE_MULTIPLIER: f32 = 0.70;
 const VORTEX_PULL_RADIUS_MULTIPLIER: f32 = 2.5;
 const VORTEX_PULL_SPEED: f32 = 96.0;
 const CHAIN_REACTION_TRAP_RADIUS_MULTIPLIER: f32 = 2.5;
+const METEOR_BURST_SPREAD_MULTIPLIER: f32 = 2.4;
+const METEOR_FALL_BASE_DELAY_SECONDS: f32 = 0.08;
+const METEOR_FALL_STAGGER_SECONDS: f32 = 0.06;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1455,6 +1458,7 @@ impl GameCore {
 
             for projectile_index in 0..spawn_count {
                 let runtime = self.weapon_projectile_runtime(WeaponProjectileRuntimeInput {
+                    weapon_id: &weapon_id,
                     weapon_type: &weapon_type,
                     target_position,
                     base_direction,
@@ -1474,6 +1478,8 @@ impl GameCore {
                 } else {
                     runtime.pierce_remaining
                 };
+                let impact_delay_seconds =
+                    meteor_impact_delay_seconds(&weapon_id, projectile_index);
                 let projectile = Projectile {
                     entity_id: self.allocate_entity_id(),
                     weapon_id: weapon_id.clone(),
@@ -1482,7 +1488,7 @@ impl GameCore {
                     damage,
                     radius,
                     pierce_remaining,
-                    lifetime: runtime.lifetime,
+                    lifetime: runtime.lifetime + impact_delay_seconds,
                     enemy_slow_multiplier,
                     enemy_slow_duration_seconds,
                     enemy_knockback_distance,
@@ -1490,6 +1496,7 @@ impl GameCore {
                     bubble_bounces_remaining,
                     bubble_bounce_range,
                     age_seconds: 0.0,
+                    impact_delay_seconds,
                     boomerang_return_after_seconds,
                     boomerang_return_speed,
                     turret_fire_interval_seconds,
@@ -1542,8 +1549,13 @@ impl GameCore {
             "burst" | "zone" => {
                 let angle = std::f32::consts::TAU * input.projectile_index as f32
                     / input.projectile_count.max(1) as f32;
+                let spread_multiplier = if input.weapon_id == "rainbow-candy-meteor" {
+                    METEOR_BURST_SPREAD_MULTIPLIER
+                } else {
+                    0.65
+                };
                 let offset = if input.projectile_count > 1 {
-                    Vec2::new(angle.cos(), angle.sin()) * input.radius * 0.65
+                    Vec2::new(angle.cos(), angle.sin()) * input.radius * spread_multiplier
                 } else {
                     Vec2::ZERO
                 };
@@ -1858,6 +1870,15 @@ impl GameCore {
                     enemy.position.x = enemy.position.x.clamp(-half_width, half_width);
                     enemy.position.y = enemy.position.y.clamp(-half_height, half_height);
                 }
+            }
+
+            if projectile.impact_delay_seconds > 0.0 {
+                projectile.impact_delay_seconds -= dt;
+                projectile.lifetime -= dt;
+                if projectile.impact_delay_seconds > 0.0 {
+                    continue;
+                }
+                projectile.impact_delay_seconds = 0.0;
             }
 
             projectile.position += projectile.velocity * dt;
@@ -2774,6 +2795,14 @@ fn trap_trigger_radius_for_weapon(weapon_tags: &[String], radius: f32) -> f32 {
     }
 }
 
+fn meteor_impact_delay_seconds(weapon_id: &str, projectile_index: usize) -> f32 {
+    if weapon_id == "rainbow-candy-meteor" {
+        METEOR_FALL_BASE_DELAY_SECONDS + projectile_index as f32 * METEOR_FALL_STAGGER_SECONDS
+    } else {
+        0.0
+    }
+}
+
 fn bubble_bounces_for_weapon(weapon_tags: &[String]) -> u32 {
     if weapon_tags.iter().any(|tag| tag == "bubble") {
         BUBBLE_WEAPON_BOUNCES
@@ -2996,6 +3025,7 @@ impl WeaponState {
 }
 
 struct WeaponProjectileRuntimeInput<'a> {
+    weapon_id: &'a str,
     weapon_type: &'a str,
     target_position: Vec2,
     base_direction: Vec2,
@@ -3823,6 +3853,7 @@ struct Projectile {
     bubble_bounces_remaining: u32,
     bubble_bounce_range: f32,
     age_seconds: f32,
+    impact_delay_seconds: f32,
     boomerang_return_after_seconds: Option<f32>,
     boomerang_return_speed: f32,
     turret_fire_interval_seconds: f32,
@@ -4513,6 +4544,7 @@ mod tests {
             bubble_bounces_remaining: 0,
             bubble_bounce_range: 0.0,
             age_seconds: 0.0,
+            impact_delay_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
             turret_fire_interval_seconds: 0.0,
@@ -4779,6 +4811,72 @@ mod tests {
     }
 
     #[test]
+    fn rainbow_meteor_uses_staggered_falling_impacts() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("rainbow-candy-meteor")
+            .expect("base demo should include rainbow candy meteor")
+            .clone();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.enemies.clear();
+        core.projectiles.clear();
+
+        let enemy_id = core.allocate_entity_id();
+        let enemy_position = Vec2::new(140.0, 0.0);
+        let mut enemy = Enemy::from_enemy_definition(enemy_id, enemy_position, &enemy_definition);
+        enemy.health = 200.0;
+        enemy.max_health = 200.0;
+        core.enemies.push(enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let mut meteor_projectiles = core
+            .projectiles
+            .iter()
+            .filter(|projectile| projectile.weapon_id == "rainbow-candy-meteor")
+            .collect::<Vec<_>>();
+        meteor_projectiles.sort_by(|left, right| {
+            left.impact_delay_seconds
+                .partial_cmp(&right.impact_delay_seconds)
+                .unwrap_or(Ordering::Equal)
+        });
+        assert_eq!(meteor_projectiles.len(), 8);
+        assert!(meteor_projectiles[0].impact_delay_seconds > 0.0);
+        assert!(
+            meteor_projectiles[7].impact_delay_seconds > meteor_projectiles[0].impact_delay_seconds
+        );
+        assert!(meteor_projectiles[0].position.distance(enemy_position) > 80.0);
+
+        let first_meteor_id = meteor_projectiles[0].entity_id;
+        let first_delay = meteor_projectiles[0].impact_delay_seconds;
+        let starting_health = core.enemies[0].health;
+        let first_meteor = core
+            .projectiles
+            .iter_mut()
+            .find(|projectile| projectile.entity_id == first_meteor_id)
+            .expect("first meteor should remain active");
+        first_meteor.position = enemy_position;
+
+        core.update_projectiles(0.0, &mut Vec::new());
+        assert_eq!(core.enemies[0].health, starting_health);
+
+        core.update_projectiles(first_delay + 0.01, &mut Vec::new());
+
+        assert!(core.enemies[0].health < starting_health);
+    }
+
+    #[test]
     fn can_run_from_disk_content_pack() {
         let content = ContentPack::load_from_dir("../../content/base_demo")
             .expect("base_demo content should load from disk");
@@ -4896,6 +4994,7 @@ mod tests {
             bubble_bounces_remaining: 0,
             bubble_bounce_range: 0.0,
             age_seconds: 0.0,
+            impact_delay_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
             turret_fire_interval_seconds: 0.0,
@@ -5074,6 +5173,7 @@ mod tests {
             bubble_bounces_remaining: 0,
             bubble_bounce_range: 0.0,
             age_seconds: 0.0,
+            impact_delay_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
             turret_fire_interval_seconds: 0.0,
