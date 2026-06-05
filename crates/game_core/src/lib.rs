@@ -50,6 +50,8 @@ const BEAM_TICK_INTERVAL_SECONDS: f32 = 0.15;
 const BUBBLE_WEAPON_BOUNCES: u32 = 1;
 const BUBBLE_BOUNCE_RANGE: f32 = 180.0;
 const BUBBLE_BOUNCE_DAMAGE_MULTIPLIER: f32 = 0.70;
+const VORTEX_PULL_RADIUS_MULTIPLIER: f32 = 2.5;
+const VORTEX_PULL_SPEED: f32 = 96.0;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1806,6 +1808,24 @@ impl GameCore {
                 });
                 projectile.beam_tick_cooldown_seconds += projectile.beam_tick_interval_seconds;
                 continue;
+            }
+
+            if projectile.is_vortex() && dt > 0.0 {
+                let pull_radius = projectile.radius * VORTEX_PULL_RADIUS_MULTIPLIER;
+                for enemy in &mut self.enemies {
+                    if enemy.health <= 0.0 {
+                        continue;
+                    }
+                    let pull_offset = projectile.position - enemy.position;
+                    let distance = pull_offset.length();
+                    if distance <= 0.0 || distance > pull_radius + enemy.radius {
+                        continue;
+                    }
+                    let pull_distance = (VORTEX_PULL_SPEED * dt).min(distance);
+                    enemy.position += pull_offset.normalized_or_zero() * pull_distance;
+                    enemy.position.x = enemy.position.x.clamp(-half_width, half_width);
+                    enemy.position.y = enemy.position.y.clamp(-half_height, half_height);
+                }
             }
 
             projectile.position += projectile.velocity * dt;
@@ -3745,6 +3765,10 @@ impl Projectile {
     fn is_bubble(&self) -> bool {
         self.bubble_bounces_remaining > 0 && self.bubble_bounce_range > 0.0
     }
+
+    fn is_vortex(&self) -> bool {
+        self.weapon_id == "caramel-vortex"
+    }
 }
 
 impl From<Projectile> for ProjectileSnapshot {
@@ -4211,6 +4235,55 @@ mod tests {
         }
 
         panic!("expected caramel-sticky-ground to create a stationary zone");
+    }
+
+    #[test]
+    fn caramel_vortex_pulls_enemies_toward_zone_center() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("caramel-vortex")
+            .expect("base demo should include caramel vortex")
+            .clone();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.enemies.clear();
+        core.projectiles.clear();
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+        let vortex_position = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "caramel-vortex")
+            .expect("caramel vortex should create a zone projectile")
+            .position;
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy = Enemy::from_enemy_definition(
+            enemy_id,
+            vortex_position + Vec2::new(150.0, 0.0),
+            &enemy_definition,
+        );
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        let starting_health = enemy.health;
+        let before_distance = enemy.position.distance(vortex_position);
+        core.enemies.push(enemy);
+
+        core.update_projectiles(0.2, &mut Vec::new());
+
+        let enemy = &core.enemies[0];
+        let after_distance = enemy.position.distance(vortex_position);
+        assert!(after_distance < before_distance - 8.0);
+        assert_eq!(enemy.health, starting_health);
     }
 
     #[test]
