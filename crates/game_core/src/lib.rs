@@ -1914,7 +1914,7 @@ impl GameCore {
                 let hit_distance = projectile.radius + enemy.radius;
                 if projectile.position.distance(enemy.position) <= hit_distance {
                     let damage = projectile.damage
-                        * enemy.projectile_damage_multiplier(projectile.position, player_position);
+                        * projectile.damage_multiplier_against(enemy, player_position);
                     enemy.health -= damage;
                     self.metrics.damage_dealt_by_weapon += damage;
                     if enemy.is_boss {
@@ -3906,6 +3906,15 @@ impl Projectile {
     fn is_player_orbiting_fortress(&self) -> bool {
         self.weapon_id == "marshmallow-fortress"
     }
+
+    fn damage_multiplier_against(&self, enemy: &Enemy, player_position: Vec2) -> f32 {
+        let multiplier = enemy.projectile_damage_multiplier(self.position, player_position);
+        if self.weapon_id == "candy-crystal-judgment" {
+            multiplier.max(1.0)
+        } else {
+            multiplier
+        }
+    }
 }
 
 impl From<Projectile> for ProjectileSnapshot {
@@ -4978,7 +4987,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 65);
+        assert_eq!(content.object_count(), 66);
         for map_id in content.maps.keys().cloned().collect::<Vec<_>>() {
             GameCore::reset_with_content(
                 RunConfig {
@@ -5286,6 +5295,56 @@ mod tests {
 
         let damage_taken = starting_health - core.enemies[0].health;
         assert!((damage_taken - 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn candy_crystal_judgment_ignores_front_shield_reduction() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("candy-crystal-judgment")
+            .expect("base demo should include candy crystal judgment")
+            .clone();
+        let bouncy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        assert_eq!(evolution.replaces_weapon, "candy-crystal-lance");
+        assert!(evolution.tags.iter().any(|tag| tag == "shield-breaker"));
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo should initialize");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.enemies.clear();
+        core.projectiles.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(60.0, 0.0), &bouncy_definition);
+        enemy.behavior = EnemyBehavior::Shielded;
+        enemy.behavior_state.shield_front_damage_multiplier = 0.25;
+        enemy.behavior_state.shield_rear_damage_multiplier = 1.5;
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        let starting_health = enemy.health;
+        core.enemies.push(enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let projectile = core
+            .projectiles
+            .iter_mut()
+            .find(|projectile| projectile.weapon_id == "candy-crystal-judgment")
+            .expect("candy crystal judgment should create lance projectiles");
+        let expected_damage = projectile.damage;
+        projectile.position = Vec2::new(48.0, 0.0);
+        projectile.velocity = Vec2::ZERO;
+        core.update_projectiles(0.0, &mut Vec::new());
+
+        let damage_taken = starting_health - core.enemies[0].health;
+        assert!((damage_taken - expected_damage).abs() < 0.01);
     }
 
     #[test]

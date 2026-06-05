@@ -734,6 +734,32 @@ impl ContentPack {
                 "星糖光束穿过透明糖棱镜，折射出多道彩色射线。",
                 "明亮持续的 prism shimmer 和高频星糖共鸣声。",
             ),
+            evolution_definition(
+                "candy-crystal-judgment",
+                "糖晶审判",
+                &[
+                    "projectile",
+                    "boss-killer",
+                    "pierce",
+                    "shield-breaker",
+                    "evolution",
+                ],
+                "糖晶长枪进化为多重审判长枪，优先贯穿 Boss 与高防目标，并无视盾面减伤。",
+                "candy-crystal-lance",
+                "candy-crystal-lens",
+                "projectile",
+                "boss_priority",
+                700.0,
+                92.0,
+                1250.0,
+                Some(760.0),
+                3,
+                Some(10),
+                18.0,
+                Some(1400.0),
+                "多支透明糖晶长枪从玩家身侧凝结后齐射，枪尖带审判星芒。",
+                "清脆糖晶蓄能声后接连续玻璃糖破空声。",
+            ),
         ] {
             pack.evolutions.insert(evolution.id.clone(), evolution);
         }

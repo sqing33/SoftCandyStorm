@@ -3423,6 +3423,8 @@ fn projectile_visual_style(
         Color::srgba(1.0, 0.86, 0.55, 0.88)
     } else if projectile_is_windmill(projectile.weapon_id.as_str()) {
         Color::srgba(1.0, 0.48, 0.62, 0.88)
+    } else if projectile_is_crystal_lance(projectile.weapon_id.as_str()) {
+        Color::srgba(0.68, 0.94, 1.0, 0.90)
     } else if projectile_is_bubble(projectile.weapon_id.as_str()) {
         Color::srgba(0.54, 0.90, 1.0, 0.86)
     } else if projectile_is_cold(projectile.weapon_id.as_str()) {
@@ -3471,6 +3473,10 @@ fn projectile_is_pudding_summon(weapon_id: &str) -> bool {
 
 fn projectile_is_windmill(weapon_id: &str) -> bool {
     matches!(weapon_id, "lollipop-boomerang" | "sugar-windmill")
+}
+
+fn projectile_is_crystal_lance(weapon_id: &str) -> bool {
+    matches!(weapon_id, "candy-crystal-lance" | "candy-crystal-judgment")
 }
 
 fn projectile_is_bubble(weapon_id: &str) -> bool {
@@ -10506,6 +10512,27 @@ mod tests {
                 entity_id,
                 weapon_id: weapon_id.to_string(),
                 position: CoreVec2::new(10.0, 14.0),
+                velocity: CoreVec2::ZERO,
+                radius: 18.0,
+            };
+
+            let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+            assert!(style.textured);
+            assert_ne!(style.color, Color::WHITE);
+            assert_eq!(style.center, projectile.position);
+            assert_eq!(style.size, Vec2::splat(36.0));
+        }
+    }
+
+    #[test]
+    fn projectile_visual_style_tints_crystal_lances() {
+        for (entity_id, weapon_id) in [(15, "candy-crystal-lance"), (16, "candy-crystal-judgment")]
+        {
+            let projectile = ProjectileSnapshot {
+                entity_id,
+                weapon_id: weapon_id.to_string(),
+                position: CoreVec2::new(26.0, -10.0),
                 velocity: CoreVec2::ZERO,
                 radius: 18.0,
             };
