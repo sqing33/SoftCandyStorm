@@ -3413,6 +3413,8 @@ fn projectile_visual_style(
 
     let color = if projectile_is_trap(projectile.weapon_id.as_str()) {
         Color::srgb(1.0, 0.38, 0.74)
+    } else if projectile_is_bubble(projectile.weapon_id.as_str()) {
+        Color::srgba(0.54, 0.90, 1.0, 0.86)
     } else {
         Color::WHITE
     };
@@ -3435,6 +3437,10 @@ fn projectile_is_trap(weapon_id: &str) -> bool {
         weapon_id,
         "popping-candy-mine" | "popping-candy-chain-reaction"
     )
+}
+
+fn projectile_is_bubble(weapon_id: &str) -> bool {
+    matches!(weapon_id, "soda-bubble-pop")
 }
 
 fn effect_visual_style(effect: &RuntimeEffect) -> (Color, f32) {
@@ -6909,8 +6915,8 @@ mod tests {
         RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use bevy::prelude::{
-        Axis, ButtonInput, Gamepad, GamepadAxis, GamepadAxisType, GamepadButton, GamepadButtonType,
-        KeyCode, MouseButton, Vec2,
+        Axis, ButtonInput, Color, Gamepad, GamepadAxis, GamepadAxisType, GamepadButton,
+        GamepadButtonType, KeyCode, MouseButton, Vec2,
     };
     use game_core::{
         ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
@@ -10348,6 +10354,24 @@ mod tests {
         assert_eq!(style.center, projectile.position);
         assert_eq!(style.size, Vec2::splat(40.0));
         assert!(style.rotation_z.abs() < 0.001);
+    }
+
+    #[test]
+    fn projectile_visual_style_tints_bubbles_blue() {
+        let projectile = ProjectileSnapshot {
+            entity_id: 3,
+            weapon_id: "soda-bubble-pop".to_string(),
+            position: CoreVec2::new(12.0, 18.0),
+            velocity: CoreVec2::ZERO,
+            radius: 16.0,
+        };
+
+        let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+        assert!(style.textured);
+        assert_ne!(style.color, Color::WHITE);
+        assert_eq!(style.center, projectile.position);
+        assert_eq!(style.size, Vec2::splat(32.0));
     }
 
     #[test]
