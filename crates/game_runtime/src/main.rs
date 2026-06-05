@@ -2603,6 +2603,119 @@ fn format_runtime_boss_phase_hint(boss: &BossSnapshot, content: &ContentPack) ->
     ))
 }
 
+fn format_runtime_hud_chapter_objective(
+    progress: &MetaProgress,
+    snapshot: &RunSnapshot,
+    content: &ContentPack,
+) -> String {
+    let Some(chapter) = progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == snapshot.map.map_id)
+    else {
+        return "章节目标 无".to_string();
+    };
+    let goals = runtime_chapter_goal_entries(&chapter.chapter_id, content);
+    let completed_count = goals
+        .iter()
+        .filter(|(goal_id, _, _)| chapter.completed_goals.contains(goal_id))
+        .count();
+    let Some((goal_id, label, reward)) = goals
+        .iter()
+        .find(|(goal_id, _, _)| !chapter.completed_goals.contains(goal_id))
+    else {
+        return format!("章节目标 {}/{} 已完成全部", completed_count, goals.len());
+    };
+    let prefix = if chapter.unlocked {
+        "章节目标"
+    } else {
+        "锁定章节目标"
+    };
+    format!(
+        "{} {}/{} {}  {}  {}",
+        prefix,
+        completed_count,
+        goals.len(),
+        label,
+        format_runtime_hud_chapter_goal_progress(goal_id, chapter, snapshot, content),
+        reward,
+    )
+}
+
+fn format_runtime_hud_chapter_goal_progress(
+    goal_id: &str,
+    chapter: &game_core::meta::ChapterProgress,
+    snapshot: &RunSnapshot,
+    content: &ContentPack,
+) -> String {
+    match goal_id {
+        "survive-10-minutes" => format!("{:.0}/600s", snapshot.time_seconds.min(600.0)),
+        "collect-200-candy-crystals" => format!(
+            "{:.0}/200 糖晶",
+            snapshot.metrics_partial.xp_collected.min(200.0)
+        ),
+        "rainbow-candy-shot-level-5" => format!(
+            "{} Lv.{}/5",
+            runtime_weapon_label(content, "rainbow-candy-shot"),
+            build_item_level(&snapshot.build.weapons, "rainbow-candy-shot").min(5),
+        ),
+        _ if goal_id.starts_with("defeat-") => {
+            format_runtime_hud_boss_goal_progress(chapter, snapshot, content)
+        }
+        _ => "局后结算确认".to_string(),
+    }
+}
+
+fn format_runtime_hud_boss_goal_progress(
+    chapter: &game_core::meta::ChapterProgress,
+    snapshot: &RunSnapshot,
+    content: &ContentPack,
+) -> String {
+    if let Some(boss) = snapshot
+        .boss
+        .as_ref()
+        .filter(|boss| boss.boss_id == chapter.boss_id)
+    {
+        let ratio = if boss.max_health > 0.0 {
+            (boss.health.max(0.0) / boss.max_health * 100.0).clamp(0.0, 100.0)
+        } else {
+            0.0
+        };
+        return format!(
+            "Boss HP {:.0}/{:.0} {:.0}%",
+            boss.health.max(0.0),
+            boss.max_health,
+            ratio
+        );
+    }
+
+    if let Some(arrival_time) =
+        runtime_boss_arrival_time(content, &chapter.map_id, &chapter.boss_id)
+    {
+        if snapshot.time_seconds < arrival_time {
+            return format!(
+                "{} {:.0}s 出现，还差 {:.0}s",
+                runtime_boss_label(content, &chapter.boss_id),
+                arrival_time,
+                (arrival_time - snapshot.time_seconds).max(0.0),
+            );
+        }
+    }
+
+    format!(
+        "{} 等待出现或局后确认",
+        runtime_boss_label(content, &chapter.boss_id)
+    )
+}
+
+fn runtime_boss_arrival_time(content: &ContentPack, map_id: &str, boss_id: &str) -> Option<f32> {
+    runtime_wave_for_map(content, map_id)?
+        .boss_events
+        .iter()
+        .find(|event| event.boss_id == boss_id)
+        .map(|event| event.time_second)
+}
+
 fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     let weapons = format_build_items(&build.weapons, 3, |id| runtime_weapon_label(content, id));
     let passives = format_build_items(&build.passives, 2, |id| runtime_passive_label(content, id));
@@ -3080,6 +3193,11 @@ fn update_hud(
             let mode = if state.paused { "Paused" } else { "Playing" };
             let map_style = map_visual_style(&snapshot.map.map_id);
             let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
+            let chapter_objective_status = format_runtime_hud_chapter_objective(
+                &state.meta_progress,
+                snapshot,
+                &state.content,
+            );
             let build_status = format_build_status(&snapshot.build, &state.content);
             let enemy_status = format_enemy_swarm_status(&snapshot.visible_enemies, &state.content);
             let event_status =
@@ -3087,7 +3205,7 @@ fn update_hud(
             let hazard_status =
                 format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
             set_text_section_if_changed(&mut text, format!(
-                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
                 state.run_number,
                 mode,
                 snapshot.time_seconds,
@@ -3099,6 +3217,7 @@ fn update_hud(
                 snapshot.metrics_partial.kills,
                 map_style.display_name,
                 snapshot.map.map_id,
+                chapter_objective_status,
                 boss_status,
                 enemy_status,
                 event_status,
@@ -7557,8 +7676,8 @@ mod tests {
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events, enemy_tint,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_enemy_behavior_details, format_enemy_swarm_status, format_event_effect_for_codex,
-        format_event_effect_status, format_hazard_status, format_terminal_overlay,
-        format_upgrade_options, load_runtime_asset_candidate_manifest,
+        format_event_effect_status, format_hazard_status, format_runtime_hud_chapter_objective,
+        format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
         make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
         next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
@@ -9507,6 +9626,57 @@ mod tests {
             runtime_boss_ability_summary("sweet_phase_shield"),
             "甜味护盾：护盾期伤害降低"
         );
+    }
+
+    #[test]
+    fn hud_chapter_objective_tracks_survival_goal_progress() {
+        let state = runtime_state_for_tests();
+        let status = format_runtime_hud_chapter_objective(
+            &state.meta_progress,
+            &state.latest_snapshot,
+            &state.content,
+        );
+
+        assert!(status.contains("章节目标 0/4 标准巡逻坚持 10 分钟"));
+        assert!(status.contains("0/600s"));
+        assert!(status.contains("奖励 星片 +1"));
+    }
+
+    #[test]
+    fn hud_chapter_objective_tracks_boss_arrival_countdown() {
+        let state = runtime_state_for_tests();
+        let mut progress = state.meta_progress.clone();
+        progress
+            .chapters
+            .get_mut("frosting-grassland")
+            .unwrap()
+            .completed_goals
+            .insert("survive-10-minutes".to_string());
+        let mut snapshot = state.latest_snapshot.clone();
+        snapshot.time_seconds = 120.0;
+        let status = format_runtime_hud_chapter_objective(&progress, &snapshot, &state.content);
+
+        assert!(status.contains("章节目标 1/4 击败暴走搅糖机"));
+        assert!(status.contains("暴走搅糖机 210s 出现，还差 90s"));
+    }
+
+    #[test]
+    fn hud_chapter_objective_tracks_candy_crystal_goal_progress() {
+        let state = runtime_state_for_tests();
+        let mut progress = state.meta_progress.clone();
+        let chapter = progress.chapters.get_mut("frosting-grassland").unwrap();
+        chapter
+            .completed_goals
+            .insert("survive-10-minutes".to_string());
+        chapter
+            .completed_goals
+            .insert("defeat-runaway-sugar-mixer".to_string());
+        let mut snapshot = state.latest_snapshot.clone();
+        snapshot.metrics_partial.xp_collected = 94.0;
+        let status = format_runtime_hud_chapter_objective(&progress, &snapshot, &state.content);
+
+        assert!(status.contains("章节目标 2/4 收集 200 糖晶经验"));
+        assert!(status.contains("94/200 糖晶"));
     }
 
     #[test]
