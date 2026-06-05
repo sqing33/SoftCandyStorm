@@ -7,7 +7,8 @@ use bevy::{
 use game_core::content::{
     BossDefinition, CharacterDefinition, EnemyDefinition, EventDefinition, EventEffectDefinition,
     EventTriggerDefinition, EvolutionDefinition, EvolutionWeaponDefinition, MapDefinition,
-    MapHazardDefinition, PassiveDefinition, StatModifierDefinition, WeaponDefinition,
+    MapHazardDefinition, PassiveDefinition, StatModifierDefinition, WaveDefinition,
+    WeaponDefinition,
 };
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
@@ -4586,6 +4587,10 @@ fn render_meta_loadout_panel(
             "地图机制 {}",
             format_runtime_map_hazard_preview(&map.hazards)
         ));
+        lines.push(format!(
+            "敌群预览 {}",
+            format_runtime_map_wave_preview(content, &config.map_id)
+        ));
     }
 
     if let Some(chapter_line) =
@@ -4623,6 +4628,75 @@ fn format_runtime_map_hazard_preview(hazards: &[MapHazardDefinition]) -> String 
     } else {
         format_map_hazards_for_codex(hazards)
     }
+}
+
+fn format_runtime_map_wave_preview(content: &ContentPack, map_id: &str) -> String {
+    let Some(wave) = runtime_wave_for_map(content, map_id) else {
+        return "未配置标准波次".to_string();
+    };
+
+    let mut weights = BTreeMap::<String, f32>::new();
+    for segment in &wave.segments {
+        for entry in &segment.enemy_pool {
+            *weights.entry(entry.enemy_id.clone()).or_default() += entry.weight.max(0.0);
+        }
+    }
+    let mut enemies = weights.into_iter().collect::<Vec<_>>();
+    enemies.sort_by(|left, right| {
+        right
+            .1
+            .total_cmp(&left.1)
+            .then_with(|| left.0.cmp(&right.0))
+    });
+
+    let enemy_preview = if enemies.is_empty() {
+        "无普通敌人".to_string()
+    } else {
+        enemies
+            .iter()
+            .take(4)
+            .map(|(enemy_id, _)| runtime_enemy_label(content, enemy_id))
+            .collect::<Vec<_>>()
+            .join(" / ")
+    };
+    let boss_preview = if wave.boss_events.is_empty() {
+        "无".to_string()
+    } else {
+        wave.boss_events
+            .iter()
+            .take(2)
+            .map(|event| {
+                format!(
+                    "{:.0}s {}",
+                    event.time_second,
+                    runtime_boss_label(content, &event.boss_id)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" / ")
+    };
+    format!(
+        "{}  Boss {}  压力 前期{} 中期{} 后期{}",
+        enemy_preview,
+        boss_preview,
+        runtime_pressure_budget_label(&wave.pressure_budget.early),
+        runtime_pressure_budget_label(&wave.pressure_budget.middle),
+        runtime_pressure_budget_label(&wave.pressure_budget.late),
+    )
+}
+
+fn runtime_wave_for_map<'a>(content: &'a ContentPack, map_id: &str) -> Option<&'a WaveDefinition> {
+    content.waves.values().find(|wave| wave.map_id == map_id)
+}
+
+fn runtime_pressure_budget_label(value: &str) -> String {
+    match value {
+        "low" => "低",
+        "medium" => "中",
+        "high" => "高",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
 }
 
 fn format_runtime_starting_loadout(content: &ContentPack, loadout: &StartingLoadout) -> String {
@@ -10687,6 +10761,9 @@ mod tests {
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
         assert!(panel.contains("地图机制 泡泡水流 每36s x2 5s 减速x0.78"));
+        assert!(panel.contains(
+            "敌群预览 蹦蹦软糖 / 汽水泡泡 / 辣味软糖 / 酸酸软糖  Boss 210s 汽水喷泉龙  压力 前期低 中期中 后期高"
+        ));
         assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
@@ -10745,6 +10822,9 @@ mod tests {
             assert!(panel.contains(expected), "missing loadout label {expected}");
         }
         assert!(panel.contains("地图机制 无固定地形伤害"));
+        assert!(panel.contains(
+            "敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"
+        ));
         assert!(!panel.contains("还有"));
     }
 
