@@ -365,6 +365,7 @@ pub struct RunMetrics {
     pub damage_taken_by_source: BTreeMap<String, f32>,
     pub boss_damage: f32,
     pub boss_kill_times: Vec<f32>,
+    pub bosses_defeated: BTreeSet<String>,
     pub max_enemy_count: usize,
     pub max_projectile_count: usize,
     pub upgrade_choices: Vec<String>,
@@ -578,6 +579,7 @@ impl GameCore {
                 damage_taken_by_source: BTreeMap::new(),
                 boss_damage: 0.0,
                 boss_kill_times: Vec::new(),
+                bosses_defeated: BTreeSet::new(),
                 max_enemy_count: 0,
                 max_projectile_count: 0,
                 upgrade_choices: Vec::new(),
@@ -2119,6 +2121,7 @@ impl GameCore {
             if enemy.is_boss {
                 self.boss_chests_available = self.boss_chests_available.saturating_add(1);
                 self.metrics.boss_kill_times.push(self.time_seconds);
+                self.metrics.bosses_defeated.insert(enemy.enemy_id.clone());
             }
             events.push(GameEvent::EnemyKilled {
                 entity_id: enemy.entity_id,
@@ -4271,6 +4274,37 @@ mod tests {
         core.update_weapon_cooldowns(0.0, &mut Vec::new());
         assert!(!core.projectiles.is_empty());
         core.update_projectiles(0.0, &mut Vec::new());
+    }
+
+    #[test]
+    fn boss_kill_records_defeated_boss_id_in_metrics() {
+        let content = ContentPack::base_demo();
+        let boss_definition = content
+            .bosses
+            .get("runaway-sugar-mixer")
+            .expect("base demo should include the first chapter boss")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                duration_seconds: 60.0,
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize");
+        let mut boss = Enemy::from_boss_definition(99, Vec2::ZERO, &boss_definition);
+        boss.health = 0.0;
+        core.enemies.push(boss);
+
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+        let metrics = core.metrics();
+
+        assert!(metrics.bosses_defeated.contains("runaway-sugar-mixer"));
+        assert_eq!(metrics.boss_kill_times.len(), 1);
+        assert!(events.iter().any(
+            |event| matches!(event, GameEvent::EnemyKilled { enemy_id, .. } if enemy_id == "runaway-sugar-mixer")
+        ));
     }
 
     #[test]
