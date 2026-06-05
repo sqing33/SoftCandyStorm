@@ -6,8 +6,8 @@ use bevy::{
 };
 use game_core::content::{
     BossDefinition, CharacterDefinition, EnemyDefinition, EventDefinition, EventEffectDefinition,
-    EventTriggerDefinition, EvolutionDefinition, MapDefinition, MapHazardDefinition,
-    PassiveDefinition, StatModifierDefinition, WeaponDefinition,
+    EventTriggerDefinition, EvolutionDefinition, EvolutionWeaponDefinition, MapDefinition,
+    MapHazardDefinition, PassiveDefinition, StatModifierDefinition, WeaponDefinition,
 };
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
@@ -1698,11 +1698,12 @@ fn format_upgrade_options(
         .enumerate()
         .map(|(index, option)| {
             format!(
-                "{}. {}  {}\n   {}\n   标签 {}  关联 {}\n   id {}",
+                "{}. {}  {}\n   {}\n   数值 {}\n   标签 {}  关联 {}\n   id {}",
                 index + 1,
                 option.name,
                 format_upgrade_option_state(option),
                 option.description,
+                format_upgrade_stat_preview(option, content),
                 format_upgrade_tags(&option.tags),
                 format_upgrade_context(option, content, build),
                 option.id,
@@ -1728,6 +1729,40 @@ fn format_upgrade_option_state(option: &UpgradeOptionSnapshot) -> String {
     } else {
         "本局强化".to_string()
     }
+}
+
+fn format_upgrade_stat_preview(option: &UpgradeOptionSnapshot, content: &ContentPack) -> String {
+    let content_id = upgrade_option_content_id(&option.id);
+    if let Some(evolution) = content.evolutions.get(content_id) {
+        return format_evolution_weapon_stat_preview(&evolution.weapon_definition);
+    }
+    if let Some(weapon) = content.weapons.get(content_id) {
+        return format_weapon_stat_preview(weapon);
+    }
+    if let Some(passive) = content.passives.get(content_id) {
+        return format_passive_modifiers(&passive.stat_modifiers);
+    }
+    "查看说明".to_string()
+}
+
+fn format_weapon_stat_preview(weapon: &WeaponDefinition) -> String {
+    format!(
+        "伤害 {:.0}  冷却 {:.2}s  数量 {}  范围 {:.0}",
+        weapon.base_stats.damage,
+        weapon.base_stats.cooldown_ms / 1000.0,
+        weapon.base_stats.projectile_count,
+        weapon.base_stats.area_radius.max(weapon.targeting.range),
+    )
+}
+
+fn format_evolution_weapon_stat_preview(weapon: &EvolutionWeaponDefinition) -> String {
+    format!(
+        "伤害 {:.0}  冷却 {:.2}s  数量 {}  范围 {:.0}",
+        weapon.base_stats.damage,
+        weapon.base_stats.cooldown_ms / 1000.0,
+        weapon.base_stats.projectile_count,
+        weapon.base_stats.area_radius.max(weapon.targeting.range),
+    )
 }
 
 fn format_upgrade_context(
@@ -10940,6 +10975,12 @@ mod tests {
                 ],
                 description: "彩虹糖弹进化为周期性流星雨。".to_string(),
             },
+            game_core::UpgradeOptionSnapshot {
+                id: "bubble-shoes".to_string(),
+                name: "泡泡鞋".to_string(),
+                tags: vec!["mobility".to_string()],
+                description: "提升移动速度。".to_string(),
+            },
         ];
 
         let rendered = format_upgrade_options(&options, &content, &build);
@@ -10947,6 +10988,7 @@ mod tests {
         assert!(rendered.contains("1. 彩虹糖弹强化"));
         assert!(rendered.contains("目标 Lv.2"));
         assert!(rendered.contains("提升伤害、射程和冷却节奏。"));
+        assert!(rendered.contains("数值 伤害 14  冷却 0.62s  数量 1  范围 420"));
         assert!(rendered.contains("标签 弹幕 / 单体"));
         assert!(rendered.contains("关联 进化线 彩虹糖流星雨: 彩虹糖弹 1/5 + 糖晶放大镜 0/3"));
         assert!(rendered.contains("Build 契合 弹幕"));
@@ -10956,8 +10998,11 @@ mod tests {
         assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
         assert!(rendered.contains("3. 彩虹糖流星雨"));
         assert!(rendered.contains("进化"));
+        assert!(rendered.contains("数值 伤害 42  冷却 0.90s  数量 8  范围 620"));
         assert!(rendered.contains("进化需求 彩虹糖弹 1/5 + 糖晶放大镜 0/3，Boss 宝箱触发"));
         assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
+        assert!(rendered.contains("4. 泡泡鞋"));
+        assert!(rendered.contains("数值 移速 + 10.00/级"));
     }
 
     #[test]
