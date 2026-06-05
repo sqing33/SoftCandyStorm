@@ -4966,6 +4966,72 @@ mod tests {
     }
 
     #[test]
+    fn star_sugar_prism_refracts_to_multiple_high_health_targets() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("star-sugar-prism")
+            .expect("base demo should include star sugar prism")
+            .clone();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        assert_eq!(evolution.replaces_weapon, "star-sugar-ray");
+        assert_eq!(evolution.weapon_definition.base_stats.projectile_count, 3);
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.enemies.clear();
+        core.projectiles.clear();
+
+        let enemy_specs = [
+            (Vec2::new(160.0, -40.0), 300.0),
+            (Vec2::new(190.0, 20.0), 220.0),
+            (Vec2::new(230.0, 70.0), 140.0),
+        ];
+        let mut enemy_ids = Vec::new();
+        for (position, health) in enemy_specs {
+            let enemy_id = core.allocate_entity_id();
+            let mut enemy = Enemy::from_enemy_definition(enemy_id, position, &enemy_definition);
+            enemy.health = health;
+            enemy.max_health = health;
+            enemy_ids.push(enemy_id);
+            core.enemies.push(enemy);
+        }
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        assert_eq!(
+            core.projectiles
+                .iter()
+                .filter(|projectile| projectile.weapon_id == "star-sugar-prism")
+                .count(),
+            3
+        );
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+
+        for enemy_id in enemy_ids {
+            assert!(core
+                .enemies
+                .iter()
+                .any(|enemy| enemy.entity_id == enemy_id && enemy.health < enemy.max_health));
+            assert!(events.iter().any(|event| {
+                matches!(
+                    event,
+                    GameEvent::EnemyHit { entity_id, weapon_id, .. }
+                        if *entity_id == enemy_id && weapon_id == "star-sugar-prism"
+                )
+            }));
+        }
+    }
+
+    #[test]
     fn bubble_weapon_bounces_once_to_nearby_enemy() {
         let content = ContentPack::base_demo();
         let enemy_definition = content
