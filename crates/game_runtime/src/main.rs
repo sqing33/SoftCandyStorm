@@ -3415,6 +3415,8 @@ fn projectile_visual_style(
         Color::srgb(1.0, 0.38, 0.74)
     } else if projectile_is_bubble(projectile.weapon_id.as_str()) {
         Color::srgba(0.54, 0.90, 1.0, 0.86)
+    } else if projectile_is_cold(projectile.weapon_id.as_str()) {
+        Color::srgba(0.66, 1.0, 0.78, 0.86)
     } else {
         Color::WHITE
     };
@@ -3441,6 +3443,10 @@ fn projectile_is_trap(weapon_id: &str) -> bool {
 
 fn projectile_is_bubble(weapon_id: &str) -> bool {
     matches!(weapon_id, "soda-bubble-pop")
+}
+
+fn projectile_is_cold(weapon_id: &str) -> bool {
+    matches!(weapon_id, "mint-cyclone")
 }
 
 fn effect_visual_style(effect: &RuntimeEffect) -> (Color, f32) {
@@ -10372,6 +10378,24 @@ mod tests {
         assert_ne!(style.color, Color::WHITE);
         assert_eq!(style.center, projectile.position);
         assert_eq!(style.size, Vec2::splat(32.0));
+    }
+
+    #[test]
+    fn projectile_visual_style_tints_cold_orbits_green() {
+        let projectile = ProjectileSnapshot {
+            entity_id: 4,
+            weapon_id: "mint-cyclone".to_string(),
+            position: CoreVec2::new(-20.0, 44.0),
+            velocity: CoreVec2::ZERO,
+            radius: 24.0,
+        };
+
+        let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+        assert!(style.textured);
+        assert_ne!(style.color, Color::WHITE);
+        assert_eq!(style.center, projectile.position);
+        assert_eq!(style.size, Vec2::splat(48.0));
     }
 
     #[test]
