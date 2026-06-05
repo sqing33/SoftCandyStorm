@@ -86,6 +86,7 @@ const UPGRADE_POINTER_CONTROL_HEIGHT: f32 = 190.0;
 const UPGRADE_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT: usize = 8;
 const LOADOUT_UNLOCKED_MAP_LABEL_LIMIT: usize = 8;
+const GAMEPAD_LEFT_STICK_DEADZONE: f32 = 0.15;
 
 fn main() {
     let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -1097,6 +1098,7 @@ fn step_game_core(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     gamepad_buttons: Res<ButtonInput<GamepadButton>>,
+    gamepad_axes: Res<Axis<GamepadAxis>>,
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut state: ResMut<RuntimeState>,
 ) {
@@ -1366,8 +1368,10 @@ fn step_game_core(
     let movement = if state.demo_input {
         demo_movement(&snapshot)
     } else {
-        (movement_from_keyboard(&keyboard) + movement_from_gamepad_buttons(&gamepad_buttons))
-            .normalized_or_zero()
+        (movement_from_keyboard(&keyboard)
+            + movement_from_gamepad_buttons(&gamepad_buttons)
+            + movement_from_gamepad_axes(&gamepad_axes))
+        .clamp_length_max(1.0)
     };
     while state.accumulator >= state.dt_seconds && !state.core.is_terminal() {
         let result = state.core.step(
@@ -1492,6 +1496,37 @@ fn movement_from_gamepad_buttons(gamepad_buttons: &ButtonInput<GamepadButton>) -
     }
 
     CoreVec2::new(x, y).normalized_or_zero()
+}
+
+fn movement_from_gamepad_axes(gamepad_axes: &Axis<GamepadAxis>) -> CoreVec2 {
+    let mut strongest = CoreVec2::ZERO;
+
+    for axis in gamepad_axes.devices() {
+        if !matches!(
+            axis.axis_type,
+            GamepadAxisType::LeftStickX | GamepadAxisType::LeftStickY
+        ) {
+            continue;
+        }
+        let gamepad = axis.gamepad;
+        let candidate = CoreVec2::new(
+            gamepad_axes
+                .get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX))
+                .unwrap_or(0.0),
+            gamepad_axes
+                .get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickY))
+                .unwrap_or(0.0),
+        );
+        if candidate.length_squared() > strongest.length_squared() {
+            strongest = candidate;
+        }
+    }
+
+    if strongest.length_squared() < GAMEPAD_LEFT_STICK_DEADZONE * GAMEPAD_LEFT_STICK_DEADZONE {
+        CoreVec2::ZERO
+    } else {
+        strongest.clamp_length_max(1.0)
+    }
 }
 
 fn upgrade_choice_from_keyboard(
@@ -2313,7 +2348,7 @@ fn update_hud(
         let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
         let build_status = format_build_status(&snapshot.build, &state.content);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -5511,9 +5546,9 @@ mod tests {
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, movement_from_gamepad_buttons, next_runtime_selection_id,
-        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        render_meta_progress_panel, resolve_runtime_content_selection,
+        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
+        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
         runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
@@ -5547,7 +5582,8 @@ mod tests {
         RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use bevy::prelude::{
-        ButtonInput, Gamepad, GamepadButton, GamepadButtonType, KeyCode, MouseButton, Vec2,
+        Axis, ButtonInput, Gamepad, GamepadAxis, GamepadAxisType, GamepadButton, GamepadButtonType,
+        KeyCode, MouseButton, Vec2,
     };
     use game_core::{
         BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, EnemyBehavior, EnemySnapshot,
@@ -8445,6 +8481,38 @@ mod tests {
             movement_from_gamepad_buttons(&ButtonInput::<GamepadButton>::default()),
             CoreVec2::ZERO
         );
+    }
+
+    #[test]
+    fn gamepad_left_stick_movement_preserves_analog_strength() {
+        let gamepad = Gamepad::new(0);
+        let mut axes = Axis::<GamepadAxis>::default();
+        axes.set(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX), 0.5);
+
+        assert_eq!(movement_from_gamepad_axes(&axes), CoreVec2::new(0.5, 0.0));
+    }
+
+    #[test]
+    fn gamepad_left_stick_movement_applies_deadzone() {
+        let gamepad = Gamepad::new(0);
+        let mut axes = Axis::<GamepadAxis>::default();
+        axes.set(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX), 0.05);
+        axes.set(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickY), 0.05);
+
+        assert_eq!(movement_from_gamepad_axes(&axes), CoreVec2::ZERO);
+    }
+
+    #[test]
+    fn gamepad_left_stick_movement_clamps_diagonal() {
+        let gamepad = Gamepad::new(0);
+        let mut axes = Axis::<GamepadAxis>::default();
+        axes.set(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX), 1.0);
+        axes.set(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickY), 1.0);
+
+        let movement = movement_from_gamepad_axes(&axes);
+
+        assert!((movement.x - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.0001);
+        assert!((movement.y - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.0001);
     }
 
     #[test]
