@@ -1,0 +1,33 @@
+{
+  "id": "route-memory-caramel-ring",
+  "name": "焦糖旧路环印",
+  "version": 1,
+  "rarity": "rare",
+  "tags": ["event", "hazard", "movement", "route-counter", "deterministic"],
+  "description": "Boss 入场前，糖霜草地会把玩家反复踩回的旧路线凝成焦糖环，提醒玩家换线绕行。",
+  "trigger": {
+    "type": "time_window",
+    "start_second": 212,
+    "end_second": 232,
+    "chance": 1.0
+  },
+  "effects": [
+    {
+      "type": "route_echo_hazard",
+      "value": 2,
+      "duration_seconds": 14,
+      "hazard_duration_seconds": 3,
+      "sample_interval_seconds": 2.2,
+      "history_seconds": 18,
+      "trigger_radius": 116,
+      "radius": 52,
+      "slow_multiplier": 0.80,
+      "damage_per_second": 0
+    }
+  ],
+  "visual_description": "旧路线附近浮起两枚浅金焦糖环，像被糖浆描出的绕圈痕迹，外圈带细小糖霜闪点。",
+  "sfx_description": "柔和提示铃后接两声轻微焦糖冒泡，提示感明确但不盖过 Boss 音效。",
+  "unlock": {
+    "type": "discover"
+  }
+}
