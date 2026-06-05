@@ -1649,18 +1649,23 @@ fn upgrade_choice_from_gamepad(
     None
 }
 
-fn format_upgrade_options(options: &[UpgradeOptionSnapshot]) -> String {
+fn format_upgrade_options(
+    options: &[UpgradeOptionSnapshot],
+    content: &ContentPack,
+    build: &BuildSnapshot,
+) -> String {
     options
         .iter()
         .enumerate()
         .map(|(index, option)| {
             format!(
-                "{}. {}  {}\n   {}\n   标签 {}  id {}",
+                "{}. {}  {}\n   {}\n   标签 {}  关联 {}\n   id {}",
                 index + 1,
                 option.name,
                 format_upgrade_option_state(option),
                 option.description,
                 format_upgrade_tags(&option.tags),
+                format_upgrade_context(option, content, build),
                 option.id,
             )
         })
@@ -1683,6 +1688,133 @@ fn format_upgrade_option_state(option: &UpgradeOptionSnapshot) -> String {
         "新获得".to_string()
     } else {
         "本局强化".to_string()
+    }
+}
+
+fn format_upgrade_context(
+    option: &UpgradeOptionSnapshot,
+    content: &ContentPack,
+    build: &BuildSnapshot,
+) -> String {
+    let mut notes = Vec::new();
+    if let Some(evolution_hint) = format_upgrade_evolution_hint(option, content, build) {
+        notes.push(evolution_hint);
+    }
+    if let Some(tag_fit) = format_upgrade_tag_fit(&option.tags, build) {
+        notes.push(tag_fit);
+    }
+    if notes.is_empty() {
+        "新路线".to_string()
+    } else {
+        notes.join("  ")
+    }
+}
+
+fn format_upgrade_evolution_hint(
+    option: &UpgradeOptionSnapshot,
+    content: &ContentPack,
+    build: &BuildSnapshot,
+) -> Option<String> {
+    let content_id = upgrade_option_content_id(&option.id);
+    if let Some(evolution) = content.evolutions.get(content_id) {
+        return Some(format!(
+            "进化需求 {}，{}",
+            format_evolution_requirement_progress(evolution, content, build),
+            runtime_evolution_trigger_label(&evolution.requirements.trigger),
+        ));
+    }
+
+    let matching_paths = build
+        .open_evolution_paths
+        .iter()
+        .filter_map(|id| content.evolutions.get(id))
+        .filter(|evolution| upgrade_advances_evolution_path(content_id, evolution))
+        .take(2)
+        .map(|evolution| {
+            format!(
+                "{}: {}",
+                runtime_evolution_label(content, &evolution.id),
+                format_evolution_requirement_progress(evolution, content, build),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    if matching_paths.is_empty() {
+        None
+    } else {
+        Some(format!("进化线 {}", matching_paths.join(", ")))
+    }
+}
+
+fn upgrade_advances_evolution_path(
+    content_id: &str,
+    evolution: &game_core::content::EvolutionDefinition,
+) -> bool {
+    evolution.requirements.weapon.id == content_id
+        || evolution
+            .requirements
+            .passive
+            .as_ref()
+            .is_some_and(|requirement| requirement.id == content_id)
+}
+
+fn upgrade_option_content_id(option_id: &str) -> &str {
+    if let Some((base_id, level)) = option_id.rsplit_once("-level-") {
+        if !base_id.is_empty() && level.chars().all(|character| character.is_ascii_digit()) {
+            return base_id;
+        }
+    }
+    option_id
+}
+
+fn format_evolution_requirement_progress(
+    evolution: &game_core::content::EvolutionDefinition,
+    content: &ContentPack,
+    build: &BuildSnapshot,
+) -> String {
+    let weapon_requirement = &evolution.requirements.weapon;
+    let weapon_progress = format!(
+        "{} {}/{}",
+        runtime_weapon_label(content, &weapon_requirement.id),
+        build_item_level(&build.weapons, &weapon_requirement.id),
+        weapon_requirement.min_level,
+    );
+    let passive_progress = evolution
+        .requirements
+        .passive
+        .as_ref()
+        .map(|requirement| {
+            format!(
+                "{} {}/{}",
+                runtime_passive_label(content, &requirement.id),
+                build_item_level(&build.passives, &requirement.id),
+                requirement.min_level,
+            )
+        })
+        .unwrap_or_else(|| "无被动要求".to_string());
+    format!("{weapon_progress} + {passive_progress}")
+}
+
+fn runtime_evolution_trigger_label(trigger: &str) -> String {
+    match trigger {
+        "boss_chest" => "Boss 宝箱触发",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
+}
+
+fn format_upgrade_tag_fit(tags: &[String], build: &BuildSnapshot) -> Option<String> {
+    let matching_tags = tags
+        .iter()
+        .filter(|tag| tag.as_str() != "evolution")
+        .filter(|tag| build.tags.contains(*tag))
+        .take(3)
+        .map(|tag| runtime_tag_label(tag))
+        .collect::<Vec<_>>();
+    if matching_tags.is_empty() {
+        None
+    } else {
+        Some(format!("Build 契合 {}", matching_tags.join(" / ")))
     }
 }
 
@@ -2631,7 +2763,7 @@ fn update_hud(
         } else {
             format!(
                 "升级选择 - 按 1/2/3，点底部三段，或手柄下/右/上按钮\n{}",
-                format_upgrade_options(&snapshot.upgrade_options)
+                format_upgrade_options(&snapshot.upgrade_options, &state.content, &snapshot.build)
             )
         };
     }
@@ -9016,6 +9148,17 @@ mod tests {
 
     #[test]
     fn upgrade_options_render_readable_choice_cards() {
+        let content = ContentPack::base_demo();
+        let build = BuildSnapshot {
+            weapons: vec![BuildItemSnapshot {
+                id: "rainbow-candy-shot".to_string(),
+                level: 1,
+            }],
+            passives: Vec::new(),
+            evolutions: Vec::new(),
+            tags: vec!["projectile".to_string()],
+            open_evolution_paths: vec!["rainbow-candy-meteor".to_string()],
+        };
         let options = vec![
             game_core::UpgradeOptionSnapshot {
                 id: "rainbow-candy-shot-level-2".to_string(),
@@ -9041,18 +9184,21 @@ mod tests {
             },
         ];
 
-        let rendered = format_upgrade_options(&options);
+        let rendered = format_upgrade_options(&options, &content, &build);
 
         assert!(rendered.contains("1. 彩虹糖弹强化"));
         assert!(rendered.contains("目标 Lv.2"));
         assert!(rendered.contains("提升伤害、射程和冷却节奏。"));
         assert!(rendered.contains("标签 弹幕 / 单体"));
+        assert!(rendered.contains("关联 进化线 彩虹糖流星雨: 彩虹糖弹 1/5 + 糖晶放大镜 0/3"));
+        assert!(rendered.contains("Build 契合 弹幕"));
         assert!(rendered.contains("id rainbow-candy-shot-level-2"));
         assert!(rendered.contains("2. 获得汽水泡泡"));
         assert!(rendered.contains("新获得"));
         assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
         assert!(rendered.contains("3. 彩虹糖流星雨"));
         assert!(rendered.contains("进化"));
+        assert!(rendered.contains("进化需求 彩虹糖弹 1/5 + 糖晶放大镜 0/3，Boss 宝箱触发"));
         assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
     }
 
