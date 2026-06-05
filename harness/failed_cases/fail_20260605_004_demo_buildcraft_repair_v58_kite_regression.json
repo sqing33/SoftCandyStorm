@@ -1,0 +1,26 @@
+{
+  "case_id": "fail_20260605_004",
+  "category": "balance",
+  "content_id": "2026-06-05_demo_buildcraft_repair_v58_full_pack",
+  "seed": "72000-72009",
+  "bot": "KiteBot",
+  "time_seconds": 300.0,
+  "symptom": "v58 combines the v55 independent route-echo event with the v52 late_mix_a 255-300 second wave pressure. It passes partial candidate validation, materialized-pack preflight, static budget validation, GameCore validate-content, and isolated game_harness validate-candidates. In the 300s / 10-seed all-Bot matrix on seeds 72000-72009, RouteBot improves to 30.0% and RandomBot improves to 10.0%, both inside target ranges. However, KiteBot remains at 90.0% against the high-skill 45%-75% target.",
+  "root_cause": "The combination proves that the v55 route-echo event can repair the fixed-route residual while the v52 late_mix_a wave shape can keep RandomBot under the random robustness cap. It does not repair the v55 KiteBot side effect: late 255-300 second pressure is too late or too avoidable for the high-mobility kite policy once the route-echo event changes the run topology. The KiteBot results match v55's 90.0% pattern, so v58 has not introduced a useful high-skill pressure counter.",
+  "fix": "Do not promote v58 to simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content. Keep the useful conclusion that independent route echo plus late_mix_a can satisfy RouteBot and RandomBot. The next repair should target KiteBot specifically without undoing RouteBot and RandomBot: test a narrower high-skill pressure window before 255 seconds, reduce the route-echo event's favorable high-skill topology, or add a readable anti-kite pressure source that does not lower GreedyXpBot, TankBot, or ZoneControlBot below their target floors.",
+  "validation": "Evidence is recorded in harness/reports/2026-06-05_demo_buildcraft_repair_v58_validate_partial_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v58_materialize_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v58_materialized_preflight_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v58_static_budget_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v58_validate_candidates_001/summary.md, and harness/reports/2026-06-05_demo_buildcraft_repair_v58_matrix_300s_10seed_72000_001/summary.md. The failure case structure was validated with python3 tools/validate_failure_cases.py harness/failed_cases.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-05_demo_buildcraft_repair_v58_candidates/README.md",
+    "harness/generated_candidates/2026-06-05_demo_buildcraft_repair_v58_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v52_route_diagnostics_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v58_validate_partial_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v58_materialize_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v58_materialized_preflight_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v58_static_budget_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v58_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v58_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v58_matrix_300s_10seed_72000_001/metrics.json"
+  ]
+}
