@@ -93,6 +93,8 @@ const UPGRADE_POINTER_CONTROL_HEIGHT: f32 = 190.0;
 const UPGRADE_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT: usize = 8;
 const LOADOUT_UNLOCKED_MAP_LABEL_LIMIT: usize = 8;
+const RUNTIME_HUD_TEXT_REFRESH_SECONDS: f32 = 0.10;
+const RUNTIME_META_TEXT_REFRESH_SECONDS: f32 = 0.25;
 const GAMEPAD_LEFT_STICK_DEADZONE: f32 = 0.15;
 
 fn main() {
@@ -920,6 +922,38 @@ type MetaTextFilter = (
     Without<UpgradeText>,
     Without<TerminalText>,
 );
+
+#[derive(Default)]
+struct RuntimeUiTextCache {
+    hud_elapsed_seconds: f32,
+    meta_elapsed_seconds: f32,
+    meta_key: Option<RuntimeMetaPanelCacheKey>,
+    meta_text: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RuntimeMetaPanelCacheKey {
+    view: RuntimeMetaPanelView,
+    selected_panel: String,
+    selected_character_id: String,
+    selected_map_id: String,
+    selected_chapter_id: String,
+    codex_category: String,
+    codex_discovered_only: bool,
+    codex_selected_index: usize,
+    pending_data_delete_action: Option<RuntimeDataControlAction>,
+    telemetry_upload_enabled: bool,
+    raw_replay_upload_enabled: bool,
+    crash_report_upload_enabled: bool,
+    completed_runs: u32,
+    best_survival_tenths: u32,
+    resource_totals: (u32, u32, u32),
+    discovered_codex_entries: usize,
+    unlocked_content_entries: usize,
+    latest_settlement_run_id: Option<String>,
+    story_candidate_id: Option<String>,
+    asset_candidate_id: Option<String>,
+}
 
 fn setup_runtime(
     mut commands: Commands,
@@ -2787,88 +2821,192 @@ fn build_has_any_tag(build: &BuildSnapshot, tags: &[&str]) -> bool {
         .any(|tag| build.tags.iter().any(|build_tag| build_tag == tag))
 }
 
+fn set_text_section_if_changed(text: &mut Text, value: String) -> bool {
+    if text.sections[0].value == value {
+        false
+    } else {
+        text.sections[0].value = value;
+        true
+    }
+}
+
+fn set_text_section_str_if_changed(text: &mut Text, value: &str) -> bool {
+    if text.sections[0].value == value {
+        false
+    } else {
+        text.sections[0].value = value.to_string();
+        true
+    }
+}
+
+fn runtime_meta_panel_cache_key(state: &RuntimeState) -> RuntimeMetaPanelCacheKey {
+    RuntimeMetaPanelCacheKey {
+        view: state.meta_panel_view,
+        selected_panel: state.base_ui_state.selected_panel.clone(),
+        selected_character_id: state.base_ui_state.last_selected_character_id.clone(),
+        selected_map_id: state.base_ui_state.last_selected_map_id.clone(),
+        selected_chapter_id: state.base_ui_state.last_selected_chapter_id.clone(),
+        codex_category: state.base_ui_state.codex_view.selected_category.clone(),
+        codex_discovered_only: state.base_ui_state.codex_view.discovered_only,
+        codex_selected_index: state.codex_selected_index,
+        pending_data_delete_action: state.pending_data_delete_action,
+        telemetry_upload_enabled: state.privacy_settings.telemetry_upload_enabled,
+        raw_replay_upload_enabled: state.privacy_settings.raw_replay_upload_enabled,
+        crash_report_upload_enabled: state.privacy_settings.crash_report_upload_enabled,
+        completed_runs: state.meta_progress.completed_runs,
+        best_survival_tenths: (state.meta_progress.best_survival_seconds.max(0.0) * 10.0) as u32,
+        resource_totals: (
+            state.meta_progress.resources.candy_crystal_shards,
+            state.meta_progress.resources.star_shards,
+            state.meta_progress.resources.storm_grains,
+        ),
+        discovered_codex_entries: meta_codex_discovered_count(&state.meta_progress),
+        unlocked_content_entries: runtime_unlocked_content_count(&state.meta_progress),
+        latest_settlement_run_id: state
+            .last_meta_settlement
+            .as_ref()
+            .map(|settlement| settlement.run_id.clone()),
+        story_candidate_id: state
+            .story_codex_ui_candidate
+            .as_ref()
+            .map(|candidate| candidate.candidate_pack_id.clone()),
+        asset_candidate_id: state
+            .asset_runtime_candidate
+            .as_ref()
+            .map(|candidate| candidate.candidate_batch_id.clone()),
+    }
+}
+
+fn runtime_unlocked_content_count(progress: &MetaProgress) -> usize {
+    progress.unlocks.characters.len()
+        + progress.unlocks.weapons.len()
+        + progress.unlocks.passives.len()
+        + progress.unlocks.maps.len()
+        + progress.unlocks.evolutions.len()
+        + progress.unlocks.chapters.len()
+        + progress.unlocks.events.len()
+        + progress.unlocks.cosmetics.len()
+}
+
 fn update_hud(
+    time: Res<Time>,
     state: Res<RuntimeState>,
+    mut ui_text_cache: Local<RuntimeUiTextCache>,
     mut hud_query: Query<&mut Text, With<HudText>>,
     mut upgrade_query: Query<&mut Text, (With<UpgradeText>, Without<HudText>)>,
     mut terminal_query: Query<&mut Text, TerminalTextFilter>,
     mut meta_query: Query<&mut Text, MetaTextFilter>,
 ) {
+    let delta_seconds = time.delta_seconds();
+    ui_text_cache.hud_elapsed_seconds += delta_seconds;
+    ui_text_cache.meta_elapsed_seconds += delta_seconds;
     let snapshot = &state.latest_snapshot;
     if let Ok(mut text) = hud_query.get_single_mut() {
-        let mode = if state.paused { "Paused" } else { "Playing" };
-        let map_style = map_visual_style(&snapshot.map.map_id);
-        let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
-        let build_status = format_build_status(&snapshot.build, &state.content);
-        let enemy_status = format_enemy_swarm_status(&snapshot.visible_enemies, &state.content);
-        let event_status =
-            format_event_effect_status(&snapshot.active_event_effects, &state.content);
-        let hazard_status =
-            format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
-        text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
-            state.run_number,
-            mode,
-            snapshot.time_seconds,
-            snapshot.player.health.max(0.0),
-            snapshot.player.max_health,
-            snapshot.player.level,
-            snapshot.player.xp,
-            snapshot.player.xp_to_next_level,
-            snapshot.metrics_partial.kills,
-            map_style.display_name,
-            snapshot.map.map_id,
-            boss_status,
-            enemy_status,
-            event_status,
-            hazard_status,
-            build_status,
-            state.last_event,
-            state.last_event_kind.label(),
-        );
+        if text.sections[0].value.is_empty()
+            || ui_text_cache.hud_elapsed_seconds >= RUNTIME_HUD_TEXT_REFRESH_SECONDS
+        {
+            ui_text_cache.hud_elapsed_seconds = 0.0;
+            let mode = if state.paused { "Paused" } else { "Playing" };
+            let map_style = map_visual_style(&snapshot.map.map_id);
+            let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
+            let build_status = format_build_status(&snapshot.build, &state.content);
+            let enemy_status = format_enemy_swarm_status(&snapshot.visible_enemies, &state.content);
+            let event_status =
+                format_event_effect_status(&snapshot.active_event_effects, &state.content);
+            let hazard_status =
+                format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
+            set_text_section_if_changed(&mut text, format!(
+                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+                state.run_number,
+                mode,
+                snapshot.time_seconds,
+                snapshot.player.health.max(0.0),
+                snapshot.player.max_health,
+                snapshot.player.level,
+                snapshot.player.xp,
+                snapshot.player.xp_to_next_level,
+                snapshot.metrics_partial.kills,
+                map_style.display_name,
+                snapshot.map.map_id,
+                boss_status,
+                enemy_status,
+                event_status,
+                hazard_status,
+                build_status,
+                state.last_event,
+                state.last_event_kind.label(),
+            ));
+        }
     }
 
     if let Ok(mut text) = upgrade_query.get_single_mut() {
-        text.sections[0].value = if snapshot.upgrade_options.is_empty() {
-            String::new()
-        } else {
-            format!(
-                "升级选择 - 按 1/2/3，点底部三段，或手柄下/右/上按钮\n{}",
-                format_upgrade_options(&snapshot.upgrade_options, &state.content, &snapshot.build)
-            )
-        };
+        if text.sections[0].value.is_empty()
+            || snapshot.upgrade_options.is_empty()
+            || ui_text_cache.hud_elapsed_seconds == 0.0
+        {
+            let value = if snapshot.upgrade_options.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "升级选择 - 按 1/2/3，点底部三段，或手柄下/右/上按钮\n{}",
+                    format_upgrade_options(
+                        &snapshot.upgrade_options,
+                        &state.content,
+                        &snapshot.build,
+                    )
+                )
+            };
+            set_text_section_if_changed(&mut text, value);
+        }
     }
 
     if let Ok(mut text) = terminal_query.get_single_mut() {
-        text.sections[0].value = if state.paused {
-            "Paused".to_string()
-        } else {
-            state
-                .core
-                .metrics()
-                .terminal
-                .as_ref()
-                .map(|terminal| format_terminal_overlay(terminal, &snapshot.build, &state.content))
-                .unwrap_or_default()
-        };
+        let terminal_visible = state.paused || state.core.metrics().terminal.is_some();
+        if terminal_visible || !text.sections[0].value.is_empty() {
+            let value = if state.paused {
+                "Paused".to_string()
+            } else {
+                state
+                    .core
+                    .metrics()
+                    .terminal
+                    .as_ref()
+                    .map(|terminal| {
+                        format_terminal_overlay(terminal, &snapshot.build, &state.content)
+                    })
+                    .unwrap_or_default()
+            };
+            set_text_section_if_changed(&mut text, value);
+        }
     }
 
     if let Ok(mut text) = meta_query.get_single_mut() {
-        text.sections[0].value = render_meta_progress_panel(
-            &state.meta_progress,
-            state.last_meta_settlement.as_ref(),
-            state.meta_panel_view,
-            RuntimeMetaPanelRenderContext {
-                privacy_settings: &state.privacy_settings,
-                runtime_settings_file: state.runtime_settings_file.as_deref(),
-                story_codex_ui_candidate: state.story_codex_ui_candidate.as_ref(),
-                asset_runtime_candidate: state.asset_runtime_candidate.as_ref(),
-                content: &state.content,
-                config: &state.config,
-                base_ui_state: &state.base_ui_state,
-                codex_selected_index: state.codex_selected_index,
-            },
-        );
+        let meta_key = runtime_meta_panel_cache_key(&state);
+        let force_refresh = match ui_text_cache.meta_key.as_ref() {
+            Some(cached_key) => cached_key != &meta_key,
+            None => true,
+        } || ui_text_cache.meta_text.is_empty();
+        if force_refresh || ui_text_cache.meta_elapsed_seconds >= RUNTIME_META_TEXT_REFRESH_SECONDS
+        {
+            ui_text_cache.meta_elapsed_seconds = 0.0;
+            ui_text_cache.meta_key = Some(meta_key);
+            ui_text_cache.meta_text = render_meta_progress_panel(
+                &state.meta_progress,
+                state.last_meta_settlement.as_ref(),
+                state.meta_panel_view,
+                RuntimeMetaPanelRenderContext {
+                    privacy_settings: &state.privacy_settings,
+                    runtime_settings_file: state.runtime_settings_file.as_deref(),
+                    story_codex_ui_candidate: state.story_codex_ui_candidate.as_ref(),
+                    asset_runtime_candidate: state.asset_runtime_candidate.as_ref(),
+                    content: &state.content,
+                    config: &state.config,
+                    base_ui_state: &state.base_ui_state,
+                    codex_selected_index: state.codex_selected_index,
+                },
+            );
+        }
+        set_text_section_str_if_changed(&mut text, &ui_text_cache.meta_text);
     }
 }
 
@@ -6390,14 +6528,15 @@ mod tests {
         runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
         runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
         runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_gamepad,
-        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
-        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
-        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        runtime_local_data_export_path, runtime_meta_panel_cache_key,
+        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
+        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
+        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
+        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -8809,6 +8948,22 @@ mod tests {
         assert!(panel.contains("威胁"));
         assert!(panel.contains("反制"));
         assert!(panel.contains("击败 3"));
+    }
+
+    #[test]
+    fn meta_panel_cache_key_tracks_navigation_and_progress() {
+        let mut state = runtime_state_for_tests();
+        state.meta_panel_view = RuntimeMetaPanelView::Codex;
+        let base_key = runtime_meta_panel_cache_key(&state);
+
+        state.codex_selected_index += 1;
+        assert_ne!(runtime_meta_panel_cache_key(&state), base_key);
+
+        let mut progress_state = runtime_state_for_tests();
+        let progress_key = runtime_meta_panel_cache_key(&progress_state);
+        progress_state.meta_progress.completed_runs += 1;
+        progress_state.meta_progress.resources.candy_crystal_shards += 3;
+        assert_ne!(runtime_meta_panel_cache_key(&progress_state), progress_key);
     }
 
     #[test]
