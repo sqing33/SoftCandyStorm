@@ -1193,7 +1193,10 @@ fn step_game_core(
                 Vec2::new(window.resolution.width(), window.resolution.height()),
             )
         });
-        if let Some(action) = runtime_chapter_action_from_keyboard(&keyboard).or(pointer_action) {
+        if let Some(action) = runtime_chapter_action_from_keyboard(&keyboard)
+            .or(pointer_action)
+            .or_else(|| runtime_chapter_action_from_gamepad(&gamepad_buttons))
+        {
             match apply_runtime_chapter_action(&mut state, action) {
                 Ok(message) => {
                     state.last_event = message;
@@ -2860,6 +2863,29 @@ fn runtime_chapter_action_from_keyboard(
     }
 }
 
+fn runtime_chapter_action_from_gamepad(
+    gamepad_buttons: &ButtonInput<GamepadButton>,
+) -> Option<RuntimeChapterAction> {
+    if gamepad_button_type_just_pressed(
+        gamepad_buttons,
+        &[GamepadButtonType::DPadLeft, GamepadButtonType::LeftTrigger],
+    ) {
+        Some(RuntimeChapterAction::Previous)
+    } else if gamepad_button_type_just_pressed(
+        gamepad_buttons,
+        &[
+            GamepadButtonType::DPadRight,
+            GamepadButtonType::RightTrigger,
+        ],
+    ) {
+        Some(RuntimeChapterAction::Next)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::South]) {
+        Some(RuntimeChapterAction::StartSelectedChapter)
+    } else {
+        None
+    }
+}
+
 fn runtime_chapter_action_from_pointer(
     mouse_buttons: &ButtonInput<MouseButton>,
     cursor_position: Option<Vec2>,
@@ -3113,7 +3139,7 @@ fn render_meta_chapter_panel(
         .position(|chapter_id| chapter_id == &selected_id)
         .unwrap_or(0);
     lines.push(format!(
-        "Q/E 切换章节  G 巡逻已解锁章节  当前 {}/{}",
+        "Q/E/手柄左/右 切换章节  G/手柄确认 巡逻已解锁章节  当前 {}/{}",
         if chapter_ids.is_empty() {
             0
         } else {
@@ -5641,19 +5667,20 @@ mod tests {
         render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
-        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
-        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
-        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_gamepad,
-        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
-        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
-        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
-        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
+        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
+        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
+        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
+        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
+        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_pointer,
+        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
+        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
+        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -7351,6 +7378,36 @@ mod tests {
     }
 
     #[test]
+    fn runtime_chapter_gamepad_input_maps_navigation_actions() {
+        let gamepad = Gamepad::new(0);
+        let mut previous = ButtonInput::<GamepadButton>::default();
+        previous.press(GamepadButton::new(gamepad, GamepadButtonType::LeftTrigger));
+        assert_eq!(
+            runtime_chapter_action_from_gamepad(&previous),
+            Some(RuntimeChapterAction::Previous)
+        );
+
+        let mut next = ButtonInput::<GamepadButton>::default();
+        next.press(GamepadButton::new(gamepad, GamepadButtonType::DPadRight));
+        assert_eq!(
+            runtime_chapter_action_from_gamepad(&next),
+            Some(RuntimeChapterAction::Next)
+        );
+
+        let mut start = ButtonInput::<GamepadButton>::default();
+        start.press(GamepadButton::new(gamepad, GamepadButtonType::South));
+        assert_eq!(
+            runtime_chapter_action_from_gamepad(&start),
+            Some(RuntimeChapterAction::StartSelectedChapter)
+        );
+
+        assert_eq!(
+            runtime_chapter_action_from_gamepad(&ButtonInput::<GamepadButton>::default()),
+            None
+        );
+    }
+
+    #[test]
     fn runtime_chapter_pointer_input_maps_left_click_zone() {
         let window_size = Vec2::new(1280.0, 720.0);
 
@@ -7719,8 +7776,8 @@ mod tests {
 
         assert!(panel.contains("章节目标"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
-        assert!(panel.contains("Q/E 切换章节"));
-        assert!(panel.contains("G 巡逻已解锁章节"));
+        assert!(panel.contains("Q/E/手柄左/右 切换章节"));
+        assert!(panel.contains("G/手柄确认 巡逻已解锁章节"));
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
         assert!(panel.contains("frosting-grassland"));
         assert!(panel.contains("地图说明 覆盖糖霜的开阔草地"));
