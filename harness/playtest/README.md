@@ -57,6 +57,10 @@ It remains a generated candidate and must not be copied into `content/base_demo`
 or `accepted_content` until human gates pass.
 
 ```bash
+python3 harness/playtest/check_current_candidate_readiness.py --allow-incomplete
+python3 harness/content_review/check_current_design_review_status.py --allow-incomplete
+python3 harness/playtest/check_current_manual_playtest_status.py --allow-incomplete
+python3 harness/playtest/create_current_human_review_worksheet.py
 python3 harness/playtest/create_current_playable_content_guide.py
 python3 harness/playtest/audit_current_playable_content_coverage.py --allow-repair
 python3 harness/playtest/play_current_candidate.py --dry-run
@@ -65,7 +69,14 @@ python3 harness/playtest/play_current_candidate.py --list
 python3 harness/playtest/run_current_content_tour.py --list
 python3 harness/playtest/run_current_content_tour.py --next --dry-run
 python3 harness/playtest/run_current_content_tour.py --next
+python3 harness/playtest/run_current_manual_playtest.py --list
+python3 harness/playtest/run_current_manual_playtest.py --status
+python3 harness/playtest/run_current_manual_playtest.py --next --dry-run
 ```
+
+Use `check_current_candidate_readiness.py` for the combined current-state
+summary: design-review TODO status, manual report counts, blockers, and the
+next manual playtest command.
 
 Use `play_current_candidate.py` for the easiest local start. With no preset it
 launches `jar-keeper` on `frosting-grassland` against the current candidate
@@ -76,6 +87,12 @@ and final-pressure presets.
 Use `run_current_content_tour.py` to cover all 6 maps and all 5 playable
 characters through optional human-run sessions. These runs are repair triage
 and playtest preparation only; they are not acceptance evidence.
+
+Use `run_current_manual_playtest.py` for the 6 required human playtest sessions
+that feed the current manual review draft. It intentionally does not add
+`--demo-input`, `--simulation-speed`, or `--auto-exit-after-report`, because
+those flags would make the evidence automated rather than human playtest
+evidence.
 
 Use `create_current_playable_content_guide.py` to summarize the current
 candidate's characters, maps, build routes, enemies, bosses, events, and

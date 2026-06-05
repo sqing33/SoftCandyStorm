@@ -154,6 +154,8 @@ def build_markdown(repo_root: Path) -> str:
             "## 校验命令",
             "",
             "```bash",
+            "python3 harness/playtest/check_current_candidate_readiness.py --allow-incomplete",
+            "python3 harness/content_review/check_current_design_review_status.py --allow-incomplete",
             "python3 harness/playtest/check_current_manual_playtest_status.py --allow-incomplete",
             f"python3 harness/playtest/validate_manual_review.py {DEFAULT_PLAYTEST_DRAFT} --strict-acceptance",
             "python3 harness/content_review/validate_content_candidate_design_review.py harness/content_review/drafts/2026-06-05_demo_buildcraft_repair_v61_full_pack_design_review_draft.json --repo-root .",
