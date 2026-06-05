@@ -1,0 +1,26 @@
+{
+  "case_id": "fail_20260605_003",
+  "category": "balance",
+  "content_id": "2026-06-05_demo_buildcraft_repair_v57_full_pack",
+  "seed": "72000-72009",
+  "bot": "RouteBot",
+  "time_seconds": 300.0,
+  "symptom": "v57 covers the existing rainbow-candy-rush event instead of adding an independent route-echo event. It passes partial candidate validation, materialized-pack preflight, static budget validation, GameCore validate-content, and isolated game_harness validate-candidates. In the 300s / 10-seed all-Bot matrix on seeds 72000-72009, RandomBot stays at 0.0% and KiteBot stays at 60.0%, matching target ranges and avoiding the v55 Random/Kite regression. However, RouteBot remains at 40.0% against the low-skill 10%-35% target.",
+  "root_cause": "v57 moves route-echo pressure from the 240s caramel-quake slot to the 180s rainbow-candy-rush slot and raises the event chance to 0.14, but the effect still depends on a probabilistic event trigger and a non-damaging slow-only route echo. The matrix shows that reusing an existing event slot is stable for RandomBot and KiteBot, but the route counter is still not reliable or decisive enough to interrupt four RouteBot winning seeds.",
+  "fix": "Do not promote v57 to simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content. Stop relying only on probabilistic route_echo_hazard effects to repair the fixed-route exploit. The next repair should target the playable content foundation more directly, such as a controlled 210-255 second wave-pressure adjustment or an existing event effect that creates reliable route pressure without widening RandomBot above 15% or KiteBot above 75%.",
+  "validation": "Evidence is recorded in harness/reports/2026-06-05_demo_buildcraft_repair_v57_validate_partial_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v57_materialize_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v57_materialized_preflight_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v57_static_budget_001/summary.md, harness/reports/2026-06-05_demo_buildcraft_repair_v57_validate_candidates_001/summary.md, and harness/reports/2026-06-05_demo_buildcraft_repair_v57_matrix_300s_10seed_72000_001/summary.md. The failure case structure was validated with python3 tools/validate_failure_cases.py harness/failed_cases.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-05_demo_buildcraft_repair_v57_candidates/README.md",
+    "harness/generated_candidates/2026-06-05_demo_buildcraft_repair_v57_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v56_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_validate_partial_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_materialize_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_materialized_preflight_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_static_budget_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-05_demo_buildcraft_repair_v57_matrix_300s_10seed_72000_001/metrics.json"
+  ]
+}
