@@ -1220,13 +1220,28 @@ impl GameCore {
         self.spawn_timer += spawn_interval;
         let free_slots = segment.max_alive.saturating_sub(self.enemies.len());
         let spawn_count = segment.spawn_count.min(free_slots);
+        let mut group_spawn_anchor = None;
         for _ in 0..spawn_count {
             let Some(enemy_id) = pick_enemy_id(&segment, &mut self.rng) else {
                 continue;
             };
             if let Some(definition) = self.content.enemies.get(&enemy_id).cloned() {
-                let position =
-                    self.spawn_position_around_player(self.map.spawn_min, self.map.spawn_max);
+                let position = if enemy_uses_group_spawn_bias(&definition) {
+                    let anchor = match group_spawn_anchor {
+                        Some(anchor) => anchor,
+                        None => {
+                            let anchor = self.spawn_position_around_player(
+                                self.map.spawn_min,
+                                self.map.spawn_max,
+                            );
+                            group_spawn_anchor = Some(anchor);
+                            anchor
+                        }
+                    };
+                    self.random_position_near(anchor, 0.0, 52.0)
+                } else {
+                    self.spawn_position_around_player(self.map.spawn_min, self.map.spawn_max)
+                };
                 let enemy =
                     Enemy::from_enemy_definition(self.allocate_entity_id(), position, &definition);
                 events.push(GameEvent::EnemySpawned {
@@ -4074,6 +4089,15 @@ fn pick_enemy_id(segment: &WaveSegmentDefinition, rng: &mut RunRng) -> Option<St
         .map(|entry| entry.enemy_id.clone())
 }
 
+fn enemy_uses_group_spawn_bias(definition: &EnemyDefinition) -> bool {
+    definition
+        .behavior
+        .parameters
+        .get("pack_spawn_bias")
+        .and_then(|value| value.as_str())
+        == Some("group")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5311,6 +5335,65 @@ mod tests {
             assert_eq!(core.config.character_id, character_id);
             assert!(!core.weapons.is_empty());
         }
+    }
+
+    #[test]
+    fn group_spawn_bias_clusters_cotton_candy_clumps() {
+        let mut content = ContentPack::base_demo();
+        let wave = content
+            .waves
+            .get_mut("frosting-grassland-standard")
+            .expect("base demo should include frosting-grassland wave");
+        wave.segments = vec![content::WaveSegmentDefinition {
+            start_second: 0.0,
+            end_second: 10.0,
+            spawn_interval_ms: 100.0,
+            spawn_count: 3,
+            max_alive: 12,
+            enemy_pool: vec![content::EnemyPoolEntryDefinition {
+                enemy_id: "cotton-candy-clump".to_string(),
+                weight: 1.0,
+            }],
+        }];
+        wave.boss_events.clear();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                map_id: "frosting-grassland".to_string(),
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+
+        let mut events = Vec::new();
+        core.update_wave_spawns(0.1, &mut events);
+
+        let cotton_positions = core
+            .enemies
+            .iter()
+            .filter(|enemy| enemy.enemy_id == "cotton-candy-clump")
+            .map(|enemy| enemy.position)
+            .collect::<Vec<_>>();
+        assert_eq!(cotton_positions.len(), 3);
+        for left in 0..cotton_positions.len() {
+            for right in (left + 1)..cotton_positions.len() {
+                assert!(cotton_positions[left].distance(cotton_positions[right]) <= 112.0);
+            }
+        }
+        assert_eq!(
+            events
+                .iter()
+                .filter(|event| {
+                    matches!(
+                        event,
+                        GameEvent::EnemySpawned { enemy_id, .. }
+                            if enemy_id == "cotton-candy-clump"
+                    )
+                })
+                .count(),
+            3
+        );
     }
 
     #[test]
