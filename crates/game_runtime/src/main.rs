@@ -3654,9 +3654,12 @@ fn render_meta_progress_panel(
     context: RuntimeMetaPanelRenderContext<'_>,
 ) -> String {
     match view {
-        RuntimeMetaPanelView::Overview => {
-            render_meta_overview_panel(progress, settlement, context.asset_runtime_candidate)
-        }
+        RuntimeMetaPanelView::Overview => render_meta_overview_panel(
+            progress,
+            settlement,
+            context.content,
+            context.asset_runtime_candidate,
+        ),
         RuntimeMetaPanelView::Chapters => {
             render_meta_chapter_panel(progress, settlement, context.content, context.base_ui_state)
         }
@@ -3680,15 +3683,19 @@ fn render_meta_progress_panel(
 fn render_meta_overview_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
+    content: &ContentPack,
     asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
 ) -> String {
     let discovered = meta_codex_discovered_count(progress);
     let completed_goals = meta_completed_goal_count(progress);
     let unlocked_content = meta_unlocked_content_count(progress);
     let maps = format_string_set(&progress.unlocks.maps, 3);
+    let next_action = format_meta_overview_next_action(progress, settlement, content);
+    let unlock_summary = format_meta_overview_unlock_summary(progress, content);
+    let chapter_summary = format_meta_overview_chapter_summary(progress, content);
 
     let mut output = format!(
-        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n",
+        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n",
         META_PANEL_HEADER,
         META_PANEL_TAB_CLICK_HINT,
         progress.resources.candy_crystal_shards,
@@ -3700,6 +3707,9 @@ fn render_meta_overview_panel(
         maps,
         progress.completed_runs,
         progress.best_survival_seconds,
+        next_action,
+        unlock_summary,
+        chapter_summary,
     );
 
     if let Some(report) = settlement {
@@ -3740,6 +3750,82 @@ fn render_meta_overview_panel(
     output.push_str("\n\n右下点击区: 章节  图鉴  设置  巡逻");
 
     output
+}
+
+fn format_meta_overview_next_action(
+    progress: &MetaProgress,
+    settlement: Option<&MetaSettlementReport>,
+    content: &ContentPack,
+) -> String {
+    if let Some(report) = settlement {
+        return format_settlement_next_step(report).to_string();
+    }
+    if let Some((chapter_id, goal)) = next_incomplete_chapter_goal(progress) {
+        return format!(
+            "F5 开始 {} 巡逻，优先 {}",
+            chapter_label(content, &chapter_id),
+            goal
+        );
+    }
+    "F5 换构筑继续巡逻，F3 补全图鉴，等待后续章节内容".to_string()
+}
+
+fn format_meta_overview_unlock_summary(progress: &MetaProgress, content: &ContentPack) -> String {
+    format!(
+        "角色 {}  地图 {}",
+        format_runtime_unlocked_labels(
+            &runtime_unlocked_character_ids(progress, content),
+            |id| runtime_character_label(content, id),
+            2,
+        ),
+        format_runtime_unlocked_labels(
+            &runtime_unlocked_map_ids(progress, content),
+            |id| runtime_map_label(content, id),
+            2,
+        ),
+    )
+}
+
+fn format_meta_overview_chapter_summary(progress: &MetaProgress, content: &ContentPack) -> String {
+    let incomplete = incomplete_chapter_goal_count(progress);
+    if let Some((chapter_id, goal)) = next_incomplete_chapter_goal(progress) {
+        format!(
+            "未完成 {} 项；{} 下一目标 {}",
+            incomplete,
+            chapter_label(content, &chapter_id),
+            goal
+        )
+    } else {
+        "当前已解锁章节目标已完成".to_string()
+    }
+}
+
+fn next_incomplete_chapter_goal(progress: &MetaProgress) -> Option<(String, String)> {
+    for (chapter_id, chapter) in &progress.chapters {
+        if !chapter.unlocked {
+            continue;
+        }
+        for line in runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals) {
+            if let Some(goal) = line.strip_prefix("[ ] ") {
+                return Some((chapter_id.clone(), goal.to_string()));
+            }
+        }
+    }
+    None
+}
+
+fn incomplete_chapter_goal_count(progress: &MetaProgress) -> usize {
+    progress
+        .chapters
+        .iter()
+        .filter(|(_, chapter)| chapter.unlocked)
+        .map(|(chapter_id, chapter)| {
+            runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals)
+                .iter()
+                .filter(|line| line.starts_with("[ ] "))
+                .count()
+        })
+        .sum()
 }
 
 fn render_meta_chapter_panel(
@@ -8918,10 +9004,39 @@ mod tests {
         assert!(panel.contains("rainbow-candy-shot Lv.1"));
         assert!(panel.contains("collect-200-candy-crystals"));
         assert!(panel.contains("discovered:jar-keeper"));
+        assert!(panel.contains("下一步行动"));
+        assert!(panel.contains("解锁概览"));
+        assert!(panel.contains("章节进度"));
         assert!(panel.contains("下一步"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
         assert!(panel.contains("手柄 Select/Start 上一页/下一页"));
         assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
+    }
+
+    #[test]
+    fn meta_panel_overview_guides_next_patrol_before_settlement() {
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Overview,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        assert!(panel.contains("下一步行动 F5 开始"));
+        assert!(panel.contains("标准巡逻坚持 10 分钟"));
+        assert!(panel.contains("解锁概览 角色"));
+        assert!(panel.contains("地图 糖霜草地(frosting-grassland)"));
+        assert!(panel.contains("章节进度 未完成 4 项"));
+        assert!(panel.contains("巡逻中：结算会在本局结束后更新"));
     }
 
     #[test]
