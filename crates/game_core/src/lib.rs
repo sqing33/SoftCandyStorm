@@ -44,6 +44,7 @@ const BOOMERANG_RETURN_SPEED_MULTIPLIER: f32 = 1.08;
 const KNOCKBACK_WEAPON_DISTANCE: f32 = 46.0;
 const SUMMON_TURRET_MIN_FIRE_INTERVAL_SECONDS: f32 = 0.24;
 const TRAP_TRIGGER_RADIUS_MULTIPLIER: f32 = 1.0;
+const BEAM_TICK_INTERVAL_SECONDS: f32 = 0.15;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1425,6 +1426,18 @@ impl GameCore {
                 0.0
             };
             let turret_range = if weapon_type == "summon" { range } else { 0.0 };
+            let beam_tick_interval_seconds = if weapon_type == "beam" {
+                BEAM_TICK_INTERVAL_SECONDS
+            } else {
+                0.0
+            };
+            let beam_damage_per_tick = if beam_tick_interval_seconds > 0.0 {
+                let expected_ticks = (lifetime / beam_tick_interval_seconds).ceil().max(1.0);
+                damage / expected_ticks
+            } else {
+                0.0
+            };
+            let beam_range = if weapon_type == "beam" { range } else { 0.0 };
 
             for projectile_index in 0..spawn_count {
                 let runtime = self.weapon_projectile_runtime(WeaponProjectileRuntimeInput {
@@ -1466,6 +1479,11 @@ impl GameCore {
                     turret_fire_interval_seconds,
                     turret_fire_cooldown_seconds: 0.0,
                     turret_range,
+                    beam_tick_interval_seconds,
+                    beam_tick_cooldown_seconds: 0.0,
+                    beam_damage_per_tick,
+                    beam_range,
+                    beam_target_rank: projectile_index,
                 };
                 self.projectiles.push(projectile);
             }
@@ -1533,16 +1551,12 @@ impl GameCore {
                     lifetime: input.lifetime,
                 }
             }
-            "beam" => {
-                let angle = input.spread_start + input.spread_step * input.projectile_index as f32;
-                let direction = input.base_direction.rotated(angle).normalized_or_zero();
-                ProjectileRuntime {
-                    position: self.player.position,
-                    velocity: direction * input.projectile_speed,
-                    pierce_remaining: input.pierce.max(4),
-                    lifetime: input.lifetime,
-                }
-            }
+            "beam" => ProjectileRuntime {
+                position: self.clamp_to_map(input.target_position),
+                velocity: Vec2::ZERO,
+                pierce_remaining: input.pierce.max(1),
+                lifetime: input.lifetime,
+            },
             _ => {
                 let angle = input.spread_start + input.spread_step * input.projectile_index as f32;
                 let direction = input.base_direction.rotated(angle).normalized_or_zero();
@@ -1700,6 +1714,77 @@ impl GameCore {
                     }
                 }
                 projectile.pierce_remaining = 0;
+                continue;
+            }
+
+            if projectile.is_beam() {
+                projectile.lifetime -= dt;
+                projectile.beam_tick_cooldown_seconds -= dt;
+
+                let mut targets = self
+                    .enemies
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, enemy)| {
+                        enemy.health > 0.0
+                            && enemy.position.distance(player_position) <= projectile.beam_range
+                    })
+                    .map(|(index, enemy)| {
+                        (
+                            index,
+                            enemy.health,
+                            enemy.position.distance(player_position),
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                targets.sort_by(|left, right| {
+                    right
+                        .1
+                        .partial_cmp(&left.1)
+                        .unwrap_or(Ordering::Equal)
+                        .then_with(|| left.2.partial_cmp(&right.2).unwrap_or(Ordering::Equal))
+                });
+
+                let target = targets
+                    .get(projectile.beam_target_rank)
+                    .or_else(|| targets.first())
+                    .copied();
+                let Some((target_index, _, _)) = target else {
+                    continue;
+                };
+
+                let target_position = self.enemies[target_index].position;
+                projectile.position = target_position;
+                projectile.velocity = target_position - player_position;
+
+                if projectile.beam_tick_cooldown_seconds > 0.0 {
+                    continue;
+                }
+
+                let enemy = &mut self.enemies[target_index];
+                let damage = projectile.beam_damage_per_tick
+                    * enemy.projectile_damage_multiplier(player_position, player_position);
+                enemy.health -= damage;
+                self.metrics.damage_dealt_by_weapon += damage;
+                if enemy.is_boss {
+                    self.metrics.boss_damage += damage;
+                }
+                enemy.apply_slow(
+                    projectile.enemy_slow_multiplier,
+                    projectile.enemy_slow_duration_seconds,
+                );
+                enemy.apply_knockback(
+                    player_position,
+                    projectile.enemy_knockback_distance,
+                    half_width,
+                    half_height,
+                );
+                events.push(GameEvent::EnemyHit {
+                    entity_id: enemy.entity_id,
+                    damage,
+                    weapon_id: projectile.weapon_id.clone(),
+                });
+                projectile.beam_tick_cooldown_seconds += projectile.beam_tick_interval_seconds;
                 continue;
             }
 
@@ -3571,6 +3656,11 @@ struct Projectile {
     turret_fire_interval_seconds: f32,
     turret_fire_cooldown_seconds: f32,
     turret_range: f32,
+    beam_tick_interval_seconds: f32,
+    beam_tick_cooldown_seconds: f32,
+    beam_damage_per_tick: f32,
+    beam_range: f32,
+    beam_target_rank: usize,
 }
 
 impl Projectile {
@@ -3580,6 +3670,10 @@ impl Projectile {
 
     fn is_trap(&self) -> bool {
         self.trap_trigger_radius > 0.0
+    }
+
+    fn is_beam(&self) -> bool {
+        self.beam_tick_interval_seconds > 0.0
     }
 }
 
@@ -4138,6 +4232,97 @@ mod tests {
     }
 
     #[test]
+    fn beam_weapon_locks_highest_health_enemy_with_tick_damage() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["star-sugar-ray".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+
+        let low_enemy_id = core.allocate_entity_id();
+        let high_enemy_id = core.allocate_entity_id();
+        let mut low_enemy =
+            Enemy::from_enemy_definition(low_enemy_id, Vec2::new(120.0, 0.0), &enemy_definition);
+        let mut high_enemy =
+            Enemy::from_enemy_definition(high_enemy_id, Vec2::new(180.0, 0.0), &enemy_definition);
+        low_enemy.health = 50.0;
+        low_enemy.max_health = 50.0;
+        high_enemy.health = 200.0;
+        high_enemy.max_health = 200.0;
+        core.enemies.push(low_enemy);
+        core.enemies.push(high_enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+        let beam = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "star-sugar-ray")
+            .expect("star sugar ray should create a beam projectile");
+        assert!(beam.is_beam());
+        assert!(beam.beam_damage_per_tick < beam.damage);
+        assert!(beam.beam_range >= 560.0);
+
+        let low_before = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == low_enemy_id)
+            .expect("low enemy should be present")
+            .health;
+        let high_before = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == high_enemy_id)
+            .expect("high enemy should be present")
+            .health;
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+
+        let low_after = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == low_enemy_id)
+            .expect("low enemy should still be present")
+            .health;
+        let high_after = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == high_enemy_id)
+            .expect("high enemy should still be present")
+            .health;
+        let beam = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "star-sugar-ray")
+            .expect("beam should remain active after one damage tick");
+
+        assert_eq!(low_after, low_before);
+        assert!(high_after < high_before);
+        assert_eq!(beam.position, Vec2::new(180.0, 0.0));
+        assert!(beam.beam_tick_cooldown_seconds > 0.0);
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::EnemyHit { entity_id, weapon_id, .. }
+                    if *entity_id == high_enemy_id && weapon_id == "star-sugar-ray"
+            )
+        }));
+    }
+
+    #[test]
     fn can_run_from_disk_content_pack() {
         let content = ContentPack::load_from_dir("../../content/base_demo")
             .expect("base_demo content should load from disk");
@@ -4258,6 +4443,11 @@ mod tests {
             turret_fire_interval_seconds: 0.0,
             turret_fire_cooldown_seconds: 0.0,
             turret_range: 0.0,
+            beam_tick_interval_seconds: 0.0,
+            beam_tick_cooldown_seconds: 0.0,
+            beam_damage_per_tick: 0.0,
+            beam_range: 0.0,
+            beam_target_rank: 0,
         });
 
         let mut events = Vec::new();
@@ -4429,6 +4619,11 @@ mod tests {
             turret_fire_interval_seconds: 0.0,
             turret_fire_cooldown_seconds: 0.0,
             turret_range: 0.0,
+            beam_tick_interval_seconds: 0.0,
+            beam_tick_cooldown_seconds: 0.0,
+            beam_damage_per_tick: 0.0,
+            beam_range: 0.0,
+            beam_target_rank: 0,
         });
 
         core.update_projectiles(0.0, &mut Vec::new());
