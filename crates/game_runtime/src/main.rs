@@ -2576,6 +2576,8 @@ fn runtime_event_effect_label(effect_type: &str) -> String {
     match effect_type {
         "damage_multiplier" => "伤害",
         "pickup_radius_multiplier" => "拾取",
+        "route_echo_hazard" => "路线回声危险区",
+        "spawn_hazard" => "危险区",
         "spawn_rate_multiplier" => "刷怪",
         "xp_multiplier" => "XP",
         other => return other.replace('_', " "),
@@ -5022,12 +5024,29 @@ fn format_event_effect_for_codex(effect: &EventEffectDefinition, content: &Conte
                 .unwrap_or_else(|| "未知敌人".to_string()),
             effect.value,
         ),
-        "spawn_hazard" | "route_echo_hazard" => format!(
-            "{} {:.0}/s {:.0}s",
-            runtime_event_effect_label(&effect.effect_type),
-            effect.damage_per_second.unwrap_or(effect.value),
-            effect.hazard_duration_seconds.unwrap_or_default(),
-        ),
+        "spawn_hazard" | "route_echo_hazard" => {
+            let duration_seconds = effect
+                .hazard_duration_seconds
+                .or(effect.duration_seconds)
+                .unwrap_or_default();
+            let slow_text = effect
+                .slow_multiplier
+                .map(|value| format!(" 减速x{value:.2}"))
+                .unwrap_or_default();
+            let damage_text = effect
+                .damage_per_second
+                .filter(|value| *value > 0.0)
+                .map(|value| format!(" 伤害{value:.0}/s"))
+                .unwrap_or_default();
+            format!(
+                "{} x{:.0} {:.0}s{}{}",
+                runtime_event_effect_label(&effect.effect_type),
+                effect.value,
+                duration_seconds,
+                slow_text,
+                damage_text,
+            )
+        }
         other => {
             let duration = effect
                 .duration_seconds
@@ -6923,29 +6942,30 @@ mod tests {
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
-        format_enemy_swarm_status, format_event_effect_status, format_hazard_status,
-        format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
-        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, projectile_visual_style, render_meta_progress_panel,
-        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
-        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
-        runtime_asset_root, runtime_can_upload, runtime_chapter_action_from_gamepad,
-        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
-        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
-        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_gamepad,
-        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
-        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_cache_key, runtime_meta_panel_tab_view_from_gamepad,
-        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
-        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
-        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        format_enemy_swarm_status, format_event_effect_for_codex, format_event_effect_status,
+        format_hazard_status, format_terminal_overlay, format_upgrade_options,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
+        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
+        projectile_visual_style, render_meta_progress_panel, resolve_runtime_content_selection,
+        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
+        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
+        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
+        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
+        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
+        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
+        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
+        runtime_local_data_export_path, runtime_meta_panel_cache_key,
+        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
+        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
+        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
+        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -8874,6 +8894,51 @@ mod tests {
         assert_eq!(
             format_event_effect_status(&[], &ContentPack::base_demo()),
             "事件效果 无"
+        );
+    }
+
+    #[test]
+    fn event_codex_formats_spawn_hazard_as_count_and_slow() {
+        let content = ContentPack::base_demo();
+        let effect = content
+            .events
+            .get("caramel-quake")
+            .expect("base demo event should include caramel-quake")
+            .effects
+            .iter()
+            .find(|effect| effect.effect_type == "spawn_hazard")
+            .expect("caramel-quake should include a hazard effect");
+
+        assert_eq!(
+            format_event_effect_for_codex(effect, &content),
+            "危险区 x5 10s 减速x0.55"
+        );
+    }
+
+    #[test]
+    fn event_codex_formats_route_echo_hazard_damage_separately() {
+        let content = ContentPack::base_demo();
+        let effect = game_core::content::EventEffectDefinition {
+            effect_type: "route_echo_hazard".to_string(),
+            value: 3.0,
+            duration_seconds: Some(12.0),
+            enemy_id: None,
+            radius: Some(64.0),
+            slow_multiplier: Some(0.72),
+            placement: None,
+            min_distance: None,
+            max_distance: None,
+            lane_width: Some(120.0),
+            sample_interval_seconds: Some(0.5),
+            history_seconds: Some(8.0),
+            trigger_radius: Some(96.0),
+            hazard_duration_seconds: Some(6.0),
+            damage_per_second: Some(4.0),
+        };
+
+        assert_eq!(
+            format_event_effect_for_codex(&effect, &content),
+            "路线回声危险区 x3 6s 减速x0.72 伤害4/s"
         );
     }
 
