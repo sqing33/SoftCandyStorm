@@ -164,7 +164,7 @@ impl MetaProgress {
             );
         }
 
-        apply_frosting_grassland_goals(self, summary, &mut report);
+        apply_chapter_goals(self, summary, &mut report);
         report
     }
 }
@@ -291,20 +291,20 @@ fn is_standard_patrol_victory(config: &RunConfig, metrics: &RunMetrics) -> bool 
         && metrics.duration_seconds >= STANDARD_PATROL_SECONDS
 }
 
-fn apply_frosting_grassland_goals(
+fn apply_chapter_goals(
     progress: &mut MetaProgress,
     summary: &MetaRunSummary,
     report: &mut MetaSettlementReport,
 ) {
-    if summary.map_id != "frosting-grassland" {
+    let Some((chapter_id, boss_id)) = chapter_for_map(&summary.map_id) else {
         return;
-    }
+    };
 
     let mut earned_star_shards = 0;
     complete_goal(
         progress,
         report,
-        "frosting-grassland",
+        chapter_id,
         "survive-10-minutes",
         summary.duration_seconds >= 600.0,
         &mut earned_star_shards,
@@ -312,37 +312,39 @@ fn apply_frosting_grassland_goals(
     complete_goal(
         progress,
         report,
-        "frosting-grassland",
-        "defeat-runaway-sugar-mixer",
-        summary.bosses_defeated.contains("runaway-sugar-mixer"),
+        chapter_id,
+        &format!("defeat-{boss_id}"),
+        summary.bosses_defeated.contains(boss_id),
         &mut earned_star_shards,
     );
     complete_goal(
         progress,
         report,
-        "frosting-grassland",
+        chapter_id,
         "collect-200-candy-crystals",
         summary.xp_collected >= 200.0,
         &mut earned_star_shards,
     );
-    complete_goal(
-        progress,
-        report,
-        "frosting-grassland",
-        "rainbow-candy-shot-level-5",
-        summary
-            .weapon_levels
-            .get("rainbow-candy-shot")
-            .is_some_and(|level| *level >= 5),
-        &mut earned_star_shards,
-    );
+    if chapter_id == "frosting-grassland" {
+        complete_goal(
+            progress,
+            report,
+            "frosting-grassland",
+            "rainbow-candy-shot-level-5",
+            summary
+                .weapon_levels
+                .get("rainbow-candy-shot")
+                .is_some_and(|level| *level >= 5),
+            &mut earned_star_shards,
+        );
+    }
 
     if earned_star_shards > 0 {
         progress.resources.star_shards += earned_star_shards;
         report.resources_gained.star_shards += earned_star_shards;
     }
 
-    if summary.bosses_defeated.contains("runaway-sugar-mixer") {
+    if chapter_id == "frosting-grassland" && summary.bosses_defeated.contains(boss_id) {
         unlock(
             &mut progress.unlocks.weapons,
             report,
@@ -359,80 +361,114 @@ fn apply_frosting_grassland_goals(
         );
     }
 
-    let chapter_boss_defeated =
-        progress
+    if let Some((next_chapter, required_star_shards)) = next_chapter_unlock(chapter_id) {
+        let boss_goal = format!("defeat-{boss_id}");
+        let chapter_boss_defeated = progress
             .chapters
-            .get("frosting-grassland")
-            .is_some_and(|chapter| {
-                chapter
-                    .completed_goals
-                    .contains("defeat-runaway-sugar-mixer")
-            });
-    if chapter_boss_defeated && progress.resources.star_shards >= 2 {
-        unlock(
-            &mut progress.unlocks.maps,
-            report,
-            "map",
-            "soda-creek",
-            "collected enough star shards",
-        );
-        unlock_chapter(
-            progress,
-            report,
-            "soda-creek",
-            "collected enough star shards",
-        );
+            .get(chapter_id)
+            .is_some_and(|chapter| chapter.completed_goals.contains(&boss_goal));
+        if chapter_boss_defeated && progress.resources.star_shards >= required_star_shards {
+            unlock(
+                &mut progress.unlocks.maps,
+                report,
+                "map",
+                next_chapter,
+                "collected enough star shards",
+            );
+            unlock_chapter(
+                progress,
+                report,
+                next_chapter,
+                "collected enough star shards",
+            );
+        }
     }
 }
 
+fn chapter_for_map(map_id: &str) -> Option<(&'static str, &'static str)> {
+    DEMO_CHAPTER_SEQUENCE
+        .iter()
+        .find(|(_, map, _, _)| *map == map_id)
+        .map(|(chapter_id, _, boss_id, _)| (*chapter_id, *boss_id))
+}
+
+fn next_chapter_unlock(chapter_id: &str) -> Option<(&'static str, u32)> {
+    DEMO_CHAPTER_SEQUENCE
+        .iter()
+        .find(|(id, _, _, _)| *id == chapter_id)
+        .and_then(|(_, _, _, next)| *next)
+}
+
+type DemoChapterSpec = (
+    &'static str,
+    &'static str,
+    &'static str,
+    Option<(&'static str, u32)>,
+);
+
+const DEMO_CHAPTER_SEQUENCE: &[DemoChapterSpec] = &[
+    (
+        "frosting-grassland",
+        "frosting-grassland",
+        "runaway-sugar-mixer",
+        Some(("soda-creek", 2)),
+    ),
+    (
+        "soda-creek",
+        "soda-creek",
+        "soda-fountain-dragon",
+        Some(("cotton-cloud-pasture", 4)),
+    ),
+    (
+        "cotton-cloud-pasture",
+        "cotton-cloud-pasture",
+        "giant-cotton-clump",
+        Some(("caramel-workshop", 6)),
+    ),
+    (
+        "caramel-workshop",
+        "caramel-workshop",
+        "caramel-furnace",
+        Some(("jelly-platform", 8)),
+    ),
+    (
+        "jelly-platform",
+        "jelly-platform",
+        "giant-gummy-bear-king",
+        Some(("cracked-star-jar", 10)),
+    ),
+    (
+        "cracked-star-jar",
+        "cracked-star-jar",
+        "cracked-star-jar-core",
+        None,
+    ),
+];
+
 fn demo_chapter_roster() -> BTreeMap<String, ChapterProgress> {
-    [
-        (
-            "frosting-grassland",
-            "frosting-grassland",
-            "runaway-sugar-mixer",
-            true,
-        ),
-        ("soda-creek", "soda-creek", "soda-fountain-dragon", false),
-        (
-            "cotton-cloud-pasture",
-            "cotton-cloud-pasture",
-            "giant-cotton-clump",
-            false,
-        ),
-        (
-            "caramel-workshop",
-            "caramel-workshop",
-            "caramel-furnace",
-            false,
-        ),
-        (
-            "jelly-platform",
-            "jelly-platform",
-            "giant-gummy-bear-king",
-            false,
-        ),
-        (
-            "cracked-star-jar",
-            "cracked-star-jar",
-            "cracked-star-jar-core",
-            false,
-        ),
-    ]
-    .into_iter()
-    .map(|(chapter_id, map_id, boss_id, unlocked)| {
-        (
-            chapter_id.to_string(),
-            ChapterProgress {
-                chapter_id: chapter_id.to_string(),
-                map_id: map_id.to_string(),
-                boss_id: boss_id.to_string(),
-                unlocked,
-                completed_goals: BTreeSet::new(),
-            },
-        )
-    })
-    .collect()
+    DEMO_CHAPTER_SEQUENCE
+        .iter()
+        .map(|(chapter_id, map_id, boss_id, _)| {
+            (
+                *chapter_id,
+                *map_id,
+                *boss_id,
+                *chapter_id == "frosting-grassland",
+            )
+        })
+        .map(|(chapter_id, map_id, boss_id, unlocked)| {
+            (
+                chapter_id.to_string(),
+                ChapterProgress {
+                    chapter_id: chapter_id.to_string(),
+                    map_id: map_id.to_string(),
+                    boss_id: boss_id.to_string(),
+                    unlocked,
+                    completed_goals: BTreeSet::new(),
+                },
+            )
+        })
+        .collect()
 }
 
 fn complete_goal(
@@ -630,6 +666,39 @@ mod tests {
         assert!(progress.chapters["soda-creek"].unlocked);
         assert!(progress.unlocks.characters.contains("bubble-courier"));
         assert!(progress.resources.star_shards >= 2);
+    }
+
+    #[test]
+    fn later_chapter_goals_unlock_following_map_with_star_shards() {
+        let mut summary = base_summary();
+        summary.run_id = "run_003".to_string();
+        summary.map_id = "soda-creek".to_string();
+        summary.duration_seconds = 600.0;
+        summary.victory = true;
+        summary.xp_collected = 220.0;
+        summary
+            .bosses_defeated
+            .insert("soda-fountain-dragon".to_string());
+
+        let mut progress = MetaProgress::demo_start();
+        progress.resources.star_shards = 1;
+        progress.unlocks.maps.insert("soda-creek".to_string());
+        progress.unlocks.chapters.insert("soda-creek".to_string());
+        progress.chapters.get_mut("soda-creek").unwrap().unlocked = true;
+        let report = progress.apply_run_summary(&summary);
+
+        assert!(report
+            .completed_goals
+            .contains(&"soda-creek:survive-10-minutes".to_string()));
+        assert!(report
+            .completed_goals
+            .contains(&"soda-creek:defeat-soda-fountain-dragon".to_string()));
+        assert!(report
+            .completed_goals
+            .contains(&"soda-creek:collect-200-candy-crystals".to_string()));
+        assert!(progress.unlocks.maps.contains("cotton-cloud-pasture"));
+        assert!(progress.chapters["cotton-cloud-pasture"].unlocked);
+        assert_eq!(progress.resources.star_shards, 4);
     }
 
     #[test]

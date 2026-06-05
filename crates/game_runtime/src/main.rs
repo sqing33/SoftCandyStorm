@@ -4965,44 +4965,36 @@ fn runtime_chapter_goal_lines(
     completed_goals: &std::collections::BTreeSet<String>,
     content: &ContentPack,
 ) -> Vec<String> {
-    let marshmallow_shield = runtime_weapon_label(content, "marshmallow-shield");
-    let bubble_courier = runtime_character_label(content, "bubble-courier");
-    let soda_creek = runtime_map_label(content, "soda-creek");
-    let goals = match chapter_id {
-        "frosting-grassland" => vec![
-            (
-                "survive-10-minutes",
-                "标准巡逻坚持 10 分钟",
-                "奖励 星片 +1".to_string(),
-            ),
-            (
-                "defeat-runaway-sugar-mixer",
-                "击败暴走搅糖机",
-                format!(
-                    "奖励 星片 +1；解锁 {marshmallow_shield}、{bubble_courier}；集齐 2 星片开放 {soda_creek}"
-                ),
-            ),
-            (
-                "collect-200-candy-crystals",
-                "收集 200 糖晶经验",
-                "奖励 星片 +1".to_string(),
-            ),
-            (
-                "rainbow-candy-shot-level-5",
-                "把彩虹糖弹升到 5 级",
-                "奖励 星片 +1；强化彩虹糖弹构筑路线".to_string(),
-            ),
-        ],
-        _ => vec![(
-            "future-chapter-goals",
-            "后续章节目标待内容接受与平衡验证后开放",
-            "奖励 待 Harness 验证后显示".to_string(),
-        )],
-    };
+    let boss_id = runtime_chapter_boss_id(chapter_id).unwrap_or(chapter_id);
+    let boss_goal_id = format!("defeat-{boss_id}");
+    let mut goals = vec![
+        (
+            "survive-10-minutes".to_string(),
+            "标准巡逻坚持 10 分钟".to_string(),
+            "奖励 星片 +1".to_string(),
+        ),
+        (
+            boss_goal_id,
+            format!("击败{}", runtime_boss_label(content, boss_id)),
+            format_runtime_chapter_boss_reward(chapter_id, content),
+        ),
+        (
+            "collect-200-candy-crystals".to_string(),
+            "收集 200 糖晶经验".to_string(),
+            "奖励 星片 +1".to_string(),
+        ),
+    ];
+    if chapter_id == "frosting-grassland" {
+        goals.push((
+            "rainbow-candy-shot-level-5".to_string(),
+            "把彩虹糖弹升到 5 级".to_string(),
+            "奖励 星片 +1；强化彩虹糖弹构筑路线".to_string(),
+        ));
+    }
     goals
         .into_iter()
         .map(|(goal_id, label, reward)| {
-            let status = if completed_goals.contains(goal_id) {
+            let status = if completed_goals.contains(&goal_id) {
                 "[x]"
             } else {
                 "[ ]"
@@ -5010,6 +5002,50 @@ fn runtime_chapter_goal_lines(
             format!("{status} {goal_id} - {label} -> {reward}")
         })
         .collect()
+}
+
+fn runtime_chapter_boss_id(chapter_id: &str) -> Option<&'static str> {
+    match chapter_id {
+        "frosting-grassland" => Some("runaway-sugar-mixer"),
+        "soda-creek" => Some("soda-fountain-dragon"),
+        "cotton-cloud-pasture" => Some("giant-cotton-clump"),
+        "caramel-workshop" => Some("caramel-furnace"),
+        "jelly-platform" => Some("giant-gummy-bear-king"),
+        "cracked-star-jar" => Some("cracked-star-jar-core"),
+        _ => None,
+    }
+}
+
+fn runtime_next_chapter_unlock(chapter_id: &str) -> Option<(&'static str, u32)> {
+    match chapter_id {
+        "frosting-grassland" => Some(("soda-creek", 2)),
+        "soda-creek" => Some(("cotton-cloud-pasture", 4)),
+        "cotton-cloud-pasture" => Some(("caramel-workshop", 6)),
+        "caramel-workshop" => Some(("jelly-platform", 8)),
+        "jelly-platform" => Some(("cracked-star-jar", 10)),
+        _ => None,
+    }
+}
+
+fn format_runtime_chapter_boss_reward(chapter_id: &str, content: &ContentPack) -> String {
+    let mut parts = vec!["奖励 星片 +1".to_string()];
+    if chapter_id == "frosting-grassland" {
+        parts.push(format!(
+            "解锁 {}、{}",
+            runtime_weapon_label(content, "marshmallow-shield"),
+            runtime_character_label(content, "bubble-courier"),
+        ));
+    }
+    if let Some((next_chapter, required_star_shards)) = runtime_next_chapter_unlock(chapter_id) {
+        parts.push(format!(
+            "集齐 {} 星片开放 {}",
+            required_star_shards,
+            chapter_label(content, next_chapter),
+        ));
+    } else {
+        parts.push("完成裂星糖罐章节挑战".to_string());
+    }
+    parts.join("；")
 }
 
 fn format_runtime_unlocked_labels(
@@ -10078,7 +10114,9 @@ mod tests {
         assert!(panel.contains("soda-creek"));
         assert!(panel.contains("汽水喷泉龙"));
         assert!(panel.contains("未解锁"));
-        assert!(panel.contains("future-chapter-goals"));
+        assert!(panel.contains("defeat-soda-fountain-dragon"));
+        assert!(panel.contains("击败汽水喷泉龙"));
+        assert!(panel.contains("集齐 4 星片开放 棉花云牧场"));
         assert!(panel.contains("G 不会启动锁定章节"));
     }
 
@@ -10822,9 +10860,8 @@ mod tests {
             assert!(panel.contains(expected), "missing loadout label {expected}");
         }
         assert!(panel.contains("地图机制 无固定地形伤害"));
-        assert!(panel.contains(
-            "敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"
-        ));
+        assert!(panel
+            .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"));
         assert!(!panel.contains("还有"));
     }
 
