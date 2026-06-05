@@ -41,6 +41,7 @@ const SOUR_CONTROL_ENEMY_SLOW_DURATION_MULTIPLIER: f32 = 1.45;
 const LONGER_SUMMONS_LIFETIME_MULTIPLIER: f32 = 1.45;
 const BOOMERANG_RETURN_AFTER_LIFETIME_RATIO: f32 = 0.42;
 const BOOMERANG_RETURN_SPEED_MULTIPLIER: f32 = 1.08;
+const KNOCKBACK_WEAPON_DISTANCE: f32 = 46.0;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1394,6 +1395,7 @@ impl GameCore {
                 * self.character_weapon_lifetime_multiplier(&weapon_type);
             let (enemy_slow_multiplier, enemy_slow_duration_seconds) =
                 self.enemy_slow_effect_for_weapon(&weapon_tags);
+            let enemy_knockback_distance = enemy_knockback_distance_for_weapon(&weapon_tags);
             let boomerang_return_after_seconds =
                 boomerang_return_after_seconds(&weapon_tags, lifetime);
             let boomerang_return_speed = if boomerang_return_after_seconds.is_some() {
@@ -1437,6 +1439,7 @@ impl GameCore {
                     lifetime: runtime.lifetime,
                     enemy_slow_multiplier,
                     enemy_slow_duration_seconds,
+                    enemy_knockback_distance,
                     age_seconds: 0.0,
                     boomerang_return_after_seconds,
                     boomerang_return_speed,
@@ -1556,6 +1559,8 @@ impl GameCore {
 
     fn update_projectiles(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
         let player_position = self.player.position;
+        let half_width = self.map.width * 0.5;
+        let half_height = self.map.height * 0.5;
         for projectile in &mut self.projectiles {
             projectile.age_seconds += dt;
             if let Some(return_after_seconds) = projectile.boomerang_return_after_seconds {
@@ -1592,6 +1597,12 @@ impl GameCore {
                     enemy.apply_slow(
                         projectile.enemy_slow_multiplier,
                         projectile.enemy_slow_duration_seconds,
+                    );
+                    enemy.apply_knockback(
+                        player_position,
+                        projectile.enemy_knockback_distance,
+                        half_width,
+                        half_height,
                     );
                     projectile.pierce_remaining = projectile.pierce_remaining.saturating_sub(1);
                     events.push(GameEvent::EnemyHit {
@@ -2382,6 +2393,14 @@ fn boomerang_return_after_seconds(weapon_tags: &[String], lifetime: f32) -> Opti
     }
 }
 
+fn enemy_knockback_distance_for_weapon(weapon_tags: &[String]) -> f32 {
+    if weapon_tags.iter().any(|tag| tag == "knockback") {
+        KNOCKBACK_WEAPON_DISTANCE
+    } else {
+        0.0
+    }
+}
+
 fn push_rotated_candidate(
     source: &mut Vec<UpgradeOffer>,
     target: &mut Vec<UpgradeOffer>,
@@ -3002,6 +3021,25 @@ impl Enemy {
         self.slow_remaining_seconds = self.slow_remaining_seconds.max(duration_seconds);
     }
 
+    fn apply_knockback(
+        &mut self,
+        player_position: Vec2,
+        distance: f32,
+        half_width: f32,
+        half_height: f32,
+    ) {
+        if distance <= 0.0 {
+            return;
+        }
+        let direction = (self.position - player_position).normalized_or_zero();
+        if direction.length_squared() <= 0.0 {
+            return;
+        }
+        self.position += direction * distance;
+        self.position.x = self.position.x.clamp(-half_width, half_width);
+        self.position.y = self.position.y.clamp(-half_height, half_height);
+    }
+
     fn dash_velocity(&mut self, direction: Vec2, dt: f32) -> Vec2 {
         if self.behavior_state.dash_remaining_seconds > 0.0 {
             self.behavior_state.dash_remaining_seconds -= dt;
@@ -3387,6 +3425,7 @@ struct Projectile {
     lifetime: f32,
     enemy_slow_multiplier: f32,
     enemy_slow_duration_seconds: f32,
+    enemy_knockback_distance: f32,
     age_seconds: f32,
     boomerang_return_after_seconds: Option<f32>,
     boomerang_return_speed: f32,
@@ -3702,6 +3741,47 @@ mod tests {
     }
 
     #[test]
+    fn knockback_weapon_pushes_enemy_away_from_player_on_hit() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["soda-fountain".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(120.0, 0.0), &enemy_definition);
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        core.enemies.push(enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        assert!(core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.enemy_knockback_distance > 0.0));
+        let before = core.enemies[0].position.distance(core.player.position);
+        core.update_projectiles(0.0, &mut Vec::new());
+        let after = core.enemies[0].position.distance(core.player.position);
+
+        assert!(after > before + KNOCKBACK_WEAPON_DISTANCE * 0.5);
+    }
+
+    #[test]
     fn zone_weapon_uses_duration_and_stationary_area() {
         let mut core = GameCore::reset(RunConfig {
             starting_loadout: StartingLoadout {
@@ -3838,6 +3918,7 @@ mod tests {
             lifetime: 1.0,
             enemy_slow_multiplier: 1.0,
             enemy_slow_duration_seconds: 0.0,
+            enemy_knockback_distance: 0.0,
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
@@ -4004,6 +4085,7 @@ mod tests {
             lifetime: 1.0,
             enemy_slow_multiplier: 1.0,
             enemy_slow_duration_seconds: 0.0,
+            enemy_knockback_distance: 0.0,
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
