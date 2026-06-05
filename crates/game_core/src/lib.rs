@@ -39,6 +39,8 @@ const SLOW_WEAPON_ENEMY_DURATION_SECONDS: f32 = 0.75;
 const SOUR_CONTROL_ENEMY_SLOW_MULTIPLIER: f32 = 0.58;
 const SOUR_CONTROL_ENEMY_SLOW_DURATION_MULTIPLIER: f32 = 1.45;
 const LONGER_SUMMONS_LIFETIME_MULTIPLIER: f32 = 1.45;
+const BOOMERANG_RETURN_AFTER_LIFETIME_RATIO: f32 = 0.42;
+const BOOMERANG_RETURN_SPEED_MULTIPLIER: f32 = 1.08;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1392,6 +1394,13 @@ impl GameCore {
                 * self.character_weapon_lifetime_multiplier(&weapon_type);
             let (enemy_slow_multiplier, enemy_slow_duration_seconds) =
                 self.enemy_slow_effect_for_weapon(&weapon_tags);
+            let boomerang_return_after_seconds =
+                boomerang_return_after_seconds(&weapon_tags, lifetime);
+            let boomerang_return_speed = if boomerang_return_after_seconds.is_some() {
+                projectile_speed * BOOMERANG_RETURN_SPEED_MULTIPLIER
+            } else {
+                0.0
+            };
             let base_direction = (target_position - self.player.position).normalized_or_zero();
             let spread_step = if count > 1 { 0.18 } else { 0.0 };
             let spread_start = -spread_step * (count.saturating_sub(1) as f32) * 0.5;
@@ -1410,6 +1419,13 @@ impl GameCore {
                     lifetime,
                     radius,
                 });
+                let pierce_remaining = if boomerang_return_after_seconds.is_some() {
+                    runtime
+                        .pierce_remaining
+                        .max(pierce.saturating_mul(2).max(2))
+                } else {
+                    runtime.pierce_remaining
+                };
                 let projectile = Projectile {
                     entity_id: self.allocate_entity_id(),
                     weapon_id: weapon_id.clone(),
@@ -1417,10 +1433,13 @@ impl GameCore {
                     velocity: runtime.velocity,
                     damage,
                     radius,
-                    pierce_remaining: runtime.pierce_remaining,
+                    pierce_remaining,
                     lifetime: runtime.lifetime,
                     enemy_slow_multiplier,
                     enemy_slow_duration_seconds,
+                    age_seconds: 0.0,
+                    boomerang_return_after_seconds,
+                    boomerang_return_speed,
                 };
                 self.projectiles.push(projectile);
             }
@@ -1538,6 +1557,17 @@ impl GameCore {
     fn update_projectiles(&mut self, dt: f32, events: &mut Vec<GameEvent>) {
         let player_position = self.player.position;
         for projectile in &mut self.projectiles {
+            projectile.age_seconds += dt;
+            if let Some(return_after_seconds) = projectile.boomerang_return_after_seconds {
+                if projectile.age_seconds >= return_after_seconds {
+                    let return_direction =
+                        (player_position - projectile.position).normalized_or_zero();
+                    if return_direction.length_squared() > 0.0 {
+                        projectile.velocity =
+                            return_direction * projectile.boomerang_return_speed.max(1.0);
+                    }
+                }
+            }
             projectile.position += projectile.velocity * dt;
             projectile.lifetime -= dt;
 
@@ -2341,6 +2371,14 @@ fn weapon_lifetime(weapon_type: &str, duration: f32) -> f32 {
         "beam" => 0.75,
         "orbit" => 1.6,
         _ => 1.2,
+    }
+}
+
+fn boomerang_return_after_seconds(weapon_tags: &[String], lifetime: f32) -> Option<f32> {
+    if weapon_tags.iter().any(|tag| tag == "boomerang") && lifetime > 0.2 {
+        Some(lifetime * BOOMERANG_RETURN_AFTER_LIFETIME_RATIO)
+    } else {
+        None
     }
 }
 
@@ -3349,6 +3387,9 @@ struct Projectile {
     lifetime: f32,
     enemy_slow_multiplier: f32,
     enemy_slow_duration_seconds: f32,
+    age_seconds: f32,
+    boomerang_return_after_seconds: Option<f32>,
+    boomerang_return_speed: f32,
 }
 
 impl From<Projectile> for ProjectileSnapshot {
@@ -3618,6 +3659,49 @@ mod tests {
     }
 
     #[test]
+    fn boomerang_weapon_returns_toward_player_after_outbound_window() {
+        let mut core = GameCore::reset(RunConfig {
+            starting_loadout: StartingLoadout {
+                weapons: vec!["lollipop-boomerang".to_string()],
+                passives: Vec::new(),
+            },
+            ..RunConfig::default()
+        });
+        core.player.velocity = Vec2::new(core.player.move_speed, 0.0);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let projectile = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "lollipop-boomerang")
+            .expect("lollipop boomerang should fire a projectile");
+        assert!(projectile.boomerang_return_after_seconds.is_some());
+        assert!(projectile.velocity.x > 0.0);
+
+        core.update_projectiles(0.2, &mut Vec::new());
+        let outbound_x = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "lollipop-boomerang")
+            .expect("boomerang should still be active")
+            .position
+            .x;
+        assert!(outbound_x > core.player.position.x);
+
+        core.update_projectiles(0.5, &mut Vec::new());
+
+        let returning = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "lollipop-boomerang")
+            .expect("boomerang should still be active on return");
+        assert!(returning.velocity.x < 0.0);
+        assert!(returning.position.x < outbound_x);
+    }
+
+    #[test]
     fn zone_weapon_uses_duration_and_stationary_area() {
         let mut core = GameCore::reset(RunConfig {
             starting_loadout: StartingLoadout {
@@ -3754,6 +3838,9 @@ mod tests {
             lifetime: 1.0,
             enemy_slow_multiplier: 1.0,
             enemy_slow_duration_seconds: 0.0,
+            age_seconds: 0.0,
+            boomerang_return_after_seconds: None,
+            boomerang_return_speed: 0.0,
         });
 
         let mut events = Vec::new();
@@ -3917,6 +4004,9 @@ mod tests {
             lifetime: 1.0,
             enemy_slow_multiplier: 1.0,
             enemy_slow_duration_seconds: 0.0,
+            age_seconds: 0.0,
+            boomerang_return_after_seconds: None,
+            boomerang_return_speed: 0.0,
         });
 
         core.update_projectiles(0.0, &mut Vec::new());
