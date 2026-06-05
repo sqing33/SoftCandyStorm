@@ -3038,11 +3038,129 @@ fn feedback_for_events(events: &[GameEvent], content: &ContentPack) -> RuntimeFe
 }
 
 fn describe_events(events: &[GameEvent], content: &ContentPack) -> String {
+    if let Some(priority_message) = events
+        .iter()
+        .rev()
+        .find_map(|event| describe_priority_event(event, content))
+    {
+        return priority_message;
+    }
+    if let Some(combat_message) = describe_combat_events(events, content) {
+        return combat_message;
+    }
     events
         .iter()
         .rev()
         .find_map(|event| describe_event(event, content))
         .unwrap_or_else(|| "糖果风暴推进中".to_string())
+}
+
+fn describe_priority_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
+    match event {
+        GameEvent::RunEnded { .. }
+        | GameEvent::LevelUp { .. }
+        | GameEvent::UpgradeOffered { .. }
+        | GameEvent::UpgradeChosen { .. }
+        | GameEvent::ContentEventTriggered { .. } => describe_event(event, content),
+        GameEvent::EnemySpawned { .. }
+        | GameEvent::BossSpawned { .. }
+        | GameEvent::BossPhaseChanged { .. }
+        | GameEvent::BossAbilityUsed { .. }
+        | GameEvent::WeaponFired { .. }
+        | GameEvent::EnemyHit { .. }
+        | GameEvent::EnemyKilled { .. }
+        | GameEvent::XpDropped { .. }
+        | GameEvent::XpCollected { .. }
+        | GameEvent::PlayerDamaged { .. } => None,
+    }
+}
+
+fn describe_combat_events(events: &[GameEvent], content: &ContentPack) -> Option<String> {
+    let mut hit_count = 0_u32;
+    let mut hit_damage = 0.0_f32;
+    let mut xp_collected = 0.0_f32;
+    let mut player_damage = 0.0_f32;
+    let mut boss_spawn: Option<String> = None;
+    let mut boss_phase: Option<String> = None;
+    let mut boss_ability: Option<String> = None;
+
+    for event in events {
+        match event {
+            GameEvent::EnemyHit { damage, .. } => {
+                hit_count += 1;
+                hit_damage += damage.max(1.0);
+            }
+            GameEvent::XpCollected { value, .. } => {
+                xp_collected += value.max(1.0);
+            }
+            GameEvent::PlayerDamaged { amount } => {
+                player_damage += amount.max(1.0);
+            }
+            GameEvent::BossSpawned { boss_id, .. } => {
+                boss_spawn = Some(format!(
+                    "Boss 出现 {} ({boss_id})",
+                    runtime_boss_label(content, boss_id)
+                ));
+            }
+            GameEvent::BossPhaseChanged {
+                boss_id,
+                phase_index,
+                ..
+            } => {
+                boss_phase = Some(format!(
+                    "Boss {} 进入第 {} 阶段",
+                    runtime_boss_label(content, boss_id),
+                    phase_index + 1
+                ));
+            }
+            GameEvent::BossAbilityUsed {
+                boss_id,
+                ability_id,
+                ..
+            } => {
+                boss_ability = Some(format!(
+                    "技能预警 Boss {} 使用 {}",
+                    runtime_boss_label(content, boss_id),
+                    runtime_boss_ability_label(ability_id)
+                ));
+            }
+            GameEvent::EnemySpawned { .. }
+            | GameEvent::WeaponFired { .. }
+            | GameEvent::EnemyKilled { .. }
+            | GameEvent::XpDropped { .. }
+            | GameEvent::ContentEventTriggered { .. }
+            | GameEvent::LevelUp { .. }
+            | GameEvent::UpgradeOffered { .. }
+            | GameEvent::UpgradeChosen { .. }
+            | GameEvent::RunEnded { .. } => {}
+        }
+    }
+
+    let mut parts = Vec::new();
+    if hit_count > 0 {
+        parts.push(format!("命中 x{hit_count} / 伤害 {hit_damage:.0}"));
+    }
+    if xp_collected > 0.0 {
+        parts.push(format!("糖晶 +{xp_collected:.0}"));
+    }
+    if player_damage > 0.0 {
+        parts.push(format!("受伤 {player_damage:.0}"));
+    }
+    if let Some(message) = boss_spawn {
+        parts.push(message);
+    }
+    if let Some(message) = boss_phase {
+        parts.push(message);
+    }
+    if let Some(message) = boss_ability {
+        parts.push(message);
+    }
+
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join(" | "))
+    }
 }
 
 fn event_kind_for_events(events: &[GameEvent]) -> RuntimeEventKind {
@@ -9976,7 +10094,7 @@ mod tests {
                 }],
                 &content
             ),
-            "Boss 焦糖熔炉 使用 铺设焦糖轨道"
+            "技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道"
         );
         assert_eq!(
             describe_events(
@@ -10083,6 +10201,40 @@ mod tests {
         assert!(effects.iter().any(|effect| {
             effect.kind == RuntimeEffectKind::BossAbility && effect.position == boss_position
         }));
+    }
+
+    #[test]
+    fn runtime_feedback_summarizes_combat_event_batches() {
+        let content = ContentPack::base_demo();
+        let feedback = describe_events(
+            &[
+                GameEvent::WeaponFired {
+                    weapon_id: "rainbow-candy-shot".to_string(),
+                    projectile_count: 1,
+                },
+                GameEvent::EnemyHit {
+                    entity_id: 2,
+                    damage: 7.0,
+                    weapon_id: "rainbow-candy-shot".to_string(),
+                },
+                GameEvent::XpCollected {
+                    entity_id: 3,
+                    value: 6.0,
+                },
+                GameEvent::PlayerDamaged { amount: 3.0 },
+                GameEvent::BossAbilityUsed {
+                    entity_id: 30,
+                    boss_id: "caramel-furnace".to_string(),
+                    ability_id: "lay_caramel_tracks".to_string(),
+                },
+            ],
+            &content,
+        );
+
+        assert!(feedback.contains("命中 x1 / 伤害 7"));
+        assert!(feedback.contains("糖晶 +6"));
+        assert!(feedback.contains("受伤 3"));
+        assert!(feedback.contains("技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道"));
     }
 
     #[test]
