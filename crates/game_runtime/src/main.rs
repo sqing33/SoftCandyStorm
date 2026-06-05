@@ -3302,37 +3302,146 @@ fn render_meta_loadout_panel(
 ) -> String {
     let character_label = runtime_character_label(content, &config.character_id);
     let map_label = runtime_map_label(content, &config.map_id);
-    let loadout = if config.starting_loadout.weapons.is_empty()
-        && config.starting_loadout.passives.is_empty()
+    let mut lines = vec![
+        META_PANEL_HEADER.to_string(),
+        META_PANEL_TAB_CLICK_HINT.to_string(),
+        "巡逻准备".to_string(),
+        format!("角色 {} ({})", character_label, config.character_id),
+    ];
+
+    if let Some(character) = content.characters.get(&config.character_id) {
+        lines.push(format!(
+            "角色说明 {}  标签 {}",
+            character.description,
+            format_upgrade_tags(&character.tags),
+        ));
+        lines.push(format!(
+            "属性 HP {:.0}  移速 {:.0}  拾取 {:.0}  伤害 x{:.2}  冷却 x{:.2}  XP x{:.2}  回复 {:.1}/s",
+            character.base_stats.max_health,
+            character.base_stats.move_speed,
+            character.base_stats.pickup_radius,
+            character.base_stats.damage_multiplier,
+            character.base_stats.cooldown_multiplier,
+            character.base_stats.xp_multiplier,
+            character.base_stats.regen_per_second,
+        ));
+        if let Some(trait_definition) = &character.trait_definition {
+            lines.push(format!(
+                "特质 {} ({})",
+                trait_definition.description, trait_definition.id
+            ));
+        }
+    }
+
+    lines.push(format!(
+        "初始装备 {}",
+        format_runtime_starting_loadout(content, &config.starting_loadout)
+    ));
+    lines.push(format!("地图 {} ({})", map_label, config.map_id));
+
+    if let Some(map) = content.maps.get(&config.map_id) {
+        lines.push(format!("地图说明 {}", map.description));
+        lines.push(format!(
+            "地图标签 {}  尺寸 {:.0}x{:.0}  音乐 {}",
+            format_upgrade_tags(&map.tags),
+            map.size.width,
+            map.size.height,
+            map.music_theme,
+        ));
+        let hazard_summary = if map.hazards.is_empty() {
+            "无固定地形伤害".to_string()
+        } else {
+            format!("{} 项", map.hazards.len())
+        };
+        lines.push(format!("地图机制 {}", hazard_summary));
+    }
+
+    if let Some(chapter_line) =
+        format_runtime_loadout_chapter_line(progress, content, &config.map_id)
     {
-        "使用角色默认初始装备".to_string()
-    } else {
-        format!(
-            "武器 {}  被动 {}",
-            format_string_slice(&config.starting_loadout.weapons, 3),
-            format_string_slice(&config.starting_loadout.passives, 3),
-        )
-    };
-    format!(
-        "{}\n{}\n巡逻准备\n角色 {} ({})\n地图 {} ({})\n{}\nC 切换已解锁角色  M 切换已解锁地图\n右下点击区: 角色  地图\n切换会重开当前巡逻并保留局外进度\n已解锁角色 {}\n已解锁地图 {}",
-        META_PANEL_HEADER,
-        META_PANEL_TAB_CLICK_HINT,
-        character_label,
-        config.character_id,
-        map_label,
-        config.map_id,
-        loadout,
+        lines.push(chapter_line);
+    }
+
+    lines.push("C 切换已解锁角色  M 切换已解锁地图".to_string());
+    lines.push("右下点击区: 角色  地图".to_string());
+    lines.push("切换会重开当前巡逻并保留局外进度".to_string());
+    lines.push(format!(
+        "已解锁角色 {}",
         format_runtime_unlocked_labels(
             &runtime_unlocked_character_ids(progress, content),
             |id| runtime_character_label(content, id),
             LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT,
         ),
+    ));
+    lines.push(format!(
+        "已解锁地图 {}",
         format_runtime_unlocked_labels(
             &runtime_unlocked_map_ids(progress, content),
             |id| runtime_map_label(content, id),
             LOADOUT_UNLOCKED_MAP_LABEL_LIMIT,
         ),
+    ));
+
+    lines.join("\n")
+}
+
+fn format_runtime_starting_loadout(content: &ContentPack, loadout: &StartingLoadout) -> String {
+    if loadout.weapons.is_empty() && loadout.passives.is_empty() {
+        return "使用角色默认初始装备".to_string();
+    }
+
+    format!(
+        "武器 {}  被动 {}",
+        format_runtime_content_id_labels(&loadout.weapons, 3, |id| runtime_weapon_label(
+            content, id
+        )),
+        format_runtime_content_id_labels(&loadout.passives, 3, |id| runtime_passive_label(
+            content, id
+        )),
     )
+}
+
+fn format_runtime_loadout_chapter_line(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    map_id: &str,
+) -> Option<String> {
+    progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == map_id)
+        .map(|chapter| {
+            let status = if chapter.unlocked {
+                "已解锁章节"
+            } else {
+                "锁定章节"
+            };
+            format!(
+                "章节 Boss {} ({})  {}",
+                runtime_boss_label(content, &chapter.boss_id),
+                chapter.boss_id,
+                status,
+            )
+        })
+}
+
+fn format_runtime_content_id_labels<F>(ids: &[String], limit: usize, label_for_id: F) -> String
+where
+    F: Fn(&str) -> String,
+{
+    if ids.is_empty() {
+        return "无".to_string();
+    }
+
+    let mut visible = ids
+        .iter()
+        .take(limit)
+        .map(|id| format!("{} ({})", label_for_id(id), id))
+        .collect::<Vec<_>>();
+    if ids.len() > limit {
+        visible.push(format!("+{} 项", ids.len() - limit));
+    }
+    visible.join("、")
 }
 
 fn runtime_character_label(content: &ContentPack, character_id: &str) -> String {
@@ -8073,7 +8182,14 @@ mod tests {
         assert!(panel.contains("F5 巡逻"));
         assert!(panel.contains("巡逻准备"));
         assert!(panel.contains("泡泡邮差"));
+        assert!(panel.contains("角色说明"));
+        assert!(panel.contains("属性 HP"));
+        assert!(panel.contains("特质 移动后短时间提升拾取范围"));
+        assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("汽水溪谷"));
+        assert!(panel.contains("地图说明"));
+        assert!(panel.contains("地图标签"));
+        assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C 切换已解锁角色"));
         assert!(panel.contains("M 切换已解锁地图"));
