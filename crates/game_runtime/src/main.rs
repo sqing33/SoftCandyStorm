@@ -4,6 +4,11 @@ use bevy::{
     prelude::*,
     window::PrimaryWindow,
 };
+use game_core::content::{
+    BossDefinition, CharacterDefinition, EnemyDefinition, EventDefinition, EventEffectDefinition,
+    EventTriggerDefinition, EvolutionDefinition, MapDefinition, PassiveDefinition,
+    StatModifierDefinition, WeaponDefinition,
+};
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
     Difficulty, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaCodexEntry,
@@ -4249,6 +4254,323 @@ fn meta_codex_recent_discoveries(progress: &MetaProgress, limit: usize) -> Vec<S
     items.into_iter().take(limit).collect()
 }
 
+fn runtime_codex_character_description(
+    item: &CharacterDefinition,
+    content: &ContentPack,
+) -> String {
+    let trait_text = item
+        .trait_definition
+        .as_ref()
+        .map(|trait_definition| trait_definition.description.as_str())
+        .unwrap_or("无特殊特性");
+    format!(
+        "{}\n玩法 标签 {}  初始武器 {}  初始被动 {}\n属性 生命 {:.0}  移速 {:.0}  拾取 {:.0}  经验 x{:.2}\n特性 {}",
+        item.description,
+        format_upgrade_tags(&item.tags),
+        format_runtime_content_id_labels(&item.initial_loadout.weapons, 2, |id| {
+            runtime_weapon_label(content, id)
+        }),
+        format_runtime_content_id_labels(&item.initial_loadout.passives, 2, |id| {
+            runtime_passive_label(content, id)
+        }),
+        item.base_stats.max_health,
+        item.base_stats.move_speed,
+        item.base_stats.pickup_radius,
+        item.base_stats.xp_multiplier,
+        trait_text,
+    )
+}
+
+fn runtime_codex_weapon_description(item: &WeaponDefinition) -> String {
+    format!(
+        "{}\n玩法 标签 {}  定位 {}  目标 {}  最高 Lv.{}\n数值 伤害 {:.0}  冷却 {:.2}s  数量 {}  范围 {:.0}\n预算 单体 {:.0}  群体 {:.0}  性能 {}",
+        item.description,
+        format_upgrade_tags(&item.tags),
+        runtime_weapon_role_label(&item.balance_budget.role),
+        runtime_targeting_label(&item.targeting.mode),
+        item.scaling.max_level,
+        item.base_stats.damage,
+        item.base_stats.cooldown_ms / 1000.0,
+        item.base_stats.projectile_count,
+        item.base_stats.area_radius.max(item.targeting.range),
+        item.balance_budget.single_target_dps,
+        item.balance_budget.group_dps,
+        runtime_performance_cost_label(&item.balance_budget.performance_cost),
+    )
+}
+
+fn runtime_codex_passive_description(item: &PassiveDefinition) -> String {
+    format!(
+        "{}\n玩法 标签 {}  最高 Lv.{}  加成 {}",
+        item.description,
+        format_upgrade_tags(&item.tags),
+        item.max_level,
+        format_passive_modifiers(&item.stat_modifiers),
+    )
+}
+
+fn runtime_codex_enemy_description(item: &EnemyDefinition) -> String {
+    format!(
+        "{}\n玩法 标签 {}  家族 {}  行为 {}  威胁 {:.1}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s  XP {:.0}\n反制 {}",
+        item.common.description,
+        format_upgrade_tags(&item.common.tags),
+        item.family,
+        runtime_behavior_label(&item.behavior.behavior_type),
+        item.spawn_budget.threat,
+        item.common.stats.health,
+        item.common.stats.move_speed,
+        item.common.stats.contact_damage_per_second,
+        item.common.stats.xp_value,
+        item.common.counterplay,
+    )
+}
+
+fn runtime_codex_boss_description(item: &BossDefinition) -> String {
+    format!(
+        "{}\n玩法 标签 {}  阶段 {}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s\n反制 {}",
+        item.common.description,
+        format_upgrade_tags(&item.common.tags),
+        format_boss_phase_summary(&item.phases),
+        item.common.stats.health,
+        item.common.stats.move_speed,
+        item.common.stats.contact_damage_per_second,
+        item.common.counterplay,
+    )
+}
+
+fn runtime_codex_map_description(item: &MapDefinition) -> String {
+    format!(
+        "{}\n玩法 标签 {}  尺寸 {:.0}x{:.0}  边界 {}  出生 {} {:.0}-{:.0}\n音乐 {}",
+        item.description,
+        format_upgrade_tags(&item.tags),
+        item.size.width,
+        item.size.height,
+        item.bounds.bounds_type,
+        item.spawn_rules.mode,
+        item.spawn_rules.min_distance,
+        item.spawn_rules.max_distance,
+        item.music_theme,
+    )
+}
+
+fn runtime_codex_evolution_description(
+    item: &EvolutionDefinition,
+    content: &ContentPack,
+) -> String {
+    format!(
+        "{}\n玩法 标签 {}  需求 {}  触发 {}  替换 {}\n形态 {}  伤害 {:.0}  冷却 {:.2}s  数量 {}",
+        item.description,
+        format_upgrade_tags(&item.tags),
+        format_evolution_codex_requirements(item, content),
+        runtime_evolution_trigger_label(&item.requirements.trigger),
+        runtime_weapon_label(content, &item.replaces_weapon),
+        runtime_weapon_role_label(&item.weapon_definition.weapon_type),
+        item.weapon_definition.base_stats.damage,
+        item.weapon_definition.base_stats.cooldown_ms / 1000.0,
+        item.weapon_definition.base_stats.projectile_count,
+    )
+}
+
+fn runtime_codex_event_description(item: &EventDefinition, content: &ContentPack) -> String {
+    let effects = item
+        .effects
+        .iter()
+        .take(4)
+        .map(|effect| format_event_effect_for_codex(effect, content))
+        .collect::<Vec<_>>();
+    format!(
+        "{}\n玩法 标签 {}  触发 {}\n效果 {}",
+        item.description,
+        format_upgrade_tags(&item.tags),
+        format_event_trigger_for_codex(&item.trigger),
+        effects.join("；"),
+    )
+}
+
+fn format_passive_modifiers(modifiers: &[StatModifierDefinition]) -> String {
+    if modifiers.is_empty() {
+        return "无".to_string();
+    }
+    modifiers
+        .iter()
+        .take(4)
+        .map(|modifier| {
+            format!(
+                "{} {} {:.2}/级",
+                runtime_stat_label(&modifier.stat),
+                runtime_modifier_mode_label(&modifier.mode),
+                modifier.value_per_level,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("，")
+}
+
+fn format_boss_phase_summary(phases: &[game_core::content::BossPhaseDefinition]) -> String {
+    if phases.is_empty() {
+        return "无阶段技能".to_string();
+    }
+    phases
+        .iter()
+        .take(3)
+        .map(|phase| {
+            let abilities = phase
+                .abilities
+                .iter()
+                .take(3)
+                .map(|ability| runtime_boss_ability_label(ability))
+                .collect::<Vec<_>>()
+                .join("/");
+            format!("{:.0}% {}", phase.hp_threshold * 100.0, abilities)
+        })
+        .collect::<Vec<_>>()
+        .join("，")
+}
+
+fn format_evolution_codex_requirements(
+    evolution: &EvolutionDefinition,
+    content: &ContentPack,
+) -> String {
+    let weapon_requirement = &evolution.requirements.weapon;
+    let weapon = format!(
+        "{} Lv.{}",
+        runtime_weapon_label(content, &weapon_requirement.id),
+        weapon_requirement.min_level,
+    );
+    let passive = evolution
+        .requirements
+        .passive
+        .as_ref()
+        .map(|requirement| {
+            format!(
+                "{} Lv.{}",
+                runtime_passive_label(content, &requirement.id),
+                requirement.min_level,
+            )
+        })
+        .unwrap_or_else(|| "无被动要求".to_string());
+    format!("{weapon} + {passive}")
+}
+
+fn format_event_trigger_for_codex(trigger: &EventTriggerDefinition) -> String {
+    match trigger.trigger_type.as_str() {
+        "time_window" => format!(
+            "{:.0}-{:.0}s 概率 {:.0}%",
+            trigger.start_second.unwrap_or_default(),
+            trigger.end_second.unwrap_or_default(),
+            trigger.chance.unwrap_or(1.0) * 100.0,
+        ),
+        other => other.replace('_', " "),
+    }
+}
+
+fn format_event_effect_for_codex(effect: &EventEffectDefinition, content: &ContentPack) -> String {
+    match effect.effect_type.as_str() {
+        "spawn_enemy" => format!(
+            "生成敌人 {} x{:.0}",
+            effect
+                .enemy_id
+                .as_deref()
+                .map(|id| runtime_enemy_label(content, id))
+                .unwrap_or_else(|| "未知敌人".to_string()),
+            effect.value,
+        ),
+        "spawn_hazard" | "route_echo_hazard" => format!(
+            "{} {:.0}/s {:.0}s",
+            runtime_event_effect_label(&effect.effect_type),
+            effect.damage_per_second.unwrap_or(effect.value),
+            effect.hazard_duration_seconds.unwrap_or_default(),
+        ),
+        other => {
+            let duration = effect
+                .duration_seconds
+                .map(|seconds| format!(" {:.0}s", seconds))
+                .unwrap_or_default();
+            format!(
+                "{} x{:.2}{}",
+                runtime_event_effect_label(other),
+                effect.value,
+                duration,
+            )
+        }
+    }
+}
+
+fn runtime_weapon_role_label(role: &str) -> String {
+    match role {
+        "aoe-clear" => "清群",
+        "boss-killer" => "Boss 输出",
+        "control" => "控场",
+        "defense" => "防御",
+        "economy" => "经济",
+        "pierce-clear" => "穿透清线",
+        "starter" => "开局武器",
+        "summon" => "召唤经营",
+        other => return other.replace('-', " "),
+    }
+    .to_string()
+}
+
+fn runtime_targeting_label(mode: &str) -> String {
+    match mode {
+        "ground_near_player" => "玩家附近地面",
+        "highest_health_enemy" => "高血敌人",
+        "movement_direction" => "移动方向",
+        "nearest_enemy" => "最近敌人",
+        "random_enemy" => "随机敌人",
+        "self_centered" => "自身周围",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
+}
+
+fn runtime_behavior_label(behavior: &str) -> String {
+    match behavior {
+        "dash" => "冲刺",
+        "jump" => "跳跃压制",
+        "orbit" => "环绕",
+        "ranged_spit" => "远程喷吐",
+        "shielded" => "正面护盾",
+        "split" => "死亡分裂",
+        "straight_chase" => "直线追击",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
+}
+
+fn runtime_stat_label(stat: &str) -> String {
+    match stat {
+        "cooldown_multiplier" => "冷却",
+        "damage_multiplier" => "伤害",
+        "max_health" => "生命",
+        "move_speed" => "移速",
+        "pickup_radius" => "拾取",
+        "regen_per_second" => "回复",
+        "xp_multiplier" => "经验",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
+}
+
+fn runtime_modifier_mode_label(mode: &str) -> String {
+    match mode {
+        "add" => "+",
+        "multiply" => "x",
+        other => other,
+    }
+    .to_string()
+}
+
+fn runtime_performance_cost_label(cost: &str) -> String {
+    match cost {
+        "low" => "低",
+        "medium" => "中",
+        "high" => "高",
+        other => other,
+    }
+    .to_string()
+}
+
 fn runtime_codex_entries(
     progress: &MetaProgress,
     content: &ContentPack,
@@ -4259,24 +4581,39 @@ fn runtime_codex_entries(
     match category {
         RuntimeCodexCategory::Characters => {
             for (id, item) in &content.characters {
-                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+                definitions.insert(
+                    id.clone(),
+                    (
+                        item.name.clone(),
+                        runtime_codex_character_description(item, content),
+                    ),
+                );
             }
         }
         RuntimeCodexCategory::Weapons => {
             for (id, item) in &content.weapons {
-                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+                definitions.insert(
+                    id.clone(),
+                    (item.name.clone(), runtime_codex_weapon_description(item)),
+                );
             }
         }
         RuntimeCodexCategory::Passives => {
             for (id, item) in &content.passives {
-                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+                definitions.insert(
+                    id.clone(),
+                    (item.name.clone(), runtime_codex_passive_description(item)),
+                );
             }
         }
         RuntimeCodexCategory::Enemies => {
             for (id, item) in &content.enemies {
                 definitions.insert(
                     id.clone(),
-                    (item.common.name.clone(), item.common.description.clone()),
+                    (
+                        item.common.name.clone(),
+                        runtime_codex_enemy_description(item),
+                    ),
                 );
             }
         }
@@ -4284,23 +4621,41 @@ fn runtime_codex_entries(
             for (id, item) in &content.bosses {
                 definitions.insert(
                     id.clone(),
-                    (item.common.name.clone(), item.common.description.clone()),
+                    (
+                        item.common.name.clone(),
+                        runtime_codex_boss_description(item),
+                    ),
                 );
             }
         }
         RuntimeCodexCategory::Maps => {
             for (id, item) in &content.maps {
-                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+                definitions.insert(
+                    id.clone(),
+                    (item.name.clone(), runtime_codex_map_description(item)),
+                );
             }
         }
         RuntimeCodexCategory::Evolutions => {
             for (id, item) in &content.evolutions {
-                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+                definitions.insert(
+                    id.clone(),
+                    (
+                        item.name.clone(),
+                        runtime_codex_evolution_description(item, content),
+                    ),
+                );
             }
         }
         RuntimeCodexCategory::Events => {
             for (id, item) in &content.events {
-                definitions.insert(id.clone(), (item.name.clone(), item.description.clone()));
+                definitions.insert(
+                    id.clone(),
+                    (
+                        item.name.clone(),
+                        runtime_codex_event_description(item, content),
+                    ),
+                );
             }
         }
     }
@@ -8392,6 +8747,8 @@ mod tests {
         assert!(panel.contains("图鉴进度"));
         assert!(panel.contains("角色: 1/1 已发现"));
         assert!(panel.contains("character:jar-keeper"));
+        assert!(panel.contains("初始武器 彩虹糖弹"));
+        assert!(panel.contains("属性 生命"));
         assert!(panel.contains("本局更新"));
     }
 
@@ -8448,6 +8805,9 @@ mod tests {
         assert!(panel.contains("右下点击区: <类  类>  <条目  条目>  过滤"));
         assert!(panel.contains("蹦蹦软糖"));
         assert!(panel.contains("bouncy-gummy"));
+        assert!(panel.contains("行为"));
+        assert!(panel.contains("威胁"));
+        assert!(panel.contains("反制"));
         assert!(panel.contains("击败 3"));
     }
 
