@@ -45,6 +45,9 @@ const KNOCKBACK_WEAPON_DISTANCE: f32 = 46.0;
 const SUMMON_TURRET_MIN_FIRE_INTERVAL_SECONDS: f32 = 0.24;
 const TRAP_TRIGGER_RADIUS_MULTIPLIER: f32 = 1.0;
 const BEAM_TICK_INTERVAL_SECONDS: f32 = 0.15;
+const BUBBLE_WEAPON_BOUNCES: u32 = 1;
+const BUBBLE_BOUNCE_RANGE: f32 = 180.0;
+const BUBBLE_BOUNCE_DAMAGE_MULTIPLIER: f32 = 0.70;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1410,6 +1413,12 @@ impl GameCore {
                 self.enemy_slow_effect_for_weapon(&weapon_tags);
             let enemy_knockback_distance = enemy_knockback_distance_for_weapon(&weapon_tags);
             let trap_trigger_radius = trap_trigger_radius_for_weapon(&weapon_tags, radius);
+            let bubble_bounces_remaining = bubble_bounces_for_weapon(&weapon_tags);
+            let bubble_bounce_range = if bubble_bounces_remaining > 0 {
+                BUBBLE_BOUNCE_RANGE
+            } else {
+                0.0
+            };
             let boomerang_return_after_seconds =
                 boomerang_return_after_seconds(&weapon_tags, lifetime);
             let boomerang_return_speed = if boomerang_return_after_seconds.is_some() {
@@ -1473,6 +1482,8 @@ impl GameCore {
                     enemy_slow_duration_seconds,
                     enemy_knockback_distance,
                     trap_trigger_radius,
+                    bubble_bounces_remaining,
+                    bubble_bounce_range,
                     age_seconds: 0.0,
                     boomerang_return_after_seconds,
                     boomerang_return_speed,
@@ -1795,6 +1806,16 @@ impl GameCore {
                 continue;
             }
 
+            let bubble_targets = if projectile.is_bubble() {
+                self.enemies
+                    .iter()
+                    .filter(|enemy| enemy.health > 0.0)
+                    .map(|enemy| (enemy.entity_id, enemy.position))
+                    .collect::<Vec<_>>()
+            } else {
+                Vec::new()
+            };
+
             for enemy in &mut self.enemies {
                 if enemy.health <= 0.0 {
                     continue;
@@ -1826,6 +1847,32 @@ impl GameCore {
                         weapon_id: projectile.weapon_id.clone(),
                     });
                     if projectile.pierce_remaining == 0 {
+                        if let Some((_, next_position)) = bubble_targets
+                            .iter()
+                            .filter(|(entity_id, position)| {
+                                *entity_id != enemy.entity_id
+                                    && enemy.position.distance(*position)
+                                        <= projectile.bubble_bounce_range
+                            })
+                            .min_by(|left, right| {
+                                let left_distance = enemy.position.distance(left.1);
+                                let right_distance = enemy.position.distance(right.1);
+                                left_distance
+                                    .partial_cmp(&right_distance)
+                                    .unwrap_or(Ordering::Equal)
+                            })
+                        {
+                            let direction = (*next_position - enemy.position).normalized_or_zero();
+                            if direction.length_squared() > 0.0 {
+                                projectile.position = enemy.position;
+                                projectile.velocity =
+                                    direction * projectile.velocity.length().max(1.0);
+                                projectile.damage *= BUBBLE_BOUNCE_DAMAGE_MULTIPLIER;
+                                projectile.bubble_bounces_remaining =
+                                    projectile.bubble_bounces_remaining.saturating_sub(1);
+                                projectile.pierce_remaining = 1;
+                            }
+                        }
                         break;
                     }
                 }
@@ -2621,6 +2668,14 @@ fn trap_trigger_radius_for_weapon(weapon_tags: &[String], radius: f32) -> f32 {
         radius.max(1.0) * TRAP_TRIGGER_RADIUS_MULTIPLIER
     } else {
         0.0
+    }
+}
+
+fn bubble_bounces_for_weapon(weapon_tags: &[String]) -> u32 {
+    if weapon_tags.iter().any(|tag| tag == "bubble") {
+        BUBBLE_WEAPON_BOUNCES
+    } else {
+        0
     }
 }
 
@@ -3650,6 +3705,8 @@ struct Projectile {
     enemy_slow_duration_seconds: f32,
     enemy_knockback_distance: f32,
     trap_trigger_radius: f32,
+    bubble_bounces_remaining: u32,
+    bubble_bounce_range: f32,
     age_seconds: f32,
     boomerang_return_after_seconds: Option<f32>,
     boomerang_return_speed: f32,
@@ -3674,6 +3731,10 @@ impl Projectile {
 
     fn is_beam(&self) -> bool {
         self.beam_tick_interval_seconds > 0.0
+    }
+
+    fn is_bubble(&self) -> bool {
+        self.bubble_bounces_remaining > 0 && self.bubble_bounce_range > 0.0
     }
 }
 
@@ -4323,6 +4384,102 @@ mod tests {
     }
 
     #[test]
+    fn bubble_weapon_bounces_once_to_nearby_enemy() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["soda-bubble-pop".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+
+        let first_enemy_id = core.allocate_entity_id();
+        let second_enemy_id = core.allocate_entity_id();
+        let mut first_enemy =
+            Enemy::from_enemy_definition(first_enemy_id, Vec2::new(100.0, 0.0), &enemy_definition);
+        let mut second_enemy =
+            Enemy::from_enemy_definition(second_enemy_id, Vec2::new(170.0, 0.0), &enemy_definition);
+        first_enemy.health = 100.0;
+        first_enemy.max_health = 100.0;
+        second_enemy.health = 100.0;
+        second_enemy.max_health = 100.0;
+        core.enemies.push(first_enemy);
+        core.enemies.push(second_enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+        let original_damage = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "soda-bubble-pop")
+            .expect("soda bubble pop should create a projectile")
+            .damage;
+
+        let mut events = Vec::new();
+        core.update_projectiles(0.20, &mut events);
+
+        let first_after = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == first_enemy_id)
+            .expect("first enemy should remain after first bounce tick")
+            .health;
+        let second_after_first_tick = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == second_enemy_id)
+            .expect("second enemy should remain before bounce impact")
+            .health;
+        let projectile = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "soda-bubble-pop")
+            .expect("bubble projectile should stay alive for one bounce");
+        assert!(first_after < 100.0);
+        assert_eq!(second_after_first_tick, 100.0);
+        assert_eq!(projectile.bubble_bounces_remaining, 0);
+        assert!(projectile.damage < original_damage);
+        assert!(projectile.velocity.x > 0.0);
+
+        core.update_projectiles(0.14, &mut events);
+
+        let second_after = core
+            .enemies
+            .iter()
+            .find(|enemy| enemy.entity_id == second_enemy_id)
+            .expect("second enemy should remain after bounce")
+            .health;
+        assert!(second_after < second_after_first_tick);
+        assert!(!core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.weapon_id == "soda-bubble-pop"));
+        assert_eq!(
+            events
+                .iter()
+                .filter(|event| {
+                    matches!(
+                        event,
+                        GameEvent::EnemyHit { weapon_id, .. } if weapon_id == "soda-bubble-pop"
+                    )
+                })
+                .count(),
+            2
+        );
+    }
+
+    #[test]
     fn can_run_from_disk_content_pack() {
         let content = ContentPack::load_from_dir("../../content/base_demo")
             .expect("base_demo content should load from disk");
@@ -4437,6 +4594,8 @@ mod tests {
             enemy_slow_duration_seconds: 0.0,
             enemy_knockback_distance: 0.0,
             trap_trigger_radius: 0.0,
+            bubble_bounces_remaining: 0,
+            bubble_bounce_range: 0.0,
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
@@ -4613,6 +4772,8 @@ mod tests {
             enemy_slow_duration_seconds: 0.0,
             enemy_knockback_distance: 0.0,
             trap_trigger_radius: 0.0,
+            bubble_bounces_remaining: 0,
+            bubble_bounce_range: 0.0,
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
