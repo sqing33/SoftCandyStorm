@@ -1502,6 +1502,10 @@ fn format_upgrade_option_state(option: &UpgradeOptionSnapshot) -> String {
         }
     }
 
+    if option.tags.iter().any(|tag| tag == "evolution") {
+        return "进化".to_string();
+    }
+
     if option.name.starts_with("获得") {
         "新获得".to_string()
     } else {
@@ -1513,8 +1517,50 @@ fn format_upgrade_tags(tags: &[String]) -> String {
     if tags.is_empty() {
         "无".to_string()
     } else {
-        tags.join(" / ")
+        tags.iter()
+            .map(|tag| runtime_tag_label(tag))
+            .collect::<Vec<_>>()
+            .join(" / ")
     }
+}
+
+fn runtime_tag_label(tag: &str) -> String {
+    match tag {
+        "aoe" | "area" => "范围",
+        "auto-fire" => "自动",
+        "beam" => "光束",
+        "beginner" => "新手",
+        "boomerang" => "回旋",
+        "boss-killer" => "Boss",
+        "bubble" => "泡泡",
+        "burst" => "爆发",
+        "close" => "近身",
+        "cold" => "冰霜",
+        "control" => "控制",
+        "cooldown" => "冷却",
+        "defense" => "防御",
+        "duration" => "持续",
+        "economy" => "经济",
+        "evolution" => "进化",
+        "health" => "生命",
+        "knockback" => "击退",
+        "mobility" => "机动",
+        "orbit" => "环绕",
+        "pickup" => "拾取",
+        "pierce" => "穿透",
+        "projectile" => "弹幕",
+        "single-target" => "单体",
+        "size" => "尺寸",
+        "slow" => "减速",
+        "starter" => "初始",
+        "summon" => "召唤",
+        "trap" => "陷阱",
+        "turret" => "炮台",
+        "xp" => "XP",
+        "zone" => "区域",
+        other => return other.replace('-', " "),
+    }
+    .to_string()
 }
 
 fn privacy_toggle_from_keyboard(keyboard: &ButtonInput<KeyCode>) -> Option<RuntimeUploadKind> {
@@ -2090,7 +2136,7 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     let evolutions = format_build_items(&build.evolutions, 2, |id| {
         runtime_evolution_label(content, id)
     });
-    let tags = format_string_items(&build.tags, 4);
+    let tags = format_tag_items(&build.tags, 4);
     format!("Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  标签 {tags}")
 }
 
@@ -2109,6 +2155,22 @@ where
         .collect::<Vec<_>>();
     if items.len() > limit {
         visible.push(format!("+{} 项", items.len() - limit));
+    }
+    visible.join(", ")
+}
+
+fn format_tag_items(tags: &[String], limit: usize) -> String {
+    if tags.is_empty() {
+        return "无".to_string();
+    }
+
+    let mut visible = tags
+        .iter()
+        .take(limit)
+        .map(|tag| runtime_tag_label(tag))
+        .collect::<Vec<_>>();
+    if tags.len() > limit {
+        visible.push(format!("+{} 项", tags.len() - limit));
     }
     visible.join(", ")
 }
@@ -7019,7 +7081,7 @@ mod tests {
                 id: "rainbow-candy-meteor".to_string(),
                 level: 1,
             }],
-            tags: vec!["弹幕".to_string(), "经济".to_string()],
+            tags: vec!["projectile".to_string(), "economy".to_string()],
             open_evolution_paths: Vec::new(),
         };
         let status = format_build_status(&build, &content);
@@ -8029,7 +8091,7 @@ mod tests {
             game_core::UpgradeOptionSnapshot {
                 id: "rainbow-candy-shot-level-2".to_string(),
                 name: "彩虹糖弹强化".to_string(),
-                tags: vec!["弹幕".to_string(), "清场".to_string()],
+                tags: vec!["projectile".to_string(), "single-target".to_string()],
                 description: "提升伤害、射程和冷却节奏。".to_string(),
             },
             game_core::UpgradeOptionSnapshot {
@@ -8038,6 +8100,16 @@ mod tests {
                 tags: vec!["控制".to_string()],
                 description: "发射会弹跳的汽水泡泡。".to_string(),
             },
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-meteor".to_string(),
+                name: "彩虹糖流星雨".to_string(),
+                tags: vec![
+                    "projectile".to_string(),
+                    "aoe".to_string(),
+                    "evolution".to_string(),
+                ],
+                description: "彩虹糖弹进化为周期性流星雨。".to_string(),
+            },
         ];
 
         let rendered = format_upgrade_options(&options);
@@ -8045,11 +8117,14 @@ mod tests {
         assert!(rendered.contains("1. 彩虹糖弹强化"));
         assert!(rendered.contains("目标 Lv.2"));
         assert!(rendered.contains("提升伤害、射程和冷却节奏。"));
-        assert!(rendered.contains("标签 弹幕 / 清场"));
+        assert!(rendered.contains("标签 弹幕 / 单体"));
         assert!(rendered.contains("id rainbow-candy-shot-level-2"));
         assert!(rendered.contains("2. 获得汽水泡泡"));
         assert!(rendered.contains("新获得"));
         assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
+        assert!(rendered.contains("3. 彩虹糖流星雨"));
+        assert!(rendered.contains("进化"));
+        assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
     }
 
     #[test]
