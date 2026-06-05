@@ -1234,7 +1234,10 @@ fn step_game_core(
                 Vec2::new(window.resolution.width(), window.resolution.height()),
             )
         });
-        if let Some(action) = runtime_loadout_action_from_keyboard(&keyboard).or(pointer_action) {
+        if let Some(action) = runtime_loadout_action_from_keyboard(&keyboard)
+            .or(pointer_action)
+            .or_else(|| runtime_loadout_action_from_gamepad(&gamepad_buttons))
+        {
             let result = match action {
                 RuntimeLoadoutAction::NextCharacter => select_next_runtime_character(&mut state)
                     .map_err(|error| format!("character selection failed: {error}")),
@@ -1832,6 +1835,27 @@ fn runtime_loadout_action_from_keyboard(
     if keyboard.just_pressed(KeyCode::KeyC) {
         Some(RuntimeLoadoutAction::NextCharacter)
     } else if keyboard.just_pressed(KeyCode::KeyM) {
+        Some(RuntimeLoadoutAction::NextMap)
+    } else {
+        None
+    }
+}
+
+fn runtime_loadout_action_from_gamepad(
+    gamepad_buttons: &ButtonInput<GamepadButton>,
+) -> Option<RuntimeLoadoutAction> {
+    if gamepad_button_type_just_pressed(
+        gamepad_buttons,
+        &[GamepadButtonType::DPadLeft, GamepadButtonType::LeftTrigger],
+    ) {
+        Some(RuntimeLoadoutAction::NextCharacter)
+    } else if gamepad_button_type_just_pressed(
+        gamepad_buttons,
+        &[
+            GamepadButtonType::DPadRight,
+            GamepadButtonType::RightTrigger,
+        ],
+    ) {
         Some(RuntimeLoadoutAction::NextMap)
     } else {
         None
@@ -3362,7 +3386,7 @@ fn render_meta_loadout_panel(
         lines.push(chapter_line);
     }
 
-    lines.push("C 切换已解锁角色  M 切换已解锁地图".to_string());
+    lines.push("C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图".to_string());
     lines.push("右下点击区: 角色  地图".to_string());
     lines.push("切换会重开当前巡逻并保留局外进度".to_string());
     lines.push(format!(
@@ -5484,16 +5508,16 @@ mod tests {
         runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
         runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
         runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_keyboard,
-        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_pointer,
-        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
-        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_gamepad,
+        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
+        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -7982,6 +8006,29 @@ mod tests {
     }
 
     #[test]
+    fn runtime_loadout_gamepad_input_maps_selection_actions() {
+        let gamepad = Gamepad::new(0);
+        let mut character = ButtonInput::<GamepadButton>::default();
+        character.press(GamepadButton::new(gamepad, GamepadButtonType::DPadLeft));
+        assert_eq!(
+            runtime_loadout_action_from_gamepad(&character),
+            Some(RuntimeLoadoutAction::NextCharacter)
+        );
+
+        let mut map = ButtonInput::<GamepadButton>::default();
+        map.press(GamepadButton::new(gamepad, GamepadButtonType::RightTrigger));
+        assert_eq!(
+            runtime_loadout_action_from_gamepad(&map),
+            Some(RuntimeLoadoutAction::NextMap)
+        );
+
+        assert_eq!(
+            runtime_loadout_action_from_gamepad(&ButtonInput::<GamepadButton>::default()),
+            None
+        );
+    }
+
+    #[test]
     fn runtime_loadout_pointer_input_maps_left_click_zone() {
         let window_size = Vec2::new(1280.0, 720.0);
 
@@ -8191,8 +8238,8 @@ mod tests {
         assert!(panel.contains("地图标签"));
         assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("soda-bubble-pop"));
-        assert!(panel.contains("C 切换已解锁角色"));
-        assert!(panel.contains("M 切换已解锁地图"));
+        assert!(panel.contains("C/手柄左 切换已解锁角色"));
+        assert!(panel.contains("M/手柄右 切换已解锁地图"));
         assert!(panel.contains("右下点击区: 角色  地图"));
     }
 
