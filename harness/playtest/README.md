@@ -58,6 +58,7 @@ or `accepted_content` until human gates pass.
 
 ```bash
 python3 harness/playtest/check_current_candidate_readiness.py --allow-incomplete
+python3 harness/playtest/list_current_human_evidence_todos.py --allow-todos
 python3 harness/content_review/check_current_design_review_status.py --allow-incomplete
 python3 harness/playtest/check_current_manual_playtest_status.py --allow-incomplete
 python3 harness/playtest/create_current_human_review_worksheet.py
@@ -77,6 +78,9 @@ python3 harness/playtest/run_current_manual_playtest.py --next --dry-run
 Use `check_current_candidate_readiness.py` for the combined current-state
 summary: design-review TODO status, manual report counts, blockers, and the
 next manual playtest command.
+
+Use `list_current_human_evidence_todos.py --allow-todos` to list the concrete
+JSON fields that still need real human observations before strict validation.
 
 Use `play_current_candidate.py` for the easiest local start. With no preset it
 launches `jar-keeper` on `frosting-grassland` against the current candidate

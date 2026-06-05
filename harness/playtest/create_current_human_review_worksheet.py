@@ -155,6 +155,7 @@ def build_markdown(repo_root: Path) -> str:
             "",
             "```bash",
             "python3 harness/playtest/check_current_candidate_readiness.py --allow-incomplete",
+            "python3 harness/playtest/list_current_human_evidence_todos.py --allow-todos",
             "python3 harness/content_review/check_current_design_review_status.py --allow-incomplete",
             "python3 harness/playtest/check_current_manual_playtest_status.py --allow-incomplete",
             f"python3 harness/playtest/validate_manual_review.py {DEFAULT_PLAYTEST_DRAFT} --strict-acceptance",

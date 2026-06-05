@@ -295,6 +295,7 @@
 
 ```bash
 python3 harness/playtest/check_current_candidate_readiness.py --allow-incomplete
+python3 harness/playtest/list_current_human_evidence_todos.py --allow-todos
 python3 harness/content_review/check_current_design_review_status.py --allow-incomplete
 python3 harness/playtest/check_current_manual_playtest_status.py --allow-incomplete
 python3 harness/playtest/validate_manual_review.py harness/playtest/drafts/2026-06-05_demo_buildcraft_repair_v61_manual_playtest_review_draft.json --strict-acceptance
