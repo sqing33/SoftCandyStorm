@@ -5016,13 +5016,14 @@ fn runtime_codex_passive_description(item: &PassiveDefinition) -> String {
     )
 }
 
-fn runtime_codex_enemy_description(item: &EnemyDefinition) -> String {
+fn runtime_codex_enemy_description(item: &EnemyDefinition, content: &ContentPack) -> String {
     format!(
-        "{}\n玩法 标签 {}  家族 {}  行为 {}  威胁 {:.1}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s  XP {:.0}\n反制 {}",
+        "{}\n玩法 标签 {}  家族 {}  行为 {}  细节 {}  威胁 {:.1}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s  XP {:.0}\n反制 {}",
         item.common.description,
         format_upgrade_tags(&item.common.tags),
         item.family,
         runtime_behavior_label(&item.behavior.behavior_type),
+        format_enemy_behavior_details(item, content),
         item.spawn_budget.threat,
         item.common.stats.health,
         item.common.stats.move_speed,
@@ -5030,6 +5031,163 @@ fn runtime_codex_enemy_description(item: &EnemyDefinition) -> String {
         item.common.stats.xp_value,
         item.common.counterplay,
     )
+}
+
+fn format_enemy_behavior_details(item: &EnemyDefinition, content: &ContentPack) -> String {
+    let parameters = &item.behavior.parameters;
+    match item.behavior.behavior_type.as_str() {
+        "chase" => format_chase_behavior_details(parameters),
+        "dash" | "jump" => format_dash_behavior_details(parameters),
+        "leave_hazard" => format_leave_hazard_behavior_details(parameters),
+        "orbit" | "orbit_player" => format_orbit_behavior_details(parameters),
+        "ranged_spit" => format_ranged_spit_behavior_details(parameters),
+        "shielded" => format_shielded_behavior_details(parameters),
+        "split" => format_split_behavior_details(parameters, content),
+        _ => "参数化行为".to_string(),
+    }
+}
+
+fn format_chase_behavior_details(parameters: &serde_json::Value) -> String {
+    let slow_multiplier =
+        runtime_nested_behavior_parameter_f32(parameters, "on_contact_status_effect", "multiplier");
+    let slow_duration = runtime_nested_behavior_parameter_f32(
+        parameters,
+        "on_contact_status_effect",
+        "duration_seconds",
+    );
+    if let (Some(multiplier), Some(duration)) = (slow_multiplier, slow_duration) {
+        let stat = parameters
+            .get("on_contact_status_effect")
+            .and_then(|effect| effect.get("stat"))
+            .and_then(|value| value.as_str())
+            .map(runtime_stat_label)
+            .unwrap_or_else(|| "状态".to_string());
+        return format!("接触{}x{multiplier:.2} {duration:.1}s", stat);
+    }
+
+    if parameters
+        .get("pack_spawn_bias")
+        .and_then(|value| value.as_str())
+        == Some("group")
+    {
+        return "偏向成团出现".to_string();
+    }
+
+    "贴近追击".to_string()
+}
+
+fn format_leave_hazard_behavior_details(parameters: &serde_json::Value) -> String {
+    let radius = runtime_behavior_parameter_f32(parameters, "hazard_radius")
+        .map(|value| format!("危险区半径{value:.0}"));
+    let duration = runtime_behavior_parameter_f32(parameters, "hazard_duration_seconds")
+        .map(|value| format!("{value:.1}s"));
+    let slow = runtime_behavior_parameter_f32(parameters, "slow_multiplier")
+        .map(|value| format!("减速x{value:.2}"));
+    join_behavior_detail_parts([radius, duration, slow], "移动时留下危险区")
+}
+
+fn format_split_behavior_details(parameters: &serde_json::Value, content: &ContentPack) -> String {
+    let child = parameters
+        .get("child_enemy_id")
+        .and_then(|value| value.as_str())
+        .map(|id| runtime_enemy_label(content, id));
+    let child_count =
+        runtime_behavior_parameter_u32(parameters, "child_count").map(|value| format!("x{value}"));
+    let health = runtime_behavior_parameter_f32(parameters, "child_health_multiplier")
+        .map(|value| format!("生命x{value:.2}"));
+    let radius = runtime_behavior_parameter_f32(parameters, "child_radius_multiplier")
+        .map(|value| format!("半径x{value:.2}"));
+    join_behavior_detail_parts([child, child_count, health, radius], "死亡后分裂")
+}
+
+fn format_dash_behavior_details(parameters: &serde_json::Value) -> String {
+    let charge = runtime_behavior_parameter_f32(parameters, "charge_seconds")
+        .map(|value| format!("蓄力{value:.1}s"));
+    let duration = runtime_behavior_parameter_f32(parameters, "dash_seconds")
+        .or_else(|| runtime_behavior_parameter_f32(parameters, "jump_duration_seconds"))
+        .map(|value| format!("冲刺{value:.1}s"));
+    let cooldown = runtime_behavior_parameter_f32(parameters, "cooldown_seconds")
+        .map(|value| format!("冷却{value:.1}s"));
+    let speed = runtime_behavior_parameter_f32(parameters, "dash_speed_multiplier")
+        .or_else(|| runtime_behavior_parameter_f32(parameters, "jump_speed_multiplier"))
+        .map(|value| format!("速度x{value:.2}"));
+    join_behavior_detail_parts([charge, duration, cooldown, speed], "短暂蓄力后突进")
+}
+
+fn format_orbit_behavior_details(parameters: &serde_json::Value) -> String {
+    let radius = runtime_behavior_parameter_f32(parameters, "orbit_radius")
+        .map(|value| format!("半径{value:.0}"));
+    let speed = runtime_behavior_parameter_f32(parameters, "orbit_speed")
+        .map(|value| format!("速度x{value:.2}"));
+    let approach = runtime_behavior_parameter_f32(parameters, "approach_weight")
+        .map(|value| format!("贴近权重x{value:.2}"));
+    join_behavior_detail_parts([radius, speed, approach], "绕玩家施压")
+}
+
+fn format_ranged_spit_behavior_details(parameters: &serde_json::Value) -> String {
+    let range =
+        runtime_behavior_parameter_f32(parameters, "range").map(|value| format!("射程{value:.0}"));
+    let windup = runtime_behavior_parameter_f32(parameters, "windup_seconds")
+        .map(|value| format!("预备{value:.1}s"));
+    let cooldown = runtime_behavior_parameter_f32(parameters, "cooldown_seconds")
+        .map(|value| format!("冷却{value:.1}s"));
+    let projectile_count = runtime_behavior_parameter_u32(parameters, "projectile_count")
+        .map(|value| format!("弹体x{value}"));
+    let damage = runtime_behavior_parameter_f32(parameters, "damage_per_second")
+        .filter(|value| *value > 0.0)
+        .map(|value| format!("伤害{value:.1}/s"));
+    join_behavior_detail_parts(
+        [range, windup, cooldown, projectile_count, damage],
+        "远程喷吐区域",
+    )
+}
+
+fn format_shielded_behavior_details(parameters: &serde_json::Value) -> String {
+    let front = runtime_behavior_parameter_f32(parameters, "front_damage_multiplier")
+        .map(|value| format!("正面承伤x{value:.2}"));
+    let rear = runtime_behavior_parameter_f32(parameters, "rear_damage_multiplier")
+        .map(|value| format!("背后承伤x{value:.2}"));
+    join_behavior_detail_parts([front, rear], "正面更难击破")
+}
+
+fn join_behavior_detail_parts<const N: usize>(
+    parts: [Option<String>; N],
+    fallback: &str,
+) -> String {
+    let details = parts.into_iter().flatten().collect::<Vec<_>>();
+    if details.is_empty() {
+        fallback.to_string()
+    } else {
+        details.join(" ")
+    }
+}
+
+fn runtime_behavior_parameter_f32(parameters: &serde_json::Value, key: &str) -> Option<f32> {
+    parameters
+        .get(key)
+        .and_then(|value| value.as_f64())
+        .map(|value| value as f32)
+        .filter(|value| value.is_finite())
+}
+
+fn runtime_behavior_parameter_u32(parameters: &serde_json::Value, key: &str) -> Option<u32> {
+    parameters
+        .get(key)
+        .and_then(|value| value.as_u64())
+        .and_then(|value| u32::try_from(value).ok())
+}
+
+fn runtime_nested_behavior_parameter_f32(
+    parameters: &serde_json::Value,
+    outer: &str,
+    key: &str,
+) -> Option<f32> {
+    parameters
+        .get(outer)
+        .and_then(|value| value.get(key))
+        .and_then(|value| value.as_f64())
+        .map(|value| value as f32)
+        .filter(|value| value.is_finite())
 }
 
 fn runtime_codex_boss_description(item: &BossDefinition) -> String {
@@ -5396,7 +5554,7 @@ fn runtime_codex_entries(
                     id.clone(),
                     (
                         item.common.name.clone(),
-                        runtime_codex_enemy_description(item),
+                        runtime_codex_enemy_description(item, content),
                     ),
                 );
             }
@@ -7160,20 +7318,21 @@ mod tests {
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events, enemy_tint,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
-        format_enemy_swarm_status, format_event_effect_for_codex, format_event_effect_status,
-        format_hazard_status, format_terminal_overlay, format_upgrade_options,
-        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
-        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
-        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        projectile_visual_style, render_meta_progress_panel, resolve_runtime_content_selection,
-        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
-        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
-        runtime_boss_ability_label, runtime_boss_ability_summary, runtime_can_upload,
-        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
-        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
-        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
-        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        format_enemy_behavior_details, format_enemy_swarm_status, format_event_effect_for_codex,
+        format_event_effect_status, format_hazard_status, format_terminal_overlay,
+        format_upgrade_options, load_runtime_asset_candidate_manifest,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
+        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, projectile_visual_style, render_meta_progress_panel,
+        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
+        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
+        runtime_asset_root, runtime_behavior_label, runtime_boss_ability_label,
+        runtime_boss_ability_summary, runtime_can_upload, runtime_chapter_action_from_gamepad,
+        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
+        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
+        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
+        runtime_codex_action_from_pointer_zone, runtime_codex_enemy_description,
         runtime_codex_map_description, runtime_loadout_action_from_gamepad,
         runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
         runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
@@ -9182,6 +9341,43 @@ mod tests {
         ] {
             assert_eq!(runtime_behavior_label(behavior), label);
         }
+    }
+
+    #[test]
+    fn enemy_codex_behavior_details_explain_base_demo_parameters() {
+        let content = ContentPack::base_demo();
+        let caramel = content.enemies.get("caramel-slime").unwrap();
+        let sticky = content.enemies.get("sticky-bear-gummy").unwrap();
+        let soda = content.enemies.get("soda-bubble").unwrap();
+        let spicy = content.enemies.get("spicy-gummy").unwrap();
+
+        assert_eq!(
+            format_enemy_behavior_details(caramel, &content),
+            "危险区半径44 2.2s 减速x0.78"
+        );
+        assert_eq!(
+            format_enemy_behavior_details(sticky, &content),
+            "接触移速x0.82 1.2s"
+        );
+        assert_eq!(
+            format_enemy_behavior_details(soda, &content),
+            "蹦蹦软糖 x2 生命x0.45 半径x0.72"
+        );
+        assert_eq!(
+            format_enemy_behavior_details(spicy, &content),
+            "蓄力0.8s 冲刺0.3s 冷却2.4s 速度x2.10"
+        );
+    }
+
+    #[test]
+    fn enemy_codex_description_includes_behavior_details() {
+        let content = ContentPack::base_demo();
+        let caramel = content.enemies.get("caramel-slime").unwrap();
+        let description = runtime_codex_enemy_description(caramel, &content);
+
+        assert!(description.contains("行为 移动留危险区"));
+        assert!(description.contains("细节 危险区半径44 2.2s 减速x0.78"));
+        assert!(description.contains("反制"));
     }
 
     #[test]
