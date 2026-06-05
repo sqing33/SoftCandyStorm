@@ -5307,9 +5307,12 @@ fn runtime_targeting_label(mode: &str) -> String {
 
 fn runtime_behavior_label(behavior: &str) -> String {
     match behavior {
+        "chase" => "追击",
         "dash" => "冲刺",
         "jump" => "跳跃压制",
         "orbit" => "环绕",
+        "orbit_player" => "绕玩家施压",
+        "leave_hazard" => "移动留危险区",
         "ranged_spit" => "远程喷吐",
         "shielded" => "正面护盾",
         "split" => "死亡分裂",
@@ -7165,23 +7168,23 @@ mod tests {
         parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
         projectile_visual_style, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
-        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_boss_ability_label,
-        runtime_boss_ability_summary, runtime_can_upload, runtime_chapter_action_from_gamepad,
-        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
-        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
-        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_codex_map_description,
-        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
-        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_cache_key,
-        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
-        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
-        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
+        runtime_boss_ability_label, runtime_boss_ability_summary, runtime_can_upload,
+        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
+        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
+        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
+        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        runtime_codex_map_description, runtime_loadout_action_from_gamepad,
+        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
+        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_cache_key, runtime_meta_panel_tab_view_from_gamepad,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -9165,6 +9168,20 @@ mod tests {
             format_enemy_swarm_status(&[], &ContentPack::base_demo()),
             "敌群 无"
         );
+    }
+
+    #[test]
+    fn enemy_codex_behavior_labels_cover_base_demo_keys() {
+        for (behavior, label) in [
+            ("chase", "追击"),
+            ("leave_hazard", "移动留危险区"),
+            ("orbit_player", "绕玩家施压"),
+            ("split", "死亡分裂"),
+            ("ranged_spit", "远程喷吐"),
+            ("shielded", "正面护盾"),
+        ] {
+            assert_eq!(runtime_behavior_label(behavior), label);
+        }
     }
 
     #[test]
