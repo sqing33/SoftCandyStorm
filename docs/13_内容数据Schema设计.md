@@ -442,13 +442,13 @@ python3 tools/validate_accepted_content_lockfile.py \
 
 ```json
 {
-  "id": "frosting-grassland",
-  "name": "糖霜草地",
+  "id": "caramel-workshop",
+  "name": "焦糖工坊",
   "version": 1,
-  "tags": ["beginner", "open"],
-  "description": "覆盖糖霜的开阔草地，新手守护员第一次面对软糖风暴的地方。",
+  "tags": ["hazard", "industrial", "control"],
+  "description": "生产焦糖机关的甜点工坊，障碍和地面危险更频繁。",
   "size": {
-    "width": 2600,
+    "width": 2300,
     "height": 1700
   },
   "bounds": {
@@ -456,14 +456,37 @@ python3 tools/validate_accepted_content_lockfile.py \
   },
   "spawn_rules": {
     "mode": "around_player",
-    "min_distance": 320,
-    "max_distance": 520
+    "min_distance": 350,
+    "max_distance": 560
   },
-  "hazards": [],
-  "visual_description": "奶白糖霜草地、棒棒糖路标、饼干小路。",
-  "music_theme": "bright_xylophone"
+  "hazards": [
+    {
+      "type": "caramel_spill",
+      "description": "焦糖溢流会周期性铺开黏糖圈，减速并造成轻微持续伤害。",
+      "start_second": 60,
+      "interval_seconds": 30,
+      "count": 2,
+      "radius": 66,
+      "duration_seconds": 6,
+      "slow_multiplier": 0.6,
+      "damage_per_second": 1.2,
+      "min_distance": 160,
+      "max_distance": 420
+    }
+  ],
+  "visual_description": "金棕焦糖锅炉、饼干齿轮、糖浆管线和亮面地板。",
+  "music_theme": "sticky_factory_groove"
 }
 ```
+
+`hazards` 可为空；有值时表示 GameCore 会按固定 tick 和 seed 周期性生成地图环境危险区。字段含义：
+
+- `type`：地图危险类型，用于 Runtime 图鉴标签和后续美术映射。
+- `start_second` / `end_second`：生效时间窗，`end_second` 可省略。
+- `interval_seconds`：生成间隔；缺失时只作为语义标记，不进入仿真。
+- `count`、`radius`、`duration_seconds`：每次生成数量、半径和持续时间。
+- `slow_multiplier`、`damage_per_second`：玩家踩入危险区后的移动倍率和每秒伤害。
+- `min_distance` / `max_distance`：相对玩家的生成距离，用于避免直接刷在脚下。
 
 ## 事件 Schema
 

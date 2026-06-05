@@ -1115,7 +1115,7 @@ impl ContentPack {
                 1700.0,
                 320.0,
                 520.0,
-                &[],
+                Vec::new(),
                 "奶白糖霜草地、棒棒糖路标、饼干小路。",
                 "bright_xylophone",
             ),
@@ -1128,9 +1128,18 @@ impl ContentPack {
                 1800.0,
                 340.0,
                 560.0,
-                &[(
+                vec![map_hazard_definition(
                     "bubble_current",
-                    "周期性出现的泡泡水流提示，首版仅作为地图语义标记。",
+                    "周期性出现的泡泡水流，短暂减速并迫使玩家调整穿行路线。",
+                    60.0,
+                    36.0,
+                    2,
+                    54.0,
+                    5.0,
+                    0.78,
+                    0.0,
+                    150.0,
+                    420.0,
                 )],
                 "蓝粉汽水溪流、透明泡泡拱桥和会弹光的糖石岸边。",
                 "sparkling_soda_marimba",
@@ -1144,9 +1153,18 @@ impl ContentPack {
                 1750.0,
                 330.0,
                 540.0,
-                &[(
+                vec![map_hazard_definition(
                     "soft_cloud_patch",
-                    "柔软云团遮挡路线边缘，首版仅作为地图语义标记。",
+                    "软云团周期性飘入战场，形成柔软但会拖慢步伐的遮挡区。",
+                    75.0,
+                    34.0,
+                    3,
+                    72.0,
+                    5.0,
+                    0.84,
+                    0.0,
+                    150.0,
+                    420.0,
                 )],
                 "粉白棉花云草地、糖丝风车和云朵围栏。",
                 "soft_cloud_music_box",
@@ -1160,9 +1178,18 @@ impl ContentPack {
                 1700.0,
                 350.0,
                 560.0,
-                &[(
+                vec![map_hazard_definition(
                     "caramel_spill",
-                    "焦糖溢流会形成路线压力，首版仅作为地图语义标记。",
+                    "焦糖溢流会周期性铺开黏糖圈，减速并造成轻微持续伤害。",
+                    60.0,
+                    30.0,
+                    2,
+                    66.0,
+                    6.0,
+                    0.60,
+                    1.2,
+                    160.0,
+                    420.0,
                 )],
                 "金棕焦糖锅炉、饼干齿轮、糖浆管线和亮面地板。",
                 "sticky_factory_groove",
@@ -1176,9 +1203,18 @@ impl ContentPack {
                 1450.0,
                 360.0,
                 600.0,
-                &[(
+                vec![map_hazard_definition(
                     "jelly_bounce_lane",
-                    "果冻弹跳带强调路线选择，首版仅作为地图语义标记。",
+                    "果冻弹跳带周期性亮起，形成路线干扰区并压缩安全通道。",
+                    70.0,
+                    32.0,
+                    2,
+                    58.0,
+                    4.0,
+                    0.72,
+                    0.0,
+                    170.0,
+                    440.0,
                 )],
                 "半透明果冻平台、环形糖轨和远处星空糖站。",
                 "jelly_station_pulse",
@@ -1192,9 +1228,18 @@ impl ContentPack {
                 1900.0,
                 380.0,
                 620.0,
-                &[(
+                vec![map_hazard_definition(
                     "storm_phase_shift",
-                    "多味风暴阶段切换，首版仅作为地图语义标记。",
+                    "多味风暴会周期性落成星糖裂隙，减速并带来持续压力。",
+                    60.0,
+                    28.0,
+                    3,
+                    76.0,
+                    6.0,
+                    0.64,
+                    1.8,
+                    180.0,
+                    460.0,
                 )],
                 "碎裂巨大糖罐、星糖裂纹、不断转色的风暴背景。",
                 "final_storm_celesta",
@@ -1776,6 +1821,76 @@ impl ContentPack {
                 || map.spawn_rules.max_distance <= map.spawn_rules.min_distance
             {
                 errors.push(format!("map `{}` has invalid spawn distance range", map.id));
+            }
+            for hazard in &map.hazards {
+                if hazard.hazard_type.trim().is_empty() {
+                    errors.push(format!("map `{}` has hazard with empty type", map.id));
+                }
+                if hazard.description.trim().is_empty() {
+                    errors.push(format!(
+                        "map `{}` hazard `{}` has empty description",
+                        map.id, hazard.hazard_type
+                    ));
+                }
+                if let Some(start_second) = hazard.start_second {
+                    if start_second < 0.0 {
+                        errors.push(format!(
+                            "map `{}` hazard `{}` has negative start_second",
+                            map.id, hazard.hazard_type
+                        ));
+                    }
+                }
+                if let Some(end_second) = hazard.end_second {
+                    if end_second <= hazard.start_second.unwrap_or(0.0) {
+                        errors.push(format!(
+                            "map `{}` hazard `{}` has invalid end_second",
+                            map.id, hazard.hazard_type
+                        ));
+                    }
+                }
+                if let Some(interval_seconds) = hazard.interval_seconds {
+                    validate_positive("map.hazard.interval_seconds", interval_seconds, &mut errors);
+                }
+                if let Some(count) = hazard.count {
+                    if count == 0 || count > 8 {
+                        errors.push(format!(
+                            "map `{}` hazard `{}` has invalid count",
+                            map.id, hazard.hazard_type
+                        ));
+                    }
+                }
+                if let Some(radius) = hazard.radius {
+                    validate_positive("map.hazard.radius", radius, &mut errors);
+                }
+                if let Some(duration_seconds) = hazard.duration_seconds {
+                    validate_positive("map.hazard.duration_seconds", duration_seconds, &mut errors);
+                }
+                if let Some(slow_multiplier) = hazard.slow_multiplier {
+                    if !(0.2..=1.0).contains(&slow_multiplier) {
+                        errors.push(format!(
+                            "map `{}` hazard `{}` has invalid slow_multiplier",
+                            map.id, hazard.hazard_type
+                        ));
+                    }
+                }
+                if let Some(damage_per_second) = hazard.damage_per_second {
+                    if damage_per_second < 0.0 {
+                        errors.push(format!(
+                            "map `{}` hazard `{}` has negative damage_per_second",
+                            map.id, hazard.hazard_type
+                        ));
+                    }
+                }
+                if let (Some(min_distance), Some(max_distance)) =
+                    (hazard.min_distance, hazard.max_distance)
+                {
+                    if min_distance <= 0.0 || max_distance <= min_distance {
+                        errors.push(format!(
+                            "map `{}` hazard `{}` has invalid distance range",
+                            map.id, hazard.hazard_type
+                        ));
+                    }
+                }
             }
         }
 
@@ -2463,7 +2578,7 @@ fn map_definition(
     height: f32,
     min_distance: f32,
     max_distance: f32,
-    hazards: &[(&str, &str)],
+    hazards: Vec<MapHazardDefinition>,
     visual_description: &str,
     music_theme: &str,
 ) -> MapDefinition {
@@ -2482,17 +2597,39 @@ fn map_definition(
             min_distance,
             max_distance,
         },
-        hazards: hazards
-            .iter()
-            .map(|(hazard_type, description)| {
-                serde_json::json!({
-                    "type": hazard_type,
-                    "description": description
-                })
-            })
-            .collect(),
+        hazards,
         visual_description: visual_description.to_string(),
         music_theme: music_theme.to_string(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn map_hazard_definition(
+    hazard_type: &str,
+    description: &str,
+    start_second: f32,
+    interval_seconds: f32,
+    count: u32,
+    radius: f32,
+    duration_seconds: f32,
+    slow_multiplier: f32,
+    damage_per_second: f32,
+    min_distance: f32,
+    max_distance: f32,
+) -> MapHazardDefinition {
+    MapHazardDefinition {
+        hazard_type: hazard_type.to_string(),
+        description: description.to_string(),
+        start_second: Some(start_second),
+        end_second: None,
+        interval_seconds: Some(interval_seconds),
+        count: Some(count),
+        radius: Some(radius),
+        duration_seconds: Some(duration_seconds),
+        slow_multiplier: Some(slow_multiplier),
+        damage_per_second: Some(damage_per_second),
+        min_distance: Some(min_distance),
+        max_distance: Some(max_distance),
     }
 }
 
@@ -3443,7 +3580,7 @@ pub struct MapDefinition {
     pub size: MapSizeDefinition,
     pub bounds: BoundsDefinition,
     pub spawn_rules: SpawnRulesDefinition,
-    pub hazards: Vec<serde_json::Value>,
+    pub hazards: Vec<MapHazardDefinition>,
     pub visual_description: String,
     pub music_theme: String,
 }
@@ -3471,6 +3608,33 @@ pub struct SpawnRulesDefinition {
     pub mode: String,
     pub min_distance: f32,
     pub max_distance: f32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MapHazardDefinition {
+    #[serde(rename = "type")]
+    pub hazard_type: String,
+    pub description: String,
+    #[serde(default)]
+    pub start_second: Option<f32>,
+    #[serde(default)]
+    pub end_second: Option<f32>,
+    #[serde(default)]
+    pub interval_seconds: Option<f32>,
+    #[serde(default)]
+    pub count: Option<u32>,
+    #[serde(default)]
+    pub radius: Option<f32>,
+    #[serde(default)]
+    pub duration_seconds: Option<f32>,
+    #[serde(default)]
+    pub slow_multiplier: Option<f32>,
+    #[serde(default)]
+    pub damage_per_second: Option<f32>,
+    #[serde(default)]
+    pub min_distance: Option<f32>,
+    #[serde(default)]
+    pub max_distance: Option<f32>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

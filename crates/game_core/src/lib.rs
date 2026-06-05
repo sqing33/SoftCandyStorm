@@ -632,6 +632,7 @@ impl GameCore {
         self.time_seconds += dt_seconds;
         reward_hint.survival_delta = dt_seconds;
 
+        self.update_map_hazards();
         self.update_content_events(dt_seconds, &mut events);
         self.update_player_slow_effects(dt_seconds);
         self.update_player_regen(dt_seconds);
@@ -817,6 +818,39 @@ impl GameCore {
         }
         self.player_slow_effects
             .retain(|effect| effect.remaining_seconds > 0.0);
+    }
+
+    fn update_map_hazards(&mut self) {
+        let mut hazard_specs = Vec::new();
+        for hazard in &mut self.map.hazards {
+            if self.time_seconds + f32::EPSILON < hazard.start_second {
+                continue;
+            }
+            if hazard
+                .end_second
+                .is_some_and(|end_second| self.time_seconds > end_second)
+            {
+                continue;
+            }
+            while hazard.next_spawn_second <= self.time_seconds && hazard_specs.len() < 16 {
+                hazard_specs.push(*hazard);
+                hazard.next_spawn_second += hazard.interval_seconds;
+            }
+        }
+
+        for spec in hazard_specs {
+            for _ in 0..spec.count {
+                let position =
+                    self.spawn_position_around_player(spec.min_distance, spec.max_distance);
+                self.hazards.push(Hazard {
+                    position,
+                    radius: spec.radius,
+                    remaining_seconds: spec.duration_seconds,
+                    slow_multiplier: spec.slow_multiplier,
+                    damage_per_second: spec.damage_per_second,
+                });
+            }
+        }
     }
 
     fn update_player_regen(&mut self, dt: f32) {
@@ -3372,6 +3406,7 @@ struct MapRuntime {
     height: f32,
     spawn_min: f32,
     spawn_max: f32,
+    hazards: Vec<MapHazardRuntime>,
 }
 
 impl MapRuntime {
@@ -3381,7 +3416,59 @@ impl MapRuntime {
             height: definition.size.height,
             spawn_min: definition.spawn_rules.min_distance,
             spawn_max: definition.spawn_rules.max_distance,
+            hazards: definition
+                .hazards
+                .iter()
+                .filter_map(|hazard| MapHazardRuntime::from_definition(hazard, definition))
+                .collect(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct MapHazardRuntime {
+    start_second: f32,
+    end_second: Option<f32>,
+    next_spawn_second: f32,
+    interval_seconds: f32,
+    count: u32,
+    radius: f32,
+    duration_seconds: f32,
+    slow_multiplier: f32,
+    damage_per_second: f32,
+    min_distance: f32,
+    max_distance: f32,
+}
+
+impl MapHazardRuntime {
+    fn from_definition(
+        definition: &content::MapHazardDefinition,
+        map: &MapDefinition,
+    ) -> Option<Self> {
+        let interval_seconds = definition.interval_seconds?.max(0.1);
+        let start_second = definition.start_second.unwrap_or(0.0).max(0.0);
+        let min_distance = definition
+            .min_distance
+            .unwrap_or(map.spawn_rules.min_distance * 0.5)
+            .max(PLAYER_RADIUS + 24.0);
+        let max_distance = definition
+            .max_distance
+            .unwrap_or(map.spawn_rules.min_distance.max(min_distance + 1.0))
+            .max(min_distance + 1.0);
+
+        Some(Self {
+            start_second,
+            end_second: definition.end_second,
+            next_spawn_second: start_second,
+            interval_seconds,
+            count: definition.count.unwrap_or(1).clamp(1, 8),
+            radius: definition.radius.unwrap_or(56.0).max(4.0),
+            duration_seconds: definition.duration_seconds.unwrap_or(4.0).max(0.1),
+            slow_multiplier: definition.slow_multiplier.unwrap_or(0.8).clamp(0.2, 1.0),
+            damage_per_second: definition.damage_per_second.unwrap_or(0.0).max(0.0),
+            min_distance,
+            max_distance,
+        })
     }
 }
 
@@ -5975,6 +6062,82 @@ mod tests {
         assert_eq!(hazard.slow_multiplier, 0.55);
         assert_eq!(hazard.damage_per_second, 2.5);
         assert_eq!(hazard.remaining_seconds, 3.5);
+    }
+
+    #[test]
+    fn beginner_map_has_no_periodic_map_hazards() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.time_seconds = 119.9;
+
+        core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+
+        assert!(core.hazards.is_empty());
+    }
+
+    #[test]
+    fn map_hazards_spawn_with_configured_pressure() {
+        let mut core = GameCore::reset(RunConfig {
+            map_id: "caramel-workshop".to_string(),
+            ..RunConfig::default()
+        });
+        core.time_seconds = 59.9;
+
+        core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+
+        assert_eq!(core.hazards.len(), 2);
+        assert!(core
+            .hazards
+            .iter()
+            .all(|hazard| (hazard.radius - 66.0).abs() < f32::EPSILON));
+        assert!(core
+            .hazards
+            .iter()
+            .all(|hazard| (hazard.slow_multiplier - 0.60).abs() < f32::EPSILON));
+        assert!(core
+            .hazards
+            .iter()
+            .all(|hazard| (hazard.damage_per_second - 1.2).abs() < f32::EPSILON));
+    }
+
+    #[test]
+    fn map_hazard_positions_are_seed_deterministic() {
+        fn spawned_positions(seed: u64) -> Vec<Vec2> {
+            let mut core = GameCore::reset(RunConfig {
+                seed,
+                map_id: "soda-creek".to_string(),
+                ..RunConfig::default()
+            });
+            core.time_seconds = 59.9;
+            core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+            core.hazards
+                .iter()
+                .map(|hazard| hazard.position)
+                .collect::<Vec<_>>()
+        }
+
+        assert_eq!(spawned_positions(77), spawned_positions(77));
+        assert_ne!(spawned_positions(77), spawned_positions(78));
+    }
+
+    #[test]
+    fn all_identity_maps_spawn_periodic_hazards_after_opening() {
+        for map_id in [
+            "soda-creek",
+            "cotton-cloud-pasture",
+            "caramel-workshop",
+            "jelly-platform",
+            "cracked-star-jar",
+        ] {
+            let mut core = GameCore::reset(RunConfig {
+                map_id: map_id.to_string(),
+                ..RunConfig::default()
+            });
+            core.time_seconds = 79.9;
+
+            core.step(PlayerAction::default(), FixedDt::from_seconds(0.1));
+
+            assert!(!core.hazards.is_empty(), "{map_id} should spawn hazards");
+        }
     }
 
     #[test]

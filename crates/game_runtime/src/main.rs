@@ -6,8 +6,8 @@ use bevy::{
 };
 use game_core::content::{
     BossDefinition, CharacterDefinition, EnemyDefinition, EventDefinition, EventEffectDefinition,
-    EventTriggerDefinition, EvolutionDefinition, MapDefinition, PassiveDefinition,
-    StatModifierDefinition, WeaponDefinition,
+    EventTriggerDefinition, EvolutionDefinition, MapDefinition, MapHazardDefinition,
+    PassiveDefinition, StatModifierDefinition, WeaponDefinition,
 };
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
@@ -4945,7 +4945,7 @@ fn runtime_codex_boss_description(item: &BossDefinition) -> String {
 
 fn runtime_codex_map_description(item: &MapDefinition) -> String {
     format!(
-        "{}\n玩法 标签 {}  尺寸 {:.0}x{:.0}  边界 {}  出生 {} {:.0}-{:.0}\n音乐 {}",
+        "{}\n玩法 标签 {}  尺寸 {:.0}x{:.0}  边界 {}  出生 {} {:.0}-{:.0}\n地图危险 {}\n音乐 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         item.size.width,
@@ -4954,8 +4954,64 @@ fn runtime_codex_map_description(item: &MapDefinition) -> String {
         item.spawn_rules.mode,
         item.spawn_rules.min_distance,
         item.spawn_rules.max_distance,
+        format_map_hazards_for_codex(&item.hazards),
         item.music_theme,
     )
+}
+
+fn format_map_hazards_for_codex(hazards: &[MapHazardDefinition]) -> String {
+    if hazards.is_empty() {
+        return "无".to_string();
+    }
+    hazards
+        .iter()
+        .take(3)
+        .map(|hazard| {
+            let cadence = hazard
+                .interval_seconds
+                .map(|seconds| format!("每{seconds:.0}s"))
+                .unwrap_or_else(|| "语义标记".to_string());
+            let count = hazard
+                .count
+                .map(|value| format!(" x{value}"))
+                .unwrap_or_default();
+            let duration = hazard
+                .duration_seconds
+                .map(|seconds| format!(" {seconds:.0}s"))
+                .unwrap_or_default();
+            let slow = hazard
+                .slow_multiplier
+                .map(|value| format!(" 减速x{value:.2}"))
+                .unwrap_or_default();
+            let damage = hazard
+                .damage_per_second
+                .filter(|value| *value > 0.0)
+                .map(|value| format!(" 伤害{value:.1}/s"))
+                .unwrap_or_default();
+            format!(
+                "{} {}{}{}{}{}",
+                runtime_map_hazard_label(&hazard.hazard_type),
+                cadence,
+                count,
+                duration,
+                slow,
+                damage,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("；")
+}
+
+fn runtime_map_hazard_label(hazard_type: &str) -> String {
+    match hazard_type {
+        "bubble_current" => "泡泡水流",
+        "caramel_spill" => "焦糖溢流",
+        "jelly_bounce_lane" => "果冻弹跳带",
+        "soft_cloud_patch" => "软云遮挡区",
+        "storm_phase_shift" => "多味风暴",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
 }
 
 fn runtime_codex_evolution_description(
@@ -7012,17 +7068,17 @@ mod tests {
         runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
         runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
         runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
-        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
-        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_cache_key,
-        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
-        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
-        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        runtime_codex_map_description, runtime_loadout_action_from_gamepad,
+        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
+        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_cache_key, runtime_meta_panel_tab_view_from_gamepad,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -8837,6 +8893,25 @@ mod tests {
             "裂星糖罐"
         );
         assert_eq!(map_visual_style("unknown-map").display_name, "糖霜草地");
+    }
+
+    #[test]
+    fn map_codex_describes_periodic_environment_hazards() {
+        let content = ContentPack::base_demo();
+        let caramel = content
+            .maps
+            .get("caramel-workshop")
+            .expect("base demo should include caramel-workshop");
+        let frosting = content
+            .maps
+            .get("frosting-grassland")
+            .expect("base demo should include frosting-grassland");
+
+        let caramel_description = runtime_codex_map_description(caramel);
+        let frosting_description = runtime_codex_map_description(frosting);
+
+        assert!(caramel_description.contains("地图危险 焦糖溢流 每30s x2 6s 减速x0.60 伤害1.2/s"));
+        assert!(frosting_description.contains("地图危险 无"));
     }
 
     #[test]
