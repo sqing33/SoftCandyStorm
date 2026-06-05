@@ -56,6 +56,7 @@ const CHAIN_REACTION_TRAP_RADIUS_MULTIPLIER: f32 = 2.5;
 const METEOR_BURST_SPREAD_MULTIPLIER: f32 = 2.4;
 const METEOR_FALL_BASE_DELAY_SECONDS: f32 = 0.08;
 const METEOR_FALL_STAGGER_SECONDS: f32 = 0.06;
+const FORTRESS_ORBIT_ANGULAR_SPEED: f32 = 3.6;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1537,8 +1538,7 @@ impl GameCore {
                     + self.time_seconds * 1.7;
                 let radial = Vec2::new(angle.cos(), angle.sin());
                 let tangent = Vec2::new(-angle.sin(), angle.cos());
-                let orbit_radius = (PLAYER_RADIUS + input.radius + 18.0)
-                    .max(self.weapons_orbit_range_hint(input.radius));
+                let orbit_radius = player_orbit_radius(input.radius);
                 ProjectileRuntime {
                     position: self.player.position + radial * orbit_radius,
                     velocity: tangent * input.projectile_speed * 0.35,
@@ -1596,10 +1596,6 @@ impl GameCore {
                 }
             }
         }
-    }
-
-    fn weapons_orbit_range_hint(&self, radius: f32) -> f32 {
-        (radius * 2.0 + PLAYER_RADIUS).min(96.0)
     }
 
     fn character_weapon_lifetime_multiplier(&self, weapon_type: &str) -> f32 {
@@ -1881,7 +1877,19 @@ impl GameCore {
                 projectile.impact_delay_seconds = 0.0;
             }
 
-            projectile.position += projectile.velocity * dt;
+            if projectile.is_player_orbiting_fortress() {
+                let mut radial = (projectile.position - player_position).normalized_or_zero();
+                if radial.length_squared() == 0.0 {
+                    let phase = projectile.entity_id as f32 * 0.618_034;
+                    radial = Vec2::new(phase.cos(), phase.sin());
+                }
+                radial = radial.rotated(FORTRESS_ORBIT_ANGULAR_SPEED * dt);
+                let orbit_radius = player_orbit_radius(projectile.radius);
+                projectile.position = player_position + radial * orbit_radius;
+                projectile.velocity = Vec2::ZERO;
+            } else {
+                projectile.position += projectile.velocity * dt;
+            }
             projectile.lifetime -= dt;
 
             if projectile.pierce_remaining == 0 {
@@ -2769,6 +2777,10 @@ fn weapon_lifetime(weapon_type: &str, duration: f32) -> f32 {
         "orbit" => 1.6,
         _ => 1.2,
     }
+}
+
+fn player_orbit_radius(radius: f32) -> f32 {
+    (PLAYER_RADIUS + radius + 18.0).max((radius * 2.0 + PLAYER_RADIUS).min(96.0))
 }
 
 fn boomerang_return_after_seconds(weapon_tags: &[String], lifetime: f32) -> Option<f32> {
@@ -3890,6 +3902,10 @@ impl Projectile {
     fn is_chain_reaction_trap(&self) -> bool {
         self.weapon_id == "popping-candy-chain-reaction"
     }
+
+    fn is_player_orbiting_fortress(&self) -> bool {
+        self.weapon_id == "marshmallow-fortress"
+    }
 }
 
 impl From<Projectile> for ProjectileSnapshot {
@@ -4171,6 +4187,44 @@ mod tests {
         }
 
         panic!("expected marshmallow-shield to create orbit projectiles");
+    }
+
+    #[test]
+    fn marshmallow_fortress_orbits_current_player_position() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("marshmallow-fortress")
+            .expect("base demo should include marshmallow fortress")
+            .clone();
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.projectiles.clear();
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let projectile_id = core
+            .projectiles
+            .first()
+            .expect("marshmallow fortress should create orbit projectiles")
+            .entity_id;
+        core.player.position += Vec2::new(80.0, 36.0);
+
+        core.update_projectiles(0.2, &mut Vec::new());
+
+        let projectile = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.entity_id == projectile_id)
+            .expect("fortress projectile should stay active");
+        let expected_radius = player_orbit_radius(projectile.radius);
+        let distance_to_current_player = projectile.position.distance(core.player.position);
+        assert!((distance_to_current_player - expected_radius).abs() < 0.01);
+        assert_eq!(projectile.velocity, Vec2::ZERO);
     }
 
     #[test]
