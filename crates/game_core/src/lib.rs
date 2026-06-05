@@ -365,6 +365,7 @@ pub struct RunMetrics {
     pub damage_taken_by_source: BTreeMap<String, f32>,
     pub boss_damage: f32,
     pub boss_kill_times: Vec<f32>,
+    pub enemies_defeated: BTreeMap<String, u32>,
     pub bosses_defeated: BTreeSet<String>,
     pub max_enemy_count: usize,
     pub max_projectile_count: usize,
@@ -579,6 +580,7 @@ impl GameCore {
                 damage_taken_by_source: BTreeMap::new(),
                 boss_damage: 0.0,
                 boss_kill_times: Vec::new(),
+                enemies_defeated: BTreeMap::new(),
                 bosses_defeated: BTreeSet::new(),
                 max_enemy_count: 0,
                 max_projectile_count: 0,
@@ -2122,6 +2124,12 @@ impl GameCore {
                 self.boss_chests_available = self.boss_chests_available.saturating_add(1);
                 self.metrics.boss_kill_times.push(self.time_seconds);
                 self.metrics.bosses_defeated.insert(enemy.enemy_id.clone());
+            } else {
+                *self
+                    .metrics
+                    .enemies_defeated
+                    .entry(enemy.enemy_id.clone())
+                    .or_default() += 1;
             }
             events.push(GameEvent::EnemyKilled {
                 entity_id: enemy.entity_id,
@@ -4304,6 +4312,37 @@ mod tests {
         assert_eq!(metrics.boss_kill_times.len(), 1);
         assert!(events.iter().any(
             |event| matches!(event, GameEvent::EnemyKilled { enemy_id, .. } if enemy_id == "runaway-sugar-mixer")
+        ));
+    }
+
+    #[test]
+    fn enemy_kill_records_defeated_enemy_count_in_metrics() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include the first enemy")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                duration_seconds: 60.0,
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize");
+        let mut enemy = Enemy::from_enemy_definition(99, Vec2::ZERO, &enemy_definition);
+        enemy.health = 0.0;
+        core.enemies.push(enemy);
+
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+        let metrics = core.metrics();
+
+        assert_eq!(metrics.enemies_defeated.get("bouncy-gummy"), Some(&1));
+        assert!(metrics.bosses_defeated.is_empty());
+        assert!(events.iter().any(
+            |event| matches!(event, GameEvent::EnemyKilled { enemy_id, .. } if enemy_id == "bouncy-gummy")
         ));
     }
 

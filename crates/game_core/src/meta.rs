@@ -231,7 +231,7 @@ impl MetaRunSummary {
             boss_damage: metrics.boss_damage,
             weapon_levels,
             passives_used: BTreeSet::new(),
-            enemies_defeated: BTreeMap::new(),
+            enemies_defeated: metrics.enemies_defeated.clone(),
             bosses_defeated: metrics.bosses_defeated.clone(),
         }
     }
@@ -753,6 +753,7 @@ mod tests {
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 10.0)]),
             boss_damage: 250.0,
             boss_kill_times: vec![580.0],
+            enemies_defeated: BTreeMap::from([("bouncy-gummy".to_string(), 7)]),
             bosses_defeated: BTreeSet::from(["runaway-sugar-mixer".to_string()]),
             max_enemy_count: 30,
             max_projectile_count: 20,
@@ -767,6 +768,7 @@ mod tests {
         assert_eq!(summary.damage_taken, 10.0);
         assert_eq!(summary.damage_taken_by_source["contact"], 10.0);
         assert_eq!(summary.boss_damage, 250.0);
+        assert_eq!(summary.enemies_defeated.get("bouncy-gummy"), Some(&7));
         assert!(summary.bosses_defeated.contains("runaway-sugar-mixer"));
     }
 
@@ -806,6 +808,7 @@ mod tests {
             damage_taken_by_source: BTreeMap::from([("hazard".to_string(), 8.0)]),
             boss_damage: 0.0,
             boss_kill_times: Vec::new(),
+            enemies_defeated: BTreeMap::new(),
             bosses_defeated: BTreeSet::new(),
             max_enemy_count: 20,
             max_projectile_count: 10,
