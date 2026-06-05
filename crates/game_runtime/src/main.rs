@@ -11,10 +11,10 @@ use game_core::content::{
 };
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
-    Difficulty, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaCodexEntry,
-    MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction, ProjectileSnapshot,
-    RunConfig, RunMetrics, RunSnapshot, StartingLoadout, StatusEffectSnapshot, TerminalKind,
-    TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    Difficulty, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot,
+    MetaCodexEntry, MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction,
+    ProjectileSnapshot, RunConfig, RunMetrics, RunSnapshot, StartingLoadout, StatusEffectSnapshot,
+    TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2543,10 +2543,14 @@ fn format_enemy_swarm_status(enemies: &[EnemySnapshot], content: &ContentPack) -
     }
 
     let mut counts = BTreeMap::<String, usize>::new();
+    let mut behaviors = BTreeMap::<String, EnemyBehavior>::new();
     let mut boss_or_elite_count = 0usize;
     let mut max_threat: f32 = 0.0;
     for enemy in enemies {
         *counts.entry(enemy.enemy_id.clone()).or_default() += 1;
+        behaviors
+            .entry(enemy.enemy_id.clone())
+            .or_insert(enemy.behavior);
         if enemy.is_boss || enemy.is_elite {
             boss_or_elite_count += 1;
         }
@@ -2558,7 +2562,15 @@ fn format_enemy_swarm_status(enemies: &[EnemySnapshot], content: &ContentPack) -
     let mut visible = entries
         .iter()
         .take(3)
-        .map(|(enemy_id, count)| format!("{} x{}", runtime_enemy_label(content, enemy_id), count))
+        .map(|(enemy_id, count)| {
+            let label = runtime_enemy_label(content, enemy_id);
+            let mechanic = behaviors
+                .get(enemy_id)
+                .and_then(|behavior| runtime_enemy_behavior_label(content, enemy_id, *behavior))
+                .map(|mechanic| format!("({mechanic})"))
+                .unwrap_or_default();
+            format!("{label}{mechanic} x{count}")
+        })
         .collect::<Vec<_>>();
     if entries.len() > visible.len() {
         visible.push(format!("+{} 类", entries.len() - visible.len()));
@@ -2576,6 +2588,30 @@ fn format_enemy_swarm_status(enemies: &[EnemySnapshot], content: &ContentPack) -
         max_threat,
         special,
     )
+}
+
+fn runtime_enemy_behavior_label(
+    content: &ContentPack,
+    enemy_id: &str,
+    behavior: EnemyBehavior,
+) -> Option<&'static str> {
+    match behavior {
+        EnemyBehavior::Chase => {
+            let tags = &content.enemies.get(enemy_id)?.common.tags;
+            if tags.iter().any(|tag| tag == "slow") && tags.iter().any(|tag| tag == "control") {
+                Some("接触减速")
+            } else {
+                None
+            }
+        }
+        EnemyBehavior::Dash => Some("冲刺"),
+        EnemyBehavior::Split => Some("分裂"),
+        EnemyBehavior::LeaveHazard => Some("留黏地"),
+        EnemyBehavior::OrbitPlayer => Some("绕行"),
+        EnemyBehavior::Jump => Some("跳跃"),
+        EnemyBehavior::RangedSpit => Some("远程吐弹"),
+        EnemyBehavior::Shielded => Some("正面护盾"),
+    }
 }
 
 fn format_event_effect_status(
@@ -9094,17 +9130,31 @@ mod tests {
                 max_health: 40.0,
                 radius: 20.0,
                 threat: 2.8,
-                behavior: EnemyBehavior::Chase,
+                behavior: EnemyBehavior::LeaveHazard,
                 is_boss: false,
                 is_elite: true,
+            },
+            EnemySnapshot {
+                entity_id: 4,
+                enemy_id: "soda-bubble".to_string(),
+                position: CoreVec2::new(30.0, 0.0),
+                velocity: CoreVec2::ZERO,
+                health: 18.0,
+                max_health: 18.0,
+                radius: 13.0,
+                threat: 1.5,
+                behavior: EnemyBehavior::Split,
+                is_boss: false,
+                is_elite: false,
             },
         ];
 
         let status = format_enemy_swarm_status(&enemies, &content);
 
         assert!(status.contains("蹦蹦软糖 x2"));
-        assert!(status.contains("焦糖史莱姆 x1"));
-        assert!(status.contains("可见 3"));
+        assert!(status.contains("焦糖史莱姆(留黏地) x1"));
+        assert!(status.contains("汽水泡泡(分裂) x1"));
+        assert!(status.contains("可见 4"));
         assert!(status.contains("最高威胁 2.8"));
         assert!(status.contains("精英/Boss 1"));
     }
