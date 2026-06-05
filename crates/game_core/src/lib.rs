@@ -42,6 +42,7 @@ const LONGER_SUMMONS_LIFETIME_MULTIPLIER: f32 = 1.45;
 const BOOMERANG_RETURN_AFTER_LIFETIME_RATIO: f32 = 0.42;
 const BOOMERANG_RETURN_SPEED_MULTIPLIER: f32 = 1.08;
 const KNOCKBACK_WEAPON_DISTANCE: f32 = 46.0;
+const SUMMON_TURRET_MIN_FIRE_INTERVAL_SECONDS: f32 = 0.24;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1390,6 +1391,16 @@ impl GameCore {
             let cooldown = self.weapons[weapon_index].cooldown * self.player.cooldown_multiplier;
             let duration = self.weapons[weapon_index].duration;
             let weapon_tags = self.weapons[weapon_index].tags.clone();
+            let spawn_count = if weapon_type == "summon" {
+                let active_count = self.active_summon_projectile_count(&weapon_id);
+                if active_count >= count {
+                    self.weapons[weapon_index].cooldown_remaining += cooldown;
+                    continue;
+                }
+                count - active_count
+            } else {
+                count
+            };
             let lifetime = weapon_lifetime(&weapon_type, duration)
                 * self.player.effect_duration_multiplier.max(0.1)
                 * self.character_weapon_lifetime_multiplier(&weapon_type);
@@ -1404,16 +1415,22 @@ impl GameCore {
                 0.0
             };
             let base_direction = (target_position - self.player.position).normalized_or_zero();
-            let spread_step = if count > 1 { 0.18 } else { 0.0 };
-            let spread_start = -spread_step * (count.saturating_sub(1) as f32) * 0.5;
+            let spread_step = if spawn_count > 1 { 0.18 } else { 0.0 };
+            let spread_start = -spread_step * (spawn_count.saturating_sub(1) as f32) * 0.5;
+            let turret_fire_interval_seconds = if weapon_type == "summon" {
+                cooldown.max(SUMMON_TURRET_MIN_FIRE_INTERVAL_SECONDS)
+            } else {
+                0.0
+            };
+            let turret_range = if weapon_type == "summon" { range } else { 0.0 };
 
-            for projectile_index in 0..count {
+            for projectile_index in 0..spawn_count {
                 let runtime = self.weapon_projectile_runtime(WeaponProjectileRuntimeInput {
                     weapon_type: &weapon_type,
                     target_position,
                     base_direction,
                     projectile_index,
-                    projectile_count: count,
+                    projectile_count: spawn_count,
                     spread_start,
                     spread_step,
                     projectile_speed,
@@ -1443,6 +1460,9 @@ impl GameCore {
                     age_seconds: 0.0,
                     boomerang_return_after_seconds,
                     boomerang_return_speed,
+                    turret_fire_interval_seconds,
+                    turret_fire_cooldown_seconds: 0.0,
+                    turret_range,
                 };
                 self.projectiles.push(projectile);
             }
@@ -1450,9 +1470,16 @@ impl GameCore {
             self.weapons[weapon_index].cooldown_remaining += cooldown;
             events.push(GameEvent::WeaponFired {
                 weapon_id,
-                projectile_count: count as u32,
+                projectile_count: spawn_count as u32,
             });
         }
+    }
+
+    fn active_summon_projectile_count(&self, weapon_id: &str) -> usize {
+        self.projectiles
+            .iter()
+            .filter(|projectile| projectile.weapon_id == weapon_id && projectile.is_summon_turret())
+            .count()
     }
 
     fn weapon_projectile_runtime(
@@ -1496,10 +1523,9 @@ impl GameCore {
                     + 0.6;
                 let summon_position =
                     self.player.position + Vec2::new(angle.cos(), angle.sin()) * 44.0;
-                let direction = (input.target_position - summon_position).normalized_or_zero();
                 ProjectileRuntime {
                     position: self.clamp_to_map(summon_position),
-                    velocity: direction * input.projectile_speed,
+                    velocity: Vec2::ZERO,
                     pierce_remaining: input.pierce,
                     lifetime: input.lifetime,
                 }
@@ -1572,6 +1598,54 @@ impl GameCore {
                             return_direction * projectile.boomerang_return_speed.max(1.0);
                     }
                 }
+            }
+            if projectile.is_summon_turret() {
+                projectile.lifetime -= dt;
+                projectile.turret_fire_cooldown_seconds -= dt;
+                if projectile.turret_fire_cooldown_seconds <= 0.0 {
+                    if let Some((target_index, _)) = self
+                        .enemies
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, enemy)| {
+                            enemy.health > 0.0
+                                && enemy.position.distance(projectile.position)
+                                    <= projectile.turret_range
+                        })
+                        .map(|(index, enemy)| (index, enemy.position.distance(projectile.position)))
+                        .min_by(|left, right| {
+                            left.1.partial_cmp(&right.1).unwrap_or(Ordering::Equal)
+                        })
+                    {
+                        let enemy = &mut self.enemies[target_index];
+                        let damage = projectile.damage
+                            * enemy
+                                .projectile_damage_multiplier(projectile.position, player_position);
+                        enemy.health -= damage;
+                        self.metrics.damage_dealt_by_weapon += damage;
+                        if enemy.is_boss {
+                            self.metrics.boss_damage += damage;
+                        }
+                        enemy.apply_slow(
+                            projectile.enemy_slow_multiplier,
+                            projectile.enemy_slow_duration_seconds,
+                        );
+                        enemy.apply_knockback(
+                            player_position,
+                            projectile.enemy_knockback_distance,
+                            half_width,
+                            half_height,
+                        );
+                        events.push(GameEvent::EnemyHit {
+                            entity_id: enemy.entity_id,
+                            damage,
+                            weapon_id: projectile.weapon_id.clone(),
+                        });
+                        projectile.turret_fire_cooldown_seconds +=
+                            projectile.turret_fire_interval_seconds;
+                    }
+                }
+                continue;
             }
             projectile.position += projectile.velocity * dt;
             projectile.lifetime -= dt;
@@ -3429,6 +3503,15 @@ struct Projectile {
     age_seconds: f32,
     boomerang_return_after_seconds: Option<f32>,
     boomerang_return_speed: f32,
+    turret_fire_interval_seconds: f32,
+    turret_fire_cooldown_seconds: f32,
+    turret_range: f32,
+}
+
+impl Projectile {
+    fn is_summon_turret(&self) -> bool {
+        self.turret_fire_interval_seconds > 0.0
+    }
 }
 
 impl From<Projectile> for ProjectileSnapshot {
@@ -3782,6 +3865,98 @@ mod tests {
     }
 
     #[test]
+    fn summon_weapon_places_stationary_turret_that_auto_fires() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["pudding-turret".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(120.0, 0.0), &enemy_definition);
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        let starting_health = enemy.health;
+        core.enemies.push(enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let turret = core
+            .projectiles
+            .iter()
+            .find(|projectile| projectile.weapon_id == "pudding-turret")
+            .expect("pudding turret should place a turret projectile");
+        assert_eq!(turret.velocity, Vec2::ZERO);
+        assert!(turret.is_summon_turret());
+        assert!(turret.turret_range >= 400.0);
+
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+
+        assert!(core.enemies[0].health < starting_health);
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::EnemyHit { weapon_id, .. } if weapon_id == "pudding-turret"
+            )
+        }));
+    }
+
+    #[test]
+    fn summon_weapon_maintains_projectile_count_cap() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["pudding-turret".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        core.enemies.push(Enemy::from_enemy_definition(
+            enemy_id,
+            Vec2::new(120.0, 0.0),
+            &enemy_definition,
+        ));
+        core.weapons[0].cooldown_remaining = 0.0;
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+        core.weapons[0].cooldown_remaining = 0.0;
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        assert_eq!(
+            core.projectiles
+                .iter()
+                .filter(|projectile| projectile.weapon_id == "pudding-turret")
+                .count(),
+            1
+        );
+    }
+
+    #[test]
     fn zone_weapon_uses_duration_and_stationary_area() {
         let mut core = GameCore::reset(RunConfig {
             starting_loadout: StartingLoadout {
@@ -3922,6 +4097,9 @@ mod tests {
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
+            turret_fire_interval_seconds: 0.0,
+            turret_fire_cooldown_seconds: 0.0,
+            turret_range: 0.0,
         });
 
         let mut events = Vec::new();
@@ -4089,6 +4267,9 @@ mod tests {
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
+            turret_fire_interval_seconds: 0.0,
+            turret_fire_cooldown_seconds: 0.0,
+            turret_range: 0.0,
         });
 
         core.update_projectiles(0.0, &mut Vec::new());
@@ -4508,6 +4689,8 @@ mod tests {
             .find(|projectile| projectile.weapon_id == "pudding-turret")
             .expect("pudding turret should fire a summon projectile");
         assert!((projectile.lifetime - 5.0 * LONGER_SUMMONS_LIFETIME_MULTIPLIER).abs() <= 0.001);
+        assert_eq!(projectile.velocity, Vec2::ZERO);
+        assert!(projectile.is_summon_turret());
     }
 
     #[test]
