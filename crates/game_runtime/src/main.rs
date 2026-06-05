@@ -1363,7 +1363,8 @@ fn step_game_core(
     let movement = if state.demo_input {
         demo_movement(&snapshot)
     } else {
-        movement_from_keyboard(&keyboard)
+        (movement_from_keyboard(&keyboard) + movement_from_gamepad_buttons(&gamepad_buttons))
+            .normalized_or_zero()
     };
     while state.accumulator >= state.dt_seconds && !state.core.is_terminal() {
         let result = state.core.step(
@@ -1464,6 +1465,26 @@ fn movement_from_keyboard(keyboard: &ButtonInput<KeyCode>) -> CoreVec2 {
         y += 1.0;
     }
     if keyboard.pressed(KeyCode::KeyS) || keyboard.pressed(KeyCode::ArrowDown) {
+        y -= 1.0;
+    }
+
+    CoreVec2::new(x, y).normalized_or_zero()
+}
+
+fn movement_from_gamepad_buttons(gamepad_buttons: &ButtonInput<GamepadButton>) -> CoreVec2 {
+    let mut x = 0.0;
+    let mut y = 0.0;
+
+    if gamepad_button_type_pressed(gamepad_buttons, &[GamepadButtonType::DPadLeft]) {
+        x -= 1.0;
+    }
+    if gamepad_button_type_pressed(gamepad_buttons, &[GamepadButtonType::DPadRight]) {
+        x += 1.0;
+    }
+    if gamepad_button_type_pressed(gamepad_buttons, &[GamepadButtonType::DPadUp]) {
+        y += 1.0;
+    }
+    if gamepad_button_type_pressed(gamepad_buttons, &[GamepadButtonType::DPadDown]) {
         y -= 1.0;
     }
 
@@ -2268,7 +2289,7 @@ fn update_hud(
         let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
         let build_status = format_build_status(&snapshot.build, &state.content);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -3177,6 +3198,15 @@ fn gamepad_button_type_just_pressed(
 ) -> bool {
     gamepad_buttons
         .get_just_pressed()
+        .any(|button| button_types.contains(&button.button_type))
+}
+
+fn gamepad_button_type_pressed(
+    gamepad_buttons: &ButtonInput<GamepadButton>,
+    button_types: &[GamepadButtonType],
+) -> bool {
+    gamepad_buttons
+        .get_pressed()
         .any(|button| button_types.contains(&button.button_type))
 }
 
@@ -5337,23 +5367,24 @@ mod tests {
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
-        persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
-        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
-        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
-        runtime_asset_root, runtime_can_upload, runtime_chapter_action_from_keyboard,
-        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
-        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
-        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
-        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
-        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
-        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
-        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        make_tone_wav, map_visual_style, movement_from_gamepad_buttons, next_runtime_selection_id,
+        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
+        render_meta_progress_panel, resolve_runtime_content_selection,
+        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
+        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
+        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
+        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
+        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
+        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_keyboard,
+        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
+        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_pointer,
+        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
+        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
+        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -8203,6 +8234,39 @@ mod tests {
         assert_eq!(
             upgrade_choice_from_pointer(&left, None, window_size, 3),
             None
+        );
+    }
+
+    #[test]
+    fn gamepad_dpad_movement_maps_cardinal_buttons() {
+        let gamepad = Gamepad::new(0);
+        let mut buttons = ButtonInput::<GamepadButton>::default();
+        buttons.press(GamepadButton::new(gamepad, GamepadButtonType::DPadLeft));
+
+        assert_eq!(
+            movement_from_gamepad_buttons(&buttons),
+            CoreVec2::new(-1.0, 0.0)
+        );
+    }
+
+    #[test]
+    fn gamepad_dpad_movement_normalizes_diagonals() {
+        let gamepad = Gamepad::new(0);
+        let mut buttons = ButtonInput::<GamepadButton>::default();
+        buttons.press(GamepadButton::new(gamepad, GamepadButtonType::DPadRight));
+        buttons.press(GamepadButton::new(gamepad, GamepadButtonType::DPadUp));
+
+        let movement = movement_from_gamepad_buttons(&buttons);
+
+        assert!((movement.x - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.0001);
+        assert!((movement.y - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.0001);
+    }
+
+    #[test]
+    fn gamepad_dpad_movement_returns_zero_without_buttons() {
+        assert_eq!(
+            movement_from_gamepad_buttons(&ButtonInput::<GamepadButton>::default()),
+            CoreVec2::ZERO
         );
     }
 
