@@ -5,10 +5,10 @@ use bevy::{
     window::PrimaryWindow,
 };
 use game_core::{
-    BossSnapshot, ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaCodexEntry,
-    MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction, RunConfig, RunMetrics,
-    RunSnapshot, StartingLoadout, TerminalKind, TerminalState, UpgradeOptionSnapshot,
-    Vec2 as CoreVec2,
+    BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, Difficulty, FixedDt, GameCore,
+    GameEvent, MetaCodexEntry, MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction,
+    RunConfig, RunMetrics, RunSnapshot, StartingLoadout, TerminalKind, TerminalState,
+    UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2084,6 +2084,35 @@ fn format_boss_status(boss: Option<&BossSnapshot>, content: &ContentPack) -> Str
     )
 }
 
+fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
+    let weapons = format_build_items(&build.weapons, 3, |id| runtime_weapon_label(content, id));
+    let passives = format_build_items(&build.passives, 2, |id| runtime_passive_label(content, id));
+    let evolutions = format_build_items(&build.evolutions, 2, |id| {
+        runtime_evolution_label(content, id)
+    });
+    let tags = format_string_items(&build.tags, 4);
+    format!("Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  标签 {tags}")
+}
+
+fn format_build_items<F>(items: &[BuildItemSnapshot], limit: usize, label: F) -> String
+where
+    F: Fn(&str) -> String,
+{
+    if items.is_empty() {
+        return "无".to_string();
+    }
+
+    let mut visible = items
+        .iter()
+        .take(limit)
+        .map(|item| format!("{} Lv.{}", label(&item.id), item.level))
+        .collect::<Vec<_>>();
+    if items.len() > limit {
+        visible.push(format!("+{} 项", items.len() - limit));
+    }
+    visible.join(", ")
+}
+
 fn update_hud(
     state: Res<RuntimeState>,
     mut hud_query: Query<&mut Text, With<HudText>>,
@@ -2096,8 +2125,9 @@ fn update_hud(
         let mode = if state.paused { "Paused" } else { "Playing" };
         let map_style = map_visual_style(&snapshot.map.map_id);
         let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
+        let build_status = format_build_status(&snapshot.build, &state.content);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -2112,6 +2142,7 @@ fn update_hud(
             map_style.display_name,
             snapshot.map.map_id,
             boss_status,
+            build_status,
             state.last_event,
             state.last_event_kind.label(),
         );
@@ -3183,6 +3214,22 @@ fn runtime_weapon_label(content: &ContentPack, weapon_id: &str) -> String {
         .get(weapon_id)
         .map(|weapon| weapon.name.clone())
         .unwrap_or_else(|| weapon_id.to_string())
+}
+
+fn runtime_passive_label(content: &ContentPack, passive_id: &str) -> String {
+    content
+        .passives
+        .get(passive_id)
+        .map(|passive| passive.name.clone())
+        .unwrap_or_else(|| passive_id.to_string())
+}
+
+fn runtime_evolution_label(content: &ContentPack, evolution_id: &str) -> String {
+    content
+        .evolutions
+        .get(evolution_id)
+        .map(|evolution| evolution.name.clone())
+        .unwrap_or_else(|| evolution_id.to_string())
 }
 
 fn runtime_event_label(content: &ContentPack, event_id: &str) -> String {
@@ -5158,7 +5205,7 @@ mod tests {
     use super::{
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
-        event_kind_for_events, export_runtime_local_data, format_boss_status,
+        event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_upgrade_options, load_runtime_asset_candidate_manifest,
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
         make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
@@ -5198,9 +5245,9 @@ mod tests {
         ButtonInput, Gamepad, GamepadButton, GamepadButtonType, KeyCode, MouseButton, Vec2,
     };
     use game_core::{
-        BossSnapshot, ContentPack, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent,
-        MetaProgress, MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode,
-        Vec2 as CoreVec2,
+        BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, EnemyBehavior, EnemySnapshot,
+        FixedDt, GameCore, GameEvent, MetaProgress, MetaRunSummary, PickupSnapshot, PickupType,
+        RunConfig, RunMode, Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
 
@@ -6949,6 +6996,41 @@ mod tests {
         assert!(status.contains("runaway-sugar-mixer"));
         assert!(status.contains("HP 125/250"));
         assert!(status.contains("50%"));
+    }
+
+    #[test]
+    fn build_status_renders_current_loadout_labels() {
+        let content = ContentPack::base_demo();
+        let build = BuildSnapshot {
+            weapons: vec![
+                BuildItemSnapshot {
+                    id: "rainbow-candy-shot".to_string(),
+                    level: 3,
+                },
+                BuildItemSnapshot {
+                    id: "soda-bubble-pop".to_string(),
+                    level: 1,
+                },
+            ],
+            passives: vec![BuildItemSnapshot {
+                id: "candy-crystal-lens".to_string(),
+                level: 2,
+            }],
+            evolutions: vec![BuildItemSnapshot {
+                id: "rainbow-candy-meteor".to_string(),
+                level: 1,
+            }],
+            tags: vec!["弹幕".to_string(), "经济".to_string()],
+            open_evolution_paths: Vec::new(),
+        };
+        let status = format_build_status(&build, &content);
+
+        assert!(status.contains("Build 武器"));
+        assert!(status.contains("彩虹糖弹 Lv.3"));
+        assert!(status.contains("汽水泡泡 Lv.1"));
+        assert!(status.contains("糖晶放大镜 Lv.2"));
+        assert!(status.contains("彩虹糖流星雨 Lv.1"));
+        assert!(status.contains("标签 弹幕, 经济"));
     }
 
     #[test]
