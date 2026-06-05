@@ -43,6 +43,7 @@ const BOOMERANG_RETURN_AFTER_LIFETIME_RATIO: f32 = 0.42;
 const BOOMERANG_RETURN_SPEED_MULTIPLIER: f32 = 1.08;
 const KNOCKBACK_WEAPON_DISTANCE: f32 = 46.0;
 const SUMMON_TURRET_MIN_FIRE_INTERVAL_SECONDS: f32 = 0.24;
+const TRAP_TRIGGER_RADIUS_MULTIPLIER: f32 = 1.0;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -1407,6 +1408,7 @@ impl GameCore {
             let (enemy_slow_multiplier, enemy_slow_duration_seconds) =
                 self.enemy_slow_effect_for_weapon(&weapon_tags);
             let enemy_knockback_distance = enemy_knockback_distance_for_weapon(&weapon_tags);
+            let trap_trigger_radius = trap_trigger_radius_for_weapon(&weapon_tags, radius);
             let boomerang_return_after_seconds =
                 boomerang_return_after_seconds(&weapon_tags, lifetime);
             let boomerang_return_speed = if boomerang_return_after_seconds.is_some() {
@@ -1457,6 +1459,7 @@ impl GameCore {
                     enemy_slow_multiplier,
                     enemy_slow_duration_seconds,
                     enemy_knockback_distance,
+                    trap_trigger_radius,
                     age_seconds: 0.0,
                     boomerang_return_after_seconds,
                     boomerang_return_speed,
@@ -1647,6 +1650,59 @@ impl GameCore {
                 }
                 continue;
             }
+
+            if projectile.is_trap() {
+                projectile.lifetime -= dt;
+                if projectile.pierce_remaining == 0 {
+                    continue;
+                }
+
+                let triggered = self.enemies.iter().any(|enemy| {
+                    enemy.health > 0.0
+                        && projectile.position.distance(enemy.position)
+                            <= projectile.trap_trigger_radius + enemy.radius
+                });
+
+                if !triggered {
+                    continue;
+                }
+
+                for enemy in &mut self.enemies {
+                    if enemy.health <= 0.0 {
+                        continue;
+                    }
+
+                    let blast_distance = projectile.radius + enemy.radius;
+                    if projectile.position.distance(enemy.position) <= blast_distance {
+                        let damage = projectile.damage
+                            * enemy
+                                .projectile_damage_multiplier(projectile.position, player_position);
+                        enemy.health -= damage;
+                        self.metrics.damage_dealt_by_weapon += damage;
+                        if enemy.is_boss {
+                            self.metrics.boss_damage += damage;
+                        }
+                        enemy.apply_slow(
+                            projectile.enemy_slow_multiplier,
+                            projectile.enemy_slow_duration_seconds,
+                        );
+                        enemy.apply_knockback(
+                            player_position,
+                            projectile.enemy_knockback_distance,
+                            half_width,
+                            half_height,
+                        );
+                        events.push(GameEvent::EnemyHit {
+                            entity_id: enemy.entity_id,
+                            damage,
+                            weapon_id: projectile.weapon_id.clone(),
+                        });
+                    }
+                }
+                projectile.pierce_remaining = 0;
+                continue;
+            }
+
             projectile.position += projectile.velocity * dt;
             projectile.lifetime -= dt;
 
@@ -2470,6 +2526,14 @@ fn boomerang_return_after_seconds(weapon_tags: &[String], lifetime: f32) -> Opti
 fn enemy_knockback_distance_for_weapon(weapon_tags: &[String]) -> f32 {
     if weapon_tags.iter().any(|tag| tag == "knockback") {
         KNOCKBACK_WEAPON_DISTANCE
+    } else {
+        0.0
+    }
+}
+
+fn trap_trigger_radius_for_weapon(weapon_tags: &[String], radius: f32) -> f32 {
+    if weapon_tags.iter().any(|tag| tag == "trap") {
+        radius.max(1.0) * TRAP_TRIGGER_RADIUS_MULTIPLIER
     } else {
         0.0
     }
@@ -3500,6 +3564,7 @@ struct Projectile {
     enemy_slow_multiplier: f32,
     enemy_slow_duration_seconds: f32,
     enemy_knockback_distance: f32,
+    trap_trigger_radius: f32,
     age_seconds: f32,
     boomerang_return_after_seconds: Option<f32>,
     boomerang_return_speed: f32,
@@ -3511,6 +3576,10 @@ struct Projectile {
 impl Projectile {
     fn is_summon_turret(&self) -> bool {
         self.turret_fire_interval_seconds > 0.0
+    }
+
+    fn is_trap(&self) -> bool {
+        self.trap_trigger_radius > 0.0
     }
 }
 
@@ -3981,6 +4050,94 @@ mod tests {
     }
 
     #[test]
+    fn trap_weapon_waits_for_proximity_then_explodes_once() {
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                starting_loadout: StartingLoadout {
+                    weapons: vec!["popping-candy-mine".to_string()],
+                    passives: Vec::new(),
+                },
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize GameCore");
+        core.enemies.clear();
+        core.weapons[0].cooldown_remaining = 0.0;
+        core.weapons[0].projectile_count_base = 1;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+        let mine_index = core
+            .projectiles
+            .iter()
+            .position(|projectile| projectile.weapon_id == "popping-candy-mine")
+            .expect("popping candy mine should place a trap");
+        let mine_position = core.projectiles[mine_index].position;
+        assert!(core.projectiles[mine_index].is_trap());
+
+        let first_enemy_id = core.allocate_entity_id();
+        let second_enemy_id = core.allocate_entity_id();
+        let far_enemy_id = core.allocate_entity_id();
+        let mut first_enemy = Enemy::from_enemy_definition(
+            first_enemy_id,
+            mine_position + Vec2::new(120.0, 0.0),
+            &enemy_definition,
+        );
+        let mut second_enemy = Enemy::from_enemy_definition(
+            second_enemy_id,
+            mine_position + Vec2::new(16.0, 0.0),
+            &enemy_definition,
+        );
+        let mut far_enemy = Enemy::from_enemy_definition(
+            far_enemy_id,
+            mine_position + Vec2::new(180.0, 0.0),
+            &enemy_definition,
+        );
+        first_enemy.health = 100.0;
+        second_enemy.health = 100.0;
+        far_enemy.health = 100.0;
+        let untouched_health = first_enemy.health;
+        core.enemies.push(first_enemy);
+        core.enemies.push(far_enemy);
+
+        core.update_projectiles(0.0, &mut Vec::new());
+        assert!(core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.weapon_id == "popping-candy-mine"));
+        assert_eq!(core.enemies[0].health, untouched_health);
+
+        core.enemies.push(second_enemy);
+        let mut events = Vec::new();
+        core.update_projectiles(0.0, &mut events);
+
+        assert!(!core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.weapon_id == "popping-candy-mine"));
+        assert!(core
+            .enemies
+            .iter()
+            .any(|enemy| enemy.entity_id == second_enemy_id && enemy.health < 100.0));
+        assert!(core
+            .enemies
+            .iter()
+            .any(|enemy| enemy.entity_id == far_enemy_id && (enemy.health - 100.0).abs() < 0.01));
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::EnemyHit { weapon_id, .. } if weapon_id == "popping-candy-mine"
+            )
+        }));
+    }
+
+    #[test]
     fn can_run_from_disk_content_pack() {
         let content = ContentPack::load_from_dir("../../content/base_demo")
             .expect("base_demo content should load from disk");
@@ -4094,6 +4251,7 @@ mod tests {
             enemy_slow_multiplier: 1.0,
             enemy_slow_duration_seconds: 0.0,
             enemy_knockback_distance: 0.0,
+            trap_trigger_radius: 0.0,
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
@@ -4264,6 +4422,7 @@ mod tests {
             enemy_slow_multiplier: 1.0,
             enemy_slow_duration_seconds: 0.0,
             enemy_knockback_distance: 0.0,
+            trap_trigger_radius: 0.0,
             age_seconds: 0.0,
             boomerang_return_after_seconds: None,
             boomerang_return_speed: 0.0,
