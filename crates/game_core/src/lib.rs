@@ -4978,7 +4978,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 64);
+        assert_eq!(content.object_count(), 65);
         for map_id in content.maps.keys().cloned().collect::<Vec<_>>() {
             GameCore::reset_with_content(
                 RunConfig {
@@ -5704,6 +5704,60 @@ mod tests {
         let enemy = &core.enemies[0];
         assert!((enemy.slow_multiplier - COLD_WEAPON_ENEMY_MULTIPLIER).abs() <= 0.001);
         assert!((enemy.slow_remaining_seconds - COLD_WEAPON_ENEMY_DURATION_SECONDS).abs() <= 0.001);
+    }
+
+    #[test]
+    fn mint_storm_eye_evolution_adds_wider_cold_control_orbit() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("mint-storm-eye")
+            .expect("base demo should include mint storm eye")
+            .clone();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        assert_eq!(evolution.replaces_weapon, "mint-cyclone");
+        assert!(evolution.tags.iter().any(|tag| tag == "cold"));
+        assert!(evolution.tags.iter().any(|tag| tag == "control"));
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.enemies.clear();
+        core.projectiles.clear();
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        let hit_position = core
+            .projectiles
+            .first()
+            .expect("mint storm eye should create orbit projectiles")
+            .position;
+        assert_eq!(
+            core.projectiles
+                .iter()
+                .filter(|projectile| projectile.weapon_id == "mint-storm-eye")
+                .count(),
+            5
+        );
+        assert!(core.projectiles[0].radius > 30.0);
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy = Enemy::from_enemy_definition(enemy_id, hit_position, &enemy_definition);
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        core.enemies.push(enemy);
+
+        core.update_projectiles(0.0, &mut Vec::new());
+
+        let enemy = &core.enemies[0];
+        assert!((enemy.slow_multiplier - COLD_WEAPON_ENEMY_MULTIPLIER).abs() <= 0.001);
+        assert!((enemy.slow_remaining_seconds - COLD_WEAPON_ENEMY_DURATION_SECONDS).abs() <= 0.001);
+        assert!(enemy.health < 1000.0);
     }
 
     #[test]

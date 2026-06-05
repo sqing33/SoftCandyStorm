@@ -3478,7 +3478,7 @@ fn projectile_is_bubble(weapon_id: &str) -> bool {
 }
 
 fn projectile_is_cold(weapon_id: &str) -> bool {
-    matches!(weapon_id, "mint-cyclone")
+    matches!(weapon_id, "mint-cyclone" | "mint-storm-eye")
 }
 
 fn projectile_is_caramel_zone(weapon_id: &str) -> bool {
@@ -10418,20 +10418,22 @@ mod tests {
 
     #[test]
     fn projectile_visual_style_tints_cold_orbits_green() {
-        let projectile = ProjectileSnapshot {
-            entity_id: 4,
-            weapon_id: "mint-cyclone".to_string(),
-            position: CoreVec2::new(-20.0, 44.0),
-            velocity: CoreVec2::ZERO,
-            radius: 24.0,
-        };
+        for (entity_id, weapon_id) in [(4, "mint-cyclone"), (14, "mint-storm-eye")] {
+            let projectile = ProjectileSnapshot {
+                entity_id,
+                weapon_id: weapon_id.to_string(),
+                position: CoreVec2::new(-20.0, 44.0),
+                velocity: CoreVec2::ZERO,
+                radius: 24.0,
+            };
 
-        let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+            let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
 
-        assert!(style.textured);
-        assert_ne!(style.color, Color::WHITE);
-        assert_eq!(style.center, projectile.position);
-        assert_eq!(style.size, Vec2::splat(48.0));
+            assert!(style.textured);
+            assert_ne!(style.color, Color::WHITE);
+            assert_eq!(style.center, projectile.position);
+            assert_eq!(style.size, Vec2::splat(48.0));
+        }
     }
 
     #[test]
