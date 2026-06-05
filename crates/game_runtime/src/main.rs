@@ -2514,14 +2514,57 @@ fn format_boss_status(boss: Option<&BossSnapshot>, content: &ContentPack) -> Str
     } else {
         0.0
     };
+    let phase_hint = format_runtime_boss_phase_hint(boss, content)
+        .map(|hint| format!("  {hint}"))
+        .unwrap_or_default();
     format!(
-        "Boss {} ({})  HP {:.0}/{:.0}  {:.0}%",
+        "Boss {} ({})  HP {:.0}/{:.0}  {:.0}%{}",
         runtime_boss_label(content, &boss.boss_id),
         boss.boss_id,
         health,
         max_health,
         health_ratio,
+        phase_hint,
     )
+}
+
+fn format_runtime_boss_phase_hint(boss: &BossSnapshot, content: &ContentPack) -> Option<String> {
+    let definition = content.bosses.get(&boss.boss_id)?;
+    if definition.phases.is_empty() {
+        return None;
+    }
+
+    let max_health = boss.max_health.max(0.0);
+    let ratio = if max_health > 0.0 {
+        (boss.health.max(0.0) / max_health).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    let mut phase_index = 0usize;
+    for (index, phase) in definition.phases.iter().enumerate() {
+        if ratio <= phase.hp_threshold {
+            phase_index = index;
+        }
+    }
+    let phase = definition.phases.get(phase_index)?;
+    let abilities = if phase.abilities.is_empty() {
+        "无阶段技能".to_string()
+    } else {
+        phase
+            .abilities
+            .iter()
+            .take(3)
+            .map(|ability| runtime_boss_ability_label(ability))
+            .collect::<Vec<_>>()
+            .join("/")
+    };
+    Some(format!(
+        "阶段 {}/{} {:.0}% {}",
+        phase_index + 1,
+        definition.phases.len(),
+        phase.hp_threshold * 100.0,
+        abilities,
+    ))
 }
 
 fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
@@ -9232,6 +9275,24 @@ mod tests {
         assert!(status.contains("runaway-sugar-mixer"));
         assert!(status.contains("HP 125/250"));
         assert!(status.contains("50%"));
+        assert!(status.contains("阶段 1/2 100% 直线冲撞/召唤蹦蹦软糖"));
+    }
+
+    #[test]
+    fn boss_status_renders_current_phase_abilities() {
+        let content = ContentPack::base_demo();
+        let boss = BossSnapshot {
+            entity_id: 42,
+            boss_id: "runaway-sugar-mixer".to_string(),
+            health: 90.0,
+            max_health: 250.0,
+            position: CoreVec2::ZERO,
+        };
+        let status = format_boss_status(Some(&boss), &content);
+
+        assert!(status.contains("36%"));
+        assert!(status.contains("阶段 2/2 45%"));
+        assert!(status.contains("直线冲撞/糖浆飞溅/召唤蹦蹦软糖"));
     }
 
     #[test]
