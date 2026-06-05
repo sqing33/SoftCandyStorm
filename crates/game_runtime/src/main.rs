@@ -3177,7 +3177,7 @@ fn describe_combat_events(events: &[GameEvent], content: &ContentPack) -> Option
                 boss_ability = Some(format!(
                     "技能预警 Boss {} 使用 {}",
                     runtime_boss_label(content, boss_id),
-                    runtime_boss_ability_label(ability_id)
+                    runtime_boss_ability_summary(ability_id)
                 ));
             }
             GameEvent::EnemySpawned { .. }
@@ -3305,7 +3305,7 @@ fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
         } => Some(format!(
             "Boss {} 使用 {}",
             runtime_boss_label(content, boss_id),
-            runtime_boss_ability_label(ability_id)
+            runtime_boss_ability_summary(ability_id)
         )),
         GameEvent::WeaponFired {
             weapon_id,
@@ -4701,6 +4701,37 @@ fn runtime_boss_ability_label(ability_id: &str) -> String {
         other => return other.replace('_', " "),
     }
     .to_string()
+}
+
+fn runtime_boss_ability_summary(ability_id: &str) -> String {
+    let label = runtime_boss_ability_label(ability_id);
+    let hint = match ability_id {
+        "dash_charge" | "soft_roll" => "横向躲开冲撞线",
+        "sugar_splash"
+        | "charged_fountain"
+        | "lay_caramel_tracks"
+        | "slow_pulse"
+        | "caramel_floor_cycle"
+        | "jump_shockwave"
+        | "double_jump_shockwave" => "离开预警地面",
+        "summon_sour_gummy"
+        | "summon_bouncy_gummy"
+        | "summon_soda_bubble"
+        | "summon_caramel_slime"
+        | "summon_sticky_bear_gummy"
+        | "summon_guard_wave"
+        | "split_cotton_clumps" => "先清增援压力",
+        "recombine_heal" => "Boss 恢复生命",
+        "bubble_barrage"
+        | "sour_phase_storm"
+        | "spicy_phase_burst"
+        | "bubble_phase_barrage"
+        | "multi_flavor_storm" => "注意增援和危险区",
+        "sweet_phase_shield" => "护盾期伤害降低",
+        "phase_shift_vulnerability" => "核心暴露时集中输出",
+        _ => return label,
+    };
+    format!("{label}：{hint}")
 }
 
 fn terminal_kind_label(kind: TerminalKind) -> &'static str {
@@ -7099,7 +7130,7 @@ mod tests {
         projectile_visual_style, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_boss_ability_label,
-        runtime_can_upload, runtime_chapter_action_from_gamepad,
+        runtime_boss_ability_summary, runtime_can_upload, runtime_chapter_action_from_gamepad,
         runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
         runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
         runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
@@ -9014,6 +9045,14 @@ mod tests {
         for (ability_id, label) in cases {
             assert_eq!(runtime_boss_ability_label(ability_id), label);
         }
+        assert_eq!(
+            runtime_boss_ability_summary("phase_shift_vulnerability"),
+            "核心暴露：核心暴露时集中输出"
+        );
+        assert_eq!(
+            runtime_boss_ability_summary("sweet_phase_shield"),
+            "甜味护盾：护盾期伤害降低"
+        );
     }
 
     #[test]
@@ -10868,7 +10907,7 @@ mod tests {
                 }],
                 &content
             ),
-            "技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道"
+            "技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道：离开预警地面"
         );
         assert_eq!(
             describe_events(
@@ -10879,7 +10918,7 @@ mod tests {
                 }],
                 &content
             ),
-            "技能预警 Boss 裂星糖罐核心 使用 核心暴露"
+            "技能预警 Boss 裂星糖罐核心 使用 核心暴露：核心暴露时集中输出"
         );
         assert_eq!(
             describe_events(
@@ -11055,7 +11094,7 @@ mod tests {
         assert!(feedback.contains("命中 x1 / 伤害 7"));
         assert!(feedback.contains("糖晶 +6"));
         assert!(feedback.contains("受伤 3"));
-        assert!(feedback.contains("技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道"));
+        assert!(feedback.contains("技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道：离开预警地面"));
     }
 
     #[test]
