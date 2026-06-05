@@ -1,0 +1,64 @@
+{
+  "batch_id": "2026-06-05_demo_buildcraft_repair_v60_candidates",
+  "generated_at": "2026-06-05",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 v60 确定性短窗口路线反制候选"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo buildcraft route counter repair v60",
+    "goal": "在 v51 基础上新增 chance=1.0 的短窗口确定性路线回声事件，验证能否只把 RouteBot 从 40% 拉回 10%-35% 目标区间，同时避免 v55/v58 的随机序列和后段压力副作用。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with event coverage",
+      "materialize full content pack with events overlay",
+      "materialized pack preflight",
+      "static balance budget review",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "key Bot matrix 300s 10 seed",
+      "all Bot matrix 300s 10 seed after key Bot pass",
+      "playable content coverage audit after matrix pass",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "route-memory-caramel-glint",
+      "type": "event",
+      "path": "events/route-memory-caramel-glint.json",
+      "role": "216-232 秒确定性短窗口重复路线提醒，轻量打断固定路线，避免概率事件 RNG 副作用。"
+    }
+  ],
+  "diagnostic_evidence": {
+    "baseline_candidate": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+    "baseline_matrix": "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md",
+    "route_stabilization_window_diagnostics": "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_stabilization_window_diagnostics_001/summary.md",
+    "v58_failure_case": "harness/failed_cases/fail_20260605_004_demo_buildcraft_repair_v58_kite_regression.json",
+    "v59_probe_report": "harness/reports/2026-06-05_demo_buildcraft_repair_v59_entry_blend_late_pressure_probe_001_matrix_300s_10seed_72000_001/summary.md",
+    "deterministic_event_rng_fix": "fix(core): 避免确定性内容事件消耗随机数"
+  },
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v51 full pack 为基线。",
+      "本批次只新增事件 route-memory-caramel-glint，不覆盖波次、敌人、武器、被动、Boss、地图或 Runtime 正式内容。",
+      "事件 chance 固定为 1.0，依赖 GameCore 确定性事件不消耗 RNG 的修复。",
+      "事件不造成直接伤害，仅以短寿命焦糖闪印减速反制重复路线。",
+      "本批次不调整门禁阈值；若 Bot 矩阵失败或误伤其他 Bot，应记录 failure case 并继续 repair。"
+    ]
+  }
+}

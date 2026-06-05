@@ -1,0 +1,33 @@
+{
+  "id": "route-memory-caramel-glint",
+  "name": "焦糖旧路闪印",
+  "version": 1,
+  "rarity": "rare",
+  "tags": ["event", "hazard", "movement", "route-counter", "deterministic"],
+  "description": "糖霜草地会在 Boss 入场前短暂记住玩家反复踩回的旧路线，并用一枚焦糖闪印提醒玩家换个移动节奏。",
+  "trigger": {
+    "type": "time_window",
+    "start_second": 216,
+    "end_second": 232,
+    "chance": 1.0
+  },
+  "effects": [
+    {
+      "type": "route_echo_hazard",
+      "value": 1,
+      "duration_seconds": 7,
+      "hazard_duration_seconds": 2.4,
+      "sample_interval_seconds": 2.8,
+      "history_seconds": 22,
+      "trigger_radius": 80,
+      "radius": 44,
+      "slow_multiplier": 0.78,
+      "damage_per_second": 0
+    }
+  ],
+  "visual_description": "玩家旧路线附近亮起一枚浅金焦糖脚印，边缘有柔和糖霜高光，短暂停留后融化。",
+  "sfx_description": "轻柔提示铃声后接一声短促焦糖冒泡，音量低于 Boss 提示音。",
+  "unlock": {
+    "type": "discover"
+  }
+}
