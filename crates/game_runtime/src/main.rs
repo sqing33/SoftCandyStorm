@@ -5,10 +5,11 @@ use bevy::{
     window::PrimaryWindow,
 };
 use game_core::{
-    BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, Difficulty, EnemySnapshot,
-    FixedDt, GameCore, GameEvent, HazardSnapshot, MetaCodexEntry, MetaProgress, MetaRunSummary,
-    MetaSettlementReport, PlayerAction, RunConfig, RunMetrics, RunSnapshot, StartingLoadout,
-    StatusEffectSnapshot, TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
+    Difficulty, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaCodexEntry,
+    MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction, RunConfig, RunMetrics,
+    RunSnapshot, StartingLoadout, StatusEffectSnapshot, TerminalKind, TerminalState,
+    UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2377,6 +2378,42 @@ fn format_enemy_swarm_status(enemies: &[EnemySnapshot], content: &ContentPack) -
     )
 }
 
+fn format_event_effect_status(
+    effects: &[ActiveEventEffectSnapshot],
+    content: &ContentPack,
+) -> String {
+    let active = effects
+        .iter()
+        .filter(|effect| effect.remaining_seconds > 0.0)
+        .take(4)
+        .map(|effect| {
+            format!(
+                "{} {} x{:.2} {:.1}s",
+                runtime_event_label(content, &effect.event_id),
+                runtime_event_effect_label(&effect.effect_type),
+                effect.value,
+                effect.remaining_seconds,
+            )
+        })
+        .collect::<Vec<_>>();
+    if active.is_empty() {
+        "事件效果 无".to_string()
+    } else {
+        format!("事件效果 {}", active.join(", "))
+    }
+}
+
+fn runtime_event_effect_label(effect_type: &str) -> String {
+    match effect_type {
+        "damage_multiplier" => "伤害",
+        "pickup_radius_multiplier" => "拾取",
+        "spawn_rate_multiplier" => "刷怪",
+        "xp_multiplier" => "XP",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
+}
+
 fn format_hazard_status(
     hazards: &[HazardSnapshot],
     status_effects: &[StatusEffectSnapshot],
@@ -2561,10 +2598,12 @@ fn update_hud(
         let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
         let build_status = format_build_status(&snapshot.build, &state.content);
         let enemy_status = format_enemy_swarm_status(&snapshot.visible_enemies, &state.content);
+        let event_status =
+            format_event_effect_status(&snapshot.active_event_effects, &state.content);
         let hazard_status =
             format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -2578,6 +2617,7 @@ fn update_hud(
             snapshot.map.map_id,
             boss_status,
             enemy_status,
+            event_status,
             hazard_status,
             build_status,
             state.last_event,
@@ -5783,8 +5823,8 @@ mod tests {
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
-        format_enemy_swarm_status, format_hazard_status, format_terminal_overlay,
-        format_upgrade_options, load_runtime_asset_candidate_manifest,
+        format_enemy_swarm_status, format_event_effect_status, format_hazard_status,
+        format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
         make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
         next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
@@ -5827,10 +5867,10 @@ mod tests {
         KeyCode, MouseButton, Vec2,
     };
     use game_core::{
-        BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, EnemyBehavior, EnemySnapshot,
-        FixedDt, GameCore, GameEvent, HazardSnapshot, MetaProgress, MetaRunSummary, PickupSnapshot,
-        PickupType, RunConfig, RunMode, StatusEffectSnapshot, TerminalKind, TerminalState,
-        Vec2 as CoreVec2,
+        ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
+        EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaProgress,
+        MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode, StatusEffectSnapshot,
+        TerminalKind, TerminalState, Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
 
@@ -7700,6 +7740,39 @@ mod tests {
         assert_eq!(
             format_enemy_swarm_status(&[], &ContentPack::base_demo()),
             "敌群 无"
+        );
+    }
+
+    #[test]
+    fn event_effect_status_renders_active_effects() {
+        let content = ContentPack::base_demo();
+        let effects = vec![
+            ActiveEventEffectSnapshot {
+                event_id: "rainbow-candy-rush".to_string(),
+                effect_type: "xp_multiplier".to_string(),
+                value: 1.4,
+                remaining_seconds: 24.5,
+            },
+            ActiveEventEffectSnapshot {
+                event_id: "rainbow-candy-rush".to_string(),
+                effect_type: "spawn_rate_multiplier".to_string(),
+                value: 1.25,
+                remaining_seconds: 24.5,
+            },
+        ];
+
+        let status = format_event_effect_status(&effects, &content);
+
+        assert!(status.contains("事件效果"));
+        assert!(status.contains("彩虹糖潮 XP x1.40 24.5s"));
+        assert!(status.contains("彩虹糖潮 刷怪 x1.25 24.5s"));
+    }
+
+    #[test]
+    fn event_effect_status_renders_empty_state() {
+        assert_eq!(
+            format_event_effect_status(&[], &ContentPack::base_demo()),
+            "事件效果 无"
         );
     }
 
