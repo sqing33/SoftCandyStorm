@@ -6,9 +6,9 @@ use bevy::{
 };
 use game_core::{
     BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, Difficulty, FixedDt, GameCore,
-    GameEvent, MetaCodexEntry, MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction,
-    RunConfig, RunMetrics, RunSnapshot, StartingLoadout, TerminalKind, TerminalState,
-    UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    GameEvent, HazardSnapshot, MetaCodexEntry, MetaProgress, MetaRunSummary, MetaSettlementReport,
+    PlayerAction, RunConfig, RunMetrics, RunSnapshot, StartingLoadout, StatusEffectSnapshot,
+    TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2288,6 +2288,69 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     format!("Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  标签 {tags}")
 }
 
+fn format_hazard_status(
+    hazards: &[HazardSnapshot],
+    status_effects: &[StatusEffectSnapshot],
+) -> String {
+    if hazards.is_empty() && status_effects.is_empty() {
+        return "地图危险 安全".to_string();
+    }
+
+    let hazard_text = if hazards.is_empty() {
+        "危险区 无".to_string()
+    } else {
+        let max_damage = hazards
+            .iter()
+            .map(|hazard| hazard.damage_per_second.max(0.0))
+            .fold(0.0, f32::max);
+        let min_slow = hazards
+            .iter()
+            .map(|hazard| hazard.slow_multiplier.clamp(0.0, 1.0))
+            .fold(1.0, f32::min);
+        let max_remaining = hazards
+            .iter()
+            .map(|hazard| hazard.remaining_seconds.max(0.0))
+            .fold(0.0, f32::max);
+        format!(
+            "危险区 {}  最高伤害 {:.0}/s  最强减速 移速 {:.0}%  最长 {:.1}s",
+            hazards.len(),
+            max_damage,
+            min_slow * 100.0,
+            max_remaining,
+        )
+    };
+    let status_text = format_player_status_effects(status_effects);
+    format!("地图危险 {hazard_text}  状态 {status_text}")
+}
+
+fn format_player_status_effects(status_effects: &[StatusEffectSnapshot]) -> String {
+    let active = status_effects
+        .iter()
+        .filter(|effect| effect.remaining_seconds > 0.0)
+        .take(3)
+        .map(|effect| {
+            format!(
+                "{} 移速 {:.0}% {:.1}s",
+                runtime_status_effect_label(&effect.kind),
+                effect.multiplier.clamp(0.0, 1.0) * 100.0,
+                effect.remaining_seconds,
+            )
+        })
+        .collect::<Vec<_>>();
+    if active.is_empty() {
+        "无".to_string()
+    } else {
+        active.join(", ")
+    }
+}
+
+fn runtime_status_effect_label(kind: &str) -> String {
+    match kind {
+        "slow" => "减速".to_string(),
+        other => other.replace('-', " "),
+    }
+}
+
 fn format_build_items<F>(items: &[BuildItemSnapshot], limit: usize, label: F) -> String
 where
     F: Fn(&str) -> String,
@@ -2347,8 +2410,10 @@ fn update_hud(
         let map_style = map_visual_style(&snapshot.map.map_id);
         let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
         let build_status = format_build_status(&snapshot.build, &state.content);
+        let hazard_status =
+            format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}\nMap {} ({})\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -2359,10 +2424,10 @@ fn update_hud(
             snapshot.player.xp_to_next_level,
             snapshot.metrics_partial.kills,
             snapshot.visible_enemies.len(),
-            snapshot.active_hazards.len(),
             map_style.display_name,
             snapshot.map.map_id,
             boss_status,
+            hazard_status,
             build_status,
             state.last_event,
             state.last_event_kind.label(),
@@ -5544,11 +5609,12 @@ mod tests {
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
-        format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
-        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
+        format_hazard_status, format_terminal_overlay, format_upgrade_options,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
+        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
+        render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
         runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
@@ -5587,8 +5653,9 @@ mod tests {
     };
     use game_core::{
         BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, EnemyBehavior, EnemySnapshot,
-        FixedDt, GameCore, GameEvent, MetaProgress, MetaRunSummary, PickupSnapshot, PickupType,
-        RunConfig, RunMode, TerminalKind, TerminalState, Vec2 as CoreVec2,
+        FixedDt, GameCore, GameEvent, HazardSnapshot, MetaProgress, MetaRunSummary, PickupSnapshot,
+        PickupType, RunConfig, RunMode, StatusEffectSnapshot, TerminalKind, TerminalState,
+        Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
 
@@ -7372,6 +7439,45 @@ mod tests {
         assert!(status.contains("糖晶放大镜 Lv.2"));
         assert!(status.contains("彩虹糖流星雨 Lv.1"));
         assert!(status.contains("标签 弹幕, 经济"));
+    }
+
+    #[test]
+    fn hazard_status_renders_safe_state() {
+        assert_eq!(format_hazard_status(&[], &[]), "地图危险 安全");
+    }
+
+    #[test]
+    fn hazard_status_renders_active_zones_and_player_status() {
+        let hazards = vec![
+            HazardSnapshot {
+                position: CoreVec2::ZERO,
+                radius: 48.0,
+                slow_multiplier: 0.65,
+                damage_per_second: 0.0,
+                remaining_seconds: 4.0,
+            },
+            HazardSnapshot {
+                position: CoreVec2::new(10.0, 0.0),
+                radius: 80.0,
+                slow_multiplier: 0.45,
+                damage_per_second: 12.0,
+                remaining_seconds: 7.5,
+            },
+        ];
+        let status_effects = vec![StatusEffectSnapshot {
+            effect_id: "movement_slow".to_string(),
+            kind: "slow".to_string(),
+            multiplier: 0.6,
+            remaining_seconds: 2.5,
+        }];
+
+        let status = format_hazard_status(&hazards, &status_effects);
+
+        assert!(status.contains("危险区 2"));
+        assert!(status.contains("最高伤害 12/s"));
+        assert!(status.contains("最强减速 移速 45%"));
+        assert!(status.contains("最长 7.5s"));
+        assert!(status.contains("减速 移速 60% 2.5s"));
     }
 
     #[test]
