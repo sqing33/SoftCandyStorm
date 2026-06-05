@@ -2270,7 +2270,7 @@ fn sync_world_visuals(
             SpriteBundle {
                 texture,
                 sprite: Sprite {
-                    color: enemy_tint(enemy.is_boss, enemy.is_elite),
+                    color: enemy_tint(enemy.enemy_id.as_str(), enemy.is_boss, enemy.is_elite),
                     custom_size: Some(Vec2::splat(enemy.radius * 2.0)),
                     ..default()
                 },
@@ -2301,7 +2301,11 @@ fn sync_world_visuals(
         SpriteBundle {
             texture: sprites.player.clone(),
             sprite: Sprite {
-                color: player_tint(snapshot.player.health, snapshot.player.max_health),
+                color: player_tint(
+                    state.config.character_id.as_str(),
+                    snapshot.player.health,
+                    snapshot.player.max_health,
+                ),
                 custom_size: Some(Vec2::splat(42.0)),
                 ..default()
             },
@@ -2450,15 +2454,35 @@ fn map_visual_style(map_id: &str) -> RuntimeMapVisualStyle {
     }
 }
 
-fn enemy_tint(_is_boss: bool, is_elite: bool) -> Color {
+fn enemy_tint(enemy_id: &str, is_boss: bool, is_elite: bool) -> Color {
     if is_elite {
         Color::srgb(1.0, 0.82, 1.0)
+    } else if is_boss {
+        match enemy_id {
+            "runaway-sugar-mixer" => Color::srgb(1.0, 0.78, 0.46),
+            "giant-cotton-clump" => Color::srgb(1.0, 0.88, 0.98),
+            "caramel-furnace" => Color::srgb(1.0, 0.55, 0.24),
+            "giant-gummy-bear-king" => Color::srgb(0.72, 1.0, 0.74),
+            "cracked-star-jar-core" => Color::srgb(0.84, 0.74, 1.0),
+            "soda-fountain-dragon" => Color::srgb(0.54, 0.88, 1.0),
+            _ => Color::srgb(1.0, 0.84, 0.58),
+        }
     } else {
-        Color::WHITE
+        match enemy_id {
+            "bouncy-gummy" => Color::srgb(1.0, 0.64, 0.76),
+            "sour-gummy" => Color::srgb(0.66, 1.0, 0.50),
+            "caramel-slime" => Color::srgb(1.0, 0.66, 0.30),
+            "sandwich-cookie-creep" => Color::srgb(0.82, 0.64, 0.46),
+            "soda-bubble" => Color::srgb(0.54, 0.90, 1.0),
+            "spicy-gummy" => Color::srgb(1.0, 0.42, 0.34),
+            "sticky-bear-gummy" => Color::srgb(0.74, 0.94, 0.56),
+            "cotton-candy-clump" => Color::srgb(1.0, 0.82, 0.96),
+            _ => Color::WHITE,
+        }
     }
 }
 
-fn player_tint(health: f32, max_health: f32) -> Color {
+fn player_tint(character_id: &str, health: f32, max_health: f32) -> Color {
     let ratio = if max_health > 0.0 {
         (health / max_health).clamp(0.0, 1.0)
     } else {
@@ -2467,7 +2491,14 @@ fn player_tint(health: f32, max_health: f32) -> Color {
     if ratio < 0.30 {
         Color::srgb(1.0, 0.55, 0.48)
     } else {
-        Color::WHITE
+        match character_id {
+            "jar-keeper" => Color::srgb(1.0, 0.96, 0.78),
+            "bubble-courier" => Color::srgb(0.62, 0.92, 1.0),
+            "sour-plum-doctor" => Color::srgb(0.78, 1.0, 0.58),
+            "pudding-crafter" => Color::srgb(1.0, 0.84, 0.48),
+            "cream-knight" => Color::srgb(1.0, 0.88, 0.92),
+            _ => Color::WHITE,
+        }
     }
 }
 
@@ -7057,7 +7088,7 @@ fn write_runtime_playtest_report(
 mod tests {
     use super::{
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
-        demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
+        demo_movement, demo_upgrade_choice, describe_events, effects_for_events, enemy_tint,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_enemy_swarm_status, format_event_effect_for_codex, format_event_effect_status,
         format_hazard_status, format_terminal_overlay, format_upgrade_options,
@@ -8887,7 +8918,36 @@ mod tests {
 
     #[test]
     fn low_health_changes_player_tint() {
-        assert_ne!(player_tint(100.0, 100.0), player_tint(20.0, 100.0));
+        assert_ne!(
+            player_tint("jar-keeper", 100.0, 100.0),
+            player_tint("jar-keeper", 20.0, 100.0)
+        );
+    }
+
+    #[test]
+    fn character_tint_distinguishes_selected_runtime_character() {
+        assert_ne!(
+            player_tint("jar-keeper", 100.0, 100.0),
+            player_tint("bubble-courier", 100.0, 100.0)
+        );
+        assert_ne!(
+            player_tint("pudding-crafter", 100.0, 100.0),
+            player_tint("sour-plum-doctor", 100.0, 100.0)
+        );
+        assert_eq!(player_tint("unknown-character", 100.0, 100.0), Color::WHITE);
+    }
+
+    #[test]
+    fn enemy_tint_distinguishes_content_archetypes() {
+        assert_ne!(
+            enemy_tint("soda-bubble", false, false),
+            enemy_tint("spicy-gummy", false, false)
+        );
+        assert_ne!(
+            enemy_tint("runaway-sugar-mixer", true, false),
+            enemy_tint("cracked-star-jar-core", true, false)
+        );
+        assert_eq!(enemy_tint("unknown-enemy", false, false), Color::WHITE);
     }
 
     #[test]
