@@ -2175,7 +2175,7 @@ fn update_hud(
 
 fn apply_runtime_feedback(state: &mut RuntimeState, events: &[GameEvent], snapshot: &RunSnapshot) {
     state.capture.event_counts.observe(events);
-    let feedback = feedback_for_events(events);
+    let feedback = feedback_for_events(events, &state.content);
     state.last_event = feedback.message;
     state.last_event_kind = feedback.kind;
     for sound in feedback.sounds {
@@ -2192,20 +2192,20 @@ struct RuntimeFeedback {
     sounds: Vec<RuntimeSound>,
 }
 
-fn feedback_for_events(events: &[GameEvent]) -> RuntimeFeedback {
+fn feedback_for_events(events: &[GameEvent], content: &ContentPack) -> RuntimeFeedback {
     RuntimeFeedback {
-        message: describe_events(events),
+        message: describe_events(events, content),
         kind: event_kind_for_events(events),
         sounds: sounds_for_events(events),
     }
 }
 
-fn describe_events(events: &[GameEvent]) -> String {
+fn describe_events(events: &[GameEvent], content: &ContentPack) -> String {
     events
         .iter()
         .rev()
-        .find_map(describe_event)
-        .unwrap_or_else(|| "storm active".to_string())
+        .find_map(|event| describe_event(event, content))
+        .unwrap_or_else(|| "糖果风暴推进中".to_string())
 }
 
 fn event_kind_for_events(events: &[GameEvent]) -> RuntimeEventKind {
@@ -2268,32 +2268,56 @@ fn push_unique_sound(sounds: &mut Vec<RuntimeSound>, sound: RuntimeSound) {
     }
 }
 
-fn describe_event(event: &GameEvent) -> Option<String> {
+fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
     match event {
-        GameEvent::EnemySpawned { enemy_id, .. } => Some(format!("spawned {enemy_id}")),
-        GameEvent::BossSpawned { boss_id, .. } => Some(format!("boss {boss_id}")),
+        GameEvent::EnemySpawned { enemy_id, .. } => Some(format!(
+            "出现 {} ({enemy_id})",
+            runtime_enemy_label(content, enemy_id)
+        )),
+        GameEvent::BossSpawned { boss_id, .. } => Some(format!(
+            "Boss 出现 {} ({boss_id})",
+            runtime_boss_label(content, boss_id)
+        )),
         GameEvent::BossPhaseChanged {
             boss_id,
             phase_index,
             ..
-        } => Some(format!("boss {boss_id} phase {}", phase_index + 1)),
+        } => Some(format!(
+            "Boss {} 进入第 {} 阶段",
+            runtime_boss_label(content, boss_id),
+            phase_index + 1
+        )),
         GameEvent::BossAbilityUsed {
             boss_id,
             ability_id,
             ..
-        } => Some(format!("boss {boss_id} uses {ability_id}")),
+        } => Some(format!(
+            "Boss {} 使用 {}",
+            runtime_boss_label(content, boss_id),
+            runtime_boss_ability_label(ability_id)
+        )),
         GameEvent::WeaponFired {
             weapon_id,
             projectile_count,
-        } => Some(format!("fired {weapon_id} x{projectile_count}")),
-        GameEvent::EnemyKilled { enemy_id, .. } => Some(format!("defeated {enemy_id}")),
-        GameEvent::XpCollected { value, .. } => Some(format!("xp +{value:.0}")),
-        GameEvent::LevelUp { level } => Some(format!("level {level}")),
-        GameEvent::UpgradeOffered { .. } => Some("upgrade offered".to_string()),
-        GameEvent::UpgradeChosen { option_id } => Some(format!("upgrade {option_id}")),
-        GameEvent::PlayerDamaged { amount } => Some(format!("damage {amount:.1}")),
-        GameEvent::ContentEventTriggered { event_id } => Some(format!("event {event_id}")),
-        GameEvent::RunEnded { terminal } => Some(format!("ended {}", terminal.kind.as_str())),
+        } => Some(format!(
+            "发射 {} x{projectile_count}",
+            runtime_weapon_label(content, weapon_id)
+        )),
+        GameEvent::EnemyKilled { enemy_id, .. } => {
+            Some(format!("击败 {}", runtime_enemy_label(content, enemy_id)))
+        }
+        GameEvent::XpCollected { value, .. } => Some(format!("糖晶 +{value:.0}")),
+        GameEvent::LevelUp { level } => Some(format!("升到 Lv.{level}")),
+        GameEvent::UpgradeOffered { .. } => Some("出现升级选择".to_string()),
+        GameEvent::UpgradeChosen { option_id } => Some(format!("选择 {option_id}")),
+        GameEvent::PlayerDamaged { amount } => Some(format!("受伤 {amount:.1}")),
+        GameEvent::ContentEventTriggered { event_id } => Some(format!(
+            "事件 {} ({event_id})",
+            runtime_event_label(content, event_id)
+        )),
+        GameEvent::RunEnded { terminal } => {
+            Some(format!("本局结束 {}", terminal_kind_label(terminal.kind)))
+        }
         GameEvent::EnemyHit { .. } | GameEvent::XpDropped { .. } => None,
     }
 }
@@ -3143,6 +3167,66 @@ fn runtime_boss_label(content: &ContentPack, boss_id: &str) -> String {
         .get(boss_id)
         .map(|boss| boss.common.name.clone())
         .unwrap_or_else(|| "未知 Boss".to_string())
+}
+
+fn runtime_enemy_label(content: &ContentPack, enemy_id: &str) -> String {
+    content
+        .enemies
+        .get(enemy_id)
+        .map(|enemy| enemy.common.name.clone())
+        .unwrap_or_else(|| enemy_id.to_string())
+}
+
+fn runtime_weapon_label(content: &ContentPack, weapon_id: &str) -> String {
+    content
+        .weapons
+        .get(weapon_id)
+        .map(|weapon| weapon.name.clone())
+        .unwrap_or_else(|| weapon_id.to_string())
+}
+
+fn runtime_event_label(content: &ContentPack, event_id: &str) -> String {
+    content
+        .events
+        .get(event_id)
+        .map(|event| event.name.clone())
+        .unwrap_or_else(|| event_id.to_string())
+}
+
+fn runtime_boss_ability_label(ability_id: &str) -> String {
+    match ability_id {
+        "dash_charge" => "直线冲撞",
+        "summon_sour_gummy" => "召唤酸味软糖",
+        "summon_bouncy_gummy" => "召唤蹦蹦软糖",
+        "summon_soda_bubble" => "召唤汽水泡泡",
+        "summon_caramel_slime" => "召唤焦糖史莱姆",
+        "summon_sticky_bear_gummy" => "召唤黏黏熊糖",
+        "summon_guard_wave" => "召唤护卫潮",
+        "split_cotton_clumps" => "分裂棉花糖团",
+        "bubble_barrage" => "汽水泡泡弹幕",
+        "soda_fountain_burst" => "汽水喷泉爆发",
+        "lay_caramel_tracks" => "铺设焦糖轨道",
+        "slow_pulse" => "减速脉冲",
+        "caramel_floor_cycle" => "焦糖地面循环",
+        "jump_shockwave" => "跳跃震波",
+        "double_jump_shockwave" => "双重跳跃震波",
+        "sour_phase_storm" => "酸味风暴",
+        "spicy_phase_storm" => "辣味风暴",
+        "soda_phase_storm" => "汽水风暴",
+        "multi_flavor_storm" => "多味风暴",
+        other => return other.replace('_', " "),
+    }
+    .to_string()
+}
+
+fn terminal_kind_label(kind: TerminalKind) -> &'static str {
+    match kind {
+        TerminalKind::Victory => "胜利",
+        TerminalKind::Defeat => "失败",
+        TerminalKind::Timeout => "超时",
+        TerminalKind::Aborted => "中止",
+        TerminalKind::InvalidState => "异常",
+    }
 }
 
 fn chapter_label(content: &ContentPack, chapter_id: &str) -> String {
@@ -5073,27 +5157,27 @@ fn write_runtime_playtest_report(
 mod tests {
     use super::{
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
-        demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
-        export_runtime_local_data, format_boss_status, format_upgrade_options,
-        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
-        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
-        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
-        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
-        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
-        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
-        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_keyboard,
-        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_pointer,
-        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
-        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
+        event_kind_for_events, export_runtime_local_data, format_boss_status,
+        format_upgrade_options, load_runtime_asset_candidate_manifest,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
+        persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
+        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
+        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
+        runtime_asset_root, runtime_can_upload, runtime_chapter_action_from_keyboard,
+        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
+        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
+        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
+        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
@@ -7941,6 +8025,53 @@ mod tests {
                 ability_id: "lay_caramel_tracks".to_string(),
             }]),
             RuntimeEventKind::Combat
+        );
+    }
+
+    #[test]
+    fn runtime_feedback_describes_events_with_content_labels() {
+        let content = ContentPack::base_demo();
+
+        assert_eq!(describe_events(&[], &content), "糖果风暴推进中");
+        assert_eq!(
+            describe_events(
+                &[GameEvent::BossSpawned {
+                    entity_id: 30,
+                    boss_id: "runaway-sugar-mixer".to_string(),
+                }],
+                &content
+            ),
+            "Boss 出现 暴走搅糖机 (runaway-sugar-mixer)"
+        );
+        assert_eq!(
+            describe_events(
+                &[GameEvent::BossAbilityUsed {
+                    entity_id: 30,
+                    boss_id: "caramel-furnace".to_string(),
+                    ability_id: "lay_caramel_tracks".to_string(),
+                }],
+                &content
+            ),
+            "Boss 焦糖熔炉 使用 铺设焦糖轨道"
+        );
+        assert_eq!(
+            describe_events(
+                &[GameEvent::EnemyKilled {
+                    entity_id: 2,
+                    enemy_id: "bouncy-gummy".to_string(),
+                }],
+                &content
+            ),
+            "击败 蹦蹦软糖"
+        );
+        assert_eq!(
+            describe_events(
+                &[GameEvent::ContentEventTriggered {
+                    event_id: "rainbow-candy-rush".to_string(),
+                }],
+                &content
+            ),
+            "事件 彩虹糖潮 (rainbow-candy-rush)"
         );
     }
 
