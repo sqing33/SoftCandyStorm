@@ -2625,14 +2625,7 @@ fn format_player_status_effects(status_effects: &[StatusEffectSnapshot]) -> Stri
         .iter()
         .filter(|effect| effect.remaining_seconds > 0.0)
         .take(3)
-        .map(|effect| {
-            format!(
-                "{} 移速 {:.0}% {:.1}s",
-                runtime_status_effect_label(&effect.kind),
-                effect.multiplier.clamp(0.0, 1.0) * 100.0,
-                effect.remaining_seconds,
-            )
-        })
+        .map(format_player_status_effect)
         .collect::<Vec<_>>();
     if active.is_empty() {
         "无".to_string()
@@ -2641,9 +2634,40 @@ fn format_player_status_effects(status_effects: &[StatusEffectSnapshot]) -> Stri
     }
 }
 
+fn format_player_status_effect(effect: &StatusEffectSnapshot) -> String {
+    match effect.kind.as_str() {
+        "slow" => format!(
+            "{} 移速 {:.0}% {:.1}s",
+            runtime_status_effect_label(&effect.kind),
+            effect.multiplier.clamp(0.0, 1.0) * 100.0,
+            effect.remaining_seconds,
+        ),
+        "pickup_boost" => format!(
+            "{} 拾取 x{:.2} {:.1}s",
+            runtime_status_effect_label(&effect.kind),
+            effect.multiplier.max(1.0),
+            effect.remaining_seconds,
+        ),
+        "damage_reduction" => format!(
+            "{} 减伤 {:.0}% {:.1}s",
+            runtime_status_effect_label(&effect.kind),
+            effect.multiplier.clamp(0.0, 1.0) * 100.0,
+            effect.remaining_seconds,
+        ),
+        _ => format!(
+            "{} x{:.2} {:.1}s",
+            runtime_status_effect_label(&effect.kind),
+            effect.multiplier,
+            effect.remaining_seconds,
+        ),
+    }
+}
+
 fn runtime_status_effect_label(kind: &str) -> String {
     match kind {
         "slow" => "减速".to_string(),
+        "pickup_boost" => "泡泡跑者".to_string(),
+        "damage_reduction" => "奶油护卫".to_string(),
         other => other.replace('-', " "),
     }
 }
@@ -8820,6 +8844,29 @@ mod tests {
         assert!(status.contains("最强减速 移速 45%"));
         assert!(status.contains("最长 7.5s"));
         assert!(status.contains("减速 移速 60% 2.5s"));
+    }
+
+    #[test]
+    fn hazard_status_renders_character_trait_statuses() {
+        let status_effects = vec![
+            StatusEffectSnapshot {
+                effect_id: "bubble-runner".to_string(),
+                kind: "pickup_boost".to_string(),
+                multiplier: 1.35,
+                remaining_seconds: 1.2,
+            },
+            StatusEffectSnapshot {
+                effect_id: "cream-guard".to_string(),
+                kind: "damage_reduction".to_string(),
+                multiplier: 0.35,
+                remaining_seconds: 2.0,
+            },
+        ];
+
+        let status = format_hazard_status(&[], &status_effects);
+
+        assert!(status.contains("泡泡跑者 拾取 x1.35 1.2s"));
+        assert!(status.contains("奶油护卫 减伤 35% 2.0s"));
     }
 
     #[test]

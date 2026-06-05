@@ -30,6 +30,10 @@ const MAX_VISIBLE_PICKUPS: usize = 16;
 const MAX_VISIBLE_PROJECTILES: usize = 48;
 const PLAYER_TRAIL_HISTORY_SECONDS: f32 = 90.0;
 const PLAYER_TRAIL_SAMPLE_INTERVAL_SECONDS: f32 = 0.5;
+const BUBBLE_RUNNER_PICKUP_BOOST_SECONDS: f32 = 1.4;
+const BUBBLE_RUNNER_PICKUP_MULTIPLIER: f32 = 1.35;
+const CREAM_GUARD_DAMAGE_REDUCTION_SECONDS: f32 = 2.5;
+const CREAM_GUARD_DAMAGE_REDUCTION_BONUS: f32 = 0.35;
 
 #[derive(Debug, Clone)]
 pub struct RunConfig {
@@ -427,6 +431,9 @@ pub struct GameCore {
     spawned_boss_events: BTreeSet<usize>,
     boss_chests_available: u32,
     pending_upgrade_options: Vec<UpgradeOffer>,
+    character_trait_id: Option<String>,
+    bubble_runner_pickup_boost_seconds: f32,
+    cream_guard_damage_reduction_seconds: f32,
     metrics: RunMetrics,
     terminal: Option<TerminalState>,
 }
@@ -453,6 +460,10 @@ impl GameCore {
                     config.character_id
                 )])
             })?;
+        let character_trait_id = character
+            .trait_definition
+            .as_ref()
+            .map(|trait_definition| trait_definition.id.clone());
         let map_definition = content.maps.get(&config.map_id).ok_or_else(|| {
             ContentError::Validation(vec![format!("missing map `{}`", config.map_id)])
         })?;
@@ -521,6 +532,9 @@ impl GameCore {
             spawned_boss_events: BTreeSet::new(),
             boss_chests_available: 0,
             pending_upgrade_options: Vec::new(),
+            character_trait_id,
+            bubble_runner_pickup_boost_seconds: 0.0,
+            cream_guard_damage_reduction_seconds: 0.0,
             metrics: RunMetrics {
                 seed,
                 tick_rate,
@@ -597,6 +611,7 @@ impl GameCore {
         self.update_player_regen(dt_seconds);
         self.update_hazards(dt_seconds, &mut events, &mut reward_hint);
         self.update_player_movement(action.movement, dt_seconds);
+        self.update_character_trait_effects(action.movement, dt_seconds);
         self.record_player_position_history(dt_seconds);
         self.update_route_echo_hazards(dt_seconds);
         self.update_wave_spawns(dt_seconds, &mut events);
@@ -671,16 +686,7 @@ impl GameCore {
                 pickup_radius: self.player.pickup_radius,
                 damage_multiplier: self.player.damage_multiplier,
                 cooldown_multiplier: self.player.cooldown_multiplier,
-                status_effects: self
-                    .player_slow_effects
-                    .iter()
-                    .map(|effect| StatusEffectSnapshot {
-                        effect_id: "movement_slow".to_string(),
-                        kind: "slow".to_string(),
-                        multiplier: effect.multiplier,
-                        remaining_seconds: effect.remaining_seconds.max(0.0),
-                    })
-                    .collect(),
+                status_effects: self.player_status_effects(),
             },
             visible_enemies: visible_enemies
                 .into_iter()
@@ -743,6 +749,40 @@ impl GameCore {
 
     pub fn fixed_dt(&self) -> FixedDt {
         FixedDt::from_tick_rate(self.config.tick_rate)
+    }
+
+    fn player_status_effects(&self) -> Vec<StatusEffectSnapshot> {
+        let mut effects = self
+            .player_slow_effects
+            .iter()
+            .map(|effect| StatusEffectSnapshot {
+                effect_id: "movement_slow".to_string(),
+                kind: "slow".to_string(),
+                multiplier: effect.multiplier,
+                remaining_seconds: effect.remaining_seconds.max(0.0),
+            })
+            .collect::<Vec<_>>();
+        if self.character_trait_id.as_deref() == Some("bubble-runner")
+            && self.bubble_runner_pickup_boost_seconds > 0.0
+        {
+            effects.push(StatusEffectSnapshot {
+                effect_id: "bubble-runner".to_string(),
+                kind: "pickup_boost".to_string(),
+                multiplier: BUBBLE_RUNNER_PICKUP_MULTIPLIER,
+                remaining_seconds: self.bubble_runner_pickup_boost_seconds,
+            });
+        }
+        if self.character_trait_id.as_deref() == Some("cream-guard")
+            && self.cream_guard_damage_reduction_seconds > 0.0
+        {
+            effects.push(StatusEffectSnapshot {
+                effect_id: "cream-guard".to_string(),
+                kind: "damage_reduction".to_string(),
+                multiplier: CREAM_GUARD_DAMAGE_REDUCTION_BONUS,
+                remaining_seconds: self.cream_guard_damage_reduction_seconds,
+            });
+        }
+        effects
     }
 
     fn update_player_slow_effects(&mut self, dt: f32) {
@@ -1632,7 +1672,7 @@ impl GameCore {
             return;
         }
 
-        let damage_reduction = self.player.damage_reduction.clamp(0.0, 0.8);
+        let damage_reduction = self.current_damage_reduction().clamp(0.0, 0.8);
         let damage = damage_per_second * dt * (1.0 - damage_reduction);
         if damage <= 0.0 {
             return;
@@ -1647,6 +1687,11 @@ impl GameCore {
             .or_insert(0.0) += damage;
         reward_hint.damage_taken_delta += damage;
         events.push(GameEvent::PlayerDamaged { amount: damage });
+        if self.character_trait_id.as_deref() == Some("cream-guard") {
+            self.cream_guard_damage_reduction_seconds = self
+                .cream_guard_damage_reduction_seconds
+                .max(CREAM_GUARD_DAMAGE_REDUCTION_SECONDS);
+        }
     }
 
     fn apply_player_slow(&mut self, multiplier: f32, duration_seconds: f32) {
@@ -1669,9 +1714,66 @@ impl GameCore {
         }
     }
 
+    fn update_character_trait_effects(&mut self, movement: Vec2, dt: f32) {
+        self.bubble_runner_pickup_boost_seconds =
+            (self.bubble_runner_pickup_boost_seconds - dt).max(0.0);
+        self.cream_guard_damage_reduction_seconds =
+            (self.cream_guard_damage_reduction_seconds - dt).max(0.0);
+
+        if self.character_trait_id.as_deref() == Some("bubble-runner")
+            && movement.length_squared() > 0.05 * 0.05
+        {
+            self.bubble_runner_pickup_boost_seconds = self
+                .bubble_runner_pickup_boost_seconds
+                .max(BUBBLE_RUNNER_PICKUP_BOOST_SECONDS);
+        }
+    }
+
+    fn character_pickup_radius_multiplier(&self) -> f32 {
+        if self.character_trait_id.as_deref() == Some("bubble-runner")
+            && self.bubble_runner_pickup_boost_seconds > 0.0
+        {
+            BUBBLE_RUNNER_PICKUP_MULTIPLIER
+        } else {
+            1.0
+        }
+    }
+
+    fn current_damage_reduction(&self) -> f32 {
+        let trait_bonus = if self.character_trait_id.as_deref() == Some("cream-guard")
+            && self.cream_guard_damage_reduction_seconds > 0.0
+        {
+            CREAM_GUARD_DAMAGE_REDUCTION_BONUS
+        } else {
+            0.0
+        };
+        self.player.damage_reduction + trait_bonus
+    }
+
+    fn apply_level_up_character_trait_bonus(
+        &mut self,
+        events: &mut Vec<GameEvent>,
+        reward_hint: &mut RewardHint,
+    ) {
+        if self.character_trait_id.as_deref() != Some("sweet-starter") || self.player.level % 5 != 0
+        {
+            return;
+        }
+
+        let bonus = (8.0 + self.player.level as f32 * 2.0).floor();
+        self.player.xp += bonus;
+        self.metrics.xp_collected += bonus;
+        reward_hint.xp_delta += bonus;
+        events.push(GameEvent::XpCollected {
+            entity_id: 0,
+            value: bonus,
+        });
+    }
+
     fn collect_pickups(&mut self, events: &mut Vec<GameEvent>, reward_hint: &mut RewardHint) {
         let mut collected = Vec::new();
         let pickup_radius = self.player.pickup_radius
+            * self.character_pickup_radius_multiplier()
             * self
                 .active_event_multiplier("pickup_radius_multiplier")
                 .max(0.1);
@@ -1720,6 +1822,7 @@ impl GameCore {
         events.push(GameEvent::LevelUp {
             level: self.player.level,
         });
+        self.apply_level_up_character_trait_bonus(events, reward_hint);
 
         self.pending_upgrade_options = self.generate_upgrade_options();
         events.push(GameEvent::UpgradeOffered {
@@ -3983,6 +4086,81 @@ mod tests {
         assert!(core.player.damage_reduction > 0.0);
         assert!(core.player.projectile_size_multiplier > 1.0);
         assert!(core.player.effect_duration_multiplier > 1.0);
+    }
+
+    #[test]
+    fn sweet_starter_grants_bonus_xp_on_level_milestones() {
+        let mut core = GameCore::reset(RunConfig::default());
+        core.player.level = 4;
+        core.player.xp = xp_required(4);
+        let mut events = Vec::new();
+        let mut reward_hint = RewardHint::default();
+
+        core.process_level_ups(&mut events, &mut reward_hint);
+
+        assert_eq!(core.player.level, 5);
+        assert_eq!(core.player.xp, 18.0);
+        assert_eq!(core.metrics.xp_collected, 18.0);
+        assert_eq!(reward_hint.xp_delta, 18.0);
+        assert!(events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::XpCollected {
+                    entity_id: 0,
+                    value
+                } if (*value - 18.0).abs() <= f32::EPSILON
+            )
+        }));
+    }
+
+    #[test]
+    fn bubble_runner_movement_temporarily_boosts_pickup_radius() {
+        let mut core = GameCore::reset(RunConfig {
+            character_id: "bubble-courier".to_string(),
+            starting_loadout: StartingLoadout::default(),
+            ..RunConfig::default()
+        });
+        core.pickups.push(Pickup {
+            entity_id: 999,
+            pickup_type: PickupType::Xp,
+            position: Vec2::new(118.0, 0.0),
+            value: 5.0,
+            radius: 5.0,
+        });
+
+        core.step(
+            PlayerAction {
+                movement: Vec2::new(1.0, 0.0),
+                upgrade_choice: None,
+            },
+            core.fixed_dt(),
+        );
+
+        assert!(core.pickups.is_empty());
+        assert!(core.metrics.xp_collected > 5.0);
+        assert!(core.snapshot().player.status_effects.iter().any(|effect| {
+            effect.kind == "pickup_boost" && effect.effect_id == "bubble-runner"
+        }));
+    }
+
+    #[test]
+    fn cream_guard_reduces_followup_damage_after_hit() {
+        let mut core = GameCore::reset(RunConfig {
+            character_id: "cream-knight".to_string(),
+            starting_loadout: StartingLoadout::default(),
+            ..RunConfig::default()
+        });
+        let mut events = Vec::new();
+        let mut reward_hint = RewardHint::default();
+
+        core.apply_player_damage(10.0, 1.0, "contact", &mut events, &mut reward_hint);
+        core.apply_player_damage(10.0, 1.0, "contact", &mut events, &mut reward_hint);
+
+        assert!((core.metrics.damage_taken - 16.5).abs() <= 0.001);
+        assert!((core.player.health - (core.player.max_health - 16.5)).abs() <= 0.001);
+        assert!(core.snapshot().player.status_effects.iter().any(|effect| {
+            effect.kind == "damage_reduction" && effect.effect_id == "cream-guard"
+        }));
     }
 
     #[test]
