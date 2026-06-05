@@ -3413,6 +3413,10 @@ fn projectile_visual_style(
 
     let color = if projectile_is_trap(projectile.weapon_id.as_str()) {
         Color::srgb(1.0, 0.38, 0.74)
+    } else if projectile_is_meteor(projectile.weapon_id.as_str()) {
+        Color::srgba(1.0, 0.82, 0.28, 0.88)
+    } else if projectile_is_fortress(projectile.weapon_id.as_str()) {
+        Color::srgba(1.0, 0.78, 0.88, 0.88)
     } else if projectile_is_bubble(projectile.weapon_id.as_str()) {
         Color::srgba(0.54, 0.90, 1.0, 0.86)
     } else if projectile_is_cold(projectile.weapon_id.as_str()) {
@@ -3441,6 +3445,14 @@ fn projectile_is_trap(weapon_id: &str) -> bool {
         weapon_id,
         "popping-candy-mine" | "popping-candy-chain-reaction"
     )
+}
+
+fn projectile_is_meteor(weapon_id: &str) -> bool {
+    matches!(weapon_id, "rainbow-candy-meteor")
+}
+
+fn projectile_is_fortress(weapon_id: &str) -> bool {
+    matches!(weapon_id, "marshmallow-fortress")
 }
 
 fn projectile_is_bubble(weapon_id: &str) -> bool {
@@ -10420,6 +10432,26 @@ mod tests {
         assert_ne!(style.color, Color::WHITE);
         assert_eq!(style.center, projectile.position);
         assert_eq!(style.size, Vec2::splat(144.0));
+    }
+
+    #[test]
+    fn projectile_visual_style_tints_evolution_projectiles() {
+        for (entity_id, weapon_id) in [(6, "rainbow-candy-meteor"), (7, "marshmallow-fortress")] {
+            let projectile = ProjectileSnapshot {
+                entity_id,
+                weapon_id: weapon_id.to_string(),
+                position: CoreVec2::new(18.0, -12.0),
+                velocity: CoreVec2::ZERO,
+                radius: 28.0,
+            };
+
+            let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+            assert!(style.textured);
+            assert_ne!(style.color, Color::WHITE);
+            assert_eq!(style.center, projectile.position);
+            assert_eq!(style.size, Vec2::splat(56.0));
+        }
     }
 
     #[test]
