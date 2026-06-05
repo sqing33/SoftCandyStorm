@@ -1,0 +1,43 @@
+{
+  "id": "rainbow-candy-rush",
+  "name": "彩虹糖潮",
+  "version": 2,
+  "rarity": "rare",
+  "tags": ["event", "risk-reward", "xp", "route-counter"],
+  "description": "短时间内糖晶掉落增加，敌人生成也会加快；如果玩家反复踩回旧路线，彩虹糖光会短暂照出焦糖回声印。",
+  "trigger": {
+    "type": "time_window",
+    "start_second": 180,
+    "end_second": 480,
+    "chance": 0.14
+  },
+  "effects": [
+    {
+      "type": "xp_multiplier",
+      "value": 1.4,
+      "duration_seconds": 25
+    },
+    {
+      "type": "spawn_rate_multiplier",
+      "value": 1.25,
+      "duration_seconds": 25
+    },
+    {
+      "type": "route_echo_hazard",
+      "value": 2,
+      "duration_seconds": 14,
+      "hazard_duration_seconds": 3.2,
+      "sample_interval_seconds": 2.2,
+      "history_seconds": 18,
+      "trigger_radius": 108,
+      "radius": 54,
+      "slow_multiplier": 0.82,
+      "damage_per_second": 0
+    }
+  ],
+  "visual_description": "天空落下彩虹糖晶，地面出现亮色糖光；被重复踩回的旧路线会泛起浅金焦糖脚印。",
+  "sfx_description": "连续亮晶晶铃声、轻微焦糖冒泡声，以及短促的黏糖铺开声。",
+  "unlock": {
+    "type": "discover"
+  }
+}

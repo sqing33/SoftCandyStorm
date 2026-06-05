@@ -1,0 +1,61 @@
+{
+  "batch_id": "2026-06-05_demo_buildcraft_repair_v57_candidates",
+  "generated_at": "2026-06-05",
+  "generator": {
+    "tool": "codex",
+    "source": "本地 Goal 模式可玩内容 v57 彩虹糖潮路线回声覆盖修复"
+  },
+  "source_docs": [
+    "docs/04_内容系统与素材库.md",
+    "docs/10_AI内容生成流水线.md",
+    "docs/13_内容数据Schema设计.md",
+    "docs/15_经济与数值平衡模型.md"
+  ],
+  "base_content_dir": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+  "target_gap": {
+    "phase": "Playable Demo buildcraft route counter repair v57",
+    "goal": "在 v51 基础上覆盖已有 rainbow-candy-rush 事件，利用 180 秒事件槽追加路线回声危险区，在不新增事件 id 的前提下恢复 v55 对 RouteBot 的修复效果。"
+  },
+  "project_rules": {
+    "candidate_only": true,
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "required_next_steps": [
+      "partial candidate validation with event override coverage",
+      "materialize full content pack with events overlay",
+      "materialized pack preflight",
+      "static balance budget review",
+      "game_harness validate-content",
+      "isolated game_harness validate-candidates",
+      "Bot matrix 300s 10 seed",
+      "playable content coverage audit after matrix pass",
+      "human design review and manual playtest before acceptance"
+    ]
+  },
+  "contents": [
+    {
+      "id": "rainbow-candy-rush",
+      "type": "event",
+      "path": "events/rainbow-candy-rush.json",
+      "role": "覆盖已有 180 秒彩虹糖潮事件，追加 RouteBot 重复路线反制，同时避免新增独立事件。"
+    }
+  ],
+  "diagnostic_evidence": {
+    "baseline_candidate": "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v51_full_pack",
+    "baseline_matrix": "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md",
+    "v55_failure_case": "harness/failed_cases/fail_20260605_001_demo_buildcraft_repair_v55_random_kite_regression.json",
+    "v56_failure_case": "harness/failed_cases/fail_20260605_002_demo_buildcraft_repair_v56_route_underrepair.json",
+    "stabilization_window_diagnostics": "harness/reports/2026-06-04_demo_buildcraft_repair_v51_route_stabilization_window_diagnostics_001/summary.md"
+  },
+  "batch_gate": {
+    "decision": "generated_candidate",
+    "accepted_content": false,
+    "runtime_integrated": false,
+    "notes": [
+      "本批次以 v51 full pack 为基线。",
+      "本批次只覆盖事件 rainbow-candy-rush，不新增事件 id，不覆盖波次、敌人、武器、被动、Boss、地图或 Runtime 正式内容。",
+      "事件保留原风险收益效果，并追加无直接伤害的路线回声危险区。",
+      "本批次不调整门禁阈值；若 Bot 矩阵仍失败或误伤其他 Bot，应记录 failure case 并继续 repair。"
+    ]
+  }
+}
