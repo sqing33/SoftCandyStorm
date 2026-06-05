@@ -1,0 +1,24 @@
+{
+  "case_id": "fail_20260605_001",
+  "category": "balance",
+  "content_id": "2026-06-04_demo_buildcraft_repair_v55_full_pack",
+  "seed": "72000-72009",
+  "bot": "RandomBot,KiteBot",
+  "time_seconds": 300.0,
+  "symptom": "v55 adds the route-echo-caramel-mark event candidate and passes partial candidate validation, materialized-pack preflight, static budget validation, GameCore validate-content, and isolated game_harness validate-candidates. In the 300s / 10-seed all-Bot matrix on seeds 72000-72009, RouteBot improves from the v51/v54 residual 40.0% win rate to 30.0%, which is inside the low-skill 10%-35% target. However, RandomBot rises from the v51 0.0% baseline to 20.0% against the random robustness 0%-15% target, and KiteBot rises from the v51 60.0% baseline to 90.0% against the high-skill 45%-75% target.",
+  "root_cause": "The route_echo_hazard event repairs the fixed-route exploit but the v55 candidate is too narrow and too seed-sensitive for full-pack promotion. It introduces an extra midgame event/chance evaluation and non-damaging slow hazards around repeated path positions; this is sufficient to disrupt RouteBot's repeated lane, but the same 10-seed matrix shows RandomBot and KiteBot landing in easier terminal outcomes. The exact per-seed mechanism still needs replay or telemetry inspection, but current evidence proves v55 cannot be accepted as a balanced content repair because it trades the RouteBot residual for RandomBot and KiteBot gate regressions.",
+  "fix": "Do not promote v55 to simulated_candidates, playtest_candidates, accepted_content, or Runtime formal content. Preserve the route-echo idea as a repair direction because it moved RouteBot into target, but the next candidate must either reduce seed drift from the extra event, add a complementary non-route terminal pressure that affects KiteBot without overcorrecting low/mid-skill bots, or tune the route echo trigger/effect so normal kiting and random movement are not handed easier outcomes. The next matrix must keep RouteBot inside 10%-35% while returning RandomBot to 0%-15% and KiteBot to 45%-75%.",
+  "validation": "Evidence is recorded in harness/reports/2026-06-04_demo_buildcraft_repair_v55_validate_partial_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v55_materialize_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v55_materialized_preflight_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v55_static_budget_001/summary.md, harness/reports/2026-06-04_demo_buildcraft_repair_v55_validate_candidates_001/summary.md, and harness/reports/2026-06-04_demo_buildcraft_repair_v55_matrix_300s_10seed_72000_001/summary.md. The failure case structure was validated with python3 tools/validate_failure_cases.py harness/failed_cases.",
+  "diagnostics": [
+    "harness/generated_candidate_patches/2026-06-04_demo_buildcraft_repair_v55_candidates/README.md",
+    "harness/generated_candidates/2026-06-04_demo_buildcraft_repair_v55_full_pack/metadata/materialization.json",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v51_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_validate_partial_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_materialize_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_materialized_preflight_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_static_budget_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_validate_candidates_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_matrix_300s_10seed_72000_001/summary.md",
+    "harness/reports/2026-06-04_demo_buildcraft_repair_v55_matrix_300s_10seed_72000_001/metrics.json"
+  ]
+}
