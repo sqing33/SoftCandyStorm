@@ -141,6 +141,7 @@ mod tests {
                 width: 2600.0,
                 height: 1700.0,
             },
+            active_event_effects: Vec::new(),
             metrics_partial: game_core::MetricsPartial::default(),
         }
     }
