@@ -1,0 +1,45 @@
+{
+  "id": "caramel-quake",
+  "name": "焦糖地震",
+  "version": 2,
+  "rarity": "rare",
+  "tags": ["event", "hazard", "movement", "control", "route-counter"],
+  "description": "地面短暂震动并出现焦糖危险区；如果玩家反复踩回旧路线，焦糖还会记住脚印并短暂黏住那条路线。",
+  "trigger": {
+    "type": "time_window",
+    "start_second": 240,
+    "end_second": 560,
+    "chance": 0.10
+  },
+  "effects": [
+    {
+      "type": "spawn_hazard",
+      "value": 5,
+      "duration_seconds": 10,
+      "radius": 72,
+      "slow_multiplier": 0.55
+    },
+    {
+      "type": "spawn_enemy",
+      "value": 2,
+      "enemy_id": "caramel-slime"
+    },
+    {
+      "type": "route_echo_hazard",
+      "value": 2,
+      "duration_seconds": 12,
+      "hazard_duration_seconds": 3,
+      "sample_interval_seconds": 2.2,
+      "history_seconds": 23.2,
+      "trigger_radius": 96,
+      "radius": 50,
+      "slow_multiplier": 0.80,
+      "damage_per_second": 0
+    }
+  ],
+  "visual_description": "金棕焦糖裂纹从地面冒出，随后形成数个亮面黏糖圈；重复经过的旧路线会泛起半透明浅金脚印。",
+  "sfx_description": "低频地面震动、焦糖冒泡、黏糖铺开的声音，以及旧路线被点亮时的轻微提示铃声。",
+  "unlock": {
+    "type": "discover"
+  }
+}
