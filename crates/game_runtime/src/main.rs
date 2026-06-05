@@ -3017,6 +3017,17 @@ fn render_meta_chapter_panel(
             runtime_boss_label(content, &chapter.boss_id),
             chapter.boss_id,
         ));
+        if let Some(map) = content.maps.get(&chapter.map_id) {
+            lines.push(format!(
+                "地图说明 {}  标签 {}",
+                map.description,
+                format_upgrade_tags(&map.tags)
+            ));
+        }
+        if let Some(boss) = content.bosses.get(&chapter.boss_id) {
+            lines.push(format!("Boss说明 {}", boss.common.description));
+            lines.push(format!("应对 {}", boss.common.counterplay));
+        }
         let goal_lines = runtime_chapter_goal_lines(&chapter.chapter_id, &chapter.completed_goals);
         lines.push(format!("目标\n{}", goal_lines.join("\n")));
         if chapter.unlocked {
@@ -7545,6 +7556,9 @@ mod tests {
         assert!(panel.contains("G 巡逻已解锁章节"));
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
         assert!(panel.contains("frosting-grassland"));
+        assert!(panel.contains("地图说明 覆盖糖霜的开阔草地"));
+        assert!(panel.contains("Boss说明"));
+        assert!(panel.contains("应对"));
         assert!(panel.contains("survive-10-minutes"));
         assert!(panel.contains("本局完成"));
     }
