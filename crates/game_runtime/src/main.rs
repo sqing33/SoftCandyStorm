@@ -5,10 +5,10 @@ use bevy::{
     window::PrimaryWindow,
 };
 use game_core::{
-    BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, Difficulty, FixedDt, GameCore,
-    GameEvent, HazardSnapshot, MetaCodexEntry, MetaProgress, MetaRunSummary, MetaSettlementReport,
-    PlayerAction, RunConfig, RunMetrics, RunSnapshot, StartingLoadout, StatusEffectSnapshot,
-    TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack, Difficulty, EnemySnapshot,
+    FixedDt, GameCore, GameEvent, HazardSnapshot, MetaCodexEntry, MetaProgress, MetaRunSummary,
+    MetaSettlementReport, PlayerAction, RunConfig, RunMetrics, RunSnapshot, StartingLoadout,
+    StatusEffectSnapshot, TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2296,6 +2296,47 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     )
 }
 
+fn format_enemy_swarm_status(enemies: &[EnemySnapshot], content: &ContentPack) -> String {
+    if enemies.is_empty() {
+        return "敌群 无".to_string();
+    }
+
+    let mut counts = BTreeMap::<String, usize>::new();
+    let mut boss_or_elite_count = 0usize;
+    let mut max_threat: f32 = 0.0;
+    for enemy in enemies {
+        *counts.entry(enemy.enemy_id.clone()).or_default() += 1;
+        if enemy.is_boss || enemy.is_elite {
+            boss_or_elite_count += 1;
+        }
+        max_threat = max_threat.max(enemy.threat.max(0.0));
+    }
+
+    let mut entries = counts.into_iter().collect::<Vec<_>>();
+    entries.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
+    let mut visible = entries
+        .iter()
+        .take(3)
+        .map(|(enemy_id, count)| format!("{} x{}", runtime_enemy_label(content, enemy_id), count))
+        .collect::<Vec<_>>();
+    if entries.len() > visible.len() {
+        visible.push(format!("+{} 类", entries.len() - visible.len()));
+    }
+
+    let special = if boss_or_elite_count > 0 {
+        format!("  精英/Boss {}", boss_or_elite_count)
+    } else {
+        String::new()
+    };
+    format!(
+        "敌群 {}  可见 {}  最高威胁 {:.1}{}",
+        visible.join(", "),
+        enemies.len(),
+        max_threat,
+        special,
+    )
+}
+
 fn format_hazard_status(
     hazards: &[HazardSnapshot],
     status_effects: &[StatusEffectSnapshot],
@@ -2437,10 +2478,11 @@ fn update_hud(
         let map_style = map_visual_style(&snapshot.map.map_id);
         let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
         let build_status = format_build_status(&snapshot.build, &state.content);
+        let enemy_status = format_enemy_swarm_status(&snapshot.visible_enemies, &state.content);
         let hazard_status =
             format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}\nMap {} ({})\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -2450,10 +2492,10 @@ fn update_hud(
             snapshot.player.xp,
             snapshot.player.xp_to_next_level,
             snapshot.metrics_partial.kills,
-            snapshot.visible_enemies.len(),
             map_style.display_name,
             snapshot.map.map_id,
             boss_status,
+            enemy_status,
             hazard_status,
             build_status,
             state.last_event,
@@ -5659,12 +5701,12 @@ mod tests {
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
-        format_hazard_status, format_terminal_overlay, format_upgrade_options,
-        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
-        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
-        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        render_meta_progress_panel, resolve_runtime_content_selection,
+        format_enemy_swarm_status, format_hazard_status, format_terminal_overlay,
+        format_upgrade_options, load_runtime_asset_candidate_manifest,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
+        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
         runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
@@ -7485,6 +7527,68 @@ mod tests {
         assert!(status.contains("runaway-sugar-mixer"));
         assert!(status.contains("HP 125/250"));
         assert!(status.contains("50%"));
+    }
+
+    #[test]
+    fn enemy_swarm_status_renders_visible_enemy_mix() {
+        let content = ContentPack::base_demo();
+        let enemies = vec![
+            EnemySnapshot {
+                entity_id: 1,
+                enemy_id: "bouncy-gummy".to_string(),
+                position: CoreVec2::ZERO,
+                velocity: CoreVec2::ZERO,
+                health: 10.0,
+                max_health: 10.0,
+                radius: 12.0,
+                threat: 1.0,
+                behavior: EnemyBehavior::Chase,
+                is_boss: false,
+                is_elite: false,
+            },
+            EnemySnapshot {
+                entity_id: 2,
+                enemy_id: "bouncy-gummy".to_string(),
+                position: CoreVec2::new(10.0, 0.0),
+                velocity: CoreVec2::ZERO,
+                health: 10.0,
+                max_health: 10.0,
+                radius: 12.0,
+                threat: 1.0,
+                behavior: EnemyBehavior::Chase,
+                is_boss: false,
+                is_elite: false,
+            },
+            EnemySnapshot {
+                entity_id: 3,
+                enemy_id: "caramel-slime".to_string(),
+                position: CoreVec2::new(20.0, 0.0),
+                velocity: CoreVec2::ZERO,
+                health: 40.0,
+                max_health: 40.0,
+                radius: 20.0,
+                threat: 2.8,
+                behavior: EnemyBehavior::Chase,
+                is_boss: false,
+                is_elite: true,
+            },
+        ];
+
+        let status = format_enemy_swarm_status(&enemies, &content);
+
+        assert!(status.contains("蹦蹦软糖 x2"));
+        assert!(status.contains("焦糖史莱姆 x1"));
+        assert!(status.contains("可见 3"));
+        assert!(status.contains("最高威胁 2.8"));
+        assert!(status.contains("精英/Boss 1"));
+    }
+
+    #[test]
+    fn enemy_swarm_status_renders_empty_state() {
+        assert_eq!(
+            format_enemy_swarm_status(&[], &ContentPack::base_demo()),
+            "敌群 无"
+        );
     }
 
     #[test]
