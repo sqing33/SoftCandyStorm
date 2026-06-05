@@ -183,6 +183,7 @@ struct RuntimeCli {
     delete_save: bool,
     story_codex_ui_candidate_manifest: Option<PathBuf>,
     asset_runtime_candidate_manifest: Option<PathBuf>,
+    unlock_all_content: bool,
 }
 
 impl Default for RuntimeCli {
@@ -222,6 +223,7 @@ impl Default for RuntimeCli {
             delete_save: false,
             story_codex_ui_candidate_manifest: None,
             asset_runtime_candidate_manifest: None,
+            unlock_all_content: false,
         }
     }
 }
@@ -926,7 +928,7 @@ fn setup_runtime(
                     .unwrap_or_else(|| "demo defaults".to_string())
             )
         });
-    let meta_progress = runtime_save_state.meta_progress.clone();
+    let mut meta_progress = runtime_save_state.meta_progress.clone();
     let base_ui_state = runtime_save_state.base_ui_state.clone();
     let story_codex_ui_candidate = load_runtime_story_codex_ui_candidate_manifest(&cli)
         .unwrap_or_else(|error| {
@@ -940,6 +942,9 @@ fn setup_runtime(
             cli.content_dir.display()
         )
     });
+    if cli.unlock_all_content {
+        unlock_runtime_content_for_session(&mut meta_progress, &content);
+    }
     let config = run_config_from_cli(&cli, &content);
     let core = GameCore::reset_with_content(config.clone(), content.clone())
         .expect("runtime content must pass the same GameCore validation as headless runs");
@@ -3531,6 +3536,39 @@ fn runtime_unlocked_map_ids(progress: &MetaProgress, content: &ContentPack) -> V
         .collect()
 }
 
+fn unlock_runtime_content_for_session(progress: &mut MetaProgress, content: &ContentPack) {
+    progress
+        .unlocks
+        .characters
+        .extend(content.characters.keys().cloned());
+    progress
+        .unlocks
+        .weapons
+        .extend(content.weapons.keys().cloned());
+    progress
+        .unlocks
+        .passives
+        .extend(content.passives.keys().cloned());
+    progress.unlocks.maps.extend(content.maps.keys().cloned());
+    progress
+        .unlocks
+        .evolutions
+        .extend(content.evolutions.keys().cloned());
+    progress
+        .unlocks
+        .events
+        .extend(content.events.keys().cloned());
+    progress
+        .unlocks
+        .chapters
+        .extend(content.maps.keys().cloned());
+    for (chapter_id, chapter) in &mut progress.chapters {
+        if content.maps.contains_key(&chapter.map_id) || content.maps.contains_key(chapter_id) {
+            chapter.unlocked = true;
+        }
+    }
+}
+
 fn next_runtime_selection_id(ids: &[String], current_id: &str) -> Option<String> {
     if ids.is_empty() {
         return None;
@@ -3755,6 +3793,9 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
                 if let Some(value) = args.next() {
                     cli.asset_runtime_candidate_manifest = Some(PathBuf::from(value));
                 }
+            }
+            "--unlock-all-content" => {
+                cli.unlock_all_content = true;
             }
             _ => {}
         }
@@ -4907,8 +4948,9 @@ mod tests {
         runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
         runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
         runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, write_runtime_privacy_settings,
-        write_runtime_save_state, write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
+        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        write_runtime_privacy_settings, write_runtime_save_state,
+        write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
@@ -6379,6 +6421,13 @@ mod tests {
     }
 
     #[test]
+    fn parse_runtime_cli_accepts_unlock_all_content() {
+        let cli = parse_runtime_cli(["--unlock-all-content".to_string()]);
+
+        assert!(cli.unlock_all_content);
+    }
+
+    #[test]
     fn runtime_selection_helpers_only_cycle_unlocked_content() {
         let mut progress = MetaProgress::demo_start();
         progress
@@ -6405,6 +6454,22 @@ mod tests {
             runtime_character_starting_loadout(&content, "bubble-courier").weapons,
             ["soda-bubble-pop"]
         );
+    }
+
+    #[test]
+    fn unlock_all_content_exposes_full_runtime_roster_for_session() {
+        let content = ContentPack::base_demo();
+        let mut progress = MetaProgress::demo_start();
+
+        unlock_runtime_content_for_session(&mut progress, &content);
+
+        assert_eq!(runtime_unlocked_character_ids(&progress, &content).len(), 5);
+        assert_eq!(runtime_unlocked_map_ids(&progress, &content).len(), 6);
+        assert!(progress.unlocks.weapons.contains("soda-fountain"));
+        assert!(progress.unlocks.passives.contains("bubble-shoes"));
+        assert!(progress.unlocks.evolutions.contains("soda-volcano"));
+        assert!(progress.unlocks.events.contains("rainbow-candy-rush"));
+        assert!(progress.chapters.values().all(|chapter| chapter.unlocked));
     }
 
     #[test]

@@ -320,6 +320,7 @@ def build_guide(repo_root: Path, content_dir: Path = CONTENT_DIR) -> dict[str, A
         "quick_play_entrypoints": [
             "python3 harness/playtest/play_current_candidate.py --dry-run",
             "python3 harness/playtest/play_current_candidate.py",
+            "python3 harness/playtest/play_current_candidate.py --sandbox",
             "python3 harness/playtest/play_current_candidate.py --list",
         ],
         "quick_play_presets": [

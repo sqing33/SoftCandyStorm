@@ -66,6 +66,7 @@ python3 harness/playtest/create_current_playable_content_guide.py
 python3 harness/playtest/audit_current_playable_content_coverage.py --allow-repair
 python3 harness/playtest/play_current_candidate.py --dry-run
 python3 harness/playtest/play_current_candidate.py
+python3 harness/playtest/play_current_candidate.py --sandbox
 python3 harness/playtest/play_current_candidate.py --list
 python3 harness/playtest/run_current_content_tour.py --list
 python3 harness/playtest/run_current_content_tour.py --next --dry-run
@@ -87,6 +88,11 @@ launches `jar-keeper` on `frosting-grassland` against the current candidate
 pack and writes a `v61_quick_play_default` report under
 `harness/telemetry/local/`. Use `--list` for speed, summon, control, defense,
 and final-pressure presets.
+
+Use `play_current_candidate.py --sandbox` when the goal is free local sampling:
+Runtime unlocks all current-candidate characters and maps for a separate local
+sandbox save, so F5 can cycle the whole v61 playable roster without promoting
+content or changing acceptance gates.
 
 Use `run_current_content_tour.py` to cover all 6 maps and all 5 playable
 characters through optional human-run sessions. These runs are repair triage

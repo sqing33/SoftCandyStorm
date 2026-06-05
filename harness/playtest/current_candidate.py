@@ -22,6 +22,7 @@ DEFAULT_CAPTURE_INTERVAL = 2
 REPORT_PREFIX_QUICK_PLAY = "harness/telemetry/local/v61_quick_play"
 REPORT_PREFIX_CONTENT_TOUR = "harness/telemetry/local/v61_content_tour"
 REPORT_PREFIX_MANUAL_PLAYTEST = "harness/telemetry/local/v61_manual_playtest"
+SANDBOX_SAVE_PATH = Path("harness/telemetry/local/v61_playable_sandbox_profile.json")
 
 FORBIDDEN_MANUAL_FLAGS = {
     "--demo-input",
@@ -168,6 +169,7 @@ def build_runtime_command(
     seconds: int = DEFAULT_SECONDS,
     capture_interval: int = DEFAULT_CAPTURE_INTERVAL,
     release: bool = False,
+    runtime_flags: tuple[str, ...] = (),
 ) -> list[str]:
     command = ["cargo", "run"]
     if release:
@@ -191,6 +193,7 @@ def build_runtime_command(
             player_skill,
         ]
     )
+    command.extend(runtime_flags)
     if report_path is not None:
         command.extend(
             [

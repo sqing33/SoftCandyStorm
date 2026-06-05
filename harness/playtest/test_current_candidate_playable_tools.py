@@ -33,6 +33,7 @@ from current_candidate import (  # noqa: E402
     FORBIDDEN_MANUAL_FLAGS,
     MANUAL_PLAYTEST_RUNS,
     QUICK_PLAY_PRESETS,
+    SANDBOX_SAVE_PATH,
 )
 from check_current_manual_playtest_status import build_report as build_manual_status_report  # noqa: E402
 from create_current_human_review_worksheet import build_markdown as build_worksheet_markdown  # noqa: E402
@@ -103,17 +104,21 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
 
     def test_runtime_commands_target_v61_without_automation_flags(self) -> None:
         quick_command = build_quick_play_command(PRESET_BY_ID["default"])
+        sandbox_command = build_quick_play_command(PRESET_BY_ID["default"], sandbox=True)
         tour_command = build_tour_command(RUN_BY_ID["soda_bubble_courier"])
         manual_command = build_manual_playtest_command(MANUAL_RUN_BY_ID["speed_soda_bubble_courier"])
 
-        for command in (quick_command, tour_command, manual_command):
+        for command in (quick_command, sandbox_command, tour_command, manual_command):
             self.assertIn(str(CONTENT_DIR), command)
             for flag in FORBIDDEN_MANUAL_FLAGS:
                 self.assertNotIn(flag, command)
         self.assertIn("harness/telemetry/local/v61_quick_play_default.json", quick_command)
+        self.assertIn("--unlock-all-content", sandbox_command)
+        self.assertIn(str(SANDBOX_SAVE_PATH), sandbox_command)
         self.assertIn("harness/telemetry/local/v61_content_tour_soda_bubble_courier.json", tour_command)
         self.assertIn("harness/telemetry/local/v61_manual_playtest_speed_soda_bubble_courier.json", manual_command)
         validate_quick_play_command(quick_command)
+        validate_quick_play_command(sandbox_command)
         validate_tour_command(tour_command)
         validate_manual_playtest_command(manual_command)
 
@@ -129,6 +134,17 @@ class CurrentPlayableCandidateToolTests(unittest.TestCase):
         self.assertIn("cargo run -p game_runtime", quick.stdout)
         self.assertIn("--content-dir harness/generated_candidates/2026-06-05_demo_buildcraft_repair_v61_full_pack", quick.stdout)
         self.assertIn("--character-id jar-keeper", quick.stdout)
+
+        sandbox = subprocess.run(
+            [sys.executable, str(QUICK_PLAY_SCRIPT), "--sandbox", "--dry-run"],
+            cwd=REPO_ROOT,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(sandbox.returncode, 0, sandbox.stderr)
+        self.assertIn("--unlock-all-content", sandbox.stdout)
+        self.assertIn(str(SANDBOX_SAVE_PATH), sandbox.stdout)
 
         tour = subprocess.run(
             [sys.executable, str(TOUR_SCRIPT), "soda_bubble_courier", "--dry-run"],

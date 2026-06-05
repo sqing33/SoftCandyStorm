@@ -15,6 +15,7 @@ from current_candidate import (
     DEFAULT_SECONDS,
     QUICK_PLAY_PRESETS,
     QuickPlayPreset,
+    SANDBOX_SAVE_PATH,
     build_runtime_command,
     shell_quote,
     validate_human_runtime_command,
@@ -34,7 +35,15 @@ def build_quick_play_command(
     capture_interval: int = DEFAULT_CAPTURE_INTERVAL,
     release: bool = False,
     report: bool = True,
+    sandbox: bool = False,
 ) -> list[str]:
+    runtime_flags: tuple[str, ...] = ()
+    if sandbox:
+        runtime_flags = (
+            "--unlock-all-content",
+            "--save-file",
+            str(SANDBOX_SAVE_PATH),
+        )
     return build_runtime_command(
         character_id=preset.character_id,
         map_id=preset.map_id,
@@ -44,6 +53,7 @@ def build_quick_play_command(
         seconds=seconds,
         capture_interval=capture_interval,
         release=release,
+        runtime_flags=runtime_flags,
     )
 
 
@@ -86,6 +96,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="Print the command without launching Runtime")
     parser.add_argument("--release", action="store_true", help="Use cargo run --release")
     parser.add_argument("--no-report", action="store_true", help="Do not write a local quick-play Runtime report")
+    parser.add_argument(
+        "--sandbox",
+        action="store_true",
+        help="Unlock all current-candidate characters/maps for this local sandbox save",
+    )
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT, help=argparse.SUPPRESS)
     parser.add_argument("--seconds", type=int, default=DEFAULT_SECONDS, help="Target run duration in seconds")
     parser.add_argument(
@@ -114,8 +129,11 @@ def main() -> int:
         capture_interval=args.capture_interval,
         release=args.release,
         report=not args.no_report,
+        sandbox=args.sandbox,
     )
     validate_quick_play_command(command)
+    if args.sandbox:
+        (args.repo_root / SANDBOX_SAVE_PATH).parent.mkdir(parents=True, exist_ok=True)
     if not args.no_report:
         (args.repo_root / preset.report_path).parent.mkdir(parents=True, exist_ok=True)
     print(shell_quote(command))

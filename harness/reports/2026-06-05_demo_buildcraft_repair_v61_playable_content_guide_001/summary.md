@@ -26,6 +26,7 @@
 
 - `python3 harness/playtest/play_current_candidate.py --dry-run`
 - `python3 harness/playtest/play_current_candidate.py`
+- `python3 harness/playtest/play_current_candidate.py --sandbox`
 - `python3 harness/playtest/play_current_candidate.py --list`
 
 | Preset | Character | Map | Seed | Focus | Launcher |
