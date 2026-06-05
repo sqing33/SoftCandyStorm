@@ -2705,15 +2705,81 @@ fn format_tag_items(tags: &[String], limit: usize) -> String {
     visible.join(", ")
 }
 
-fn format_terminal_overlay(terminal: &TerminalState) -> String {
+fn format_terminal_overlay(
+    terminal: &TerminalState,
+    build: &BuildSnapshot,
+    content: &ContentPack,
+) -> String {
     format!(
-        "{}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n按 R 重新巡逻",
+        "{}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻",
         terminal_kind_label(terminal.kind),
         terminal.time_seconds,
         terminal.final_level,
         terminal.kills,
         format_terminal_reason(&terminal.reason),
+        format_terminal_build_summary(build, content),
+        format_terminal_next_run_advice(terminal, build, content),
     )
+}
+
+fn format_terminal_build_summary(build: &BuildSnapshot, content: &ContentPack) -> String {
+    let weapons = format_build_items(&build.weapons, 3, |id| runtime_weapon_label(content, id));
+    let passives = format_build_items(&build.passives, 2, |id| runtime_passive_label(content, id));
+    let evolutions = format_build_items(&build.evolutions, 2, |id| {
+        runtime_evolution_label(content, id)
+    });
+    format!("武器 {weapons}  被动 {passives}  进化 {evolutions}")
+}
+
+fn format_terminal_next_run_advice(
+    terminal: &TerminalState,
+    build: &BuildSnapshot,
+    content: &ContentPack,
+) -> String {
+    match terminal.kind {
+        TerminalKind::Victory => format_terminal_victory_advice(build, content),
+        TerminalKind::Defeat => format_terminal_defeat_advice(terminal, build),
+        TerminalKind::Timeout => {
+            "这局接近目标时长，下局优先补 Boss 输出或一条完整进化线".to_string()
+        }
+        TerminalKind::Aborted => "回守护站换角色、地图或初始装备后再巡逻".to_string(),
+        TerminalKind::InvalidState => "保留 replay 和 seed，先记录异常再继续验证".to_string(),
+    }
+}
+
+fn format_terminal_victory_advice(build: &BuildSnapshot, content: &ContentPack) -> String {
+    if let Some(evolution) = build
+        .open_evolution_paths
+        .first()
+        .and_then(|id| content.evolutions.get(id))
+    {
+        format!(
+            "已能稳定过关，下局可补齐 {}：{}",
+            runtime_evolution_label(content, &evolution.id),
+            format_evolution_requirement_progress(evolution, content, build),
+        )
+    } else {
+        "已能稳定过关，下局尝试新角色、地图或更高风暴强度".to_string()
+    }
+}
+
+fn format_terminal_defeat_advice(terminal: &TerminalState, build: &BuildSnapshot) -> String {
+    if terminal.reason == "player_health_depleted" {
+        if !build_has_any_tag(build, &["defense", "control", "orbit", "health"]) {
+            return "生命归零多半是容错不足，下局优先拿防御、控场或生命标签".to_string();
+        }
+        if terminal.final_level < 6 {
+            return "前期等级偏低，下局先绕圈吃糖晶，再回头清怪".to_string();
+        }
+        return "已有生存组件，下局优先补伤害或冷却，缩短危险区停留时间".to_string();
+    }
+
+    "先看终局 Build 是否缺核心武器，再决定补输出、控制或拾取".to_string()
+}
+
+fn build_has_any_tag(build: &BuildSnapshot, tags: &[&str]) -> bool {
+    tags.iter()
+        .any(|tag| build.tags.iter().any(|build_tag| build_tag == tag))
 }
 
 fn update_hud(
@@ -2777,7 +2843,7 @@ fn update_hud(
                 .metrics()
                 .terminal
                 .as_ref()
-                .map(format_terminal_overlay)
+                .map(|terminal| format_terminal_overlay(terminal, &snapshot.build, &state.content))
                 .unwrap_or_default()
         };
     }
@@ -7985,6 +8051,17 @@ mod tests {
 
     #[test]
     fn terminal_overlay_renders_result_and_reason() {
+        let content = ContentPack::base_demo();
+        let build = BuildSnapshot {
+            weapons: vec![BuildItemSnapshot {
+                id: "rainbow-candy-shot".to_string(),
+                level: 2,
+            }],
+            passives: Vec::new(),
+            evolutions: Vec::new(),
+            tags: vec!["projectile".to_string()],
+            open_evolution_paths: Vec::new(),
+        };
         let terminal = TerminalState {
             kind: TerminalKind::Defeat,
             time_seconds: 214.5,
@@ -7992,14 +8069,45 @@ mod tests {
             final_level: 6,
             kills: 128,
         };
-        let overlay = format_terminal_overlay(&terminal);
+        let overlay = format_terminal_overlay(&terminal, &build, &content);
 
         assert!(overlay.contains("失败"));
         assert!(overlay.contains("214.5s"));
         assert!(overlay.contains("Lv 6"));
         assert!(overlay.contains("击杀 128"));
         assert!(overlay.contains("生命值归零"));
+        assert!(overlay.contains("终局 武器 彩虹糖弹 Lv.2"));
+        assert!(overlay.contains("生命归零多半是容错不足"));
         assert!(overlay.contains("按 R 重新巡逻"));
+    }
+
+    #[test]
+    fn terminal_overlay_renders_victory_progression_advice() {
+        let content = ContentPack::base_demo();
+        let build = BuildSnapshot {
+            weapons: vec![BuildItemSnapshot {
+                id: "rainbow-candy-shot".to_string(),
+                level: 5,
+            }],
+            passives: Vec::new(),
+            evolutions: Vec::new(),
+            tags: vec!["projectile".to_string()],
+            open_evolution_paths: vec!["rainbow-candy-meteor".to_string()],
+        };
+        let terminal = TerminalState {
+            kind: TerminalKind::Victory,
+            time_seconds: 600.0,
+            reason: "duration_reached".to_string(),
+            final_level: 15,
+            kills: 520,
+        };
+
+        let overlay = format_terminal_overlay(&terminal, &build, &content);
+
+        assert!(overlay.contains("胜利"));
+        assert!(overlay.contains("下一局 已能稳定过关"));
+        assert!(overlay.contains("彩虹糖流星雨"));
+        assert!(overlay.contains("彩虹糖弹 5/5 + 糖晶放大镜 0/3"));
     }
 
     #[test]
