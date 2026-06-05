@@ -71,7 +71,8 @@ const META_PANEL_RIGHT_MARGIN: f32 = 14.0;
 const META_PANEL_TAB_CONTROL_HEIGHT: f32 = 64.0;
 const META_PANEL_TAB_CONTROL_ZONE_COUNT: usize = 5;
 const META_PANEL_HEADER: &str = "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻";
-const META_PANEL_TAB_CLICK_HINT: &str = "页签点击区: 概览  章节  图鉴  设置  巡逻";
+const META_PANEL_TAB_CLICK_HINT: &str =
+    "页签点击区: 概览  章节  图鉴  设置  巡逻  | 手柄 Select/Start 上一页/下一页";
 const OVERVIEW_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const OVERVIEW_POINTER_CONTROL_ZONE_COUNT: usize = 4;
 const CODEX_POINTER_CONTROL_HEIGHT: f32 = 96.0;
@@ -318,6 +319,14 @@ enum RuntimeMetaPanelView {
     Settings,
     Loadout,
 }
+
+const RUNTIME_META_PANEL_VIEW_ORDER: [RuntimeMetaPanelView; 5] = [
+    RuntimeMetaPanelView::Overview,
+    RuntimeMetaPanelView::Chapters,
+    RuntimeMetaPanelView::Codex,
+    RuntimeMetaPanelView::Settings,
+    RuntimeMetaPanelView::Loadout,
+];
 
 fn runtime_meta_panel_view_from_key(key: &str) -> RuntimeMetaPanelView {
     match key {
@@ -1093,6 +1102,32 @@ fn runtime_meta_panel_selection(view: RuntimeMetaPanelView) -> (&'static str, &'
     }
 }
 
+fn runtime_meta_panel_tab_view_from_gamepad(
+    current: RuntimeMetaPanelView,
+    gamepad_buttons: &ButtonInput<GamepadButton>,
+) -> Option<RuntimeMetaPanelView> {
+    if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::Select]) {
+        Some(runtime_adjacent_meta_panel_view(current, -1))
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::Start]) {
+        Some(runtime_adjacent_meta_panel_view(current, 1))
+    } else {
+        None
+    }
+}
+
+fn runtime_adjacent_meta_panel_view(
+    current: RuntimeMetaPanelView,
+    direction: isize,
+) -> RuntimeMetaPanelView {
+    let current_index = RUNTIME_META_PANEL_VIEW_ORDER
+        .iter()
+        .position(|view| *view == current)
+        .unwrap_or(0) as isize;
+    let len = RUNTIME_META_PANEL_VIEW_ORDER.len() as isize;
+    let next_index = (current_index + direction).rem_euclid(len) as usize;
+    RUNTIME_META_PANEL_VIEW_ORDER[next_index]
+}
+
 fn step_game_core(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -1158,6 +1193,13 @@ fn step_game_core(
             "loadout",
             "patrol loadout view",
         );
+    }
+    if let Some(view) =
+        runtime_meta_panel_tab_view_from_gamepad(state.meta_panel_view, &gamepad_buttons)
+    {
+        let (panel_key, event) = runtime_meta_panel_selection(view);
+        select_runtime_meta_panel(&mut state, view, panel_key, event);
+        return;
     }
     let pointer_tab_view = primary_window.get_single().ok().and_then(|window| {
         runtime_meta_panel_tab_view_from_pointer(
@@ -5755,14 +5797,14 @@ mod tests {
         runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
         runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
         runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_pointer,
-        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
-        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_gamepad,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -7317,6 +7359,36 @@ mod tests {
     }
 
     #[test]
+    fn runtime_meta_panel_tab_gamepad_input_cycles_pages() {
+        let gamepad = Gamepad::new(0);
+        let mut next = ButtonInput::<GamepadButton>::default();
+        next.press(GamepadButton::new(gamepad, GamepadButtonType::Start));
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_gamepad(RuntimeMetaPanelView::Overview, &next),
+            Some(RuntimeMetaPanelView::Chapters)
+        );
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_gamepad(RuntimeMetaPanelView::Loadout, &next),
+            Some(RuntimeMetaPanelView::Overview)
+        );
+
+        let mut previous = ButtonInput::<GamepadButton>::default();
+        previous.press(GamepadButton::new(gamepad, GamepadButtonType::Select));
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_gamepad(RuntimeMetaPanelView::Overview, &previous),
+            Some(RuntimeMetaPanelView::Loadout)
+        );
+
+        assert_eq!(
+            runtime_meta_panel_tab_view_from_gamepad(
+                RuntimeMetaPanelView::Overview,
+                &ButtonInput::<GamepadButton>::default()
+            ),
+            None
+        );
+    }
+
+    #[test]
     fn runtime_meta_panel_tab_pointer_zone_maps_header_segments() {
         let window_size = Vec2::new(1280.0, 720.0);
 
@@ -7875,6 +7947,7 @@ mod tests {
         assert!(panel.contains("discovered:jar-keeper"));
         assert!(panel.contains("下一步"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
+        assert!(panel.contains("手柄 Select/Start 上一页/下一页"));
         assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
     }
 
@@ -7920,6 +7993,7 @@ mod tests {
 
         assert!(panel.contains("章节目标"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
+        assert!(panel.contains("手柄 Select/Start 上一页/下一页"));
         assert!(panel.contains("Q/E/手柄左/右 切换章节"));
         assert!(panel.contains("G/手柄确认 巡逻已解锁章节"));
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
