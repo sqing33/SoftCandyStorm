@@ -5,9 +5,10 @@ use bevy::{
     window::PrimaryWindow,
 };
 use game_core::{
-    ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaCodexEntry, MetaProgress,
-    MetaRunSummary, MetaSettlementReport, PlayerAction, RunConfig, RunMetrics, RunSnapshot,
-    StartingLoadout, TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    BossSnapshot, ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaCodexEntry,
+    MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction, RunConfig, RunMetrics,
+    RunSnapshot, StartingLoadout, TerminalKind, TerminalState, UpgradeOptionSnapshot,
+    Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2061,6 +2062,28 @@ fn player_tint(health: f32, max_health: f32) -> Color {
     }
 }
 
+fn format_boss_status(boss: Option<&BossSnapshot>, content: &ContentPack) -> String {
+    let Some(boss) = boss else {
+        return "Boss 未出现".to_string();
+    };
+
+    let health = boss.health.max(0.0);
+    let max_health = boss.max_health.max(0.0);
+    let health_ratio = if max_health > 0.0 {
+        (health / max_health * 100.0).clamp(0.0, 100.0)
+    } else {
+        0.0
+    };
+    format!(
+        "Boss {} ({})  HP {:.0}/{:.0}  {:.0}%",
+        runtime_boss_label(content, &boss.boss_id),
+        boss.boss_id,
+        health,
+        max_health,
+        health_ratio,
+    )
+}
+
 fn update_hud(
     state: Res<RuntimeState>,
     mut hud_query: Query<&mut Text, With<HudText>>,
@@ -2072,8 +2095,9 @@ fn update_hud(
     if let Ok(mut text) = hud_query.get_single_mut() {
         let mode = if state.paused { "Paused" } else { "Playing" };
         let map_style = map_visual_style(&snapshot.map.map_id);
+        let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
         text.sections[0].value = format!(
-            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+            "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}  Enemies {}  Hazards {}\nMap {} ({})\n{}\n{}  [{}]\nControls: WASD/Arrows move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
             state.run_number,
             mode,
             snapshot.time_seconds,
@@ -2087,6 +2111,7 @@ fn update_hud(
             snapshot.active_hazards.len(),
             map_style.display_name,
             snapshot.map.map_id,
+            boss_status,
             state.last_event,
             state.last_event_kind.label(),
         );
@@ -5049,25 +5074,26 @@ mod tests {
     use super::{
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
-        export_runtime_local_data, format_upgrade_options, load_runtime_asset_candidate_manifest,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
-        persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
-        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
-        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
-        runtime_asset_root, runtime_can_upload, runtime_chapter_action_from_keyboard,
-        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
-        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
-        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
-        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
-        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
-        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
-        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        export_runtime_local_data, format_boss_status, format_upgrade_options,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
+        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
+        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
+        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
+        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
+        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
+        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_keyboard,
+        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
+        runtime_local_data_export_path, runtime_meta_panel_tab_view_from_pointer,
+        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
+        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
+        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
@@ -6819,6 +6845,26 @@ mod tests {
             "裂星糖罐"
         );
         assert_eq!(map_visual_style("unknown-map").display_name, "糖霜草地");
+    }
+
+    #[test]
+    fn boss_status_renders_current_boss_health() {
+        let content = ContentPack::base_demo();
+        assert_eq!(format_boss_status(None, &content), "Boss 未出现");
+
+        let boss = BossSnapshot {
+            entity_id: 42,
+            boss_id: "runaway-sugar-mixer".to_string(),
+            health: 125.0,
+            max_health: 250.0,
+            position: CoreVec2::ZERO,
+        };
+        let status = format_boss_status(Some(&boss), &content);
+
+        assert!(status.contains("暴走搅糖机"));
+        assert!(status.contains("runaway-sugar-mixer"));
+        assert!(status.contains("HP 125/250"));
+        assert!(status.contains("50%"));
     }
 
     #[test]
