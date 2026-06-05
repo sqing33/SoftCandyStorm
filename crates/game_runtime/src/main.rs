@@ -3419,6 +3419,10 @@ fn projectile_visual_style(
         Color::srgba(1.0, 0.78, 0.88, 0.88)
     } else if projectile_is_soda_burst(projectile.weapon_id.as_str()) {
         Color::srgba(0.42, 0.86, 1.0, 0.88)
+    } else if projectile_is_pudding_summon(projectile.weapon_id.as_str()) {
+        Color::srgba(1.0, 0.86, 0.55, 0.88)
+    } else if projectile_is_windmill(projectile.weapon_id.as_str()) {
+        Color::srgba(1.0, 0.48, 0.62, 0.88)
     } else if projectile_is_bubble(projectile.weapon_id.as_str()) {
         Color::srgba(0.54, 0.90, 1.0, 0.86)
     } else if projectile_is_cold(projectile.weapon_id.as_str()) {
@@ -3459,6 +3463,14 @@ fn projectile_is_fortress(weapon_id: &str) -> bool {
 
 fn projectile_is_soda_burst(weapon_id: &str) -> bool {
     matches!(weapon_id, "soda-fountain" | "soda-volcano")
+}
+
+fn projectile_is_pudding_summon(weapon_id: &str) -> bool {
+    matches!(weapon_id, "pudding-turret" | "pudding-bastion")
+}
+
+fn projectile_is_windmill(weapon_id: &str) -> bool {
+    matches!(weapon_id, "lollipop-boomerang" | "sugar-windmill")
 }
 
 fn projectile_is_bubble(weapon_id: &str) -> bool {
@@ -10477,6 +10489,31 @@ mod tests {
             assert_ne!(style.color, Color::WHITE);
             assert_eq!(style.center, projectile.position);
             assert_eq!(style.size, Vec2::splat(60.0));
+        }
+    }
+
+    #[test]
+    fn projectile_visual_style_tints_pudding_and_windmill_projectiles() {
+        for (entity_id, weapon_id) in [
+            (10, "pudding-turret"),
+            (11, "pudding-bastion"),
+            (12, "lollipop-boomerang"),
+            (13, "sugar-windmill"),
+        ] {
+            let projectile = ProjectileSnapshot {
+                entity_id,
+                weapon_id: weapon_id.to_string(),
+                position: CoreVec2::new(10.0, 14.0),
+                velocity: CoreVec2::ZERO,
+                radius: 18.0,
+            };
+
+            let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+            assert!(style.textured);
+            assert_ne!(style.color, Color::WHITE);
+            assert_eq!(style.center, projectile.position);
+            assert_eq!(style.size, Vec2::splat(36.0));
         }
     }
 
