@@ -4260,13 +4260,20 @@ fn next_incomplete_chapter_goal(
         if !chapter.unlocked {
             continue;
         }
-        for line in runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals, content) {
-            if let Some(goal) = line.strip_prefix("[ ] ") {
-                return Some((chapter_id.clone(), goal.to_string()));
+        for (goal_id, label, reward) in runtime_chapter_goal_entries(chapter_id, content) {
+            if !chapter.completed_goals.contains(&goal_id) {
+                return Some((
+                    chapter_id.clone(),
+                    format_runtime_overview_goal_prompt(&label, &reward),
+                ));
             }
         }
     }
     None
+}
+
+fn format_runtime_overview_goal_prompt(label: &str, reward: &str) -> String {
+    format!("{label}（{reward}）")
 }
 
 fn incomplete_chapter_goal_count(progress: &MetaProgress, content: &ContentPack) -> usize {
@@ -4275,9 +4282,9 @@ fn incomplete_chapter_goal_count(progress: &MetaProgress, content: &ContentPack)
         .iter()
         .filter(|(_, chapter)| chapter.unlocked)
         .map(|(chapter_id, chapter)| {
-            runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals, content)
+            runtime_chapter_goal_entries(chapter_id, content)
                 .iter()
-                .filter(|line| line.starts_with("[ ] "))
+                .filter(|(goal_id, _, _)| !chapter.completed_goals.contains(goal_id))
                 .count()
         })
         .sum()
@@ -10236,11 +10243,15 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("下一步行动 F5 开始"));
-        assert!(panel.contains("标准巡逻坚持 10 分钟"));
+        assert!(panel.contains(
+            "下一步行动 F5 开始 糖霜草地 巡逻，优先 标准巡逻坚持 10 分钟（奖励 星片 +1）"
+        ));
         assert!(panel.contains("解锁概览 角色"));
         assert!(panel.contains("地图 糖霜草地(frosting-grassland)"));
-        assert!(panel.contains("章节进度 未完成 4 项"));
+        assert!(panel.contains(
+            "章节进度 未完成 4 项；糖霜草地 下一目标 标准巡逻坚持 10 分钟（奖励 星片 +1）"
+        ));
+        assert!(!panel.contains("survive-10-minutes - 标准巡逻坚持 10 分钟"));
         assert!(panel.contains("巡逻中：结算会在本局结束后更新"));
     }
 
