@@ -597,7 +597,7 @@ impl ContentPack {
             evolution_definition(
                 "soda-volcano",
                 "汽水火山",
-                &["aoe", "burst", "evolution"],
+                &["aoe", "burst", "knockback", "evolution"],
                 "汽水喷泉进化为连续喷发的汽水火山，覆盖更大敌群。",
                 "soda-fountain",
                 "bubble-shoes",

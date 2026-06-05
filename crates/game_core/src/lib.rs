@@ -4312,6 +4312,48 @@ mod tests {
     }
 
     #[test]
+    fn soda_volcano_evolution_keeps_fountain_knockback() {
+        let content = ContentPack::base_demo();
+        let evolution = content
+            .evolutions
+            .get("soda-volcano")
+            .expect("base demo should include soda volcano")
+            .clone();
+        let enemy_definition = content
+            .enemies
+            .get("soda-bubble")
+            .expect("base demo should include soda-bubble")
+            .clone();
+        assert!(evolution.tags.iter().any(|tag| tag == "knockback"));
+        let mut core = GameCore::reset_with_content(RunConfig::default(), content)
+            .expect("base demo content should initialize GameCore");
+        core.weapons.clear();
+        core.weapons
+            .push(WeaponState::from_evolution_definition(&evolution));
+        core.enemies.clear();
+        let enemy_id = core.allocate_entity_id();
+        let mut enemy =
+            Enemy::from_enemy_definition(enemy_id, Vec2::new(120.0, 0.0), &enemy_definition);
+        enemy.health = 1000.0;
+        enemy.max_health = 1000.0;
+        core.enemies.push(enemy);
+        core.weapons[0].cooldown_remaining = 0.0;
+
+        core.update_weapon_cooldowns(0.0, &mut Vec::new());
+
+        assert!(core
+            .projectiles
+            .iter()
+            .any(|projectile| projectile.weapon_id == "soda-volcano"
+                && projectile.enemy_knockback_distance > 0.0));
+        let before = core.enemies[0].position.distance(core.player.position);
+        core.update_projectiles(0.0, &mut Vec::new());
+        let after = core.enemies[0].position.distance(core.player.position);
+
+        assert!(after > before + KNOCKBACK_WEAPON_DISTANCE * 0.5);
+    }
+
+    #[test]
     fn summon_weapon_places_stationary_turret_that_auto_fires() {
         let content = ContentPack::base_demo();
         let enemy_definition = content
