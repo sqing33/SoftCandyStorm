@@ -3760,7 +3760,7 @@ fn format_meta_overview_next_action(
     if let Some(report) = settlement {
         return format_settlement_next_step(report).to_string();
     }
-    if let Some((chapter_id, goal)) = next_incomplete_chapter_goal(progress) {
+    if let Some((chapter_id, goal)) = next_incomplete_chapter_goal(progress, content) {
         return format!(
             "F5 开始 {} 巡逻，优先 {}",
             chapter_label(content, &chapter_id),
@@ -3787,8 +3787,8 @@ fn format_meta_overview_unlock_summary(progress: &MetaProgress, content: &Conten
 }
 
 fn format_meta_overview_chapter_summary(progress: &MetaProgress, content: &ContentPack) -> String {
-    let incomplete = incomplete_chapter_goal_count(progress);
-    if let Some((chapter_id, goal)) = next_incomplete_chapter_goal(progress) {
+    let incomplete = incomplete_chapter_goal_count(progress, content);
+    if let Some((chapter_id, goal)) = next_incomplete_chapter_goal(progress, content) {
         format!(
             "未完成 {} 项；{} 下一目标 {}",
             incomplete,
@@ -3800,12 +3800,15 @@ fn format_meta_overview_chapter_summary(progress: &MetaProgress, content: &Conte
     }
 }
 
-fn next_incomplete_chapter_goal(progress: &MetaProgress) -> Option<(String, String)> {
+fn next_incomplete_chapter_goal(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Option<(String, String)> {
     for (chapter_id, chapter) in &progress.chapters {
         if !chapter.unlocked {
             continue;
         }
-        for line in runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals) {
+        for line in runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals, content) {
             if let Some(goal) = line.strip_prefix("[ ] ") {
                 return Some((chapter_id.clone(), goal.to_string()));
             }
@@ -3814,13 +3817,13 @@ fn next_incomplete_chapter_goal(progress: &MetaProgress) -> Option<(String, Stri
     None
 }
 
-fn incomplete_chapter_goal_count(progress: &MetaProgress) -> usize {
+fn incomplete_chapter_goal_count(progress: &MetaProgress, content: &ContentPack) -> usize {
     progress
         .chapters
         .iter()
         .filter(|(_, chapter)| chapter.unlocked)
         .map(|(chapter_id, chapter)| {
-            runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals)
+            runtime_chapter_goal_lines(chapter_id, &chapter.completed_goals, content)
                 .iter()
                 .filter(|line| line.starts_with("[ ] "))
                 .count()
@@ -3887,7 +3890,8 @@ fn render_meta_chapter_panel(
             lines.push(format!("Boss说明 {}", boss.common.description));
             lines.push(format!("应对 {}", boss.common.counterplay));
         }
-        let goal_lines = runtime_chapter_goal_lines(&chapter.chapter_id, &chapter.completed_goals);
+        let goal_lines =
+            runtime_chapter_goal_lines(&chapter.chapter_id, &chapter.completed_goals, content);
         lines.push(format!("目标\n{}", goal_lines.join("\n")));
         if chapter.unlocked {
             lines.push("G 会使用该章节地图重开当前巡逻并保留局外进度".to_string());
@@ -4511,28 +4515,51 @@ fn runtime_selected_chapter_id(
 fn runtime_chapter_goal_lines(
     chapter_id: &str,
     completed_goals: &std::collections::BTreeSet<String>,
+    content: &ContentPack,
 ) -> Vec<String> {
+    let marshmallow_shield = runtime_weapon_label(content, "marshmallow-shield");
+    let bubble_courier = runtime_character_label(content, "bubble-courier");
+    let soda_creek = runtime_map_label(content, "soda-creek");
     let goals = match chapter_id {
         "frosting-grassland" => vec![
-            ("survive-10-minutes", "标准巡逻坚持 10 分钟"),
-            ("defeat-runaway-sugar-mixer", "击败暴走搅糖机"),
-            ("collect-200-candy-crystals", "收集 200 糖晶经验"),
-            ("rainbow-candy-shot-level-5", "把彩虹糖弹升到 5 级"),
+            (
+                "survive-10-minutes",
+                "标准巡逻坚持 10 分钟",
+                "奖励 星片 +1".to_string(),
+            ),
+            (
+                "defeat-runaway-sugar-mixer",
+                "击败暴走搅糖机",
+                format!(
+                    "奖励 星片 +1；解锁 {marshmallow_shield}、{bubble_courier}；集齐 2 星片开放 {soda_creek}"
+                ),
+            ),
+            (
+                "collect-200-candy-crystals",
+                "收集 200 糖晶经验",
+                "奖励 星片 +1".to_string(),
+            ),
+            (
+                "rainbow-candy-shot-level-5",
+                "把彩虹糖弹升到 5 级",
+                "奖励 星片 +1；强化彩虹糖弹构筑路线".to_string(),
+            ),
         ],
         _ => vec![(
             "future-chapter-goals",
             "后续章节目标待内容接受与平衡验证后开放",
+            "奖励 待 Harness 验证后显示".to_string(),
         )],
     };
     goals
         .into_iter()
-        .map(|(goal_id, label)| {
+        .map(|(goal_id, label, reward)| {
             let status = if completed_goals.contains(goal_id) {
                 "[x]"
             } else {
                 "[ ]"
             };
-            format!("{status} {goal_id} - {label}")
+            format!("{status} {goal_id} - {label} -> {reward}")
         })
         .collect()
 }
@@ -9090,6 +9117,9 @@ mod tests {
         assert!(panel.contains("Boss说明"));
         assert!(panel.contains("应对"));
         assert!(panel.contains("survive-10-minutes"));
+        assert!(panel.contains("奖励 星片 +1"));
+        assert!(panel.contains("解锁"));
+        assert!(panel.contains("集齐 2 星片开放"));
         assert!(panel.contains("本局完成"));
     }
 
