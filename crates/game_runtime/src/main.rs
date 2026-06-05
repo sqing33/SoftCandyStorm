@@ -4027,6 +4027,10 @@ fn render_meta_loadout_panel(
         "初始装备 {}",
         format_runtime_starting_loadout(content, &config.starting_loadout)
     ));
+    lines.push(format!(
+        "开局路线 {}",
+        format_runtime_loadout_plan(content, &config.starting_loadout)
+    ));
     lines.push(format!("地图 {} ({})", map_label, config.map_id));
 
     if let Some(map) = content.maps.get(&config.map_id) {
@@ -4091,6 +4095,39 @@ fn format_runtime_starting_loadout(content: &ContentPack, loadout: &StartingLoad
     )
 }
 
+fn format_runtime_loadout_plan(content: &ContentPack, loadout: &StartingLoadout) -> String {
+    if let Some(evolution) = content.evolutions.values().find(|evolution| {
+        loadout.weapons.contains(&evolution.requirements.weapon.id)
+            || evolution
+                .requirements
+                .passive
+                .as_ref()
+                .is_some_and(|requirement| loadout.passives.contains(&requirement.id))
+    }) {
+        return format!(
+            "目标进化 {}：{}，{}",
+            runtime_evolution_label(content, &evolution.id),
+            format_evolution_codex_requirements(evolution, content),
+            runtime_evolution_trigger_label(&evolution.requirements.trigger),
+        );
+    }
+
+    if let Some(weapon_id) = loadout.weapons.first() {
+        let tags = content
+            .weapons
+            .get(weapon_id)
+            .map(|weapon| format_upgrade_tags(&weapon.tags))
+            .unwrap_or_else(|| "当前武器".to_string());
+        return format!(
+            "先熟悉 {} 节奏，升级时补 {} 或一件生存被动",
+            runtime_weapon_label(content, weapon_id),
+            tags,
+        );
+    }
+
+    "先确认角色默认武器手感，再选择输出、控制或生存路线".to_string()
+}
+
 fn format_runtime_loadout_chapter_line(
     progress: &MetaProgress,
     content: &ContentPack,
@@ -4106,12 +4143,23 @@ fn format_runtime_loadout_chapter_line(
             } else {
                 "锁定章节"
             };
-            format!(
-                "章节 Boss {} ({})  {}",
-                runtime_boss_label(content, &chapter.boss_id),
-                chapter.boss_id,
-                status,
-            )
+            if let Some(boss) = content.bosses.get(&chapter.boss_id) {
+                format!(
+                    "章节 Boss {} ({})  {}  应对 {}  阶段 {}",
+                    runtime_boss_label(content, &chapter.boss_id),
+                    chapter.boss_id,
+                    status,
+                    boss.common.counterplay,
+                    format_boss_phase_summary(&boss.phases),
+                )
+            } else {
+                format!(
+                    "章节 Boss {} ({})  {}",
+                    runtime_boss_label(content, &chapter.boss_id),
+                    chapter.boss_id,
+                    status,
+                )
+            }
         })
 }
 
@@ -9517,10 +9565,13 @@ mod tests {
         assert!(panel.contains("属性 HP"));
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
+        assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
         assert!(panel.contains("汽水溪谷"));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
         assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
+        assert!(panel.contains("应对 喷射前有明显蓄力"));
+        assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
         assert!(panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
