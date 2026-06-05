@@ -12,9 +12,9 @@ use game_core::content::{
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
     Difficulty, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaCodexEntry,
-    MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction, RunConfig, RunMetrics,
-    RunSnapshot, StartingLoadout, StatusEffectSnapshot, TerminalKind, TerminalState,
-    UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction, ProjectileSnapshot,
+    RunConfig, RunMetrics, RunSnapshot, StartingLoadout, StatusEffectSnapshot, TerminalKind,
+    TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2245,23 +2245,21 @@ fn sync_world_visuals(
     }
 
     for projectile in &snapshot.visible_projectiles {
-        commands.spawn((
-            SpriteBundle {
-                texture: sprites.projectile.clone(),
-                sprite: Sprite {
-                    color: Color::WHITE,
-                    custom_size: Some(Vec2::splat((projectile.radius * 2.0).max(18.0))),
-                    ..default()
-                },
-                transform: Transform::from_xyz(
-                    projectile.position.x,
-                    projectile.position.y,
-                    PROJECTILE_Z,
-                ),
+        let visual = projectile_visual_style(projectile, snapshot.player.position);
+        let mut bundle = SpriteBundle {
+            sprite: Sprite {
+                color: visual.color,
+                custom_size: Some(visual.size),
                 ..default()
             },
-            RuntimeVisual,
-        ));
+            transform: Transform::from_xyz(visual.center.x, visual.center.y, PROJECTILE_Z)
+                .with_rotation(Quat::from_rotation_z(visual.rotation_z)),
+            ..default()
+        };
+        if visual.textured {
+            bundle.texture = sprites.projectile.clone();
+        }
+        commands.spawn((bundle, RuntimeVisual));
     }
 
     for enemy in &snapshot.visible_enemies {
@@ -3384,6 +3382,59 @@ fn push_runtime_effect(state: &mut RuntimeState, effect: RuntimeEffect) {
         let overflow = state.effects.len() - MAX_RUNTIME_EFFECTS;
         state.effects.drain(0..overflow);
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ProjectileVisualStyle {
+    color: Color,
+    size: Vec2,
+    center: CoreVec2,
+    rotation_z: f32,
+    textured: bool,
+}
+
+fn projectile_visual_style(
+    projectile: &ProjectileSnapshot,
+    player_position: CoreVec2,
+) -> ProjectileVisualStyle {
+    if projectile_is_beam(projectile.weapon_id.as_str()) {
+        let delta = projectile.position - player_position;
+        let length = delta.length().max(projectile.radius * 2.0).max(24.0);
+        let center = player_position + delta * 0.5;
+        let thickness = (projectile.radius * 1.4).clamp(10.0, 28.0);
+        return ProjectileVisualStyle {
+            color: Color::srgba(1.0, 0.92, 0.34, 0.82),
+            size: Vec2::new(length, thickness),
+            center,
+            rotation_z: delta.y.atan2(delta.x),
+            textured: false,
+        };
+    }
+
+    let color = if projectile_is_trap(projectile.weapon_id.as_str()) {
+        Color::srgb(1.0, 0.38, 0.74)
+    } else {
+        Color::WHITE
+    };
+
+    ProjectileVisualStyle {
+        color,
+        size: Vec2::splat((projectile.radius * 2.0).max(18.0)),
+        center: projectile.position,
+        rotation_z: 0.0,
+        textured: true,
+    }
+}
+
+fn projectile_is_beam(weapon_id: &str) -> bool {
+    matches!(weapon_id, "star-sugar-ray" | "star-sugar-prism")
+}
+
+fn projectile_is_trap(weapon_id: &str) -> bool {
+    matches!(
+        weapon_id,
+        "popping-candy-mine" | "popping-candy-chain-reaction"
+    )
 }
 
 fn effect_visual_style(effect: &RuntimeEffect) -> (Color, f32) {
@@ -6822,24 +6873,24 @@ mod tests {
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
         make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
         next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, render_meta_progress_panel, resolve_runtime_content_selection,
-        resolve_runtime_platform_paths, run_config_from_cli, run_runtime_data_control_action,
-        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_can_upload,
-        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
-        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
-        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
-        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
-        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
-        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_cache_key,
-        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
-        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
-        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice, runtime_save_export_path,
-        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
-        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, sounds_for_events,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        player_tint, projectile_visual_style, render_meta_progress_panel,
+        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
+        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
+        runtime_asset_root, runtime_can_upload, runtime_chapter_action_from_gamepad,
+        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
+        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
+        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
+        runtime_codex_action_from_pointer_zone, runtime_loadout_action_from_gamepad,
+        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
+        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_cache_key, runtime_meta_panel_tab_view_from_gamepad,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
+        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
+        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
+        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
         upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
@@ -6864,8 +6915,8 @@ mod tests {
     use game_core::{
         ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
         EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaProgress,
-        MetaRunSummary, PickupSnapshot, PickupType, RunConfig, RunMode, StatusEffectSnapshot,
-        TerminalKind, TerminalState, Vec2 as CoreVec2,
+        MetaRunSummary, PickupSnapshot, PickupType, ProjectileSnapshot, RunConfig, RunMode,
+        StatusEffectSnapshot, TerminalKind, TerminalState, Vec2 as CoreVec2,
     };
     use std::{collections::BTreeMap, fs, path::PathBuf};
 
@@ -10260,6 +10311,43 @@ mod tests {
             }]),
             RuntimeEventKind::Combat
         );
+    }
+
+    #[test]
+    fn projectile_visual_style_draws_beam_as_line_from_player() {
+        let projectile = ProjectileSnapshot {
+            entity_id: 1,
+            weapon_id: "star-sugar-ray".to_string(),
+            position: CoreVec2::new(120.0, 0.0),
+            velocity: CoreVec2::ZERO,
+            radius: 12.0,
+        };
+
+        let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+        assert!(!style.textured);
+        assert_eq!(style.center, CoreVec2::new(60.0, 0.0));
+        assert!(style.size.x >= 120.0);
+        assert!(style.size.y < style.size.x * 0.25);
+        assert!(style.rotation_z.abs() < 0.001);
+    }
+
+    #[test]
+    fn projectile_visual_style_keeps_traps_as_textured_candy_dots() {
+        let projectile = ProjectileSnapshot {
+            entity_id: 2,
+            weapon_id: "popping-candy-mine".to_string(),
+            position: CoreVec2::new(24.0, 36.0),
+            velocity: CoreVec2::ZERO,
+            radius: 20.0,
+        };
+
+        let style = projectile_visual_style(&projectile, CoreVec2::ZERO);
+
+        assert!(style.textured);
+        assert_eq!(style.center, projectile.position);
+        assert_eq!(style.size, Vec2::splat(40.0));
+        assert!(style.rotation_z.abs() < 0.001);
     }
 
     #[test]
