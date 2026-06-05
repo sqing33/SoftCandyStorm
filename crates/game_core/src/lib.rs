@@ -192,6 +192,7 @@ pub struct RunSnapshot {
     pub upgrade_options: Vec<UpgradeOptionSnapshot>,
     pub build: BuildSnapshot,
     pub map: MapSnapshot,
+    pub active_event_effects: Vec<ActiveEventEffectSnapshot>,
     pub metrics_partial: MetricsPartial,
 }
 
@@ -216,6 +217,14 @@ pub struct StatusEffectSnapshot {
     pub effect_id: String,
     pub kind: String,
     pub multiplier: f32,
+    pub remaining_seconds: f32,
+}
+
+#[derive(Debug, Clone)]
+pub struct ActiveEventEffectSnapshot {
+    pub event_id: String,
+    pub effect_type: String,
+    pub value: f32,
     pub remaining_seconds: f32,
 }
 
@@ -701,6 +710,16 @@ impl GameCore {
                 width: self.map.width,
                 height: self.map.height,
             },
+            active_event_effects: self
+                .active_event_effects
+                .iter()
+                .map(|effect| ActiveEventEffectSnapshot {
+                    event_id: effect.event_id.clone(),
+                    effect_type: effect.effect_type.clone(),
+                    value: effect.value,
+                    remaining_seconds: effect.remaining_seconds.max(0.0),
+                })
+                .collect(),
             metrics_partial: MetricsPartial {
                 kills: self.metrics.kills,
                 level: self.player.level,
@@ -882,6 +901,7 @@ impl GameCore {
                         continue;
                     };
                     self.active_event_effects.push(ActiveEventEffect {
+                        event_id: event.id.clone(),
                         effect_type: effect.effect_type.clone(),
                         value: effect.value,
                         remaining_seconds: duration_seconds,
@@ -2427,6 +2447,7 @@ struct EvolutionState {
 
 #[derive(Debug, Clone)]
 struct ActiveEventEffect {
+    event_id: String,
     effect_type: String,
     value: f32,
     remaining_seconds: f32,
@@ -4066,6 +4087,12 @@ mod tests {
             .any(|event| matches!(event, GameEvent::ContentEventTriggered { event_id } if event_id == "rainbow-candy-rush")));
         assert!(result.reward_hint.xp_delta > 13.9);
         assert!(core.active_event_multiplier("spawn_rate_multiplier") > 1.0);
+        assert!(result.snapshot.active_event_effects.iter().any(|effect| {
+            effect.event_id == "rainbow-candy-rush"
+                && effect.effect_type == "xp_multiplier"
+                && effect.value > 1.0
+                && effect.remaining_seconds > 24.0
+        }));
     }
 
     #[test]
