@@ -7,7 +7,7 @@ use bevy::{
 use game_core::{
     ContentPack, Difficulty, FixedDt, GameCore, GameEvent, MetaCodexEntry, MetaProgress,
     MetaRunSummary, MetaSettlementReport, PlayerAction, RunConfig, RunMetrics, RunSnapshot,
-    StartingLoadout, TerminalKind, TerminalState, Vec2 as CoreVec2,
+    StartingLoadout, TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -1475,6 +1475,47 @@ fn upgrade_choice_from_keyboard(
     None
 }
 
+fn format_upgrade_options(options: &[UpgradeOptionSnapshot]) -> String {
+    options
+        .iter()
+        .enumerate()
+        .map(|(index, option)| {
+            format!(
+                "{}. {}  {}\n   {}\n   标签 {}  id {}",
+                index + 1,
+                option.name,
+                format_upgrade_option_state(option),
+                option.description,
+                format_upgrade_tags(&option.tags),
+                option.id,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn format_upgrade_option_state(option: &UpgradeOptionSnapshot) -> String {
+    if let Some((_, level)) = option.id.rsplit_once("-level-") {
+        if !level.is_empty() && level.chars().all(|character| character.is_ascii_digit()) {
+            return format!("目标 Lv.{level}");
+        }
+    }
+
+    if option.name.starts_with("获得") {
+        "新获得".to_string()
+    } else {
+        "本局强化".to_string()
+    }
+}
+
+fn format_upgrade_tags(tags: &[String]) -> String {
+    if tags.is_empty() {
+        "无".to_string()
+    } else {
+        tags.join(" / ")
+    }
+}
+
 fn privacy_toggle_from_keyboard(keyboard: &ButtonInput<KeyCode>) -> Option<RuntimeUploadKind> {
     if keyboard.just_pressed(KeyCode::Digit7) {
         Some(RuntimeUploadKind::Telemetry)
@@ -2055,16 +2096,10 @@ fn update_hud(
         text.sections[0].value = if snapshot.upgrade_options.is_empty() {
             String::new()
         } else {
-            let options = snapshot
-                .upgrade_options
-                .iter()
-                .enumerate()
-                .map(|(index, option)| {
-                    format!("{}. {} [{}]", index + 1, option.id, option.tags.join(","))
-                })
-                .collect::<Vec<_>>()
-                .join("\n");
-            format!("Upgrade paused - press 1/2/3\n{options}")
+            format!(
+                "升级选择 - 按 1/2/3 选择\n{}",
+                format_upgrade_options(&snapshot.upgrade_options)
+            )
         };
     }
 
@@ -5014,7 +5049,7 @@ mod tests {
     use super::{
         apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
         demo_movement, demo_upgrade_choice, effects_for_events, event_kind_for_events,
-        export_runtime_local_data, load_runtime_asset_candidate_manifest,
+        export_runtime_local_data, format_upgrade_options, load_runtime_asset_candidate_manifest,
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
         make_tone_wav, map_visual_style, next_runtime_selection_id, parse_runtime_cli,
         persist_runtime_privacy_settings_file, player_tint, render_meta_progress_panel,
@@ -7756,6 +7791,35 @@ mod tests {
             });
 
         assert_eq!(demo_upgrade_choice(&snapshot), Some(0));
+    }
+
+    #[test]
+    fn upgrade_options_render_readable_choice_cards() {
+        let options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-2".to_string(),
+                name: "彩虹糖弹强化".to_string(),
+                tags: vec!["弹幕".to_string(), "清场".to_string()],
+                description: "提升伤害、射程和冷却节奏。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "soda-bubble-pop".to_string(),
+                name: "获得汽水泡泡".to_string(),
+                tags: vec!["控制".to_string()],
+                description: "发射会弹跳的汽水泡泡。".to_string(),
+            },
+        ];
+
+        let rendered = format_upgrade_options(&options);
+
+        assert!(rendered.contains("1. 彩虹糖弹强化"));
+        assert!(rendered.contains("目标 Lv.2"));
+        assert!(rendered.contains("提升伤害、射程和冷却节奏。"));
+        assert!(rendered.contains("标签 弹幕 / 清场"));
+        assert!(rendered.contains("id rainbow-candy-shot-level-2"));
+        assert!(rendered.contains("2. 获得汽水泡泡"));
+        assert!(rendered.contains("新获得"));
+        assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
     }
 
     #[test]
