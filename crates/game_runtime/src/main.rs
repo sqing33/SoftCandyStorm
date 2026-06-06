@@ -4210,12 +4210,20 @@ fn apply_runtime_chapter_action(
                 ));
             }
             state.config.map_id = chapter.map_id.clone();
+            state.run_mode = RunMode::ChapterChallenge;
+            state.config.difficulty = runtime_run_mode_difficulty(state.run_mode);
+            state.config.duration_seconds = runtime_run_mode_duration_seconds(state.run_mode);
             state.base_ui_state.last_selected_map_id = chapter.map_id.clone();
             state.base_ui_state.last_selected_chapter_id = chapter.chapter_id.clone();
+            state.base_ui_state.last_selected_run_mode =
+                runtime_run_mode_key(state.run_mode).to_string();
             reset_runtime_run(state);
             persist_runtime_save_if_configured(state)?;
             let label = runtime_map_label(&state.content, &state.config.map_id);
-            Ok(format!("started chapter {selected_id} on {label}"))
+            Ok(format!(
+                "started chapter {selected_id} on {label} as {}",
+                runtime_run_mode_label(state.run_mode)
+            ))
         }
     }
 }
@@ -10381,7 +10389,14 @@ mod tests {
                 .unwrap();
 
         assert!(message.contains("started chapter frosting-grassland"));
+        assert!(message.contains("章节挑战"));
         assert_eq!(state.config.map_id, "frosting-grassland");
+        assert_eq!(state.run_mode, RunMode::ChapterChallenge);
+        assert_eq!(
+            state.config.duration_seconds,
+            runtime_run_mode_duration_seconds(RunMode::ChapterChallenge)
+        );
+        assert_eq!(state.config.difficulty, Difficulty::Normal);
         assert_eq!(
             state.base_ui_state.last_selected_map_id,
             "frosting-grassland"
@@ -10390,6 +10405,7 @@ mod tests {
             state.base_ui_state.last_selected_chapter_id,
             "frosting-grassland"
         );
+        assert_eq!(state.base_ui_state.last_selected_run_mode, "chapter");
         assert_eq!(state.run_number, 2);
     }
 
