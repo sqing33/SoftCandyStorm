@@ -3114,9 +3114,45 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     });
     let evolution_paths = format_evolution_path_items(build, content, 2);
     let tags = format_tag_items(&build.tags, 4);
+    let advice = format_runtime_build_advice(build, content);
     format!(
-        "Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  进化线 {evolution_paths}  标签 {tags}"
+        "Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  进化线 {evolution_paths}  标签 {tags}  建议 {advice}"
     )
+}
+
+fn format_runtime_build_advice(build: &BuildSnapshot, content: &ContentPack) -> String {
+    if build.weapons.is_empty() {
+        return "先拿一把稳定输出武器".to_string();
+    }
+    if let Some(evolution_id) = build
+        .open_evolution_paths
+        .first()
+        .filter(|_| build.evolutions.is_empty())
+    {
+        return format!(
+            "优先补齐进化线 {}",
+            runtime_evolution_label(content, evolution_id)
+        );
+    }
+    if !build_has_any_tag(build, &["defense", "control", "orbit", "health", "slow"]) {
+        return "缺容错，下一次升级优先防御、控制或生命".to_string();
+    }
+    if !build_has_any_tag(
+        build,
+        &[
+            "boss-killer",
+            "single-target",
+            "beam",
+            "projectile",
+            "pierce",
+        ],
+    ) {
+        return "缺 Boss 输出，补单体、穿透或光束".to_string();
+    }
+    if build.evolutions.is_empty() {
+        return "基础组件已齐，继续冲一条进化".to_string();
+    }
+    "构筑已成型，补冷却、拾取或地图应对".to_string()
 }
 
 fn format_enemy_swarm_status(
@@ -13508,6 +13544,7 @@ mod tests {
         assert!(status.contains("彩虹糖流星雨 Lv.1"));
         assert!(status.contains("进化线 彩虹糖流星雨: 彩虹糖弹 3/5 + 糖晶放大镜 2/3"));
         assert!(status.contains("标签 弹幕, 经济"));
+        assert!(status.contains("建议 缺容错，下一次升级优先防御、控制或生命"));
     }
 
     #[test]
