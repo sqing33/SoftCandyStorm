@@ -6098,7 +6098,7 @@ fn render_meta_loadout_panel(
         runtime_run_mode_reward_hint(run_mode),
     ));
     if run_mode == RunMode::DailyStorm {
-        lines.push(format!("每日固定 seed {}", runtime_daily_storm_seed()));
+        lines.push(format!("每日固定种子 {}", runtime_daily_storm_seed()));
     }
     lines.push(format!("地图 {map_label}"));
     if let Some(target_summary) =
@@ -9785,7 +9785,7 @@ fn runtime_run_mode_duration_label(mode: RunMode) -> &'static str {
         RunMode::LongPatrol => "15 分钟",
         RunMode::EndlessStorm => "20 分钟目标",
         RunMode::ChapterChallenge => "10 分钟",
-        RunMode::DailyStorm => "10 分钟固定 seed",
+        RunMode::DailyStorm => "10 分钟固定种子",
         RunMode::ExperimentalStorm => "10 分钟",
     }
 }
@@ -9796,7 +9796,7 @@ fn runtime_run_mode_description(mode: RunMode) -> &'static str {
         RunMode::ChapterChallenge => "锁定当前地图章节目标，适合补首领、收集和进化任务",
         RunMode::LongPatrol => "留给构筑更多升级和进化空间",
         RunMode::EndlessStorm => "先以 20 分钟强风暴目标承载极限构筑与压力验证",
-        RunMode::DailyStorm => "固定 seed 与强风暴压力，胜利额外给糖晶和风暴糖粒",
+        RunMode::DailyStorm => "固定种子与强风暴压力，胜利额外给糖晶和风暴糖粒",
         RunMode::ExperimentalStorm => "候选内容测试模式，当前不进入主线",
     }
 }
@@ -14225,7 +14225,7 @@ mod tests {
         let status = format_runtime_hud_run_mode(RunMode::DailyStorm, &config);
 
         assert!(status.contains("每日风暴"));
-        assert!(status.contains("10 分钟固定 seed"));
+        assert!(status.contains("10 分钟固定种子"));
         assert!(status.contains("种子 66606"));
     }
 
@@ -16538,10 +16538,10 @@ mod tests {
             context,
         );
 
-        assert!(panel.contains("模式 每日风暴 (10 分钟固定 seed)"));
+        assert!(panel.contains("模式 每日风暴 (10 分钟固定种子)"));
         assert!(panel.contains("胜利额外给糖晶和风暴糖粒"));
         assert!(panel.contains("奖励 胜利 +25% 糖晶 +1 风暴糖粒"));
-        assert!(panel.contains("每日固定 seed 66606"));
+        assert!(panel.contains("每日固定种子 66606"));
     }
 
     #[test]
