@@ -6107,6 +6107,9 @@ fn render_meta_loadout_panel(
     {
         lines.push(target_summary);
     }
+    lines.extend(format_runtime_loadout_departure_plan_lines(
+        progress, content, config, run_mode,
+    ));
 
     if let Some(map) = content.maps.get(&config.map_id) {
         lines.push(format!("地图说明 {}", map.description));
@@ -6284,6 +6287,152 @@ fn format_runtime_patrol_target_summary(
         runtime_boss_label(content, &chapter.boss_id),
         format_runtime_chapter_reward_preview(&chapter.chapter_id, content),
     ))
+}
+
+fn format_runtime_loadout_departure_plan_lines(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    config: &RunConfig,
+    run_mode: RunMode,
+) -> Vec<String> {
+    let Some(chapter) = progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == config.map_id)
+    else {
+        return Vec::new();
+    };
+    let goals = runtime_chapter_goal_entries(&chapter.chapter_id, content);
+    let next_goal = goals
+        .iter()
+        .find(|(goal_id, _, _)| !chapter.completed_goals.contains(goal_id));
+    let availability = if chapter.unlocked {
+        "本局可推进"
+    } else {
+        "锁定预览"
+    };
+    let goal_text = next_goal
+        .map(|(_, label, reward)| format!("下一项 {label} -> {reward}"))
+        .unwrap_or_else(|| "章节目标已完成，适合刷图鉴、资源或切换下一章".to_string());
+    let goal_hint = next_goal
+        .map(|(goal_id, _, _)| {
+            format_runtime_loadout_goal_mode_hint(chapter, goal_id, content, run_mode)
+        })
+        .unwrap_or_else(|| "继续补图鉴、资源或更高风暴模式".to_string());
+    let reward_text =
+        format_runtime_loadout_departure_reward_line(chapter, next_goal, progress, content);
+    let build_status = format_runtime_loadout_chapter_build_status(
+        progress,
+        content,
+        &config.map_id,
+        &config.starting_loadout,
+    )
+    .unwrap_or_else(|| "按当前角色路线补输出、控制或生存短板".to_string());
+    let risk_text = format_runtime_loadout_departure_risk_line(chapter, content);
+
+    vec![
+        format!(
+            "出发计划 {availability} {}：{goal_text}；{goal_hint}",
+            chapter_label(content, &chapter.chapter_id),
+        ),
+        format!("推进收益 {reward_text}"),
+        format!("开局提醒 {build_status}；{risk_text}"),
+    ]
+}
+
+fn format_runtime_loadout_goal_mode_hint(
+    chapter: &game_core::meta::ChapterProgress,
+    goal_id: &str,
+    content: &ContentPack,
+    run_mode: RunMode,
+) -> String {
+    if !chapter.unlocked {
+        return format!(
+            "先解锁章节后计入目标，当前可熟悉{}",
+            runtime_run_mode_label(run_mode)
+        );
+    }
+    if goal_id == "survive-10-minutes" {
+        if runtime_run_mode_duration_seconds(run_mode) >= RUNTIME_STANDARD_PATROL_SECONDS {
+            return format!("{}可覆盖 10 分钟目标", runtime_run_mode_label(run_mode));
+        }
+        return "需要 10 分钟以上模式".to_string();
+    }
+    if goal_id.starts_with("defeat-") {
+        return format!(
+            "Boss 战计入章节目标，{}可推进",
+            runtime_run_mode_label(run_mode)
+        );
+    }
+    if goal_id.starts_with("collect-") {
+        return "拾取糖晶会直接推进，机动/拾取构筑更快".to_string();
+    }
+    if goal_id.starts_with("evolve-") {
+        return "升级时优先补目标进化，Boss 宝箱触发".to_string();
+    }
+    if goal_id.ends_with("-level-5") {
+        return format!(
+            "升级时优先点{}",
+            runtime_loadout_goal_subject(goal_id, content)
+        );
+    }
+    format!("{}可推进章节记录", runtime_run_mode_label(run_mode))
+}
+
+fn runtime_loadout_goal_subject(goal_id: &str, content: &ContentPack) -> String {
+    let Some(weapon_id) = goal_id.strip_suffix("-level-5") else {
+        return "目标武器".to_string();
+    };
+    runtime_weapon_label(content, weapon_id)
+}
+
+fn format_runtime_loadout_departure_reward_line(
+    chapter: &game_core::meta::ChapterProgress,
+    next_goal: Option<&(String, String, String)>,
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> String {
+    let mut parts = vec![format!(
+        "章节奖励 {}",
+        format_runtime_chapter_reward_preview(&chapter.chapter_id, content)
+    )];
+    if let Some((_, _, reward)) = next_goal {
+        parts.push(format!("当前目标 {reward}"));
+    }
+    if !chapter.unlocked {
+        parts.push(format_locked_chapter_unlock_hint(
+            &chapter.chapter_id,
+            progress,
+            content,
+        ));
+    }
+    parts.join("；")
+}
+
+fn format_runtime_loadout_departure_risk_line(
+    chapter: &game_core::meta::ChapterProgress,
+    content: &ContentPack,
+) -> String {
+    let boss_time = runtime_boss_arrival_time(content, &chapter.map_id, &chapter.boss_id)
+        .map(|time| format!("约 {:.0}s 到场", time))
+        .unwrap_or_else(|| "按波次到场".to_string());
+    let boss_hint = content
+        .bosses
+        .get(&chapter.boss_id)
+        .map(|boss| format!("应对 {}", boss.common.counterplay))
+        .unwrap_or_else(|| "应对 先补单体输出和生存容错".to_string());
+    let map_hint = content
+        .maps
+        .get(&chapter.map_id)
+        .map(format_runtime_chapter_strategy_map_hint)
+        .unwrap_or_else(|| "地图压力未知，先保持绕圈拾取".to_string());
+    format!(
+        "Boss {} {}；{}；{}",
+        runtime_boss_label(content, &chapter.boss_id),
+        boss_time,
+        boss_hint,
+        map_hint,
+    )
 }
 
 fn runtime_map_recommended_difficulty(map_id: &str) -> &'static str {
@@ -16124,6 +16273,11 @@ mod tests {
         assert!(panel.contains(
             "巡逻目标 推荐 进阶  目标 0/4  风暴 标准  Boss 汽水喷泉龙  目标奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"
         ));
+        assert!(panel.contains(
+            "出发计划 锁定预览 汽水溪谷：下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1；先解锁章节后计入目标，当前可熟悉标准巡逻"
+        ));
+        assert!(panel.contains("推进收益 章节奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山；当前目标 奖励 星片 +1；解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：未完成；星片 0/2：还差 2 星片"));
+        assert!(panel.contains("开局提醒 章节构筑状态 部分可调整：缺 泡泡鞋，另缺 汽水喷泉 需先解锁；Boss 汽水喷泉龙 约 210s 到场"));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
         assert!(panel.contains("地图机制 泡泡水流 每36s x2 5s 减速x0.78"));
@@ -16326,6 +16480,11 @@ mod tests {
         assert!(panel.contains(
             "巡逻目标 推荐 新手  目标 0/5  风暴 标准  Boss 暴走搅糖机  目标奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"
         ));
+        assert!(panel.contains(
+            "出发计划 本局可推进 糖霜草地：下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1；标准巡逻可覆盖 10 分钟目标"
+        ));
+        assert!(panel.contains("推进收益 章节奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨；当前目标 奖励 星片 +1"));
+        assert!(panel.contains("开局提醒 章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到；Boss 暴走搅糖机 约 210s 到场"));
         assert!(panel
             .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"));
         assert!(panel.contains("本图目标 0/5  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
