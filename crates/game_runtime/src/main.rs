@@ -3434,17 +3434,31 @@ fn format_terminal_overlay(
     build: &BuildSnapshot,
     content: &ContentPack,
     run_mode: RunMode,
+    damage_taken: f32,
+    damage_taken_by_source: &BTreeMap<String, f32>,
 ) -> String {
     format!(
-        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻",
+        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n终局 {}\n下一局 {}\n按 R 重新巡逻",
         terminal_kind_label(terminal.kind),
         runtime_run_mode_label(run_mode),
         terminal.time_seconds,
         terminal.final_level,
         terminal.kills,
         format_terminal_reason(&terminal.reason),
+        format_terminal_damage_summary(damage_taken, damage_taken_by_source),
         format_terminal_build_summary(build, content),
         format_terminal_next_run_advice(terminal, build, content),
+    )
+}
+
+fn format_terminal_damage_summary(
+    damage_taken: f32,
+    damage_taken_by_source: &BTreeMap<String, f32>,
+) -> String {
+    format!(
+        "受伤 {:.1}  来源 {}",
+        damage_taken.max(0.0),
+        format_damage_sources(damage_taken_by_source, 3),
     )
 }
 
@@ -3684,9 +3698,8 @@ fn update_hud(
             let value = if state.paused {
                 "Paused".to_string()
             } else {
-                state
-                    .core
-                    .metrics()
+                let metrics = state.core.metrics();
+                metrics
                     .terminal
                     .as_ref()
                     .map(|terminal| {
@@ -3695,6 +3708,8 @@ fn update_hud(
                             &snapshot.build,
                             &state.content,
                             state.run_mode,
+                            metrics.damage_taken,
+                            &metrics.damage_taken_by_source,
                         )
                     })
                     .unwrap_or_default()
@@ -12330,7 +12345,14 @@ mod tests {
             final_level: 6,
             kills: 128,
         };
-        let overlay = format_terminal_overlay(&terminal, &build, &content, RunMode::DailyStorm);
+        let overlay = format_terminal_overlay(
+            &terminal,
+            &build,
+            &content,
+            RunMode::DailyStorm,
+            12.5,
+            &BTreeMap::from([("contact".to_string(), 9.0), ("hazard".to_string(), 3.5)]),
+        );
 
         assert!(overlay.contains("失败"));
         assert!(overlay.contains("每日风暴"));
@@ -12338,6 +12360,8 @@ mod tests {
         assert!(overlay.contains("Lv 6"));
         assert!(overlay.contains("击杀 128"));
         assert!(overlay.contains("生命值归零"));
+        assert!(overlay.contains("受伤 12.5"));
+        assert!(overlay.contains("来源 接触 9.0, 风暴地面 3.5"));
         assert!(overlay.contains("终局 武器 彩虹糖弹 Lv.2"));
         assert!(overlay.contains("生命归零多半是容错不足"));
         assert!(overlay.contains("按 R 重新巡逻"));
@@ -12364,10 +12388,18 @@ mod tests {
             kills: 520,
         };
 
-        let overlay = format_terminal_overlay(&terminal, &build, &content, RunMode::StandardPatrol);
+        let overlay = format_terminal_overlay(
+            &terminal,
+            &build,
+            &content,
+            RunMode::StandardPatrol,
+            0.0,
+            &BTreeMap::new(),
+        );
 
         assert!(overlay.contains("胜利"));
         assert!(overlay.contains("标准巡逻"));
+        assert!(overlay.contains("受伤 0.0  来源 无"));
         assert!(overlay.contains("下一局 已能稳定过关"));
         assert!(overlay.contains("彩虹糖流星雨"));
         assert!(overlay.contains("彩虹糖弹 5/5 + 糖晶放大镜 0/3"));
