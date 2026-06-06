@@ -4579,7 +4579,12 @@ fn render_meta_chapter_panel(
         if chapter.unlocked {
             lines.push("G 会使用该章节地图重开当前巡逻并保留局外进度".to_string());
         } else {
-            lines.push("该章节仍锁定；完成前序章节目标后开放，G 不会启动锁定章节".to_string());
+            lines.push(format_locked_chapter_unlock_hint(
+                &chapter.chapter_id,
+                progress,
+                content,
+            ));
+            lines.push("该章节仍锁定；完成上方条件后开放，G 不会启动锁定章节".to_string());
         }
     } else {
         lines.push("当前没有章节进度记录".to_string());
@@ -5572,6 +5577,60 @@ fn runtime_next_chapter_unlock(chapter_id: &str) -> Option<(&'static str, u32)> 
         "jelly-platform" => Some(("cracked-star-jar", 10)),
         _ => None,
     }
+}
+
+fn runtime_previous_chapter_unlock_requirement(chapter_id: &str) -> Option<(&'static str, u32)> {
+    [
+        "frosting-grassland",
+        "soda-creek",
+        "cotton-cloud-pasture",
+        "caramel-workshop",
+        "jelly-platform",
+    ]
+    .into_iter()
+    .find_map(|previous_chapter| {
+        runtime_next_chapter_unlock(previous_chapter)
+            .filter(|(next_chapter, _)| *next_chapter == chapter_id)
+            .map(|(_, required_star_shards)| (previous_chapter, required_star_shards))
+    })
+}
+
+fn format_locked_chapter_unlock_hint(
+    chapter_id: &str,
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> String {
+    let Some((previous_chapter, required_star_shards)) =
+        runtime_previous_chapter_unlock_requirement(chapter_id)
+    else {
+        return "解锁条件 首章默认开放；若仍锁定请检查存档章节状态".to_string();
+    };
+    let boss_id = runtime_chapter_boss_id(previous_chapter).unwrap_or(previous_chapter);
+    let boss_goal_id = format!("defeat-{boss_id}");
+    let boss_done = progress
+        .chapters
+        .get(previous_chapter)
+        .is_some_and(|chapter| chapter.completed_goals.contains(&boss_goal_id));
+    let boss_status = if boss_done { "已完成" } else { "未完成" };
+    let current_star_shards = progress.resources.star_shards.min(required_star_shards);
+    let star_status = if progress.resources.star_shards >= required_star_shards {
+        "已满足".to_string()
+    } else {
+        format!(
+            "还差 {} 星片",
+            required_star_shards - progress.resources.star_shards
+        )
+    };
+
+    format!(
+        "解锁条件 击败前章 {} Boss {}：{}；星片 {}/{}：{}",
+        chapter_label(content, previous_chapter),
+        runtime_boss_label(content, boss_id),
+        boss_status,
+        current_star_shards,
+        required_star_shards,
+        star_status,
+    )
 }
 
 fn format_runtime_chapter_boss_reward(chapter_id: &str, content: &ContentPack) -> String {
@@ -11652,7 +11711,45 @@ mod tests {
         assert!(panel.contains("defeat-soda-fountain-dragon"));
         assert!(panel.contains("击败汽水喷泉龙"));
         assert!(panel.contains("集齐 4 星片开放 棉花云牧场"));
+        assert!(panel
+            .contains("解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：未完成；星片 0/2：还差 2 星片"));
         assert!(panel.contains("G 不会启动锁定章节"));
+    }
+
+    #[test]
+    fn meta_panel_locked_chapter_shows_satisfied_requirements() {
+        let mut progress = MetaProgress::demo_start();
+        progress.resources.star_shards = 2;
+        progress
+            .chapters
+            .get_mut("frosting-grassland")
+            .unwrap()
+            .completed_goals
+            .insert("defeat-runaway-sugar-mixer".to_string());
+        let base_ui_state = RuntimeBaseUiState {
+            last_selected_chapter_id: "soda-creek".to_string(),
+            last_selected_map_id: "soda-creek".to_string(),
+            ..RuntimeBaseUiState::default()
+        };
+        let panel = render_meta_progress_panel(
+            &progress,
+            None,
+            RuntimeMetaPanelView::Chapters,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &base_ui_state,
+                0,
+            ),
+        );
+
+        assert!(
+            panel.contains("解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：已完成；星片 2/2：已满足")
+        );
     }
 
     #[test]
