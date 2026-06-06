@@ -536,6 +536,7 @@ struct RuntimeCodexEntryView {
     id: String,
     name: String,
     description: String,
+    action_hint: String,
     discovered: bool,
     first_seen_run: Option<String>,
     seen_count: u32,
@@ -5718,6 +5719,9 @@ fn render_meta_codex_panel(
         };
         lines.push(format!("{} ({})  {}", title, entry.id, status));
         lines.push(detail);
+        if entry.discovered {
+            lines.push(format!("行动建议 {}", entry.action_hint));
+        }
         lines.push(format!(
             "首次 {}  见过 {}  击败 {}  使用 {}",
             entry.first_seen_run.as_deref().unwrap_or("尚未记录"),
@@ -8099,6 +8103,239 @@ fn format_codex_event_source(item: &EventDefinition, progress: &MetaProgress) ->
     format!("{state}；标准局临时事件窗口触发，结算后记录图鉴")
 }
 
+fn runtime_codex_action_hint(
+    category: RuntimeCodexCategory,
+    id: &str,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    match category {
+        RuntimeCodexCategory::Characters => content
+            .characters
+            .get(id)
+            .map(|item| runtime_codex_character_action_hint(item, content, progress))
+            .unwrap_or_else(|| "继续巡逻，等待正式内容包补充角色来源。".to_string()),
+        RuntimeCodexCategory::Weapons => content
+            .weapons
+            .get(id)
+            .map(|item| runtime_codex_weapon_action_hint(item, content, progress))
+            .unwrap_or_else(|| "继续巡逻，等待正式内容包补充武器来源。".to_string()),
+        RuntimeCodexCategory::Passives => content
+            .passives
+            .get(id)
+            .map(|item| runtime_codex_passive_action_hint(item, content, progress))
+            .unwrap_or_else(|| "继续巡逻，等待正式内容包补充被动来源。".to_string()),
+        RuntimeCodexCategory::Enemies => content
+            .enemies
+            .get(id)
+            .map(|item| runtime_codex_enemy_action_hint(item, content))
+            .unwrap_or_else(|| "继续巡逻，留意临时事件或后续地图中的敌群变化。".to_string()),
+        RuntimeCodexCategory::Bosses => content
+            .bosses
+            .get(id)
+            .map(|item| runtime_codex_boss_action_hint(item, content))
+            .unwrap_or_else(|| "继续推进章节，Boss 出现前补单体输出和防御容错。".to_string()),
+        RuntimeCodexCategory::Maps => content
+            .maps
+            .get(id)
+            .map(|item| runtime_codex_map_action_hint(item, content, progress))
+            .unwrap_or_else(|| "继续推进章节，解锁后可在 F5 选择地图。".to_string()),
+        RuntimeCodexCategory::Evolutions => content
+            .evolutions
+            .get(id)
+            .map(|item| runtime_codex_evolution_action_hint(item, content, progress))
+            .unwrap_or_else(|| "继续尝试武器和被动组合，结算后记录新进化。".to_string()),
+        RuntimeCodexCategory::Events => content
+            .events
+            .get(id)
+            .map(|item| runtime_codex_event_action_hint(item, content))
+            .unwrap_or_else(|| "继续标准巡逻，临时事件窗口出现时观察收益和风险。".to_string()),
+    }
+}
+
+fn runtime_codex_character_action_hint(
+    item: &CharacterDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    if progress.unlocks.characters.contains(&item.id) {
+        format!(
+            "F5 选择{}试一局；{}",
+            item.name,
+            format_runtime_character_play_hint(item)
+        )
+    } else {
+        format!(
+            "先推进{}；解锁后去 F5 试角色差异。",
+            format_codex_character_source(item, content, progress)
+        )
+    }
+}
+
+fn runtime_codex_weapon_action_hint(
+    item: &WeaponDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    let unlocked = runtime_is_default_unlock(&item.unlock.unlock_type)
+        || progress.unlocks.weapons.contains(&item.id);
+    let build_links = format_codex_build_links("weapon", &item.id, content);
+    let build_hint = if build_links.is_empty() {
+        format!(
+            "按{}定位补主输出或清群短板。",
+            runtime_weapon_role_label(&item.balance_budget.role)
+        )
+    } else {
+        format!(
+            "优先围绕{}补齐进化线。",
+            format_string_items(&build_links, 1)
+        )
+    };
+    if unlocked {
+        format!(
+            "F5 可用{}开局；局内升级先稳住最高 Lv.{}，{build_hint}",
+            item.name, item.scaling.max_level
+        )
+    } else {
+        format!(
+            "先用 F1 基地构筑商店解锁{}；解锁后用 F5 开局验证，{build_hint}",
+            item.name
+        )
+    }
+}
+
+fn runtime_codex_passive_action_hint(
+    item: &PassiveDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    let unlocked = runtime_is_default_unlock(&item.unlock.unlock_type)
+        || progress.unlocks.passives.contains(&item.id);
+    let build_links = format_codex_build_links("passive", &item.id, content);
+    let build_hint = if build_links.is_empty() {
+        format!("用来补{}短板。", format_upgrade_tags(&item.tags))
+    } else {
+        format!("可服务{}。", format_string_items(&build_links, 1))
+    };
+    if unlocked {
+        format!(
+            "F5 可把{}作为额外被动；局内看到时按当前 Build 短板选择，{build_hint}",
+            item.name
+        )
+    } else {
+        format!(
+            "先用 F1 基地构筑商店解锁{}；解锁后作为开局被动或局内补强，{build_hint}",
+            item.name
+        )
+    }
+}
+
+fn runtime_codex_enemy_action_hint(item: &EnemyDefinition, content: &ContentPack) -> String {
+    let maps = runtime_maps_for_enemy(content, &item.common.id)
+        .into_iter()
+        .map(|map_id| runtime_map_label(content, &map_id))
+        .collect::<Vec<_>>();
+    let source = if maps.is_empty() {
+        "临时事件或后续地图".to_string()
+    } else {
+        format!("{}会出现", format_string_items(&maps, 2))
+    };
+    format!("{source}；局内应对：{}。", item.common.counterplay)
+}
+
+fn runtime_codex_boss_action_hint(item: &BossDefinition, content: &ContentPack) -> String {
+    let chapter = runtime_chapter_for_boss_id(&item.common.id)
+        .map(|chapter_id| chapter_label(content, chapter_id))
+        .unwrap_or_else(|| "对应章节".to_string());
+    format!(
+        "F2/F5 选择{}推进；Boss 到场前补单体输出和生存容错，应对：{}。",
+        chapter, item.common.counterplay
+    )
+}
+
+fn runtime_codex_map_action_hint(
+    item: &MapDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    let status = if progress.unlocks.maps.contains(&item.id) {
+        "F5 可直接选择"
+    } else {
+        "先推进前置章节解锁"
+    };
+    if let Some(chapter_id) = runtime_chapter_for_map_id(&item.id) {
+        if let Some(chapter) = progress.chapters.get(chapter_id) {
+            if let Some((_, label, reward)) = runtime_chapter_goal_entries(chapter_id, content)
+                .into_iter()
+                .find(|(goal_id, _, _)| !chapter.completed_goals.contains(goal_id))
+            {
+                return format!(
+                    "{status}；下一局优先{}：{}（{}）。",
+                    chapter_label(content, chapter_id),
+                    label,
+                    reward
+                );
+            }
+        }
+        return format!(
+            "{status}；{}章节目标已清，可换下一张地图或尝试每日/无尽。",
+            chapter_label(content, chapter_id)
+        );
+    }
+    format!("{status}；观察地图危险节奏，优先补移动和控制。")
+}
+
+fn runtime_codex_evolution_action_hint(
+    item: &EvolutionDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    let chapter_hint = runtime_chapter_for_target_evolution(&item.id)
+        .map(|chapter_id| format!("它也是{}章节构筑目标；", chapter_label(content, chapter_id)))
+        .unwrap_or_default();
+    let weapon_available = progress
+        .unlocks
+        .weapons
+        .contains(&item.requirements.weapon.id)
+        || content
+            .weapons
+            .get(&item.requirements.weapon.id)
+            .is_some_and(|weapon| runtime_is_default_unlock(&weapon.unlock.unlock_type));
+    let passive_ready = item
+        .requirements
+        .passive
+        .as_ref()
+        .map_or(true, |requirement| {
+            progress.unlocks.passives.contains(&requirement.id)
+                || content
+                    .passives
+                    .get(&requirement.id)
+                    .is_some_and(|passive| runtime_is_default_unlock(&passive.unlock.unlock_type))
+        });
+    let start_hint = if weapon_available && passive_ready {
+        "F5 可尽量把所需武器/被动带入开局"
+    } else {
+        "先在基地构筑商店补齐所需武器/被动"
+    };
+    format!(
+        "{chapter_hint}{start_hint}；局内满足{}并等待{}。",
+        format_evolution_codex_requirements(item, content),
+        runtime_evolution_trigger_label(&item.requirements.trigger)
+    )
+}
+
+fn runtime_codex_event_action_hint(item: &EventDefinition, content: &ContentPack) -> String {
+    let first_effect = item
+        .effects
+        .first()
+        .map(|effect| format_event_effect_for_codex(effect, content))
+        .unwrap_or_else(|| "观察事件提示".to_string());
+    format!(
+        "标准巡逻中留意事件窗口；触发后围绕{}调整路线和升级选择。",
+        first_effect
+    )
+}
+
 fn runtime_maps_for_enemy(content: &ContentPack, enemy_id: &str) -> Vec<String> {
     let mut maps = BTreeSet::new();
     for wave in content.waves.values() {
@@ -8505,6 +8742,7 @@ fn runtime_codex_entries(
             let default_entry = MetaCodexEntry::default();
             let entry = codex_entry.unwrap_or(&default_entry);
             Some(RuntimeCodexEntryView {
+                action_hint: runtime_codex_action_hint(category, &id, content, progress),
                 id,
                 name,
                 description,
@@ -14941,6 +15179,7 @@ mod tests {
         assert!(panel.contains("初始武器 彩虹糖弹"));
         assert!(panel.contains("属性 生命"));
         assert!(panel.contains("来源 默认角色，F5 可直接选择"));
+        assert!(panel.contains("行动建议 F5 选择糖罐守护员试一局"));
         assert!(panel.contains("本局更新"));
     }
 
@@ -15003,6 +15242,8 @@ mod tests {
         assert!(panel.contains("威胁"));
         assert!(panel.contains("反制"));
         assert!(panel.contains("来源 出现地图"));
+        assert!(panel.contains("行动建议"));
+        assert!(panel.contains("局内应对"));
         assert!(panel.contains("焦糖工坊"));
         assert!(panel.contains("击败 3"));
     }
@@ -15057,6 +15298,8 @@ mod tests {
         assert!(panel.contains("彩虹糖弹"));
         assert!(panel.contains("来源 默认武器池，局内可抽；已可作为 F5 开局武器"));
         assert!(panel.contains("关联 糖霜草地 章节目标 彩虹糖流星雨"));
+        assert!(panel.contains("行动建议 F5 可用彩虹糖弹开局"));
+        assert!(panel.contains("优先围绕糖霜草地 章节目标 彩虹糖流星雨补齐进化线"));
     }
 
     #[test]
