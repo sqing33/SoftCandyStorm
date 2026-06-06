@@ -7007,7 +7007,7 @@ where
     let mut visible = ids
         .iter()
         .take(limit)
-        .map(|id| format!("{} ({})", label_for_id(id), id))
+        .map(|id| label_for_id(id))
         .collect::<Vec<_>>();
     if ids.len() > limit {
         visible.push(format!("+{} 项", ids.len() - limit));
@@ -9896,11 +9896,7 @@ fn format_runtime_starting_weapon_selection(
             )
         );
     }
-    format!(
-        "指定 {} ({})",
-        runtime_weapon_label(content, starting_weapon_id),
-        starting_weapon_id,
-    )
+    format!("指定 {}", runtime_weapon_label(content, starting_weapon_id))
 }
 
 fn normalize_runtime_starting_passive_id(
@@ -9934,9 +9930,8 @@ fn format_runtime_starting_passive_selection(
         );
     }
     format!(
-        "额外 {} ({})",
-        runtime_passive_label(content, starting_passive_id),
-        starting_passive_id,
+        "额外 {}",
+        runtime_passive_label(content, starting_passive_id)
     )
 }
 
@@ -16357,9 +16352,11 @@ mod tests {
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
         assert!(!panel.contains("特质 移动后短时间提升拾取范围 ("));
         assert!(panel.contains("角色玩法 机动拾取：保持移动拉怪"));
-        assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
+        assert!(panel.contains("初始装备 武器 汽水泡泡  被动 无"));
+        assert!(!panel.contains("初始装备 武器 汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
-        assert!(panel.contains("开局武器选择 角色默认 汽水泡泡 (soda-bubble-pop)"));
+        assert!(panel.contains("开局武器选择 角色默认 汽水泡泡"));
+        assert!(!panel.contains("开局武器选择 角色默认 汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局被动选择 无额外被动"));
         assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
         assert!(panel.contains("构筑池详情 默认武器"));
@@ -16395,7 +16392,7 @@ mod tests {
         assert!(panel.contains(
             "章节构筑目标 汽水火山：汽水喷泉 未解锁 + 泡泡鞋 F5 可切换/局内可抽，Boss 宝箱触发"
         ));
-        assert!(panel.contains("soda-bubble-pop"));
+        assert!(!panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
         assert!(panel.contains("T/手柄上 切换巡逻模式"));
