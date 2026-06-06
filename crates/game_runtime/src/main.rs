@@ -6677,14 +6677,14 @@ fn runtime_run_mode_description(mode: RunMode) -> &'static str {
         RunMode::LongPatrol => "留给 Build 更多升级和进化空间",
         RunMode::EndlessStorm => "先以 20 分钟强风暴目标承载极限 Build 与压力验证",
         RunMode::ChapterChallenge => "固定规则挑战后续接入",
-        RunMode::DailyStorm => "固定 seed 与强风暴压力，胜利额外给风暴糖粒",
+        RunMode::DailyStorm => "固定 seed 与强风暴压力，胜利额外给糖晶和风暴糖粒",
         RunMode::ExperimentalStorm => "候选内容测试模式，当前不进入主线",
     }
 }
 
 fn runtime_run_mode_reward_hint(mode: RunMode) -> &'static str {
     match mode {
-        RunMode::DailyStorm | RunMode::EndlessStorm => "胜利 +1 风暴糖粒",
+        RunMode::DailyStorm | RunMode::EndlessStorm => "胜利 +25% 糖晶 +1 风暴糖粒",
         RunMode::LongPatrol => "更多存活和击杀资源，适合做完整 Build",
         _ => "标准章节目标、解锁和图鉴进度",
     }
@@ -12004,8 +12004,8 @@ mod tests {
         );
 
         assert!(panel.contains("模式 每日风暴 (10 分钟固定 seed)"));
-        assert!(panel.contains("胜利额外给风暴糖粒"));
-        assert!(panel.contains("奖励 胜利 +1 风暴糖粒"));
+        assert!(panel.contains("胜利额外给糖晶和风暴糖粒"));
+        assert!(panel.contains("奖励 胜利 +25% 糖晶 +1 风暴糖粒"));
         assert!(panel.contains("每日固定 seed 66606"));
     }
 
