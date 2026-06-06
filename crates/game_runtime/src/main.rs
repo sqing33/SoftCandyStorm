@@ -2694,11 +2694,27 @@ fn format_runtime_hud_run_mode(run_mode: RunMode, config: &RunConfig) -> String 
     )
 }
 
-fn format_boss_status(boss: Option<&BossSnapshot>, content: &ContentPack) -> String {
-    let Some(boss) = boss else {
-        return "Boss 未出现".to_string();
-    };
+fn format_boss_status(snapshot: &RunSnapshot, content: &ContentPack) -> String {
+    if let Some(boss) = snapshot.boss.as_ref() {
+        return format_active_boss_status(boss, content);
+    }
 
+    if let Some((arrival_time, boss_id)) =
+        runtime_next_boss_arrival(content, &snapshot.map.map_id, snapshot.time_seconds)
+    {
+        return format!(
+            "Boss 下一只 {} ({})  还有 {:.0}s  {:.0}s 出现",
+            runtime_boss_label(content, boss_id),
+            boss_id,
+            (arrival_time - snapshot.time_seconds).max(0.0),
+            arrival_time,
+        );
+    }
+
+    "Boss 未出现".to_string()
+}
+
+fn format_active_boss_status(boss: &BossSnapshot, content: &ContentPack) -> String {
     let health = boss.health.max(0.0);
     let max_health = boss.max_health.max(0.0);
     let health_ratio = if max_health > 0.0 {
@@ -2942,6 +2958,19 @@ fn runtime_boss_arrival_time(content: &ContentPack, map_id: &str, boss_id: &str)
         .iter()
         .find(|event| event.boss_id == boss_id)
         .map(|event| event.time_second)
+}
+
+fn runtime_next_boss_arrival<'a>(
+    content: &'a ContentPack,
+    map_id: &str,
+    time_seconds: f32,
+) -> Option<(f32, &'a str)> {
+    runtime_wave_for_map(content, map_id)?
+        .boss_events
+        .iter()
+        .filter(|event| event.time_second >= time_seconds)
+        .min_by(|left, right| left.time_second.total_cmp(&right.time_second))
+        .map(|event| (event.time_second, event.boss_id.as_str()))
 }
 
 fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
@@ -3433,7 +3462,7 @@ fn update_hud(
             let play_state = if state.paused { "Paused" } else { "Playing" };
             let map_style = map_visual_style(&snapshot.map.map_id);
             let run_mode_status = format_runtime_hud_run_mode(state.run_mode, &state.config);
-            let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
+            let boss_status = format_boss_status(snapshot, &state.content);
             let chapter_objective_status = format_runtime_hud_chapter_objective(
                 &state.meta_progress,
                 snapshot,
@@ -11545,9 +11574,25 @@ mod tests {
     }
 
     #[test]
+    fn boss_status_renders_next_boss_countdown() {
+        let state = runtime_state_for_tests();
+        let mut snapshot = state.latest_snapshot.clone();
+        snapshot.time_seconds = 120.0;
+        let status = format_boss_status(&snapshot, &state.content);
+
+        assert!(status.contains("Boss 下一只 暴走搅糖机"));
+        assert!(status.contains("runaway-sugar-mixer"));
+        assert!(status.contains("还有 90s"));
+        assert!(status.contains("210s 出现"));
+    }
+
+    #[test]
     fn boss_status_renders_current_boss_health() {
-        let content = ContentPack::base_demo();
-        assert_eq!(format_boss_status(None, &content), "Boss 未出现");
+        let state = runtime_state_for_tests();
+        let mut snapshot = state.latest_snapshot.clone();
+        snapshot.time_seconds = 999.0;
+
+        assert_eq!(format_boss_status(&snapshot, &state.content), "Boss 未出现");
 
         let boss = BossSnapshot {
             entity_id: 42,
@@ -11556,7 +11601,8 @@ mod tests {
             max_health: 250.0,
             position: CoreVec2::ZERO,
         };
-        let status = format_boss_status(Some(&boss), &content);
+        snapshot.boss = Some(boss);
+        let status = format_boss_status(&snapshot, &state.content);
 
         assert!(status.contains("暴走搅糖机"));
         assert!(status.contains("runaway-sugar-mixer"));
@@ -11567,7 +11613,8 @@ mod tests {
 
     #[test]
     fn boss_status_renders_current_phase_abilities() {
-        let content = ContentPack::base_demo();
+        let state = runtime_state_for_tests();
+        let mut snapshot = state.latest_snapshot.clone();
         let boss = BossSnapshot {
             entity_id: 42,
             boss_id: "runaway-sugar-mixer".to_string(),
@@ -11575,7 +11622,8 @@ mod tests {
             max_health: 250.0,
             position: CoreVec2::ZERO,
         };
-        let status = format_boss_status(Some(&boss), &content);
+        snapshot.boss = Some(boss);
+        let status = format_boss_status(&snapshot, &state.content);
 
         assert!(status.contains("36%"));
         assert!(status.contains("阶段 2/2 45%"));
