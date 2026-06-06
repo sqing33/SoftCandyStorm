@@ -3231,6 +3231,7 @@ fn format_enemy_swarm_status(
     let mut behaviors = BTreeMap::<String, EnemyBehavior>::new();
     let mut boss_or_elite_count = 0usize;
     let mut max_threat: f32 = 0.0;
+    let mut top_threat_enemy: Option<(String, EnemyBehavior, f32)> = None;
     for enemy in enemies {
         *counts.entry(enemy.enemy_id.clone()).or_default() += 1;
         behaviors
@@ -3238,6 +3239,12 @@ fn format_enemy_swarm_status(
             .or_insert(enemy.behavior);
         if enemy.is_boss || enemy.is_elite {
             boss_or_elite_count += 1;
+        }
+        if top_threat_enemy
+            .as_ref()
+            .map_or(true, |(_, _, threat)| enemy.threat > *threat)
+        {
+            top_threat_enemy = Some((enemy.enemy_id.clone(), enemy.behavior, enemy.threat));
         }
         max_threat = max_threat.max(enemy.threat.max(0.0));
     }
@@ -3266,13 +3273,89 @@ fn format_enemy_swarm_status(
     } else {
         String::new()
     };
+    let counterplay = top_threat_enemy
+        .as_ref()
+        .and_then(|(enemy_id, behavior, _)| {
+            format_enemy_swarm_counterplay(content, enemy_id, *behavior)
+        })
+        .map(|counterplay| format!("  应对 {counterplay}"))
+        .unwrap_or_default();
     format!(
-        "敌群 {}  可见 {}  最高威胁 {:.1}{}",
+        "敌群 {}  可见 {}  最高威胁 {:.1}{}{}",
         visible.join(", "),
         enemies.len(),
         max_threat,
         special,
+        counterplay,
     )
+}
+
+fn format_enemy_swarm_counterplay(
+    content: &ContentPack,
+    enemy_id: &str,
+    behavior: EnemyBehavior,
+) -> Option<String> {
+    let content_counterplay = content
+        .enemies
+        .get(enemy_id)
+        .map(|enemy| enemy.common.counterplay.as_str())
+        .or_else(|| {
+            content
+                .bosses
+                .get(enemy_id)
+                .map(|boss| boss.common.counterplay.as_str())
+        })
+        .map(trim_runtime_sentence_end);
+
+    if let Some(counterplay) = content_counterplay
+        .as_ref()
+        .filter(|counterplay| !counterplay.is_empty())
+        .filter(|counterplay| counterplay.as_str() != "保持移动并用自动武器清理")
+    {
+        return Some(counterplay.clone());
+    }
+
+    runtime_enemy_behavior_counterplay_hint(content, enemy_id, behavior).map(str::to_string)
+}
+
+fn runtime_enemy_behavior_counterplay_hint(
+    content: &ContentPack,
+    enemy_id: &str,
+    behavior: EnemyBehavior,
+) -> Option<&'static str> {
+    let tags = content
+        .enemies
+        .get(enemy_id)
+        .map(|enemy| enemy.common.tags.as_slice())
+        .unwrap_or(&[]);
+    match behavior {
+        EnemyBehavior::Chase => {
+            if tags.iter().any(|tag| tag == "slow" || tag == "control") {
+                Some("优先拉开距离，避免被减速围住")
+            } else if tags.iter().any(|tag| tag == "tank" || tag == "blocker") {
+                Some("用穿透或范围提前削血，别让它堵路")
+            } else if tags.iter().any(|tag| tag == "fast") {
+                Some("提前拉开距离，别被快速贴身")
+            } else {
+                Some("保持移动并用自动武器清理")
+            }
+        }
+        EnemyBehavior::Dash => Some("看蓄力后横向躲开"),
+        EnemyBehavior::Split => Some("提前范围清理，别在身边集中击杀"),
+        EnemyBehavior::LeaveHazard => Some("绕开黏地，优先清路线附近"),
+        EnemyBehavior::OrbitPlayer => Some("别贴边，保持可绕行空间"),
+        EnemyBehavior::Jump => Some("看落点阴影，落地硬直再输出"),
+        EnemyBehavior::RangedSpit => Some("横向移动躲弹幕，先清远程"),
+        EnemyBehavior::Shielded => Some("绕到背后或用穿透破盾"),
+    }
+}
+
+fn trim_runtime_sentence_end(text: &str) -> String {
+    text.trim()
+        .trim_end_matches(|character: char| {
+            matches!(character, '。' | '.' | '！' | '!' | '？' | '?')
+        })
+        .to_string()
 }
 
 fn runtime_enemy_behavior_label(
@@ -13393,6 +13476,7 @@ mod tests {
         assert!(status.contains("可见 4"));
         assert!(status.contains("最高威胁 2.8"));
         assert!(status.contains("精英/Boss 1"));
+        assert!(status.contains("应对 绕开黏地，优先清路线附近"));
     }
 
     #[test]
