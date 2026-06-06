@@ -3405,18 +3405,28 @@ fn format_event_effect_status(
         if let Some((start_second, end_second, chance, event_id)) =
             runtime_next_event_window(content, time_seconds)
         {
+            let hint = format_runtime_event_hint(content, event_id)
+                .map(|hint| format!("  提示 {hint}"))
+                .unwrap_or_default();
             return format!(
-                "事件窗口 {}  {:.0}-{:.0}s  还有 {:.0}s  概率 {:.0}%",
+                "事件窗口 {}  {:.0}-{:.0}s  还有 {:.0}s  概率 {:.0}%{}",
                 runtime_event_label(content, event_id),
                 start_second,
                 end_second,
                 (start_second - time_seconds).max(0.0),
                 chance * 100.0,
+                hint,
             );
         }
         "事件效果 无".to_string()
     } else {
-        format!("事件效果 {}", active.join(", "))
+        let hint = effects
+            .iter()
+            .filter(|effect| effect.remaining_seconds > 0.0)
+            .find_map(|effect| format_runtime_event_hint(content, &effect.event_id))
+            .map(|hint| format!("  提示 {hint}"))
+            .unwrap_or_default();
+        format!("事件效果 {}{}", active.join(", "), hint)
     }
 }
 
@@ -3440,6 +3450,14 @@ fn runtime_next_event_window(
             })
         })
         .min_by(|left, right| left.0.total_cmp(&right.0))
+}
+
+fn format_runtime_event_hint(content: &ContentPack, event_id: &str) -> Option<String> {
+    content
+        .events
+        .get(event_id)
+        .map(|event| trim_runtime_sentence_end(&event.description))
+        .filter(|hint| !hint.is_empty())
 }
 
 fn runtime_event_effect_label(effect_type: &str) -> String {
@@ -13569,6 +13587,7 @@ mod tests {
         assert!(status.contains("事件效果"));
         assert!(status.contains("彩虹糖潮 XP x1.40 24.5s"));
         assert!(status.contains("彩虹糖潮 刷怪 x1.25 24.5s"));
+        assert!(status.contains("提示 短时间内糖晶掉落增加，但敌人生成也会加快"));
     }
 
     #[test]
@@ -13587,6 +13606,7 @@ mod tests {
         assert!(status.contains("120-"));
         assert!(status.contains("还有 60s"));
         assert!(status.contains("概率 6%"));
+        assert!(status.contains("提示 "));
     }
 
     #[test]
