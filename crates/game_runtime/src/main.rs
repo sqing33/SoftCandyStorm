@@ -5617,6 +5617,9 @@ fn render_meta_chapter_panel(
             lines.push(format!("Boss说明 {}", boss.common.description));
             lines.push(format!("应对 {}", boss.common.counterplay));
         }
+        lines.push(format_runtime_chapter_strategy_line(
+            chapter, progress, content, config,
+        ));
         let goal_lines =
             runtime_chapter_goal_lines(&chapter.chapter_id, &chapter.completed_goals, content);
         lines.push(format!("目标\n{}", goal_lines.join("\n")));
@@ -6267,6 +6270,50 @@ fn format_runtime_chapter_reward_preview(chapter_id: &str, content: &ContentPack
         "星片和章节完成度".to_string()
     } else {
         rewards.join(" / ")
+    }
+}
+
+fn format_runtime_chapter_strategy_line(
+    chapter: &game_core::meta::ChapterProgress,
+    progress: &MetaProgress,
+    content: &ContentPack,
+    config: &RunConfig,
+) -> String {
+    let launch_hint = if chapter.unlocked {
+        "按 G 进入章节挑战"
+    } else {
+        "先完成解锁条件"
+    };
+    let goal_hint = runtime_chapter_goal_entries(&chapter.chapter_id, content)
+        .into_iter()
+        .find(|(goal_id, _, _)| !chapter.completed_goals.contains(goal_id))
+        .map(|(_, label, reward)| format!("优先{label}（{reward}）"))
+        .unwrap_or_else(|| "目标已清，转下一章或每日/无尽".to_string());
+    let build_hint = format_runtime_loadout_chapter_build_status(
+        progress,
+        content,
+        &chapter.map_id,
+        &config.starting_loadout,
+    )
+    .unwrap_or_else(|| "构筑按地图压力补输出、控制或生存".to_string());
+    let map_hint = content
+        .maps
+        .get(&chapter.map_id)
+        .map(format_runtime_chapter_strategy_map_hint)
+        .unwrap_or_else(|| "地图压力未知，先保持绕圈拾取".to_string());
+    let boss_hint = content
+        .bosses
+        .get(&chapter.boss_id)
+        .map(|boss| format!("Boss 前补单体输出；{}", boss.common.counterplay))
+        .unwrap_or_else(|| "Boss 前补单体输出和生存容错".to_string());
+    format!("章节战术 {launch_hint}；{goal_hint}；{build_hint}；{map_hint}；{boss_hint}")
+}
+
+fn format_runtime_chapter_strategy_map_hint(map: &MapDefinition) -> String {
+    if let Some(hazard) = map.hazards.first() {
+        format!("地图留意{}", runtime_map_hazard_label(&hazard.hazard_type))
+    } else {
+        "地图无固定危险，先练移动拾取节奏".to_string()
     }
 }
 
@@ -15039,6 +15086,9 @@ mod tests {
         assert!(panel.contains("地图说明 覆盖糖霜的开阔草地"));
         assert!(panel.contains("Boss说明"));
         assert!(panel.contains("应对"));
+        assert!(panel.contains("章节战术 按 G 进入章节挑战"));
+        assert!(panel.contains("优先击败暴走搅糖机"));
+        assert!(panel.contains("地图无固定危险，先练移动拾取节奏"));
         assert!(panel.contains("survive-10-minutes"));
         assert!(panel.contains("奖励 星片 +1"));
         assert!(panel.contains("章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到"));
@@ -15082,6 +15132,8 @@ mod tests {
         ));
         assert!(panel
             .contains("章节奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"));
+        assert!(panel.contains("章节战术 先完成解锁条件"));
+        assert!(panel.contains("地图留意泡泡水流"));
         assert!(panel.contains("defeat-soda-fountain-dragon"));
         assert!(panel.contains("击败汽水喷泉龙"));
         assert!(panel.contains("集齐 4 星片开放 棉花云牧场"));
