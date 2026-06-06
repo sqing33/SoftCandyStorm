@@ -110,6 +110,7 @@ const RUNTIME_SELECTABLE_RUN_MODES: [RunMode; 5] = [
 ];
 const RUNTIME_HUD_TEXT_REFRESH_SECONDS: f32 = 0.10;
 const RUNTIME_META_TEXT_REFRESH_SECONDS: f32 = 0.25;
+const RUNTIME_EVENT_TIMELINE_LIMIT: usize = 6;
 const GAMEPAD_LEFT_STICK_DEADZONE: f32 = 0.15;
 
 fn main() {
@@ -321,6 +322,8 @@ struct RuntimeState {
     story_codex_ui_candidate: Option<RuntimeStoryCodexUiCandidateManifest>,
     asset_runtime_candidate: Option<RuntimeAssetCandidateManifest>,
     last_meta_settlement: Option<MetaSettlementReport>,
+    event_timeline: Vec<RuntimeEventTimelineEntry>,
+    last_settlement_event_timeline: Vec<RuntimeEventTimelineEntry>,
     settled_run_number: Option<u32>,
 }
 
@@ -774,6 +777,7 @@ struct RuntimeMetaPanelRenderContext<'a> {
     runtime_settings_file: Option<&'a Path>,
     story_codex_ui_candidate: Option<&'a RuntimeStoryCodexUiCandidateManifest>,
     asset_runtime_candidate: Option<&'a RuntimeAssetCandidateManifest>,
+    last_settlement_event_timeline: &'a [RuntimeEventTimelineEntry],
     content: &'a ContentPack,
     config: &'a RunConfig,
     run_mode: RunMode,
@@ -798,6 +802,12 @@ struct RuntimeEventCounts {
     player_damaged: u32,
     content_event_triggered: u32,
     run_ended: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct RuntimeEventTimelineEntry {
+    time_seconds: f32,
+    label: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1174,6 +1184,8 @@ fn setup_runtime(
         story_codex_ui_candidate,
         asset_runtime_candidate,
         last_meta_settlement: None,
+        event_timeline: Vec::new(),
+        last_settlement_event_timeline: Vec::new(),
         settled_run_number: None,
     });
     commands.insert_resource(create_runtime_sounds(&mut audio_sources));
@@ -3759,6 +3771,7 @@ fn update_hud(
                     runtime_settings_file: state.runtime_settings_file.as_deref(),
                     story_codex_ui_candidate: state.story_codex_ui_candidate.as_ref(),
                     asset_runtime_candidate: state.asset_runtime_candidate.as_ref(),
+                    last_settlement_event_timeline: &state.last_settlement_event_timeline,
                     content: &state.content,
                     config: &state.config,
                     run_mode: state.run_mode,
@@ -3773,6 +3786,12 @@ fn update_hud(
 
 fn apply_runtime_feedback(state: &mut RuntimeState, events: &[GameEvent], snapshot: &RunSnapshot) {
     state.capture.event_counts.observe(events);
+    record_runtime_event_timeline(
+        &mut state.event_timeline,
+        events,
+        snapshot.time_seconds,
+        &state.content,
+    );
     let feedback = feedback_for_events(events, &state.content);
     state.last_event = feedback.message;
     state.last_event_kind = feedback.kind;
@@ -4035,6 +4054,48 @@ fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
             Some(format!("本局结束 {}", terminal_kind_label(terminal.kind)))
         }
         GameEvent::EnemyHit { .. } | GameEvent::XpDropped { .. } => None,
+    }
+}
+
+fn record_runtime_event_timeline(
+    timeline: &mut Vec<RuntimeEventTimelineEntry>,
+    events: &[GameEvent],
+    time_seconds: f32,
+    content: &ContentPack,
+) {
+    for event in events {
+        let Some(label) = runtime_event_timeline_label(event, content) else {
+            continue;
+        };
+        timeline.push(RuntimeEventTimelineEntry {
+            time_seconds,
+            label,
+        });
+    }
+
+    if timeline.len() > RUNTIME_EVENT_TIMELINE_LIMIT {
+        let overflow = timeline.len() - RUNTIME_EVENT_TIMELINE_LIMIT;
+        timeline.drain(0..overflow);
+    }
+}
+
+fn runtime_event_timeline_label(event: &GameEvent, content: &ContentPack) -> Option<String> {
+    match event {
+        GameEvent::BossSpawned { .. }
+        | GameEvent::BossPhaseChanged { .. }
+        | GameEvent::BossAbilityUsed { .. }
+        | GameEvent::LevelUp { .. }
+        | GameEvent::UpgradeChosen { .. }
+        | GameEvent::ContentEventTriggered { .. }
+        | GameEvent::RunEnded { .. } => describe_event(event, content),
+        GameEvent::EnemySpawned { .. }
+        | GameEvent::WeaponFired { .. }
+        | GameEvent::EnemyHit { .. }
+        | GameEvent::EnemyKilled { .. }
+        | GameEvent::XpDropped { .. }
+        | GameEvent::XpCollected { .. }
+        | GameEvent::UpgradeOffered { .. }
+        | GameEvent::PlayerDamaged { .. } => None,
     }
 }
 
@@ -4356,6 +4417,8 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.paused = false;
     state.run_number += 1;
     state.last_meta_settlement = None;
+    state.event_timeline.clear();
+    state.last_settlement_event_timeline.clear();
     state.settled_run_number = None;
 }
 
@@ -4779,6 +4842,7 @@ fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
     let mut summary = MetaRunSummary::from_metrics(run_id, &state.config, &metrics);
     summary.mode = state.run_mode;
     let report = state.meta_progress.apply_run_summary(&summary);
+    state.last_settlement_event_timeline = state.event_timeline.clone();
     state.last_meta_settlement = Some(report);
     state.settled_run_number = Some(state.run_number);
     if let Err(error) = persist_runtime_save_if_configured(state) {
@@ -4799,6 +4863,7 @@ fn render_meta_progress_panel(
             settlement,
             context.content,
             context.asset_runtime_candidate,
+            context.last_settlement_event_timeline,
         ),
         RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(
             progress,
@@ -4833,6 +4898,7 @@ fn render_meta_overview_panel(
     settlement: Option<&MetaSettlementReport>,
     content: &ContentPack,
     asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
+    last_settlement_event_timeline: &[RuntimeEventTimelineEntry],
 ) -> String {
     let discovered = meta_codex_discovered_count(progress);
     let completed_goals = meta_completed_goal_count(progress);
@@ -4867,7 +4933,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
@@ -4879,6 +4945,7 @@ fn render_meta_overview_panel(
             summary.boss_damage,
             summary.damage_taken,
             format_damage_sources(&summary.damage_taken_by_source, 2),
+            format_settlement_event_timeline(last_settlement_event_timeline),
             format_weapon_levels(&summary.weapon_levels, 4),
             format_passive_set(&summary.passives_used, 3),
             format_evolution_set(&summary.evolutions_used, content, 3),
@@ -7220,6 +7287,24 @@ fn format_settlement_notes(notes: &[String], limit: usize) -> String {
     format_string_items(&values, limit)
 }
 
+fn format_settlement_event_timeline(timeline: &[RuntimeEventTimelineEntry]) -> String {
+    if timeline.is_empty() {
+        return "无关键事件记录".to_string();
+    }
+
+    timeline
+        .iter()
+        .map(|entry| {
+            format!(
+                "{} {}",
+                format_settlement_duration(entry.time_seconds),
+                entry.label
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" | ")
+}
+
 fn format_settlement_note_label(note: &str) -> String {
     if let Some(value) = note.strip_prefix("strong_storm_candy_crystal_bonus:") {
         return format!("强风暴糖晶加成 +{value}");
@@ -9354,30 +9439,31 @@ mod tests {
         format_enemy_behavior_details, format_enemy_swarm_status, format_event_effect_for_codex,
         format_event_effect_status, format_hazard_status, format_meta_shop_offer_line,
         format_runtime_hud_chapter_build_goal, format_runtime_hud_chapter_objective,
-        format_runtime_hud_run_mode, format_terminal_overlay, format_upgrade_options,
-        format_upgrade_playstyle_preview, load_runtime_asset_candidate_manifest,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
-        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, projectile_visual_style, purchase_next_runtime_shop_offer,
-        read_runtime_save_state, render_meta_progress_panel, resolve_runtime_content_selection,
-        resolve_runtime_platform_paths, restore_runtime_loadout_selection_from_save,
-        run_config_from_cli, run_runtime_data_control_action,
-        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
-        runtime_boss_ability_label, runtime_boss_ability_summary, runtime_can_upload,
-        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
-        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
-        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
-        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
-        runtime_codex_enemy_description, runtime_codex_map_description,
-        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
-        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
-        runtime_local_data_export_path, runtime_meta_panel_cache_key,
-        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
-        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
-        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
-        runtime_overview_view_from_pointer_zone, runtime_privacy_notice,
-        runtime_run_mode_duration_seconds, runtime_save_export_path,
+        format_runtime_hud_run_mode, format_settlement_event_timeline, format_terminal_overlay,
+        format_upgrade_options, format_upgrade_playstyle_preview,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
+        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
+        projectile_visual_style, purchase_next_runtime_shop_offer, read_runtime_save_state,
+        record_runtime_event_timeline, render_meta_progress_panel,
+        resolve_runtime_content_selection, resolve_runtime_platform_paths,
+        restore_runtime_loadout_selection_from_save, run_config_from_cli,
+        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
+        runtime_asset_root, runtime_behavior_label, runtime_boss_ability_label,
+        runtime_boss_ability_summary, runtime_can_upload, runtime_chapter_action_from_gamepad,
+        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
+        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
+        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
+        runtime_codex_action_from_pointer_zone, runtime_codex_enemy_description,
+        runtime_codex_map_description, runtime_loadout_action_from_gamepad,
+        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
+        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
+        runtime_meta_panel_cache_key, runtime_meta_panel_tab_view_from_gamepad,
+        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
+        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
+        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
+        runtime_privacy_notice, runtime_run_mode_duration_seconds, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
@@ -9391,16 +9477,16 @@ mod tests {
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
         RuntimeCaptureState, RuntimeChapterAction, RuntimeCli, RuntimeCodexAction,
         RuntimeCodexCategory, RuntimeDataControlAction, RuntimeDataControlContext,
-        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeFrameMetricsReport,
-        RuntimeFrameMetricsState, RuntimeLoadoutAction, RuntimeMetaPanelRenderContext,
-        RuntimeMetaPanelView, RuntimePrivacyReport, RuntimePrivacySettings,
-        RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSettingsAction, RuntimeSound,
-        RuntimeState, RuntimeStoryCodexUiCandidateManifest, RuntimeStoryCodexUiCandidateRules,
-        RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID, DEFAULT_PLATFORM_DATA_ROOT,
-        DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID, MAX_PROFILED_FRAME_SECONDS,
-        PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT, PLATFORM_SAVE_ROOT,
-        PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT, RUNTIME_SAVE_TIMESTAMP,
-        RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
+        RuntimeEffectKind, RuntimeEventCounts, RuntimeEventKind, RuntimeEventTimelineEntry,
+        RuntimeFrameMetricsReport, RuntimeFrameMetricsState, RuntimeLoadoutAction,
+        RuntimeMetaPanelRenderContext, RuntimeMetaPanelView, RuntimePrivacyReport,
+        RuntimePrivacySettings, RuntimeSaveDataControls, RuntimeSaveStateV0, RuntimeSettingsAction,
+        RuntimeSound, RuntimeState, RuntimeStoryCodexUiCandidateManifest,
+        RuntimeStoryCodexUiCandidateRules, RuntimeUploadKind, DEFAULT_CONTENT_DIR, DEFAULT_MAP_ID,
+        DEFAULT_PLATFORM_DATA_ROOT, DEFAULT_PROFILE_ID, DEFAULT_SAVE_ID,
+        MAX_PROFILED_FRAME_SECONDS, PLATFORM_CRASH_REPORT_ROOT, PLATFORM_REPLAY_ROOT,
+        PLATFORM_SAVE_ROOT, PLATFORM_SETTINGS_ROOT, PLATFORM_TELEMETRY_ROOT,
+        RUNTIME_SAVE_TIMESTAMP, RUNTIME_SAVE_V0_CONTRACT_ID, RUNTIME_SAVE_V0_SCHEMA_VERSION,
     };
     use bevy::prelude::{
         Axis, ButtonInput, Color, Gamepad, GamepadAxis, GamepadAxisType, GamepadButton,
@@ -9434,6 +9520,7 @@ mod tests {
             runtime_settings_file,
             story_codex_ui_candidate,
             asset_runtime_candidate,
+            last_settlement_event_timeline: &[],
             content,
             config,
             run_mode: RunMode::StandardPatrol,
@@ -9491,6 +9578,8 @@ mod tests {
             story_codex_ui_candidate: None,
             asset_runtime_candidate: None,
             last_meta_settlement: None,
+            event_timeline: Vec::new(),
+            last_settlement_event_timeline: Vec::new(),
             settled_run_number: None,
         }
     }
@@ -12528,6 +12617,53 @@ mod tests {
     }
 
     #[test]
+    fn runtime_event_timeline_records_key_events_and_limits_noise() {
+        let content = ContentPack::base_demo();
+        let mut timeline = Vec::new();
+        record_runtime_event_timeline(
+            &mut timeline,
+            &[
+                GameEvent::EnemySpawned {
+                    entity_id: 1,
+                    enemy_id: "bouncy-gummy".to_string(),
+                },
+                GameEvent::LevelUp { level: 2 },
+                GameEvent::UpgradeOffered {
+                    options: vec!["rainbow-candy-shot-level-2".to_string()],
+                },
+                GameEvent::UpgradeChosen {
+                    option_id: "rainbow-candy-shot-level-2".to_string(),
+                },
+            ],
+            12.0,
+            &content,
+        );
+
+        assert_eq!(timeline.len(), 2);
+        assert_eq!(timeline[0].label, "升到 Lv.2");
+        assert_eq!(timeline[1].label, "选择 rainbow-candy-shot-level-2");
+
+        for index in 0..8 {
+            record_runtime_event_timeline(
+                &mut timeline,
+                &[GameEvent::BossAbilityUsed {
+                    entity_id: 7,
+                    boss_id: "runaway-sugar-mixer".to_string(),
+                    ability_id: "dash_charge".to_string(),
+                }],
+                30.0 + index as f32,
+                &content,
+            );
+        }
+
+        assert_eq!(timeline.len(), 6);
+        assert!(timeline[0].time_seconds >= 32.0);
+        let rendered = format_settlement_event_timeline(&timeline);
+        assert!(rendered.contains("Boss 暴走搅糖机 使用 直线冲撞：横向躲开冲撞线"));
+        assert!(!rendered.contains("升到 Lv.2"));
+    }
+
+    #[test]
     fn meta_panel_highlights_last_settlement() {
         let mut progress = MetaProgress::demo_start();
         let summary = MetaRunSummary {
@@ -12555,20 +12691,36 @@ mod tests {
             bosses_defeated: Default::default(),
         };
         let report = progress.apply_run_summary(&summary);
+        let timeline = vec![
+            RuntimeEventTimelineEntry {
+                time_seconds: 30.0,
+                label: "升到 Lv.2".to_string(),
+            },
+            RuntimeEventTimelineEntry {
+                time_seconds: 180.0,
+                label: "Boss 出现 暴走搅糖机 (runaway-sugar-mixer)".to_string(),
+            },
+        ];
+        let privacy_settings = RuntimePrivacySettings::default();
+        let content = ContentPack::base_demo();
+        let config = RunConfig::default();
+        let base_ui_state = RuntimeBaseUiState::default();
+        let mut context = meta_panel_context(
+            &privacy_settings,
+            None,
+            None,
+            None,
+            &content,
+            &config,
+            &base_ui_state,
+            0,
+        );
+        context.last_settlement_event_timeline = &timeline;
         let panel = render_meta_progress_panel(
             &progress,
             Some(&report),
             RuntimeMetaPanelView::Overview,
-            meta_panel_context(
-                &RuntimePrivacySettings::default(),
-                None,
-                None,
-                None,
-                &ContentPack::base_demo(),
-                &RunConfig::default(),
-                &RuntimeBaseUiState::default(),
-                0,
-            ),
+            context,
         );
 
         assert!(panel.contains("糖罐守护站"));
@@ -12582,6 +12734,7 @@ mod tests {
         assert!(panel.contains("输出 900"));
         assert!(panel.contains("受伤 12.5"));
         assert!(panel.contains("接触 9.0"));
+        assert!(panel.contains("关键事件 30s 升到 Lv.2 | 180s Boss 出现 暴走搅糖机"));
         assert!(panel.contains("rainbow-candy-shot Lv.1"));
         assert!(panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
         assert!(panel.contains("collect-200-candy-crystals"));
