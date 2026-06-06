@@ -1941,6 +1941,12 @@ fn format_upgrade_context(
     if let Some(evolution_hint) = format_upgrade_evolution_hint(option, content, build) {
         notes.push(evolution_hint);
     }
+    if let Some(new_route_hint) = format_upgrade_new_route_hint(option, content, build) {
+        notes.push(new_route_hint);
+    }
+    if let Some(gap_fit) = format_upgrade_gap_fit(&option.tags, build) {
+        notes.push(gap_fit);
+    }
     if let Some(tag_fit) = format_upgrade_tag_fit(&option.tags, build) {
         notes.push(tag_fit);
     }
@@ -2110,6 +2116,58 @@ fn format_upgrade_tag_fit(tags: &[String], build: &BuildSnapshot) -> Option<Stri
     } else {
         Some(format!("Build 契合 {}", matching_tags.join(" / ")))
     }
+}
+
+fn format_upgrade_new_route_hint(
+    option: &UpgradeOptionSnapshot,
+    content: &ContentPack,
+    build: &BuildSnapshot,
+) -> Option<String> {
+    if upgrade_option_level(&option.id).is_some() {
+        return None;
+    }
+    let content_id = upgrade_option_content_id(&option.id);
+    let is_new_weapon = content.weapons.contains_key(content_id)
+        && !build.weapons.iter().any(|item| item.id == content_id);
+    let is_new_passive = content.passives.contains_key(content_id)
+        && !build.passives.iter().any(|item| item.id == content_id);
+    (is_new_weapon || is_new_passive).then(|| "新路线".to_string())
+}
+
+fn format_upgrade_gap_fit(tags: &[String], build: &BuildSnapshot) -> Option<String> {
+    if !build_has_any_tag(build, &["defense", "control", "orbit", "health", "slow"])
+        && tags_have_any(tags, &["defense", "control", "orbit", "health", "slow"])
+    {
+        return Some("补强 缺容错".to_string());
+    }
+    if !build_has_any_tag(
+        build,
+        &[
+            "boss-killer",
+            "single-target",
+            "beam",
+            "projectile",
+            "pierce",
+        ],
+    ) && tags_have_any(
+        tags,
+        &[
+            "boss-killer",
+            "single-target",
+            "beam",
+            "projectile",
+            "pierce",
+        ],
+    ) {
+        return Some("补强 Boss 输出".to_string());
+    }
+    None
+}
+
+fn tags_have_any(tags: &[String], wanted: &[&str]) -> bool {
+    wanted
+        .iter()
+        .any(|wanted_tag| tags.iter().any(|tag| tag == wanted_tag))
 }
 
 fn format_upgrade_tags(tags: &[String]) -> String {
@@ -15719,7 +15777,7 @@ mod tests {
             game_core::UpgradeOptionSnapshot {
                 id: "soda-bubble-pop".to_string(),
                 name: "获得汽水泡泡".to_string(),
-                tags: vec!["控制".to_string()],
+                tags: vec!["control".to_string()],
                 description: "发射会弹跳的汽水泡泡。".to_string(),
             },
             game_core::UpgradeOptionSnapshot {
@@ -15752,6 +15810,7 @@ mod tests {
         assert!(rendered.contains("id rainbow-candy-shot-level-2"));
         assert!(rendered.contains("2. 获得汽水泡泡  新获得  类型 新武器"));
         assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
+        assert!(rendered.contains("标签 控制  关联 新路线  补强 缺容错"));
         assert!(rendered.contains("3. 彩虹糖流星雨  进化  类型 进化"));
         assert!(rendered.contains("数值 伤害 42  冷却 0.90s  数量 8  范围 620"));
         assert!(rendered.contains("玩法 目标 随机敌人  进化武器"));
