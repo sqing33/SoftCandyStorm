@@ -1835,7 +1835,7 @@ fn format_upgrade_options(
         .enumerate()
         .map(|(index, option)| {
             format!(
-                "{}. {}  {}  类型 {}\n   {}\n   数值 {}\n   玩法 {}\n   标签 {}  关联 {}\n   id {}",
+                "{}. {}  {}  类型 {}\n   {}\n   数值 {}\n   玩法 {}\n   标签 {}  关联 {}",
                 index + 1,
                 option.name,
                 format_upgrade_option_state(option),
@@ -1845,7 +1845,6 @@ fn format_upgrade_options(
                 format_upgrade_playstyle_preview(option, content),
                 format_upgrade_tags(&option.tags),
                 format_upgrade_context(option, content, build, chapter_target_evolution_id),
-                option.id,
             )
         })
         .collect::<Vec<_>>()
@@ -16844,7 +16843,8 @@ mod tests {
         assert!(rendered.contains("标签 弹幕 / 单体"));
         assert!(rendered.contains("关联 进化线 彩虹糖流星雨: 彩虹糖弹 1/5 + 糖晶放大镜 0/3"));
         assert!(rendered.contains("契合当前构筑 弹幕"));
-        assert!(rendered.contains("id rainbow-candy-shot-level-2"));
+        assert!(!rendered.contains("id rainbow-candy-shot-level-2"));
+        assert!(!rendered.contains("rainbow-candy-shot-level-2"));
         assert!(rendered.contains("2. 获得汽水泡泡  新获得  类型 新武器"));
         assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
         assert!(rendered.contains("标签 控制  关联 新路线  补强 缺容错"));
