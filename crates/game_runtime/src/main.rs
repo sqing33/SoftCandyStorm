@@ -4186,7 +4186,7 @@ fn render_meta_overview_panel(
             report.resources_gained.storm_grains,
             format_string_slice(&report.completed_goals, 2),
             format_meta_unlocks(report, content, 4),
-            format_string_slice(&report.codex_updates, 2),
+            format_codex_updates(&report.codex_updates, content, 4),
             format_settlement_next_step(report),
         ));
     } else {
@@ -4446,7 +4446,7 @@ fn render_meta_codex_panel(
     if let Some(report) = settlement {
         lines.push(format!(
             "本局更新 {}",
-            format_string_slice(&report.codex_updates, 3)
+            format_codex_updates(&report.codex_updates, content, 5)
         ));
     } else {
         lines.push("本局图鉴更新会在结算后显示".to_string());
@@ -6105,6 +6105,49 @@ fn format_meta_unlock_label(kind: &str, id: &str, content: &ContentPack) -> Stri
         "event" => format!("事件 {} ({id})", runtime_event_label(content, id)),
         _ => format!("{kind}:{id}"),
     }
+}
+
+fn format_codex_updates(updates: &[String], content: &ContentPack, limit: usize) -> String {
+    let values = updates
+        .iter()
+        .map(|update| format_codex_update_label(update, content))
+        .collect::<Vec<_>>();
+    format_string_items(&values, limit)
+}
+
+fn format_codex_update_label(update: &str, content: &ContentPack) -> String {
+    if let Some(id) = update.strip_prefix("discovered:") {
+        return format!("发现 {}", runtime_codex_content_label(content, id));
+    }
+    update.to_string()
+}
+
+fn runtime_codex_content_label(content: &ContentPack, id: &str) -> String {
+    if content.characters.contains_key(id) {
+        return format!("角色 {} ({id})", runtime_character_label(content, id));
+    }
+    if content.weapons.contains_key(id) {
+        return format!("武器 {} ({id})", runtime_weapon_label(content, id));
+    }
+    if content.passives.contains_key(id) {
+        return format!("被动 {} ({id})", runtime_passive_label(content, id));
+    }
+    if content.enemies.contains_key(id) {
+        return format!("敌人 {} ({id})", runtime_enemy_label(content, id));
+    }
+    if content.bosses.contains_key(id) {
+        return format!("Boss {} ({id})", runtime_boss_label(content, id));
+    }
+    if content.maps.contains_key(id) {
+        return format!("地图 {} ({id})", runtime_map_label(content, id));
+    }
+    if content.evolutions.contains_key(id) {
+        return format!("进化 {} ({id})", runtime_evolution_label(content, id));
+    }
+    if content.events.contains_key(id) {
+        return format!("事件 {} ({id})", runtime_event_label(content, id));
+    }
+    id.to_string()
 }
 
 fn format_settlement_outcome(summary: &MetaRunSummary) -> &'static str {
@@ -10274,7 +10317,8 @@ mod tests {
         assert!(panel.contains("rainbow-candy-shot Lv.1"));
         assert!(panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
         assert!(panel.contains("collect-200-candy-crystals"));
-        assert!(panel.contains("discovered:jar-keeper"));
+        assert!(panel.contains("发现 角色 糖罐守护员 (jar-keeper)"));
+        assert!(!panel.contains("discovered:jar-keeper"));
         assert!(panel.contains("下一步行动"));
         assert!(panel.contains("解锁概览"));
         assert!(panel.contains("章节进度"));
