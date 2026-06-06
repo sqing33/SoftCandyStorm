@@ -5001,12 +5001,13 @@ fn render_meta_overview_panel(
     let build_shop_summary = format_runtime_next_build_shop_line(progress, content);
 
     let mut output = format!(
-        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n基地解锁 {}\n构筑进阶 {}\n",
+        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n资源用途 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n基地解锁 {}\n构筑进阶 {}\n",
         META_PANEL_HEADER,
         META_PANEL_TAB_CLICK_HINT,
         progress.resources.candy_crystal_shards,
         progress.resources.star_shards,
         progress.resources.storm_grains,
+        format_runtime_resource_usage_summary(),
         completed_goals,
         discovered,
         unlocked_content,
@@ -5065,6 +5066,10 @@ fn render_meta_overview_panel(
     output.push_str("\n\n右下点击区: 章节  图鉴  设置  巡逻");
 
     output
+}
+
+fn format_runtime_resource_usage_summary() -> &'static str {
+    "糖晶买角色/构筑；星片开章节地图；风暴糖粒来自每日/无尽强风暴，后续用于强风暴奖励"
 }
 
 fn format_meta_overview_next_action(
@@ -13657,6 +13662,9 @@ mod tests {
         assert!(panel.contains("下一步行动"));
         assert!(panel.contains("解锁概览"));
         assert!(panel.contains("章节进度"));
+        assert!(
+            panel.contains("资源用途 糖晶买角色/构筑；星片开章节地图；风暴糖粒来自每日/无尽强风暴")
+        );
         assert!(panel.contains("奖励说明 无"));
         assert!(panel.contains("下一步"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
