@@ -2134,7 +2134,7 @@ fn format_upgrade_tag_fit(tags: &[String], build: &BuildSnapshot) -> Option<Stri
     if matching_tags.is_empty() {
         None
     } else {
-        Some(format!("Build 契合 {}", matching_tags.join(" / ")))
+        Some(format!("契合当前构筑 {}", matching_tags.join(" / ")))
     }
 }
 
@@ -2876,7 +2876,7 @@ fn player_tint(character_id: &str, health: f32, max_health: f32) -> Color {
 
 fn format_runtime_hud_run_mode(run_mode: RunMode, config: &RunConfig) -> String {
     format!(
-        "Mode {}  Target {}  Seed {}",
+        "模式 {}  目标 {}  种子 {}",
         runtime_run_mode_label(run_mode),
         runtime_run_mode_duration_label(run_mode),
         config.seed,
@@ -3192,7 +3192,7 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     let tags = format_tag_items(&build.tags, 4);
     let advice = format_runtime_build_advice(build, content);
     format!(
-        "Build 武器 {weapons}  被动 {passives}  进化 {evolutions}  进化线 {evolution_paths}  标签 {tags}  建议 {advice}"
+        "构筑 武器 {weapons}  被动 {passives}  进化 {evolutions}  进化线 {evolution_paths}  标签 {tags}  建议 {advice}"
     )
 }
 
@@ -3910,7 +3910,7 @@ fn format_terminal_defeat_advice(terminal: &TerminalState, build: &BuildSnapshot
         return "已有生存组件，下局优先补伤害或冷却，缩短危险区停留时间".to_string();
     }
 
-    "先看终局 Build 是否缺核心武器，再决定补输出、控制或拾取".to_string()
+    "先看终局构筑是否缺核心武器，再决定补输出、控制或拾取".to_string()
 }
 
 fn build_has_any_tag(build: &BuildSnapshot, tags: &[&str]) -> bool {
@@ -8485,7 +8485,7 @@ fn runtime_codex_passive_action_hint(
     };
     if unlocked {
         format!(
-            "F5 可把{}作为额外被动；局内看到时按当前 Build 短板选择，{build_hint}",
+            "F5 可把{}作为额外被动；局内看到时按当前构筑短板选择，{build_hint}",
             item.name
         )
     } else {
@@ -9770,8 +9770,8 @@ fn runtime_run_mode_description(mode: RunMode) -> &'static str {
     match mode {
         RunMode::StandardPatrol => "主线推进和平衡基准",
         RunMode::ChapterChallenge => "锁定当前地图章节目标，适合补 Boss、收集和进化任务",
-        RunMode::LongPatrol => "留给 Build 更多升级和进化空间",
-        RunMode::EndlessStorm => "先以 20 分钟强风暴目标承载极限 Build 与压力验证",
+        RunMode::LongPatrol => "留给构筑更多升级和进化空间",
+        RunMode::EndlessStorm => "先以 20 分钟强风暴目标承载极限构筑与压力验证",
         RunMode::DailyStorm => "固定 seed 与强风暴压力，胜利额外给糖晶和风暴糖粒",
         RunMode::ExperimentalStorm => "候选内容测试模式，当前不进入主线",
     }
@@ -14186,7 +14186,7 @@ mod tests {
 
         assert!(status.contains("每日风暴"));
         assert!(status.contains("10 分钟固定 seed"));
-        assert!(status.contains("Seed 66606"));
+        assert!(status.contains("种子 66606"));
     }
 
     #[test]
@@ -14563,7 +14563,7 @@ mod tests {
         };
         let status = format_build_status(&build, &content);
 
-        assert!(status.contains("Build 武器"));
+        assert!(status.contains("构筑 武器"));
         assert!(status.contains("彩虹糖弹 Lv.3"));
         assert!(status.contains("汽水泡泡 Lv.1"));
         assert!(status.contains("糖晶放大镜 Lv.2"));
@@ -16843,7 +16843,7 @@ mod tests {
         assert!(rendered.contains("玩法 目标 最近敌人  定位 开局武器"));
         assert!(rendered.contains("标签 弹幕 / 单体"));
         assert!(rendered.contains("关联 进化线 彩虹糖流星雨: 彩虹糖弹 1/5 + 糖晶放大镜 0/3"));
-        assert!(rendered.contains("Build 契合 弹幕"));
+        assert!(rendered.contains("契合当前构筑 弹幕"));
         assert!(rendered.contains("id rainbow-candy-shot-level-2"));
         assert!(rendered.contains("2. 获得汽水泡泡  新获得  类型 新武器"));
         assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
