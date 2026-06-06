@@ -4381,9 +4381,13 @@ fn render_meta_progress_panel(
             context.content,
             context.asset_runtime_candidate,
         ),
-        RuntimeMetaPanelView::Chapters => {
-            render_meta_chapter_panel(progress, settlement, context.content, context.base_ui_state)
-        }
+        RuntimeMetaPanelView::Chapters => render_meta_chapter_panel(
+            progress,
+            settlement,
+            context.content,
+            context.config,
+            context.base_ui_state,
+        ),
         RuntimeMetaPanelView::Codex => render_meta_codex_panel(
             progress,
             settlement,
@@ -4645,6 +4649,7 @@ fn render_meta_chapter_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
     content: &ContentPack,
+    config: &RunConfig,
     base_ui_state: &RuntimeBaseUiState,
 ) -> String {
     let mut lines = vec![
@@ -4703,6 +4708,14 @@ fn render_meta_chapter_panel(
         let goal_lines =
             runtime_chapter_goal_lines(&chapter.chapter_id, &chapter.completed_goals, content);
         lines.push(format!("目标\n{}", goal_lines.join("\n")));
+        if let Some(build_hint) = format_runtime_loadout_chapter_build_hint(
+            progress,
+            content,
+            &chapter.map_id,
+            &config.starting_loadout,
+        ) {
+            lines.push(build_hint);
+        }
         if chapter.unlocked {
             lines.push("G 会使用该章节地图重开当前巡逻并保留局外进度".to_string());
         } else {
@@ -12289,6 +12302,9 @@ mod tests {
         assert!(panel.contains("应对"));
         assert!(panel.contains("survive-10-minutes"));
         assert!(panel.contains("奖励 星片 +1"));
+        assert!(panel.contains(
+            "章节构筑目标 彩虹糖流星雨：彩虹糖弹 开局已带 + 糖晶放大镜 F5 可切换/局内可抽，Boss 宝箱触发"
+        ));
         assert!(panel.contains("解锁"));
         assert!(panel.contains("集齐 2 星片开放"));
         assert!(panel.contains("本局完成"));
