@@ -4339,7 +4339,7 @@ fn render_meta_overview_panel(
             format_string_slice(&report.completed_goals, 2),
             format_meta_unlocks(report, content, 4),
             format_codex_updates(&report.codex_updates, content, 4),
-            format_settlement_next_step(report),
+            format_settlement_next_step(report, progress, content),
         ));
     } else {
         output.push_str("\n巡逻中：结算会在本局结束后更新");
@@ -4363,7 +4363,7 @@ fn format_meta_overview_next_action(
     content: &ContentPack,
 ) -> String {
     if let Some(report) = settlement {
-        return format_settlement_next_step(report).to_string();
+        return format_settlement_next_step(report, progress, content);
     }
     if let Some((chapter_id, goal)) = next_incomplete_chapter_goal(progress, content) {
         return format!(
@@ -4444,6 +4444,36 @@ fn format_meta_resource_cost(cost: &MetaResourceWallet) -> String {
     } else {
         parts.join(" + ")
     }
+}
+
+fn format_meta_resource_gap(wallet: &MetaResourceWallet, cost: &MetaResourceWallet) -> String {
+    let mut gaps = Vec::new();
+    if wallet.candy_crystal_shards < cost.candy_crystal_shards {
+        gaps.push(format!(
+            "{} 糖晶碎片",
+            cost.candy_crystal_shards - wallet.candy_crystal_shards
+        ));
+    }
+    if wallet.star_shards < cost.star_shards {
+        gaps.push(format!("{} 星片", cost.star_shards - wallet.star_shards));
+    }
+    if wallet.storm_grains < cost.storm_grains {
+        gaps.push(format!(
+            "{} 风暴糖粒",
+            cost.storm_grains - wallet.storm_grains
+        ));
+    }
+    if gaps.is_empty() {
+        "0".to_string()
+    } else {
+        gaps.join(" + ")
+    }
+}
+
+fn meta_resource_wallet_can_afford(wallet: &MetaResourceWallet, cost: &MetaResourceWallet) -> bool {
+    wallet.candy_crystal_shards >= cost.candy_crystal_shards
+        && wallet.star_shards >= cost.star_shards
+        && wallet.storm_grains >= cost.storm_grains
 }
 
 fn next_incomplete_chapter_goal(
@@ -6561,16 +6591,40 @@ fn format_damage_source(source: &str) -> String {
     }
 }
 
-fn format_settlement_next_step(report: &MetaSettlementReport) -> &'static str {
+fn format_settlement_next_step(
+    report: &MetaSettlementReport,
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> String {
     if !report.unlocked.is_empty() {
-        "F5 试试新角色或地图，F3 查看新增图鉴"
-    } else if !report.completed_goals.is_empty() {
-        "F2 查看章节目标，F5 开下一次巡逻"
-    } else if report.run_summary.victory {
-        "F2 挑战下一章，F5 换构筑继续巡逻"
-    } else {
-        "F5 调整角色或地图继续巡逻，F3 查看本局图鉴"
+        return "F5 试试新角色或地图，F3 查看新增图鉴".to_string();
     }
+    if let Some(shop_step) = format_settlement_shop_next_step(progress, content) {
+        return shop_step;
+    }
+    if !report.completed_goals.is_empty() {
+        return "F2 查看章节目标，F5 开下一次巡逻".to_string();
+    }
+    if report.run_summary.victory {
+        return "F2 挑战下一章，F5 换构筑继续巡逻".to_string();
+    }
+    "F5 调整角色或地图继续巡逻，F3 查看本局图鉴".to_string()
+}
+
+fn format_settlement_shop_next_step(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Option<String> {
+    let offer = progress.next_demo_shop_offer()?;
+    let label = format_meta_shop_offer_label(&offer, content);
+    if meta_resource_wallet_can_afford(&progress.resources, &offer.cost) {
+        return Some(format!("F1 按 U 解锁 {label}，再去 F5 试新内容"));
+    }
+    Some(format!(
+        "还差 {} 可解锁 {}，F5 继续巡逻或 F2 做章节目标",
+        format_meta_resource_gap(&progress.resources, &offer.cost),
+        label,
+    ))
 }
 
 fn format_asset_candidate_type_counts(candidate: &RuntimeAssetCandidateManifest) -> String {
@@ -11366,6 +11420,97 @@ mod tests {
         assert!(panel.contains("费用 60 糖晶碎片"));
         assert!(panel.contains("可购买"));
         assert!(panel.contains("按 U 解锁"));
+    }
+
+    #[test]
+    fn meta_panel_settlement_guides_affordable_shop_unlock() {
+        let mut progress = MetaProgress::demo_start();
+        progress.resources.candy_crystal_shards = 50;
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 120.0,
+            victory: false,
+            terminal_reason: "player_health_depleted".to_string(),
+            kills: 0,
+            level: 1,
+            xp_collected: 0.0,
+            damage_dealt_by_weapon: 100.0,
+            damage_taken: 12.0,
+            damage_taken_by_source: Default::default(),
+            boss_damage: 0.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
+            passives_used: Default::default(),
+            evolutions_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        let report = progress.apply_run_summary(&summary);
+        let panel = render_meta_progress_panel(
+            &progress,
+            Some(&report),
+            RuntimeMetaPanelView::Overview,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        assert!(panel.contains("下一步行动 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("下一步 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
+    }
+
+    #[test]
+    fn meta_panel_settlement_shows_shop_resource_gap() {
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 120.0,
+            victory: false,
+            terminal_reason: "player_health_depleted".to_string(),
+            kills: 0,
+            level: 1,
+            xp_collected: 0.0,
+            damage_dealt_by_weapon: 100.0,
+            damage_taken: 12.0,
+            damage_taken_by_source: Default::default(),
+            boss_damage: 0.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
+            passives_used: Default::default(),
+            evolutions_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        let report = progress.apply_run_summary(&summary);
+        let panel = render_meta_progress_panel(
+            &progress,
+            Some(&report),
+            RuntimeMetaPanelView::Overview,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        assert!(panel.contains("下一步行动 还差 50 糖晶碎片 可解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("下一步 还差 50 糖晶碎片 可解锁 角色 泡泡邮差 (bubble-courier)"));
     }
 
     #[test]
