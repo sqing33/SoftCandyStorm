@@ -4920,6 +4920,7 @@ fn render_meta_progress_panel(
             progress,
             settlement,
             context.content,
+            context.privacy_settings,
             context.asset_runtime_candidate,
             context.last_settlement_event_timeline,
         ),
@@ -4955,6 +4956,7 @@ fn render_meta_overview_panel(
     progress: &MetaProgress,
     settlement: Option<&MetaSettlementReport>,
     content: &ContentPack,
+    privacy_settings: &RuntimePrivacySettings,
     asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
     last_settlement_event_timeline: &[RuntimeEventTimelineEntry],
 ) -> String {
@@ -4991,7 +4993,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\nBoss 结果 {}\nReplay {}\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
@@ -5003,6 +5005,8 @@ fn render_meta_overview_panel(
             summary.boss_damage,
             summary.damage_taken,
             format_damage_sources(&summary.damage_taken_by_source, 2),
+            format_settlement_boss_result(summary, content),
+            format_settlement_replay_status(privacy_settings),
             format_settlement_weapon_damage_shares(summary, content, 3),
             format_settlement_event_timeline(last_settlement_event_timeline),
             format_weapon_levels(&summary.weapon_levels, 4),
@@ -7487,6 +7491,32 @@ fn format_settlement_event_timeline(timeline: &[RuntimeEventTimelineEntry]) -> S
         })
         .collect::<Vec<_>>()
         .join(" | ")
+}
+
+fn format_settlement_boss_result(summary: &MetaRunSummary, content: &ContentPack) -> String {
+    if !summary.bosses_defeated.is_empty() {
+        let values = summary
+            .bosses_defeated
+            .iter()
+            .map(|boss_id| runtime_boss_label(content, boss_id))
+            .collect::<Vec<_>>();
+        return format!("已击败 {}", format_string_items(&values, 2));
+    }
+
+    if summary.boss_damage > 0.0 {
+        return format!("未击败，已造成 {:.0} Boss 伤害", summary.boss_damage);
+    }
+
+    "未遭遇或未造成伤害".to_string()
+}
+
+fn format_settlement_replay_status(settings: &RuntimePrivacySettings) -> String {
+    let raw_replay_upload = if settings.raw_replay_upload_enabled {
+        "原始 Replay 上传同意已开启，传输层未实现"
+    } else {
+        "原始 Replay 上传关闭"
+    };
+    format!("自动保存未接入，本机 replay 目录可在 F4 导出，{raw_replay_upload}")
 }
 
 fn format_settlement_weapon_damage_shares(
@@ -12994,6 +13024,9 @@ mod tests {
         assert!(panel.contains("武器伤害占比 彩虹糖弹 600 (67%), 彩虹糖流星雨 300 (33%)"));
         assert!(panel.contains("受伤 12.5"));
         assert!(panel.contains("接触 9.0"));
+        assert!(panel.contains("Boss 结果 未遭遇或未造成伤害"));
+        assert!(panel.contains("Replay 自动保存未接入"));
+        assert!(panel.contains("原始 Replay 上传关闭"));
         assert!(panel.contains("关键事件 30s 升到 Lv.2 | 180s Boss 出现 暴走搅糖机"));
         assert!(panel.contains("rainbow-candy-shot Lv.1"));
         assert!(panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
@@ -13106,6 +13139,7 @@ mod tests {
         assert!(panel.contains("角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("地图 汽水溪谷 (soda-creek)"));
         assert!(panel.contains("章节 汽水溪谷 (soda-creek)"));
+        assert!(panel.contains("Boss 结果 已击败 暴走搅糖机"));
         assert!(!panel.contains("weapon:marshmallow-shield"));
     }
 
