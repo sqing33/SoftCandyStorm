@@ -5666,17 +5666,14 @@ fn render_meta_chapter_panel(
             "未解锁"
         };
         lines.push(format!(
-            "{} ({})  {}",
+            "{}  {}",
             chapter_label(content, &chapter.chapter_id),
-            chapter.chapter_id,
             status
         ));
         lines.push(format!(
-            "地图 {} ({})  Boss {} ({})",
+            "地图 {}  Boss {}",
             runtime_map_label(content, &chapter.map_id),
-            chapter.map_id,
             runtime_boss_label(content, &chapter.boss_id),
-            chapter.boss_id,
         ));
         lines.push(format!(
             "章节奖励 {}",
@@ -15391,7 +15388,10 @@ mod tests {
         assert!(panel.contains("G/手柄确认 巡逻已解锁章节"));
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
         assert!(panel.contains("章节路线 已解锁 糖霜草地"));
-        assert!(panel.contains("frosting-grassland"));
+        assert!(panel.contains("糖霜草地  已解锁"));
+        assert!(panel.contains("地图 糖霜草地  Boss 暴走搅糖机"));
+        assert!(!panel.contains("糖霜草地 (frosting-grassland)"));
+        assert!(!panel.contains("地图 糖霜草地 (frosting-grassland)"));
         assert!(panel.contains("章节奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"));
         assert!(panel.contains("地图说明 覆盖糖霜的开阔草地"));
         assert!(panel.contains("Boss说明"));
@@ -15436,7 +15436,10 @@ mod tests {
         );
 
         assert!(panel.contains("汽水溪谷"));
-        assert!(panel.contains("soda-creek"));
+        assert!(panel.contains("汽水溪谷  未解锁"));
+        assert!(panel.contains("地图 汽水溪谷  Boss 汽水喷泉龙"));
+        assert!(!panel.contains("汽水溪谷 (soda-creek)"));
+        assert!(!panel.contains("地图 汽水溪谷 (soda-creek)"));
         assert!(panel.contains("汽水喷泉龙"));
         assert!(panel.contains("未解锁"));
         assert!(panel.contains(
