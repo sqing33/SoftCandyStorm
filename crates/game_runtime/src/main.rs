@@ -1852,7 +1852,7 @@ fn format_upgrade_options(
 
 fn format_upgrade_option_state(option: &UpgradeOptionSnapshot) -> String {
     if let Some(level) = upgrade_option_level(&option.id) {
-        return format!("目标 Lv.{level}");
+        return format!("目标等级 {level}");
     }
 
     if option.tags.iter().any(|tag| tag == "evolution") {
@@ -2074,12 +2074,12 @@ fn runtime_upgrade_choice_label(content: &ContentPack, option_id: &str) -> Strin
     }
     if let Some(weapon) = content.weapons.get(content_id) {
         return level
-            .map(|level| format!("{} Lv.{level}", weapon.name))
+            .map(|level| format!("{} 等级 {level}", weapon.name))
             .unwrap_or_else(|| format!("获得 {}", weapon.name));
     }
     if let Some(passive) = content.passives.get(content_id) {
         return level
-            .map(|level| format!("{} Lv.{level}", passive.name))
+            .map(|level| format!("{} 等级 {level}", passive.name))
             .unwrap_or_else(|| format!("获得 {}", passive.name));
     }
     option_id.to_string()
@@ -2250,7 +2250,7 @@ fn runtime_tag_label(tag: &str) -> String {
         "swarm" => "敌群",
         "trap" => "陷阱",
         "turret" => "炮台",
-        "xp" => "XP",
+        "xp" => "糖晶经验",
         "zone" => "区域",
         other => return other.replace('-', " "),
     }
@@ -2912,7 +2912,7 @@ fn format_active_boss_status(boss: &BossSnapshot, content: &ContentPack) -> Stri
         .map(|hint| format!("  {hint}"))
         .unwrap_or_default();
     format!(
-        "Boss {}  HP {:.0}/{:.0}  {:.0}%{}",
+        "Boss {}  生命 {:.0}/{:.0}  {:.0}%{}",
         runtime_boss_label(content, &boss.boss_id),
         health,
         max_health,
@@ -3084,7 +3084,7 @@ fn format_runtime_hud_chapter_goal_progress(
             snapshot.metrics_partial.xp_collected.min(200.0)
         ),
         "rainbow-candy-shot-level-5" => format!(
-            "{} Lv.{}/5",
+            "{} 等级 {}/5",
             runtime_weapon_label(content, "rainbow-candy-shot"),
             build_item_level(&snapshot.build.weapons, "rainbow-candy-shot").min(5),
         ),
@@ -3133,7 +3133,7 @@ fn format_runtime_hud_boss_goal_progress(
             0.0
         };
         return format!(
-            "Boss HP {:.0}/{:.0} {:.0}%",
+            "Boss 生命 {:.0}/{:.0} {:.0}%",
             boss.health.max(0.0),
             boss.max_health,
             ratio
@@ -3484,7 +3484,7 @@ fn runtime_event_effect_label(effect_type: &str) -> String {
         "route_echo_hazard" => "路线回声危险区",
         "spawn_hazard" => "危险区",
         "spawn_rate_multiplier" => "刷怪",
-        "xp_multiplier" => "XP",
+        "xp_multiplier" => "糖晶经验",
         other => return other.replace('_', " "),
     }
     .to_string()
@@ -3696,7 +3696,7 @@ where
     let mut visible = items
         .iter()
         .take(limit)
-        .map(|item| format!("{} Lv.{}", label(&item.id), item.level))
+        .map(|item| format!("{} 等级 {}", label(&item.id), item.level))
         .collect::<Vec<_>>();
     if items.len() > limit {
         visible.push(format!("+{} 项", items.len() - limit));
@@ -3791,7 +3791,7 @@ fn format_terminal_overlay(
     damage_taken_by_source: &BTreeMap<String, f32>,
 ) -> String {
     format!(
-        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n复盘 {}\n进度 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻  F1 看结算  F5 换构筑",
+        "{}  {}  {:.1}s  等级 {}  击杀 {}\n原因 {}\n{}\n复盘 {}\n进度 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻  F1 看结算  F5 换构筑",
         terminal_kind_label(terminal.kind),
         runtime_run_mode_label(run_mode),
         terminal.time_seconds,
@@ -4404,7 +4404,7 @@ fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
             Some(format!("击败 {}", runtime_enemy_label(content, enemy_id)))
         }
         GameEvent::XpCollected { value, .. } => Some(format!("糖晶 +{value:.0}")),
-        GameEvent::LevelUp { level } => Some(format!("升到 Lv.{level}")),
+        GameEvent::LevelUp { level } => Some(format!("升到等级 {level}")),
         GameEvent::UpgradeOffered { .. } => Some("出现升级选择".to_string()),
         GameEvent::UpgradeChosen { option_id } => Some(format!(
             "选择 {}",
@@ -5323,7 +5323,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n复盘重点 {}\nBoss 结果 {}\nReplay {}\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  糖晶经验 {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n复盘重点 {}\nBoss 结果 {}\nReplay {}\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
@@ -6053,7 +6053,7 @@ fn render_meta_loadout_panel(
             format_upgrade_tags(&character.tags),
         ));
         lines.push(format!(
-            "属性 HP {:.0}  移速 {:.0}  拾取 {:.0}  伤害 x{:.2}  冷却 x{:.2}  XP x{:.2}  回复 {:.1}/s",
+            "属性 生命 {:.0}  移速 {:.0}  拾取 {:.0}  伤害 x{:.2}  冷却 x{:.2}  糖晶经验 x{:.2}  回复 {:.1}/s",
             character.base_stats.max_health,
             character.base_stats.move_speed,
             character.base_stats.pickup_radius,
@@ -7845,7 +7845,7 @@ fn runtime_codex_weapon_description(
     progress: &MetaProgress,
 ) -> String {
     format!(
-        "{}\n玩法 标签 {}  定位 {}  目标 {}  最高 Lv.{}\n数值 伤害 {:.0}  冷却 {:.2}s  数量 {}  范围 {:.0}\n预算 单体 {:.0}  群体 {:.0}  性能 {}\n来源 {}",
+        "{}\n玩法 标签 {}  定位 {}  目标 {}  最高等级 {}\n数值 伤害 {:.0}  冷却 {:.2}s  数量 {}  范围 {:.0}\n预算 单体 {:.0}  群体 {:.0}  性能 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         runtime_weapon_role_label(&item.balance_budget.role),
@@ -7868,7 +7868,7 @@ fn runtime_codex_passive_description(
     progress: &MetaProgress,
 ) -> String {
     format!(
-        "{}\n玩法 标签 {}  最高 Lv.{}  加成 {}\n来源 {}",
+        "{}\n玩法 标签 {}  最高等级 {}  加成 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         item.max_level,
@@ -7879,7 +7879,7 @@ fn runtime_codex_passive_description(
 
 fn runtime_codex_enemy_description(item: &EnemyDefinition, content: &ContentPack) -> String {
     format!(
-        "{}\n玩法 标签 {}  家族 {}  行为 {}  细节 {}  威胁 {:.1}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s  XP {:.0}\n反制 {}\n来源 {}",
+        "{}\n玩法 标签 {}  家族 {}  行为 {}  细节 {}  威胁 {:.1}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s  糖晶经验 {:.0}\n反制 {}\n来源 {}",
         item.common.description,
         format_upgrade_tags(&item.common.tags),
         item.family,
@@ -8470,7 +8470,7 @@ fn runtime_codex_weapon_action_hint(
     };
     if unlocked {
         format!(
-            "F5 可用{}开局；局内升级先稳住最高 Lv.{}，{build_hint}",
+            "F5 可用{}开局；局内升级先稳住最高等级 {}，{build_hint}",
             item.name, item.scaling.max_level
         )
     } else {
@@ -8742,7 +8742,7 @@ fn format_evolution_codex_requirements(
 ) -> String {
     let weapon_requirement = &evolution.requirements.weapon;
     let weapon = format!(
-        "{} Lv.{}",
+        "{} 等级 {}",
         runtime_weapon_label(content, &weapon_requirement.id),
         weapon_requirement.min_level,
     );
@@ -8752,7 +8752,7 @@ fn format_evolution_codex_requirements(
         .as_ref()
         .map(|requirement| {
             format!(
-                "{} Lv.{}",
+                "{} 等级 {}",
                 runtime_passive_label(content, &requirement.id),
                 requirement.min_level,
             )
@@ -8878,7 +8878,7 @@ fn runtime_stat_label(stat: &str) -> String {
         "move_speed" => "移速",
         "pickup_radius" => "拾取",
         "regen_per_second" => "回复",
-        "xp_multiplier" => "经验",
+        "xp_multiplier" => "糖晶经验",
         other => return other.replace('_', " "),
     }
     .to_string()
@@ -9364,7 +9364,7 @@ fn format_weapon_levels(
         .iter()
         .map(|(weapon_id, level)| {
             format!(
-                "{} Lv.{level}",
+                "{} 等级 {level}",
                 runtime_damage_weapon_label(content, weapon_id)
             )
         })
@@ -13863,7 +13863,7 @@ mod tests {
         state.latest_snapshot = state.core.snapshot();
         state.event_timeline.push(RuntimeEventTimelineEntry {
             time_seconds: 30.0,
-            label: "升到 Lv.2".to_string(),
+            label: "升到等级 2".to_string(),
         });
 
         for _ in 0..10 {
@@ -13908,7 +13908,7 @@ mod tests {
         );
         assert_eq!(
             replay_json["event_timeline"][0]["label"].as_str(),
-            Some("升到 Lv.2")
+            Some("升到等级 2")
         );
         assert_eq!(
             replay_json["privacy"]["raw_replay_upload_enabled"].as_bool(),
@@ -14137,7 +14137,7 @@ mod tests {
 
         assert!(status.contains("暴走搅糖机"));
         assert!(!status.contains("runaway-sugar-mixer"));
-        assert!(status.contains("HP 125/250"));
+        assert!(status.contains("生命 125/250"));
         assert!(status.contains("50%"));
         assert!(status.contains("阶段 1/2 100% 技能 直线冲撞/召唤蹦蹦软糖"));
         assert!(status.contains("应对 横向躲开冲撞线；先清增援压力"));
@@ -14496,7 +14496,7 @@ mod tests {
         let status = format_event_effect_status(&effects, &content, 200.0);
 
         assert!(status.contains("事件效果"));
-        assert!(status.contains("彩虹糖潮 XP x1.40 24.5s"));
+        assert!(status.contains("彩虹糖潮 糖晶经验 x1.40 24.5s"));
         assert!(status.contains("彩虹糖潮 刷怪 x1.25 24.5s"));
         assert!(status.contains("提示 短时间内糖晶掉落增加，但敌人生成也会加快"));
     }
@@ -14611,10 +14611,10 @@ mod tests {
         let status = format_build_status(&build, &content);
 
         assert!(status.contains("构筑 武器"));
-        assert!(status.contains("彩虹糖弹 Lv.3"));
-        assert!(status.contains("汽水泡泡 Lv.1"));
-        assert!(status.contains("糖晶放大镜 Lv.2"));
-        assert!(status.contains("彩虹糖流星雨 Lv.1"));
+        assert!(status.contains("彩虹糖弹 等级 3"));
+        assert!(status.contains("汽水泡泡 等级 1"));
+        assert!(status.contains("糖晶放大镜 等级 2"));
+        assert!(status.contains("彩虹糖流星雨 等级 1"));
         assert!(status.contains("进化线 彩虹糖流星雨: 彩虹糖弹 3/5 + 糖晶放大镜 2/3"));
         assert!(status.contains("标签 弹幕, 经济"));
         assert!(status.contains("建议 缺容错，下一次升级优先防御、控制或生命"));
@@ -14765,14 +14765,14 @@ mod tests {
         assert!(overlay.contains("失败"));
         assert!(overlay.contains("每日风暴"));
         assert!(overlay.contains("214.5s"));
-        assert!(overlay.contains("Lv 6"));
+        assert!(overlay.contains("等级 6"));
         assert!(overlay.contains("击杀 128"));
         assert!(overlay.contains("生命值归零"));
         assert!(overlay.contains("受伤 12.5"));
         assert!(overlay.contains("来源 接触 9.0, 风暴地面 3.5"));
         assert!(overlay.contains("复盘 最大问题 接触伤害，下局补防御/控场并保持绕圈拾取"));
         assert!(overlay.contains("进度 糖罐星修复 0/25 (0%)"));
-        assert!(overlay.contains("终局 武器 彩虹糖弹 Lv.2"));
+        assert!(overlay.contains("终局 武器 彩虹糖弹 等级 2"));
         assert!(overlay.contains("生命归零多半是容错不足"));
         assert!(overlay.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(overlay.contains("按 R 重新巡逻  F1 看结算  F5 换构筑"));
@@ -14939,8 +14939,8 @@ mod tests {
         );
 
         assert_eq!(timeline.len(), 2);
-        assert_eq!(timeline[0].label, "升到 Lv.2");
-        assert_eq!(timeline[1].label, "选择 彩虹糖弹 Lv.2");
+        assert_eq!(timeline[0].label, "升到等级 2");
+        assert_eq!(timeline[1].label, "选择 彩虹糖弹 等级 2");
 
         for index in 0..8 {
             record_runtime_event_timeline(
@@ -14959,7 +14959,7 @@ mod tests {
         assert!(timeline[0].time_seconds >= 32.0);
         let rendered = format_settlement_event_timeline(&timeline);
         assert!(rendered.contains("Boss 暴走搅糖机 使用 直线冲撞：横向躲开冲撞线"));
-        assert!(!rendered.contains("升到 Lv.2"));
+        assert!(!rendered.contains("升到等级 2"));
     }
 
     #[test]
@@ -14997,7 +14997,7 @@ mod tests {
         let timeline = vec![
             RuntimeEventTimelineEntry {
                 time_seconds: 30.0,
-                label: "升到 Lv.2".to_string(),
+                label: "升到等级 2".to_string(),
             },
             RuntimeEventTimelineEntry {
                 time_seconds: 180.0,
@@ -15033,7 +15033,7 @@ mod tests {
         assert!(panel.contains("存活 120s"));
         assert!(panel.contains("等级 5"));
         assert!(panel.contains("击杀 95"));
-        assert!(panel.contains("XP 210"));
+        assert!(panel.contains("糖晶经验 210"));
         assert!(panel.contains("输出 900"));
         assert!(panel.contains("武器伤害占比 彩虹糖弹 600 (67%), 彩虹糖流星雨 300 (33%)"));
         assert!(panel.contains("受伤 12.5"));
@@ -15042,8 +15042,8 @@ mod tests {
         assert!(panel.contains("Boss 结果 未遭遇或未造成伤害"));
         assert!(panel.contains("Replay 本机复盘摘要未保存"));
         assert!(panel.contains("原始 Replay 上传关闭"));
-        assert!(panel.contains("关键事件 30s 升到 Lv.2 | 180s Boss 出现 暴走搅糖机"));
-        assert!(panel.contains("最终构筑 武器 彩虹糖弹 Lv.1"));
+        assert!(panel.contains("关键事件 30s 升到等级 2 | 180s Boss 出现 暴走搅糖机"));
+        assert!(panel.contains("最终构筑 武器 彩虹糖弹 等级 1"));
         assert!(panel.contains("被动 糖晶放大镜"));
         assert!(panel.contains("进化 彩虹糖流星雨"));
         assert!(!panel.contains("被动 糖晶放大镜 (candy-crystal-lens)"));
@@ -16402,7 +16402,7 @@ mod tests {
         assert!(panel.contains("角色 泡泡邮差"));
         assert!(!panel.contains("角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("角色说明"));
-        assert!(panel.contains("属性 HP"));
+        assert!(panel.contains("属性 生命"));
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
         assert!(!panel.contains("特质 移动后短时间提升拾取范围 ("));
         assert!(panel.contains("角色玩法 机动拾取：保持移动拉怪"));
@@ -16887,7 +16887,7 @@ mod tests {
 
         let rendered = format_upgrade_options(&options, &content, &build, None);
 
-        assert!(rendered.contains("1. 彩虹糖弹强化  目标 Lv.2  类型 武器升级"));
+        assert!(rendered.contains("1. 彩虹糖弹强化  目标等级 2  类型 武器升级"));
         assert!(rendered.contains("提升伤害、射程和冷却节奏。"));
         assert!(rendered.contains("数值 伤害 14  冷却 0.62s  数量 1  范围 420"));
         assert!(rendered.contains("玩法 目标 最近敌人  定位 开局武器"));
@@ -17276,7 +17276,7 @@ mod tests {
                 }],
                 &content
             ),
-            "事件 彩虹糖潮：XP x1.40 25s，刷怪 x1.25 25s"
+            "事件 彩虹糖潮：糖晶经验 x1.40 25s，刷怪 x1.25 25s"
         );
         assert_eq!(
             describe_events(
@@ -17285,7 +17285,7 @@ mod tests {
                 }],
                 &content
             ),
-            "选择 彩虹糖弹 Lv.2"
+            "选择 彩虹糖弹 等级 2"
         );
     }
 
@@ -17296,7 +17296,7 @@ mod tests {
             ("sugar-jar-supply", "事件 糖罐补给：升级3选1"),
             (
                 "sour-rain",
-                "事件 酸味雨：刷怪 x1.18 28s，XP x1.30 28s，生成 辣味软糖 x2",
+                "事件 酸味雨：刷怪 x1.18 28s，糖晶经验 x1.30 28s，生成 辣味软糖 x2",
             ),
             (
                 "cotton-cloud-cover",
@@ -17308,7 +17308,7 @@ mod tests {
             ),
             (
                 "rainbow-candy-rush",
-                "事件 彩虹糖潮：XP x1.40 25s，刷怪 x1.25 25s",
+                "事件 彩虹糖潮：糖晶经验 x1.40 25s，刷怪 x1.25 25s",
             ),
         ];
 
