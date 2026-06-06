@@ -9376,7 +9376,7 @@ fn format_weapon_levels(
 fn format_passive_set(passives: &BTreeSet<String>, content: &ContentPack, limit: usize) -> String {
     let values = passives
         .iter()
-        .map(|id| format!("{} ({id})", runtime_passive_label(content, id)))
+        .map(|id| runtime_passive_label(content, id))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
 }
@@ -9388,7 +9388,7 @@ fn format_evolution_set(
 ) -> String {
     let values = evolutions
         .iter()
-        .map(|id| format!("{} ({id})", runtime_evolution_label(content, id)))
+        .map(|id| runtime_evolution_label(content, id))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
 }
@@ -14998,8 +14998,10 @@ mod tests {
         assert!(panel.contains("原始 Replay 上传关闭"));
         assert!(panel.contains("关键事件 30s 升到 Lv.2 | 180s Boss 出现 暴走搅糖机"));
         assert!(panel.contains("最终构筑 武器 彩虹糖弹 Lv.1"));
-        assert!(panel.contains("被动 糖晶放大镜 (candy-crystal-lens)"));
-        assert!(panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
+        assert!(panel.contains("被动 糖晶放大镜"));
+        assert!(panel.contains("进化 彩虹糖流星雨"));
+        assert!(!panel.contains("被动 糖晶放大镜 (candy-crystal-lens)"));
+        assert!(!panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
         assert!(panel.contains("章节目标 糖霜草地：收集 200 糖晶经验（奖励 星片 +1）"));
         assert!(panel.contains("糖霜草地：完成彩虹糖流星雨进化（奖励 星片 +1；完成本章构筑挑战）"));
         assert!(!panel.contains("章节目标 frosting-grassland:collect-200-candy-crystals"));
