@@ -322,6 +322,7 @@ struct RuntimeState {
     story_codex_ui_candidate: Option<RuntimeStoryCodexUiCandidateManifest>,
     asset_runtime_candidate: Option<RuntimeAssetCandidateManifest>,
     last_meta_settlement: Option<MetaSettlementReport>,
+    last_replay_summary_path: Option<PathBuf>,
     event_timeline: Vec<RuntimeEventTimelineEntry>,
     last_settlement_event_timeline: Vec<RuntimeEventTimelineEntry>,
     settled_run_number: Option<u32>,
@@ -778,6 +779,7 @@ struct RuntimeDataControlContext {
 struct RuntimeMetaPanelRenderContext<'a> {
     privacy_settings: &'a RuntimePrivacySettings,
     runtime_settings_file: Option<&'a Path>,
+    last_replay_summary_path: Option<&'a Path>,
     story_codex_ui_candidate: Option<&'a RuntimeStoryCodexUiCandidateManifest>,
     asset_runtime_candidate: Option<&'a RuntimeAssetCandidateManifest>,
     last_settlement_event_timeline: &'a [RuntimeEventTimelineEntry],
@@ -807,10 +809,27 @@ struct RuntimeEventCounts {
     run_ended: u32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 struct RuntimeEventTimelineEntry {
     time_seconds: f32,
     label: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RuntimeReplaySummary {
+    kind: &'static str,
+    replay_version: u32,
+    run_id: String,
+    run_number: u32,
+    input_mode: &'static str,
+    content_dir: String,
+    content_pack_ids: Vec<String>,
+    run_config: RuntimeRunConfigReport,
+    summary: MetaRunSummary,
+    event_timeline: Vec<RuntimeEventTimelineEntry>,
+    privacy: RuntimePrivacyReport,
+    raw_input_included: bool,
+    upload_transport: &'static str,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1193,6 +1212,7 @@ fn setup_runtime(
         story_codex_ui_candidate,
         asset_runtime_candidate,
         last_meta_settlement: None,
+        last_replay_summary_path: None,
         event_timeline: Vec::new(),
         last_settlement_event_timeline: Vec::new(),
         settled_run_number: None,
@@ -4114,6 +4134,7 @@ fn update_hud(
                 RuntimeMetaPanelRenderContext {
                     privacy_settings: &state.privacy_settings,
                     runtime_settings_file: state.runtime_settings_file.as_deref(),
+                    last_replay_summary_path: state.last_replay_summary_path.as_deref(),
                     story_codex_ui_candidate: state.story_codex_ui_candidate.as_ref(),
                     asset_runtime_candidate: state.asset_runtime_candidate.as_ref(),
                     last_settlement_event_timeline: &state.last_settlement_event_timeline,
@@ -4765,6 +4786,7 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.paused = false;
     state.run_number += 1;
     state.last_meta_settlement = None;
+    state.last_replay_summary_path = None;
     state.event_timeline.clear();
     state.last_settlement_event_timeline.clear();
     state.settled_run_number = None;
@@ -5191,6 +5213,15 @@ fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
     summary.mode = state.run_mode;
     let report = state.meta_progress.apply_run_summary(&summary);
     state.last_settlement_event_timeline = state.event_timeline.clone();
+    state.last_replay_summary_path = None;
+    match write_runtime_replay_summary(state, &summary, &state.last_settlement_event_timeline) {
+        Ok(Some(path)) => state.last_replay_summary_path = Some(path),
+        Ok(None) => {}
+        Err(error) => {
+            state.last_event = format!("replay summary save failed: {error}");
+            state.last_event_kind = RuntimeEventKind::System;
+        }
+    }
     state.last_meta_settlement = Some(report);
     state.settled_run_number = Some(state.run_number);
     if let Err(error) = persist_runtime_save_if_configured(state) {
@@ -5211,6 +5242,7 @@ fn render_meta_progress_panel(
             settlement,
             context.content,
             context.privacy_settings,
+            context.last_replay_summary_path,
             context.asset_runtime_candidate,
             context.last_settlement_event_timeline,
         ),
@@ -5247,6 +5279,7 @@ fn render_meta_overview_panel(
     settlement: Option<&MetaSettlementReport>,
     content: &ContentPack,
     privacy_settings: &RuntimePrivacySettings,
+    last_replay_summary_path: Option<&Path>,
     asset_runtime_candidate: Option<&RuntimeAssetCandidateManifest>,
     last_settlement_event_timeline: &[RuntimeEventTimelineEntry],
 ) -> String {
@@ -5300,7 +5333,7 @@ fn render_meta_overview_panel(
             format_damage_sources(&summary.damage_taken_by_source, 2),
             format_settlement_review_focus(summary),
             format_settlement_boss_result(summary, content),
-            format_settlement_replay_status(privacy_settings),
+            format_settlement_replay_status(privacy_settings, last_replay_summary_path),
             format_settlement_weapon_damage_shares(summary, content, 3),
             format_settlement_event_timeline(last_settlement_event_timeline),
             format_weapon_levels(&summary.weapon_levels, 4),
@@ -8640,13 +8673,23 @@ fn format_settlement_boss_result(summary: &MetaRunSummary, content: &ContentPack
     "未遭遇或未造成伤害".to_string()
 }
 
-fn format_settlement_replay_status(settings: &RuntimePrivacySettings) -> String {
+fn format_settlement_replay_status(
+    settings: &RuntimePrivacySettings,
+    replay_summary_path: Option<&Path>,
+) -> String {
     let raw_replay_upload = if settings.raw_replay_upload_enabled {
         "原始 Replay 上传同意已开启，传输层未实现"
     } else {
         "原始 Replay 上传关闭"
     };
-    format!("自动保存未接入，本机 replay 目录可在 F4 导出，{raw_replay_upload}")
+    if let Some(path) = replay_summary_path {
+        format!(
+            "本机复盘摘要已保存 {}，可在 F4 导出，{raw_replay_upload}",
+            path.display()
+        )
+    } else {
+        format!("本机复盘摘要未保存，本机 replay 目录可在 F4 导出，{raw_replay_upload}")
+    }
 }
 
 fn format_settlement_weapon_damage_shares(
@@ -10750,6 +10793,30 @@ impl RuntimePlaytestReport {
     }
 }
 
+impl RuntimeReplaySummary {
+    fn from_state(
+        state: &RuntimeState,
+        summary: &MetaRunSummary,
+        event_timeline: &[RuntimeEventTimelineEntry],
+    ) -> Self {
+        Self {
+            kind: "runtime_replay_summary",
+            replay_version: 1,
+            run_id: summary.run_id.clone(),
+            run_number: state.run_number,
+            input_mode: if state.demo_input { "demo" } else { "keyboard" },
+            content_dir: state.content_dir.display().to_string(),
+            content_pack_ids: state.content_pack_ids.clone(),
+            run_config: RuntimeRunConfigReport::from_config(&state.config),
+            summary: summary.clone(),
+            event_timeline: event_timeline.to_vec(),
+            privacy: RuntimePrivacyReport::from_settings(&state.privacy_settings),
+            raw_input_included: false,
+            upload_transport: "not_implemented",
+        }
+    }
+}
+
 impl RuntimePrivacyReport {
     fn from_settings(settings: &RuntimePrivacySettings) -> Self {
         Self {
@@ -10760,6 +10827,37 @@ impl RuntimePrivacyReport {
             upload_transport: "not_implemented",
         }
     }
+}
+
+fn runtime_replay_dir_from_local_data_dirs(local_data_dirs: &[PathBuf]) -> Option<PathBuf> {
+    local_data_dirs
+        .iter()
+        .find(|path| {
+            path.file_name()
+                .map(|name| name == PLATFORM_REPLAY_ROOT)
+                .unwrap_or(false)
+        })
+        .cloned()
+}
+
+fn runtime_replay_summary_path(replay_dir: &Path, run_id: &str) -> PathBuf {
+    replay_dir.join(format!("{run_id}_summary.json"))
+}
+
+fn write_runtime_replay_summary(
+    state: &RuntimeState,
+    summary: &MetaRunSummary,
+    event_timeline: &[RuntimeEventTimelineEntry],
+) -> std::io::Result<Option<PathBuf>> {
+    let Some(replay_dir) = runtime_replay_dir_from_local_data_dirs(&state.local_data_dirs) else {
+        return Ok(None);
+    };
+    fs::create_dir_all(&replay_dir)?;
+    let path = runtime_replay_summary_path(&replay_dir, &summary.run_id);
+    let replay_summary = RuntimeReplaySummary::from_state(state, summary, event_timeline);
+    let json = serde_json::to_string_pretty(&replay_summary)?;
+    fs::write(&path, format!("{json}\n"))?;
+    Ok(Some(path))
 }
 
 impl RuntimeRunConfigReport {
@@ -10885,11 +10983,12 @@ mod tests {
         format_enemy_swarm_status, format_event_effect_for_codex, format_event_effect_status,
         format_hazard_status, format_meta_shop_offer_line, format_runtime_hud_chapter_build_goal,
         format_runtime_hud_chapter_objective, format_runtime_hud_run_mode,
-        format_settlement_event_timeline, format_terminal_overlay, format_upgrade_options,
-        format_upgrade_playstyle_preview, load_runtime_asset_candidate_manifest,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
-        next_runtime_selection_id, normalize_runtime_codex_view_selection, parse_runtime_cli,
+        format_settlement_event_timeline, format_settlement_replay_status, format_terminal_overlay,
+        format_upgrade_options, format_upgrade_playstyle_preview,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
+        normalize_runtime_codex_view_selection, parse_runtime_cli,
         persist_runtime_privacy_settings_file, player_tint, projectile_visual_style,
         purchase_next_runtime_shop_offer, read_runtime_save_state, record_runtime_event_timeline,
         render_meta_progress_panel, resolve_runtime_content_selection,
@@ -10909,6 +11008,7 @@ mod tests {
         runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
         runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
         runtime_overview_view_from_pointer_zone, runtime_privacy_notice,
+        runtime_replay_dir_from_local_data_dirs, runtime_replay_summary_path,
         runtime_run_mode_duration_seconds, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
@@ -10964,6 +11064,7 @@ mod tests {
         RuntimeMetaPanelRenderContext {
             privacy_settings,
             runtime_settings_file,
+            last_replay_summary_path: None,
             story_codex_ui_candidate,
             asset_runtime_candidate,
             last_settlement_event_timeline: &[],
@@ -11024,6 +11125,7 @@ mod tests {
             story_codex_ui_candidate: None,
             asset_runtime_candidate: None,
             last_meta_settlement: None,
+            last_replay_summary_path: None,
             event_timeline: Vec::new(),
             last_settlement_event_timeline: Vec::new(),
             settled_run_number: None,
@@ -13144,6 +13246,97 @@ mod tests {
     }
 
     #[test]
+    fn runtime_settlement_saves_replay_summary_to_replay_dir() {
+        let root = std::env::temp_dir().join(format!(
+            "soft_candy_runtime_replay_summary_{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let platform_root = root.join("platform");
+        let telemetry_dir = platform_root.join(PLATFORM_TELEMETRY_ROOT);
+        let replay_dir = platform_root.join(PLATFORM_REPLAY_ROOT);
+        let crash_dir = platform_root.join(PLATFORM_CRASH_REPORT_ROOT);
+
+        let mut state = runtime_state_for_tests();
+        state.platform_data_root = platform_root.clone();
+        state.local_data_dirs = vec![telemetry_dir.clone(), replay_dir.clone(), crash_dir.clone()];
+        state.demo_input = true;
+        state.config.duration_seconds = 0.1;
+        state.core = GameCore::reset_with_content(state.config.clone(), state.content.clone())
+            .expect("test content should reset");
+        state.latest_snapshot = state.core.snapshot();
+        state.event_timeline.push(RuntimeEventTimelineEntry {
+            time_seconds: 30.0,
+            label: "升到 Lv.2".to_string(),
+        });
+
+        for _ in 0..10 {
+            state.core.step(PlayerAction::default(), state.dt);
+            if state.core.is_terminal() {
+                break;
+            }
+        }
+
+        settle_runtime_meta_if_needed(&mut state);
+
+        let path = state
+            .last_replay_summary_path
+            .as_ref()
+            .expect("terminal runtime should save a replay summary");
+        let expected_path = runtime_replay_summary_path(
+            &replay_dir,
+            &format!(
+                "runtime_run_{}_seed_{}",
+                state.run_number, state.config.seed
+            ),
+        );
+        assert_eq!(path, &expected_path);
+        assert_eq!(
+            runtime_replay_dir_from_local_data_dirs(&state.local_data_dirs),
+            Some(replay_dir.clone())
+        );
+
+        let replay_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        assert_eq!(replay_json["kind"].as_str(), Some("runtime_replay_summary"));
+        assert_eq!(replay_json["replay_version"].as_u64(), Some(1));
+        assert_eq!(replay_json["input_mode"].as_str(), Some("demo"));
+        assert_eq!(replay_json["raw_input_included"].as_bool(), Some(false));
+        assert_eq!(
+            replay_json["upload_transport"].as_str(),
+            Some("not_implemented")
+        );
+        assert_eq!(
+            replay_json["summary"]["run_id"].as_str(),
+            Some("runtime_run_1_seed_12345")
+        );
+        assert_eq!(
+            replay_json["event_timeline"][0]["label"].as_str(),
+            Some("升到 Lv.2")
+        );
+        assert_eq!(
+            replay_json["privacy"]["raw_replay_upload_enabled"].as_bool(),
+            Some(false)
+        );
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn format_settlement_replay_status_reports_saved_summary_path() {
+        let path = PathBuf::from(
+            "platform_user_data/soft-candy-storm/replay/runtime_run_1_seed_12345_summary.json",
+        );
+        let status =
+            format_settlement_replay_status(&RuntimePrivacySettings::default(), Some(&path));
+
+        assert!(status.contains("本机复盘摘要已保存"));
+        assert!(status.contains("runtime_run_1_seed_12345_summary.json"));
+        assert!(status.contains("可在 F4 导出"));
+        assert!(status.contains("原始 Replay 上传关闭"));
+    }
+
+    #[test]
     fn runtime_chapter_keyboard_input_maps_navigation_actions() {
         let mut previous = ButtonInput::<KeyCode>::default();
         previous.press(KeyCode::KeyQ);
@@ -14223,7 +14416,7 @@ mod tests {
         assert!(panel.contains("接触 9.0"));
         assert!(panel.contains("复盘重点 最大问题 接触伤害，下局补防御/控场并保持绕圈拾取"));
         assert!(panel.contains("Boss 结果 未遭遇或未造成伤害"));
-        assert!(panel.contains("Replay 自动保存未接入"));
+        assert!(panel.contains("Replay 本机复盘摘要未保存"));
         assert!(panel.contains("原始 Replay 上传关闭"));
         assert!(panel.contains("关键事件 30s 升到 Lv.2 | 180s Boss 出现 暴走搅糖机"));
         assert!(panel.contains("rainbow-candy-shot Lv.1"));

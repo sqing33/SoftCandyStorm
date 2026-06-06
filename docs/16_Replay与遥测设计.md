@@ -186,7 +186,7 @@ cargo run -p game_runtime -- --runtime-settings-file harness/telemetry/local/run
 cargo run -p game_runtime -- --local-data-dir harness/telemetry/local/manual-smoke --delete-local-data
 ```
 
-默认导出数据目录为 `harness/telemetry/local/` 和 `harness/replay/`，也可以重复传入 `--local-data-dir <path>` 指定额外本地数据目录。导出会读取配置目录并写成 JSON；删除必须显式传入至少一个 `--local-data-dir`，且只移除这些显式目录中的文件和空子目录。Runtime 仍没有网络上传传输层，试玩 capture 报告只会写入当前隐私设置摘要。
+默认导出数据目录为 `harness/telemetry/local/` 和 `harness/replay/`，也可以重复传入 `--local-data-dir <path>` 指定额外本地数据目录。导出会读取配置目录并写成 JSON；删除必须显式传入至少一个 `--local-data-dir`，且只移除这些显式目录中的文件和空子目录。Runtime 结算时会把本局 `runtime_replay_summary` JSON 写入本机 replay 目录，包含 run 配置、结算摘要、关键事件时间线和隐私摘要，不包含 raw input；它用于玩家和开发者复盘，不等同于 strict replay。Runtime 仍没有网络上传传输层，试玩 capture 报告只会写入当前隐私设置摘要。
 
 当前 Runtime / Gym 运行级 smoke 可用同一工具刷新：
 
@@ -212,7 +212,7 @@ Runtime 局外面板提供 `F4` 隐私与本地数据设置页：
 - `8`：切换上传原始 Replay。
 - `9`：切换上传崩溃报告。
 
-三个开关默认关闭，只有玩家显式操作才会开启。Runtime `F4` 设置页也提供文本面板原型级的右下七段点击区：从左到右映射为匿名遥测、raw replay、崩溃报告、导出存档、删除存档、导出本地数据和删除本地数据。点击区复用 `7/8/9/E/X/L/K` 的同一套 Runtime action；删除存档和删除本地数据仍必须再次触发同一个删除 action 才会执行，切换面板、切换隐私项或执行其他数据操作会取消确认态。启动时传入 `--runtime-settings-file <path>` 后，设置页会把切换结果写回该 JSON；未传入设置文件时只在当前会话生效。该页面会显示上传传输层 `not_implemented`，避免把开关误解为真实上传能力。它仍不是发布级视觉按钮、真实鼠标设备审查、平台路径审查或隐私法律审查通过证据。
+三个开关默认关闭，只有玩家显式操作才会开启。Runtime `F4` 设置页也提供文本面板原型级的右下七段点击区：从左到右映射为匿名遥测、raw replay、崩溃报告、导出存档、删除存档、导出本地数据和删除本地数据。点击区复用 `7/8/9/E/X/L/K` 的同一套 Runtime action；删除存档和删除本地数据仍必须再次触发同一个删除 action 才会执行，切换面板、切换隐私项或执行其他数据操作会取消确认态。启动时传入 `--runtime-settings-file <path>` 后，设置页会把切换结果写回该 JSON；未传入设置文件时只在当前会话生效。F1 结算页会显示本机复盘摘要是否已保存，并提示可通过 F4 导出 replay 目录。该页面会显示上传传输层 `not_implemented`，避免把开关误解为真实上传能力。它仍不是发布级视觉按钮、真实鼠标设备审查、平台路径审查或隐私法律审查通过证据。
 
 ## 版本对比
 
