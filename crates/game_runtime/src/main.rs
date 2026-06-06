@@ -2576,6 +2576,15 @@ fn player_tint(character_id: &str, health: f32, max_health: f32) -> Color {
     }
 }
 
+fn format_runtime_hud_run_mode(run_mode: RunMode, config: &RunConfig) -> String {
+    format!(
+        "Mode {}  Target {}  Seed {}",
+        runtime_run_mode_label(run_mode),
+        runtime_run_mode_duration_label(run_mode),
+        config.seed,
+    )
+}
+
 fn format_boss_status(boss: Option<&BossSnapshot>, content: &ContentPack) -> String {
     let Some(boss) = boss else {
         return "Boss 未出现".to_string();
@@ -3092,10 +3101,12 @@ fn format_terminal_overlay(
     terminal: &TerminalState,
     build: &BuildSnapshot,
     content: &ContentPack,
+    run_mode: RunMode,
 ) -> String {
     format!(
-        "{}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻",
+        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻",
         terminal_kind_label(terminal.kind),
+        runtime_run_mode_label(run_mode),
         terminal.time_seconds,
         terminal.final_level,
         terminal.kills,
@@ -3251,8 +3262,9 @@ fn update_hud(
             || ui_text_cache.hud_elapsed_seconds >= RUNTIME_HUD_TEXT_REFRESH_SECONDS
         {
             ui_text_cache.hud_elapsed_seconds = 0.0;
-            let mode = if state.paused { "Paused" } else { "Playing" };
+            let play_state = if state.paused { "Paused" } else { "Playing" };
             let map_style = map_visual_style(&snapshot.map.map_id);
+            let run_mode_status = format_runtime_hud_run_mode(state.run_mode, &state.config);
             let boss_status = format_boss_status(snapshot.boss.as_ref(), &state.content);
             let chapter_objective_status = format_runtime_hud_chapter_objective(
                 &state.meta_progress,
@@ -3266,9 +3278,9 @@ fn update_hud(
             let hazard_status =
                 format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
             set_text_section_if_changed(&mut text, format!(
-                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\n{}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
                 state.run_number,
-                mode,
+                play_state,
                 snapshot.time_seconds,
                 snapshot.player.health.max(0.0),
                 snapshot.player.max_health,
@@ -3276,6 +3288,7 @@ fn update_hud(
                 snapshot.player.xp,
                 snapshot.player.xp_to_next_level,
                 snapshot.metrics_partial.kills,
+                run_mode_status,
                 map_style.display_name,
                 snapshot.map.map_id,
                 chapter_objective_status,
@@ -3323,7 +3336,12 @@ fn update_hud(
                     .terminal
                     .as_ref()
                     .map(|terminal| {
-                        format_terminal_overlay(terminal, &snapshot.build, &state.content)
+                        format_terminal_overlay(
+                            terminal,
+                            &snapshot.build,
+                            &state.content,
+                            state.run_mode,
+                        )
                     })
                     .unwrap_or_default()
             };
@@ -4246,8 +4264,9 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
+            runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
             format_terminal_reason(&summary.terminal_reason),
             summary.level,
@@ -8001,11 +8020,12 @@ mod tests {
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_enemy_behavior_details, format_enemy_swarm_status, format_event_effect_for_codex,
         format_event_effect_status, format_hazard_status, format_runtime_hud_chapter_objective,
-        format_terminal_overlay, format_upgrade_options, load_runtime_asset_candidate_manifest,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
-        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, projectile_visual_style, read_runtime_save_state, render_meta_progress_panel,
+        format_runtime_hud_run_mode, format_terminal_overlay, format_upgrade_options,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
+        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
+        projectile_visual_style, read_runtime_save_state, render_meta_progress_panel,
         resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
         runtime_asset_root, runtime_behavior_label, runtime_boss_ability_label,
@@ -10114,6 +10134,20 @@ mod tests {
     }
 
     #[test]
+    fn hud_run_mode_status_names_selected_mode() {
+        let config = RunConfig {
+            seed: super::runtime_daily_storm_seed(),
+            ..RunConfig::default()
+        };
+
+        let status = format_runtime_hud_run_mode(RunMode::DailyStorm, &config);
+
+        assert!(status.contains("每日风暴"));
+        assert!(status.contains("10 分钟固定 seed"));
+        assert!(status.contains("Seed 66606"));
+    }
+
+    #[test]
     fn hud_chapter_objective_tracks_boss_arrival_countdown() {
         let state = runtime_state_for_tests();
         let mut progress = state.meta_progress.clone();
@@ -10521,9 +10555,10 @@ mod tests {
             final_level: 6,
             kills: 128,
         };
-        let overlay = format_terminal_overlay(&terminal, &build, &content);
+        let overlay = format_terminal_overlay(&terminal, &build, &content, RunMode::DailyStorm);
 
         assert!(overlay.contains("失败"));
+        assert!(overlay.contains("每日风暴"));
         assert!(overlay.contains("214.5s"));
         assert!(overlay.contains("Lv 6"));
         assert!(overlay.contains("击杀 128"));
@@ -10554,9 +10589,10 @@ mod tests {
             kills: 520,
         };
 
-        let overlay = format_terminal_overlay(&terminal, &build, &content);
+        let overlay = format_terminal_overlay(&terminal, &build, &content, RunMode::StandardPatrol);
 
         assert!(overlay.contains("胜利"));
+        assert!(overlay.contains("标准巡逻"));
         assert!(overlay.contains("下一局 已能稳定过关"));
         assert!(overlay.contains("彩虹糖流星雨"));
         assert!(overlay.contains("彩虹糖弹 5/5 + 糖晶放大镜 0/3"));
@@ -10701,6 +10737,7 @@ mod tests {
         assert!(panel.contains("糖罐守护站"));
         assert!(panel.contains("局后结算"));
         assert!(panel.contains("失败"));
+        assert!(panel.contains("模式 标准巡逻"));
         assert!(panel.contains("存活 120s"));
         assert!(panel.contains("等级 5"));
         assert!(panel.contains("击杀 95"));
