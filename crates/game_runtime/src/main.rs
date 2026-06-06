@@ -3505,7 +3505,7 @@ fn format_terminal_overlay(
     damage_taken_by_source: &BTreeMap<String, f32>,
 ) -> String {
     format!(
-        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n终局 {}\n下一局 {}\n按 R 重新巡逻",
+        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n终局 {}\n下一局 {}\n按 R 重新巡逻  F1 看结算  F5 换构筑",
         terminal_kind_label(terminal.kind),
         runtime_run_mode_label(run_mode),
         terminal.time_seconds,
@@ -12553,7 +12553,7 @@ mod tests {
         assert!(overlay.contains("来源 接触 9.0, 风暴地面 3.5"));
         assert!(overlay.contains("终局 武器 彩虹糖弹 Lv.2"));
         assert!(overlay.contains("生命归零多半是容错不足"));
-        assert!(overlay.contains("按 R 重新巡逻"));
+        assert!(overlay.contains("按 R 重新巡逻  F1 看结算  F5 换构筑"));
     }
 
     #[test]
@@ -12592,6 +12592,8 @@ mod tests {
         assert!(overlay.contains("下一局 已能稳定过关"));
         assert!(overlay.contains("彩虹糖流星雨"));
         assert!(overlay.contains("彩虹糖弹 5/5 + 糖晶放大镜 0/3"));
+        assert!(overlay.contains("F1 看结算"));
+        assert!(overlay.contains("F5 换构筑"));
     }
 
     #[test]
