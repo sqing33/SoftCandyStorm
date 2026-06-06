@@ -1823,10 +1823,8 @@ fn format_upgrade_options(
 }
 
 fn format_upgrade_option_state(option: &UpgradeOptionSnapshot) -> String {
-    if let Some((_, level)) = option.id.rsplit_once("-level-") {
-        if !level.is_empty() && level.chars().all(|character| character.is_ascii_digit()) {
-            return format!("目标 Lv.{level}");
-        }
+    if let Some(level) = upgrade_option_level(&option.id) {
+        return format!("目标 Lv.{level}");
     }
 
     if option.tags.iter().any(|tag| tag == "evolution") {
@@ -2004,6 +2002,33 @@ fn upgrade_option_content_id(option_id: &str) -> &str {
         }
     }
     option_id
+}
+
+fn upgrade_option_level(option_id: &str) -> Option<u32> {
+    let (_, level) = option_id.rsplit_once("-level-")?;
+    if level.is_empty() || !level.chars().all(|character| character.is_ascii_digit()) {
+        return None;
+    }
+    level.parse().ok()
+}
+
+fn runtime_upgrade_choice_label(content: &ContentPack, option_id: &str) -> String {
+    let content_id = upgrade_option_content_id(option_id);
+    let level = upgrade_option_level(option_id);
+    if let Some(evolution) = content.evolutions.get(content_id) {
+        return format!("进化 {}", evolution.name);
+    }
+    if let Some(weapon) = content.weapons.get(content_id) {
+        return level
+            .map(|level| format!("{} Lv.{level}", weapon.name))
+            .unwrap_or_else(|| format!("获得 {}", weapon.name));
+    }
+    if let Some(passive) = content.passives.get(content_id) {
+        return level
+            .map(|level| format!("{} Lv.{level}", passive.name))
+            .unwrap_or_else(|| format!("获得 {}", passive.name));
+    }
+    option_id.to_string()
 }
 
 fn format_evolution_requirement_progress(
@@ -4044,7 +4069,10 @@ fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
         GameEvent::XpCollected { value, .. } => Some(format!("糖晶 +{value:.0}")),
         GameEvent::LevelUp { level } => Some(format!("升到 Lv.{level}")),
         GameEvent::UpgradeOffered { .. } => Some("出现升级选择".to_string()),
-        GameEvent::UpgradeChosen { option_id } => Some(format!("选择 {option_id}")),
+        GameEvent::UpgradeChosen { option_id } => Some(format!(
+            "选择 {}",
+            runtime_upgrade_choice_label(content, option_id)
+        )),
         GameEvent::PlayerDamaged { amount } => Some(format!("受伤 {amount:.1}")),
         GameEvent::ContentEventTriggered { event_id } => Some(format!(
             "事件 {}",
@@ -12641,7 +12669,7 @@ mod tests {
 
         assert_eq!(timeline.len(), 2);
         assert_eq!(timeline[0].label, "升到 Lv.2");
-        assert_eq!(timeline[1].label, "选择 rainbow-candy-shot-level-2");
+        assert_eq!(timeline[1].label, "选择 彩虹糖弹 Lv.2");
 
         for index in 0..8 {
             record_runtime_event_timeline(
@@ -14774,6 +14802,15 @@ mod tests {
                 &content
             ),
             "事件 彩虹糖潮：XP x1.40 25s，刷怪 x1.25 25s"
+        );
+        assert_eq!(
+            describe_events(
+                &[GameEvent::UpgradeChosen {
+                    option_id: "rainbow-candy-shot-level-2".to_string(),
+                }],
+                &content
+            ),
+            "选择 彩虹糖弹 Lv.2"
         );
     }
 
