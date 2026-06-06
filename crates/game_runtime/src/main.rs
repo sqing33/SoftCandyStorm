@@ -3547,7 +3547,7 @@ fn format_terminal_overlay(
     damage_taken_by_source: &BTreeMap<String, f32>,
 ) -> String {
     format!(
-        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n终局 {}\n下一局 {}\n按 R 重新巡逻  F1 看结算  F5 换构筑",
+        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n进度 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻  F1 看结算  F5 换构筑",
         terminal_kind_label(terminal.kind),
         runtime_run_mode_label(run_mode),
         terminal.time_seconds,
@@ -3555,6 +3555,7 @@ fn format_terminal_overlay(
         terminal.kills,
         format_terminal_reason(&terminal.reason),
         format_terminal_damage_summary(damage_taken, damage_taken_by_source),
+        format_terminal_progress_summary(progress, content),
         format_terminal_build_summary(build, content),
         format_terminal_next_run_advice(terminal, build, content, progress),
     )
@@ -3578,6 +3579,16 @@ fn format_terminal_build_summary(build: &BuildSnapshot, content: &ContentPack) -
         runtime_evolution_label(content, id)
     });
     format!("武器 {weapons}  被动 {passives}  进化 {evolutions}")
+}
+
+fn format_terminal_progress_summary(progress: &MetaProgress, content: &ContentPack) -> String {
+    let completed = meta_completed_goal_count(progress);
+    let total = meta_total_chapter_goal_count(progress, content);
+    if total == 0 {
+        return "糖罐星修复 暂无章节目标记录".to_string();
+    }
+    let percent = completed * 100 / total;
+    format!("糖罐星修复 {completed}/{total} ({percent}%)")
 }
 
 fn format_terminal_next_run_advice(
@@ -13639,6 +13650,7 @@ mod tests {
         assert!(overlay.contains("生命值归零"));
         assert!(overlay.contains("受伤 12.5"));
         assert!(overlay.contains("来源 接触 9.0, 风暴地面 3.5"));
+        assert!(overlay.contains("进度 糖罐星修复 0/25 (0%)"));
         assert!(overlay.contains("终局 武器 彩虹糖弹 Lv.2"));
         assert!(overlay.contains("生命归零多半是容错不足"));
         assert!(overlay.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
@@ -13679,6 +13691,7 @@ mod tests {
         assert!(overlay.contains("胜利"));
         assert!(overlay.contains("标准巡逻"));
         assert!(overlay.contains("受伤 0.0  来源 无"));
+        assert!(overlay.contains("进度 糖罐星修复 0/25 (0%)"));
         assert!(overlay.contains("下一局 已能稳定过关"));
         assert!(overlay.contains("彩虹糖流星雨"));
         assert!(overlay.contains("彩虹糖弹 5/5 + 糖晶放大镜 0/3"));
