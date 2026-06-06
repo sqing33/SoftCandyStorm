@@ -5350,7 +5350,7 @@ fn render_meta_overview_panel(
     }
     if let Some(candidate) = asset_runtime_candidate {
         output.push_str(&format!(
-            "\n\n素材 Runtime 候选: {}\n素材 {}  类型 {}  状态 asset_candidate 待预览\n仅显示候选状态，不替换正式 Runtime 素材；仍需 Runtime preview、音频响度审查和最终人工接受",
+            "\n\n素材候选包: {}\n素材 {}  类型 {}  状态 待预览\n只显示候选包信息，不替换正式游戏素材；还需要游戏内预览、音频响度审查和最终人工接受",
             candidate.candidate_batch_id,
             candidate.asset_count,
             format_asset_candidate_type_counts(candidate),
@@ -5809,19 +5809,16 @@ fn render_meta_codex_panel(
     }
     if let Some(candidate) = story_codex_ui_candidate {
         lines.push(format!(
-            "\n剧情/图鉴 UI 候选: {}",
+            "\n剧情/图鉴候选包: {}",
             candidate.candidate_pack_id
         ));
         lines.push(format!(
-            "章节 {}  图鉴条目 {}  状态 ui_candidate 待验收",
+            "章节 {}  图鉴条目 {}  状态 待验收",
             candidate.chapter_count, candidate.codex_entry_count
         ));
-        lines.push(
-            "仅显示候选状态，不读取 generated candidate 正文；仍需 Runtime UI review 和最终人工接受"
-                .to_string(),
-        );
+        lines.push("只显示候选包信息，不读取候选正文；还需要界面验收和最终人工接受".to_string());
     } else {
-        lines.push("\n剧情/图鉴 UI 候选: 未加载".to_string());
+        lines.push("\n剧情/图鉴候选包: 未加载".to_string());
     }
     lines.join("\n")
 }
@@ -9545,9 +9542,20 @@ fn format_asset_candidate_type_counts(candidate: &RuntimeAssetCandidateManifest)
     }
     counts
         .into_iter()
-        .map(|(asset_type, count)| format!("{asset_type}:{count}"))
+        .map(|(asset_type, count)| format!("{} {count}", runtime_asset_type_label(asset_type)))
         .collect::<Vec<_>>()
-        .join(", ")
+        .join("、")
+}
+
+fn runtime_asset_type_label(asset_type: &str) -> &str {
+    match asset_type {
+        "image" => "图片",
+        "audio" => "音频",
+        "music" => "音乐",
+        "voice" => "语音",
+        "spritesheet" => "序列帧",
+        _ => asset_type,
+    }
 }
 
 impl RuntimeEventKind {
@@ -16301,11 +16309,11 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("剧情/图鉴 UI 候选"));
+        assert!(panel.contains("剧情/图鉴候选包"));
         assert!(panel.contains("2026-05-26_story_codex_seed_pack"));
         assert!(panel.contains("章节 6"));
         assert!(panel.contains("图鉴条目 26"));
-        assert!(panel.contains("不读取 generated candidate 正文"));
+        assert!(panel.contains("只显示候选包信息，不读取候选正文"));
         assert!(!panel.contains("糖罐星不是坏掉了"));
     }
 
@@ -16356,13 +16364,13 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("素材 Runtime 候选"));
+        assert!(panel.contains("素材候选包"));
         assert!(panel.contains("2026-05-26_mmx_runtime_topdown_audio_plan"));
         assert!(panel.contains("素材 2"));
-        assert!(panel.contains("audio:1"));
-        assert!(panel.contains("image:1"));
-        assert!(panel.contains("状态 asset_candidate 待预览"));
-        assert!(panel.contains("不替换正式 Runtime 素材"));
+        assert!(panel.contains("音频 1"));
+        assert!(panel.contains("图片 1"));
+        assert!(panel.contains("状态 待预览"));
+        assert!(panel.contains("不替换正式游戏素材"));
     }
 
     #[test]
