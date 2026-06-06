@@ -6913,19 +6913,66 @@ fn format_settlement_next_step(
     progress: &MetaProgress,
     content: &ContentPack,
 ) -> String {
+    let chapter_step = format_settlement_chapter_goal_next_step(progress, content);
     if !report.unlocked.is_empty() {
-        return "F5 试试新角色或地图，F3 查看新增图鉴".to_string();
+        return append_optional_next_step(
+            "F5 试试新角色或地图，F3 查看新增图鉴".to_string(),
+            chapter_step,
+        );
     }
     if let Some(shop_step) = format_settlement_shop_next_step(progress, content) {
-        return shop_step;
+        return append_optional_next_step(shop_step, chapter_step);
     }
     if !report.completed_goals.is_empty() {
-        return "F2 查看章节目标，F5 开下一次巡逻".to_string();
+        return chapter_step.unwrap_or_else(|| "F2 查看章节目标，F5 开下一次巡逻".to_string());
     }
     if report.run_summary.victory {
-        return "F2 挑战下一章，F5 换构筑继续巡逻".to_string();
+        return chapter_step.unwrap_or_else(|| "F2 挑战下一章，F5 换构筑继续巡逻".to_string());
     }
-    "F5 调整角色或地图继续巡逻，F3 查看本局图鉴".to_string()
+    chapter_step.unwrap_or_else(|| "F5 调整角色或地图继续巡逻，F3 查看本局图鉴".to_string())
+}
+
+fn append_optional_next_step(base: String, extra: Option<String>) -> String {
+    extra
+        .map(|extra| format!("{base}；{extra}"))
+        .unwrap_or(base)
+}
+
+fn format_settlement_chapter_goal_next_step(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Option<String> {
+    let (chapter_id, goal) = next_incomplete_chapter_goal(progress, content)?;
+    let mut step = format!(
+        "F2/F5 下一局优先 {}：{}",
+        chapter_label(content, &chapter_id),
+        goal
+    );
+    if let Some(evolution_hint) = format_settlement_chapter_evolution_hint(content, &chapter_id) {
+        step.push_str(&format!("；{evolution_hint}"));
+    }
+    Some(step)
+}
+
+fn format_settlement_chapter_evolution_hint(
+    content: &ContentPack,
+    chapter_id: &str,
+) -> Option<String> {
+    let evolution_id = game_core::meta::chapter_target_evolution_id(chapter_id)?;
+    let evolution = content.evolutions.get(evolution_id)?;
+    let weapon = runtime_weapon_label(content, &evolution.requirements.weapon.id);
+    let passive = evolution
+        .requirements
+        .passive
+        .as_ref()
+        .map(|requirement| runtime_passive_label(content, &requirement.id))
+        .unwrap_or_else(|| "无被动要求".to_string());
+    Some(format!(
+        "目标进化 {} 需 {} + {}",
+        runtime_evolution_label(content, evolution_id),
+        weapon,
+        passive,
+    ))
 }
 
 fn format_settlement_shop_next_step(
@@ -12151,6 +12198,8 @@ mod tests {
 
         assert!(panel.contains("下一步行动 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("下一步 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
+        assert!(panel.contains("目标进化 彩虹糖流星雨 需 彩虹糖弹 + 糖晶放大镜"));
     }
 
     #[test]
@@ -12196,6 +12245,8 @@ mod tests {
 
         assert!(panel.contains("下一步行动 还差 50 糖晶碎片 可解锁 角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("下一步 还差 50 糖晶碎片 可解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
+        assert!(panel.contains("目标进化 彩虹糖流星雨 需 彩虹糖弹 + 糖晶放大镜"));
     }
 
     #[test]
