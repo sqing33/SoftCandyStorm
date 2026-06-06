@@ -3831,9 +3831,7 @@ fn format_terminal_review_focus(
         }
         TerminalKind::Timeout => "接近目标时长，重点检查首领输出和终局进化线".to_string(),
         TerminalKind::Aborted => "主动中止，本局不作为平衡或构筑判断依据".to_string(),
-        TerminalKind::InvalidState => {
-            "异常终局，先保留 seed/replay 并记录 failure case".to_string()
-        }
+        TerminalKind::InvalidState => "异常终局，先保留种子和复盘并记录失败案例".to_string(),
         TerminalKind::Defeat => "未完成巡逻，先看关键事件、伤害来源和终局构筑".to_string(),
     }
 }
@@ -3868,7 +3866,7 @@ fn format_terminal_next_run_advice(
         TerminalKind::Defeat => format_terminal_defeat_advice(terminal, build),
         TerminalKind::Timeout => "这局接近目标时长，下局优先补首领输出或一条完整进化线".to_string(),
         TerminalKind::Aborted => "回守护站换角色、地图或初始装备后再巡逻".to_string(),
-        TerminalKind::InvalidState => "保留 replay 和 seed，先记录异常再继续验证".to_string(),
+        TerminalKind::InvalidState => "保留复盘和种子，先记录异常再继续验证".to_string(),
     };
     if terminal.kind == TerminalKind::InvalidState {
         base
@@ -6006,7 +6004,7 @@ fn render_meta_settings_panel(
         RuntimePrivacyReport::from_settings(settings).upload_transport,
     );
     format!(
-        "{}\n{}\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n右下七段点击区: 遥测 Replay 崩溃 导出存档 删除存档 导出本地 删除本地\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传服务: {}",
+        "{}\n{}\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始复盘: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n右下七段点击区: 遥测 复盘 崩溃 导出存档 删除存档 导出本地 删除本地\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前运行配置的存档或本地遥测/复盘/崩溃目录\n上传服务: {}",
         META_PANEL_HEADER,
         META_PANEL_TAB_CLICK_HINT,
         on_off_label(settings.telemetry_upload_enabled),
@@ -9213,9 +9211,9 @@ fn format_settlement_replay_status(
     replay_summary_path: Option<&Path>,
 ) -> String {
     let raw_replay_upload = if settings.raw_replay_upload_enabled {
-        "原始 Replay 上传同意已开启，传输层未实现"
+        "原始复盘上传同意已开启，传输层未实现"
     } else {
-        "原始 Replay 上传关闭"
+        "原始复盘上传关闭"
     };
     if let Some(path) = replay_summary_path {
         format!(
@@ -9223,7 +9221,7 @@ fn format_settlement_replay_status(
             path.display()
         )
     } else {
-        format!("本机复盘摘要未保存，本机 replay 目录可在 F4 导出，{raw_replay_upload}")
+        format!("本机复盘摘要未保存，本机复盘目录可在 F4 导出，{raw_replay_upload}")
     }
 }
 
@@ -10863,7 +10861,7 @@ fn runtime_upload_transport_enabled(settings: &RuntimePrivacySettings) -> bool {
 fn runtime_upload_kind_label(kind: RuntimeUploadKind) -> &'static str {
     match kind {
         RuntimeUploadKind::Telemetry => "匿名遥测上传",
-        RuntimeUploadKind::RawReplay => "原始 Replay 上传",
+        RuntimeUploadKind::RawReplay => "原始复盘上传",
         RuntimeUploadKind::CrashReport => "崩溃报告上传",
     }
 }
@@ -10879,9 +10877,9 @@ fn runtime_privacy_persistence_label(persisted: bool) -> &'static str {
 fn runtime_privacy_notice(settings: &RuntimePrivacySettings) -> String {
     format!(
         "《软糖风暴》隐私说明\n\
-遥测、Replay 和崩溃报告默认只保存在本机，用于平衡、崩溃分析和玩法改进。\n\
-上传匿名遥测：{}；上传原始 Replay 输入：{}；上传崩溃报告：{}。\n\
-上传功能必须由玩家明确开启，raw replay 需要单独同意；当前 Runtime 没有网络上传传输层。\n\
+遥测、复盘和崩溃报告默认只保存在本机，用于平衡、崩溃分析和玩法改进。\n\
+上传匿名遥测：{}；上传原始复盘输入：{}；上传崩溃报告：{}。\n\
+上传功能必须由玩家明确开启，原始复盘需要单独同意；当前版本没有网络上传传输层。\n\
 本地数据可以导出为 JSON，也可以删除。数据不应包含个人身份信息、IP 地址、文件路径或自由文本输入；默认保留 90 天。",
         on_off_label(settings.telemetry_upload_enabled),
         on_off_label(settings.raw_replay_upload_enabled),
@@ -12573,7 +12571,7 @@ mod tests {
             "崩溃分析",
             "玩法改进",
             "明确开启",
-            "raw replay",
+            "原始复盘",
             "导出",
             "删除",
             "个人身份信息",
@@ -13924,7 +13922,7 @@ mod tests {
         assert!(status.contains("本机复盘摘要已保存"));
         assert!(status.contains("runtime_run_1_seed_12345_summary.json"));
         assert!(status.contains("可在 F4 导出"));
-        assert!(status.contains("原始 Replay 上传关闭"));
+        assert!(status.contains("原始复盘上传关闭"));
     }
 
     #[test]
@@ -15042,8 +15040,8 @@ mod tests {
         assert!(panel.contains("接触 9.0"));
         assert!(panel.contains("复盘重点 最大问题 接触伤害，下局补防御/控场并保持绕圈拾取"));
         assert!(panel.contains("首领结果 未遭遇或未造成伤害"));
-        assert!(panel.contains("Replay 本机复盘摘要未保存"));
-        assert!(panel.contains("原始 Replay 上传关闭"));
+        assert!(panel.contains("本机复盘摘要未保存"));
+        assert!(panel.contains("原始复盘上传关闭"));
         assert!(panel.contains("关键事件 30s 升到等级 2 | 180s 首领出现 暴走搅糖机"));
         assert!(panel.contains("最终构筑 武器 彩虹糖弹 等级 1"));
         assert!(panel.contains("被动 糖晶放大镜"));
@@ -16677,7 +16675,7 @@ mod tests {
 
         assert!(panel.contains("隐私与本地数据"));
         assert!(panel.contains("上传匿名遥测: 已开启"));
-        assert!(panel.contains("上传原始 Replay: 关闭"));
+        assert!(panel.contains("上传原始复盘: 关闭"));
         assert!(panel.contains("E 导出存档"));
         assert!(panel.contains("X 删除存档"));
         assert!(panel.contains("L 导出本地数据"));
