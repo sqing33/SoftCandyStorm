@@ -5307,6 +5307,10 @@ fn render_meta_chapter_panel(
             runtime_boss_label(content, &chapter.boss_id),
             chapter.boss_id,
         ));
+        lines.push(format!(
+            "章节奖励 {}",
+            format_runtime_chapter_reward_preview(&chapter.chapter_id, content)
+        ));
         if let Some(map) = content.maps.get(&chapter.map_id) {
             lines.push(format!(
                 "地图说明 {}  标签 {}",
@@ -14281,6 +14285,7 @@ mod tests {
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
         assert!(panel.contains("章节路线 已解锁 糖霜草地"));
         assert!(panel.contains("frosting-grassland"));
+        assert!(panel.contains("章节奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"));
         assert!(panel.contains("地图说明 覆盖糖霜的开阔草地"));
         assert!(panel.contains("Boss说明"));
         assert!(panel.contains("应对"));
@@ -14325,6 +14330,8 @@ mod tests {
         assert!(panel.contains(
             "章节路线 已解锁 糖霜草地  下一章节 汽水溪谷: 击败糖霜草地 Boss 暴走搅糖机 + 星片 0/2"
         ));
+        assert!(panel
+            .contains("章节奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"));
         assert!(panel.contains("defeat-soda-fountain-dragon"));
         assert!(panel.contains("击败汽水喷泉龙"));
         assert!(panel.contains("集齐 4 星片开放 棉花云牧场"));
