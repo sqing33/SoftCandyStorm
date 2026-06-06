@@ -357,21 +357,25 @@ fn apply_chapter_goals(
         report.resources_gained.star_shards += earned_star_shards;
     }
 
-    if chapter_id == "frosting-grassland" && summary.bosses_defeated.contains(boss_id) {
-        unlock(
-            &mut progress.unlocks.weapons,
-            report,
-            "weapon",
-            "marshmallow-shield",
-            "defeated frosting-grassland chapter boss",
-        );
-        unlock(
-            &mut progress.unlocks.characters,
-            report,
-            "character",
-            "bubble-courier",
-            "defeated frosting-grassland chapter boss",
-        );
+    if summary.bosses_defeated.contains(boss_id) {
+        if chapter_id == "frosting-grassland" {
+            unlock(
+                &mut progress.unlocks.weapons,
+                report,
+                "weapon",
+                "marshmallow-shield",
+                "defeated frosting-grassland chapter boss",
+            );
+        }
+        if let Some(character_id) = chapter_character_unlock(chapter_id) {
+            unlock(
+                &mut progress.unlocks.characters,
+                report,
+                "character",
+                character_id,
+                "defeated chapter boss",
+            );
+        }
     }
 
     if let Some((next_chapter, required_star_shards)) = next_chapter_unlock(chapter_id) {
@@ -410,6 +414,16 @@ fn next_chapter_unlock(chapter_id: &str) -> Option<(&'static str, u32)> {
         .iter()
         .find(|(id, _, _, _)| *id == chapter_id)
         .and_then(|(_, _, _, next)| *next)
+}
+
+fn chapter_character_unlock(chapter_id: &str) -> Option<&'static str> {
+    match chapter_id {
+        "frosting-grassland" => Some("bubble-courier"),
+        "soda-creek" => Some("cream-knight"),
+        "cotton-cloud-pasture" => Some("sour-plum-doctor"),
+        "caramel-workshop" => Some("pudding-crafter"),
+        _ => None,
+    }
 }
 
 type DemoChapterSpec = (
@@ -745,7 +759,38 @@ mod tests {
             .contains(&"soda-creek:collect-200-candy-crystals".to_string()));
         assert!(progress.unlocks.maps.contains("cotton-cloud-pasture"));
         assert!(progress.chapters["cotton-cloud-pasture"].unlocked);
+        assert!(progress.unlocks.characters.contains("cream-knight"));
+        assert!(report
+            .unlocked
+            .iter()
+            .any(|unlock| unlock.kind == "character" && unlock.id == "cream-knight"));
         assert_eq!(progress.resources.star_shards, 4);
+    }
+
+    #[test]
+    fn chapter_bosses_unlock_remaining_demo_characters() {
+        let mut progress = MetaProgress::demo_start();
+        progress.resources.star_shards = 20;
+        for chapter_id in ["soda-creek", "cotton-cloud-pasture", "caramel-workshop"] {
+            progress.unlocks.maps.insert(chapter_id.to_string());
+            progress.unlocks.chapters.insert(chapter_id.to_string());
+            progress.chapters.get_mut(chapter_id).unwrap().unlocked = true;
+        }
+
+        for (map_id, boss_id) in [
+            ("soda-creek", "soda-fountain-dragon"),
+            ("cotton-cloud-pasture", "giant-cotton-clump"),
+            ("caramel-workshop", "caramel-furnace"),
+        ] {
+            let mut summary = base_summary();
+            summary.map_id = map_id.to_string();
+            summary.bosses_defeated.insert(boss_id.to_string());
+            progress.apply_run_summary(&summary);
+        }
+
+        assert!(progress.unlocks.characters.contains("cream-knight"));
+        assert!(progress.unlocks.characters.contains("sour-plum-doctor"));
+        assert!(progress.unlocks.characters.contains("pudding-crafter"));
     }
 
     #[test]
