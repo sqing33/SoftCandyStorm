@@ -7165,7 +7165,7 @@ fn format_settlement_chapter_evolution_hint(
         .map(|requirement| runtime_passive_label(content, &requirement.id))
         .unwrap_or_else(|| "无被动要求".to_string());
     Some(format!(
-        "目标进化 {} 需 {} + {}",
+        "目标进化 {} 需 {} + {}，F5 按 G 推荐构筑",
         runtime_evolution_label(content, evolution_id),
         weapon,
         passive,
@@ -12472,6 +12472,7 @@ mod tests {
         assert!(panel.contains("下一步 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(panel.contains("目标进化 彩虹糖流星雨 需 彩虹糖弹 + 糖晶放大镜"));
+        assert!(panel.contains("F5 按 G 推荐构筑"));
     }
 
     #[test]
@@ -12519,6 +12520,7 @@ mod tests {
         assert!(panel.contains("下一步 还差 50 糖晶碎片 可解锁 角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(panel.contains("目标进化 彩虹糖流星雨 需 彩虹糖弹 + 糖晶放大镜"));
+        assert!(panel.contains("F5 按 G 推荐构筑"));
     }
 
     #[test]
