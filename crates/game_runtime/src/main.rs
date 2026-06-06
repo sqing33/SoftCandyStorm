@@ -5251,6 +5251,14 @@ fn render_meta_chapter_panel(
         let goal_lines =
             runtime_chapter_goal_lines(&chapter.chapter_id, &chapter.completed_goals, content);
         lines.push(format!("目标\n{}", goal_lines.join("\n")));
+        if let Some(build_status) = format_runtime_loadout_chapter_build_status(
+            progress,
+            content,
+            &chapter.map_id,
+            &config.starting_loadout,
+        ) {
+            lines.push(build_status);
+        }
         if let Some(build_hint) = format_runtime_loadout_chapter_build_hint(
             progress,
             content,
@@ -13297,6 +13305,7 @@ mod tests {
         assert!(panel.contains("应对"));
         assert!(panel.contains("survive-10-minutes"));
         assert!(panel.contains("奖励 星片 +1"));
+        assert!(panel.contains("章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到"));
         assert!(panel.contains(
             "章节构筑目标 彩虹糖流星雨：彩虹糖弹 开局已带 + 糖晶放大镜 F5 可切换/局内可抽，Boss 宝箱触发"
         ));
