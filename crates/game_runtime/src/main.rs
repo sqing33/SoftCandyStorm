@@ -5444,14 +5444,83 @@ fn format_meta_shop_offer_line(progress: &MetaProgress, content: &ContentPack) -
             "糖晶不足"
         };
         return format!(
-            "{}  费用 {}  {}  按 U 解锁",
+            "{}  费用 {}  {}  按 U 解锁  效果 {}",
             format_meta_shop_offer_label(&offer, content),
             format_meta_resource_cost(&offer.cost),
             status,
+            format_meta_shop_offer_effect(&offer, content),
         );
     }
 
     "当前基地解锁已买完，继续挑战章节和风暴模式".to_string()
+}
+
+fn format_meta_shop_offer_effect(offer: &MetaShopOffer, content: &ContentPack) -> String {
+    match offer.kind.as_str() {
+        "character" => content
+            .characters
+            .get(&offer.id)
+            .map(|character| {
+                format!(
+                    "F5 新角色；{}",
+                    format_runtime_character_play_hint(character)
+                )
+            })
+            .unwrap_or_else(|| "解锁新角色，F5 可选择".to_string()),
+        "weapon" => content
+            .weapons
+            .get(&offer.id)
+            .map(|weapon| {
+                format!(
+                    "进入武器掉落池并可作 F5 开局；{}",
+                    format_runtime_shop_build_link_hint("weapon", &weapon.id, content)
+                )
+            })
+            .unwrap_or_else(|| "进入武器掉落池并可作 F5 开局".to_string()),
+        "passive" => content
+            .passives
+            .get(&offer.id)
+            .map(|passive| {
+                format!(
+                    "进入被动掉落池并可作 F5 开局被动；{}",
+                    format_runtime_shop_build_link_hint("passive", &passive.id, content)
+                )
+            })
+            .unwrap_or_else(|| "进入被动掉落池并可作 F5 开局被动".to_string()),
+        _ => "解锁后进入对应局外进度".to_string(),
+    }
+}
+
+fn format_runtime_shop_build_link_hint(kind: &str, id: &str, content: &ContentPack) -> String {
+    let links = format_codex_build_links(kind, id, content);
+    if !links.is_empty() {
+        return format!("关联 {}", format_string_items(&links, 2));
+    }
+    match kind {
+        "weapon" => content
+            .weapons
+            .get(id)
+            .map(|weapon| {
+                format!(
+                    "定位 {}  标签 {}",
+                    runtime_weapon_role_label(&weapon.balance_budget.role),
+                    format_upgrade_tags(&weapon.tags)
+                )
+            })
+            .unwrap_or_else(|| "补充新输出路线".to_string()),
+        "passive" => content
+            .passives
+            .get(id)
+            .map(|passive| {
+                format!(
+                    "标签 {}  加成 {}",
+                    format_upgrade_tags(&passive.tags),
+                    format_passive_modifiers(&passive.stat_modifiers)
+                )
+            })
+            .unwrap_or_else(|| "补充新被动路线".to_string()),
+        _ => "补充新构筑路线".to_string(),
+    }
 }
 
 fn format_meta_shop_offer_label(offer: &MetaShopOffer, content: &ContentPack) -> String {
@@ -6483,9 +6552,10 @@ fn format_runtime_next_build_shop_line(progress: &MetaProgress, content: &Conten
             "排队待解锁"
         };
         return format!(
-            "下一构筑 {}  {}",
+            "下一构筑 {}  {}  效果 {}",
             format_meta_shop_offer_label(&offer, content),
             status,
+            format_meta_shop_offer_effect(&offer, content),
         );
     }
 
@@ -14880,6 +14950,8 @@ mod tests {
         assert!(panel.contains("费用 60 糖晶碎片"));
         assert!(panel.contains("可购买"));
         assert!(panel.contains("按 U 解锁"));
+        assert!(panel.contains("效果 F5 新角色"));
+        assert!(panel.contains("机动拾取"));
     }
 
     #[test]
@@ -15023,6 +15095,8 @@ mod tests {
         assert!(overview.contains("被动 星星勺子 (star-spoon)"));
         assert!(overview.contains("费用 70 糖晶碎片"));
         assert!(overview.contains("可购买"));
+        assert!(overview.contains("效果 进入被动掉落池并可作 F5 开局被动"));
+        assert!(overview.contains("关联 进化 跳跳糖连锁反应"));
 
         let message = purchase_next_runtime_shop_offer(&mut state)
             .expect("enough candy crystal shards should unlock the build pool offer");
