@@ -3100,6 +3100,7 @@ fn runtime_enemy_behavior_label(
 fn format_event_effect_status(
     effects: &[ActiveEventEffectSnapshot],
     content: &ContentPack,
+    time_seconds: f32,
 ) -> String {
     let active = effects
         .iter()
@@ -3116,10 +3117,44 @@ fn format_event_effect_status(
         })
         .collect::<Vec<_>>();
     if active.is_empty() {
+        if let Some((start_second, end_second, chance, event_id)) =
+            runtime_next_event_window(content, time_seconds)
+        {
+            return format!(
+                "事件窗口 {}  {:.0}-{:.0}s  还有 {:.0}s  概率 {:.0}%",
+                runtime_event_label(content, event_id),
+                start_second,
+                end_second,
+                (start_second - time_seconds).max(0.0),
+                chance * 100.0,
+            );
+        }
         "事件效果 无".to_string()
     } else {
         format!("事件效果 {}", active.join(", "))
     }
+}
+
+fn runtime_next_event_window(
+    content: &ContentPack,
+    time_seconds: f32,
+) -> Option<(f32, f32, f32, &str)> {
+    content
+        .events
+        .values()
+        .filter(|event| event.trigger.trigger_type == "time_window")
+        .filter_map(|event| {
+            let start_second = event.trigger.start_second?;
+            (start_second >= time_seconds).then(|| {
+                (
+                    start_second,
+                    event.trigger.end_second.unwrap_or(start_second),
+                    event.trigger.chance.unwrap_or(1.0).clamp(0.0, 1.0),
+                    event.id.as_str(),
+                )
+            })
+        })
+        .min_by(|left, right| left.0.total_cmp(&right.0))
 }
 
 fn runtime_event_effect_label(effect_type: &str) -> String {
@@ -3504,8 +3539,11 @@ fn update_hud(
                 &state.content,
                 snapshot.time_seconds,
             );
-            let event_status =
-                format_event_effect_status(&snapshot.active_event_effects, &state.content);
+            let event_status = format_event_effect_status(
+                &snapshot.active_event_effects,
+                &state.content,
+                snapshot.time_seconds,
+            );
             let hazard_status =
                 format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
             set_text_section_if_changed(&mut text, format!(
@@ -11966,7 +12004,7 @@ mod tests {
             },
         ];
 
-        let status = format_event_effect_status(&effects, &content);
+        let status = format_event_effect_status(&effects, &content, 200.0);
 
         assert!(status.contains("事件效果"));
         assert!(status.contains("彩虹糖潮 XP x1.40 24.5s"));
@@ -11976,9 +12014,19 @@ mod tests {
     #[test]
     fn event_effect_status_renders_empty_state() {
         assert_eq!(
-            format_event_effect_status(&[], &ContentPack::base_demo()),
+            format_event_effect_status(&[], &ContentPack::base_demo(), 999.0),
             "事件效果 无"
         );
+    }
+
+    #[test]
+    fn event_effect_status_renders_next_event_window_countdown() {
+        let status = format_event_effect_status(&[], &ContentPack::base_demo(), 60.0);
+
+        assert!(status.contains("事件窗口"));
+        assert!(status.contains("120-"));
+        assert!(status.contains("还有 60s"));
+        assert!(status.contains("概率 6%"));
     }
 
     #[test]
