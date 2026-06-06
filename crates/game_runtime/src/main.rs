@@ -4999,15 +4999,17 @@ fn render_meta_overview_panel(
     let chapter_summary = format_meta_overview_chapter_summary(progress, content);
     let shop_summary = format_meta_shop_offer_line(progress, content);
     let build_shop_summary = format_runtime_next_build_shop_line(progress, content);
+    let repair_summary = format_meta_overview_star_repair_summary(progress, content);
 
     let mut output = format!(
-        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n资源用途 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n基地解锁 {}\n构筑进阶 {}\n",
+        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n资源用途 {}\n{}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n基地解锁 {}\n构筑进阶 {}\n",
         META_PANEL_HEADER,
         META_PANEL_TAB_CLICK_HINT,
         progress.resources.candy_crystal_shards,
         progress.resources.star_shards,
         progress.resources.storm_grains,
         format_runtime_resource_usage_summary(),
+        repair_summary,
         completed_goals,
         discovered,
         unlocked_content,
@@ -5070,6 +5072,24 @@ fn render_meta_overview_panel(
 
 fn format_runtime_resource_usage_summary() -> &'static str {
     "糖晶买角色/构筑；星片开章节地图；风暴糖粒来自每日/无尽强风暴，后续用于强风暴奖励"
+}
+
+fn format_meta_overview_star_repair_summary(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> String {
+    let completed = meta_completed_goal_count(progress);
+    let total = meta_total_chapter_goal_count(progress, content);
+    if total == 0 {
+        return "糖罐星修复 暂无章节目标记录".to_string();
+    }
+    let percent = completed * 100 / total;
+    let next_step = next_incomplete_chapter_goal(progress, content)
+        .map(|(chapter_id, goal)| {
+            format!("下一片 {}：{}", chapter_label(content, &chapter_id), goal)
+        })
+        .unwrap_or_else(|| "当前已解锁章节目标已完成，继续开放后续章节".to_string());
+    format!("糖罐星修复 {completed}/{total} ({percent}%)  {next_step}")
 }
 
 fn format_meta_overview_next_action(
@@ -5226,6 +5246,14 @@ fn incomplete_chapter_goal_count(progress: &MetaProgress, content: &ContentPack)
                 .filter(|(goal_id, _, _)| !chapter.completed_goals.contains(goal_id))
                 .count()
         })
+        .sum()
+}
+
+fn meta_total_chapter_goal_count(progress: &MetaProgress, content: &ContentPack) -> usize {
+    progress
+        .chapters
+        .keys()
+        .map(|chapter_id| runtime_chapter_goal_entries(chapter_id, content).len())
         .sum()
 }
 
@@ -13662,6 +13690,7 @@ mod tests {
         assert!(panel.contains("下一步行动"));
         assert!(panel.contains("解锁概览"));
         assert!(panel.contains("章节进度"));
+        assert!(panel.contains("糖罐星修复 2/25 (8%)  下一片 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(
             panel.contains("资源用途 糖晶买角色/构筑；星片开章节地图；风暴糖粒来自每日/无尽强风暴")
         );
@@ -13793,6 +13822,7 @@ mod tests {
         assert!(panel.contains(
             "下一步行动 F5 开始 糖霜草地 巡逻，优先 标准巡逻坚持 10 分钟（奖励 星片 +1）"
         ));
+        assert!(panel.contains("糖罐星修复 0/25 (0%)  下一片 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(panel.contains("解锁概览 角色"));
         assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
         assert!(panel.contains("构筑进阶 下一构筑 被动 星星勺子 (star-spoon)  排队待解锁"));
