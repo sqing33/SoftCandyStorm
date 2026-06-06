@@ -14,8 +14,8 @@ use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
     Difficulty, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot,
     MetaCodexEntry, MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction,
-    ProjectileSnapshot, RunConfig, RunMetrics, RunSnapshot, StartingLoadout, StatusEffectSnapshot,
-    TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    ProjectileSnapshot, RunConfig, RunMetrics, RunMode, RunSnapshot, StartingLoadout,
+    StatusEffectSnapshot, TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -87,13 +87,23 @@ const CODEX_POINTER_CONTROL_ZONE_COUNT: usize = 5;
 const SETTINGS_POINTER_CONTROL_HEIGHT: f32 = 112.0;
 const SETTINGS_POINTER_CONTROL_ZONE_COUNT: usize = 7;
 const LOADOUT_POINTER_CONTROL_HEIGHT: f32 = 96.0;
-const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 2;
+const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const CHAPTER_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CHAPTER_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const UPGRADE_POINTER_CONTROL_HEIGHT: f32 = 190.0;
 const UPGRADE_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT: usize = 8;
 const LOADOUT_UNLOCKED_MAP_LABEL_LIMIT: usize = 8;
+const RUNTIME_STANDARD_PATROL_SECONDS: f32 = 600.0;
+const RUNTIME_LONG_PATROL_SECONDS: f32 = 900.0;
+const RUNTIME_ENDLESS_STORM_SECONDS: f32 = 1200.0;
+const RUNTIME_DAILY_STORM_SEED: u64 = 66_606;
+const RUNTIME_SELECTABLE_RUN_MODES: [RunMode; 4] = [
+    RunMode::StandardPatrol,
+    RunMode::LongPatrol,
+    RunMode::DailyStorm,
+    RunMode::EndlessStorm,
+];
 const RUNTIME_HUD_TEXT_REFRESH_SECONDS: f32 = 0.10;
 const RUNTIME_META_TEXT_REFRESH_SECONDS: f32 = 0.25;
 const GAMEPAD_LEFT_STICK_DEADZONE: f32 = 0.15;
@@ -175,9 +185,13 @@ struct RuntimeCli {
     content_pack_ids: Vec<String>,
     character_id: String,
     seed: u64,
+    explicit_seed: bool,
     map_id: String,
     seconds: f32,
+    explicit_seconds: bool,
     tick_rate: u32,
+    run_mode: RunMode,
+    explicit_run_mode: bool,
     demo_input: bool,
     simulation_speed: f32,
     playtest_report: Option<PathBuf>,
@@ -211,9 +225,13 @@ impl Default for RuntimeCli {
             content_pack_ids: vec!["base-demo".to_string()],
             character_id: "jar-keeper".to_string(),
             seed: 12_345,
+            explicit_seed: false,
             map_id: DEFAULT_MAP_ID.to_string(),
             seconds: 600.0,
+            explicit_seconds: false,
             tick_rate: 30,
+            run_mode: RunMode::StandardPatrol,
+            explicit_run_mode: false,
             demo_input: false,
             simulation_speed: 1.0,
             playtest_report: None,
@@ -258,6 +276,7 @@ struct RuntimeState {
     content_dir: PathBuf,
     content_pack_ids: Vec<String>,
     config: RunConfig,
+    run_mode: RunMode,
     core: GameCore,
     dt: FixedDt,
     dt_seconds: f32,
@@ -409,8 +428,9 @@ enum RuntimeSettingsAction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RuntimeLoadoutAction {
-    NextCharacter,
-    NextMap,
+    Character,
+    Map,
+    Mode,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -562,6 +582,8 @@ struct RuntimeBaseUiState {
     last_selected_character_id: String,
     last_selected_map_id: String,
     last_selected_chapter_id: String,
+    #[serde(default = "default_runtime_run_mode_key")]
+    last_selected_run_mode: String,
     codex_view: RuntimeBaseCodexViewState,
     privacy_view: RuntimeBasePrivacyViewState,
 }
@@ -664,6 +686,7 @@ impl Default for RuntimeBaseUiState {
             last_selected_character_id: "jar-keeper".to_string(),
             last_selected_map_id: DEFAULT_MAP_ID.to_string(),
             last_selected_chapter_id: DEFAULT_MAP_ID.to_string(),
+            last_selected_run_mode: default_runtime_run_mode_key(),
             codex_view: RuntimeBaseCodexViewState {
                 selected_category: "characters".to_string(),
                 discovered_only: true,
@@ -728,6 +751,7 @@ struct RuntimeMetaPanelRenderContext<'a> {
     asset_runtime_candidate: Option<&'a RuntimeAssetCandidateManifest>,
     content: &'a ContentPack,
     config: &'a RunConfig,
+    run_mode: RunMode,
     base_ui_state: &'a RuntimeBaseUiState,
     codex_selected_index: usize,
 }
@@ -939,6 +963,7 @@ struct RuntimeMetaPanelCacheKey {
     selected_character_id: String,
     selected_map_id: String,
     selected_chapter_id: String,
+    run_mode: RunMode,
     codex_category: String,
     codex_discovered_only: bool,
     codex_selected_index: usize,
@@ -961,7 +986,7 @@ fn setup_runtime(
     mut audio_sources: ResMut<Assets<AudioSource>>,
     asset_server: Res<AssetServer>,
 ) {
-    let cli = resolve_runtime_content_selection(parse_runtime_cli(std::env::args().skip(1)))
+    let mut cli = resolve_runtime_content_selection(parse_runtime_cli(std::env::args().skip(1)))
         .unwrap_or_else(|error| panic!("failed to resolve runtime content selection: {error}"));
     let privacy_settings = load_runtime_privacy_settings(&cli).unwrap_or_else(|error| {
         panic!(
@@ -983,7 +1008,12 @@ fn setup_runtime(
             )
         });
     let mut meta_progress = runtime_save_state.meta_progress.clone();
-    let base_ui_state = runtime_save_state.base_ui_state.clone();
+    let mut base_ui_state = runtime_save_state.base_ui_state.clone();
+    if !cli.explicit_run_mode {
+        cli.run_mode = runtime_run_mode_from_key(&base_ui_state.last_selected_run_mode)
+            .unwrap_or(cli.run_mode);
+    }
+    base_ui_state.last_selected_run_mode = runtime_run_mode_key(cli.run_mode).to_string();
     let story_codex_ui_candidate = load_runtime_story_codex_ui_candidate_manifest(&cli)
         .unwrap_or_else(|error| {
             panic!("failed to load story/codex UI candidate manifest: {error}")
@@ -1081,6 +1111,7 @@ fn setup_runtime(
         content_dir: cli.content_dir.clone(),
         content_pack_ids: cli.content_pack_ids.clone(),
         config,
+        run_mode: cli.run_mode,
         core,
         dt,
         dt_seconds: dt.seconds(),
@@ -1327,10 +1358,12 @@ fn step_game_core(
             .or_else(|| runtime_loadout_action_from_gamepad(&gamepad_buttons))
         {
             let result = match action {
-                RuntimeLoadoutAction::NextCharacter => select_next_runtime_character(&mut state)
+                RuntimeLoadoutAction::Character => select_next_runtime_character(&mut state)
                     .map_err(|error| format!("character selection failed: {error}")),
-                RuntimeLoadoutAction::NextMap => select_next_runtime_map(&mut state)
+                RuntimeLoadoutAction::Map => select_next_runtime_map(&mut state)
                     .map_err(|error| format!("map selection failed: {error}")),
+                RuntimeLoadoutAction::Mode => select_next_runtime_run_mode(&mut state)
+                    .map_err(|error| format!("run mode selection failed: {error}")),
             };
             match result {
                 Ok(message) => {
@@ -2121,9 +2154,11 @@ fn runtime_loadout_action_from_keyboard(
     keyboard: &ButtonInput<KeyCode>,
 ) -> Option<RuntimeLoadoutAction> {
     if keyboard.just_pressed(KeyCode::KeyC) {
-        Some(RuntimeLoadoutAction::NextCharacter)
+        Some(RuntimeLoadoutAction::Character)
     } else if keyboard.just_pressed(KeyCode::KeyM) {
-        Some(RuntimeLoadoutAction::NextMap)
+        Some(RuntimeLoadoutAction::Map)
+    } else if keyboard.just_pressed(KeyCode::KeyT) {
+        Some(RuntimeLoadoutAction::Mode)
     } else {
         None
     }
@@ -2136,7 +2171,7 @@ fn runtime_loadout_action_from_gamepad(
         gamepad_buttons,
         &[GamepadButtonType::DPadLeft, GamepadButtonType::LeftTrigger],
     ) {
-        Some(RuntimeLoadoutAction::NextCharacter)
+        Some(RuntimeLoadoutAction::Character)
     } else if gamepad_button_type_just_pressed(
         gamepad_buttons,
         &[
@@ -2144,7 +2179,9 @@ fn runtime_loadout_action_from_gamepad(
             GamepadButtonType::RightTrigger,
         ],
     ) {
-        Some(RuntimeLoadoutAction::NextMap)
+        Some(RuntimeLoadoutAction::Map)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::DPadUp]) {
+        Some(RuntimeLoadoutAction::Mode)
     } else {
         None
     }
@@ -2182,8 +2219,9 @@ fn runtime_loadout_action_from_pointer_zone(
     let normalized_x = ((cursor_position.x - panel_left) / panel_width).clamp(0.0, 0.999);
     let zone = (normalized_x * LOADOUT_POINTER_CONTROL_ZONE_COUNT as f32).floor() as usize;
     match zone {
-        0 => Some(RuntimeLoadoutAction::NextCharacter),
-        _ => Some(RuntimeLoadoutAction::NextMap),
+        0 => Some(RuntimeLoadoutAction::Character),
+        1 => Some(RuntimeLoadoutAction::Map),
+        _ => Some(RuntimeLoadoutAction::Mode),
     }
 }
 
@@ -3152,6 +3190,7 @@ fn runtime_meta_panel_cache_key(state: &RuntimeState) -> RuntimeMetaPanelCacheKe
         selected_character_id: state.base_ui_state.last_selected_character_id.clone(),
         selected_map_id: state.base_ui_state.last_selected_map_id.clone(),
         selected_chapter_id: state.base_ui_state.last_selected_chapter_id.clone(),
+        run_mode: state.run_mode,
         codex_category: state.base_ui_state.codex_view.selected_category.clone(),
         codex_discovered_only: state.base_ui_state.codex_view.discovered_only,
         codex_selected_index: state.codex_selected_index,
@@ -3313,6 +3352,7 @@ fn update_hud(
                     asset_runtime_candidate: state.asset_runtime_candidate.as_ref(),
                     content: &state.content,
                     config: &state.config,
+                    run_mode: state.run_mode,
                     base_ui_state: &state.base_ui_state,
                     codex_selected_index: state.codex_selected_index,
                 },
@@ -3946,6 +3986,22 @@ fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> 
     Ok(format!("selected map {label} ({next_id})"))
 }
 
+fn select_next_runtime_run_mode(state: &mut RuntimeState) -> std::io::Result<String> {
+    let next_mode = next_runtime_run_mode(state.run_mode);
+    state.run_mode = next_mode;
+    state.config.duration_seconds = runtime_run_mode_duration_seconds(next_mode);
+    if next_mode == RunMode::DailyStorm {
+        state.config.seed = runtime_daily_storm_seed();
+    }
+    state.base_ui_state.last_selected_run_mode = runtime_run_mode_key(next_mode).to_string();
+    reset_runtime_run(state);
+    persist_runtime_save_if_configured(state)?;
+    Ok(format!(
+        "selected run mode {}",
+        runtime_run_mode_label(next_mode)
+    ))
+}
+
 fn runtime_chapter_action_from_keyboard(
     keyboard: &ButtonInput<KeyCode>,
 ) -> Option<RuntimeChapterAction> {
@@ -4111,7 +4167,8 @@ fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
         "runtime_run_{}_seed_{}",
         state.run_number, state.config.seed
     );
-    let summary = MetaRunSummary::from_metrics(run_id, &state.config, &metrics);
+    let mut summary = MetaRunSummary::from_metrics(run_id, &state.config, &metrics);
+    summary.mode = state.run_mode;
     let report = state.meta_progress.apply_run_summary(&summary);
     state.last_meta_settlement = Some(report);
     state.settled_run_number = Some(state.run_number);
@@ -4149,7 +4206,7 @@ fn render_meta_progress_panel(
             render_meta_settings_panel(context.privacy_settings, context.runtime_settings_file)
         }
         RuntimeMetaPanelView::Loadout => {
-            render_meta_loadout_panel(progress, context.content, context.config)
+            render_meta_loadout_panel(progress, context.content, context.config, context.run_mode)
         }
     }
 }
@@ -4680,6 +4737,7 @@ fn render_meta_loadout_panel(
     progress: &MetaProgress,
     content: &ContentPack,
     config: &RunConfig,
+    run_mode: RunMode,
 ) -> String {
     let character_label = runtime_character_label(content, &config.character_id);
     let map_label = runtime_map_label(content, &config.map_id);
@@ -4723,6 +4781,19 @@ fn render_meta_loadout_panel(
         format_runtime_loadout_plan(content, &config.starting_loadout)
     ));
     lines.push(format_runtime_build_pool_summary(content));
+    lines.push(format!(
+        "模式 {} ({})",
+        runtime_run_mode_label(run_mode),
+        runtime_run_mode_duration_label(run_mode),
+    ));
+    lines.push(format!(
+        "模式说明 {}  奖励 {}",
+        runtime_run_mode_description(run_mode),
+        runtime_run_mode_reward_hint(run_mode),
+    ));
+    if run_mode == RunMode::DailyStorm {
+        lines.push(format!("每日固定 seed {}", runtime_daily_storm_seed()));
+    }
     lines.push(format!("地图 {} ({})", map_label, config.map_id));
 
     if let Some(map) = content.maps.get(&config.map_id) {
@@ -4755,8 +4826,10 @@ fn render_meta_loadout_panel(
         lines.push(goal_line);
     }
 
-    lines.push("C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图".to_string());
-    lines.push("右下点击区: 角色  地图".to_string());
+    lines.push(
+        "C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图  T/手柄上 切换巡逻模式".to_string(),
+    );
+    lines.push("右下点击区: 角色  地图  模式".to_string());
     lines.push("切换会重开当前巡逻并保留局外进度".to_string());
     lines.push(format!(
         "已解锁角色 {}",
@@ -6368,15 +6441,120 @@ fn make_tone_wav(frequency_hz: f32, seconds: f32, amplitude: f32) -> Vec<u8> {
 
 fn run_config_from_cli(cli: &RuntimeCli, content: &ContentPack) -> RunConfig {
     RunConfig {
-        seed: cli.seed,
+        seed: runtime_run_seed_for_cli(cli),
         map_id: cli.map_id.clone(),
         character_id: cli.character_id.clone(),
         starting_loadout: runtime_character_starting_loadout(content, &cli.character_id),
         difficulty: Difficulty::Normal,
-        duration_seconds: cli.seconds,
+        duration_seconds: runtime_run_duration_seconds_for_cli(cli),
         ruleset_version: "prototype-v0".to_string(),
         content_pack_ids: cli.content_pack_ids.clone(),
         tick_rate: cli.tick_rate,
+    }
+}
+
+fn runtime_run_duration_seconds_for_cli(cli: &RuntimeCli) -> f32 {
+    if cli.explicit_seconds {
+        cli.seconds
+    } else {
+        runtime_run_mode_duration_seconds(cli.run_mode)
+    }
+}
+
+fn runtime_run_seed_for_cli(cli: &RuntimeCli) -> u64 {
+    if cli.run_mode == RunMode::DailyStorm && !cli.explicit_seed {
+        runtime_daily_storm_seed()
+    } else {
+        cli.seed
+    }
+}
+
+fn runtime_run_mode_duration_seconds(mode: RunMode) -> f32 {
+    match mode {
+        RunMode::LongPatrol => RUNTIME_LONG_PATROL_SECONDS,
+        RunMode::EndlessStorm => RUNTIME_ENDLESS_STORM_SECONDS,
+        _ => RUNTIME_STANDARD_PATROL_SECONDS,
+    }
+}
+
+fn runtime_daily_storm_seed() -> u64 {
+    RUNTIME_DAILY_STORM_SEED
+}
+
+fn default_runtime_run_mode_key() -> String {
+    runtime_run_mode_key(RunMode::StandardPatrol).to_string()
+}
+
+fn runtime_run_mode_key(mode: RunMode) -> &'static str {
+    match mode {
+        RunMode::StandardPatrol => "standard",
+        RunMode::LongPatrol => "long",
+        RunMode::EndlessStorm => "endless",
+        RunMode::ChapterChallenge => "chapter",
+        RunMode::DailyStorm => "daily",
+        RunMode::ExperimentalStorm => "experimental",
+    }
+}
+
+fn runtime_run_mode_from_key(value: &str) -> Option<RunMode> {
+    let normalized = value.trim().to_ascii_lowercase().replace('_', "-");
+    match normalized.as_str() {
+        "standard" | "standard-patrol" => Some(RunMode::StandardPatrol),
+        "long" | "long-patrol" => Some(RunMode::LongPatrol),
+        "endless" | "endless-storm" => Some(RunMode::EndlessStorm),
+        "chapter" | "chapter-challenge" => Some(RunMode::ChapterChallenge),
+        "daily" | "daily-storm" => Some(RunMode::DailyStorm),
+        "experimental" | "experimental-storm" => Some(RunMode::ExperimentalStorm),
+        _ => None,
+    }
+}
+
+fn next_runtime_run_mode(current: RunMode) -> RunMode {
+    let current_index = RUNTIME_SELECTABLE_RUN_MODES
+        .iter()
+        .position(|mode| *mode == current)
+        .unwrap_or(0);
+    RUNTIME_SELECTABLE_RUN_MODES[(current_index + 1) % RUNTIME_SELECTABLE_RUN_MODES.len()]
+}
+
+fn runtime_run_mode_label(mode: RunMode) -> &'static str {
+    match mode {
+        RunMode::StandardPatrol => "标准巡逻",
+        RunMode::LongPatrol => "长巡逻",
+        RunMode::EndlessStorm => "无尽风暴原型",
+        RunMode::ChapterChallenge => "章节挑战",
+        RunMode::DailyStorm => "每日风暴",
+        RunMode::ExperimentalStorm => "实验风暴",
+    }
+}
+
+fn runtime_run_mode_duration_label(mode: RunMode) -> &'static str {
+    match mode {
+        RunMode::StandardPatrol => "10 分钟",
+        RunMode::LongPatrol => "15 分钟",
+        RunMode::EndlessStorm => "20 分钟目标",
+        RunMode::ChapterChallenge => "10 分钟",
+        RunMode::DailyStorm => "10 分钟固定 seed",
+        RunMode::ExperimentalStorm => "10 分钟",
+    }
+}
+
+fn runtime_run_mode_description(mode: RunMode) -> &'static str {
+    match mode {
+        RunMode::StandardPatrol => "主线推进和平衡基准",
+        RunMode::LongPatrol => "留给 Build 更多升级和进化空间",
+        RunMode::EndlessStorm => "先以 20 分钟目标承载极限 Build 与压力验证",
+        RunMode::ChapterChallenge => "固定规则挑战后续接入",
+        RunMode::DailyStorm => "固定 seed 挑战，胜利额外给风暴糖粒",
+        RunMode::ExperimentalStorm => "候选内容测试模式，当前不进入主线",
+    }
+}
+
+fn runtime_run_mode_reward_hint(mode: RunMode) -> &'static str {
+    match mode {
+        RunMode::DailyStorm | RunMode::EndlessStorm => "胜利 +1 风暴糖粒",
+        RunMode::LongPatrol => "更多存活和击杀资源，适合做完整 Build",
+        _ => "标准章节目标、解锁和图鉴进度",
     }
 }
 
@@ -6574,7 +6752,10 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             }
             "--seed" => {
                 if let Some(value) = args.next() {
-                    cli.seed = value.parse().unwrap_or(cli.seed);
+                    if let Ok(seed) = value.parse() {
+                        cli.seed = seed;
+                        cli.explicit_seed = true;
+                    }
                 }
             }
             "--map-id" => {
@@ -6584,12 +6765,23 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             }
             "--seconds" => {
                 if let Some(value) = args.next() {
-                    cli.seconds = value.parse().unwrap_or(cli.seconds);
+                    if let Ok(seconds) = value.parse() {
+                        cli.seconds = seconds;
+                        cli.explicit_seconds = true;
+                    }
                 }
             }
             "--tick-rate" => {
                 if let Some(value) = args.next() {
                     cli.tick_rate = value.parse().unwrap_or(cli.tick_rate);
+                }
+            }
+            "--run-mode" | "--mode" => {
+                if let Some(value) = args.next() {
+                    if let Some(run_mode) = runtime_run_mode_from_key(&value) {
+                        cli.run_mode = run_mode;
+                        cli.explicit_run_mode = true;
+                    }
                 }
             }
             "--demo-input" => {
@@ -7813,7 +8005,7 @@ mod tests {
         load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
         make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
         next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, projectile_visual_style, render_meta_progress_panel,
+        player_tint, projectile_visual_style, read_runtime_save_state, render_meta_progress_panel,
         resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
         runtime_asset_root, runtime_behavior_label, runtime_boss_ability_label,
@@ -7829,11 +8021,13 @@ mod tests {
         runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
         runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
         runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_save_export_path, runtime_settings_action_from_keyboard,
-        runtime_settings_action_from_pointer, runtime_settings_action_from_pointer_zone,
-        runtime_sprite_paths, runtime_unlocked_character_ids, runtime_unlocked_map_ids,
-        sounds_for_events, toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
-        upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
+        runtime_privacy_notice, runtime_run_mode_duration_seconds, runtime_save_export_path,
+        runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
+        runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
+        settle_runtime_meta_if_needed, sounds_for_events, toggle_runtime_privacy_setting,
+        unlock_runtime_content_for_session, upgrade_choice_from_gamepad,
+        upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
@@ -7857,8 +8051,8 @@ mod tests {
     use game_core::{
         ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
         EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaProgress,
-        MetaRunSummary, PickupSnapshot, PickupType, ProjectileSnapshot, RunConfig, RunMode,
-        StatusEffectSnapshot, TerminalKind, TerminalState, Vec2 as CoreVec2,
+        MetaRunSummary, PickupSnapshot, PickupType, PlayerAction, ProjectileSnapshot, RunConfig,
+        RunMode, StatusEffectSnapshot, TerminalKind, TerminalState, Vec2 as CoreVec2,
     };
     use std::{
         collections::{BTreeMap, BTreeSet},
@@ -7884,6 +8078,7 @@ mod tests {
             asset_runtime_candidate,
             content,
             config,
+            run_mode: RunMode::StandardPatrol,
             base_ui_state,
             codex_selected_index,
         }
@@ -7908,6 +8103,7 @@ mod tests {
             content_dir: cli.content_dir.clone(),
             content_pack_ids: cli.content_pack_ids.clone(),
             config,
+            run_mode: cli.run_mode,
             core,
             dt,
             dt_seconds,
@@ -7955,6 +8151,8 @@ mod tests {
             "120".to_string(),
             "--tick-rate".to_string(),
             "20".to_string(),
+            "--run-mode".to_string(),
+            "daily".to_string(),
             "--demo-input".to_string(),
             "--simulation-speed".to_string(),
             "4".to_string(),
@@ -7964,12 +8162,55 @@ mod tests {
         assert_eq!(cli.content_dir, PathBuf::from("content/custom"));
         assert_eq!(cli.character_id, "bubble-courier");
         assert_eq!(cli.seed, 9);
+        assert!(cli.explicit_seed);
         assert_eq!(cli.map_id, "soda-creek");
         assert_eq!(cli.seconds, 120.0);
+        assert!(cli.explicit_seconds);
         assert_eq!(cli.tick_rate, 20);
+        assert_eq!(cli.run_mode, RunMode::DailyStorm);
+        assert!(cli.explicit_run_mode);
         assert!(cli.demo_input);
         assert_eq!(cli.simulation_speed, 4.0);
         assert!(cli.auto_exit_after_report);
+    }
+
+    #[test]
+    fn runtime_run_mode_cli_sets_mode_defaults() {
+        let content = ContentPack::base_demo();
+        let long_cli = parse_runtime_cli(["--run-mode".to_string(), "long".to_string()]);
+        let long_config = run_config_from_cli(&long_cli, &content);
+
+        assert_eq!(long_cli.run_mode, RunMode::LongPatrol);
+        assert_eq!(
+            long_config.duration_seconds,
+            runtime_run_mode_duration_seconds(RunMode::LongPatrol)
+        );
+        assert_eq!(long_config.seed, 12_345);
+
+        let daily_cli = parse_runtime_cli(["--mode".to_string(), "daily-storm".to_string()]);
+        let daily_config = run_config_from_cli(&daily_cli, &content);
+
+        assert_eq!(daily_cli.run_mode, RunMode::DailyStorm);
+        assert_eq!(daily_config.duration_seconds, 600.0);
+        assert_eq!(daily_config.seed, super::runtime_daily_storm_seed());
+    }
+
+    #[test]
+    fn runtime_run_mode_cli_respects_explicit_seed_and_seconds() {
+        let content = ContentPack::base_demo();
+        let cli = parse_runtime_cli([
+            "--run-mode".to_string(),
+            "daily".to_string(),
+            "--seed".to_string(),
+            "77".to_string(),
+            "--seconds".to_string(),
+            "42".to_string(),
+        ]);
+        let config = run_config_from_cli(&cli, &content);
+
+        assert_eq!(cli.run_mode, RunMode::DailyStorm);
+        assert_eq!(config.seed, 77);
+        assert_eq!(config.duration_seconds, 42.0);
     }
 
     #[test]
@@ -8915,6 +9156,10 @@ mod tests {
             "save-state-v0-to-v1"
         );
         assert_eq!(save_json["base_ui_state"]["selected_panel"], "overview");
+        assert_eq!(
+            save_json["base_ui_state"]["last_selected_run_mode"],
+            "standard"
+        );
     }
 
     #[test]
@@ -8962,6 +9207,7 @@ mod tests {
         };
         base_ui_state.codex_view.selected_category = "enemies".to_string();
         base_ui_state.codex_view.discovered_only = false;
+        base_ui_state.last_selected_run_mode = "daily".to_string();
 
         write_runtime_save_state_with_base_ui(
             &save_file,
@@ -8983,6 +9229,10 @@ mod tests {
         assert_eq!(
             save_json["base_ui_state"]["codex_view"]["discovered_only"],
             false
+        );
+        assert_eq!(
+            save_json["base_ui_state"]["last_selected_run_mode"],
+            "daily"
         );
     }
 
@@ -9078,6 +9328,42 @@ mod tests {
         assert_eq!(
             before_json["migration_history"].as_array().unwrap().len(),
             after_json["migration_history"].as_array().unwrap().len()
+        );
+    }
+
+    #[test]
+    fn runtime_save_reads_v1_missing_run_mode_with_default() {
+        let root = std::env::temp_dir().join(format!(
+            "soft-candy-runtime-save-v1-mode-default-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let save_file = root.join("profile.json");
+        write_runtime_save_state(
+            &save_file,
+            &RuntimeCli::default(),
+            &RuntimePrivacySettings::default(),
+            &MetaProgress::demo_start(),
+        )
+        .unwrap();
+        let mut save_json: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&save_file).unwrap()).unwrap();
+        save_json["base_ui_state"]
+            .as_object_mut()
+            .unwrap()
+            .remove("last_selected_run_mode");
+        fs::write(
+            &save_file,
+            format!("{}\n", serde_json::to_string_pretty(&save_json).unwrap()),
+        )
+        .unwrap();
+
+        let loaded = read_runtime_save_state(&save_file).unwrap();
+
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(
+            loaded.state.base_ui_state.last_selected_run_mode,
+            "standard"
         );
     }
 
@@ -9532,6 +9818,55 @@ mod tests {
             "frosting-grassland"
         );
         assert_eq!(state.run_number, 2);
+    }
+
+    #[test]
+    fn runtime_loadout_mode_selection_cycles_and_restarts_run() {
+        let mut state = runtime_state_for_tests();
+
+        let message = select_next_runtime_run_mode(&mut state).unwrap();
+
+        assert!(message.contains("长巡逻"));
+        assert_eq!(state.run_mode, RunMode::LongPatrol);
+        assert_eq!(
+            state.config.duration_seconds,
+            runtime_run_mode_duration_seconds(RunMode::LongPatrol)
+        );
+        assert_eq!(state.base_ui_state.last_selected_run_mode, "long");
+        assert_eq!(state.run_number, 2);
+
+        select_next_runtime_run_mode(&mut state).unwrap();
+
+        assert_eq!(state.run_mode, RunMode::DailyStorm);
+        assert_eq!(state.config.seed, super::runtime_daily_storm_seed());
+        assert_eq!(state.base_ui_state.last_selected_run_mode, "daily");
+        assert_eq!(state.run_number, 3);
+    }
+
+    #[test]
+    fn runtime_settlement_records_current_run_mode() {
+        let mut state = runtime_state_for_tests();
+        state.run_mode = RunMode::DailyStorm;
+        state.config.duration_seconds = 0.1;
+        state.core = GameCore::reset_with_content(state.config.clone(), state.content.clone())
+            .expect("test content should reset");
+        state.latest_snapshot = state.core.snapshot();
+
+        for _ in 0..10 {
+            state.core.step(PlayerAction::default(), state.dt);
+            if state.core.is_terminal() {
+                break;
+            }
+        }
+
+        settle_runtime_meta_if_needed(&mut state);
+
+        let report = state
+            .last_meta_settlement
+            .as_ref()
+            .expect("terminal runtime should create a settlement report");
+        assert_eq!(report.mode, RunMode::DailyStorm);
+        assert_eq!(report.run_summary.mode, RunMode::DailyStorm);
     }
 
     #[test]
@@ -10683,6 +11018,11 @@ mod tests {
         progress_state.meta_progress.completed_runs += 1;
         progress_state.meta_progress.resources.candy_crystal_shards += 3;
         assert_ne!(runtime_meta_panel_cache_key(&progress_state), progress_key);
+
+        let mut mode_state = runtime_state_for_tests();
+        let mode_key = runtime_meta_panel_cache_key(&mode_state);
+        mode_state.run_mode = RunMode::DailyStorm;
+        assert_ne!(runtime_meta_panel_cache_key(&mode_state), mode_key);
     }
 
     #[test]
@@ -10992,14 +11332,21 @@ mod tests {
         character.press(KeyCode::KeyC);
         assert_eq!(
             runtime_loadout_action_from_keyboard(&character),
-            Some(RuntimeLoadoutAction::NextCharacter)
+            Some(RuntimeLoadoutAction::Character)
         );
 
         let mut map = ButtonInput::<KeyCode>::default();
         map.press(KeyCode::KeyM);
         assert_eq!(
             runtime_loadout_action_from_keyboard(&map),
-            Some(RuntimeLoadoutAction::NextMap)
+            Some(RuntimeLoadoutAction::Map)
+        );
+
+        let mut mode = ButtonInput::<KeyCode>::default();
+        mode.press(KeyCode::KeyT);
+        assert_eq!(
+            runtime_loadout_action_from_keyboard(&mode),
+            Some(RuntimeLoadoutAction::Mode)
         );
 
         assert_eq!(
@@ -11015,14 +11362,21 @@ mod tests {
         character.press(GamepadButton::new(gamepad, GamepadButtonType::DPadLeft));
         assert_eq!(
             runtime_loadout_action_from_gamepad(&character),
-            Some(RuntimeLoadoutAction::NextCharacter)
+            Some(RuntimeLoadoutAction::Character)
         );
 
         let mut map = ButtonInput::<GamepadButton>::default();
         map.press(GamepadButton::new(gamepad, GamepadButtonType::RightTrigger));
         assert_eq!(
             runtime_loadout_action_from_gamepad(&map),
-            Some(RuntimeLoadoutAction::NextMap)
+            Some(RuntimeLoadoutAction::Map)
+        );
+
+        let mut mode = ButtonInput::<GamepadButton>::default();
+        mode.press(GamepadButton::new(gamepad, GamepadButtonType::DPadUp));
+        assert_eq!(
+            runtime_loadout_action_from_gamepad(&mode),
+            Some(RuntimeLoadoutAction::Mode)
         );
 
         assert_eq!(
@@ -11039,7 +11393,7 @@ mod tests {
         left.press(MouseButton::Left);
         assert_eq!(
             runtime_loadout_action_from_pointer(&left, Some(Vec2::new(900.0, 40.0)), window_size),
-            Some(RuntimeLoadoutAction::NextCharacter)
+            Some(RuntimeLoadoutAction::Character)
         );
 
         let mut right = ButtonInput::<MouseButton>::default();
@@ -11056,11 +11410,15 @@ mod tests {
 
         assert_eq!(
             runtime_loadout_action_from_pointer_zone(Vec2::new(900.0, 40.0), window_size),
-            Some(RuntimeLoadoutAction::NextCharacter)
+            Some(RuntimeLoadoutAction::Character)
         );
         assert_eq!(
-            runtime_loadout_action_from_pointer_zone(Vec2::new(1120.0, 40.0), window_size),
-            Some(RuntimeLoadoutAction::NextMap)
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1040.0, 40.0), window_size),
+            Some(RuntimeLoadoutAction::Map)
+        );
+        assert_eq!(
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1200.0, 40.0), window_size),
+            Some(RuntimeLoadoutAction::Mode)
         );
         assert_eq!(
             runtime_loadout_action_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
@@ -11238,6 +11596,9 @@ mod tests {
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
         assert!(panel.contains("可抽构筑池 武器 12  被动 8  进化配方 10"));
+        assert!(panel.contains("模式 标准巡逻 (10 分钟)"));
+        assert!(panel.contains("模式说明 主线推进和平衡基准"));
+        assert!(panel.contains("奖励 标准章节目标、解锁和图鉴进度"));
         assert!(panel.contains("汽水溪谷"));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
@@ -11252,7 +11613,39 @@ mod tests {
         assert!(panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
-        assert!(panel.contains("右下点击区: 角色  地图"));
+        assert!(panel.contains("T/手柄上 切换巡逻模式"));
+        assert!(panel.contains("右下点击区: 角色  地图  模式"));
+    }
+
+    #[test]
+    fn meta_panel_renders_daily_run_mode_details() {
+        let content = ContentPack::base_demo();
+        let config = RunConfig::default();
+        let privacy_settings = RuntimePrivacySettings::default();
+        let base_ui_state = RuntimeBaseUiState::default();
+        let mut context = meta_panel_context(
+            &privacy_settings,
+            None,
+            None,
+            None,
+            &content,
+            &config,
+            &base_ui_state,
+            0,
+        );
+        context.run_mode = RunMode::DailyStorm;
+
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Loadout,
+            context,
+        );
+
+        assert!(panel.contains("模式 每日风暴 (10 分钟固定 seed)"));
+        assert!(panel.contains("胜利额外给风暴糖粒"));
+        assert!(panel.contains("奖励 胜利 +1 风暴糖粒"));
+        assert!(panel.contains("每日固定 seed 66606"));
     }
 
     #[test]
