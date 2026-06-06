@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 const STANDARD_PATROL_SECONDS: f32 = 600.0;
-const DEMO_DEFAULT_WEAPON_IDS: [&str; 12] = [
+const DEMO_DEFAULT_WEAPON_IDS: [&str; 8] = [
     "rainbow-candy-shot",
     "lollipop-boomerang",
     "marshmallow-shield",
@@ -12,20 +12,13 @@ const DEMO_DEFAULT_WEAPON_IDS: [&str; 12] = [
     "popping-candy-mine",
     "sour-plum-spray",
     "soda-bubble-pop",
-    "candy-crystal-lance",
-    "soda-fountain",
-    "star-sugar-ray",
-    "pudding-turret",
 ];
-const DEMO_DEFAULT_PASSIVE_IDS: [&str; 8] = [
+const DEMO_DEFAULT_PASSIVE_IDS: [&str; 5] = [
     "big-candy-jar",
     "candy-crystal-lens",
-    "cream-clockwork",
     "frosting-gloves",
     "nonstick-apron",
-    "star-spoon",
     "bubble-shoes",
-    "sour-tuner",
 ];
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -393,13 +386,32 @@ fn demo_shop_offers() -> Vec<MetaShopOffer> {
         demo_character_shop_offer("cream-knight", 80),
         demo_character_shop_offer("sour-plum-doctor", 120),
         demo_character_shop_offer("pudding-crafter", 140),
+        demo_passive_shop_offer("star-spoon", 70),
+        demo_passive_shop_offer("cream-clockwork", 90),
+        demo_weapon_shop_offer("candy-crystal-lance", 110),
+        demo_weapon_shop_offer("soda-fountain", 120),
+        demo_passive_shop_offer("sour-tuner", 130),
+        demo_weapon_shop_offer("star-sugar-ray", 140),
+        demo_weapon_shop_offer("pudding-turret", 150),
     ]
 }
 
 fn demo_character_shop_offer(id: &str, candy_crystal_shards: u32) -> MetaShopOffer {
+    demo_shop_offer("character", id, candy_crystal_shards)
+}
+
+fn demo_weapon_shop_offer(id: &str, candy_crystal_shards: u32) -> MetaShopOffer {
+    demo_shop_offer("weapon", id, candy_crystal_shards)
+}
+
+fn demo_passive_shop_offer(id: &str, candy_crystal_shards: u32) -> MetaShopOffer {
+    demo_shop_offer("passive", id, candy_crystal_shards)
+}
+
+fn demo_shop_offer(kind: &str, id: &str, candy_crystal_shards: u32) -> MetaShopOffer {
     MetaShopOffer {
-        offer_id: format!("character:{id}"),
-        kind: "character".to_string(),
+        offer_id: format!("{kind}:{id}"),
+        kind: kind.to_string(),
         id: id.to_string(),
         cost: MetaResourceWallet {
             candy_crystal_shards,
@@ -842,10 +854,12 @@ mod tests {
         );
         assert!(progress.unlocks.chapters.contains("frosting-grassland"));
         assert!(!progress.unlocks.chapters.contains("soda-creek"));
-        assert_eq!(progress.unlocks.weapons.len(), 12);
-        assert_eq!(progress.unlocks.passives.len(), 8);
-        assert!(progress.unlocks.weapons.contains("pudding-turret"));
+        assert_eq!(progress.unlocks.weapons.len(), 8);
+        assert_eq!(progress.unlocks.passives.len(), 5);
+        assert!(!progress.unlocks.weapons.contains("pudding-turret"));
+        assert!(progress.unlocks.weapons.contains("soda-bubble-pop"));
         assert!(progress.unlocks.passives.contains("bubble-shoes"));
+        assert!(!progress.unlocks.passives.contains("star-spoon"));
     }
 
     #[test]
@@ -872,6 +886,42 @@ mod tests {
             progress.next_demo_shop_offer().map(|next| next.offer_id),
             Some("character:cream-knight".to_string())
         );
+    }
+
+    #[test]
+    fn demo_shop_offers_build_pool_unlocks_after_characters() {
+        let mut progress = MetaProgress::demo_start();
+        for character_id in [
+            "bubble-courier",
+            "cream-knight",
+            "sour-plum-doctor",
+            "pudding-crafter",
+        ] {
+            progress.unlocks.characters.insert(character_id.to_string());
+        }
+
+        let passive_offer = progress
+            .next_demo_shop_offer()
+            .expect("demo shop should continue with build pool offers");
+
+        assert_eq!(passive_offer.offer_id, "passive:star-spoon");
+        assert_eq!(passive_offer.cost.candy_crystal_shards, 70);
+        progress.resources.candy_crystal_shards = passive_offer.cost.candy_crystal_shards;
+        let passive_unlock = progress
+            .purchase_next_demo_shop_offer()
+            .expect("enough candy crystal shards should unlock the passive offer");
+        assert_eq!(passive_unlock.kind, "passive");
+        assert_eq!(passive_unlock.id, "star-spoon");
+        assert!(progress.unlocks.passives.contains("star-spoon"));
+
+        progress
+            .unlocks
+            .passives
+            .insert("cream-clockwork".to_string());
+        let weapon_offer = progress
+            .next_demo_shop_offer()
+            .expect("demo shop should offer weapons after early passives");
+        assert_eq!(weapon_offer.offer_id, "weapon:candy-crystal-lance");
     }
 
     #[test]

@@ -8211,14 +8211,14 @@ mod tests {
         demo_movement, demo_upgrade_choice, describe_events, effects_for_events, enemy_tint,
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_enemy_behavior_details, format_enemy_swarm_status, format_event_effect_for_codex,
-        format_event_effect_status, format_hazard_status, format_runtime_hud_chapter_objective,
-        format_runtime_hud_run_mode, format_terminal_overlay, format_upgrade_options,
-        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
-        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
-        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        projectile_visual_style, purchase_next_runtime_shop_offer, read_runtime_save_state,
-        render_meta_progress_panel, resolve_runtime_content_selection,
+        format_event_effect_status, format_hazard_status, format_meta_shop_offer_line,
+        format_runtime_hud_chapter_objective, format_runtime_hud_run_mode, format_terminal_overlay,
+        format_upgrade_options, load_runtime_asset_candidate_manifest,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
+        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, projectile_visual_style, purchase_next_runtime_shop_offer,
+        read_runtime_save_state, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, restore_runtime_loadout_selection_from_save,
         run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
@@ -9978,7 +9978,7 @@ mod tests {
                 .iter()
                 .filter(|id| content.weapons.contains_key(*id))
                 .count(),
-            12
+            8
         );
         assert_eq!(
             progress
@@ -9987,10 +9987,12 @@ mod tests {
                 .iter()
                 .filter(|id| content.passives.contains_key(*id))
                 .count(),
-            8
+            5
         );
-        assert!(progress.unlocks.weapons.contains("pudding-turret"));
+        assert!(!progress.unlocks.weapons.contains("pudding-turret"));
+        assert!(progress.unlocks.weapons.contains("soda-bubble-pop"));
         assert!(progress.unlocks.passives.contains("bubble-shoes"));
+        assert!(!progress.unlocks.passives.contains("star-spoon"));
     }
 
     #[test]
@@ -11204,7 +11206,7 @@ mod tests {
             "下一步行动 F5 开始 糖霜草地 巡逻，优先 标准巡逻坚持 10 分钟（奖励 星片 +1）"
         ));
         assert!(panel.contains("解锁概览 角色"));
-        assert!(panel.contains("可抽构筑池 武器 12  被动 8  进化配方 10"));
+        assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
         assert!(panel.contains("地图 糖霜草地(frosting-grassland)"));
         assert!(panel.contains(
             "章节进度 未完成 5 项；糖霜草地 下一目标 标准巡逻坚持 10 分钟（奖励 星片 +1）"
@@ -11258,6 +11260,36 @@ mod tests {
             runtime_unlocked_character_ids(&state.meta_progress, &state.content)
                 .contains(&"bubble-courier".to_string())
         );
+    }
+
+    #[test]
+    fn runtime_shop_purchase_unlocks_build_pool_offer_after_characters() {
+        let mut state = runtime_state_for_tests();
+        for character_id in [
+            "bubble-courier",
+            "cream-knight",
+            "sour-plum-doctor",
+            "pudding-crafter",
+        ] {
+            state
+                .meta_progress
+                .unlocks
+                .characters
+                .insert(character_id.to_string());
+        }
+        state.meta_progress.resources.candy_crystal_shards = 70;
+
+        let overview = format_meta_shop_offer_line(&state.meta_progress, &state.content);
+        assert!(overview.contains("被动 星星勺子 (star-spoon)"));
+        assert!(overview.contains("费用 70 糖晶碎片"));
+        assert!(overview.contains("可购买"));
+
+        let message = purchase_next_runtime_shop_offer(&mut state)
+            .expect("enough candy crystal shards should unlock the build pool offer");
+
+        assert!(message.contains("星星勺子"));
+        assert_eq!(state.meta_progress.resources.candy_crystal_shards, 0);
+        assert!(state.meta_progress.unlocks.passives.contains("star-spoon"));
     }
 
     #[test]
@@ -12051,7 +12083,7 @@ mod tests {
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
-        assert!(panel.contains("可抽构筑池 武器 12  被动 8  进化配方 10"));
+        assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
         assert!(panel.contains("模式 标准巡逻 (10 分钟)"));
         assert!(panel.contains("模式说明 主线推进和平衡基准"));
         assert!(panel.contains("奖励 标准章节目标、解锁和图鉴进度"));

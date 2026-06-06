@@ -1379,6 +1379,8 @@ impl ContentPack {
             pack.waves.insert(wave.id.clone(), wave);
         }
 
+        mark_base_demo_discover_build_unlocks(&mut pack);
+
         pack
     }
 
@@ -2223,6 +2225,24 @@ impl ContentPack {
             + self.waves.len()
             + self.maps.len()
             + self.events.len()
+    }
+}
+
+fn mark_base_demo_discover_build_unlocks(pack: &mut ContentPack) {
+    for weapon_id in [
+        "candy-crystal-lance",
+        "soda-fountain",
+        "star-sugar-ray",
+        "pudding-turret",
+    ] {
+        if let Some(weapon) = pack.weapons.get_mut(weapon_id) {
+            weapon.unlock.unlock_type = "discover".to_string();
+        }
+    }
+    for passive_id in ["star-spoon", "cream-clockwork", "sour-tuner"] {
+        if let Some(passive) = pack.passives.get_mut(passive_id) {
+            passive.unlock.unlock_type = "discover".to_string();
+        }
     }
 }
 
