@@ -9772,7 +9772,7 @@ fn runtime_run_mode_label(mode: RunMode) -> &'static str {
     match mode {
         RunMode::StandardPatrol => "标准巡逻",
         RunMode::LongPatrol => "长巡逻",
-        RunMode::EndlessStorm => "无尽风暴原型",
+        RunMode::EndlessStorm => "无尽风暴",
         RunMode::ChapterChallenge => "章节挑战",
         RunMode::DailyStorm => "每日风暴",
         RunMode::ExperimentalStorm => "实验风暴",
@@ -9805,7 +9805,7 @@ fn runtime_run_mode_reward_hint(mode: RunMode) -> &'static str {
     match mode {
         RunMode::DailyStorm | RunMode::EndlessStorm => "胜利 +25% 糖晶 +1 风暴糖粒",
         RunMode::ChapterChallenge => "优先完成本图章节目标，获得星片、角色和地图推进",
-        RunMode::LongPatrol => "更多存活和击杀资源，适合做完整 Build",
+        RunMode::LongPatrol => "更多存活和击杀资源，适合做完整构筑",
         _ => "标准章节目标、解锁和图鉴进度",
     }
 }
