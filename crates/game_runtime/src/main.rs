@@ -5118,6 +5118,14 @@ fn render_meta_loadout_panel(
     {
         lines.push(goal_line);
     }
+    if let Some(build_hint) = format_runtime_loadout_chapter_build_hint(
+        progress,
+        content,
+        &config.map_id,
+        &config.starting_loadout,
+    ) {
+        lines.push(build_hint);
+    }
 
     lines.push(
         "C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图  T/手柄上 切换巡逻模式  W/手柄下 切换开局武器  P/手柄确认 切换开局被动".to_string(),
@@ -5479,6 +5487,83 @@ fn format_runtime_loadout_chapter_goal_line(
                 format!("{status} {progress_label}  已完成全部章节目标")
             }
         })
+}
+
+fn format_runtime_loadout_chapter_build_hint(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    map_id: &str,
+    loadout: &StartingLoadout,
+) -> Option<String> {
+    let chapter = progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == map_id)?;
+    let evolution_id = game_core::meta::chapter_target_evolution_id(&chapter.chapter_id)?;
+    let evolution = content.evolutions.get(evolution_id)?;
+    let completed_goal_id = format!("evolve-{evolution_id}");
+    let prefix = if chapter.completed_goals.contains(&completed_goal_id) {
+        "章节构筑目标 已完成"
+    } else {
+        "章节构筑目标"
+    };
+    let weapon_id = &evolution.requirements.weapon.id;
+    let weapon_status =
+        format_runtime_loadout_weapon_requirement_status(progress, loadout, weapon_id);
+    let passive_status = evolution
+        .requirements
+        .passive
+        .as_ref()
+        .map(|requirement| {
+            format!(
+                "{} {}",
+                runtime_passive_label(content, &requirement.id),
+                format_runtime_loadout_passive_requirement_status(
+                    progress,
+                    loadout,
+                    &requirement.id,
+                )
+            )
+        })
+        .unwrap_or_else(|| "无被动要求".to_string());
+
+    Some(format!(
+        "{} {}：{} {} + {}，{}",
+        prefix,
+        runtime_evolution_label(content, evolution_id),
+        runtime_weapon_label(content, weapon_id),
+        weapon_status,
+        passive_status,
+        runtime_evolution_trigger_label(&evolution.requirements.trigger),
+    ))
+}
+
+fn format_runtime_loadout_weapon_requirement_status(
+    progress: &MetaProgress,
+    loadout: &StartingLoadout,
+    weapon_id: &str,
+) -> &'static str {
+    if loadout.weapons.iter().any(|id| id == weapon_id) {
+        "开局已带"
+    } else if progress.unlocks.weapons.contains(weapon_id) {
+        "F5 可切换/局内可抽"
+    } else {
+        "未解锁"
+    }
+}
+
+fn format_runtime_loadout_passive_requirement_status(
+    progress: &MetaProgress,
+    loadout: &StartingLoadout,
+    passive_id: &str,
+) -> &'static str {
+    if loadout.passives.iter().any(|id| id == passive_id) {
+        "开局已带"
+    } else if progress.unlocks.passives.contains(passive_id) {
+        "F5 可切换/局内可抽"
+    } else {
+        "未解锁"
+    }
 }
 
 fn format_runtime_content_id_labels<F>(ids: &[String], limit: usize, label_for_id: F) -> String
@@ -13036,6 +13121,9 @@ mod tests {
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
         assert!(panel.contains("锁定目标预览 0/4  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
+        assert!(panel.contains(
+            "章节构筑目标 汽水火山：汽水喷泉 未解锁 + 泡泡鞋 F5 可切换/局内可抽，Boss 宝箱触发"
+        ));
         assert!(panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
