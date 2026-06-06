@@ -80,7 +80,7 @@ const META_PANEL_TAB_CONTROL_HEIGHT: f32 = 64.0;
 const META_PANEL_TAB_CONTROL_ZONE_COUNT: usize = 5;
 const META_PANEL_HEADER: &str = "糖罐守护站  F1 概览 | F2 章节 | F3 图鉴 | F4 设置 | F5 巡逻";
 const META_PANEL_TAB_CLICK_HINT: &str =
-    "页签点击区: 概览  章节  图鉴  设置  巡逻  | 手柄 Select/Start 上一页/下一页";
+    "页签点击区: 概览  章节  图鉴  设置  巡逻  | 手柄选择键/开始键 上一页/下一页";
 const OVERVIEW_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const OVERVIEW_POINTER_CONTROL_ZONE_COUNT: usize = 4;
 const CODEX_POINTER_CONTROL_HEIGHT: f32 = 96.0;
@@ -5762,7 +5762,7 @@ fn render_meta_codex_panel(
         entries.len()
     ));
     lines.push(
-        "Q/E 或手柄 LT/RT 切换分类  B/N、右下点击区或十字键左/右切换条目  V、鼠标中键或手柄 Y 切换过滤"
+        "Q/E 或手柄左/右扳机切换分类  B/N、右下点击区或十字键左/右切换条目  V、鼠标中键或手柄 Y 切换过滤"
             .to_string(),
     );
     lines.push("右下点击区: <类  类>  <条目  条目>  过滤".to_string());
@@ -15084,7 +15084,7 @@ mod tests {
         assert!(panel.contains("奖励说明 无"));
         assert!(panel.contains("下一步"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
-        assert!(panel.contains("手柄 Select/Start 上一页/下一页"));
+        assert!(panel.contains("手柄选择键/开始键 上一页/下一页"));
         assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
     }
 
@@ -15453,7 +15453,7 @@ mod tests {
 
         assert!(panel.contains("章节目标"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
-        assert!(panel.contains("手柄 Select/Start 上一页/下一页"));
+        assert!(panel.contains("手柄选择键/开始键 上一页/下一页"));
         assert!(panel.contains("Q/E/手柄左/右 切换章节"));
         assert!(panel.contains("G/手柄确认 巡逻已解锁章节"));
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
@@ -15670,7 +15670,7 @@ mod tests {
 
         assert!(panel.contains("图鉴浏览 仅已发现"));
         assert!(panel.contains("分类 敌人"));
-        assert!(panel.contains("Q/E 或手柄 LT/RT 切换分类"));
+        assert!(panel.contains("Q/E 或手柄左/右扳机切换分类"));
         assert!(panel.contains("B/N、右下点击区或十字键左/右切换条目"));
         assert!(panel.contains("V、鼠标中键或手柄 Y 切换过滤"));
         assert!(panel.contains("右下点击区: <类  类>  <条目  条目>  过滤"));
