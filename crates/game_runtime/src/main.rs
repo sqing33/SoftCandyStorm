@@ -5675,6 +5675,14 @@ fn render_meta_loadout_panel(
     {
         lines.push(goal_line);
     }
+    if let Some(build_status) = format_runtime_loadout_chapter_build_status(
+        progress,
+        content,
+        &config.map_id,
+        &config.starting_loadout,
+    ) {
+        lines.push(build_status);
+    }
     if let Some(build_hint) = format_runtime_loadout_chapter_build_hint(
         progress,
         content,
@@ -6046,6 +6054,72 @@ fn format_runtime_loadout_chapter_goal_line(
         })
 }
 
+fn format_runtime_loadout_chapter_build_status(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    map_id: &str,
+    loadout: &StartingLoadout,
+) -> Option<String> {
+    let chapter = progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == map_id)?;
+    let evolution_id = game_core::meta::chapter_target_evolution_id(&chapter.chapter_id)?;
+    let evolution = content.evolutions.get(evolution_id)?;
+    let evolution_label = runtime_evolution_label(content, evolution_id);
+    let completed_goal_id = format!("evolve-{evolution_id}");
+    if chapter.completed_goals.contains(&completed_goal_id) {
+        return Some(format!(
+            "章节构筑状态 已完成 {evolution_label}，可自由换构筑"
+        ));
+    }
+
+    let mut adjustable = Vec::new();
+    let mut locked = Vec::new();
+    let weapon_id = &evolution.requirements.weapon.id;
+    if !loadout.weapons.iter().any(|id| id == weapon_id) {
+        if runtime_weapon_available_for_loadout(progress, content, weapon_id) {
+            adjustable.push(runtime_weapon_label(content, weapon_id));
+        } else {
+            locked.push(runtime_weapon_label(content, weapon_id));
+        }
+    }
+    if let Some(requirement) = &evolution.requirements.passive {
+        let passive_id = &requirement.id;
+        if !loadout.passives.iter().any(|id| id == passive_id) {
+            if runtime_passive_available_for_loadout(progress, content, passive_id) {
+                adjustable.push(runtime_passive_label(content, passive_id));
+            } else {
+                locked.push(runtime_passive_label(content, passive_id));
+            }
+        }
+    }
+
+    if adjustable.is_empty() && locked.is_empty() {
+        return Some(format!(
+            "章节构筑状态 开局已齐：局内升满后等待 {}",
+            runtime_evolution_trigger_label(&evolution.requirements.trigger),
+        ));
+    }
+    if locked.is_empty() {
+        return Some(format!(
+            "章节构筑状态 可调整：缺 {}，按 G 推荐构筑或局内抽到",
+            adjustable.join(" / "),
+        ));
+    }
+    if adjustable.is_empty() {
+        return Some(format!(
+            "章节构筑状态 先解锁：缺 {}，暂不能开局带入",
+            locked.join(" / "),
+        ));
+    }
+    Some(format!(
+        "章节构筑状态 部分可调整：缺 {}，另缺 {} 需先解锁",
+        adjustable.join(" / "),
+        locked.join(" / "),
+    ))
+}
+
 fn format_runtime_loadout_chapter_build_hint(
     progress: &MetaProgress,
     content: &ContentPack,
@@ -6093,6 +6167,30 @@ fn format_runtime_loadout_chapter_build_hint(
         passive_status,
         runtime_evolution_trigger_label(&evolution.requirements.trigger),
     ))
+}
+
+fn runtime_weapon_available_for_loadout(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    weapon_id: &str,
+) -> bool {
+    progress.unlocks.weapons.contains(weapon_id)
+        || content
+            .weapons
+            .get(weapon_id)
+            .is_some_and(|weapon| runtime_is_default_unlock(&weapon.unlock.unlock_type))
+}
+
+fn runtime_passive_available_for_loadout(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    passive_id: &str,
+) -> bool {
+    progress.unlocks.passives.contains(passive_id)
+        || content
+            .passives
+            .get(passive_id)
+            .is_some_and(|passive| runtime_is_default_unlock(&passive.unlock.unlock_type))
 }
 
 fn format_runtime_loadout_weapon_requirement_status(
@@ -14089,6 +14187,7 @@ mod tests {
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
         assert!(panel.contains("锁定目标预览 0/4  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
+        assert!(panel.contains("章节构筑状态 部分可调整：缺 泡泡鞋，另缺 汽水喷泉 需先解锁"));
         assert!(panel.contains(
             "章节构筑目标 汽水火山：汽水喷泉 未解锁 + 泡泡鞋 F5 可切换/局内可抽，Boss 宝箱触发"
         ));
@@ -14216,6 +14315,7 @@ mod tests {
         );
 
         assert!(panel.contains("本图目标 1/5"));
+        assert!(panel.contains("章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到"));
         assert!(panel.contains(
             "下一项 击败暴走搅糖机 -> 奖励 星片 +1；解锁 泡泡邮差；棉花糖护盾 已在默认构筑池；集齐 2 星片开放 汽水溪谷"
         ));
