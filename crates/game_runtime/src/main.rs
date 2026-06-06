@@ -4003,62 +4003,7 @@ fn update_hud(
             || ui_text_cache.hud_elapsed_seconds >= RUNTIME_HUD_TEXT_REFRESH_SECONDS
         {
             ui_text_cache.hud_elapsed_seconds = 0.0;
-            let play_state = if state.paused { "Paused" } else { "Playing" };
-            let map_style = map_visual_style(&snapshot.map.map_id);
-            let run_mode_status = format_runtime_hud_run_mode(state.run_mode, &state.config);
-            let boss_status = format_boss_status(snapshot, &state.content);
-            let chapter_objective_status = format_runtime_hud_chapter_objective(
-                &state.meta_progress,
-                snapshot,
-                &state.content,
-            );
-            let chapter_build_status = format_runtime_hud_chapter_build_goal(
-                &state.meta_progress,
-                snapshot,
-                &state.content,
-            );
-            let build_status = format_build_status(&snapshot.build, &state.content);
-            let enemy_status = format_enemy_swarm_status(
-                &snapshot.visible_enemies,
-                &state.content,
-                snapshot.time_seconds,
-            );
-            let event_status = format_event_effect_status(
-                &snapshot.active_event_effects,
-                &state.content,
-                snapshot.time_seconds,
-            );
-            let hazard_status = format_hazard_status(
-                &snapshot.active_hazards,
-                &snapshot.player.status_effects,
-                &state.content,
-                &snapshot.map.map_id,
-                snapshot.time_seconds,
-            );
-            set_text_section_if_changed(&mut text, format!(
-                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\n{}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
-                state.run_number,
-                play_state,
-                snapshot.time_seconds,
-                snapshot.player.health.max(0.0),
-                snapshot.player.max_health,
-                snapshot.player.level,
-                snapshot.player.xp,
-                snapshot.player.xp_to_next_level,
-                snapshot.metrics_partial.kills,
-                run_mode_status,
-                map_style.display_name,
-                snapshot.map.map_id,
-                chapter_objective_status,
-                chapter_build_status,
-                boss_status,
-                enemy_status,
-                event_status,
-                hazard_status,
-                build_status,
-                state.last_event,
-                state.last_event_kind.label(),
-            ));
+            set_text_section_if_changed(&mut text, format_runtime_hud_text(&state, snapshot));
         }
     }
 
@@ -4091,7 +4036,7 @@ fn update_hud(
         let terminal_visible = state.paused || state.core.metrics().terminal.is_some();
         if terminal_visible || !text.sections[0].value.is_empty() {
             let value = if state.paused {
-                "Paused".to_string()
+                "已暂停\nP 继续巡逻  R 重新巡逻  F1-F5 打开守护站".to_string()
             } else {
                 let metrics = state.core.metrics();
                 metrics
@@ -4145,6 +4090,62 @@ fn update_hud(
         }
         set_text_section_str_if_changed(&mut text, &ui_text_cache.meta_text);
     }
+}
+
+fn format_runtime_hud_text(state: &RuntimeState, snapshot: &RunSnapshot) -> String {
+    let play_state = if state.paused {
+        "已暂停"
+    } else {
+        "巡逻中"
+    };
+    let map_style = map_visual_style(&snapshot.map.map_id);
+    let run_mode_status = format_runtime_hud_run_mode(state.run_mode, &state.config);
+    let boss_status = format_boss_status(snapshot, &state.content);
+    let chapter_objective_status =
+        format_runtime_hud_chapter_objective(&state.meta_progress, snapshot, &state.content);
+    let chapter_build_status =
+        format_runtime_hud_chapter_build_goal(&state.meta_progress, snapshot, &state.content);
+    let build_status = format_build_status(&snapshot.build, &state.content);
+    let enemy_status = format_enemy_swarm_status(
+        &snapshot.visible_enemies,
+        &state.content,
+        snapshot.time_seconds,
+    );
+    let event_status = format_event_effect_status(
+        &snapshot.active_event_effects,
+        &state.content,
+        snapshot.time_seconds,
+    );
+    let hazard_status = format_hazard_status(
+        &snapshot.active_hazards,
+        &snapshot.player.status_effects,
+        &state.content,
+        &snapshot.map.map_id,
+        snapshot.time_seconds,
+    );
+    format!(
+        "第 {} 局  {}  时间 {:05.1}s  生命 {:03.0}/{:03.0}  等级 {}  糖晶经验 {:.0}/{:.0}  击杀 {}\n{}\n地图 {}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\n操作: WASD/方向键/左摇杆/十字键移动 | 1/2/3 升级 | P 暂停 | R 重开 | F1-F5 守护站",
+        state.run_number,
+        play_state,
+        snapshot.time_seconds,
+        snapshot.player.health.max(0.0),
+        snapshot.player.max_health,
+        snapshot.player.level,
+        snapshot.player.xp,
+        snapshot.player.xp_to_next_level,
+        snapshot.metrics_partial.kills,
+        run_mode_status,
+        map_style.display_name,
+        chapter_objective_status,
+        chapter_build_status,
+        boss_status,
+        enemy_status,
+        event_status,
+        hazard_status,
+        build_status,
+        state.last_event,
+        state.last_event_kind.label(),
+    )
 }
 
 fn apply_runtime_feedback(state: &mut RuntimeState, events: &[GameEvent], snapshot: &RunSnapshot) {
@@ -11529,7 +11530,7 @@ mod tests {
         format_boss_status, format_build_status, format_enemy_behavior_details,
         format_enemy_swarm_status, format_event_effect_for_codex, format_event_effect_status,
         format_hazard_status, format_meta_shop_offer_line, format_runtime_hud_chapter_build_goal,
-        format_runtime_hud_chapter_objective, format_runtime_hud_run_mode,
+        format_runtime_hud_chapter_objective, format_runtime_hud_run_mode, format_runtime_hud_text,
         format_settlement_event_timeline, format_settlement_replay_status, format_terminal_overlay,
         format_upgrade_options, format_upgrade_playstyle_preview,
         load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
@@ -14198,6 +14199,26 @@ mod tests {
         assert!(status.contains("每日风暴"));
         assert!(status.contains("10 分钟固定 seed"));
         assert!(status.contains("种子 66606"));
+    }
+
+    #[test]
+    fn runtime_hud_uses_player_readable_chinese_status() {
+        let state = runtime_state_for_tests();
+        let rendered = format_runtime_hud_text(&state, &state.latest_snapshot);
+
+        assert!(rendered.contains("第 1 局  巡逻中"));
+        assert!(rendered.contains("时间 000.0s"));
+        assert!(rendered.contains("生命"));
+        assert!(rendered.contains("等级"));
+        assert!(rendered.contains("糖晶经验"));
+        assert!(rendered.contains("击杀"));
+        assert!(rendered.contains("地图 糖霜草地"));
+        assert!(rendered.contains("操作: WASD/方向键/左摇杆/十字键移动"));
+        assert!(!rendered.contains("Playing"));
+        assert!(!rendered.contains("Run "));
+        assert!(!rendered.contains("Controls:"));
+        assert!(!rendered.contains("Map 糖霜草地"));
+        assert!(!rendered.contains("frosting-grassland"));
     }
 
     #[test]
