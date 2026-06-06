@@ -88,7 +88,7 @@ const CODEX_POINTER_CONTROL_ZONE_COUNT: usize = 5;
 const SETTINGS_POINTER_CONTROL_HEIGHT: f32 = 112.0;
 const SETTINGS_POINTER_CONTROL_ZONE_COUNT: usize = 7;
 const LOADOUT_POINTER_CONTROL_HEIGHT: f32 = 96.0;
-const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 5;
+const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 6;
 const CHAPTER_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CHAPTER_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const UPGRADE_POINTER_CONTROL_HEIGHT: f32 = 190.0;
@@ -449,6 +449,7 @@ enum RuntimeLoadoutAction {
     Mode,
     StartingWeapon,
     StartingPassive,
+    ChapterBuild,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1420,6 +1421,10 @@ fn step_game_core(
                     select_next_runtime_starting_passive(&mut state)
                         .map_err(|error| format!("starting passive selection failed: {error}"))
                 }
+                RuntimeLoadoutAction::ChapterBuild => {
+                    select_runtime_chapter_build_loadout(&mut state)
+                        .map_err(|error| format!("chapter build loadout selection failed: {error}"))
+                }
             };
             match result {
                 Ok(message) => {
@@ -2252,6 +2257,8 @@ fn runtime_loadout_action_from_keyboard(
         Some(RuntimeLoadoutAction::StartingWeapon)
     } else if keyboard.just_pressed(KeyCode::KeyP) {
         Some(RuntimeLoadoutAction::StartingPassive)
+    } else if keyboard.just_pressed(KeyCode::KeyG) {
+        Some(RuntimeLoadoutAction::ChapterBuild)
     } else {
         None
     }
@@ -2279,6 +2286,8 @@ fn runtime_loadout_action_from_gamepad(
         Some(RuntimeLoadoutAction::StartingWeapon)
     } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::South]) {
         Some(RuntimeLoadoutAction::StartingPassive)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::North]) {
+        Some(RuntimeLoadoutAction::ChapterBuild)
     } else {
         None
     }
@@ -2320,7 +2329,8 @@ fn runtime_loadout_action_from_pointer_zone(
         1 => Some(RuntimeLoadoutAction::Map),
         2 => Some(RuntimeLoadoutAction::Mode),
         3 => Some(RuntimeLoadoutAction::StartingWeapon),
-        _ => Some(RuntimeLoadoutAction::StartingPassive),
+        4 => Some(RuntimeLoadoutAction::StartingPassive),
+        _ => Some(RuntimeLoadoutAction::ChapterBuild),
     }
 }
 
@@ -4259,6 +4269,100 @@ fn select_next_runtime_starting_passive(state: &mut RuntimeState) -> std::io::Re
     ))
 }
 
+fn select_runtime_chapter_build_loadout(state: &mut RuntimeState) -> std::io::Result<String> {
+    let chapter = state
+        .meta_progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == state.config.map_id)
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "no chapter progress for current Runtime map",
+            )
+        })?;
+    let evolution_id = game_core::meta::chapter_target_evolution_id(&chapter.chapter_id)
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "no chapter build target for current Runtime map",
+            )
+        })?;
+    let evolution = state.content.evolutions.get(evolution_id).ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("missing chapter build target evolution {evolution_id}"),
+        )
+    })?;
+
+    let current_weapon_id = normalize_runtime_starting_weapon_id(
+        &state.base_ui_state.last_selected_starting_weapon_id,
+        &state.meta_progress,
+        &state.content,
+    );
+    let current_passive_id = normalize_runtime_starting_passive_id(
+        &state.base_ui_state.last_selected_starting_passive_id,
+        &state.meta_progress,
+        &state.content,
+    );
+    let current_loadout = runtime_starting_loadout_for_selection(
+        &state.content,
+        &state.config.character_id,
+        &current_weapon_id,
+        &current_passive_id,
+    );
+    let mut next_weapon_id = current_weapon_id.clone();
+    let mut next_passive_id = current_passive_id.clone();
+    let mut notes = Vec::new();
+
+    let weapon_id = &evolution.requirements.weapon.id;
+    let weapon_label = runtime_weapon_label(&state.content, weapon_id);
+    if current_loadout.weapons.iter().any(|id| id == weapon_id) {
+        notes.push(format!("武器 {weapon_label} 已带"));
+    } else if state.meta_progress.unlocks.weapons.contains(weapon_id) {
+        next_weapon_id = weapon_id.clone();
+        notes.push(format!("武器 {weapon_label}"));
+    } else {
+        notes.push(format!("武器 {weapon_label} 未解锁"));
+    }
+
+    if let Some(requirement) = &evolution.requirements.passive {
+        let passive_id = &requirement.id;
+        let passive_label = runtime_passive_label(&state.content, passive_id);
+        if current_loadout.passives.iter().any(|id| id == passive_id) {
+            notes.push(format!("被动 {passive_label} 已带"));
+        } else if state.meta_progress.unlocks.passives.contains(passive_id) {
+            next_passive_id = passive_id.clone();
+            notes.push(format!("被动 {passive_label}"));
+        } else {
+            notes.push(format!("被动 {passive_label} 未解锁"));
+        }
+    } else {
+        notes.push("无被动要求".to_string());
+    }
+
+    let changed = next_weapon_id != current_weapon_id || next_passive_id != current_passive_id;
+    if changed {
+        state.base_ui_state.last_selected_starting_weapon_id = next_weapon_id.clone();
+        state.base_ui_state.last_selected_starting_passive_id = next_passive_id.clone();
+        state.config.starting_loadout = runtime_starting_loadout_for_selection(
+            &state.content,
+            &state.config.character_id,
+            &next_weapon_id,
+            &next_passive_id,
+        );
+        reset_runtime_run(state);
+        persist_runtime_save_if_configured(state)?;
+    }
+
+    let status = if changed { "已应用" } else { "无需切换" };
+    Ok(format!(
+        "{status}章节构筑 {}: {}",
+        runtime_evolution_label(&state.content, evolution_id),
+        notes.join(" + "),
+    ))
+}
+
 fn purchase_next_runtime_shop_offer(state: &mut RuntimeState) -> std::io::Result<String> {
     let offer = state.meta_progress.next_demo_shop_offer().ok_or_else(|| {
         std::io::Error::new(
@@ -5234,9 +5338,9 @@ fn render_meta_loadout_panel(
     }
 
     lines.push(
-        "C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图  T/手柄上 切换巡逻模式  W/手柄下 切换开局武器  P/手柄确认 切换开局被动".to_string(),
+        "C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图  T/手柄上 切换巡逻模式  W/手柄下 切换开局武器  P/手柄确认 切换开局被动  G/手柄上按钮 推荐章节构筑".to_string(),
     );
-    lines.push("右下点击区: 角色  地图  模式  武器  被动".to_string());
+    lines.push("右下点击区: 角色  地图  模式  武器  被动  推荐".to_string());
     lines.push("切换会重开当前巡逻并保留局外进度".to_string());
     lines.push(format!(
         "已解锁角色 {}",
@@ -9048,9 +9152,10 @@ mod tests {
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
         select_next_runtime_starting_passive, select_next_runtime_starting_weapon,
-        settle_runtime_meta_if_needed, sounds_for_events, sync_runtime_default_build_unlocks,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
-        upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
+        select_runtime_chapter_build_loadout, settle_runtime_meta_if_needed, sounds_for_events,
+        sync_runtime_default_build_unlocks, toggle_runtime_privacy_setting,
+        unlock_runtime_content_for_session, upgrade_choice_from_gamepad,
+        upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
@@ -11197,6 +11302,43 @@ mod tests {
     }
 
     #[test]
+    fn runtime_loadout_chapter_build_recommendation_selects_target_parts() {
+        let mut state = runtime_state_for_tests();
+        state.base_ui_state.last_selected_starting_weapon_id = "caramel-sticky-ground".to_string();
+        state.base_ui_state.last_selected_starting_passive_id =
+            super::default_runtime_starting_passive_key();
+        state.config.starting_loadout = super::runtime_starting_loadout_for_selection(
+            &state.content,
+            &state.config.character_id,
+            &state.base_ui_state.last_selected_starting_weapon_id,
+            &state.base_ui_state.last_selected_starting_passive_id,
+        );
+
+        let message = select_runtime_chapter_build_loadout(&mut state).unwrap();
+
+        assert!(message.contains("已应用章节构筑 彩虹糖流星雨"));
+        assert!(message.contains("武器 彩虹糖弹"));
+        assert!(message.contains("被动 糖晶放大镜"));
+        assert_eq!(
+            state.base_ui_state.last_selected_starting_weapon_id,
+            "rainbow-candy-shot"
+        );
+        assert_eq!(
+            state.base_ui_state.last_selected_starting_passive_id,
+            "candy-crystal-lens"
+        );
+        assert_eq!(
+            state.config.starting_loadout.weapons,
+            ["rainbow-candy-shot"]
+        );
+        assert_eq!(
+            state.config.starting_loadout.passives,
+            ["candy-crystal-lens"]
+        );
+        assert_eq!(state.run_number, 2);
+    }
+
+    #[test]
     fn runtime_settlement_records_current_run_mode() {
         let mut state = runtime_state_for_tests();
         state.run_mode = RunMode::DailyStorm;
@@ -13030,6 +13172,13 @@ mod tests {
             Some(RuntimeLoadoutAction::StartingPassive)
         );
 
+        let mut chapter_build = ButtonInput::<KeyCode>::default();
+        chapter_build.press(KeyCode::KeyG);
+        assert_eq!(
+            runtime_loadout_action_from_keyboard(&chapter_build),
+            Some(RuntimeLoadoutAction::ChapterBuild)
+        );
+
         assert_eq!(
             runtime_loadout_action_from_keyboard(&ButtonInput::<KeyCode>::default()),
             None
@@ -13074,6 +13223,13 @@ mod tests {
             Some(RuntimeLoadoutAction::StartingPassive)
         );
 
+        let mut chapter_build = ButtonInput::<GamepadButton>::default();
+        chapter_build.press(GamepadButton::new(gamepad, GamepadButtonType::North));
+        assert_eq!(
+            runtime_loadout_action_from_gamepad(&chapter_build),
+            Some(RuntimeLoadoutAction::ChapterBuild)
+        );
+
         assert_eq!(
             runtime_loadout_action_from_gamepad(&ButtonInput::<GamepadButton>::default()),
             None
@@ -13104,24 +13260,28 @@ mod tests {
         let window_size = Vec2::new(1280.0, 720.0);
 
         assert_eq!(
-            runtime_loadout_action_from_pointer_zone(Vec2::new(900.0, 40.0), window_size),
+            runtime_loadout_action_from_pointer_zone(Vec2::new(872.0, 40.0), window_size),
             Some(RuntimeLoadoutAction::Character)
         );
         assert_eq!(
-            runtime_loadout_action_from_pointer_zone(Vec2::new(980.0, 40.0), window_size),
+            runtime_loadout_action_from_pointer_zone(Vec2::new(944.0, 40.0), window_size),
             Some(RuntimeLoadoutAction::Map)
         );
         assert_eq!(
-            runtime_loadout_action_from_pointer_zone(Vec2::new(1060.0, 40.0), window_size),
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1016.0, 40.0), window_size),
             Some(RuntimeLoadoutAction::Mode)
         );
         assert_eq!(
-            runtime_loadout_action_from_pointer_zone(Vec2::new(1140.0, 40.0), window_size),
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1088.0, 40.0), window_size),
             Some(RuntimeLoadoutAction::StartingWeapon)
         );
         assert_eq!(
-            runtime_loadout_action_from_pointer_zone(Vec2::new(1240.0, 40.0), window_size),
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1160.0, 40.0), window_size),
             Some(RuntimeLoadoutAction::StartingPassive)
+        );
+        assert_eq!(
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1230.0, 40.0), window_size),
+            Some(RuntimeLoadoutAction::ChapterBuild)
         );
         assert_eq!(
             runtime_loadout_action_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
@@ -13327,7 +13487,8 @@ mod tests {
         assert!(panel.contains("T/手柄上 切换巡逻模式"));
         assert!(panel.contains("W/手柄下 切换开局武器"));
         assert!(panel.contains("P/手柄确认 切换开局被动"));
-        assert!(panel.contains("右下点击区: 角色  地图  模式  武器  被动"));
+        assert!(panel.contains("G/手柄上按钮 推荐章节构筑"));
+        assert!(panel.contains("右下点击区: 角色  地图  模式  武器  被动  推荐"));
         assert!(panel.contains("可选开局武器"));
         assert!(panel.contains("可选开局被动"));
     }
