@@ -49,6 +49,8 @@ Replay 应能在同版本内容和规则下重现一局。
   "character_id": "jar-keeper",
   "difficulty": "normal",
   "duration_seconds": 600,
+  "unlocked_weapon_ids": ["rainbow-candy-shot"],
+  "unlocked_passive_ids": [],
   "content_pack_ids": ["base-demo"]
 }
 ```

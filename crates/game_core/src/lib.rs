@@ -70,6 +70,8 @@ pub struct RunConfig {
     pub map_id: String,
     pub character_id: String,
     pub starting_loadout: StartingLoadout,
+    pub unlocked_weapon_ids: Vec<String>,
+    pub unlocked_passive_ids: Vec<String>,
     pub difficulty: Difficulty,
     pub duration_seconds: f32,
     pub ruleset_version: String,
@@ -87,6 +89,8 @@ impl Default for RunConfig {
                 weapons: vec!["rainbow-candy-shot".to_string()],
                 passives: Vec::new(),
             },
+            unlocked_weapon_ids: Vec::new(),
+            unlocked_passive_ids: Vec::new(),
             difficulty: Difficulty::Normal,
             duration_seconds: 600.0,
             ruleset_version: "prototype-v0".to_string(),
@@ -2612,7 +2616,11 @@ impl GameCore {
             if self.weapons.iter().any(|state| state.id == weapon.id) {
                 continue;
             }
-            if !is_default_unlock(&weapon.unlock.unlock_type) {
+            if !is_weapon_unlocked_for_run(
+                &weapon.id,
+                &weapon.unlock.unlock_type,
+                &self.config.unlocked_weapon_ids,
+            ) {
                 continue;
             }
             new_weapon_candidates.push(UpgradeOffer {
@@ -2630,7 +2638,11 @@ impl GameCore {
 
         let mut passive_candidates = Vec::new();
         for passive in self.content.passives.values() {
-            if !is_default_unlock(&passive.unlock.unlock_type) {
+            if !is_passive_unlocked_for_run(
+                &passive.id,
+                &passive.unlock.unlock_type,
+                &self.config.unlocked_passive_ids,
+            ) {
                 continue;
             }
             if self
@@ -2910,6 +2922,22 @@ impl GameCore {
 
 fn is_default_unlock(unlock_type: &str) -> bool {
     unlock_type == "default"
+}
+
+fn is_weapon_unlocked_for_run(
+    weapon_id: &str,
+    unlock_type: &str,
+    unlocked_weapon_ids: &[String],
+) -> bool {
+    is_default_unlock(unlock_type) || unlocked_weapon_ids.iter().any(|id| id == weapon_id)
+}
+
+fn is_passive_unlocked_for_run(
+    passive_id: &str,
+    unlock_type: &str,
+    unlocked_passive_ids: &[String],
+) -> bool {
+    is_default_unlock(unlock_type) || unlocked_passive_ids.iter().any(|id| id == passive_id)
 }
 
 fn xp_required(level: u32) -> f32 {
@@ -4511,6 +4539,70 @@ mod tests {
         assert!(options
             .iter()
             .all(|option| option.snapshot.id.starts_with("rainbow-candy-shot-level-")));
+    }
+
+    #[test]
+    fn upgrade_options_include_meta_unlocked_discover_weapon() {
+        let mut content = ContentPack::base_demo();
+        for (weapon_id, weapon) in content.weapons.iter_mut() {
+            if weapon_id != "rainbow-candy-shot" {
+                weapon.unlock.unlock_type = "discover".to_string();
+            }
+        }
+        for passive in content.passives.values_mut() {
+            passive.unlock.unlock_type = "discover".to_string();
+        }
+
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                unlocked_weapon_ids: vec!["soda-bubble-pop".to_string()],
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("content with a meta-unlocked weapon should initialize");
+        let options = core.generate_upgrade_options();
+
+        assert!(options.iter().any(|option| matches!(
+            &option.effect,
+            UpgradeEffect::NewWeapon { weapon_id } if weapon_id == "soda-bubble-pop"
+        )));
+        assert!(options.iter().all(|option| !matches!(
+            &option.effect,
+            UpgradeEffect::NewWeapon { weapon_id } if weapon_id != "soda-bubble-pop"
+        )));
+    }
+
+    #[test]
+    fn upgrade_options_include_meta_unlocked_discover_passive() {
+        let mut content = ContentPack::base_demo();
+        for (weapon_id, weapon) in content.weapons.iter_mut() {
+            if weapon_id != "rainbow-candy-shot" {
+                weapon.unlock.unlock_type = "discover".to_string();
+            }
+        }
+        for passive in content.passives.values_mut() {
+            passive.unlock.unlock_type = "discover".to_string();
+        }
+
+        let mut core = GameCore::reset_with_content(
+            RunConfig {
+                unlocked_passive_ids: vec!["bubble-shoes".to_string()],
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("content with a meta-unlocked passive should initialize");
+        let options = core.generate_upgrade_options();
+
+        assert!(options.iter().any(|option| matches!(
+            &option.effect,
+            UpgradeEffect::Passive { passive_id } if passive_id == "bubble-shoes"
+        )));
+        assert!(options.iter().all(|option| !matches!(
+            &option.effect,
+            UpgradeEffect::Passive { passive_id } if passive_id != "bubble-shoes"
+        )));
     }
 
     #[test]

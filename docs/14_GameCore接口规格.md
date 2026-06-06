@@ -56,6 +56,8 @@ impl GameCore {
 - `map_id`
 - `character_id`
 - `starting_loadout`
+- `unlocked_weapon_ids`
+- `unlocked_passive_ids`
 - `content_pack_ids`
 - `difficulty`
 - `duration_seconds`
@@ -73,6 +75,8 @@ impl GameCore {
     "weapons": ["rainbow-candy-shot"],
     "passives": []
   },
+  "unlocked_weapon_ids": ["rainbow-candy-shot"],
+  "unlocked_passive_ids": [],
   "content_pack_ids": ["base-demo"],
   "difficulty": "normal",
   "duration_seconds": 600,

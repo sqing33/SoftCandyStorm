@@ -829,6 +829,8 @@ struct RuntimeRunConfigReport {
     content_pack_ids: Vec<String>,
     starting_weapons: Vec<String>,
     starting_passives: Vec<String>,
+    unlocked_weapon_ids: Vec<String>,
+    unlocked_passive_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1041,7 +1043,7 @@ fn setup_runtime(
         &meta_progress,
         &content,
     );
-    let config = run_config_from_cli(&cli, &content);
+    let config = run_config_from_cli(&cli, &content, &meta_progress);
     let core = GameCore::reset_with_content(config.clone(), content.clone())
         .expect("runtime content must pass the same GameCore validation as headless runs");
     let latest_snapshot = core.snapshot();
@@ -6571,12 +6573,18 @@ fn make_tone_wav(frequency_hz: f32, seconds: f32, amplitude: f32) -> Vec<u8> {
     bytes
 }
 
-fn run_config_from_cli(cli: &RuntimeCli, content: &ContentPack) -> RunConfig {
+fn run_config_from_cli(
+    cli: &RuntimeCli,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> RunConfig {
     RunConfig {
         seed: runtime_run_seed_for_cli(cli),
         map_id: cli.map_id.clone(),
         character_id: cli.character_id.clone(),
         starting_loadout: runtime_character_starting_loadout(content, &cli.character_id),
+        unlocked_weapon_ids: progress.unlocks.weapons.iter().cloned().collect(),
+        unlocked_passive_ids: progress.unlocks.passives.iter().cloned().collect(),
         difficulty: runtime_run_mode_difficulty(cli.run_mode),
         duration_seconds: runtime_run_duration_seconds_for_cli(cli),
         ruleset_version: "prototype-v0".to_string(),
@@ -8097,6 +8105,8 @@ impl RuntimeRunConfigReport {
             content_pack_ids: config.content_pack_ids.clone(),
             starting_weapons: config.starting_loadout.weapons.clone(),
             starting_passives: config.starting_loadout.passives.clone(),
+            unlocked_weapon_ids: config.unlocked_weapon_ids.clone(),
+            unlocked_passive_ids: config.unlocked_passive_ids.clone(),
         }
     }
 }
@@ -8296,7 +8306,8 @@ mod tests {
             ..RuntimeCli::default()
         };
         let content = ContentPack::base_demo();
-        let config = run_config_from_cli(&cli, &content);
+        let meta_progress = MetaProgress::demo_start();
+        let config = run_config_from_cli(&cli, &content, &meta_progress);
         let core = GameCore::reset_with_content(config.clone(), content.clone())
             .expect("base demo content should initialize Runtime tests");
         let latest_snapshot = core.snapshot();
@@ -8332,7 +8343,7 @@ mod tests {
             meta_panel_view: RuntimeMetaPanelView::Overview,
             base_ui_state: RuntimeBaseUiState::default(),
             codex_selected_index: 0,
-            meta_progress: MetaProgress::demo_start(),
+            meta_progress,
             story_codex_ui_candidate: None,
             asset_runtime_candidate: None,
             last_meta_settlement: None,
@@ -8383,8 +8394,9 @@ mod tests {
     #[test]
     fn runtime_run_mode_cli_sets_mode_defaults() {
         let content = ContentPack::base_demo();
+        let progress = MetaProgress::demo_start();
         let long_cli = parse_runtime_cli(["--run-mode".to_string(), "long".to_string()]);
-        let long_config = run_config_from_cli(&long_cli, &content);
+        let long_config = run_config_from_cli(&long_cli, &content, &progress);
 
         assert_eq!(long_cli.run_mode, RunMode::LongPatrol);
         assert_eq!(
@@ -8395,7 +8407,7 @@ mod tests {
         assert_eq!(long_config.seed, 12_345);
 
         let daily_cli = parse_runtime_cli(["--mode".to_string(), "daily-storm".to_string()]);
-        let daily_config = run_config_from_cli(&daily_cli, &content);
+        let daily_config = run_config_from_cli(&daily_cli, &content, &progress);
 
         assert_eq!(daily_cli.run_mode, RunMode::DailyStorm);
         assert_eq!(daily_config.duration_seconds, 600.0);
@@ -8414,7 +8426,7 @@ mod tests {
             "--seconds".to_string(),
             "42".to_string(),
         ]);
-        let config = run_config_from_cli(&cli, &content);
+        let config = run_config_from_cli(&cli, &content, &MetaProgress::demo_start());
 
         assert_eq!(cli.run_mode, RunMode::DailyStorm);
         assert_eq!(config.seed, 77);
@@ -9797,12 +9809,37 @@ mod tests {
             "jelly-platform".to_string(),
         ]);
         let content = ContentPack::base_demo();
-        let config = run_config_from_cli(&cli, &content);
+        let progress = MetaProgress::demo_start();
+        let config = run_config_from_cli(&cli, &content, &progress);
 
         assert_eq!(config.seed, 77);
         assert_eq!(config.map_id, "jelly-platform");
         assert_eq!(config.character_id, "bubble-courier");
         assert_eq!(config.starting_loadout.weapons, ["soda-bubble-pop"]);
+        assert!(config
+            .unlocked_weapon_ids
+            .contains(&"rainbow-candy-shot".to_string()));
+    }
+
+    #[test]
+    fn runtime_run_config_includes_meta_unlocked_build_pool() {
+        let cli = RuntimeCli::default();
+        let content = ContentPack::base_demo();
+        let mut progress = MetaProgress::demo_start();
+        progress
+            .unlocks
+            .weapons
+            .insert("soda-bubble-pop".to_string());
+        progress.unlocks.passives.insert("bubble-shoes".to_string());
+
+        let config = run_config_from_cli(&cli, &content, &progress);
+
+        assert!(config
+            .unlocked_weapon_ids
+            .contains(&"soda-bubble-pop".to_string()));
+        assert!(config
+            .unlocked_passive_ids
+            .contains(&"bubble-shoes".to_string()));
     }
 
     #[test]
