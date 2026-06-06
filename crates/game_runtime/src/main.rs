@@ -5254,6 +5254,7 @@ fn render_meta_chapter_panel(
         chapter_ids.len()
     ));
     lines.push("右下点击区: 上章  下章  巡逻".to_string());
+    lines.push(format_runtime_chapter_route_status(progress, content));
     if let Some(chapter) = progress.chapters.get(&selected_id) {
         let status = if chapter.unlocked {
             "已解锁"
@@ -6762,6 +6763,31 @@ fn format_runtime_map_unlock_short(
         runtime_boss_label(content, boss_id),
         progress.resources.star_shards.min(required_star_shards),
         required_star_shards,
+    )
+}
+
+fn format_runtime_chapter_route_status(progress: &MetaProgress, content: &ContentPack) -> String {
+    let mut unlocked = Vec::new();
+    let mut next_locked = None;
+    for chapter_id in runtime_story_chapter_ids() {
+        let Some(chapter) = progress.chapters.get(chapter_id) else {
+            continue;
+        };
+        if chapter.unlocked {
+            unlocked.push(chapter_label(content, chapter_id));
+        } else if next_locked.is_none() {
+            next_locked = Some(format!(
+                "{}: {}",
+                chapter_label(content, chapter_id),
+                format_runtime_map_unlock_short(chapter_id, progress, content),
+            ));
+        }
+    }
+
+    format!(
+        "章节路线 已解锁 {}  下一章节 {}",
+        format_string_items(&unlocked, unlocked.len()),
+        next_locked.unwrap_or_else(|| "已全部开放".to_string()),
     )
 }
 
@@ -13896,6 +13922,7 @@ mod tests {
         assert!(panel.contains("Q/E/手柄左/右 切换章节"));
         assert!(panel.contains("G/手柄确认 巡逻已解锁章节"));
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
+        assert!(panel.contains("章节路线 已解锁 糖霜草地"));
         assert!(panel.contains("frosting-grassland"));
         assert!(panel.contains("地图说明 覆盖糖霜的开阔草地"));
         assert!(panel.contains("Boss说明"));
@@ -13938,6 +13965,9 @@ mod tests {
         assert!(panel.contains("soda-creek"));
         assert!(panel.contains("汽水喷泉龙"));
         assert!(panel.contains("未解锁"));
+        assert!(panel.contains(
+            "章节路线 已解锁 糖霜草地  下一章节 汽水溪谷: 击败糖霜草地 Boss 暴走搅糖机 + 星片 0/2"
+        ));
         assert!(panel.contains("defeat-soda-fountain-dragon"));
         assert!(panel.contains("击败汽水喷泉龙"));
         assert!(panel.contains("集齐 4 星片开放 棉花云牧场"));
@@ -13980,6 +14010,9 @@ mod tests {
         assert!(
             panel.contains("解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：已完成；星片 2/2：已满足")
         );
+        assert!(panel.contains(
+            "章节路线 已解锁 糖霜草地  下一章节 汽水溪谷: 击败糖霜草地 Boss 暴走搅糖机 + 星片 2/2"
+        ));
     }
 
     #[test]
