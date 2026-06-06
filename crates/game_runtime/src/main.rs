@@ -2126,16 +2126,19 @@ fn format_upgrade_tags(tags: &[String]) -> String {
 fn runtime_tag_label(tag: &str) -> String {
     match tag {
         "aoe" | "area" => "范围",
+        "aoe-check" => "范围检验",
         "area-control" => "范围控制",
         "advanced" => "高级",
         "auto-fire" => "自动",
         "balanced" => "均衡",
         "beam" => "光束",
         "beginner" => "新手",
+        "bot-test" => "Bot 测试",
         "boomerang" => "回旋",
         "boss-killer" => "Boss",
         "boss-safe" => "稳打 Boss",
         "bubble" => "泡泡",
+        "bubbles" => "泡泡",
         "burst" => "爆发",
         "close" => "近身",
         "cold" => "冰霜",
@@ -2145,19 +2148,30 @@ fn runtime_tag_label(tag: &str) -> String {
         "duration" => "持续",
         "economy" => "经济",
         "evolution" => "进化",
+        "final" => "终章",
+        "hazard" => "地形危险",
         "health" => "生命",
+        "industrial" => "工坊",
         "intermediate" => "进阶",
         "knockback" => "击退",
+        "loop" => "循环",
+        "midgame" => "中期",
         "mobility" => "机动",
+        "open" => "开阔",
         "orbit" => "环绕",
+        "phase-shift" => "阶段变化",
         "pickup" => "拾取",
         "pierce" => "穿透",
         "projectile" => "弹幕",
+        "route" => "路线",
         "single-target" => "单体",
         "size" => "尺寸",
         "slow" => "减速",
+        "soft" => "柔软",
         "starter" => "初始",
+        "storm" => "风暴",
         "summon" => "召唤",
+        "swarm" => "敌群",
         "trap" => "陷阱",
         "turret" => "炮台",
         "xp" => "XP",
@@ -5733,6 +5747,7 @@ fn render_meta_loadout_panel(
             LOADOUT_UNLOCKED_MAP_LABEL_LIMIT,
         ),
     ));
+    lines.push(format_runtime_map_route_status(progress, content));
     lines.push(format!(
         "可选开局武器 {}",
         format_runtime_unlocked_labels(
@@ -6648,6 +6663,94 @@ fn format_runtime_character_unlock_short(character_id: &str, content: &ContentPa
         "击败{} Boss {}",
         chapter_label(content, chapter_id),
         runtime_boss_label(content, boss_id),
+    )
+}
+
+fn format_runtime_map_route_status(progress: &MetaProgress, content: &ContentPack) -> String {
+    let mut unlocked = Vec::new();
+    let mut next_locked = None;
+    for map_id in runtime_ordered_map_ids(content) {
+        if progress.unlocks.maps.contains(&map_id) {
+            if let Some(map) = content.maps.get(&map_id) {
+                unlocked.push(format_runtime_map_route_entry(map));
+            } else {
+                unlocked.push(runtime_map_label(content, &map_id));
+            }
+        } else if next_locked.is_none() {
+            next_locked = Some(format!(
+                "{}: {}",
+                runtime_map_label(content, &map_id),
+                format_runtime_map_unlock_short(&map_id, progress, content),
+            ));
+        }
+    }
+
+    format!(
+        "地图路线 已解锁 {}  下一地图 {}",
+        format_string_items(&unlocked, unlocked.len()),
+        next_locked.unwrap_or_else(|| "已全部开放".to_string()),
+    )
+}
+
+fn runtime_ordered_map_ids(content: &ContentPack) -> Vec<String> {
+    let mut ids = runtime_story_chapter_ids()
+        .into_iter()
+        .filter(|id| content.maps.contains_key(*id))
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    for id in content.maps.keys() {
+        if !ids.iter().any(|ordered_id| ordered_id == id) {
+            ids.push(id.clone());
+        }
+    }
+    ids
+}
+
+fn runtime_story_chapter_ids() -> [&'static str; 6] {
+    [
+        "frosting-grassland",
+        "soda-creek",
+        "cotton-cloud-pasture",
+        "caramel-workshop",
+        "jelly-platform",
+        "cracked-star-jar",
+    ]
+}
+
+fn format_runtime_map_route_entry(map: &MapDefinition) -> String {
+    let tags = map
+        .tags
+        .iter()
+        .take(2)
+        .map(|tag| runtime_tag_label(tag))
+        .collect::<Vec<_>>();
+    if tags.is_empty() {
+        map.name.clone()
+    } else {
+        format!("{}({})", map.name, tags.join("/"))
+    }
+}
+
+fn format_runtime_map_unlock_short(
+    map_id: &str,
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> String {
+    let Some(chapter_id) = runtime_chapter_for_map_id(map_id) else {
+        return "基地或后续事件开放".to_string();
+    };
+    let Some((previous_chapter, required_star_shards)) =
+        runtime_previous_chapter_unlock_requirement(chapter_id)
+    else {
+        return "首章默认开放".to_string();
+    };
+    let boss_id = runtime_chapter_boss_id(previous_chapter).unwrap_or(previous_chapter);
+    format!(
+        "击败{} Boss {} + 星片 {}/{}",
+        chapter_label(content, previous_chapter),
+        runtime_boss_label(content, boss_id),
+        progress.resources.star_shards.min(required_star_shards),
+        required_star_shards,
     )
 }
 
@@ -14745,6 +14848,8 @@ mod tests {
         assert!(panel.contains("右下点击区: 角色  地图  模式  武器  被动  推荐"));
         assert!(panel.contains("角色路线 已解锁 泡泡邮差(机动/拾取), 糖罐守护员(均衡/新手)"));
         assert!(panel.contains("待解锁 奶油骑士: 击败汽水溪谷 Boss 汽水喷泉龙"));
+        assert!(panel.contains("地图路线 已解锁 糖霜草地(新手/开阔), 汽水溪谷(机动/泡泡)"));
+        assert!(panel.contains("下一地图 棉花云牧场: 击败汽水溪谷 Boss 汽水喷泉龙 + 星片 0/4"));
         assert!(panel.contains("可选开局武器"));
         assert!(panel.contains("可选开局被动"));
     }
@@ -14922,6 +15027,8 @@ mod tests {
         assert!(panel.contains("本图目标 0/5  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
         assert!(panel.contains("角色路线 已解锁 泡泡邮差(机动/拾取), 奶油骑士(防御/新手), 糖罐守护员(均衡/新手), 布丁工匠(召唤/范围控制), 酸梅博士(控制/稳打 Boss)"));
         assert!(panel.contains("待解锁 已全部开放"));
+        assert!(panel.contains("地图路线 已解锁 糖霜草地(新手/开阔), 汽水溪谷(机动/泡泡), 棉花云牧场(柔软/敌群), 焦糖工坊(地形危险/工坊), 果冻月台(路线/循环), 裂星糖罐(终章/阶段变化)"));
+        assert!(panel.contains("下一地图 已全部开放"));
         assert!(!panel.contains("还有"));
     }
 
