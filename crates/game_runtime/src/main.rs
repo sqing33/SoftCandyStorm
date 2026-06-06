@@ -1814,10 +1814,11 @@ fn format_upgrade_options(
         .enumerate()
         .map(|(index, option)| {
             format!(
-                "{}. {}  {}\n   {}\n   数值 {}\n   玩法 {}\n   标签 {}  关联 {}\n   id {}",
+                "{}. {}  {}  类型 {}\n   {}\n   数值 {}\n   玩法 {}\n   标签 {}  关联 {}\n   id {}",
                 index + 1,
                 option.name,
                 format_upgrade_option_state(option),
+                format_upgrade_option_kind(option, content),
                 option.description,
                 format_upgrade_stat_preview(option, content),
                 format_upgrade_playstyle_preview(option, content),
@@ -1844,6 +1845,26 @@ fn format_upgrade_option_state(option: &UpgradeOptionSnapshot) -> String {
     } else {
         "本局强化".to_string()
     }
+}
+
+fn format_upgrade_option_kind(
+    option: &UpgradeOptionSnapshot,
+    content: &ContentPack,
+) -> &'static str {
+    let content_id = upgrade_option_content_id(&option.id);
+    if content.evolutions.contains_key(content_id) {
+        return "进化";
+    }
+    if content.weapons.contains_key(content_id) {
+        if upgrade_option_level(&option.id).is_some() {
+            return "武器升级";
+        }
+        return "新武器";
+    }
+    if content.passives.contains_key(content_id) {
+        return "被动强化";
+    }
+    "未知内容"
 }
 
 fn format_upgrade_stat_preview(option: &UpgradeOptionSnapshot, content: &ContentPack) -> String {
@@ -14492,8 +14513,7 @@ mod tests {
 
         let rendered = format_upgrade_options(&options, &content, &build, None);
 
-        assert!(rendered.contains("1. 彩虹糖弹强化"));
-        assert!(rendered.contains("目标 Lv.2"));
+        assert!(rendered.contains("1. 彩虹糖弹强化  目标 Lv.2  类型 武器升级"));
         assert!(rendered.contains("提升伤害、射程和冷却节奏。"));
         assert!(rendered.contains("数值 伤害 14  冷却 0.62s  数量 1  范围 420"));
         assert!(rendered.contains("玩法 目标 最近敌人  定位 开局武器"));
@@ -14501,16 +14521,14 @@ mod tests {
         assert!(rendered.contains("关联 进化线 彩虹糖流星雨: 彩虹糖弹 1/5 + 糖晶放大镜 0/3"));
         assert!(rendered.contains("Build 契合 弹幕"));
         assert!(rendered.contains("id rainbow-candy-shot-level-2"));
-        assert!(rendered.contains("2. 获得汽水泡泡"));
-        assert!(rendered.contains("新获得"));
+        assert!(rendered.contains("2. 获得汽水泡泡  新获得  类型 新武器"));
         assert!(rendered.contains("发射会弹跳的汽水泡泡。"));
-        assert!(rendered.contains("3. 彩虹糖流星雨"));
-        assert!(rendered.contains("进化"));
+        assert!(rendered.contains("3. 彩虹糖流星雨  进化  类型 进化"));
         assert!(rendered.contains("数值 伤害 42  冷却 0.90s  数量 8  范围 620"));
         assert!(rendered.contains("玩法 目标 随机敌人  进化武器"));
         assert!(rendered.contains("进化需求 彩虹糖弹 1/5 + 糖晶放大镜 0/3，Boss 宝箱触发"));
         assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
-        assert!(rendered.contains("4. 泡泡鞋"));
+        assert!(rendered.contains("4. 泡泡鞋  本局强化  类型 被动强化"));
         assert!(rendered.contains("数值 移速 + 10.00/级"));
         assert!(rendered.contains("玩法 被动强化"));
     }
