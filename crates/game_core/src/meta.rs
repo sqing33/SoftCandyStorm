@@ -3,6 +3,30 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 const STANDARD_PATROL_SECONDS: f32 = 600.0;
+const DEMO_DEFAULT_WEAPON_IDS: [&str; 12] = [
+    "rainbow-candy-shot",
+    "lollipop-boomerang",
+    "marshmallow-shield",
+    "caramel-sticky-ground",
+    "mint-cyclone",
+    "popping-candy-mine",
+    "sour-plum-spray",
+    "soda-bubble-pop",
+    "candy-crystal-lance",
+    "soda-fountain",
+    "star-sugar-ray",
+    "pudding-turret",
+];
+const DEMO_DEFAULT_PASSIVE_IDS: [&str; 8] = [
+    "big-candy-jar",
+    "candy-crystal-lens",
+    "cream-clockwork",
+    "frosting-gloves",
+    "nonstick-apron",
+    "star-spoon",
+    "bubble-shoes",
+    "sour-tuner",
+];
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -107,7 +131,12 @@ impl MetaProgress {
     pub fn demo_start() -> Self {
         let mut unlocks = MetaUnlockSet::default();
         unlocks.characters.insert("jar-keeper".to_string());
-        unlocks.weapons.insert("rainbow-candy-shot".to_string());
+        unlocks
+            .weapons
+            .extend(DEMO_DEFAULT_WEAPON_IDS.iter().map(|id| (*id).to_string()));
+        unlocks
+            .passives
+            .extend(DEMO_DEFAULT_PASSIVE_IDS.iter().map(|id| (*id).to_string()));
         unlocks.maps.insert("frosting-grassland".to_string());
         unlocks.chapters.insert("frosting-grassland".to_string());
 
@@ -813,6 +842,10 @@ mod tests {
         );
         assert!(progress.unlocks.chapters.contains("frosting-grassland"));
         assert!(!progress.unlocks.chapters.contains("soda-creek"));
+        assert_eq!(progress.unlocks.weapons.len(), 12);
+        assert_eq!(progress.unlocks.passives.len(), 8);
+        assert!(progress.unlocks.weapons.contains("pudding-turret"));
+        assert!(progress.unlocks.passives.contains("bubble-shoes"));
     }
 
     #[test]

@@ -1031,6 +1031,7 @@ fn setup_runtime(
             cli.content_dir.display()
         )
     });
+    sync_runtime_default_build_unlocks(&mut meta_progress, &content);
     if cli.unlock_all_content {
         unlock_runtime_content_for_session(&mut meta_progress, &content);
     }
@@ -4382,7 +4383,7 @@ fn format_meta_overview_unlock_summary(progress: &MetaProgress, content: &Conten
             |id| runtime_map_label(content, id),
             2,
         ),
-        format_runtime_build_pool_summary(content),
+        format_runtime_build_pool_summary(progress, content),
     )
 }
 
@@ -4887,7 +4888,7 @@ fn render_meta_loadout_panel(
         "开局路线 {}",
         format_runtime_loadout_plan(content, &config.starting_loadout)
     ));
-    lines.push(format_runtime_build_pool_summary(content));
+    lines.push(format_runtime_build_pool_summary(progress, content));
     lines.push(format!(
         "模式 {} ({})",
         runtime_run_mode_label(run_mode),
@@ -5084,18 +5085,24 @@ fn format_runtime_loadout_plan(content: &ContentPack, loadout: &StartingLoadout)
     "先确认角色默认武器手感，再选择输出、控制或生存路线".to_string()
 }
 
-fn format_runtime_build_pool_summary(content: &ContentPack) -> String {
+fn format_runtime_build_pool_summary(progress: &MetaProgress, content: &ContentPack) -> String {
     format!(
         "可抽构筑池 武器 {}  被动 {}  进化配方 {}",
         content
             .weapons
-            .values()
-            .filter(|weapon| runtime_is_default_unlock(&weapon.unlock.unlock_type))
+            .iter()
+            .filter(|(id, weapon)| {
+                runtime_is_default_unlock(&weapon.unlock.unlock_type)
+                    || progress.unlocks.weapons.contains(*id)
+            })
             .count(),
         content
             .passives
-            .values()
-            .filter(|passive| runtime_is_default_unlock(&passive.unlock.unlock_type))
+            .iter()
+            .filter(|(id, passive)| {
+                runtime_is_default_unlock(&passive.unlock.unlock_type)
+                    || progress.unlocks.passives.contains(*id)
+            })
             .count(),
         content.evolutions.len(),
     )
@@ -5434,9 +5441,9 @@ fn format_runtime_chapter_boss_reward(chapter_id: &str, content: &ContentPack) -
     let mut parts = vec!["奖励 星片 +1".to_string()];
     if chapter_id == "frosting-grassland" {
         parts.push(format!(
-            "解锁 {}、{}",
-            runtime_weapon_label(content, "marshmallow-shield"),
+            "解锁 {}；{} 已在默认构筑池",
             runtime_character_label(content, "bubble-courier"),
+            runtime_weapon_label(content, "marshmallow-shield"),
         ));
     }
     if let Some((next_chapter, required_star_shards)) = runtime_next_chapter_unlock(chapter_id) {
@@ -6795,6 +6802,23 @@ fn unlock_runtime_content_for_session(progress: &mut MetaProgress, content: &Con
             chapter.unlocked = true;
         }
     }
+}
+
+fn sync_runtime_default_build_unlocks(progress: &mut MetaProgress, content: &ContentPack) {
+    progress.unlocks.weapons.extend(
+        content
+            .weapons
+            .iter()
+            .filter(|(_, weapon)| runtime_is_default_unlock(&weapon.unlock.unlock_type))
+            .map(|(id, _)| id.clone()),
+    );
+    progress.unlocks.passives.extend(
+        content
+            .passives
+            .iter()
+            .filter(|(_, passive)| runtime_is_default_unlock(&passive.unlock.unlock_type))
+            .map(|(id, _)| id.clone()),
+    );
 }
 
 fn next_runtime_selection_id(ids: &[String], current_id: &str) -> Option<String> {
@@ -8205,9 +8229,9 @@ mod tests {
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
-        settle_runtime_meta_if_needed, sounds_for_events, toggle_runtime_privacy_setting,
-        unlock_runtime_content_for_session, upgrade_choice_from_gamepad,
-        upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
+        settle_runtime_meta_if_needed, sounds_for_events, sync_runtime_default_build_unlocks,
+        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
+        upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
@@ -9898,6 +9922,41 @@ mod tests {
     }
 
     #[test]
+    fn runtime_syncs_default_build_pool_unlocks_for_legacy_progress() {
+        let content = ContentPack::base_demo();
+        let mut progress = MetaProgress::demo_start();
+        progress.unlocks.weapons.clear();
+        progress.unlocks.passives.clear();
+        progress
+            .unlocks
+            .weapons
+            .insert("rainbow-candy-shot".to_string());
+
+        sync_runtime_default_build_unlocks(&mut progress, &content);
+
+        assert_eq!(
+            progress
+                .unlocks
+                .weapons
+                .iter()
+                .filter(|id| content.weapons.contains_key(*id))
+                .count(),
+            12
+        );
+        assert_eq!(
+            progress
+                .unlocks
+                .passives
+                .iter()
+                .filter(|id| content.passives.contains_key(*id))
+                .count(),
+            8
+        );
+        assert!(progress.unlocks.weapons.contains("pudding-turret"));
+        assert!(progress.unlocks.passives.contains("bubble-shoes"));
+    }
+
+    #[test]
     fn runtime_meta_panel_tab_pointer_input_maps_left_click_zone() {
         let window_size = Vec2::new(1280.0, 720.0);
 
@@ -11080,7 +11139,6 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("新解锁 武器 棉花糖护盾 (marshmallow-shield)"));
         assert!(panel.contains("角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("地图 汽水溪谷 (soda-creek)"));
         assert!(panel.contains("章节 汽水溪谷 (soda-creek)"));
@@ -12060,7 +12118,7 @@ mod tests {
 
         assert!(panel.contains("本图目标 1/5"));
         assert!(panel.contains(
-            "下一项 击败暴走搅糖机 -> 奖励 星片 +1；解锁 棉花糖护盾、泡泡邮差；集齐 2 星片开放 汽水溪谷"
+            "下一项 击败暴走搅糖机 -> 奖励 星片 +1；解锁 泡泡邮差；棉花糖护盾 已在默认构筑池；集齐 2 星片开放 汽水溪谷"
         ));
     }
 
