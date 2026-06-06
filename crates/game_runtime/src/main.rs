@@ -890,6 +890,7 @@ struct RuntimeMetricsReport {
     xp_collected: f32,
     xp_dropped: f32,
     damage_dealt_by_weapon: f32,
+    damage_dealt_by_weapon_id: BTreeMap<String, f32>,
     damage_taken: f32,
     max_enemy_count: usize,
     max_projectile_count: usize,
@@ -4990,7 +4991,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
@@ -5002,6 +5003,7 @@ fn render_meta_overview_panel(
             summary.boss_damage,
             summary.damage_taken,
             format_damage_sources(&summary.damage_taken_by_source, 2),
+            format_settlement_weapon_damage_shares(summary, content, 3),
             format_settlement_event_timeline(last_settlement_event_timeline),
             format_weapon_levels(&summary.weapon_levels, 4),
             format_passive_set(&summary.passives_used, 3),
@@ -7487,6 +7489,59 @@ fn format_settlement_event_timeline(timeline: &[RuntimeEventTimelineEntry]) -> S
         .join(" | ")
 }
 
+fn format_settlement_weapon_damage_shares(
+    summary: &MetaRunSummary,
+    content: &ContentPack,
+    limit: usize,
+) -> String {
+    if summary.damage_dealt_by_weapon_id.is_empty() {
+        if summary.damage_dealt_by_weapon > 0.0 {
+            return format!("未按武器记录，总输出 {:.0}", summary.damage_dealt_by_weapon);
+        }
+        return "无".to_string();
+    }
+
+    let total_damage = summary
+        .damage_dealt_by_weapon
+        .max(summary.damage_dealt_by_weapon_id.values().sum::<f32>())
+        .max(0.0);
+    let mut values = summary
+        .damage_dealt_by_weapon_id
+        .iter()
+        .filter(|(_, damage)| **damage > 0.0)
+        .collect::<Vec<_>>();
+    values.sort_by(|left, right| right.1.total_cmp(left.1).then_with(|| left.0.cmp(right.0)));
+
+    if values.is_empty() || total_damage <= 0.0 {
+        return "无".to_string();
+    }
+
+    let labels = values
+        .into_iter()
+        .take(limit)
+        .map(|(weapon_id, damage)| {
+            let share = (*damage / total_damage * 100.0).clamp(0.0, 999.0);
+            format!(
+                "{} {:.0} ({:.0}%)",
+                runtime_damage_weapon_label(content, weapon_id),
+                damage,
+                share
+            )
+        })
+        .collect::<Vec<_>>();
+    format_string_items(&labels, limit)
+}
+
+fn runtime_damage_weapon_label(content: &ContentPack, weapon_id: &str) -> String {
+    if content.weapons.contains_key(weapon_id) {
+        return runtime_weapon_label(content, weapon_id);
+    }
+    if content.evolutions.contains_key(weapon_id) {
+        return runtime_evolution_label(content, weapon_id);
+    }
+    weapon_id.to_string()
+}
+
 fn format_settlement_note_label(note: &str) -> String {
     if let Some(value) = note.strip_prefix("strong_storm_candy_crystal_bonus:") {
         return format!("强风暴糖晶加成 +{value}");
@@ -9560,6 +9615,7 @@ impl RuntimeMetricsReport {
             xp_collected: metrics.xp_collected,
             xp_dropped: metrics.xp_dropped,
             damage_dealt_by_weapon: metrics.damage_dealt_by_weapon,
+            damage_dealt_by_weapon_id: metrics.damage_dealt_by_weapon_id.clone(),
             damage_taken: metrics.damage_taken,
             max_enemy_count: metrics.max_enemy_count,
             max_projectile_count: metrics.max_projectile_count,
@@ -12877,6 +12933,10 @@ mod tests {
             level: 5,
             xp_collected: 210.0,
             damage_dealt_by_weapon: 900.0,
+            damage_dealt_by_weapon_id: BTreeMap::from([
+                ("rainbow-candy-shot".to_string(), 600.0),
+                ("rainbow-candy-meteor".to_string(), 300.0),
+            ]),
             damage_taken: 12.5,
             damage_taken_by_source: BTreeMap::from([
                 ("contact".to_string(), 9.0),
@@ -12931,6 +12991,7 @@ mod tests {
         assert!(panel.contains("击杀 95"));
         assert!(panel.contains("XP 210"));
         assert!(panel.contains("输出 900"));
+        assert!(panel.contains("武器伤害占比 彩虹糖弹 600 (67%), 彩虹糖流星雨 300 (33%)"));
         assert!(panel.contains("受伤 12.5"));
         assert!(panel.contains("接触 9.0"));
         assert!(panel.contains("关键事件 30s 升到 Lv.2 | 180s Boss 出现 暴走搅糖机"));
@@ -12964,6 +13025,7 @@ mod tests {
             level: 6,
             xp_collected: 210.0,
             damage_dealt_by_weapon: 1_100.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 6.0,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 6.0)]),
             boss_damage: 300.0,
@@ -13011,6 +13073,7 @@ mod tests {
             level: 8,
             xp_collected: 220.0,
             damage_dealt_by_weapon: 1_800.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 4.0,
             damage_taken_by_source: Default::default(),
             boss_damage: 450.0,
@@ -13120,6 +13183,7 @@ mod tests {
             level: 1,
             xp_collected: 0.0,
             damage_dealt_by_weapon: 100.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 12.0,
             damage_taken_by_source: Default::default(),
             boss_damage: 0.0,
@@ -13168,6 +13232,7 @@ mod tests {
             level: 1,
             xp_collected: 0.0,
             damage_dealt_by_weapon: 100.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 12.0,
             damage_taken_by_source: Default::default(),
             boss_damage: 0.0,
@@ -13267,6 +13332,7 @@ mod tests {
             level: 5,
             xp_collected: 210.0,
             damage_dealt_by_weapon: 1_200.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 4.0,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 4.0)]),
             boss_damage: 300.0,
@@ -13400,6 +13466,7 @@ mod tests {
             level: 5,
             xp_collected: 210.0,
             damage_dealt_by_weapon: 900.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 12.5,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 12.5)]),
             boss_damage: 0.0,
@@ -13449,6 +13516,7 @@ mod tests {
             level: 2,
             xp_collected: 12.0,
             damage_dealt_by_weapon: 40.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 2.0,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 2.0)]),
             boss_damage: 0.0,
@@ -14290,6 +14358,7 @@ mod tests {
             level: 4,
             xp_collected: 80.0,
             damage_dealt_by_weapon: 900.0,
+            damage_dealt_by_weapon_id: Default::default(),
             damage_taken: 2.0,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 2.0)]),
             boss_damage: 0.0,

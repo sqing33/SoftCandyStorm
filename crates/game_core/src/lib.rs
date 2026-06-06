@@ -381,6 +381,7 @@ pub struct RunMetrics {
     pub xp_collected: f32,
     pub xp_dropped: f32,
     pub damage_dealt_by_weapon: f32,
+    pub damage_dealt_by_weapon_id: BTreeMap<String, f32>,
     pub damage_taken: f32,
     pub damage_taken_by_source: BTreeMap<String, f32>,
     pub weapon_levels: BTreeMap<String, u32>,
@@ -599,6 +600,7 @@ impl GameCore {
                 xp_collected: 0.0,
                 xp_dropped: 0.0,
                 damage_dealt_by_weapon: 0.0,
+                damage_dealt_by_weapon_id: BTreeMap::new(),
                 damage_taken: 0.0,
                 damage_taken_by_source: BTreeMap::new(),
                 weapon_levels: BTreeMap::new(),
@@ -1826,10 +1828,12 @@ impl GameCore {
                             let damage = projectile.damage
                                 * projectile.damage_multiplier_against(enemy, player_position);
                             enemy.health -= damage;
-                            self.metrics.damage_dealt_by_weapon += damage;
-                            if enemy.is_boss {
-                                self.metrics.boss_damage += damage;
-                            }
+                            record_weapon_damage(
+                                &mut self.metrics,
+                                &projectile.weapon_id,
+                                damage,
+                                enemy.is_boss,
+                            );
                             enemy.apply_slow(
                                 projectile.enemy_slow_multiplier,
                                 projectile.enemy_slow_duration_seconds,
@@ -1903,10 +1907,12 @@ impl GameCore {
                             * enemy
                                 .projectile_damage_multiplier(projectile.position, player_position);
                         enemy.health -= damage;
-                        self.metrics.damage_dealt_by_weapon += damage;
-                        if enemy.is_boss {
-                            self.metrics.boss_damage += damage;
-                        }
+                        record_weapon_damage(
+                            &mut self.metrics,
+                            &projectile.weapon_id,
+                            damage,
+                            enemy.is_boss,
+                        );
                         enemy.apply_slow(
                             projectile.enemy_slow_multiplier,
                             projectile.enemy_slow_duration_seconds,
@@ -1976,10 +1982,12 @@ impl GameCore {
                 let damage = projectile.beam_damage_per_tick
                     * enemy.projectile_damage_multiplier(player_position, player_position);
                 enemy.health -= damage;
-                self.metrics.damage_dealt_by_weapon += damage;
-                if enemy.is_boss {
-                    self.metrics.boss_damage += damage;
-                }
+                record_weapon_damage(
+                    &mut self.metrics,
+                    &projectile.weapon_id,
+                    damage,
+                    enemy.is_boss,
+                );
                 enemy.apply_slow(
                     projectile.enemy_slow_multiplier,
                     projectile.enemy_slow_duration_seconds,
@@ -2065,10 +2073,12 @@ impl GameCore {
                     let damage = projectile.damage
                         * projectile.damage_multiplier_against(enemy, player_position);
                     enemy.health -= damage;
-                    self.metrics.damage_dealt_by_weapon += damage;
-                    if enemy.is_boss {
-                        self.metrics.boss_damage += damage;
-                    }
+                    record_weapon_damage(
+                        &mut self.metrics,
+                        &projectile.weapon_id,
+                        damage,
+                        enemy.is_boss,
+                    );
                     enemy.apply_slow(
                         projectile.enemy_slow_multiplier,
                         projectile.enemy_slow_duration_seconds,
@@ -2129,10 +2139,12 @@ impl GameCore {
                     let damage = detonation.damage
                         * enemy.projectile_damage_multiplier(detonation.position, player_position);
                     enemy.health -= damage;
-                    self.metrics.damage_dealt_by_weapon += damage;
-                    if enemy.is_boss {
-                        self.metrics.boss_damage += damage;
-                    }
+                    record_weapon_damage(
+                        &mut self.metrics,
+                        &detonation.weapon_id,
+                        damage,
+                        enemy.is_boss,
+                    );
                     enemy.apply_slow(
                         detonation.enemy_slow_multiplier,
                         detonation.enemy_slow_duration_seconds,
@@ -3000,6 +3012,20 @@ fn bubble_bounces_for_weapon(weapon_tags: &[String]) -> u32 {
         BUBBLE_WEAPON_BOUNCES
     } else {
         0
+    }
+}
+
+fn record_weapon_damage(metrics: &mut RunMetrics, weapon_id: &str, damage: f32, is_boss: bool) {
+    if damage <= 0.0 {
+        return;
+    }
+    metrics.damage_dealt_by_weapon += damage;
+    *metrics
+        .damage_dealt_by_weapon_id
+        .entry(weapon_id.to_string())
+        .or_default() += damage;
+    if is_boss {
+        metrics.boss_damage += damage;
     }
 }
 

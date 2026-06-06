@@ -305,6 +305,7 @@ RunMetrics 字段：
 - `level`
 - `score`
 - `damage_dealt_by_weapon`
+- `damage_dealt_by_weapon_id`
 - `damage_taken_by_source`
 - `xp_collected`
 - `xp_dropped`

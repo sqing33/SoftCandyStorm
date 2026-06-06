@@ -6,7 +6,7 @@ use game_core::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::io::{self, BufRead, BufWriter, Write};
@@ -594,6 +594,8 @@ struct ReplayFinalMetrics {
     xp_dropped: f32,
     damage_taken: f32,
     damage_dealt_by_weapon: f32,
+    #[serde(default)]
+    damage_dealt_by_weapon_id: BTreeMap<String, f32>,
     max_enemy_count: usize,
     max_projectile_count: usize,
     upgrade_choices: Vec<String>,
@@ -2096,6 +2098,11 @@ fn print_metrics_json(metrics: &RunMetrics, bot: BotKind, map_id: &str) {
     println!(
         "  \"damage_dealt_by_weapon\": {:.3},",
         metrics.damage_dealt_by_weapon
+    );
+    println!(
+        "  \"damage_dealt_by_weapon_id\": {},",
+        serde_json::to_string(&metrics.damage_dealt_by_weapon_id)
+            .unwrap_or_else(|_| "{}".to_string())
     );
     println!("  \"damage_taken\": {:.3},", metrics.damage_taken);
     println!("  \"max_enemy_count\": {},", metrics.max_enemy_count);
@@ -4639,6 +4646,7 @@ impl ReplayFinalMetrics {
             xp_dropped: metrics.xp_dropped,
             damage_taken: metrics.damage_taken,
             damage_dealt_by_weapon: metrics.damage_dealt_by_weapon,
+            damage_dealt_by_weapon_id: metrics.damage_dealt_by_weapon_id.clone(),
             max_enemy_count: metrics.max_enemy_count,
             max_projectile_count: metrics.max_projectile_count,
             upgrade_choices: metrics.upgrade_choices.clone(),

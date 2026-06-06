@@ -302,6 +302,8 @@ pub struct MetaRunSummary {
     pub level: u32,
     pub xp_collected: f32,
     pub damage_dealt_by_weapon: f32,
+    #[serde(default)]
+    pub damage_dealt_by_weapon_id: BTreeMap<String, f32>,
     pub damage_taken: f32,
     pub damage_taken_by_source: BTreeMap<String, f32>,
     pub boss_damage: f32,
@@ -348,6 +350,7 @@ impl MetaRunSummary {
             level: metrics.level,
             xp_collected: metrics.xp_collected,
             damage_dealt_by_weapon: metrics.damage_dealt_by_weapon,
+            damage_dealt_by_weapon_id: metrics.damage_dealt_by_weapon_id.clone(),
             damage_taken: metrics.damage_taken,
             damage_taken_by_source: metrics.damage_taken_by_source.clone(),
             boss_damage: metrics.boss_damage,
@@ -837,6 +840,7 @@ mod tests {
             level: 4,
             xp_collected: 80.0,
             damage_dealt_by_weapon: 320.0,
+            damage_dealt_by_weapon_id: BTreeMap::new(),
             damage_taken: 18.5,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 18.5)]),
             boss_damage: 0.0,
@@ -1192,6 +1196,10 @@ mod tests {
             xp_collected: 150.0,
             xp_dropped: 180.0,
             damage_dealt_by_weapon: 1_000.0,
+            damage_dealt_by_weapon_id: BTreeMap::from([
+                ("rainbow-candy-shot".to_string(), 700.0),
+                ("rainbow-candy-meteor".to_string(), 300.0),
+            ]),
             damage_taken: 10.0,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 10.0)]),
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 5)]),
@@ -1211,6 +1219,10 @@ mod tests {
         assert!(summary.victory);
         assert_eq!(summary.weapon_levels["rainbow-candy-shot"], 5);
         assert_eq!(summary.damage_dealt_by_weapon, 1_000.0);
+        assert_eq!(
+            summary.damage_dealt_by_weapon_id["rainbow-candy-shot"],
+            700.0
+        );
         assert_eq!(summary.damage_taken, 10.0);
         assert_eq!(summary.damage_taken_by_source["contact"], 10.0);
         assert_eq!(summary.boss_damage, 250.0);
@@ -1254,6 +1266,10 @@ mod tests {
             xp_collected: 220.0,
             xp_dropped: 30.0,
             damage_dealt_by_weapon: 1_500.0,
+            damage_dealt_by_weapon_id: BTreeMap::from([(
+                "rainbow-candy-meteor".to_string(),
+                1_500.0,
+            )]),
             damage_taken: 3.0,
             damage_taken_by_source: BTreeMap::new(),
             weapon_levels: BTreeMap::from([("rainbow-candy-meteor".to_string(), 1)]),
@@ -1309,6 +1325,7 @@ mod tests {
             xp_collected: 90.0,
             xp_dropped: 100.0,
             damage_dealt_by_weapon: 400.0,
+            damage_dealt_by_weapon_id: BTreeMap::from([("rainbow-candy-shot".to_string(), 400.0)]),
             damage_taken: 8.0,
             damage_taken_by_source: BTreeMap::from([("hazard".to_string(), 8.0)]),
             weapon_levels: BTreeMap::new(),
