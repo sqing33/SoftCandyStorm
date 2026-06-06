@@ -2659,6 +2659,28 @@ fn format_runtime_hud_chapter_goal_progress(
             runtime_weapon_label(content, "rainbow-candy-shot"),
             build_item_level(&snapshot.build.weapons, "rainbow-candy-shot").min(5),
         ),
+        _ if goal_id.starts_with("evolve-") => {
+            let evolution_id = goal_id.trim_start_matches("evolve-");
+            if snapshot
+                .build
+                .evolutions
+                .iter()
+                .any(|item| item.id == evolution_id)
+            {
+                return "已完成".to_string();
+            }
+            content
+                .evolutions
+                .get(evolution_id)
+                .map(|evolution| {
+                    format!(
+                        "{}，{}",
+                        format_evolution_requirement_progress(evolution, content, &snapshot.build),
+                        runtime_evolution_trigger_label(&evolution.requirements.trigger),
+                    )
+                })
+                .unwrap_or_else(|| "局后结算确认".to_string())
+        }
         _ if goal_id.starts_with("defeat-") => {
             format_runtime_hud_boss_goal_progress(chapter, snapshot, content)
         }
@@ -5193,6 +5215,13 @@ fn runtime_chapter_goal_entries(
             "rainbow-candy-shot-level-5".to_string(),
             "把彩虹糖弹升到 5 级".to_string(),
             "奖励 星片 +1；强化彩虹糖弹构筑路线".to_string(),
+        ));
+    }
+    if let Some(evolution_id) = game_core::meta::chapter_target_evolution_id(chapter_id) {
+        goals.push((
+            format!("evolve-{evolution_id}"),
+            format!("完成{}进化", runtime_evolution_label(content, evolution_id)),
+            "奖励 星片 +1；完成本章构筑挑战".to_string(),
         ));
     }
     goals
@@ -9744,7 +9773,7 @@ mod tests {
             &state.content,
         );
 
-        assert!(status.contains("章节目标 0/4 标准巡逻坚持 10 分钟"));
+        assert!(status.contains("章节目标 0/5 标准巡逻坚持 10 分钟"));
         assert!(status.contains("0/600s"));
         assert!(status.contains("奖励 星片 +1"));
     }
@@ -9763,7 +9792,7 @@ mod tests {
         snapshot.time_seconds = 120.0;
         let status = format_runtime_hud_chapter_objective(&progress, &snapshot, &state.content);
 
-        assert!(status.contains("章节目标 1/4 击败暴走搅糖机"));
+        assert!(status.contains("章节目标 1/5 击败暴走搅糖机"));
         assert!(status.contains("暴走搅糖机 210s 出现，还差 90s"));
     }
 
@@ -9782,8 +9811,38 @@ mod tests {
         snapshot.metrics_partial.xp_collected = 94.0;
         let status = format_runtime_hud_chapter_objective(&progress, &snapshot, &state.content);
 
-        assert!(status.contains("章节目标 2/4 收集 200 糖晶经验"));
+        assert!(status.contains("章节目标 2/5 收集 200 糖晶经验"));
         assert!(status.contains("94/200 糖晶"));
+    }
+
+    #[test]
+    fn hud_chapter_objective_tracks_evolution_goal_progress() {
+        let state = runtime_state_for_tests();
+        let mut progress = state.meta_progress.clone();
+        let chapter = progress.chapters.get_mut("frosting-grassland").unwrap();
+        for goal_id in [
+            "survive-10-minutes",
+            "defeat-runaway-sugar-mixer",
+            "collect-200-candy-crystals",
+            "rainbow-candy-shot-level-5",
+        ] {
+            chapter.completed_goals.insert(goal_id.to_string());
+        }
+        let mut snapshot = state.latest_snapshot.clone();
+        snapshot.build.weapons = vec![BuildItemSnapshot {
+            id: "rainbow-candy-shot".to_string(),
+            level: 3,
+        }];
+        snapshot.build.passives = vec![BuildItemSnapshot {
+            id: "candy-crystal-lens".to_string(),
+            level: 1,
+        }];
+        snapshot.build.open_evolution_paths = vec!["rainbow-candy-meteor".to_string()];
+
+        let status = format_runtime_hud_chapter_objective(&progress, &snapshot, &state.content);
+
+        assert!(status.contains("章节目标 4/5 完成彩虹糖流星雨进化"));
+        assert!(status.contains("彩虹糖弹 3/5 + 糖晶放大镜 1/3，Boss 宝箱触发"));
     }
 
     #[test]
@@ -10404,7 +10463,7 @@ mod tests {
         assert!(panel.contains("可抽构筑池 武器 12  被动 8  进化配方 10"));
         assert!(panel.contains("地图 糖霜草地(frosting-grassland)"));
         assert!(panel.contains(
-            "章节进度 未完成 4 项；糖霜草地 下一目标 标准巡逻坚持 10 分钟（奖励 星片 +1）"
+            "章节进度 未完成 5 项；糖霜草地 下一目标 标准巡逻坚持 10 分钟（奖励 星片 +1）"
         ));
         assert!(!panel.contains("survive-10-minutes - 标准巡逻坚持 10 分钟"));
         assert!(panel.contains("巡逻中：结算会在本局结束后更新"));
@@ -11189,7 +11248,7 @@ mod tests {
         assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
-        assert!(panel.contains("锁定目标预览 0/3  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
+        assert!(panel.contains("锁定目标预览 0/4  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
         assert!(panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
@@ -11245,7 +11304,7 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("本图目标 1/4"));
+        assert!(panel.contains("本图目标 1/5"));
         assert!(panel.contains(
             "下一项 击败暴走搅糖机 -> 奖励 星片 +1；解锁 棉花糖护盾、泡泡邮差；集齐 2 星片开放 汽水溪谷"
         ));
@@ -11302,7 +11361,7 @@ mod tests {
         assert!(panel.contains("地图机制 无固定地形伤害"));
         assert!(panel
             .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"));
-        assert!(panel.contains("本图目标 0/4  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
+        assert!(panel.contains("本图目标 0/5  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
         assert!(!panel.contains("还有"));
     }
 

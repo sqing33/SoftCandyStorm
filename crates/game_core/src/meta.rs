@@ -207,17 +207,15 @@ impl MetaRunSummary {
         metrics: &RunMetrics,
     ) -> Self {
         let mut weapon_levels = metrics.weapon_levels.clone();
-        if weapon_levels.is_empty() {
-            for weapon_id in &config.starting_loadout.weapons {
-                weapon_levels.insert(weapon_id.clone(), 1);
-            }
-            for choice in &metrics.upgrade_choices {
-                if let Some((weapon_id, level)) = parse_weapon_level_choice(choice) {
-                    weapon_levels
-                        .entry(weapon_id)
-                        .and_modify(|current| *current = (*current).max(level))
-                        .or_insert(level);
-                }
+        for weapon_id in &config.starting_loadout.weapons {
+            weapon_levels.entry(weapon_id.clone()).or_insert(1);
+        }
+        for choice in &metrics.upgrade_choices {
+            if let Some((weapon_id, level)) = parse_weapon_level_choice(choice) {
+                weapon_levels
+                    .entry(weapon_id)
+                    .and_modify(|current| *current = (*current).max(level))
+                    .or_insert(level);
             }
         }
         let passives_used = metrics.passive_levels.keys().cloned().collect();
@@ -351,6 +349,16 @@ fn apply_chapter_goals(
             &mut earned_star_shards,
         );
     }
+    if let Some(evolution_id) = chapter_target_evolution_id(chapter_id) {
+        complete_goal(
+            progress,
+            report,
+            chapter_id,
+            &format!("evolve-{evolution_id}"),
+            summary.evolutions_used.contains(evolution_id),
+            &mut earned_star_shards,
+        );
+    }
 
     if earned_star_shards > 0 {
         progress.resources.star_shards += earned_star_shards;
@@ -422,6 +430,18 @@ fn chapter_character_unlock(chapter_id: &str) -> Option<&'static str> {
         "soda-creek" => Some("cream-knight"),
         "cotton-cloud-pasture" => Some("sour-plum-doctor"),
         "caramel-workshop" => Some("pudding-crafter"),
+        _ => None,
+    }
+}
+
+pub fn chapter_target_evolution_id(chapter_id: &str) -> Option<&'static str> {
+    match chapter_id {
+        "frosting-grassland" => Some("rainbow-candy-meteor"),
+        "soda-creek" => Some("soda-volcano"),
+        "cotton-cloud-pasture" => Some("marshmallow-fortress"),
+        "caramel-workshop" => Some("caramel-vortex"),
+        "jelly-platform" => Some("sugar-windmill"),
+        "cracked-star-jar" => Some("star-sugar-prism"),
         _ => None,
     }
 }
@@ -704,6 +724,23 @@ mod tests {
     }
 
     #[test]
+    fn chapter_evolution_goal_completes_from_run_summary() {
+        let mut summary = base_summary();
+        summary
+            .evolutions_used
+            .insert("rainbow-candy-meteor".to_string());
+        let mut progress = MetaProgress::demo_start();
+        let report = progress.apply_run_summary(&summary);
+
+        assert!(report
+            .completed_goals
+            .contains(&"frosting-grassland:evolve-rainbow-candy-meteor".to_string()));
+        assert!(progress.chapters["frosting-grassland"]
+            .completed_goals
+            .contains("evolve-rainbow-candy-meteor"));
+    }
+
+    #[test]
     fn chapter_boss_and_star_shards_unlock_next_map() {
         let mut summary = base_summary();
         summary.run_id = "run_002".to_string();
@@ -867,6 +904,59 @@ mod tests {
         assert!(summary.evolutions_used.contains("rainbow-candy-meteor"));
         assert_eq!(summary.enemies_defeated.get("bouncy-gummy"), Some(&7));
         assert!(summary.bosses_defeated.contains("runaway-sugar-mixer"));
+    }
+
+    #[test]
+    fn run_metrics_summary_preserves_replaced_weapon_level_history() {
+        let config = RunConfig {
+            seed: 7,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            starting_loadout: StartingLoadout {
+                weapons: vec!["rainbow-candy-shot".to_string()],
+                passives: Vec::new(),
+            },
+            difficulty: Difficulty::Normal,
+            duration_seconds: 600.0,
+            ruleset_version: "prototype-v0".to_string(),
+            content_pack_ids: vec!["base-demo".to_string()],
+            tick_rate: 30,
+        };
+        let metrics = RunMetrics {
+            seed: 7,
+            tick_rate: 30,
+            duration_seconds: 600.0,
+            terminal: Some(TerminalState {
+                kind: TerminalKind::Victory,
+                time_seconds: 600.0,
+                reason: "duration_reached".to_string(),
+                final_level: 8,
+                kills: 160,
+            }),
+            kills: 160,
+            level: 8,
+            xp_collected: 220.0,
+            xp_dropped: 30.0,
+            damage_dealt_by_weapon: 1_500.0,
+            damage_taken: 3.0,
+            damage_taken_by_source: BTreeMap::new(),
+            weapon_levels: BTreeMap::from([("rainbow-candy-meteor".to_string(), 1)]),
+            passive_levels: BTreeMap::from([("candy-crystal-lens".to_string(), 3)]),
+            evolutions_obtained: BTreeSet::from(["rainbow-candy-meteor".to_string()]),
+            boss_damage: 400.0,
+            boss_kill_times: vec![210.0],
+            enemies_defeated: BTreeMap::new(),
+            bosses_defeated: BTreeSet::new(),
+            max_enemy_count: 20,
+            max_projectile_count: 12,
+            upgrade_choices: vec!["rainbow-candy-shot-level-5".to_string()],
+        };
+
+        let summary = MetaRunSummary::from_metrics("run_evolved", &config, &metrics);
+
+        assert_eq!(summary.weapon_levels["rainbow-candy-shot"], 5);
+        assert_eq!(summary.weapon_levels["rainbow-candy-meteor"], 1);
+        assert!(summary.evolutions_used.contains("rainbow-candy-meteor"));
     }
 
     #[test]
