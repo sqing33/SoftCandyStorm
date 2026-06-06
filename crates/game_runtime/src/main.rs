@@ -2126,11 +2126,15 @@ fn format_upgrade_tags(tags: &[String]) -> String {
 fn runtime_tag_label(tag: &str) -> String {
     match tag {
         "aoe" | "area" => "范围",
+        "area-control" => "范围控制",
+        "advanced" => "高级",
         "auto-fire" => "自动",
+        "balanced" => "均衡",
         "beam" => "光束",
         "beginner" => "新手",
         "boomerang" => "回旋",
         "boss-killer" => "Boss",
+        "boss-safe" => "稳打 Boss",
         "bubble" => "泡泡",
         "burst" => "爆发",
         "close" => "近身",
@@ -2142,6 +2146,7 @@ fn runtime_tag_label(tag: &str) -> String {
         "economy" => "经济",
         "evolution" => "进化",
         "health" => "生命",
+        "intermediate" => "进阶",
         "knockback" => "击退",
         "mobility" => "机动",
         "orbit" => "环绕",
@@ -5719,6 +5724,7 @@ fn render_meta_loadout_panel(
             LOADOUT_UNLOCKED_CHARACTER_LABEL_LIMIT,
         ),
     ));
+    lines.push(format_runtime_character_roster_status(progress, content));
     lines.push(format!(
         "已解锁地图 {}",
         format_runtime_unlocked_labels(
@@ -6591,6 +6597,58 @@ fn format_runtime_unlocked_labels(
         labels.push(format!("还有 {} 项", ids.len() - limit));
     }
     labels.join(", ")
+}
+
+fn format_runtime_character_roster_status(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> String {
+    let mut unlocked = Vec::new();
+    let mut locked = Vec::new();
+    for (character_id, character) in &content.characters {
+        if progress.unlocks.characters.contains(character_id) {
+            unlocked.push(format_runtime_character_roster_entry(character));
+        } else {
+            locked.push(format!(
+                "{}: {}",
+                runtime_character_label(content, character_id),
+                format_runtime_character_unlock_short(character_id, content),
+            ));
+        }
+    }
+
+    let locked_text = if locked.is_empty() {
+        "已全部开放".to_string()
+    } else {
+        format_string_items(&locked, locked.len())
+    };
+    format!(
+        "角色路线 已解锁 {}  待解锁 {}",
+        format_string_items(&unlocked, unlocked.len()),
+        locked_text,
+    )
+}
+
+fn format_runtime_character_roster_entry(character: &CharacterDefinition) -> String {
+    let tags = character
+        .tags
+        .iter()
+        .take(2)
+        .map(|tag| runtime_tag_label(tag))
+        .collect::<Vec<_>>();
+    format!("{}({})", character.name, tags.join("/"))
+}
+
+fn format_runtime_character_unlock_short(character_id: &str, content: &ContentPack) -> String {
+    let Some(chapter_id) = runtime_chapter_for_character_unlock(character_id) else {
+        return "后续章节或基地解锁".to_string();
+    };
+    let boss_id = runtime_chapter_boss_id(chapter_id).unwrap_or(chapter_id);
+    format!(
+        "击败{} Boss {}",
+        chapter_label(content, chapter_id),
+        runtime_boss_label(content, boss_id),
+    )
 }
 
 fn meta_codex_discovered_count(progress: &MetaProgress) -> usize {
@@ -14685,6 +14743,8 @@ mod tests {
         assert!(panel.contains("P/手柄确认 切换开局被动"));
         assert!(panel.contains("G/手柄上按钮 推荐章节构筑"));
         assert!(panel.contains("右下点击区: 角色  地图  模式  武器  被动  推荐"));
+        assert!(panel.contains("角色路线 已解锁 泡泡邮差(机动/拾取), 糖罐守护员(均衡/新手)"));
+        assert!(panel.contains("待解锁 奶油骑士: 击败汽水溪谷 Boss 汽水喷泉龙"));
         assert!(panel.contains("可选开局武器"));
         assert!(panel.contains("可选开局被动"));
     }
@@ -14860,6 +14920,8 @@ mod tests {
         assert!(panel
             .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"));
         assert!(panel.contains("本图目标 0/5  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
+        assert!(panel.contains("角色路线 已解锁 泡泡邮差(机动/拾取), 奶油骑士(防御/新手), 糖罐守护员(均衡/新手), 布丁工匠(召唤/范围控制), 酸梅博士(控制/稳打 Boss)"));
+        assert!(panel.contains("待解锁 已全部开放"));
         assert!(!panel.contains("还有"));
     }
 
