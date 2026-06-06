@@ -4822,7 +4822,7 @@ fn select_next_runtime_character(state: &mut RuntimeState) -> std::io::Result<St
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
     let label = runtime_character_label(&state.content, &next_id);
-    Ok(format!("已选择角色 {label} ({next_id})，重新开始巡逻"))
+    Ok(format!("已选择角色 {label}，重新开始巡逻"))
 }
 
 fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> {
@@ -4840,7 +4840,7 @@ fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> 
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
     let label = runtime_map_label(&state.content, &next_id);
-    Ok(format!("已选择地图 {label} ({next_id})，重新开始巡逻"))
+    Ok(format!("已选择地图 {label}，重新开始巡逻"))
 }
 
 fn select_next_runtime_run_mode(state: &mut RuntimeState) -> std::io::Result<String> {
@@ -5150,7 +5150,7 @@ fn apply_runtime_chapter_action(
             state.base_ui_state.last_selected_chapter_id = next_id.clone();
             persist_runtime_save_if_configured(state)?;
             Ok(format!(
-                "已选择章节 {} ({next_id})",
+                "已选择章节 {}",
                 chapter_label(&state.content, &next_id),
             ))
         }
@@ -5191,7 +5191,7 @@ fn apply_runtime_chapter_action(
             persist_runtime_save_if_configured(state)?;
             let label = runtime_map_label(&state.content, &state.config.map_id);
             Ok(format!(
-                "已开始章节挑战 {} ({selected_id})，地图 {label}，模式 {}",
+                "已开始章节挑战 {}，地图 {label}，模式 {}",
                 chapter_label(&state.content, &selected_id),
                 runtime_run_mode_label(state.run_mode)
             ))
@@ -13607,6 +13607,11 @@ mod tests {
     fn runtime_chapter_action_starts_only_unlocked_chapters() {
         let mut state = runtime_state_for_tests();
 
+        let selection_message =
+            apply_runtime_chapter_action(&mut state, RuntimeChapterAction::Next).unwrap();
+        assert!(selection_message.contains("已选择章节"));
+        assert!(!selection_message.contains('('));
+
         state.base_ui_state.last_selected_chapter_id = "soda-creek".to_string();
         let locked_error =
             apply_runtime_chapter_action(&mut state, RuntimeChapterAction::StartSelectedChapter)
@@ -13621,7 +13626,8 @@ mod tests {
             apply_runtime_chapter_action(&mut state, RuntimeChapterAction::StartSelectedChapter)
                 .unwrap();
 
-        assert!(message.contains("已开始章节挑战 糖霜草地 (frosting-grassland)"));
+        assert!(message.contains("已开始章节挑战 糖霜草地"));
+        assert!(!message.contains("糖霜草地 (frosting-grassland)"));
         assert!(message.contains("章节挑战"));
         assert_eq!(state.config.map_id, "frosting-grassland");
         assert_eq!(state.run_mode, RunMode::ChapterChallenge);
@@ -13657,11 +13663,13 @@ mod tests {
             .insert("soda-creek".to_string());
 
         let character_message = select_next_runtime_character(&mut state).unwrap();
-        assert!(character_message.contains("已选择角色 泡泡邮差 (bubble-courier)"));
+        assert!(character_message.contains("已选择角色 泡泡邮差"));
+        assert!(!character_message.contains("泡泡邮差 (bubble-courier)"));
         assert!(character_message.contains("重新开始巡逻"));
 
         let map_message = select_next_runtime_map(&mut state).unwrap();
-        assert!(map_message.contains("已选择地图 汽水溪谷 (soda-creek)"));
+        assert!(map_message.contains("已选择地图 汽水溪谷"));
+        assert!(!map_message.contains("汽水溪谷 (soda-creek)"));
         assert!(map_message.contains("重新开始巡逻"));
         assert_eq!(state.run_number, 3);
     }
