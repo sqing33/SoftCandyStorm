@@ -5290,7 +5290,11 @@ fn render_meta_overview_panel(
     let discovered = meta_codex_discovered_count(progress);
     let completed_goals = meta_completed_goal_count(progress);
     let unlocked_content = meta_unlocked_content_count(progress);
-    let maps = format_string_set(&progress.unlocks.maps, 3);
+    let maps = format_runtime_unlocked_labels(
+        &runtime_unlocked_map_ids(progress, content),
+        |id| runtime_map_label(content, id),
+        3,
+    );
     let next_action = format_meta_overview_next_action(progress, settlement, content);
     let unlock_summary = format_meta_overview_unlock_summary(progress, content);
     let chapter_summary = format_meta_overview_chapter_summary(progress, content);
@@ -7350,7 +7354,7 @@ fn format_runtime_unlocked_labels(
     let mut labels = ids
         .iter()
         .take(limit)
-        .map(|id| format!("{}({})", label_for_id(id), id))
+        .map(|id| label_for_id(id))
         .collect::<Vec<_>>();
     if ids.len() > limit {
         labels.push(format!("还有 {} 项", ids.len() - limit));
@@ -9082,11 +9086,6 @@ fn meta_unlocked_content_count(progress: &MetaProgress) -> usize {
         + progress.unlocks.cosmetics.len()
 }
 
-fn format_string_set(values: &std::collections::BTreeSet<String>, limit: usize) -> String {
-    let items = values.iter().cloned().collect::<Vec<_>>();
-    format_string_items(&items, limit)
-}
-
 fn format_string_slice(values: &[String], limit: usize) -> String {
     format_string_items(values, limit)
 }
@@ -9122,13 +9121,13 @@ fn format_meta_unlocks(
 
 fn format_meta_unlock_label(kind: &str, id: &str, content: &ContentPack) -> String {
     match kind {
-        "character" => format!("角色 {} ({id})", runtime_character_label(content, id)),
-        "weapon" => format!("武器 {} ({id})", runtime_weapon_label(content, id)),
-        "passive" => format!("被动 {} ({id})", runtime_passive_label(content, id)),
-        "map" => format!("地图 {} ({id})", runtime_map_label(content, id)),
-        "chapter" => format!("章节 {} ({id})", chapter_label(content, id)),
-        "evolution" => format!("进化 {} ({id})", runtime_evolution_label(content, id)),
-        "event" => format!("事件 {} ({id})", runtime_event_label(content, id)),
+        "character" => format!("角色 {}", runtime_character_label(content, id)),
+        "weapon" => format!("武器 {}", runtime_weapon_label(content, id)),
+        "passive" => format!("被动 {}", runtime_passive_label(content, id)),
+        "map" => format!("地图 {}", runtime_map_label(content, id)),
+        "chapter" => format!("章节 {}", chapter_label(content, id)),
+        "evolution" => format!("进化 {}", runtime_evolution_label(content, id)),
+        "event" => format!("事件 {}", runtime_event_label(content, id)),
         _ => format!("{kind}:{id}"),
     }
 }
@@ -15115,9 +15114,12 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("角色 泡泡邮差 (bubble-courier)"));
-        assert!(panel.contains("地图 汽水溪谷 (soda-creek)"));
-        assert!(panel.contains("章节 汽水溪谷 (soda-creek)"));
+        assert!(panel.contains("角色 泡泡邮差"));
+        assert!(panel.contains("地图 汽水溪谷"));
+        assert!(panel.contains("章节 汽水溪谷"));
+        assert!(!panel.contains("角色 泡泡邮差 (bubble-courier)"));
+        assert!(!panel.contains("地图 汽水溪谷 (soda-creek)"));
+        assert!(!panel.contains("章节 汽水溪谷 (soda-creek)"));
         assert!(panel.contains("Boss 结果 已击败 暴走搅糖机"));
         assert!(!panel.contains("weapon:marshmallow-shield"));
     }
@@ -15146,8 +15148,9 @@ mod tests {
         assert!(panel.contains("糖罐星修复 0/25 (0%)  下一片 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(panel.contains("解锁概览 角色"));
         assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
-        assert!(panel.contains("构筑进阶 下一构筑 被动 星星勺子 (star-spoon)  排队待解锁"));
-        assert!(panel.contains("地图 糖霜草地(frosting-grassland)"));
+        assert!(panel.contains("构筑进阶 下一构筑 被动 星星勺子  排队待解锁"));
+        assert!(panel.contains("地图 糖霜草地"));
+        assert!(!panel.contains("地图 糖霜草地(frosting-grassland)"));
         assert!(panel.contains(
             "章节进度 未完成 5 项；糖霜草地 下一目标 标准巡逻坚持 10 分钟（奖励 星片 +1）"
         ));
@@ -15175,7 +15178,8 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("基地解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("基地解锁 角色 泡泡邮差"));
+        assert!(!panel.contains("基地解锁 角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("费用 60 糖晶碎片"));
         assert!(panel.contains("可购买"));
         assert!(panel.contains("按 U 解锁"));
@@ -15226,8 +15230,9 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("下一步行动 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
-        assert!(panel.contains("下一步 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("下一步行动 F1 按 U 解锁 角色 泡泡邮差"));
+        assert!(panel.contains("下一步 F1 按 U 解锁 角色 泡泡邮差"));
+        assert!(!panel.contains("下一步行动 F1 按 U 解锁 角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(panel.contains("目标进化 彩虹糖流星雨 需 彩虹糖弹 + 糖晶放大镜"));
         assert!(panel.contains("F5 按 G 推荐构筑"));
@@ -15275,8 +15280,9 @@ mod tests {
             ),
         );
 
-        assert!(panel.contains("下一步行动 还差 50 糖晶碎片 可解锁 角色 泡泡邮差 (bubble-courier)"));
-        assert!(panel.contains("下一步 还差 50 糖晶碎片 可解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("下一步行动 还差 50 糖晶碎片 可解锁 角色 泡泡邮差"));
+        assert!(panel.contains("下一步 还差 50 糖晶碎片 可解锁 角色 泡泡邮差"));
+        assert!(!panel.contains("可解锁 角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(panel.contains("目标进化 彩虹糖流星雨 需 彩虹糖弹 + 糖晶放大镜"));
         assert!(panel.contains("F5 按 G 推荐构筑"));
@@ -15321,7 +15327,8 @@ mod tests {
         state.meta_progress.resources.candy_crystal_shards = 70;
 
         let overview = format_meta_shop_offer_line(&state.meta_progress, &state.content);
-        assert!(overview.contains("被动 星星勺子 (star-spoon)"));
+        assert!(overview.contains("被动 星星勺子"));
+        assert!(!overview.contains("被动 星星勺子 (star-spoon)"));
         assert!(overview.contains("费用 70 糖晶碎片"));
         assert!(overview.contains("可购买"));
         assert!(overview.contains("效果 进入被动掉落池并可作 F5 开局被动"));
@@ -16348,7 +16355,8 @@ mod tests {
         assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
         assert!(panel.contains("构筑池详情 默认武器"));
         assert!(panel.contains("默认被动"));
-        assert!(panel.contains("下一构筑 被动 星星勺子 (star-spoon)  排队待解锁"));
+        assert!(panel.contains("下一构筑 被动 星星勺子  排队待解锁"));
+        assert!(!panel.contains("下一构筑 被动 星星勺子 (star-spoon)"));
         assert!(panel.contains("模式 标准巡逻 (10 分钟)"));
         assert!(panel.contains("模式说明 主线推进和平衡基准"));
         assert!(panel.contains("奖励 标准章节目标、解锁和图鉴进度"));
