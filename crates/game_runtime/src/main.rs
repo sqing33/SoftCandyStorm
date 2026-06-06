@@ -3541,6 +3541,7 @@ fn format_terminal_overlay(
     terminal: &TerminalState,
     build: &BuildSnapshot,
     content: &ContentPack,
+    progress: &MetaProgress,
     run_mode: RunMode,
     damage_taken: f32,
     damage_taken_by_source: &BTreeMap<String, f32>,
@@ -3555,7 +3556,7 @@ fn format_terminal_overlay(
         format_terminal_reason(&terminal.reason),
         format_terminal_damage_summary(damage_taken, damage_taken_by_source),
         format_terminal_build_summary(build, content),
-        format_terminal_next_run_advice(terminal, build, content),
+        format_terminal_next_run_advice(terminal, build, content, progress),
     )
 }
 
@@ -3583,8 +3584,9 @@ fn format_terminal_next_run_advice(
     terminal: &TerminalState,
     build: &BuildSnapshot,
     content: &ContentPack,
+    progress: &MetaProgress,
 ) -> String {
-    match terminal.kind {
+    let base = match terminal.kind {
         TerminalKind::Victory => format_terminal_victory_advice(build, content),
         TerminalKind::Defeat => format_terminal_defeat_advice(terminal, build),
         TerminalKind::Timeout => {
@@ -3592,6 +3594,14 @@ fn format_terminal_next_run_advice(
         }
         TerminalKind::Aborted => "回守护站换角色、地图或初始装备后再巡逻".to_string(),
         TerminalKind::InvalidState => "保留 replay 和 seed，先记录异常再继续验证".to_string(),
+    };
+    if terminal.kind == TerminalKind::InvalidState {
+        base
+    } else {
+        append_optional_next_step(
+            base,
+            format_settlement_chapter_goal_next_step(progress, content),
+        )
     }
 }
 
@@ -3815,6 +3825,7 @@ fn update_hud(
                             terminal,
                             &snapshot.build,
                             &state.content,
+                            &state.meta_progress,
                             state.run_mode,
                             metrics.damage_taken,
                             &metrics.damage_taken_by_source,
@@ -13232,6 +13243,7 @@ mod tests {
             &terminal,
             &build,
             &content,
+            &MetaProgress::demo_start(),
             RunMode::DailyStorm,
             12.5,
             &BTreeMap::from([("contact".to_string(), 9.0), ("hazard".to_string(), 3.5)]),
@@ -13247,6 +13259,7 @@ mod tests {
         assert!(overlay.contains("来源 接触 9.0, 风暴地面 3.5"));
         assert!(overlay.contains("终局 武器 彩虹糖弹 Lv.2"));
         assert!(overlay.contains("生命归零多半是容错不足"));
+        assert!(overlay.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(overlay.contains("按 R 重新巡逻  F1 看结算  F5 换构筑"));
     }
 
@@ -13275,6 +13288,7 @@ mod tests {
             &terminal,
             &build,
             &content,
+            &MetaProgress::demo_start(),
             RunMode::StandardPatrol,
             0.0,
             &BTreeMap::new(),
@@ -13286,6 +13300,8 @@ mod tests {
         assert!(overlay.contains("下一局 已能稳定过关"));
         assert!(overlay.contains("彩虹糖流星雨"));
         assert!(overlay.contains("彩虹糖弹 5/5 + 糖晶放大镜 0/3"));
+        assert!(overlay.contains("F2/F5 下一局优先 糖霜草地：标准巡逻坚持 10 分钟"));
+        assert!(overlay.contains("F5 按 G 推荐构筑"));
         assert!(overlay.contains("F1 看结算"));
         assert!(overlay.contains("F5 换构筑"));
     }
