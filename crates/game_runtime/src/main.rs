@@ -7196,7 +7196,7 @@ fn runtime_chapter_goal_lines(
             } else {
                 "[ ]"
             };
-            format!("{status} {goal_id} - {label} -> {reward}")
+            format!("{status} {label} -> {reward}")
         })
         .collect()
 }
@@ -15385,7 +15385,8 @@ mod tests {
         assert!(panel.contains("章节战术 按 G 进入章节挑战"));
         assert!(panel.contains("优先击败暴走搅糖机"));
         assert!(panel.contains("地图无固定危险，先练移动拾取节奏"));
-        assert!(panel.contains("survive-10-minutes"));
+        assert!(panel.contains("[x] 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
+        assert!(!panel.contains("survive-10-minutes - 标准巡逻坚持 10 分钟"));
         assert!(panel.contains("奖励 星片 +1"));
         assert!(panel.contains("章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到"));
         assert!(panel.contains(
@@ -15431,8 +15432,8 @@ mod tests {
             .contains("章节奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"));
         assert!(panel.contains("章节战术 先完成解锁条件"));
         assert!(panel.contains("地图留意泡泡水流"));
-        assert!(panel.contains("defeat-soda-fountain-dragon"));
         assert!(panel.contains("击败汽水喷泉龙"));
+        assert!(!panel.contains("defeat-soda-fountain-dragon - 击败汽水喷泉龙"));
         assert!(panel.contains("集齐 4 星片开放 棉花云牧场"));
         assert!(panel
             .contains("解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：未完成；星片 0/2：还差 2 星片"));
