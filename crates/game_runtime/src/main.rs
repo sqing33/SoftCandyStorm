@@ -6035,7 +6035,7 @@ fn render_meta_loadout_panel(
         META_PANEL_HEADER.to_string(),
         META_PANEL_TAB_CLICK_HINT.to_string(),
         "巡逻准备".to_string(),
-        format!("角色 {} ({})", character_label, config.character_id),
+        format!("角色 {character_label}"),
     ];
 
     if let Some(character) = content.characters.get(&config.character_id) {
@@ -6055,10 +6055,7 @@ fn render_meta_loadout_panel(
             character.base_stats.regen_per_second,
         ));
         if let Some(trait_definition) = &character.trait_definition {
-            lines.push(format!(
-                "特质 {} ({})",
-                trait_definition.description, trait_definition.id
-            ));
+            lines.push(format!("特质 {}", trait_definition.description));
         }
         lines.push(format!(
             "角色玩法 {}",
@@ -6105,7 +6102,7 @@ fn render_meta_loadout_panel(
     if run_mode == RunMode::DailyStorm {
         lines.push(format!("每日固定 seed {}", runtime_daily_storm_seed()));
     }
-    lines.push(format!("地图 {} ({})", map_label, config.map_id));
+    lines.push(format!("地图 {map_label}"));
     if let Some(target_summary) =
         format_runtime_patrol_target_summary(progress, content, &config.map_id, run_mode)
     {
@@ -6784,18 +6781,16 @@ fn format_runtime_loadout_chapter_line(
             };
             if let Some(boss) = content.bosses.get(&chapter.boss_id) {
                 format!(
-                    "章节 Boss {} ({})  {}  应对 {}  阶段 {}",
+                    "章节 Boss {}  {}  应对 {}  阶段 {}",
                     runtime_boss_label(content, &chapter.boss_id),
-                    chapter.boss_id,
                     status,
                     boss.common.counterplay,
                     format_boss_phase_summary(&boss.phases),
                 )
             } else {
                 format!(
-                    "章节 Boss {} ({})  {}",
+                    "章节 Boss {}  {}",
                     runtime_boss_label(content, &chapter.boss_id),
-                    chapter.boss_id,
                     status,
                 )
             }
@@ -16355,9 +16350,12 @@ mod tests {
         assert!(panel.contains("F5 巡逻"));
         assert!(panel.contains("巡逻准备"));
         assert!(panel.contains("泡泡邮差"));
+        assert!(panel.contains("角色 泡泡邮差"));
+        assert!(!panel.contains("角色 泡泡邮差 (bubble-courier)"));
         assert!(panel.contains("角色说明"));
         assert!(panel.contains("属性 HP"));
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
+        assert!(!panel.contains("特质 移动后短时间提升拾取范围 ("));
         assert!(panel.contains("角色玩法 机动拾取：保持移动拉怪"));
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
@@ -16372,6 +16370,8 @@ mod tests {
         assert!(panel.contains("模式说明 主线推进和平衡基准"));
         assert!(panel.contains("奖励 标准章节目标、解锁和图鉴进度"));
         assert!(panel.contains("汽水溪谷"));
+        assert!(panel.contains("地图 汽水溪谷"));
+        assert!(!panel.contains("地图 汽水溪谷 (soda-creek)"));
         assert!(panel.contains(
             "巡逻目标 推荐 进阶  目标 0/4  风暴 标准  Boss 汽水喷泉龙  目标奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"
         ));
@@ -16386,7 +16386,8 @@ mod tests {
         assert!(panel.contains(
             "敌群预览 蹦蹦软糖 / 汽水泡泡 / 辣味软糖 / 酸酸软糖  Boss 210s 汽水喷泉龙  压力 前期低 中期中 后期高"
         ));
-        assert!(panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
+        assert!(panel.contains("章节 Boss 汽水喷泉龙"));
+        assert!(!panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
         assert!(panel.contains("锁定目标预览 0/4  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
