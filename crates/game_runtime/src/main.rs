@@ -112,6 +112,7 @@ const RUNTIME_HUD_TEXT_REFRESH_SECONDS: f32 = 0.10;
 const RUNTIME_META_TEXT_REFRESH_SECONDS: f32 = 0.25;
 const RUNTIME_EVENT_TIMELINE_LIMIT: usize = 6;
 const GAMEPAD_LEFT_STICK_DEADZONE: f32 = 0.15;
+const RUNTIME_WINDOW_TITLE: &str = "软糖风暴";
 
 fn main() {
     let raw_args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -131,7 +132,7 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Soft Candy Storm Runtime Prototype".to_string(),
+                        title: RUNTIME_WINDOW_TITLE.to_string(),
                         resolution: (1280.0, 720.0).into(),
                         present_mode: bevy::window::PresentMode::AutoVsync,
                         ..default()
@@ -14234,6 +14235,13 @@ mod tests {
         assert!(!rendered.contains("Controls:"));
         assert!(!rendered.contains("Map 糖霜草地"));
         assert!(!rendered.contains("frosting-grassland"));
+    }
+
+    #[test]
+    fn runtime_window_title_uses_game_name() {
+        assert_eq!(super::RUNTIME_WINDOW_TITLE, "软糖风暴");
+        assert!(!super::RUNTIME_WINDOW_TITLE.contains("Runtime"));
+        assert!(!super::RUNTIME_WINDOW_TITLE.contains("Prototype"));
     }
 
     #[test]
