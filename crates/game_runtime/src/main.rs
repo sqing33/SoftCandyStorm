@@ -618,6 +618,8 @@ struct RuntimeBaseUiState {
 struct RuntimeBaseCodexViewState {
     selected_category: String,
     discovered_only: bool,
+    #[serde(default)]
+    selected_index: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -718,6 +720,7 @@ impl Default for RuntimeBaseUiState {
             codex_view: RuntimeBaseCodexViewState {
                 selected_category: "characters".to_string(),
                 discovered_only: true,
+                selected_index: 0,
             },
             privacy_view: RuntimeBasePrivacyViewState {
                 last_notice_version: "privacy-notice-v0".to_string(),
@@ -1073,6 +1076,11 @@ fn setup_runtime(
         &meta_progress,
         &content,
     );
+    let codex_selected_index = normalize_runtime_codex_view_selection(
+        &meta_progress,
+        &content,
+        &mut base_ui_state.codex_view,
+    );
     let config = run_config_from_cli(&cli, &content, &meta_progress);
     let core = GameCore::reset_with_content(config.clone(), content.clone())
         .expect("runtime content must pass the same GameCore validation as headless runs");
@@ -1179,7 +1187,7 @@ fn setup_runtime(
         pending_data_delete_action: None,
         meta_panel_view: runtime_meta_panel_view_from_key(&base_ui_state.selected_panel),
         base_ui_state,
-        codex_selected_index: 0,
+        codex_selected_index,
         meta_progress,
         story_codex_ui_candidate,
         asset_runtime_candidate,
@@ -5513,6 +5521,7 @@ fn apply_runtime_codex_action(state: &mut RuntimeState, action: RuntimeCodexActi
             };
         }
     }
+    state.base_ui_state.codex_view.selected_index = state.codex_selected_index;
     state.last_event_kind = RuntimeEventKind::System;
     state.pending_sounds.push(RuntimeSound::System);
 }
@@ -7211,6 +7220,24 @@ fn runtime_codex_entries(
             })
         })
         .collect()
+}
+
+fn normalize_runtime_codex_view_selection(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    codex_view: &mut RuntimeBaseCodexViewState,
+) -> usize {
+    let category = RuntimeCodexCategory::from_key(&codex_view.selected_category);
+    codex_view.selected_category = category.key().to_string();
+    let entry_count =
+        runtime_codex_entries(progress, content, category, codex_view.discovered_only).len();
+    let selected_index = if entry_count == 0 {
+        0
+    } else {
+        codex_view.selected_index.min(entry_count - 1)
+    };
+    codex_view.selected_index = selected_index;
+    selected_index
 }
 
 fn runtime_codex_group(
@@ -9461,37 +9488,38 @@ fn write_runtime_playtest_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        apply_runtime_chapter_action, collect_runtime_local_data_files, delete_runtime_local_data,
-        demo_movement, demo_upgrade_choice, describe_events, effects_for_events, enemy_tint,
-        event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
-        format_enemy_behavior_details, format_enemy_swarm_status, format_event_effect_for_codex,
-        format_event_effect_status, format_hazard_status, format_meta_shop_offer_line,
-        format_runtime_hud_chapter_build_goal, format_runtime_hud_chapter_objective,
-        format_runtime_hud_run_mode, format_settlement_event_timeline, format_terminal_overlay,
-        format_upgrade_options, format_upgrade_playstyle_preview,
-        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
-        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
-        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        projectile_visual_style, purchase_next_runtime_shop_offer, read_runtime_save_state,
-        record_runtime_event_timeline, render_meta_progress_panel,
-        resolve_runtime_content_selection, resolve_runtime_platform_paths,
-        restore_runtime_loadout_selection_from_save, run_config_from_cli,
-        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
-        runtime_asset_root, runtime_behavior_label, runtime_boss_ability_label,
-        runtime_boss_ability_summary, runtime_can_upload, runtime_chapter_action_from_gamepad,
-        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
-        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
-        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_codex_enemy_description,
-        runtime_codex_map_description, runtime_loadout_action_from_gamepad,
-        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
-        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_cache_key, runtime_meta_panel_tab_view_from_gamepad,
-        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
-        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_run_mode_duration_seconds, runtime_save_export_path,
+        apply_runtime_chapter_action, apply_runtime_codex_action, collect_runtime_local_data_files,
+        delete_runtime_local_data, demo_movement, demo_upgrade_choice, describe_events,
+        effects_for_events, enemy_tint, event_kind_for_events, export_runtime_local_data,
+        format_boss_status, format_build_status, format_enemy_behavior_details,
+        format_enemy_swarm_status, format_event_effect_for_codex, format_event_effect_status,
+        format_hazard_status, format_meta_shop_offer_line, format_runtime_hud_chapter_build_goal,
+        format_runtime_hud_chapter_objective, format_runtime_hud_run_mode,
+        format_settlement_event_timeline, format_terminal_overlay, format_upgrade_options,
+        format_upgrade_playstyle_preview, load_runtime_asset_candidate_manifest,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
+        next_runtime_selection_id, normalize_runtime_codex_view_selection, parse_runtime_cli,
+        persist_runtime_privacy_settings_file, player_tint, projectile_visual_style,
+        purchase_next_runtime_shop_offer, read_runtime_save_state, record_runtime_event_timeline,
+        render_meta_progress_panel, resolve_runtime_content_selection,
+        resolve_runtime_platform_paths, restore_runtime_loadout_selection_from_save,
+        run_config_from_cli, run_runtime_data_control_action,
+        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
+        runtime_boss_ability_label, runtime_boss_ability_summary, runtime_can_upload,
+        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
+        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
+        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
+        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        runtime_codex_enemy_description, runtime_codex_map_description,
+        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
+        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
+        runtime_local_data_export_path, runtime_meta_panel_cache_key,
+        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
+        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
+        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice,
+        runtime_run_mode_duration_seconds, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
@@ -10757,6 +10785,7 @@ mod tests {
         };
         base_ui_state.codex_view.selected_category = "enemies".to_string();
         base_ui_state.codex_view.discovered_only = false;
+        base_ui_state.codex_view.selected_index = 3;
         base_ui_state.last_selected_run_mode = "daily".to_string();
         base_ui_state.last_selected_starting_weapon_id = "mint-cyclone".to_string();
         base_ui_state.last_selected_starting_passive_id = "bubble-shoes".to_string();
@@ -10781,6 +10810,10 @@ mod tests {
         assert_eq!(
             save_json["base_ui_state"]["codex_view"]["discovered_only"],
             false
+        );
+        assert_eq!(
+            save_json["base_ui_state"]["codex_view"]["selected_index"],
+            3
         );
         assert_eq!(
             save_json["base_ui_state"]["last_selected_run_mode"],
@@ -10849,6 +10882,10 @@ mod tests {
         assert_eq!(
             migrated_json["base_ui_state"]["codex_view"]["discovered_only"],
             true
+        );
+        assert_eq!(
+            migrated_json["base_ui_state"]["codex_view"]["selected_index"],
+            0
         );
     }
 
@@ -10920,6 +10957,10 @@ mod tests {
             .as_object_mut()
             .unwrap()
             .remove("last_selected_starting_passive_id");
+        save_json["base_ui_state"]["codex_view"]
+            .as_object_mut()
+            .unwrap()
+            .remove("selected_index");
         fs::write(
             &save_file,
             format!("{}\n", serde_json::to_string_pretty(&save_json).unwrap()),
@@ -10941,6 +10982,7 @@ mod tests {
             loaded.state.base_ui_state.last_selected_starting_passive_id,
             "no-extra-passive"
         );
+        assert_eq!(loaded.state.base_ui_state.codex_view.selected_index, 0);
     }
 
     #[test]
@@ -13341,6 +13383,43 @@ mod tests {
         let mode_key = runtime_meta_panel_cache_key(&mode_state);
         mode_state.run_mode = RunMode::DailyStorm;
         assert_ne!(runtime_meta_panel_cache_key(&mode_state), mode_key);
+    }
+
+    #[test]
+    fn runtime_codex_actions_persist_selected_index_in_base_ui_state() {
+        let mut state = runtime_state_for_tests();
+        state.base_ui_state.codex_view.selected_category =
+            RuntimeCodexCategory::Weapons.key().to_string();
+        state.base_ui_state.codex_view.discovered_only = false;
+
+        apply_runtime_codex_action(&mut state, RuntimeCodexAction::NextEntry);
+
+        assert_eq!(state.codex_selected_index, 1);
+        assert_eq!(state.base_ui_state.codex_view.selected_index, 1);
+
+        apply_runtime_codex_action(&mut state, RuntimeCodexAction::ToggleDiscoveredOnly);
+
+        assert_eq!(state.codex_selected_index, 0);
+        assert_eq!(state.base_ui_state.codex_view.selected_index, 0);
+    }
+
+    #[test]
+    fn runtime_codex_selection_restores_clamped_saved_index() {
+        let state = runtime_state_for_tests();
+        let mut base_ui_state = RuntimeBaseUiState::default();
+        base_ui_state.codex_view.selected_category =
+            RuntimeCodexCategory::Weapons.key().to_string();
+        base_ui_state.codex_view.discovered_only = false;
+        base_ui_state.codex_view.selected_index = usize::MAX;
+
+        let selected_index = normalize_runtime_codex_view_selection(
+            &state.meta_progress,
+            &state.content,
+            &mut base_ui_state.codex_view,
+        );
+
+        assert_eq!(base_ui_state.codex_view.selected_index, selected_index);
+        assert!(selected_index < state.content.weapons.len());
     }
 
     #[test]
