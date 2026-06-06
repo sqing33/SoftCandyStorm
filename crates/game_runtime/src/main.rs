@@ -4225,7 +4225,7 @@ fn format_meta_overview_next_action(
 
 fn format_meta_overview_unlock_summary(progress: &MetaProgress, content: &ContentPack) -> String {
     format!(
-        "角色 {}  地图 {}",
+        "角色 {}  地图 {}  {}",
         format_runtime_unlocked_labels(
             &runtime_unlocked_character_ids(progress, content),
             |id| runtime_character_label(content, id),
@@ -4236,6 +4236,7 @@ fn format_meta_overview_unlock_summary(progress: &MetaProgress, content: &Conten
             |id| runtime_map_label(content, id),
             2,
         ),
+        format_runtime_build_pool_summary(content),
     )
 }
 
@@ -4699,6 +4700,7 @@ fn render_meta_loadout_panel(
         "开局路线 {}",
         format_runtime_loadout_plan(content, &config.starting_loadout)
     ));
+    lines.push(format_runtime_build_pool_summary(content));
     lines.push(format!("地图 {} ({})", map_label, config.map_id));
 
     if let Some(map) = content.maps.get(&config.map_id) {
@@ -4878,6 +4880,27 @@ fn format_runtime_loadout_plan(content: &ContentPack, loadout: &StartingLoadout)
     }
 
     "先确认角色默认武器手感，再选择输出、控制或生存路线".to_string()
+}
+
+fn format_runtime_build_pool_summary(content: &ContentPack) -> String {
+    format!(
+        "可抽构筑池 武器 {}  被动 {}  进化配方 {}",
+        content
+            .weapons
+            .values()
+            .filter(|weapon| runtime_is_default_unlock(&weapon.unlock.unlock_type))
+            .count(),
+        content
+            .passives
+            .values()
+            .filter(|passive| runtime_is_default_unlock(&passive.unlock.unlock_type))
+            .count(),
+        content.evolutions.len(),
+    )
+}
+
+fn runtime_is_default_unlock(unlock_type: &str) -> bool {
+    unlock_type == "default"
 }
 
 fn format_runtime_loadout_chapter_line(
@@ -10266,6 +10289,7 @@ mod tests {
             "下一步行动 F5 开始 糖霜草地 巡逻，优先 标准巡逻坚持 10 分钟（奖励 星片 +1）"
         ));
         assert!(panel.contains("解锁概览 角色"));
+        assert!(panel.contains("可抽构筑池 武器 12  被动 8  进化配方 10"));
         assert!(panel.contains("地图 糖霜草地(frosting-grassland)"));
         assert!(panel.contains(
             "章节进度 未完成 4 项；糖霜草地 下一目标 标准巡逻坚持 10 分钟（奖励 星片 +1）"
@@ -11042,6 +11066,7 @@ mod tests {
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
+        assert!(panel.contains("可抽构筑池 武器 12  被动 8  进化配方 10"));
         assert!(panel.contains("汽水溪谷"));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
