@@ -3721,7 +3721,7 @@ fn format_evolution_path_items(
         .take(limit)
         .map(|id| {
             let Some(evolution) = content.evolutions.get(id) else {
-                return format!("{} ({id})", runtime_evolution_label(content, id));
+                return runtime_evolution_label(content, id);
             };
             let weapon_requirement = &evolution.requirements.weapon;
             let weapon_level = build_item_level(&build.weapons, &weapon_requirement.id);
@@ -7065,7 +7065,7 @@ fn runtime_evolution_label(content: &ContentPack, evolution_id: &str) -> String 
         .evolutions
         .get(evolution_id)
         .map(|evolution| evolution.name.clone())
-        .unwrap_or_else(|| evolution_id.to_string())
+        .unwrap_or_else(|| "未知进化".to_string())
 }
 
 fn runtime_event_label(content: &ContentPack, event_id: &str) -> String {
@@ -14571,6 +14571,14 @@ mod tests {
         assert!(status.contains("进化线 彩虹糖流星雨: 彩虹糖弹 3/5 + 糖晶放大镜 2/3"));
         assert!(status.contains("标签 弹幕, 经济"));
         assert!(status.contains("建议 缺容错，下一次升级优先防御、控制或生命"));
+
+        let missing_evolution_build = BuildSnapshot {
+            open_evolution_paths: vec!["missing-evolution".to_string()],
+            ..BuildSnapshot::default()
+        };
+        let missing_status = format_build_status(&missing_evolution_build, &content);
+        assert!(missing_status.contains("进化线 未知进化"));
+        assert!(!missing_status.contains("missing-evolution"));
     }
 
     #[test]
