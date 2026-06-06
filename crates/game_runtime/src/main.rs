@@ -5347,7 +5347,7 @@ fn render_meta_overview_panel(
             report.resources_gained.star_shards,
             report.resources_gained.storm_grains,
             format_settlement_notes(&report.notes, 2),
-            format_string_slice(&report.completed_goals, 2),
+            format_settlement_completed_goals(&report.completed_goals, content, 2),
             format_meta_unlocks(report, content, 4),
             format_codex_updates(&report.codex_updates, content, 4),
             format_settlement_next_step(report, progress, content),
@@ -5727,7 +5727,7 @@ fn render_meta_chapter_panel(
     if let Some(report) = settlement {
         lines.push(format!(
             "\n本局完成 {}",
-            format_string_slice(&report.completed_goals, 3)
+            format_settlement_completed_goals(&report.completed_goals, content, 3)
         ));
     } else {
         lines.push("\n完成章节目标后会在这里显示本局变化".to_string());
@@ -9143,6 +9143,36 @@ fn format_settlement_notes(notes: &[String], limit: usize) -> String {
         .map(|note| format_settlement_note_label(note))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
+}
+
+fn format_settlement_completed_goals(
+    completed_goals: &[String],
+    content: &ContentPack,
+    limit: usize,
+) -> String {
+    let values = completed_goals
+        .iter()
+        .map(|goal| format_settlement_completed_goal(goal, content))
+        .collect::<Vec<_>>();
+    format_string_items(&values, limit)
+}
+
+fn format_settlement_completed_goal(goal: &str, content: &ContentPack) -> String {
+    let Some((chapter_id, goal_id)) = goal.split_once(':') else {
+        return goal.to_string();
+    };
+    runtime_chapter_goal_entries(chapter_id, content)
+        .into_iter()
+        .find(|(candidate_goal_id, _, _)| candidate_goal_id == goal_id)
+        .map(|(_, label, reward)| {
+            format!(
+                "{}：{}（{}）",
+                chapter_label(content, chapter_id),
+                label,
+                reward
+            )
+        })
+        .unwrap_or_else(|| format!("{}：{}", chapter_label(content, chapter_id), goal_id))
 }
 
 fn format_settlement_event_timeline(timeline: &[RuntimeEventTimelineEntry]) -> String {
@@ -14966,7 +14996,9 @@ mod tests {
         assert!(panel.contains("最终构筑 武器 彩虹糖弹 Lv.1"));
         assert!(panel.contains("被动 糖晶放大镜 (candy-crystal-lens)"));
         assert!(panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
-        assert!(panel.contains("collect-200-candy-crystals"));
+        assert!(panel.contains("章节目标 糖霜草地：收集 200 糖晶经验（奖励 星片 +1）"));
+        assert!(panel.contains("糖霜草地：完成彩虹糖流星雨进化（奖励 星片 +1；完成本章构筑挑战）"));
+        assert!(!panel.contains("章节目标 frosting-grassland:collect-200-candy-crystals"));
         assert!(panel.contains("发现 角色 糖罐守护员 (jar-keeper)"));
         assert!(!panel.contains("discovered:jar-keeper"));
         assert!(panel.contains("下一步行动"));
@@ -15361,7 +15393,8 @@ mod tests {
         ));
         assert!(panel.contains("解锁"));
         assert!(panel.contains("集齐 2 星片开放"));
-        assert!(panel.contains("本局完成"));
+        assert!(panel.contains("本局完成 糖霜草地：标准巡逻坚持 10 分钟（奖励 星片 +1）"));
+        assert!(panel.contains("糖霜草地：收集 200 糖晶经验（奖励 星片 +1）"));
     }
 
     #[test]
