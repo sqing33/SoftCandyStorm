@@ -1497,8 +1497,7 @@ fn step_game_core(
                     state.pending_data_delete_action = None;
                     let enabled = toggle_runtime_privacy_setting(&mut state.privacy_settings, kind);
                     let persistence = match persist_runtime_privacy_settings_if_configured(&state) {
-                        Ok(true) => "saved",
-                        Ok(false) => "session only",
+                        Ok(persisted) => runtime_privacy_persistence_label(persisted),
                         Err(error) => {
                             state.last_event = format!("隐私设置保存失败: {error}");
                             state.last_event_kind = RuntimeEventKind::System;
@@ -10363,7 +10362,7 @@ fn run_runtime_prelaunch_actions(cli: &RuntimeCli) -> Result<bool, String> {
         let report = delete_runtime_local_data(cli)
             .map_err(|error| format!("failed to delete local data: {error}"))?;
         println!(
-            "deleted {} local files and {} empty directories",
+            "已删除本地数据 {} 个文件 {} 个空目录",
             report.deleted_files, report.deleted_dirs
         );
         handled = true;
@@ -10379,7 +10378,7 @@ fn run_runtime_prelaunch_actions(cli: &RuntimeCli) -> Result<bool, String> {
     if cli.delete_save {
         delete_runtime_save(cli).map_err(|error| format!("failed to delete save: {error}"))?;
         println!(
-            "deleted save {}",
+            "已删除存档 {}",
             cli.save_file
                 .as_ref()
                 .map(|path| path.display().to_string())
@@ -10874,6 +10873,14 @@ fn runtime_upload_kind_label(kind: RuntimeUploadKind) -> &'static str {
     }
 }
 
+fn runtime_privacy_persistence_label(persisted: bool) -> &'static str {
+    if persisted {
+        "已写入设置文件"
+    } else {
+        "仅本次会话"
+    }
+}
+
 fn runtime_privacy_notice(settings: &RuntimePrivacySettings) -> String {
     format!(
         "《软糖风暴》隐私说明\n\
@@ -11077,7 +11084,7 @@ fn run_runtime_data_control_action(
                 &context.privacy_settings,
                 &output_path,
             )?;
-            Ok(format!("exported save {}", output_path.display()))
+            Ok(format!("已导出存档 {}", output_path.display()))
         }
         RuntimeDataControlAction::DeleteSave => {
             let save_file = context
@@ -11086,7 +11093,7 @@ fn run_runtime_data_control_action(
                 .map(|path| path.display().to_string())
                 .unwrap_or_else(|| "<missing>".to_string());
             delete_runtime_save(&context.cli(true, false))?;
-            Ok(format!("deleted save {save_file}"))
+            Ok(format!("已删除存档 {save_file}"))
         }
         RuntimeDataControlAction::ExportLocalData => {
             let output_path = runtime_local_data_export_path(&context.platform_data_root);
@@ -11095,12 +11102,12 @@ fn run_runtime_data_control_action(
                 &context.privacy_settings,
                 &output_path,
             )?;
-            Ok(format!("exported local data {}", output_path.display()))
+            Ok(format!("已导出本地数据 {}", output_path.display()))
         }
         RuntimeDataControlAction::DeleteLocalData => {
             let report = delete_runtime_local_data(&context.cli(false, true))?;
             Ok(format!(
-                "deleted local data {} files {} dirs",
+                "已删除本地数据 {} 个文件 {} 个目录",
                 report.deleted_files, report.deleted_dirs
             ))
         }
@@ -11116,10 +11123,10 @@ fn runtime_data_control_requires_confirmation(action: RuntimeDataControlAction) 
 
 fn runtime_data_control_confirmation_message(action: RuntimeDataControlAction) -> &'static str {
     match action {
-        RuntimeDataControlAction::DeleteSave => "confirm delete save: press X again",
-        RuntimeDataControlAction::DeleteLocalData => "confirm delete local data: press K again",
+        RuntimeDataControlAction::DeleteSave => "再次按 X 确认删除存档",
+        RuntimeDataControlAction::DeleteLocalData => "再次按 K 确认删除本地数据",
         RuntimeDataControlAction::ExportSave | RuntimeDataControlAction::ExportLocalData => {
-            "no confirmation required"
+            "无需再次确认"
         }
     }
 }
@@ -11556,8 +11563,8 @@ mod tests {
         runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
         runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
         runtime_overview_view_from_pointer_zone, runtime_privacy_notice,
-        runtime_replay_dir_from_local_data_dirs, runtime_replay_summary_path,
-        runtime_run_mode_duration_seconds, runtime_save_export_path,
+        runtime_privacy_persistence_label, runtime_replay_dir_from_local_data_dirs,
+        runtime_replay_summary_path, runtime_run_mode_duration_seconds, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_character,
@@ -12556,6 +12563,12 @@ mod tests {
     }
 
     #[test]
+    fn privacy_persistence_status_uses_player_readable_labels() {
+        assert_eq!(runtime_privacy_persistence_label(true), "已写入设置文件");
+        assert_eq!(runtime_privacy_persistence_label(false), "仅本次会话");
+    }
+
+    #[test]
     fn privacy_notice_contains_required_topics() {
         let notice = runtime_privacy_notice(&RuntimePrivacySettings::default());
 
@@ -12715,7 +12728,7 @@ mod tests {
         let export_json: serde_json::Value =
             serde_json::from_str(&fs::read_to_string(&export_path).unwrap()).unwrap();
 
-        assert!(message.contains("exported local data"));
+        assert!(message.contains("已导出本地数据"));
         assert_eq!(export_json["kind"], "runtime_local_data_export");
         assert_eq!(export_json["files"].as_array().unwrap().len(), 3);
         assert!(export_json["files"].as_array().unwrap().iter().any(|file| {
@@ -12727,7 +12740,7 @@ mod tests {
             run_runtime_data_control_action(&context, RuntimeDataControlAction::DeleteLocalData)
                 .unwrap();
 
-        assert!(message.contains("deleted local data 3 files"));
+        assert!(message.contains("已删除本地数据 3 个文件"));
         assert!(!telemetry_dir.join("session.json").exists());
         assert!(!replay_dir.join("run.json").exists());
         assert!(!crash_dir.join("crash.json").exists());
@@ -13183,7 +13196,7 @@ mod tests {
         let export_json: serde_json::Value =
             serde_json::from_str(&fs::read_to_string(&export_path).unwrap()).unwrap();
 
-        assert!(message.contains("exported save"));
+        assert!(message.contains("已导出存档"));
         assert!(save_file.exists());
         assert_eq!(export_json["contract_id"], "save-state-v1");
         assert_eq!(export_json["content_pack_ids"].as_array().unwrap().len(), 2);
@@ -13192,7 +13205,7 @@ mod tests {
             run_runtime_data_control_action(&context, RuntimeDataControlAction::DeleteSave)
                 .unwrap();
 
-        assert!(message.contains("deleted save"));
+        assert!(message.contains("已删除存档"));
         assert!(!save_file.exists());
         assert!(export_path.exists());
         let _ = fs::remove_dir_all(&root);
@@ -13218,7 +13231,8 @@ mod tests {
             RuntimeDataControlAction::DeleteSave,
         )
         .unwrap();
-        assert!(message.contains("press X again"));
+        assert!(message.contains("再次按 X 确认删除存档"));
+        assert!(!message.contains("press X again"));
         assert!(save_file.exists());
         assert_eq!(
             state.pending_data_delete_action,
@@ -13230,7 +13244,8 @@ mod tests {
             RuntimeDataControlAction::DeleteSave,
         )
         .unwrap();
-        assert!(message.contains("deleted save"));
+        assert!(message.contains("已删除存档"));
+        assert!(!message.contains("deleted save"));
         assert!(!save_file.exists());
         assert_eq!(state.pending_data_delete_action, None);
 
@@ -16049,7 +16064,8 @@ mod tests {
         };
 
         let message = run_runtime_data_control_action_from_state(&mut state, data_action).unwrap();
-        assert!(message.contains("press X again"));
+        assert!(message.contains("再次按 X 确认删除存档"));
+        assert!(!message.contains("press X again"));
         assert!(save_file.exists());
         assert_eq!(
             state.pending_data_delete_action,
@@ -16057,7 +16073,8 @@ mod tests {
         );
 
         let message = run_runtime_data_control_action_from_state(&mut state, data_action).unwrap();
-        assert!(message.contains("deleted save"));
+        assert!(message.contains("已删除存档"));
+        assert!(!message.contains("deleted save"));
         assert!(!save_file.exists());
         assert_eq!(state.pending_data_delete_action, None);
 
