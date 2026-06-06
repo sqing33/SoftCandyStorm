@@ -2791,13 +2791,35 @@ fn format_runtime_boss_phase_hint(boss: &BossSnapshot, content: &ContentPack) ->
             .collect::<Vec<_>>()
             .join("/")
     };
+    let counterplay = format_runtime_boss_phase_counterplay(&phase.abilities)
+        .map(|hint| format!("  应对 {hint}"))
+        .unwrap_or_default();
     Some(format!(
-        "阶段 {}/{} {:.0}% {}",
+        "阶段 {}/{} {:.0}% 技能 {}{}",
         phase_index + 1,
         definition.phases.len(),
         phase.hp_threshold * 100.0,
         abilities,
+        counterplay,
     ))
+}
+
+fn format_runtime_boss_phase_counterplay(abilities: &[String]) -> Option<String> {
+    let mut hints = Vec::new();
+    for ability in abilities.iter().take(3) {
+        let Some(hint) = runtime_boss_ability_counterplay_hint(ability) else {
+            continue;
+        };
+        if !hints.contains(&hint) {
+            hints.push(hint);
+        }
+    }
+
+    if hints.is_empty() {
+        None
+    } else {
+        Some(hints.join("；"))
+    }
 }
 
 fn format_runtime_hud_chapter_objective(
@@ -6092,7 +6114,14 @@ fn runtime_boss_ability_label(ability_id: &str) -> String {
 
 fn runtime_boss_ability_summary(ability_id: &str) -> String {
     let label = runtime_boss_ability_label(ability_id);
-    let hint = match ability_id {
+    let Some(hint) = runtime_boss_ability_counterplay_hint(ability_id) else {
+        return label;
+    };
+    format!("{label}：{hint}")
+}
+
+fn runtime_boss_ability_counterplay_hint(ability_id: &str) -> Option<&'static str> {
+    Some(match ability_id {
         "dash_charge" | "soft_roll" => "横向躲开冲撞线",
         "sugar_splash"
         | "charged_fountain"
@@ -6116,9 +6145,8 @@ fn runtime_boss_ability_summary(ability_id: &str) -> String {
         | "multi_flavor_storm" => "注意增援和危险区",
         "sweet_phase_shield" => "护盾期伤害降低",
         "phase_shift_vulnerability" => "核心暴露时集中输出",
-        _ => return label,
-    };
-    format!("{label}：{hint}")
+        _ => return None,
+    })
 }
 
 fn terminal_kind_label(kind: TerminalKind) -> &'static str {
@@ -11768,7 +11796,8 @@ mod tests {
         assert!(status.contains("runaway-sugar-mixer"));
         assert!(status.contains("HP 125/250"));
         assert!(status.contains("50%"));
-        assert!(status.contains("阶段 1/2 100% 直线冲撞/召唤蹦蹦软糖"));
+        assert!(status.contains("阶段 1/2 100% 技能 直线冲撞/召唤蹦蹦软糖"));
+        assert!(status.contains("应对 横向躲开冲撞线；先清增援压力"));
     }
 
     #[test]
@@ -11787,7 +11816,8 @@ mod tests {
 
         assert!(status.contains("36%"));
         assert!(status.contains("阶段 2/2 45%"));
-        assert!(status.contains("直线冲撞/糖浆飞溅/召唤蹦蹦软糖"));
+        assert!(status.contains("技能 直线冲撞/糖浆飞溅/召唤蹦蹦软糖"));
+        assert!(status.contains("应对 横向躲开冲撞线；离开预警地面；先清增援压力"));
     }
 
     #[test]
