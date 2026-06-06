@@ -2892,9 +2892,8 @@ fn format_boss_status(snapshot: &RunSnapshot, content: &ContentPack) -> String {
         runtime_next_boss_arrival(content, &snapshot.map.map_id, snapshot.time_seconds)
     {
         return format!(
-            "Boss 下一只 {} ({})  还有 {:.0}s  {:.0}s 出现",
+            "Boss 下一只 {}  还有 {:.0}s  {:.0}s 出现",
             runtime_boss_label(content, boss_id),
-            boss_id,
             (arrival_time - snapshot.time_seconds).max(0.0),
             arrival_time,
         );
@@ -2915,9 +2914,8 @@ fn format_active_boss_status(boss: &BossSnapshot, content: &ContentPack) -> Stri
         .map(|hint| format!("  {hint}"))
         .unwrap_or_default();
     format!(
-        "Boss {} ({})  HP {:.0}/{:.0}  {:.0}%{}",
+        "Boss {}  HP {:.0}/{:.0}  {:.0}%{}",
         runtime_boss_label(content, &boss.boss_id),
-        boss.boss_id,
         health,
         max_health,
         health_ratio,
@@ -4244,7 +4242,7 @@ fn describe_combat_events(events: &[GameEvent], content: &ContentPack) -> Option
             }
             GameEvent::BossSpawned { boss_id, .. } => {
                 boss_spawn = Some(format!(
-                    "Boss 出现 {} ({boss_id})",
+                    "Boss 出现 {}",
                     runtime_boss_label(content, boss_id)
                 ));
             }
@@ -4371,12 +4369,11 @@ fn push_unique_sound(sounds: &mut Vec<RuntimeSound>, sound: RuntimeSound) {
 
 fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
     match event {
-        GameEvent::EnemySpawned { enemy_id, .. } => Some(format!(
-            "出现 {} ({enemy_id})",
-            runtime_enemy_label(content, enemy_id)
-        )),
+        GameEvent::EnemySpawned { enemy_id, .. } => {
+            Some(format!("出现 {}", runtime_enemy_label(content, enemy_id)))
+        }
         GameEvent::BossSpawned { boss_id, .. } => Some(format!(
-            "Boss 出现 {} ({boss_id})",
+            "Boss 出现 {}",
             runtime_boss_label(content, boss_id)
         )),
         GameEvent::BossPhaseChanged {
@@ -14088,7 +14085,7 @@ mod tests {
         let status = format_boss_status(&snapshot, &state.content);
 
         assert!(status.contains("Boss 下一只 暴走搅糖机"));
-        assert!(status.contains("runaway-sugar-mixer"));
+        assert!(!status.contains("runaway-sugar-mixer"));
         assert!(status.contains("还有 90s"));
         assert!(status.contains("210s 出现"));
     }
@@ -14112,7 +14109,7 @@ mod tests {
         let status = format_boss_status(&snapshot, &state.content);
 
         assert!(status.contains("暴走搅糖机"));
-        assert!(status.contains("runaway-sugar-mixer"));
+        assert!(!status.contains("runaway-sugar-mixer"));
         assert!(status.contains("HP 125/250"));
         assert!(status.contains("50%"));
         assert!(status.contains("阶段 1/2 100% 技能 直线冲撞/召唤蹦蹦软糖"));
@@ -14949,7 +14946,7 @@ mod tests {
             },
             RuntimeEventTimelineEntry {
                 time_seconds: 180.0,
-                label: "Boss 出现 暴走搅糖机 (runaway-sugar-mixer)".to_string(),
+                label: "Boss 出现 暴走搅糖机".to_string(),
             },
         ];
         let privacy_settings = RuntimePrivacySettings::default();
@@ -17179,7 +17176,7 @@ mod tests {
                 }],
                 &content
             ),
-            "Boss 出现 暴走搅糖机 (runaway-sugar-mixer)"
+            "Boss 出现 暴走搅糖机"
         );
         assert_eq!(
             describe_events(
