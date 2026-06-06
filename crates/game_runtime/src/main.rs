@@ -3514,7 +3514,10 @@ fn format_hazard_status(
         )
     };
     let status_text = format_player_status_effects(status_effects);
-    format!("地图危险 {hazard_text}  状态 {status_text}")
+    let advice = format_active_hazard_advice(hazards)
+        .map(|advice| format!("  应对 {advice}"))
+        .unwrap_or_default();
+    format!("地图危险 {hazard_text}  状态 {status_text}{advice}")
 }
 
 fn runtime_next_map_hazard<'a>(
@@ -3571,8 +3574,14 @@ fn format_next_map_hazard_preview(
     } else {
         String::new()
     };
+    let hint = trim_runtime_sentence_end(&hazard.description);
+    let hint_text = if hint.is_empty() {
+        String::new()
+    } else {
+        format!("  提示 {hint}")
+    };
     format!(
-        "下一波 {}  还有 {:.0}s  {:.0}s 出现  {} x{}  持续 {:.0}s  减速x{:.2}{}",
+        "下一波 {}  还有 {:.0}s  {:.0}s 出现  {} x{}  持续 {:.0}s  减速x{:.2}{}{}",
         runtime_map_hazard_label(&hazard.hazard_type),
         (spawn_second - time_seconds).max(0.0),
         spawn_second,
@@ -3581,7 +3590,31 @@ fn format_next_map_hazard_preview(
         duration,
         slow,
         damage_text,
+        hint_text,
     )
+}
+
+fn format_active_hazard_advice(hazards: &[HazardSnapshot]) -> Option<&'static str> {
+    if hazards.is_empty() {
+        return None;
+    }
+    let max_damage = hazards
+        .iter()
+        .map(|hazard| hazard.damage_per_second.max(0.0))
+        .fold(0.0, f32::max);
+    let min_slow = hazards
+        .iter()
+        .map(|hazard| hazard.slow_multiplier.clamp(0.0, 1.0))
+        .fold(1.0, f32::min);
+    if max_damage > 0.0 && min_slow < 0.8 {
+        Some("先离开有伤害和减速的地面")
+    } else if max_damage > 0.0 {
+        Some("先离开伤害区，再回到可拾取路线")
+    } else if min_slow < 0.9 {
+        Some("沿边缘穿出减速区，别在里面转向")
+    } else {
+        Some("保持移动，别停在危险区边缘")
+    }
 }
 
 fn format_player_status_effects(status_effects: &[StatusEffectSnapshot]) -> String {
@@ -13740,6 +13773,7 @@ mod tests {
         assert!(status.contains("持续 6s"));
         assert!(status.contains("减速x0.60"));
         assert!(status.contains("伤害 1.2/s"));
+        assert!(status.contains("提示 焦糖溢流会周期性铺开黏糖圈，减速并造成轻微持续伤害"));
     }
 
     #[test]
@@ -13780,6 +13814,7 @@ mod tests {
         assert!(status.contains("最强减速 移速 45%"));
         assert!(status.contains("最长 7.5s"));
         assert!(status.contains("减速 移速 60% 2.5s"));
+        assert!(status.contains("应对 先离开有伤害和减速的地面"));
     }
 
     #[test]
