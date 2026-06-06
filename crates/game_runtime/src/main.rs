@@ -4185,7 +4185,7 @@ fn render_meta_overview_panel(
             report.resources_gained.star_shards,
             report.resources_gained.storm_grains,
             format_string_slice(&report.completed_goals, 2),
-            format_meta_unlocks(report, 2),
+            format_meta_unlocks(report, content, 4),
             format_string_slice(&report.codex_updates, 2),
             format_settlement_next_step(report),
         ));
@@ -6077,7 +6077,11 @@ fn format_string_items(values: &[String], limit: usize) -> String {
     visible.join(", ")
 }
 
-fn format_meta_unlocks(report: &MetaSettlementReport, limit: usize) -> String {
+fn format_meta_unlocks(
+    report: &MetaSettlementReport,
+    content: &ContentPack,
+    limit: usize,
+) -> String {
     if report.unlocked.is_empty() {
         return "无".to_string();
     }
@@ -6085,9 +6089,22 @@ fn format_meta_unlocks(report: &MetaSettlementReport, limit: usize) -> String {
     let values = report
         .unlocked
         .iter()
-        .map(|unlock| format!("{}:{}", unlock.kind, unlock.id))
+        .map(|unlock| format_meta_unlock_label(&unlock.kind, &unlock.id, content))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
+}
+
+fn format_meta_unlock_label(kind: &str, id: &str, content: &ContentPack) -> String {
+    match kind {
+        "character" => format!("角色 {} ({id})", runtime_character_label(content, id)),
+        "weapon" => format!("武器 {} ({id})", runtime_weapon_label(content, id)),
+        "passive" => format!("被动 {} ({id})", runtime_passive_label(content, id)),
+        "map" => format!("地图 {} ({id})", runtime_map_label(content, id)),
+        "chapter" => format!("章节 {} ({id})", chapter_label(content, id)),
+        "evolution" => format!("进化 {} ({id})", runtime_evolution_label(content, id)),
+        "event" => format!("事件 {} ({id})", runtime_event_label(content, id)),
+        _ => format!("{kind}:{id}"),
+    }
 }
 
 fn format_settlement_outcome(summary: &MetaRunSummary) -> &'static str {
@@ -10265,6 +10282,57 @@ mod tests {
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
         assert!(panel.contains("手柄 Select/Start 上一页/下一页"));
         assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
+    }
+
+    #[test]
+    fn meta_panel_labels_settlement_unlocks() {
+        let mut progress = MetaProgress::demo_start();
+        let mut summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 600.0,
+            victory: true,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 180,
+            level: 8,
+            xp_collected: 220.0,
+            damage_dealt_by_weapon: 1_800.0,
+            damage_taken: 4.0,
+            damage_taken_by_source: Default::default(),
+            boss_damage: 450.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 5)]),
+            passives_used: Default::default(),
+            evolutions_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        summary
+            .bosses_defeated
+            .insert("runaway-sugar-mixer".to_string());
+        let report = progress.apply_run_summary(&summary);
+        let panel = render_meta_progress_panel(
+            &progress,
+            Some(&report),
+            RuntimeMetaPanelView::Overview,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        assert!(panel.contains("新解锁 武器 棉花糖护盾 (marshmallow-shield)"));
+        assert!(panel.contains("角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("地图 汽水溪谷 (soda-creek)"));
+        assert!(panel.contains("章节 汽水溪谷 (soda-creek)"));
+        assert!(!panel.contains("weapon:marshmallow-shield"));
     }
 
     #[test]
