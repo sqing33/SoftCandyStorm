@@ -5377,6 +5377,7 @@ fn render_meta_codex_panel(
     for (label, discovered, total) in meta_codex_category_counts(progress) {
         lines.push(format!("{label}: {discovered}/{total} 已发现"));
     }
+    lines.push(format_meta_codex_route_summary(progress, content));
     let category = RuntimeCodexCategory::from_key(&codex_view.selected_category);
     let entries = runtime_codex_entries(progress, content, category, codex_view.discovered_only);
     let selected_entry = entries.get(selected_index.min(entries.len().saturating_sub(1)));
@@ -7037,6 +7038,197 @@ fn meta_codex_recent_discoveries(progress: &MetaProgress, limit: usize) -> Vec<S
         }
     }
     items.into_iter().take(limit).collect()
+}
+
+fn format_meta_codex_route_summary(progress: &MetaProgress, content: &ContentPack) -> String {
+    let discovered = meta_codex_discovered_count(progress);
+    let total = meta_codex_total_content_count(content);
+    let next = format_meta_codex_next_discovery(progress, content)
+        .unwrap_or_else(|| "当前内容池已全部发现，等待后续章节或内容包".to_string());
+    format!("图鉴路线 总计 {discovered}/{total}  下一发现 {next}")
+}
+
+fn meta_codex_total_content_count(content: &ContentPack) -> usize {
+    content.characters.len()
+        + content.weapons.len()
+        + content.passives.len()
+        + content.enemies.len()
+        + content.bosses.len()
+        + content.maps.len()
+        + content.evolutions.len()
+        + content.events.len()
+}
+
+fn format_meta_codex_next_discovery(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Option<String> {
+    let mut characters = content.characters.values().collect::<Vec<_>>();
+    characters.sort_by(|left, right| {
+        runtime_codex_accessible_character(progress, left)
+            .cmp(&runtime_codex_accessible_character(progress, right))
+            .reverse()
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    for character in characters {
+        if !runtime_codex_entry_is_discovered(
+            progress,
+            RuntimeCodexCategory::Characters,
+            &character.id,
+        ) {
+            return Some(format!(
+                "角色 {}：{}",
+                character.name,
+                format_codex_character_source(character, content, progress)
+            ));
+        }
+    }
+
+    for map_id in runtime_ordered_map_ids(content) {
+        if !runtime_codex_entry_is_discovered(progress, RuntimeCodexCategory::Maps, &map_id) {
+            return Some(format!(
+                "地图 {}：{}",
+                runtime_map_label(content, &map_id),
+                format_codex_map_source(&map_id, content, progress)
+            ));
+        }
+    }
+
+    let mut weapons = content.weapons.values().collect::<Vec<_>>();
+    weapons.sort_by(|left, right| {
+        runtime_codex_accessible_weapon(progress, left)
+            .cmp(&runtime_codex_accessible_weapon(progress, right))
+            .reverse()
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    for weapon in weapons {
+        if !runtime_codex_entry_is_discovered(progress, RuntimeCodexCategory::Weapons, &weapon.id) {
+            return Some(format!(
+                "武器 {}：{}",
+                weapon.name,
+                format_codex_unlock_source("weapon", &weapon.id, &weapon.unlock, content, progress)
+            ));
+        }
+    }
+
+    let mut passives = content.passives.values().collect::<Vec<_>>();
+    passives.sort_by(|left, right| {
+        runtime_codex_accessible_passive(progress, left)
+            .cmp(&runtime_codex_accessible_passive(progress, right))
+            .reverse()
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    for passive in passives {
+        if !runtime_codex_entry_is_discovered(progress, RuntimeCodexCategory::Passives, &passive.id)
+        {
+            return Some(format!(
+                "被动 {}：{}",
+                passive.name,
+                format_codex_unlock_source(
+                    "passive",
+                    &passive.id,
+                    &passive.unlock,
+                    content,
+                    progress
+                )
+            ));
+        }
+    }
+
+    for enemy in content.enemies.values() {
+        if runtime_codex_entry_is_discovered(
+            progress,
+            RuntimeCodexCategory::Enemies,
+            &enemy.common.id,
+        ) {
+            continue;
+        }
+        let source_maps = runtime_maps_for_enemy(content, &enemy.common.id);
+        if source_maps
+            .iter()
+            .any(|map_id| progress.unlocks.maps.contains(map_id))
+        {
+            return Some(format!(
+                "敌人 {}：{}",
+                enemy.common.name,
+                format_codex_enemy_source(&enemy.common.id, content)
+            ));
+        }
+    }
+
+    for boss in content.bosses.values() {
+        if runtime_codex_entry_is_discovered(
+            progress,
+            RuntimeCodexCategory::Bosses,
+            &boss.common.id,
+        ) {
+            continue;
+        }
+        let sources = runtime_boss_wave_sources(content, &boss.common.id);
+        if sources
+            .iter()
+            .any(|(map_id, _)| progress.unlocks.maps.contains(map_id))
+        {
+            return Some(format!(
+                "Boss {}：{}",
+                boss.common.name,
+                format_codex_boss_source(&boss.common.id, content)
+            ));
+        }
+    }
+
+    for evolution in content.evolutions.values() {
+        if !runtime_codex_entry_is_discovered(
+            progress,
+            RuntimeCodexCategory::Evolutions,
+            &evolution.id,
+        ) {
+            return Some(format!(
+                "进化 {}：{}",
+                evolution.name,
+                format_codex_evolution_source(evolution, content, progress)
+            ));
+        }
+    }
+
+    for event in content.events.values() {
+        if !runtime_codex_entry_is_discovered(progress, RuntimeCodexCategory::Events, &event.id) {
+            return Some(format!(
+                "事件 {}：{}",
+                event.name,
+                format_codex_event_source(event, progress)
+            ));
+        }
+    }
+    None
+}
+
+fn runtime_codex_accessible_character(
+    progress: &MetaProgress,
+    character: &CharacterDefinition,
+) -> bool {
+    runtime_is_default_unlock(&character.unlock.unlock_type)
+        || progress.unlocks.characters.contains(&character.id)
+}
+
+fn runtime_codex_accessible_weapon(progress: &MetaProgress, weapon: &WeaponDefinition) -> bool {
+    runtime_is_default_unlock(&weapon.unlock.unlock_type)
+        || progress.unlocks.weapons.contains(&weapon.id)
+}
+
+fn runtime_codex_accessible_passive(progress: &MetaProgress, passive: &PassiveDefinition) -> bool {
+    runtime_is_default_unlock(&passive.unlock.unlock_type)
+        || progress.unlocks.passives.contains(&passive.id)
+}
+
+fn runtime_codex_entry_is_discovered(
+    progress: &MetaProgress,
+    category: RuntimeCodexCategory,
+    id: &str,
+) -> bool {
+    runtime_codex_group(progress, category)
+        .get(id)
+        .is_some_and(|entry| entry.discovered)
 }
 
 fn runtime_codex_character_description(
@@ -14224,6 +14416,8 @@ mod tests {
 
         assert!(panel.contains("图鉴进度"));
         assert!(panel.contains("角色: 1/1 已发现"));
+        assert!(panel.contains("图鉴路线 总计"));
+        assert!(panel.contains("下一发现 角色 泡泡邮差"));
         assert!(panel.contains("character:jar-keeper"));
         assert!(panel.contains("初始武器 彩虹糖弹"));
         assert!(panel.contains("属性 生命"));
