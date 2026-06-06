@@ -184,9 +184,11 @@ struct RuntimeCli {
     accepted_content_id: Option<String>,
     content_pack_ids: Vec<String>,
     character_id: String,
+    explicit_character_id: bool,
     seed: u64,
     explicit_seed: bool,
     map_id: String,
+    explicit_map_id: bool,
     seconds: f32,
     explicit_seconds: bool,
     tick_rate: u32,
@@ -224,9 +226,11 @@ impl Default for RuntimeCli {
             accepted_content_id: None,
             content_pack_ids: vec!["base-demo".to_string()],
             character_id: "jar-keeper".to_string(),
+            explicit_character_id: false,
             seed: 12_345,
             explicit_seed: false,
             map_id: DEFAULT_MAP_ID.to_string(),
+            explicit_map_id: false,
             seconds: 600.0,
             explicit_seconds: false,
             tick_rate: 30,
@@ -1029,6 +1033,12 @@ fn setup_runtime(
     if cli.unlock_all_content {
         unlock_runtime_content_for_session(&mut meta_progress, &content);
     }
+    restore_runtime_loadout_selection_from_save(
+        &mut cli,
+        &mut base_ui_state,
+        &meta_progress,
+        &content,
+    );
     let config = run_config_from_cli(&cli, &content);
     let core = GameCore::reset_with_content(config.clone(), content.clone())
         .expect("runtime content must pass the same GameCore validation as headless runs");
@@ -6609,6 +6619,48 @@ fn runtime_unlocked_map_ids(progress: &MetaProgress, content: &ContentPack) -> V
         .collect()
 }
 
+fn restore_runtime_loadout_selection_from_save(
+    cli: &mut RuntimeCli,
+    base_ui_state: &mut RuntimeBaseUiState,
+    progress: &MetaProgress,
+    content: &ContentPack,
+) {
+    if !cli.explicit_character_id
+        && content
+            .characters
+            .contains_key(&base_ui_state.last_selected_character_id)
+        && progress
+            .unlocks
+            .characters
+            .contains(&base_ui_state.last_selected_character_id)
+    {
+        cli.character_id = base_ui_state.last_selected_character_id.clone();
+    } else {
+        base_ui_state.last_selected_character_id = cli.character_id.clone();
+    }
+
+    if !cli.explicit_map_id
+        && content
+            .maps
+            .contains_key(&base_ui_state.last_selected_map_id)
+        && progress
+            .unlocks
+            .maps
+            .contains(&base_ui_state.last_selected_map_id)
+    {
+        cli.map_id = base_ui_state.last_selected_map_id.clone();
+    } else {
+        base_ui_state.last_selected_map_id = cli.map_id.clone();
+    }
+
+    if !progress
+        .chapters
+        .contains_key(&base_ui_state.last_selected_chapter_id)
+    {
+        base_ui_state.last_selected_chapter_id = cli.map_id.clone();
+    }
+}
+
 fn unlock_runtime_content_for_session(progress: &mut MetaProgress, content: &ContentPack) {
     progress
         .unlocks
@@ -6767,6 +6819,7 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--character-id" => {
                 if let Some(value) = args.next() {
                     cli.character_id = value;
+                    cli.explicit_character_id = true;
                 }
             }
             "--seed" => {
@@ -6780,6 +6833,7 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
             "--map-id" => {
                 if let Some(value) = args.next() {
                     cli.map_id = value;
+                    cli.explicit_map_id = true;
                 }
             }
             "--seconds" => {
@@ -8026,7 +8080,8 @@ mod tests {
         movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
         parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
         projectile_visual_style, read_runtime_save_state, render_meta_progress_panel,
-        resolve_runtime_content_selection, resolve_runtime_platform_paths, run_config_from_cli,
+        resolve_runtime_content_selection, resolve_runtime_platform_paths,
+        restore_runtime_loadout_selection_from_save, run_config_from_cli,
         run_runtime_data_control_action, run_runtime_data_control_action_from_state,
         runtime_asset_root, runtime_behavior_label, runtime_boss_ability_label,
         runtime_boss_ability_summary, runtime_can_upload, runtime_chapter_action_from_gamepad,
@@ -8181,9 +8236,11 @@ mod tests {
 
         assert_eq!(cli.content_dir, PathBuf::from("content/custom"));
         assert_eq!(cli.character_id, "bubble-courier");
+        assert!(cli.explicit_character_id);
         assert_eq!(cli.seed, 9);
         assert!(cli.explicit_seed);
         assert_eq!(cli.map_id, "soda-creek");
+        assert!(cli.explicit_map_id);
         assert_eq!(cli.seconds, 120.0);
         assert!(cli.explicit_seconds);
         assert_eq!(cli.tick_rate, 20);
@@ -9651,6 +9708,70 @@ mod tests {
             runtime_character_starting_loadout(&content, "bubble-courier").weapons,
             ["soda-bubble-pop"]
         );
+    }
+
+    #[test]
+    fn runtime_loadout_restore_uses_unlocked_saved_character_and_map() {
+        let content = ContentPack::base_demo();
+        let mut progress = MetaProgress::demo_start();
+        progress
+            .unlocks
+            .characters
+            .insert("bubble-courier".to_string());
+        progress.unlocks.maps.insert("soda-creek".to_string());
+        let mut cli = RuntimeCli::default();
+        let mut base_ui_state = RuntimeBaseUiState {
+            last_selected_character_id: "bubble-courier".to_string(),
+            last_selected_map_id: "soda-creek".to_string(),
+            last_selected_chapter_id: "soda-creek".to_string(),
+            ..RuntimeBaseUiState::default()
+        };
+
+        restore_runtime_loadout_selection_from_save(
+            &mut cli,
+            &mut base_ui_state,
+            &progress,
+            &content,
+        );
+
+        assert_eq!(cli.character_id, "bubble-courier");
+        assert_eq!(cli.map_id, "soda-creek");
+        assert_eq!(base_ui_state.last_selected_character_id, "bubble-courier");
+        assert_eq!(base_ui_state.last_selected_map_id, "soda-creek");
+    }
+
+    #[test]
+    fn runtime_loadout_restore_keeps_explicit_cli_selection() {
+        let content = ContentPack::base_demo();
+        let mut progress = MetaProgress::demo_start();
+        progress
+            .unlocks
+            .characters
+            .insert("bubble-courier".to_string());
+        progress.unlocks.maps.insert("soda-creek".to_string());
+        let mut cli = parse_runtime_cli([
+            "--character-id".to_string(),
+            "jar-keeper".to_string(),
+            "--map-id".to_string(),
+            "frosting-grassland".to_string(),
+        ]);
+        let mut base_ui_state = RuntimeBaseUiState {
+            last_selected_character_id: "bubble-courier".to_string(),
+            last_selected_map_id: "soda-creek".to_string(),
+            ..RuntimeBaseUiState::default()
+        };
+
+        restore_runtime_loadout_selection_from_save(
+            &mut cli,
+            &mut base_ui_state,
+            &progress,
+            &content,
+        );
+
+        assert_eq!(cli.character_id, "jar-keeper");
+        assert_eq!(cli.map_id, "frosting-grassland");
+        assert_eq!(base_ui_state.last_selected_character_id, "jar-keeper");
+        assert_eq!(base_ui_state.last_selected_map_id, "frosting-grassland");
     }
 
     #[test]
