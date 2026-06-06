@@ -1190,7 +1190,7 @@ fn setup_runtime(
         dt_seconds: dt.seconds(),
         accumulator: 0.0,
         latest_snapshot,
-        last_event: "run started".to_string(),
+        last_event: "巡逻开始".to_string(),
         last_event_kind: RuntimeEventKind::System,
         pending_sounds: vec![RuntimeSound::System],
         effects: Vec::new(),
@@ -1234,7 +1234,7 @@ fn select_runtime_meta_panel(
     state.last_event = event.to_string();
     state.last_event_kind = RuntimeEventKind::System;
     if let Err(error) = persist_runtime_save_if_configured(state) {
-        state.last_event = format!("base UI state save failed: {error}");
+        state.last_event = format!("基地界面状态保存失败: {error}");
         state.last_event_kind = RuntimeEventKind::System;
         state.pending_sounds.push(RuntimeSound::System);
     }
@@ -1242,11 +1242,11 @@ fn select_runtime_meta_panel(
 
 fn runtime_meta_panel_selection(view: RuntimeMetaPanelView) -> (&'static str, &'static str) {
     match view {
-        RuntimeMetaPanelView::Overview => ("overview", "guardian station overview"),
-        RuntimeMetaPanelView::Chapters => ("chapters", "chapter goals view"),
-        RuntimeMetaPanelView::Codex => ("codex", "codex progress view"),
-        RuntimeMetaPanelView::Settings => ("settings", "privacy settings view"),
-        RuntimeMetaPanelView::Loadout => ("loadout", "patrol loadout view"),
+        RuntimeMetaPanelView::Overview => ("overview", "打开糖罐守护站概览"),
+        RuntimeMetaPanelView::Chapters => ("chapters", "打开章节目标"),
+        RuntimeMetaPanelView::Codex => ("codex", "打开图鉴进度"),
+        RuntimeMetaPanelView::Settings => ("settings", "打开隐私与本地数据"),
+        RuntimeMetaPanelView::Loadout => ("loadout", "打开巡逻准备"),
     }
 }
 
@@ -1291,9 +1291,9 @@ fn step_game_core(
     if keyboard.just_pressed(KeyCode::KeyP) {
         state.paused = !state.paused;
         state.last_event = if state.paused {
-            "paused".to_string()
+            "已暂停".to_string()
         } else {
-            "resumed".to_string()
+            "继续巡逻".to_string()
         };
         state.last_event_kind = RuntimeEventKind::System;
         state.pending_sounds.push(RuntimeSound::System);
@@ -1307,7 +1307,7 @@ fn step_game_core(
             &mut state,
             RuntimeMetaPanelView::Overview,
             "overview",
-            "guardian station overview",
+            "打开糖罐守护站概览",
         );
     }
     if keyboard.just_pressed(KeyCode::F2) {
@@ -1315,7 +1315,7 @@ fn step_game_core(
             &mut state,
             RuntimeMetaPanelView::Chapters,
             "chapters",
-            "chapter goals view",
+            "打开章节目标",
         );
     }
     if keyboard.just_pressed(KeyCode::F3) {
@@ -1323,7 +1323,7 @@ fn step_game_core(
             &mut state,
             RuntimeMetaPanelView::Codex,
             "codex",
-            "codex progress view",
+            "打开图鉴进度",
         );
     }
     if keyboard.just_pressed(KeyCode::F4) {
@@ -1331,7 +1331,7 @@ fn step_game_core(
             &mut state,
             RuntimeMetaPanelView::Settings,
             "settings",
-            "privacy settings view",
+            "打开隐私与本地数据",
         );
     }
     if keyboard.just_pressed(KeyCode::F5) {
@@ -1339,7 +1339,7 @@ fn step_game_core(
             &mut state,
             RuntimeMetaPanelView::Loadout,
             "loadout",
-            "patrol loadout view",
+            "打开巡逻准备",
         );
     }
     if let Some(view) =
@@ -1370,7 +1370,7 @@ fn step_game_core(
                     state.pending_sounds.push(RuntimeSound::System);
                 }
                 Err(error) => {
-                    state.last_event = format!("base unlock failed: {error}");
+                    state.last_event = format!("基地解锁失败: {error}");
                     state.last_event_kind = RuntimeEventKind::System;
                     state.pending_sounds.push(RuntimeSound::Damage);
                 }
@@ -1409,7 +1409,7 @@ fn step_game_core(
                     state.pending_sounds.push(RuntimeSound::System);
                 }
                 Err(error) => {
-                    state.last_event = format!("chapter selection failed: {error}");
+                    state.last_event = format!("章节选择失败: {error}");
                     state.last_event_kind = RuntimeEventKind::System;
                     state.pending_sounds.push(RuntimeSound::Damage);
                 }
@@ -1430,7 +1430,7 @@ fn step_game_core(
         {
             apply_runtime_codex_action(&mut state, action);
             if let Err(error) = persist_runtime_save_if_configured(&state) {
-                state.last_event = format!("codex UI state save failed: {error}");
+                state.last_event = format!("图鉴界面状态保存失败: {error}");
                 state.last_event_kind = RuntimeEventKind::System;
                 state.pending_sounds.push(RuntimeSound::System);
             }
@@ -1450,22 +1450,22 @@ fn step_game_core(
         {
             let result = match action {
                 RuntimeLoadoutAction::Character => select_next_runtime_character(&mut state)
-                    .map_err(|error| format!("character selection failed: {error}")),
+                    .map_err(|error| format!("角色选择失败: {error}")),
                 RuntimeLoadoutAction::Map => select_next_runtime_map(&mut state)
-                    .map_err(|error| format!("map selection failed: {error}")),
+                    .map_err(|error| format!("地图选择失败: {error}")),
                 RuntimeLoadoutAction::Mode => select_next_runtime_run_mode(&mut state)
-                    .map_err(|error| format!("run mode selection failed: {error}")),
+                    .map_err(|error| format!("巡逻模式选择失败: {error}")),
                 RuntimeLoadoutAction::StartingWeapon => {
                     select_next_runtime_starting_weapon(&mut state)
-                        .map_err(|error| format!("starting weapon selection failed: {error}"))
+                        .map_err(|error| format!("开局武器选择失败: {error}"))
                 }
                 RuntimeLoadoutAction::StartingPassive => {
                     select_next_runtime_starting_passive(&mut state)
-                        .map_err(|error| format!("starting passive selection failed: {error}"))
+                        .map_err(|error| format!("开局被动选择失败: {error}"))
                 }
                 RuntimeLoadoutAction::ChapterBuild => {
                     select_runtime_chapter_build_loadout(&mut state)
-                        .map_err(|error| format!("chapter build loadout selection failed: {error}"))
+                        .map_err(|error| format!("章节推荐构筑选择失败: {error}"))
                 }
             };
             match result {
@@ -1500,23 +1500,22 @@ fn step_game_core(
                         Ok(true) => "saved",
                         Ok(false) => "session only",
                         Err(error) => {
-                            state.last_event = format!("privacy settings save failed: {error}");
+                            state.last_event = format!("隐私设置保存失败: {error}");
                             state.last_event_kind = RuntimeEventKind::System;
                             state.pending_sounds.push(RuntimeSound::System);
                             return;
                         }
                     };
                     if let Err(error) = persist_runtime_save_if_configured(&state) {
-                        state.last_event =
-                            format!("privacy settings {persistence}, save sync failed: {error}");
+                        state.last_event = format!("隐私设置{persistence}，存档同步失败: {error}");
                         state.last_event_kind = RuntimeEventKind::System;
                         state.pending_sounds.push(RuntimeSound::System);
                         return;
                     }
                     state.last_event = format!(
-                        "{} {} ({persistence})",
+                        "{}{}（{persistence}）",
                         runtime_upload_kind_label(kind),
-                        if enabled { "enabled" } else { "disabled" }
+                        if enabled { "已开启" } else { "已关闭" }
                     );
                     state.last_event_kind = RuntimeEventKind::System;
                     state.pending_sounds.push(RuntimeSound::System);
@@ -1529,7 +1528,7 @@ fn step_game_core(
                             state.pending_sounds.push(RuntimeSound::System);
                         }
                         Err(error) => {
-                            state.last_event = format!("local data action failed: {error}");
+                            state.last_event = format!("本地数据操作失败: {error}");
                             state.last_event_kind = RuntimeEventKind::System;
                             state.pending_sounds.push(RuntimeSound::Damage);
                         }
@@ -4778,7 +4777,7 @@ fn reset_runtime_run(state: &mut RuntimeState) {
     state.core = core;
     state.latest_snapshot = state.core.snapshot();
     state.accumulator = 0.0;
-    state.last_event = "run restarted".to_string();
+    state.last_event = "已重新开始巡逻".to_string();
     state.last_event_kind = RuntimeEventKind::System;
     state.pending_sounds.clear();
     state.pending_sounds.push(RuntimeSound::System);
@@ -4823,7 +4822,7 @@ fn select_next_runtime_character(state: &mut RuntimeState) -> std::io::Result<St
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
     let label = runtime_character_label(&state.content, &next_id);
-    Ok(format!("selected character {label} ({next_id})"))
+    Ok(format!("已选择角色 {label} ({next_id})，重新开始巡逻"))
 }
 
 fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> {
@@ -4841,7 +4840,7 @@ fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> 
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
     let label = runtime_map_label(&state.content, &next_id);
-    Ok(format!("selected map {label} ({next_id})"))
+    Ok(format!("已选择地图 {label} ({next_id})，重新开始巡逻"))
 }
 
 fn select_next_runtime_run_mode(state: &mut RuntimeState) -> std::io::Result<String> {
@@ -4856,7 +4855,7 @@ fn select_next_runtime_run_mode(state: &mut RuntimeState) -> std::io::Result<Str
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
     Ok(format!(
-        "selected run mode {}",
+        "已选择巡逻模式 {}，重新开始巡逻",
         runtime_run_mode_label(next_mode)
     ))
 }
@@ -4884,7 +4883,7 @@ fn select_next_runtime_starting_weapon(state: &mut RuntimeState) -> std::io::Res
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
     Ok(format!(
-        "selected starting weapon {}",
+        "已选择开局武器 {}，重新开始巡逻",
         format_runtime_starting_weapon_selection(
             &state.content,
             &state.config.character_id,
@@ -4916,7 +4915,7 @@ fn select_next_runtime_starting_passive(state: &mut RuntimeState) -> std::io::Re
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
     Ok(format!(
-        "selected starting passive {}",
+        "已选择开局被动 {}，重新开始巡逻",
         format_runtime_starting_passive_selection(
             &state.content,
             &state.config.character_id,
@@ -5034,7 +5033,7 @@ fn purchase_next_runtime_shop_offer(state: &mut RuntimeState) -> std::io::Result
         .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidInput, error))?;
     persist_runtime_save_if_configured(state)?;
 
-    Ok(format!("unlocked {label} for {cost}"))
+    Ok(format!("已解锁 {label}，消耗 {cost}"))
 }
 
 fn runtime_chapter_action_from_keyboard(
@@ -5150,7 +5149,10 @@ fn apply_runtime_chapter_action(
             };
             state.base_ui_state.last_selected_chapter_id = next_id.clone();
             persist_runtime_save_if_configured(state)?;
-            Ok(format!("selected chapter {next_id}"))
+            Ok(format!(
+                "已选择章节 {} ({next_id})",
+                chapter_label(&state.content, &next_id),
+            ))
         }
         RuntimeChapterAction::StartSelectedChapter => {
             let selected_id =
@@ -5189,7 +5191,8 @@ fn apply_runtime_chapter_action(
             persist_runtime_save_if_configured(state)?;
             let label = runtime_map_label(&state.content, &state.config.map_id);
             Ok(format!(
-                "started chapter {selected_id} on {label} as {}",
+                "已开始章节挑战 {} ({selected_id})，地图 {label}，模式 {}",
+                chapter_label(&state.content, &selected_id),
                 runtime_run_mode_label(state.run_mode)
             ))
         }
@@ -5219,14 +5222,14 @@ fn settle_runtime_meta_if_needed(state: &mut RuntimeState) {
         Ok(Some(path)) => state.last_replay_summary_path = Some(path),
         Ok(None) => {}
         Err(error) => {
-            state.last_event = format!("replay summary save failed: {error}");
+            state.last_event = format!("复盘摘要保存失败: {error}");
             state.last_event_kind = RuntimeEventKind::System;
         }
     }
     state.last_meta_settlement = Some(report);
     state.settled_run_number = Some(state.run_number);
     if let Err(error) = persist_runtime_save_if_configured(state) {
-        state.last_event = format!("save failed: {error}");
+        state.last_event = format!("存档保存失败: {error}");
         state.last_event_kind = RuntimeEventKind::System;
     }
 }
@@ -5957,7 +5960,7 @@ fn apply_runtime_codex_action(state: &mut RuntimeState, action: RuntimeCodexActi
             let next_category = RuntimeCodexCategory::ALL[next_index];
             state.base_ui_state.codex_view.selected_category = next_category.key().to_string();
             state.codex_selected_index = 0;
-            state.last_event = format!("codex category {}", next_category.label());
+            state.last_event = format!("图鉴分类 {}", next_category.label());
         }
         RuntimeCodexAction::PreviousEntry | RuntimeCodexAction::NextEntry => {
             let entry_count = runtime_codex_entries(
@@ -5982,16 +5985,16 @@ fn apply_runtime_codex_action(state: &mut RuntimeState, action: RuntimeCodexActi
             } else {
                 state.codex_selected_index = 0;
             }
-            state.last_event = format!("codex entry {}", state.codex_selected_index + 1);
+            state.last_event = format!("图鉴条目 {}", state.codex_selected_index + 1);
         }
         RuntimeCodexAction::ToggleDiscoveredOnly => {
             state.base_ui_state.codex_view.discovered_only =
                 !state.base_ui_state.codex_view.discovered_only;
             state.codex_selected_index = 0;
             state.last_event = if state.base_ui_state.codex_view.discovered_only {
-                "codex filter discovered only".to_string()
+                "图鉴仅显示已发现".to_string()
             } else {
-                "codex filter all entries".to_string()
+                "图鉴显示全部条目".to_string()
             };
         }
     }
@@ -10824,9 +10827,9 @@ fn runtime_upload_transport_enabled(settings: &RuntimePrivacySettings) -> bool {
 
 fn runtime_upload_kind_label(kind: RuntimeUploadKind) -> &'static str {
     match kind {
-        RuntimeUploadKind::Telemetry => "telemetry upload",
-        RuntimeUploadKind::RawReplay => "raw replay upload",
-        RuntimeUploadKind::CrashReport => "crash report upload",
+        RuntimeUploadKind::Telemetry => "匿名遥测上传",
+        RuntimeUploadKind::RawReplay => "原始 Replay 上传",
+        RuntimeUploadKind::CrashReport => "崩溃报告上传",
     }
 }
 
@@ -11516,7 +11519,8 @@ mod tests {
         runtime_run_mode_duration_seconds, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
-        runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
+        runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_character,
+        select_next_runtime_map, select_next_runtime_run_mode,
         select_next_runtime_starting_passive, select_next_runtime_starting_weapon,
         select_runtime_chapter_build_loadout, settle_runtime_meta_if_needed, sounds_for_events,
         sync_runtime_default_build_unlocks, toggle_runtime_privacy_setting,
@@ -11606,7 +11610,7 @@ mod tests {
             dt_seconds,
             accumulator: 0.0,
             latest_snapshot,
-            last_event: "run started".to_string(),
+            last_event: "巡逻开始".to_string(),
             last_event_kind: RuntimeEventKind::System,
             pending_sounds: Vec::new(),
             effects: Vec::new(),
@@ -13575,7 +13579,7 @@ mod tests {
             apply_runtime_chapter_action(&mut state, RuntimeChapterAction::StartSelectedChapter)
                 .unwrap();
 
-        assert!(message.contains("started chapter frosting-grassland"));
+        assert!(message.contains("已开始章节挑战 糖霜草地 (frosting-grassland)"));
         assert!(message.contains("章节挑战"));
         assert_eq!(state.config.map_id, "frosting-grassland");
         assert_eq!(state.run_mode, RunMode::ChapterChallenge);
@@ -13594,6 +13598,30 @@ mod tests {
         );
         assert_eq!(state.base_ui_state.last_selected_run_mode, "chapter");
         assert_eq!(state.run_number, 2);
+    }
+
+    #[test]
+    fn runtime_loadout_selection_messages_are_player_readable() {
+        let mut state = runtime_state_for_tests();
+        state
+            .meta_progress
+            .unlocks
+            .characters
+            .insert("bubble-courier".to_string());
+        state
+            .meta_progress
+            .unlocks
+            .maps
+            .insert("soda-creek".to_string());
+
+        let character_message = select_next_runtime_character(&mut state).unwrap();
+        assert!(character_message.contains("已选择角色 泡泡邮差 (bubble-courier)"));
+        assert!(character_message.contains("重新开始巡逻"));
+
+        let map_message = select_next_runtime_map(&mut state).unwrap();
+        assert!(map_message.contains("已选择地图 汽水溪谷 (soda-creek)"));
+        assert!(map_message.contains("重新开始巡逻"));
+        assert_eq!(state.run_number, 3);
     }
 
     #[test]
