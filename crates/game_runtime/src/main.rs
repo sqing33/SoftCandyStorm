@@ -5690,6 +5690,11 @@ fn render_meta_loadout_panel(
         lines.push(format!("每日固定 seed {}", runtime_daily_storm_seed()));
     }
     lines.push(format!("地图 {} ({})", map_label, config.map_id));
+    if let Some(target_summary) =
+        format_runtime_patrol_target_summary(progress, content, &config.map_id, run_mode)
+    {
+        lines.push(target_summary);
+    }
 
     if let Some(map) = content.maps.get(&config.map_id) {
         lines.push(format!("地图说明 {}", map.description));
@@ -5841,6 +5846,99 @@ fn format_runtime_map_wave_preview(content: &ContentPack, map_id: &str) -> Strin
         runtime_pressure_budget_label(&wave.pressure_budget.middle),
         runtime_pressure_budget_label(&wave.pressure_budget.late),
     )
+}
+
+fn format_runtime_patrol_target_summary(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    map_id: &str,
+    run_mode: RunMode,
+) -> Option<String> {
+    let chapter = progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == map_id)?;
+    let goals = runtime_chapter_goal_entries(&chapter.chapter_id, content);
+    let completed_count = goals
+        .iter()
+        .filter(|(goal_id, _, _)| chapter.completed_goals.contains(goal_id))
+        .count();
+    Some(format!(
+        "巡逻目标 推荐 {}  目标 {}/{}  风暴 {}  Boss {}  目标奖励 {}",
+        runtime_map_recommended_difficulty(map_id),
+        completed_count,
+        goals.len(),
+        runtime_run_mode_storm_strength_label(run_mode),
+        runtime_boss_label(content, &chapter.boss_id),
+        format_runtime_chapter_reward_preview(&chapter.chapter_id, content),
+    ))
+}
+
+fn runtime_map_recommended_difficulty(map_id: &str) -> &'static str {
+    match map_id {
+        "frosting-grassland" => "新手",
+        "soda-creek" => "进阶",
+        "cotton-cloud-pasture" => "中期清群",
+        "caramel-workshop" => "高压控制",
+        "jelly-platform" => "路线挑战",
+        "cracked-star-jar" => "终章",
+        _ => "标准",
+    }
+}
+
+fn runtime_run_mode_storm_strength_label(run_mode: RunMode) -> &'static str {
+    match run_mode {
+        RunMode::DailyStorm | RunMode::EndlessStorm => "强风暴",
+        RunMode::LongPatrol => "延长标准",
+        RunMode::ChapterChallenge => "章节锁定",
+        RunMode::ExperimentalStorm => "候选测试",
+        RunMode::StandardPatrol => "标准",
+    }
+}
+
+fn format_runtime_chapter_reward_preview(chapter_id: &str, content: &ContentPack) -> String {
+    let mut rewards = Vec::new();
+    if let Some(character_id) = runtime_character_unlocked_by_chapter(chapter_id, content) {
+        rewards.push(format!(
+            "角色 {}",
+            runtime_character_label(content, &character_id)
+        ));
+    }
+    if chapter_id == "frosting-grassland" {
+        rewards.push(format!(
+            "武器 {}",
+            runtime_weapon_label(content, "marshmallow-shield")
+        ));
+    }
+    if let Some((next_chapter, required_star_shards)) = runtime_next_chapter_unlock(chapter_id) {
+        rewards.push(format!(
+            "地图 {}(需 {} 星片)",
+            chapter_label(content, next_chapter),
+            required_star_shards,
+        ));
+    }
+    if let Some(evolution_id) = game_core::meta::chapter_target_evolution_id(chapter_id) {
+        rewards.push(format!(
+            "构筑目标 {}",
+            runtime_evolution_label(content, evolution_id)
+        ));
+    }
+    if rewards.is_empty() {
+        "星片和章节完成度".to_string()
+    } else {
+        rewards.join(" / ")
+    }
+}
+
+fn runtime_character_unlocked_by_chapter(
+    chapter_id: &str,
+    content: &ContentPack,
+) -> Option<String> {
+    content
+        .characters
+        .keys()
+        .find(|character_id| runtime_chapter_for_character_unlock(character_id) == Some(chapter_id))
+        .cloned()
 }
 
 fn runtime_wave_for_map<'a>(content: &'a ContentPack, map_id: &str) -> Option<&'a WaveDefinition> {
@@ -14873,6 +14971,9 @@ mod tests {
         assert!(panel.contains("模式说明 主线推进和平衡基准"));
         assert!(panel.contains("奖励 标准章节目标、解锁和图鉴进度"));
         assert!(panel.contains("汽水溪谷"));
+        assert!(panel.contains(
+            "巡逻目标 推荐 进阶  目标 0/4  风暴 标准  Boss 汽水喷泉龙  目标奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"
+        ));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
         assert!(panel.contains("地图机制 泡泡水流 每36s x2 5s 减速x0.78"));
@@ -15071,6 +15172,9 @@ mod tests {
             assert!(panel.contains(expected), "missing loadout label {expected}");
         }
         assert!(panel.contains("地图机制 无固定地形伤害"));
+        assert!(panel.contains(
+            "巡逻目标 推荐 新手  目标 0/5  风暴 标准  Boss 暴走搅糖机  目标奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"
+        ));
         assert!(panel
             .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"));
         assert!(panel.contains("本图目标 0/5  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
