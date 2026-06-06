@@ -22,6 +22,7 @@ use std::{
 };
 
 const DEFAULT_TICK_RATE: u32 = 30;
+pub const OPENING_ENEMY_SPAWN_DELAY_SECONDS: f32 = 3.0;
 const PLAYER_RADIUS: f32 = 18.0;
 const CONTACT_DAMAGE_CAP_PER_SECOND: f32 = 35.0;
 const HAZARD_DAMAGE_CAP_PER_SECOND: f32 = 42.0;
@@ -581,7 +582,7 @@ impl GameCore {
             hazards: Vec::new(),
             projectiles: Vec::new(),
             pickups: Vec::new(),
-            spawn_timer: 0.0,
+            spawn_timer: OPENING_ENEMY_SPAWN_DELAY_SECONDS,
             spawned_boss_events: BTreeSet::new(),
             boss_chests_available: 0,
             pending_upgrade_options: Vec::new(),
@@ -5735,6 +5736,7 @@ mod tests {
         )
         .expect("base demo content should initialize GameCore");
         core.enemies.clear();
+        core.spawn_timer = 0.0;
 
         let mut events = Vec::new();
         core.update_wave_spawns(0.1, &mut events);
@@ -5764,6 +5766,34 @@ mod tests {
                 .count(),
             3
         );
+    }
+
+    #[test]
+    fn opening_wave_spawns_wait_for_safe_start_window() {
+        let mut core = GameCore::reset(RunConfig::default());
+
+        let before_first_second = core.step(PlayerAction::default(), FixedDt::from_seconds(1.0));
+        assert!(!before_first_second
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::EnemySpawned { .. })));
+        assert!(before_first_second.snapshot.visible_enemies.is_empty());
+
+        let before_delay = core.step(PlayerAction::default(), FixedDt::from_seconds(1.9));
+        assert!(before_delay.snapshot.time_seconds < OPENING_ENEMY_SPAWN_DELAY_SECONDS);
+        assert!(!before_delay
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::EnemySpawned { .. })));
+        assert!(before_delay.snapshot.visible_enemies.is_empty());
+
+        let after_delay = core.step(PlayerAction::default(), FixedDt::from_seconds(0.2));
+        assert!(after_delay.snapshot.time_seconds > OPENING_ENEMY_SPAWN_DELAY_SECONDS);
+        assert!(after_delay
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::EnemySpawned { .. })));
+        assert!(!after_delay.snapshot.visible_enemies.is_empty());
     }
 
     #[test]

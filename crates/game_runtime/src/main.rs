@@ -2957,8 +2957,17 @@ fn format_build_status(build: &BuildSnapshot, content: &ContentPack) -> String {
     )
 }
 
-fn format_enemy_swarm_status(enemies: &[EnemySnapshot], content: &ContentPack) -> String {
+fn format_enemy_swarm_status(
+    enemies: &[EnemySnapshot],
+    content: &ContentPack,
+    time_seconds: f32,
+) -> String {
     if enemies.is_empty() {
+        let opening_remaining =
+            (game_core::OPENING_ENEMY_SPAWN_DELAY_SECONDS - time_seconds).max(0.0);
+        if opening_remaining > 0.0 {
+            return format!("敌群 开局缓冲 {:.1}s", opening_remaining);
+        }
         return "敌群 无".to_string();
     }
 
@@ -3436,7 +3445,11 @@ fn update_hud(
                 &state.content,
             );
             let build_status = format_build_status(&snapshot.build, &state.content);
-            let enemy_status = format_enemy_swarm_status(&snapshot.visible_enemies, &state.content);
+            let enemy_status = format_enemy_swarm_status(
+                &snapshot.visible_enemies,
+                &state.content,
+                snapshot.time_seconds,
+            );
             let event_status =
                 format_event_effect_status(&snapshot.active_event_effects, &state.content);
             let hazard_status =
@@ -11783,7 +11796,7 @@ mod tests {
             },
         ];
 
-        let status = format_enemy_swarm_status(&enemies, &content);
+        let status = format_enemy_swarm_status(&enemies, &content, 12.0);
 
         assert!(status.contains("蹦蹦软糖 x2"));
         assert!(status.contains("焦糖史莱姆(留黏地) x1"));
@@ -11796,8 +11809,16 @@ mod tests {
     #[test]
     fn enemy_swarm_status_renders_empty_state() {
         assert_eq!(
-            format_enemy_swarm_status(&[], &ContentPack::base_demo()),
+            format_enemy_swarm_status(&[], &ContentPack::base_demo(), 12.0),
             "敌群 无"
+        );
+    }
+
+    #[test]
+    fn enemy_swarm_status_renders_opening_grace_countdown() {
+        assert_eq!(
+            format_enemy_swarm_status(&[], &ContentPack::base_demo(), 1.0),
+            "敌群 开局缓冲 2.0s"
         );
     }
 
