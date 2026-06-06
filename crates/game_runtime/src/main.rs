@@ -5792,7 +5792,7 @@ fn render_meta_codex_panel(
         } else {
             "继续巡逻、使用装备、击败敌人或解锁地图后显示说明。".to_string()
         };
-        lines.push(format!("{} ({})  {}", title, entry.id, status));
+        lines.push(format!("{title}  {status}"));
         lines.push(detail);
         if entry.discovered {
             lines.push(format!("行动建议 {}", entry.action_hint));
@@ -5807,7 +5807,7 @@ fn render_meta_codex_panel(
     } else {
         lines.push("当前过滤条件下没有图鉴条目；按 V 查看全部条目。".to_string());
     }
-    let highlights = meta_codex_recent_discoveries(progress, 5);
+    let highlights = meta_codex_recent_discoveries(progress, content, 5);
     lines.push(format!("\n已发现 {}", format_string_slice(&highlights, 5)));
     if let Some(report) = settlement {
         lines.push(format!(
@@ -7589,22 +7589,26 @@ fn discovered_meta_entries(group: &std::collections::BTreeMap<String, MetaCodexE
     group.values().filter(|entry| entry.discovered).count()
 }
 
-fn meta_codex_recent_discoveries(progress: &MetaProgress, limit: usize) -> Vec<String> {
+fn meta_codex_recent_discoveries(
+    progress: &MetaProgress,
+    content: &ContentPack,
+    limit: usize,
+) -> Vec<String> {
     let groups = [
-        ("character", &progress.codex.characters),
-        ("weapon", &progress.codex.weapons),
-        ("passive", &progress.codex.passives),
-        ("enemy", &progress.codex.enemies),
-        ("boss", &progress.codex.bosses),
-        ("map", &progress.codex.maps),
-        ("evolution", &progress.codex.evolutions),
-        ("event", &progress.codex.events),
+        &progress.codex.characters,
+        &progress.codex.weapons,
+        &progress.codex.passives,
+        &progress.codex.enemies,
+        &progress.codex.bosses,
+        &progress.codex.maps,
+        &progress.codex.evolutions,
+        &progress.codex.events,
     ];
     let mut items = Vec::new();
-    for (label, group) in groups {
+    for group in groups {
         for (id, entry) in group {
             if entry.discovered {
-                items.push(format!("{label}:{id}"));
+                items.push(runtime_codex_content_label(content, id));
             }
         }
     }
@@ -9301,28 +9305,28 @@ fn format_codex_update_label(update: &str, content: &ContentPack) -> String {
 
 fn runtime_codex_content_label(content: &ContentPack, id: &str) -> String {
     if content.characters.contains_key(id) {
-        return format!("角色 {} ({id})", runtime_character_label(content, id));
+        return format!("角色 {}", runtime_character_label(content, id));
     }
     if content.weapons.contains_key(id) {
-        return format!("武器 {} ({id})", runtime_weapon_label(content, id));
+        return format!("武器 {}", runtime_weapon_label(content, id));
     }
     if content.passives.contains_key(id) {
-        return format!("被动 {} ({id})", runtime_passive_label(content, id));
+        return format!("被动 {}", runtime_passive_label(content, id));
     }
     if content.enemies.contains_key(id) {
-        return format!("敌人 {} ({id})", runtime_enemy_label(content, id));
+        return format!("敌人 {}", runtime_enemy_label(content, id));
     }
     if content.bosses.contains_key(id) {
-        return format!("Boss {} ({id})", runtime_boss_label(content, id));
+        return format!("Boss {}", runtime_boss_label(content, id));
     }
     if content.maps.contains_key(id) {
-        return format!("地图 {} ({id})", runtime_map_label(content, id));
+        return format!("地图 {}", runtime_map_label(content, id));
     }
     if content.evolutions.contains_key(id) {
-        return format!("进化 {} ({id})", runtime_evolution_label(content, id));
+        return format!("进化 {}", runtime_evolution_label(content, id));
     }
     if content.events.contains_key(id) {
-        return format!("事件 {} ({id})", runtime_event_label(content, id));
+        return format!("事件 {}", runtime_event_label(content, id));
     }
     id.to_string()
 }
@@ -14999,7 +15003,8 @@ mod tests {
         assert!(panel.contains("章节目标 糖霜草地：收集 200 糖晶经验（奖励 星片 +1）"));
         assert!(panel.contains("糖霜草地：完成彩虹糖流星雨进化（奖励 星片 +1；完成本章构筑挑战）"));
         assert!(!panel.contains("章节目标 frosting-grassland:collect-200-candy-crystals"));
-        assert!(panel.contains("发现 角色 糖罐守护员 (jar-keeper)"));
+        assert!(panel.contains("发现 角色 糖罐守护员"));
+        assert!(!panel.contains("发现 角色 糖罐守护员 (jar-keeper)"));
         assert!(!panel.contains("discovered:jar-keeper"));
         assert!(panel.contains("下一步行动"));
         assert!(panel.contains("解锁概览"));
@@ -15525,7 +15530,8 @@ mod tests {
         assert!(panel.contains("角色: 1/1 已发现"));
         assert!(panel.contains("图鉴路线 总计"));
         assert!(panel.contains("下一发现 角色 泡泡邮差"));
-        assert!(panel.contains("character:jar-keeper"));
+        assert!(panel.contains("已发现 角色 糖罐守护员"));
+        assert!(!panel.contains("character:jar-keeper"));
         assert!(panel.contains("初始武器 彩虹糖弹"));
         assert!(panel.contains("属性 生命"));
         assert!(panel.contains("来源 默认角色，F5 可直接选择"));
@@ -15587,7 +15593,7 @@ mod tests {
         assert!(panel.contains("V、鼠标中键或手柄 Y 切换过滤"));
         assert!(panel.contains("右下点击区: <类  类>  <条目  条目>  过滤"));
         assert!(panel.contains("蹦蹦软糖"));
-        assert!(panel.contains("bouncy-gummy"));
+        assert!(!panel.contains("bouncy-gummy"));
         assert!(panel.contains("行为"));
         assert!(panel.contains("威胁"));
         assert!(panel.contains("反制"));
@@ -16194,7 +16200,7 @@ mod tests {
 
         assert!(panel.contains("图鉴浏览 全部条目"));
         assert!(panel.contains("未发现条目"));
-        assert!(panel.contains("bouncy-gummy"));
+        assert!(!panel.contains("bouncy-gummy"));
         assert!(panel.contains("继续巡逻、使用装备、击败敌人或解锁地图后显示说明"));
         assert!(!panel.contains("蹦蹦软糖"));
     }
