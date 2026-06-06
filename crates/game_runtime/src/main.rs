@@ -4167,7 +4167,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             format_settlement_duration(summary.duration_seconds),
             format_terminal_reason(&summary.terminal_reason),
@@ -4180,6 +4180,7 @@ fn render_meta_overview_panel(
             format_damage_sources(&summary.damage_taken_by_source, 2),
             format_weapon_levels(&summary.weapon_levels, 4),
             format_passive_set(&summary.passives_used, 3),
+            format_evolution_set(&summary.evolutions_used, content, 3),
             report.resources_gained.candy_crystal_shards,
             report.resources_gained.star_shards,
             report.resources_gained.storm_grains,
@@ -6104,6 +6105,18 @@ fn format_passive_set(passives: &BTreeSet<String>, limit: usize) -> String {
     format_string_items(&values, limit)
 }
 
+fn format_evolution_set(
+    evolutions: &BTreeSet<String>,
+    content: &ContentPack,
+    limit: usize,
+) -> String {
+    let values = evolutions
+        .iter()
+        .map(|id| format!("{} ({id})", runtime_evolution_label(content, id)))
+        .collect::<Vec<_>>();
+    format_string_items(&values, limit)
+}
+
 fn format_damage_sources(sources: &BTreeMap<String, f32>, limit: usize) -> String {
     if sources.is_empty() {
         return "无".to_string();
@@ -7735,7 +7748,11 @@ mod tests {
         MetaRunSummary, PickupSnapshot, PickupType, ProjectileSnapshot, RunConfig, RunMode,
         StatusEffectSnapshot, TerminalKind, TerminalState, Vec2 as CoreVec2,
     };
-    use std::{collections::BTreeMap, fs, path::PathBuf};
+    use std::{
+        collections::{BTreeMap, BTreeSet},
+        fs,
+        path::PathBuf,
+    };
 
     #[allow(clippy::too_many_arguments)]
     fn meta_panel_context<'a>(
@@ -10183,7 +10200,7 @@ mod tests {
             boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
             passives_used: Default::default(),
-            evolutions_used: Default::default(),
+            evolutions_used: BTreeSet::from(["rainbow-candy-meteor".to_string()]),
             enemies_defeated: Default::default(),
             bosses_defeated: Default::default(),
         };
@@ -10215,6 +10232,7 @@ mod tests {
         assert!(panel.contains("受伤 12.5"));
         assert!(panel.contains("接触 9.0"));
         assert!(panel.contains("rainbow-candy-shot Lv.1"));
+        assert!(panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
         assert!(panel.contains("collect-200-candy-crystals"));
         assert!(panel.contains("discovered:jar-keeper"));
         assert!(panel.contains("下一步行动"));
