@@ -226,6 +226,13 @@ impl MetaProgress {
             .find(|offer| !self.is_shop_offer_unlocked(offer))
     }
 
+    pub fn next_demo_build_shop_offer(&self) -> Option<MetaShopOffer> {
+        demo_shop_offers().into_iter().find(|offer| {
+            matches!(offer.kind.as_str(), "weapon" | "passive")
+                && !self.is_shop_offer_unlocked(offer)
+        })
+    }
+
     pub fn purchase_next_demo_shop_offer(&mut self) -> Result<MetaUnlock, String> {
         let offer = self
             .next_demo_shop_offer()
@@ -922,6 +929,26 @@ mod tests {
             .next_demo_shop_offer()
             .expect("demo shop should offer weapons after early passives");
         assert_eq!(weapon_offer.offer_id, "weapon:candy-crystal-lance");
+    }
+
+    #[test]
+    fn demo_build_shop_offer_peeks_past_locked_characters() {
+        let progress = MetaProgress::demo_start();
+
+        assert_eq!(
+            progress
+                .next_demo_shop_offer()
+                .expect("demo shop should have a first offer")
+                .offer_id,
+            "character:bubble-courier"
+        );
+        assert_eq!(
+            progress
+                .next_demo_build_shop_offer()
+                .expect("demo build shop should have a future build offer")
+                .offer_id,
+            "passive:star-spoon"
+        );
     }
 
     #[test]

@@ -4291,9 +4291,10 @@ fn render_meta_overview_panel(
     let unlock_summary = format_meta_overview_unlock_summary(progress, content);
     let chapter_summary = format_meta_overview_chapter_summary(progress, content);
     let shop_summary = format_meta_shop_offer_line(progress, content);
+    let build_shop_summary = format_runtime_next_build_shop_line(progress, content);
 
     let mut output = format!(
-        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n基地解锁 {}\n",
+        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n基地解锁 {}\n构筑进阶 {}\n",
         META_PANEL_HEADER,
         META_PANEL_TAB_CLICK_HINT,
         progress.resources.candy_crystal_shards,
@@ -4309,6 +4310,7 @@ fn render_meta_overview_panel(
         unlock_summary,
         chapter_summary,
         shop_summary,
+        build_shop_summary,
     );
 
     if let Some(report) = settlement {
@@ -4891,6 +4893,7 @@ fn render_meta_loadout_panel(
         format_runtime_loadout_plan(content, &config.starting_loadout)
     ));
     lines.push(format_runtime_build_pool_summary(progress, content));
+    lines.push(format_runtime_build_pool_detail(progress, content));
     lines.push(format!(
         "模式 {} ({})",
         runtime_run_mode_label(run_mode),
@@ -5108,6 +5111,107 @@ fn format_runtime_build_pool_summary(progress: &MetaProgress, content: &ContentP
             .count(),
         content.evolutions.len(),
     )
+}
+
+fn format_runtime_build_pool_detail(progress: &MetaProgress, content: &ContentPack) -> String {
+    let default_weapon_ids = runtime_default_weapon_ids(content);
+    let default_passive_ids = runtime_default_passive_ids(content);
+    let unlocked_advanced_weapon_ids = runtime_unlocked_advanced_weapon_ids(progress, content);
+    let unlocked_advanced_passive_ids = runtime_unlocked_advanced_passive_ids(progress, content);
+    let advanced_parts = [
+        format!(
+            "武器 {}",
+            format_runtime_content_id_labels(&unlocked_advanced_weapon_ids, 2, |id| {
+                runtime_weapon_label(content, id)
+            })
+        ),
+        format!(
+            "被动 {}",
+            format_runtime_content_id_labels(&unlocked_advanced_passive_ids, 2, |id| {
+                runtime_passive_label(content, id)
+            })
+        ),
+    ];
+
+    format!(
+        "构筑池详情 默认武器 {}  默认被动 {}  已解锁进阶 {}  {}",
+        format_runtime_content_id_labels(&default_weapon_ids, 3, |id| runtime_weapon_label(
+            content, id
+        )),
+        format_runtime_content_id_labels(&default_passive_ids, 3, |id| runtime_passive_label(
+            content, id
+        )),
+        advanced_parts.join(" / "),
+        format_runtime_next_build_shop_line(progress, content),
+    )
+}
+
+fn format_runtime_next_build_shop_line(progress: &MetaProgress, content: &ContentPack) -> String {
+    if let Some(offer) = progress.next_demo_build_shop_offer() {
+        let status = if progress
+            .next_demo_shop_offer()
+            .is_some_and(|next_offer| next_offer.offer_id == offer.offer_id)
+        {
+            "当前可买"
+        } else {
+            "排队待解锁"
+        };
+        return format!(
+            "下一构筑 {}  {}",
+            format_meta_shop_offer_label(&offer, content),
+            status,
+        );
+    }
+
+    "下一构筑 已全部解锁".to_string()
+}
+
+fn runtime_default_weapon_ids(content: &ContentPack) -> Vec<String> {
+    content
+        .weapons
+        .iter()
+        .filter(|(_, weapon)| runtime_is_default_unlock(&weapon.unlock.unlock_type))
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
+fn runtime_default_passive_ids(content: &ContentPack) -> Vec<String> {
+    content
+        .passives
+        .iter()
+        .filter(|(_, passive)| runtime_is_default_unlock(&passive.unlock.unlock_type))
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
+fn runtime_unlocked_advanced_weapon_ids(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Vec<String> {
+    content
+        .weapons
+        .iter()
+        .filter(|(id, weapon)| {
+            !runtime_is_default_unlock(&weapon.unlock.unlock_type)
+                && progress.unlocks.weapons.contains(*id)
+        })
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
+fn runtime_unlocked_advanced_passive_ids(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Vec<String> {
+    content
+        .passives
+        .iter()
+        .filter(|(id, passive)| {
+            !runtime_is_default_unlock(&passive.unlock.unlock_type)
+                && progress.unlocks.passives.contains(*id)
+        })
+        .map(|(id, _)| id.clone())
+        .collect()
 }
 
 fn runtime_is_default_unlock(unlock_type: &str) -> bool {
@@ -11207,6 +11311,7 @@ mod tests {
         ));
         assert!(panel.contains("解锁概览 角色"));
         assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
+        assert!(panel.contains("构筑进阶 下一构筑 被动 星星勺子 (star-spoon)  排队待解锁"));
         assert!(panel.contains("地图 糖霜草地(frosting-grassland)"));
         assert!(panel.contains(
             "章节进度 未完成 5 项；糖霜草地 下一目标 标准巡逻坚持 10 分钟（奖励 星片 +1）"
@@ -12084,6 +12189,9 @@ mod tests {
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
         assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
+        assert!(panel.contains("构筑池详情 默认武器"));
+        assert!(panel.contains("默认被动"));
+        assert!(panel.contains("下一构筑 被动 星星勺子 (star-spoon)  排队待解锁"));
         assert!(panel.contains("模式 标准巡逻 (10 分钟)"));
         assert!(panel.contains("模式说明 主线推进和平衡基准"));
         assert!(panel.contains("奖励 标准章节目标、解锁和图鉴进度"));
