@@ -105,6 +105,21 @@ pub struct StartingLoadout {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Difficulty {
     Normal,
+    StrongStorm,
+}
+
+fn difficulty_spawn_rate_multiplier(difficulty: Difficulty) -> f32 {
+    match difficulty {
+        Difficulty::Normal => 1.0,
+        Difficulty::StrongStorm => 1.20,
+    }
+}
+
+fn difficulty_max_alive(max_alive: usize, difficulty: Difficulty) -> usize {
+    match difficulty {
+        Difficulty::Normal => max_alive,
+        Difficulty::StrongStorm => ((max_alive as f32) * 1.25).ceil() as usize,
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1250,8 +1265,9 @@ impl GameCore {
             if let Some(definition) = self.content.bosses.get(&boss_id).cloned() {
                 let position =
                     self.spawn_position_around_player(self.map.spawn_min, self.map.spawn_max);
-                let boss =
+                let mut boss =
                     Enemy::from_boss_definition(self.allocate_entity_id(), position, &definition);
+                self.apply_difficulty_to_enemy(&mut boss);
                 events.push(GameEvent::BossSpawned {
                     entity_id: boss.entity_id,
                     boss_id: boss.enemy_id.clone(),
@@ -1265,14 +1281,16 @@ impl GameCore {
             return;
         };
 
-        if self.enemies.len() >= segment.max_alive {
+        let max_alive = difficulty_max_alive(segment.max_alive, self.config.difficulty);
+        if self.enemies.len() >= max_alive {
             return;
         }
 
         let spawn_interval = (segment.spawn_interval_ms / 1000.0)
             / self
                 .active_event_multiplier("spawn_rate_multiplier")
-                .max(0.1);
+                .max(0.1)
+            / difficulty_spawn_rate_multiplier(self.config.difficulty);
 
         self.spawn_timer -= dt;
         if self.spawn_timer > 0.0 {
@@ -1280,7 +1298,7 @@ impl GameCore {
         }
 
         self.spawn_timer += spawn_interval;
-        let free_slots = segment.max_alive.saturating_sub(self.enemies.len());
+        let free_slots = max_alive.saturating_sub(self.enemies.len());
         let spawn_count = segment.spawn_count.min(free_slots);
         let mut group_spawn_anchor = None;
         for _ in 0..spawn_count {
@@ -1304,13 +1322,24 @@ impl GameCore {
                 } else {
                     self.spawn_position_around_player(self.map.spawn_min, self.map.spawn_max)
                 };
-                let enemy =
+                let mut enemy =
                     Enemy::from_enemy_definition(self.allocate_entity_id(), position, &definition);
+                self.apply_difficulty_to_enemy(&mut enemy);
                 events.push(GameEvent::EnemySpawned {
                     entity_id: enemy.entity_id,
                     enemy_id: enemy.enemy_id.clone(),
                 });
                 self.enemies.push(enemy);
+            }
+        }
+    }
+
+    fn apply_difficulty_to_enemy(&self, enemy: &mut Enemy) {
+        match self.config.difficulty {
+            Difficulty::Normal => {}
+            Difficulty::StrongStorm => {
+                let speed_multiplier = if enemy.is_boss { 1.08 } else { 1.12 };
+                enemy.move_speed *= speed_multiplier;
             }
         }
     }
@@ -4303,6 +4332,33 @@ mod tests {
         core.update_weapon_cooldowns(0.0, &mut Vec::new());
         assert!(!core.projectiles.is_empty());
         core.update_projectiles(0.0, &mut Vec::new());
+    }
+
+    #[test]
+    fn strong_storm_raises_spawn_pressure_and_enemy_speed() {
+        assert!(difficulty_spawn_rate_multiplier(Difficulty::StrongStorm) > 1.0);
+        assert_eq!(difficulty_max_alive(10, Difficulty::StrongStorm), 13);
+
+        let content = ContentPack::base_demo();
+        let enemy_definition = content
+            .enemies
+            .get("bouncy-gummy")
+            .expect("base demo should include bouncy-gummy")
+            .clone();
+        let core = GameCore::reset_with_content(
+            RunConfig {
+                difficulty: Difficulty::StrongStorm,
+                ..RunConfig::default()
+            },
+            content,
+        )
+        .expect("base demo content should initialize");
+        let mut enemy = Enemy::from_enemy_definition(7, Vec2::ZERO, &enemy_definition);
+        let normal_speed = enemy.move_speed;
+
+        core.apply_difficulty_to_enemy(&mut enemy);
+
+        assert!(enemy.move_speed > normal_speed);
     }
 
     #[test]

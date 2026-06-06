@@ -4105,6 +4105,7 @@ fn write_json_line_or_exit<T: Serialize>(writer: &mut impl Write, value: &T) {
 fn replay_run_config_to_config(replay: &ReplayRecord) -> Result<RunConfig, String> {
     let difficulty = match replay.run_config.difficulty.as_str() {
         "normal" => Difficulty::Normal,
+        "strong_storm" => Difficulty::StrongStorm,
         value => return Err(format!("unsupported replay difficulty `{value}`")),
     };
 
@@ -4592,6 +4593,7 @@ impl ReplayRunConfig {
             },
             difficulty: match config.difficulty {
                 Difficulty::Normal => "normal",
+                Difficulty::StrongStorm => "strong_storm",
             }
             .to_string(),
             duration_seconds: config.duration_seconds,

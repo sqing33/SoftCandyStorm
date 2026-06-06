@@ -4017,6 +4017,7 @@ fn select_next_runtime_map(state: &mut RuntimeState) -> std::io::Result<String> 
 fn select_next_runtime_run_mode(state: &mut RuntimeState) -> std::io::Result<String> {
     let next_mode = next_runtime_run_mode(state.run_mode);
     state.run_mode = next_mode;
+    state.config.difficulty = runtime_run_mode_difficulty(next_mode);
     state.config.duration_seconds = runtime_run_mode_duration_seconds(next_mode);
     if next_mode == RunMode::DailyStorm {
         state.config.seed = runtime_daily_storm_seed();
@@ -6474,7 +6475,7 @@ fn run_config_from_cli(cli: &RuntimeCli, content: &ContentPack) -> RunConfig {
         map_id: cli.map_id.clone(),
         character_id: cli.character_id.clone(),
         starting_loadout: runtime_character_starting_loadout(content, &cli.character_id),
-        difficulty: Difficulty::Normal,
+        difficulty: runtime_run_mode_difficulty(cli.run_mode),
         duration_seconds: runtime_run_duration_seconds_for_cli(cli),
         ruleset_version: "prototype-v0".to_string(),
         content_pack_ids: cli.content_pack_ids.clone(),
@@ -6503,6 +6504,13 @@ fn runtime_run_mode_duration_seconds(mode: RunMode) -> f32 {
         RunMode::LongPatrol => RUNTIME_LONG_PATROL_SECONDS,
         RunMode::EndlessStorm => RUNTIME_ENDLESS_STORM_SECONDS,
         _ => RUNTIME_STANDARD_PATROL_SECONDS,
+    }
+}
+
+fn runtime_run_mode_difficulty(mode: RunMode) -> Difficulty {
+    match mode {
+        RunMode::DailyStorm | RunMode::EndlessStorm => Difficulty::StrongStorm,
+        _ => Difficulty::Normal,
     }
 }
 
@@ -6572,9 +6580,9 @@ fn runtime_run_mode_description(mode: RunMode) -> &'static str {
     match mode {
         RunMode::StandardPatrol => "主线推进和平衡基准",
         RunMode::LongPatrol => "留给 Build 更多升级和进化空间",
-        RunMode::EndlessStorm => "先以 20 分钟目标承载极限 Build 与压力验证",
+        RunMode::EndlessStorm => "先以 20 分钟强风暴目标承载极限 Build 与压力验证",
         RunMode::ChapterChallenge => "固定规则挑战后续接入",
-        RunMode::DailyStorm => "固定 seed 挑战，胜利额外给风暴糖粒",
+        RunMode::DailyStorm => "固定 seed 与强风暴压力，胜利额外给风暴糖粒",
         RunMode::ExperimentalStorm => "候选内容测试模式，当前不进入主线",
     }
 }
@@ -6768,6 +6776,7 @@ impl RuntimePlatformPaths {
 fn difficulty_label(difficulty: Difficulty) -> &'static str {
     match difficulty {
         Difficulty::Normal => "normal",
+        Difficulty::StrongStorm => "strong_storm",
     }
 }
 
@@ -8125,9 +8134,9 @@ mod tests {
     };
     use game_core::{
         ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
-        EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot, MetaProgress,
-        MetaRunSummary, PickupSnapshot, PickupType, PlayerAction, ProjectileSnapshot, RunConfig,
-        RunMode, StatusEffectSnapshot, TerminalKind, TerminalState, Vec2 as CoreVec2,
+        Difficulty, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot,
+        MetaProgress, MetaRunSummary, PickupSnapshot, PickupType, PlayerAction, ProjectileSnapshot,
+        RunConfig, RunMode, StatusEffectSnapshot, TerminalKind, TerminalState, Vec2 as CoreVec2,
     };
     use std::{
         collections::{BTreeMap, BTreeSet},
@@ -8262,6 +8271,7 @@ mod tests {
             long_config.duration_seconds,
             runtime_run_mode_duration_seconds(RunMode::LongPatrol)
         );
+        assert_eq!(long_config.difficulty, Difficulty::Normal);
         assert_eq!(long_config.seed, 12_345);
 
         let daily_cli = parse_runtime_cli(["--mode".to_string(), "daily-storm".to_string()]);
@@ -8269,6 +8279,7 @@ mod tests {
 
         assert_eq!(daily_cli.run_mode, RunMode::DailyStorm);
         assert_eq!(daily_config.duration_seconds, 600.0);
+        assert_eq!(daily_config.difficulty, Difficulty::StrongStorm);
         assert_eq!(daily_config.seed, super::runtime_daily_storm_seed());
     }
 
@@ -9979,6 +9990,7 @@ mod tests {
         select_next_runtime_run_mode(&mut state).unwrap();
 
         assert_eq!(state.run_mode, RunMode::DailyStorm);
+        assert_eq!(state.config.difficulty, Difficulty::StrongStorm);
         assert_eq!(state.config.seed, super::runtime_daily_storm_seed());
         assert_eq!(state.base_ui_state.last_selected_run_mode, "daily");
         assert_eq!(state.run_number, 3);
