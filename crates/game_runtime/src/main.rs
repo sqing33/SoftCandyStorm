@@ -4140,7 +4140,7 @@ fn format_runtime_hud_text(state: &RuntimeState, snapshot: &RunSnapshot) -> Stri
         hazard_status,
         build_status,
         state.last_event,
-        state.last_event_kind.label(),
+        state.last_event_kind.display_label(),
     )
 }
 
@@ -9568,6 +9568,18 @@ impl RuntimeEventKind {
             Self::Damage => "damage",
             Self::Terminal => "terminal",
             Self::System => "system",
+        }
+    }
+
+    fn display_label(self) -> &'static str {
+        match self {
+            Self::Neutral => "状态",
+            Self::Combat => "战斗",
+            Self::Pickup => "拾取",
+            Self::Upgrade => "升级",
+            Self::Damage => "受伤",
+            Self::Terminal => "结算",
+            Self::System => "系统",
         }
     }
 }
