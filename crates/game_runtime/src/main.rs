@@ -7,8 +7,8 @@ use bevy::{
 use game_core::content::{
     BossDefinition, CharacterDefinition, EnemyDefinition, EventDefinition, EventEffectDefinition,
     EventTriggerDefinition, EvolutionDefinition, EvolutionWeaponDefinition, MapDefinition,
-    MapHazardDefinition, PassiveDefinition, StatModifierDefinition, WaveDefinition,
-    WeaponDefinition,
+    MapHazardDefinition, PassiveDefinition, StatModifierDefinition, UnlockDefinition,
+    WaveDefinition, WeaponDefinition,
 };
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
@@ -6684,6 +6684,7 @@ fn meta_codex_recent_discoveries(progress: &MetaProgress, limit: usize) -> Vec<S
 fn runtime_codex_character_description(
     item: &CharacterDefinition,
     content: &ContentPack,
+    progress: &MetaProgress,
 ) -> String {
     let trait_text = item
         .trait_definition
@@ -6691,7 +6692,7 @@ fn runtime_codex_character_description(
         .map(|trait_definition| trait_definition.description.as_str())
         .unwrap_or("无特殊特性");
     format!(
-        "{}\n玩法 标签 {}  初始武器 {}  初始被动 {}\n属性 生命 {:.0}  移速 {:.0}  拾取 {:.0}  经验 x{:.2}\n特性 {}",
+        "{}\n玩法 标签 {}  初始武器 {}  初始被动 {}\n属性 生命 {:.0}  移速 {:.0}  拾取 {:.0}  经验 x{:.2}\n特性 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         format_runtime_content_id_labels(&item.initial_loadout.weapons, 2, |id| {
@@ -6705,12 +6706,17 @@ fn runtime_codex_character_description(
         item.base_stats.pickup_radius,
         item.base_stats.xp_multiplier,
         trait_text,
+        format_codex_character_source(item, content, progress),
     )
 }
 
-fn runtime_codex_weapon_description(item: &WeaponDefinition) -> String {
+fn runtime_codex_weapon_description(
+    item: &WeaponDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
     format!(
-        "{}\n玩法 标签 {}  定位 {}  目标 {}  最高 Lv.{}\n数值 伤害 {:.0}  冷却 {:.2}s  数量 {}  范围 {:.0}\n预算 单体 {:.0}  群体 {:.0}  性能 {}",
+        "{}\n玩法 标签 {}  定位 {}  目标 {}  最高 Lv.{}\n数值 伤害 {:.0}  冷却 {:.2}s  数量 {}  范围 {:.0}\n预算 单体 {:.0}  群体 {:.0}  性能 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         runtime_weapon_role_label(&item.balance_budget.role),
@@ -6723,22 +6729,28 @@ fn runtime_codex_weapon_description(item: &WeaponDefinition) -> String {
         item.balance_budget.single_target_dps,
         item.balance_budget.group_dps,
         runtime_performance_cost_label(&item.balance_budget.performance_cost),
+        format_codex_unlock_source("weapon", &item.id, &item.unlock, content, progress),
     )
 }
 
-fn runtime_codex_passive_description(item: &PassiveDefinition) -> String {
+fn runtime_codex_passive_description(
+    item: &PassiveDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
     format!(
-        "{}\n玩法 标签 {}  最高 Lv.{}  加成 {}",
+        "{}\n玩法 标签 {}  最高 Lv.{}  加成 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         item.max_level,
         format_passive_modifiers(&item.stat_modifiers),
+        format_codex_unlock_source("passive", &item.id, &item.unlock, content, progress),
     )
 }
 
 fn runtime_codex_enemy_description(item: &EnemyDefinition, content: &ContentPack) -> String {
     format!(
-        "{}\n玩法 标签 {}  家族 {}  行为 {}  细节 {}  威胁 {:.1}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s  XP {:.0}\n反制 {}",
+        "{}\n玩法 标签 {}  家族 {}  行为 {}  细节 {}  威胁 {:.1}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s  XP {:.0}\n反制 {}\n来源 {}",
         item.common.description,
         format_upgrade_tags(&item.common.tags),
         item.family,
@@ -6750,6 +6762,7 @@ fn runtime_codex_enemy_description(item: &EnemyDefinition, content: &ContentPack
         item.common.stats.contact_damage_per_second,
         item.common.stats.xp_value,
         item.common.counterplay,
+        format_codex_enemy_source(&item.common.id, content),
     )
 }
 
@@ -6910,9 +6923,9 @@ fn runtime_nested_behavior_parameter_f32(
         .filter(|value| value.is_finite())
 }
 
-fn runtime_codex_boss_description(item: &BossDefinition) -> String {
+fn runtime_codex_boss_description(item: &BossDefinition, content: &ContentPack) -> String {
     format!(
-        "{}\n玩法 标签 {}  阶段 {}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s\n反制 {}",
+        "{}\n玩法 标签 {}  阶段 {}\n数值 生命 {:.0}  速度 {:.0}  接触 {:.0}/s\n反制 {}\n来源 {}",
         item.common.description,
         format_upgrade_tags(&item.common.tags),
         format_boss_phase_summary(&item.phases),
@@ -6920,12 +6933,17 @@ fn runtime_codex_boss_description(item: &BossDefinition) -> String {
         item.common.stats.move_speed,
         item.common.stats.contact_damage_per_second,
         item.common.counterplay,
+        format_codex_boss_source(&item.common.id, content),
     )
 }
 
-fn runtime_codex_map_description(item: &MapDefinition) -> String {
+fn runtime_codex_map_description(
+    item: &MapDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
     format!(
-        "{}\n玩法 标签 {}  尺寸 {:.0}x{:.0}  边界 {}  出生 {} {:.0}-{:.0}\n地图危险 {}\n音乐 {}",
+        "{}\n玩法 标签 {}  尺寸 {:.0}x{:.0}  边界 {}  出生 {} {:.0}-{:.0}\n地图危险 {}\n音乐 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         item.size.width,
@@ -6936,6 +6954,7 @@ fn runtime_codex_map_description(item: &MapDefinition) -> String {
         item.spawn_rules.max_distance,
         format_map_hazards_for_codex(&item.hazards),
         item.music_theme,
+        format_codex_map_source(&item.id, content, progress),
     )
 }
 
@@ -6997,9 +7016,10 @@ fn runtime_map_hazard_label(hazard_type: &str) -> String {
 fn runtime_codex_evolution_description(
     item: &EvolutionDefinition,
     content: &ContentPack,
+    progress: &MetaProgress,
 ) -> String {
     format!(
-        "{}\n玩法 标签 {}  需求 {}  触发 {}  替换 {}\n形态 {}  伤害 {:.0}  冷却 {:.2}s  数量 {}",
+        "{}\n玩法 标签 {}  需求 {}  触发 {}  替换 {}\n形态 {}  伤害 {:.0}  冷却 {:.2}s  数量 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         format_evolution_codex_requirements(item, content),
@@ -7009,10 +7029,15 @@ fn runtime_codex_evolution_description(
         item.weapon_definition.base_stats.damage,
         item.weapon_definition.base_stats.cooldown_ms / 1000.0,
         item.weapon_definition.base_stats.projectile_count,
+        format_codex_evolution_source(item, content, progress),
     )
 }
 
-fn runtime_codex_event_description(item: &EventDefinition, content: &ContentPack) -> String {
+fn runtime_codex_event_description(
+    item: &EventDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
     let effects = item
         .effects
         .iter()
@@ -7020,12 +7045,293 @@ fn runtime_codex_event_description(item: &EventDefinition, content: &ContentPack
         .map(|effect| format_event_effect_for_codex(effect, content))
         .collect::<Vec<_>>();
     format!(
-        "{}\n玩法 标签 {}  触发 {}\n效果 {}",
+        "{}\n玩法 标签 {}  触发 {}\n效果 {}\n来源 {}",
         item.description,
         format_upgrade_tags(&item.tags),
         format_event_trigger_for_codex(&item.trigger),
         effects.join("；"),
+        format_codex_event_source(item, progress),
     )
+}
+
+fn format_codex_character_source(
+    item: &CharacterDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    if item.unlock.unlock_type == "default" {
+        return "默认角色，F5 可直接选择".to_string();
+    }
+
+    let state = if progress.unlocks.characters.contains(&item.id) {
+        "已解锁，F5 可选择"
+    } else {
+        "未解锁"
+    };
+    if let Some(chapter_id) = runtime_chapter_for_character_unlock(&item.id) {
+        let boss_id = runtime_chapter_boss_id(chapter_id).unwrap_or(chapter_id);
+        return format!(
+            "{state}；击败 {} 章节 Boss {} 后解锁",
+            chapter_label(content, chapter_id),
+            runtime_boss_label(content, boss_id),
+        );
+    }
+
+    format!("{state}；通过基地解锁队列或后续章节获得")
+}
+
+fn format_codex_unlock_source(
+    kind: &str,
+    id: &str,
+    unlock: &UnlockDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    let unlocked = match kind {
+        "weapon" => progress.unlocks.weapons.contains(id),
+        "passive" => progress.unlocks.passives.contains(id),
+        "evolution" => progress.unlocks.evolutions.contains(id),
+        _ => false,
+    };
+    let base = match (kind, unlock.unlock_type.as_str(), unlocked) {
+        ("weapon", "default", _) => "默认武器池，局内可抽；已可作为 F5 开局武器".to_string(),
+        ("passive", "default", _) => "默认被动池，局内可抽；已可作为 F5 开局被动".to_string(),
+        ("weapon", _, true) => "已解锁，进入局内掉落池；F5 可作为开局武器".to_string(),
+        ("passive", _, true) => "已解锁，进入局内掉落池；F5 可作为开局被动".to_string(),
+        ("weapon", _, false) | ("passive", _, false) => {
+            "未解锁，基地构筑商店购买后进入局内掉落池".to_string()
+        }
+        ("evolution", _, true) => "已解锁记录；局内满足需求并触发后可再次获得".to_string(),
+        ("evolution", _, false) => "局内满足需求并触发后发现，不在基地直接购买".to_string(),
+        _ => format!("解锁类型 {}", unlock.unlock_type.replace('_', " ")),
+    };
+    let links = format_codex_build_links(kind, id, content);
+    if links.is_empty() {
+        base
+    } else {
+        format!("{base}；关联 {}", format_string_items(&links, 2))
+    }
+}
+
+fn format_codex_build_links(kind: &str, id: &str, content: &ContentPack) -> Vec<String> {
+    let mut links = Vec::new();
+    for evolution in content.evolutions.values() {
+        let matches = match kind {
+            "weapon" => evolution.requirements.weapon.id == id,
+            "passive" => evolution
+                .requirements
+                .passive
+                .as_ref()
+                .is_some_and(|requirement| requirement.id == id),
+            "evolution" => evolution.id == id,
+            _ => false,
+        };
+        if !matches {
+            continue;
+        }
+        let evolution_label = runtime_evolution_label(content, &evolution.id);
+        if let Some(chapter_id) = runtime_chapter_for_target_evolution(&evolution.id) {
+            links.push(format!(
+                "{} 章节目标 {}",
+                chapter_label(content, chapter_id),
+                evolution_label,
+            ));
+        } else {
+            links.push(format!("进化 {evolution_label}"));
+        }
+    }
+    links
+}
+
+fn format_codex_enemy_source(enemy_id: &str, content: &ContentPack) -> String {
+    let maps = runtime_maps_for_enemy(content, enemy_id)
+        .into_iter()
+        .map(|map_id| runtime_map_label(content, &map_id))
+        .collect::<Vec<_>>();
+    if maps.is_empty() {
+        return "临时事件或后续内容生成；遭遇或击败后记录图鉴".to_string();
+    }
+    format!(
+        "出现地图 {}；遭遇或击败后记录图鉴",
+        format_string_items(&maps, 3)
+    )
+}
+
+fn format_codex_boss_source(boss_id: &str, content: &ContentPack) -> String {
+    let sources = runtime_boss_wave_sources(content, boss_id)
+        .into_iter()
+        .map(|(map_id, time_second)| {
+            format!(
+                "{} {:.0}s",
+                runtime_map_label(content, &map_id),
+                time_second
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut parts = Vec::new();
+    if let Some(chapter_id) = runtime_chapter_for_boss_id(boss_id) {
+        parts.push(format!("{} 章节 Boss", chapter_label(content, chapter_id)));
+    }
+    if !sources.is_empty() {
+        parts.push(format!("出现 {}", format_string_items(&sources, 2)));
+    }
+    if parts.is_empty() {
+        "Boss 事件生成；击败后推进对应图鉴".to_string()
+    } else {
+        format!("{}；击败后推进章节和 Boss 图鉴", parts.join("；"))
+    }
+}
+
+fn format_codex_map_source(map_id: &str, content: &ContentPack, progress: &MetaProgress) -> String {
+    let status = if progress.unlocks.maps.contains(map_id) {
+        "已解锁，可在 F5 选择或 F2 章节挑战"
+    } else {
+        "未解锁"
+    };
+    let Some(chapter_id) = runtime_chapter_for_map_id(map_id) else {
+        return format!("{status}；非主线章节地图");
+    };
+    let mut parts = vec![format!(
+        "{status}；章节 {}",
+        chapter_label(content, chapter_id)
+    )];
+    if let Some((previous_chapter, required_star_shards)) =
+        runtime_previous_chapter_unlock_requirement(chapter_id)
+    {
+        let boss_id = runtime_chapter_boss_id(previous_chapter).unwrap_or(previous_chapter);
+        let current_star_shards = progress.resources.star_shards.min(required_star_shards);
+        parts.push(format!(
+            "解锁需击败前章 {} Boss {} 且星片 {}/{}",
+            chapter_label(content, previous_chapter),
+            runtime_boss_label(content, boss_id),
+            current_star_shards,
+            required_star_shards,
+        ));
+    } else {
+        parts.push("首章默认开放".to_string());
+    }
+    if let Some(evolution_id) = game_core::meta::chapter_target_evolution_id(chapter_id) {
+        parts.push(format!(
+            "目标进化 {}",
+            runtime_evolution_label(content, evolution_id)
+        ));
+    }
+    parts.join("；")
+}
+
+fn format_codex_evolution_source(
+    item: &EvolutionDefinition,
+    content: &ContentPack,
+    progress: &MetaProgress,
+) -> String {
+    let discovered = progress
+        .codex
+        .evolutions
+        .get(&item.id)
+        .is_some_and(|entry| entry.discovered);
+    let state = if discovered { "已发现" } else { "未发现" };
+    let mut parts = vec![format!(
+        "{state}；{}",
+        format_codex_unlock_source("evolution", &item.id, &item.unlock, content, progress),
+    )];
+    parts.push(format!(
+        "触发 {}",
+        runtime_evolution_trigger_label(&item.requirements.trigger)
+    ));
+    parts.join("；")
+}
+
+fn format_codex_event_source(item: &EventDefinition, progress: &MetaProgress) -> String {
+    let discovered = progress
+        .codex
+        .events
+        .get(&item.id)
+        .is_some_and(|entry| entry.discovered);
+    let state = if discovered { "已触发" } else { "未触发" };
+    format!("{state}；标准局临时事件窗口触发，结算后记录图鉴")
+}
+
+fn runtime_maps_for_enemy(content: &ContentPack, enemy_id: &str) -> Vec<String> {
+    let mut maps = BTreeSet::new();
+    for wave in content.waves.values() {
+        if wave.segments.iter().any(|segment| {
+            segment
+                .enemy_pool
+                .iter()
+                .any(|entry| entry.enemy_id == enemy_id)
+        }) {
+            maps.insert(wave.map_id.clone());
+        }
+    }
+    maps.into_iter().collect()
+}
+
+fn runtime_boss_wave_sources(content: &ContentPack, boss_id: &str) -> Vec<(String, f32)> {
+    let mut sources = Vec::new();
+    for wave in content.waves.values() {
+        for boss_event in &wave.boss_events {
+            if boss_event.boss_id == boss_id {
+                sources.push((wave.map_id.clone(), boss_event.time_second));
+            }
+        }
+    }
+    sources.sort_by(|left, right| {
+        left.0
+            .cmp(&right.0)
+            .then_with(|| left.1.total_cmp(&right.1))
+    });
+    sources
+}
+
+fn runtime_chapter_for_character_unlock(character_id: &str) -> Option<&'static str> {
+    match character_id {
+        "bubble-courier" => Some("frosting-grassland"),
+        "cream-knight" => Some("soda-creek"),
+        "sour-plum-doctor" => Some("cotton-cloud-pasture"),
+        "pudding-crafter" => Some("caramel-workshop"),
+        _ => None,
+    }
+}
+
+fn runtime_chapter_for_target_evolution(evolution_id: &str) -> Option<&'static str> {
+    [
+        "frosting-grassland",
+        "soda-creek",
+        "cotton-cloud-pasture",
+        "caramel-workshop",
+        "jelly-platform",
+        "cracked-star-jar",
+    ]
+    .into_iter()
+    .find(|chapter_id| {
+        game_core::meta::chapter_target_evolution_id(chapter_id) == Some(evolution_id)
+    })
+}
+
+fn runtime_chapter_for_boss_id(boss_id: &str) -> Option<&'static str> {
+    [
+        "frosting-grassland",
+        "soda-creek",
+        "cotton-cloud-pasture",
+        "caramel-workshop",
+        "jelly-platform",
+        "cracked-star-jar",
+    ]
+    .into_iter()
+    .find(|chapter_id| runtime_chapter_boss_id(chapter_id) == Some(boss_id))
+}
+
+fn runtime_chapter_for_map_id(map_id: &str) -> Option<&'static str> {
+    [
+        "frosting-grassland",
+        "soda-creek",
+        "cotton-cloud-pasture",
+        "caramel-workshop",
+        "jelly-platform",
+        "cracked-star-jar",
+    ]
+    .into_iter()
+    .find(|chapter_id| *chapter_id == map_id)
 }
 
 fn format_passive_modifiers(modifiers: &[StatModifierDefinition]) -> String {
@@ -7249,7 +7555,7 @@ fn runtime_codex_entries(
                     id.clone(),
                     (
                         item.name.clone(),
-                        runtime_codex_character_description(item, content),
+                        runtime_codex_character_description(item, content, progress),
                     ),
                 );
             }
@@ -7258,7 +7564,10 @@ fn runtime_codex_entries(
             for (id, item) in &content.weapons {
                 definitions.insert(
                     id.clone(),
-                    (item.name.clone(), runtime_codex_weapon_description(item)),
+                    (
+                        item.name.clone(),
+                        runtime_codex_weapon_description(item, content, progress),
+                    ),
                 );
             }
         }
@@ -7266,7 +7575,10 @@ fn runtime_codex_entries(
             for (id, item) in &content.passives {
                 definitions.insert(
                     id.clone(),
-                    (item.name.clone(), runtime_codex_passive_description(item)),
+                    (
+                        item.name.clone(),
+                        runtime_codex_passive_description(item, content, progress),
+                    ),
                 );
             }
         }
@@ -7287,7 +7599,7 @@ fn runtime_codex_entries(
                     id.clone(),
                     (
                         item.common.name.clone(),
-                        runtime_codex_boss_description(item),
+                        runtime_codex_boss_description(item, content),
                     ),
                 );
             }
@@ -7296,7 +7608,10 @@ fn runtime_codex_entries(
             for (id, item) in &content.maps {
                 definitions.insert(
                     id.clone(),
-                    (item.name.clone(), runtime_codex_map_description(item)),
+                    (
+                        item.name.clone(),
+                        runtime_codex_map_description(item, content, progress),
+                    ),
                 );
             }
         }
@@ -7306,7 +7621,7 @@ fn runtime_codex_entries(
                     id.clone(),
                     (
                         item.name.clone(),
-                        runtime_codex_evolution_description(item, content),
+                        runtime_codex_evolution_description(item, content, progress),
                     ),
                 );
             }
@@ -7317,7 +7632,7 @@ fn runtime_codex_entries(
                     id.clone(),
                     (
                         item.name.clone(),
-                        runtime_codex_event_description(item, content),
+                        runtime_codex_event_description(item, content, progress),
                     ),
                 );
             }
@@ -12117,6 +12432,7 @@ mod tests {
     #[test]
     fn map_codex_describes_periodic_environment_hazards() {
         let content = ContentPack::base_demo();
+        let progress = MetaProgress::demo_start();
         let caramel = content
             .maps
             .get("caramel-workshop")
@@ -12126,11 +12442,15 @@ mod tests {
             .get("frosting-grassland")
             .expect("base demo should include frosting-grassland");
 
-        let caramel_description = runtime_codex_map_description(caramel);
-        let frosting_description = runtime_codex_map_description(frosting);
+        let caramel_description = runtime_codex_map_description(caramel, &content, &progress);
+        let frosting_description = runtime_codex_map_description(frosting, &content, &progress);
 
         assert!(caramel_description.contains("地图危险 焦糖溢流 每30s x2 6s 减速x0.60 伤害1.2/s"));
+        assert!(caramel_description.contains("未解锁；章节 焦糖工坊"));
+        assert!(caramel_description.contains("解锁需击败前章 棉花云牧场 Boss 巨型棉花团"));
         assert!(frosting_description.contains("地图危险 无"));
+        assert!(frosting_description.contains("已解锁，可在 F5 选择或 F2 章节挑战"));
+        assert!(frosting_description.contains("首章默认开放"));
     }
 
     #[test]
@@ -13532,6 +13852,7 @@ mod tests {
         assert!(panel.contains("character:jar-keeper"));
         assert!(panel.contains("初始武器 彩虹糖弹"));
         assert!(panel.contains("属性 生命"));
+        assert!(panel.contains("来源 默认角色，F5 可直接选择"));
         assert!(panel.contains("本局更新"));
     }
 
@@ -13593,7 +13914,61 @@ mod tests {
         assert!(panel.contains("行为"));
         assert!(panel.contains("威胁"));
         assert!(panel.contains("反制"));
+        assert!(panel.contains("来源 出现地图"));
+        assert!(panel.contains("焦糖工坊"));
         assert!(panel.contains("击败 3"));
+    }
+
+    #[test]
+    fn meta_panel_codex_weapon_source_links_unlock_and_chapter_build() {
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_12345".to_string(),
+            mode: RunMode::StandardPatrol,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 120.0,
+            victory: false,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 3,
+            level: 2,
+            xp_collected: 12.0,
+            damage_dealt_by_weapon: 40.0,
+            damage_dealt_by_weapon_id: Default::default(),
+            damage_taken: 2.0,
+            damage_taken_by_source: BTreeMap::from([("contact".to_string(), 2.0)]),
+            boss_damage: 0.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
+            passives_used: Default::default(),
+            evolutions_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        progress.apply_run_summary(&summary);
+        let mut base_ui_state = RuntimeBaseUiState::default();
+        base_ui_state.codex_view.selected_category =
+            RuntimeCodexCategory::Weapons.key().to_string();
+        base_ui_state.codex_view.discovered_only = true;
+
+        let panel = render_meta_progress_panel(
+            &progress,
+            None,
+            RuntimeMetaPanelView::Codex,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &base_ui_state,
+                0,
+            ),
+        );
+
+        assert!(panel.contains("彩虹糖弹"));
+        assert!(panel.contains("来源 默认武器池，局内可抽；已可作为 F5 开局武器"));
+        assert!(panel.contains("关联 糖霜草地 章节目标 彩虹糖流星雨"));
     }
 
     #[test]
