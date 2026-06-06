@@ -5340,8 +5340,8 @@ fn render_meta_overview_panel(
             format_settlement_replay_status(privacy_settings, last_replay_summary_path),
             format_settlement_weapon_damage_shares(summary, content, 3),
             format_settlement_event_timeline(last_settlement_event_timeline),
-            format_weapon_levels(&summary.weapon_levels, 4),
-            format_passive_set(&summary.passives_used, 3),
+            format_weapon_levels(&summary.weapon_levels, content, 4),
+            format_passive_set(&summary.passives_used, content, 3),
             format_evolution_set(&summary.evolutions_used, content, 3),
             report.resources_gained.candy_crystal_shards,
             report.resources_gained.star_shards,
@@ -9318,20 +9318,32 @@ fn format_terminal_reason(reason: &str) -> String {
     }
 }
 
-fn format_weapon_levels(weapon_levels: &BTreeMap<String, u32>, limit: usize) -> String {
+fn format_weapon_levels(
+    weapon_levels: &BTreeMap<String, u32>,
+    content: &ContentPack,
+    limit: usize,
+) -> String {
     if weapon_levels.is_empty() {
         return "无".to_string();
     }
 
     let values = weapon_levels
         .iter()
-        .map(|(weapon_id, level)| format!("{weapon_id} Lv.{level}"))
+        .map(|(weapon_id, level)| {
+            format!(
+                "{} Lv.{level}",
+                runtime_damage_weapon_label(content, weapon_id)
+            )
+        })
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
 }
 
-fn format_passive_set(passives: &BTreeSet<String>, limit: usize) -> String {
-    let values = passives.iter().cloned().collect::<Vec<_>>();
+fn format_passive_set(passives: &BTreeSet<String>, content: &ContentPack, limit: usize) -> String {
+    let values = passives
+        .iter()
+        .map(|id| format!("{} ({id})", runtime_passive_label(content, id)))
+        .collect::<Vec<_>>();
     format_string_items(&values, limit)
 }
 
@@ -14896,7 +14908,7 @@ mod tests {
             ]),
             boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
-            passives_used: Default::default(),
+            passives_used: BTreeSet::from(["candy-crystal-lens".to_string()]),
             evolutions_used: BTreeSet::from(["rainbow-candy-meteor".to_string()]),
             enemies_defeated: Default::default(),
             bosses_defeated: Default::default(),
@@ -14951,7 +14963,8 @@ mod tests {
         assert!(panel.contains("Replay 本机复盘摘要未保存"));
         assert!(panel.contains("原始 Replay 上传关闭"));
         assert!(panel.contains("关键事件 30s 升到 Lv.2 | 180s Boss 出现 暴走搅糖机"));
-        assert!(panel.contains("rainbow-candy-shot Lv.1"));
+        assert!(panel.contains("最终构筑 武器 彩虹糖弹 Lv.1"));
+        assert!(panel.contains("被动 糖晶放大镜 (candy-crystal-lens)"));
         assert!(panel.contains("进化 彩虹糖流星雨 (rainbow-candy-meteor)"));
         assert!(panel.contains("collect-200-candy-crystals"));
         assert!(panel.contains("发现 角色 糖罐守护员 (jar-keeper)"));
