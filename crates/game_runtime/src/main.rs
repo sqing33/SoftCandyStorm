@@ -3174,13 +3174,21 @@ fn runtime_event_effect_label(effect_type: &str) -> String {
 fn format_hazard_status(
     hazards: &[HazardSnapshot],
     status_effects: &[StatusEffectSnapshot],
+    content: &ContentPack,
+    map_id: &str,
+    time_seconds: f32,
 ) -> String {
-    if hazards.is_empty() && status_effects.is_empty() {
+    let next_hazard = runtime_next_map_hazard(content, map_id, time_seconds);
+    if hazards.is_empty() && status_effects.is_empty() && next_hazard.is_none() {
         return "地图危险 安全".to_string();
     }
 
     let hazard_text = if hazards.is_empty() {
-        "危险区 无".to_string()
+        next_hazard
+            .map(|(spawn_second, hazard)| {
+                format_next_map_hazard_preview(spawn_second, hazard, time_seconds)
+            })
+            .unwrap_or_else(|| "危险区 无".to_string())
     } else {
         let max_damage = hazards
             .iter()
@@ -3204,6 +3212,73 @@ fn format_hazard_status(
     };
     let status_text = format_player_status_effects(status_effects);
     format!("地图危险 {hazard_text}  状态 {status_text}")
+}
+
+fn runtime_next_map_hazard<'a>(
+    content: &'a ContentPack,
+    map_id: &str,
+    time_seconds: f32,
+) -> Option<(f32, &'a MapHazardDefinition)> {
+    content
+        .maps
+        .get(map_id)?
+        .hazards
+        .iter()
+        .filter_map(|hazard| {
+            let interval_seconds = hazard.interval_seconds?.max(0.1);
+            let start_second = hazard.start_second.unwrap_or(0.0).max(0.0);
+            if hazard
+                .end_second
+                .is_some_and(|end_second| time_seconds > end_second)
+            {
+                return None;
+            }
+            let elapsed = (time_seconds - start_second).max(0.0);
+            let spawn_second = if time_seconds <= start_second {
+                start_second
+            } else {
+                start_second + (elapsed / interval_seconds).ceil() * interval_seconds
+            };
+            if hazard
+                .end_second
+                .is_some_and(|end_second| spawn_second > end_second)
+            {
+                return None;
+            }
+            Some((spawn_second, hazard))
+        })
+        .min_by(|left, right| left.0.total_cmp(&right.0))
+}
+
+fn format_next_map_hazard_preview(
+    spawn_second: f32,
+    hazard: &MapHazardDefinition,
+    time_seconds: f32,
+) -> String {
+    let interval = hazard
+        .interval_seconds
+        .map(|seconds| format!("每{seconds:.0}s"))
+        .unwrap_or_else(|| "周期未知".to_string());
+    let count = hazard.count.unwrap_or(1).clamp(1, 8);
+    let duration = hazard.duration_seconds.unwrap_or(4.0).max(0.1);
+    let slow = hazard.slow_multiplier.unwrap_or(0.8).clamp(0.2, 1.0);
+    let damage = hazard.damage_per_second.unwrap_or(0.0).max(0.0);
+    let damage_text = if damage > 0.0 {
+        format!("  伤害 {:.1}/s", damage)
+    } else {
+        String::new()
+    };
+    format!(
+        "下一波 {}  还有 {:.0}s  {:.0}s 出现  {} x{}  持续 {:.0}s  减速x{:.2}{}",
+        runtime_map_hazard_label(&hazard.hazard_type),
+        (spawn_second - time_seconds).max(0.0),
+        spawn_second,
+        interval,
+        count,
+        duration,
+        slow,
+        damage_text,
+    )
 }
 
 fn format_player_status_effects(status_effects: &[StatusEffectSnapshot]) -> String {
@@ -3544,8 +3619,13 @@ fn update_hud(
                 &state.content,
                 snapshot.time_seconds,
             );
-            let hazard_status =
-                format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
+            let hazard_status = format_hazard_status(
+                &snapshot.active_hazards,
+                &snapshot.player.status_effects,
+                &state.content,
+                &snapshot.map.map_id,
+                snapshot.time_seconds,
+            );
             set_text_section_if_changed(&mut text, format!(
                 "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\n{}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
                 state.run_number,
@@ -12130,7 +12210,35 @@ mod tests {
 
     #[test]
     fn hazard_status_renders_safe_state() {
-        assert_eq!(format_hazard_status(&[], &[]), "地图危险 安全");
+        assert_eq!(
+            format_hazard_status(
+                &[],
+                &[],
+                &ContentPack::base_demo(),
+                "frosting-grassland",
+                12.0
+            ),
+            "地图危险 安全"
+        );
+    }
+
+    #[test]
+    fn hazard_status_renders_next_map_hazard_countdown() {
+        let status = format_hazard_status(
+            &[],
+            &[],
+            &ContentPack::base_demo(),
+            "caramel-workshop",
+            45.0,
+        );
+
+        assert!(status.contains("下一波 焦糖溢流"));
+        assert!(status.contains("还有 15s"));
+        assert!(status.contains("60s 出现"));
+        assert!(status.contains("每30s x2"));
+        assert!(status.contains("持续 6s"));
+        assert!(status.contains("减速x0.60"));
+        assert!(status.contains("伤害 1.2/s"));
     }
 
     #[test]
@@ -12158,7 +12266,13 @@ mod tests {
             remaining_seconds: 2.5,
         }];
 
-        let status = format_hazard_status(&hazards, &status_effects);
+        let status = format_hazard_status(
+            &hazards,
+            &status_effects,
+            &ContentPack::base_demo(),
+            "caramel-workshop",
+            72.0,
+        );
 
         assert!(status.contains("危险区 2"));
         assert!(status.contains("最高伤害 12/s"));
@@ -12184,7 +12298,13 @@ mod tests {
             },
         ];
 
-        let status = format_hazard_status(&[], &status_effects);
+        let status = format_hazard_status(
+            &[],
+            &status_effects,
+            &ContentPack::base_demo(),
+            "frosting-grassland",
+            12.0,
+        );
 
         assert!(status.contains("泡泡跑者 拾取 x1.35 1.2s"));
         assert!(status.contains("奶油护卫 减伤 35% 2.0s"));
