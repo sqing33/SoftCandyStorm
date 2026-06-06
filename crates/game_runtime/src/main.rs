@@ -3775,7 +3775,7 @@ fn format_terminal_overlay(
     damage_taken_by_source: &BTreeMap<String, f32>,
 ) -> String {
     format!(
-        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n进度 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻  F1 看结算  F5 换构筑",
+        "{}  {}  {:.1}s  Lv {}  击杀 {}\n原因 {}\n{}\n复盘 {}\n进度 {}\n终局 {}\n下一局 {}\n按 R 重新巡逻  F1 看结算  F5 换构筑",
         terminal_kind_label(terminal.kind),
         runtime_run_mode_label(run_mode),
         terminal.time_seconds,
@@ -3783,6 +3783,7 @@ fn format_terminal_overlay(
         terminal.kills,
         format_terminal_reason(&terminal.reason),
         format_terminal_damage_summary(damage_taken, damage_taken_by_source),
+        format_terminal_review_focus(terminal, damage_taken_by_source),
         format_terminal_progress_summary(progress, content),
         format_terminal_build_summary(build, content),
         format_terminal_next_run_advice(terminal, build, content, progress),
@@ -3798,6 +3799,26 @@ fn format_terminal_damage_summary(
         damage_taken.max(0.0),
         format_damage_sources(damage_taken_by_source, 3),
     )
+}
+
+fn format_terminal_review_focus(
+    terminal: &TerminalState,
+    damage_taken_by_source: &BTreeMap<String, f32>,
+) -> String {
+    match terminal.kind {
+        TerminalKind::Victory => "已完成巡逻，复盘武器伤害占比和下一章目标".to_string(),
+        TerminalKind::Defeat if terminal.reason == "player_health_depleted" => {
+            format_damage_review_focus(damage_taken_by_source).unwrap_or_else(|| {
+                "最大问题 生命归零但伤害来源不明确，先看关键事件和走位路线".to_string()
+            })
+        }
+        TerminalKind::Timeout => "接近目标时长，重点检查 Boss 输出和终局进化线".to_string(),
+        TerminalKind::Aborted => "主动中止，本局不作为平衡或构筑判断依据".to_string(),
+        TerminalKind::InvalidState => {
+            "异常终局，先保留 seed/replay 并记录 failure case".to_string()
+        }
+        TerminalKind::Defeat => "未完成巡逻，先看关键事件、伤害来源和终局构筑".to_string(),
+    }
 }
 
 fn format_terminal_build_summary(build: &BuildSnapshot, content: &ContentPack) -> String {
@@ -5265,7 +5286,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\nBoss 结果 {}\nReplay {}\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n复盘重点 {}\nBoss 结果 {}\nReplay {}\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
@@ -5277,6 +5298,7 @@ fn render_meta_overview_panel(
             summary.boss_damage,
             summary.damage_taken,
             format_damage_sources(&summary.damage_taken_by_source, 2),
+            format_settlement_review_focus(summary),
             format_settlement_boss_result(summary, content),
             format_settlement_replay_status(privacy_settings),
             format_settlement_weapon_damage_shares(summary, content, 3),
@@ -8785,6 +8807,53 @@ fn format_damage_sources(sources: &BTreeMap<String, f32>, limit: usize) -> Strin
         .map(|(source, damage)| format!("{} {:.1}", format_damage_source(source), damage))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
+}
+
+fn format_settlement_review_focus(summary: &MetaRunSummary) -> String {
+    if !summary.victory && summary.terminal_reason == "player_health_depleted" {
+        return format_damage_review_focus(&summary.damage_taken_by_source).unwrap_or_else(|| {
+            "最大问题 生命归零但伤害来源不明确，先看关键事件和走位路线".to_string()
+        });
+    }
+    if !summary.victory {
+        if let Some(focus) = format_damage_review_focus(&summary.damage_taken_by_source) {
+            return focus;
+        }
+    }
+    if !summary.victory && summary.boss_damage <= 0.0 && summary.duration_seconds >= 180.0 {
+        return "最大问题 Boss 前输出不足，下局优先补单体、穿透或一条进化线".to_string();
+    }
+    if !summary.victory {
+        return "最大问题 本局目标未完成，先看关键事件和终局构筑缺口".to_string();
+    }
+    if !summary.bosses_defeated.is_empty() && summary.damage_taken <= 0.0 {
+        return "表现稳定，可挑战下一章或提高风暴强度".to_string();
+    }
+    if summary.damage_taken > 0.0 {
+        return format_damage_review_focus(&summary.damage_taken_by_source)
+            .unwrap_or_else(|| "已完成巡逻，复盘伤害来源以减少下局波动".to_string());
+    }
+    "已完成巡逻，复盘武器伤害占比并推进下一章目标".to_string()
+}
+
+fn format_damage_review_focus(sources: &BTreeMap<String, f32>) -> Option<String> {
+    let source = dominant_damage_source(sources)?;
+    Some(match source {
+        "contact" => "最大问题 接触伤害，下局补防御/控场并保持绕圈拾取".to_string(),
+        "hazard" => "最大问题 风暴地面，下局提前绕开危险区并补移动/控场".to_string(),
+        other => format!(
+            "最大问题 {}，下局先减少该来源伤害",
+            format_damage_source(other)
+        ),
+    })
+}
+
+fn dominant_damage_source(sources: &BTreeMap<String, f32>) -> Option<&str> {
+    sources
+        .iter()
+        .filter(|(_, damage)| **damage > 0.0)
+        .max_by(|left, right| left.1.total_cmp(right.1).then_with(|| left.0.cmp(right.0)))
+        .map(|(source, _)| source.as_str())
 }
 
 fn format_damage_source(source: &str) -> String {
@@ -13884,6 +13953,7 @@ mod tests {
         assert!(overlay.contains("生命值归零"));
         assert!(overlay.contains("受伤 12.5"));
         assert!(overlay.contains("来源 接触 9.0, 风暴地面 3.5"));
+        assert!(overlay.contains("复盘 最大问题 接触伤害，下局补防御/控场并保持绕圈拾取"));
         assert!(overlay.contains("进度 糖罐星修复 0/25 (0%)"));
         assert!(overlay.contains("终局 武器 彩虹糖弹 Lv.2"));
         assert!(overlay.contains("生命归零多半是容错不足"));
@@ -13925,6 +13995,7 @@ mod tests {
         assert!(overlay.contains("胜利"));
         assert!(overlay.contains("标准巡逻"));
         assert!(overlay.contains("受伤 0.0  来源 无"));
+        assert!(overlay.contains("复盘 已完成巡逻，复盘武器伤害占比和下一章目标"));
         assert!(overlay.contains("进度 糖罐星修复 0/25 (0%)"));
         assert!(overlay.contains("下一局 已能稳定过关"));
         assert!(overlay.contains("彩虹糖流星雨"));
@@ -14150,6 +14221,7 @@ mod tests {
         assert!(panel.contains("武器伤害占比 彩虹糖弹 600 (67%), 彩虹糖流星雨 300 (33%)"));
         assert!(panel.contains("受伤 12.5"));
         assert!(panel.contains("接触 9.0"));
+        assert!(panel.contains("复盘重点 最大问题 接触伤害，下局补防御/控场并保持绕圈拾取"));
         assert!(panel.contains("Boss 结果 未遭遇或未造成伤害"));
         assert!(panel.contains("Replay 自动保存未接入"));
         assert!(panel.contains("原始 Replay 上传关闭"));
