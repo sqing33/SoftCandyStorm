@@ -6007,15 +6007,27 @@ fn render_meta_settings_panel(
     let persistence = runtime_settings_file
         .map(|path| format!("写回 {}", path.display()))
         .unwrap_or_else(|| "未配置设置文件，本次会话生效".to_string());
+    let transport_label = runtime_upload_transport_label(
+        RuntimePrivacyReport::from_settings(settings).upload_transport,
+    );
     format!(
-        "{}\n{}\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n右下七段点击区: 遥测 Replay 崩溃 导出存档 删除存档 导出本地 删除本地\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传传输层: not_implemented",
+        "{}\n{}\n隐私与本地数据\n7 上传匿名遥测: {}\n8 上传原始 Replay: {}\n9 上传崩溃报告: {}\n{}\nE 导出存档  X 删除存档\nL 导出本地数据  K 删除本地数据\n右下七段点击区: 遥测 Replay 崩溃 导出存档 删除存档 导出本地 删除本地\nX/K 删除需要再次按同一键确认，切换面板或执行其他操作会取消\n导出写入平台数据根 exports/；删除只清理当前 Runtime 配置的存档或本地 telemetry/replay/crash 目录\n上传服务: {}",
         META_PANEL_HEADER,
         META_PANEL_TAB_CLICK_HINT,
         on_off_label(settings.telemetry_upload_enabled),
         on_off_label(settings.raw_replay_upload_enabled),
         on_off_label(settings.crash_report_upload_enabled),
         persistence,
+        transport_label,
     )
+}
+
+fn runtime_upload_transport_label(upload_transport: &str) -> &str {
+    match upload_transport {
+        "not_implemented" => "暂未接入上传服务，本机保存仍可导出",
+        "" => "未配置上传服务",
+        other => other,
+    }
 }
 
 fn render_meta_loadout_panel(
@@ -16633,7 +16645,8 @@ mod tests {
         assert!(panel.contains("X/K 删除需要再次按同一键确认"));
         assert!(panel.contains("exports/"));
         assert!(panel.contains("runtime_settings.json"));
-        assert!(panel.contains("not_implemented"));
+        assert!(panel.contains("上传服务: 暂未接入上传服务，本机保存仍可导出"));
+        assert!(!panel.contains("not_implemented"));
     }
 
     #[test]
