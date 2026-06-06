@@ -88,7 +88,7 @@ const CODEX_POINTER_CONTROL_ZONE_COUNT: usize = 5;
 const SETTINGS_POINTER_CONTROL_HEIGHT: f32 = 112.0;
 const SETTINGS_POINTER_CONTROL_ZONE_COUNT: usize = 7;
 const LOADOUT_POINTER_CONTROL_HEIGHT: f32 = 96.0;
-const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 3;
+const LOADOUT_POINTER_CONTROL_ZONE_COUNT: usize = 4;
 const CHAPTER_POINTER_CONTROL_HEIGHT: f32 = 96.0;
 const CHAPTER_POINTER_CONTROL_ZONE_COUNT: usize = 3;
 const UPGRADE_POINTER_CONTROL_HEIGHT: f32 = 190.0;
@@ -99,6 +99,7 @@ const RUNTIME_STANDARD_PATROL_SECONDS: f32 = 600.0;
 const RUNTIME_LONG_PATROL_SECONDS: f32 = 900.0;
 const RUNTIME_ENDLESS_STORM_SECONDS: f32 = 1200.0;
 const RUNTIME_DAILY_STORM_SEED: u64 = 66_606;
+const RUNTIME_CHARACTER_DEFAULT_STARTING_WEAPON_KEY: &str = "character-default";
 const RUNTIME_SELECTABLE_RUN_MODES: [RunMode; 5] = [
     RunMode::StandardPatrol,
     RunMode::ChapterChallenge,
@@ -216,6 +217,8 @@ struct RuntimeCli {
     story_codex_ui_candidate_manifest: Option<PathBuf>,
     asset_runtime_candidate_manifest: Option<PathBuf>,
     unlock_all_content: bool,
+    starting_weapon_id: String,
+    explicit_starting_weapon_id: bool,
 }
 
 impl Default for RuntimeCli {
@@ -262,6 +265,8 @@ impl Default for RuntimeCli {
             story_codex_ui_candidate_manifest: None,
             asset_runtime_candidate_manifest: None,
             unlock_all_content: false,
+            starting_weapon_id: default_runtime_starting_weapon_key(),
+            explicit_starting_weapon_id: false,
         }
     }
 }
@@ -437,6 +442,7 @@ enum RuntimeLoadoutAction {
     Character,
     Map,
     Mode,
+    StartingWeapon,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -590,6 +596,8 @@ struct RuntimeBaseUiState {
     last_selected_chapter_id: String,
     #[serde(default = "default_runtime_run_mode_key")]
     last_selected_run_mode: String,
+    #[serde(default = "default_runtime_starting_weapon_key")]
+    last_selected_starting_weapon_id: String,
     codex_view: RuntimeBaseCodexViewState,
     privacy_view: RuntimeBasePrivacyViewState,
 }
@@ -693,6 +701,7 @@ impl Default for RuntimeBaseUiState {
             last_selected_map_id: DEFAULT_MAP_ID.to_string(),
             last_selected_chapter_id: DEFAULT_MAP_ID.to_string(),
             last_selected_run_mode: default_runtime_run_mode_key(),
+            last_selected_starting_weapon_id: default_runtime_starting_weapon_key(),
             codex_view: RuntimeBaseCodexViewState {
                 selected_category: "characters".to_string(),
                 discovered_only: true,
@@ -1394,6 +1403,10 @@ fn step_game_core(
                     .map_err(|error| format!("map selection failed: {error}")),
                 RuntimeLoadoutAction::Mode => select_next_runtime_run_mode(&mut state)
                     .map_err(|error| format!("run mode selection failed: {error}")),
+                RuntimeLoadoutAction::StartingWeapon => {
+                    select_next_runtime_starting_weapon(&mut state)
+                        .map_err(|error| format!("starting weapon selection failed: {error}"))
+                }
             };
             match result {
                 Ok(message) => {
@@ -2189,6 +2202,8 @@ fn runtime_loadout_action_from_keyboard(
         Some(RuntimeLoadoutAction::Map)
     } else if keyboard.just_pressed(KeyCode::KeyT) {
         Some(RuntimeLoadoutAction::Mode)
+    } else if keyboard.just_pressed(KeyCode::KeyW) {
+        Some(RuntimeLoadoutAction::StartingWeapon)
     } else {
         None
     }
@@ -2212,6 +2227,8 @@ fn runtime_loadout_action_from_gamepad(
         Some(RuntimeLoadoutAction::Map)
     } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::DPadUp]) {
         Some(RuntimeLoadoutAction::Mode)
+    } else if gamepad_button_type_just_pressed(gamepad_buttons, &[GamepadButtonType::DPadDown]) {
+        Some(RuntimeLoadoutAction::StartingWeapon)
     } else {
         None
     }
@@ -2251,7 +2268,8 @@ fn runtime_loadout_action_from_pointer_zone(
     match zone {
         0 => Some(RuntimeLoadoutAction::Character),
         1 => Some(RuntimeLoadoutAction::Map),
-        _ => Some(RuntimeLoadoutAction::Mode),
+        2 => Some(RuntimeLoadoutAction::Mode),
+        _ => Some(RuntimeLoadoutAction::StartingWeapon),
     }
 }
 
@@ -4008,7 +4026,16 @@ fn select_next_runtime_character(state: &mut RuntimeState) -> std::io::Result<St
             )
         })?;
     state.config.character_id = next_id.clone();
-    state.config.starting_loadout = runtime_character_starting_loadout(&state.content, &next_id);
+    state.base_ui_state.last_selected_starting_weapon_id = normalize_runtime_starting_weapon_id(
+        &state.base_ui_state.last_selected_starting_weapon_id,
+        &state.meta_progress,
+        &state.content,
+    );
+    state.config.starting_loadout = runtime_starting_loadout_for_selection(
+        &state.content,
+        &next_id,
+        &state.base_ui_state.last_selected_starting_weapon_id,
+    );
     state.base_ui_state.last_selected_character_id = next_id.clone();
     reset_runtime_run(state);
     persist_runtime_save_if_configured(state)?;
@@ -4048,6 +4075,37 @@ fn select_next_runtime_run_mode(state: &mut RuntimeState) -> std::io::Result<Str
     Ok(format!(
         "selected run mode {}",
         runtime_run_mode_label(next_mode)
+    ))
+}
+
+fn select_next_runtime_starting_weapon(state: &mut RuntimeState) -> std::io::Result<String> {
+    let candidates = runtime_starting_weapon_selection_ids(&state.meta_progress, &state.content);
+    let current_id = normalize_runtime_starting_weapon_id(
+        &state.base_ui_state.last_selected_starting_weapon_id,
+        &state.meta_progress,
+        &state.content,
+    );
+    let next_id = next_runtime_selection_id(&candidates, &current_id).ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "no Runtime starting weapons available",
+        )
+    })?;
+    state.base_ui_state.last_selected_starting_weapon_id = next_id.clone();
+    state.config.starting_loadout = runtime_starting_loadout_for_selection(
+        &state.content,
+        &state.config.character_id,
+        &next_id,
+    );
+    reset_runtime_run(state);
+    persist_runtime_save_if_configured(state)?;
+    Ok(format!(
+        "selected starting weapon {}",
+        format_runtime_starting_weapon_selection(
+            &state.content,
+            &state.config.character_id,
+            &next_id
+        )
     ))
 }
 
@@ -4280,9 +4338,13 @@ fn render_meta_progress_panel(
         RuntimeMetaPanelView::Settings => {
             render_meta_settings_panel(context.privacy_settings, context.runtime_settings_file)
         }
-        RuntimeMetaPanelView::Loadout => {
-            render_meta_loadout_panel(progress, context.content, context.config, context.run_mode)
-        }
+        RuntimeMetaPanelView::Loadout => render_meta_loadout_panel(
+            progress,
+            context.content,
+            context.config,
+            context.run_mode,
+            context.base_ui_state,
+        ),
     }
 }
 
@@ -4894,6 +4956,7 @@ fn render_meta_loadout_panel(
     content: &ContentPack,
     config: &RunConfig,
     run_mode: RunMode,
+    base_ui_state: &RuntimeBaseUiState,
 ) -> String {
     let character_label = runtime_character_label(content, &config.character_id);
     let map_label = runtime_map_label(content, &config.map_id);
@@ -4931,6 +4994,14 @@ fn render_meta_loadout_panel(
     lines.push(format!(
         "初始装备 {}",
         format_runtime_starting_loadout(content, &config.starting_loadout)
+    ));
+    lines.push(format!(
+        "开局武器选择 {}",
+        format_runtime_starting_weapon_selection(
+            content,
+            &config.character_id,
+            &base_ui_state.last_selected_starting_weapon_id,
+        )
     ));
     lines.push(format!(
         "开局路线 {}",
@@ -4984,9 +5055,9 @@ fn render_meta_loadout_panel(
     }
 
     lines.push(
-        "C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图  T/手柄上 切换巡逻模式".to_string(),
+        "C/手柄左 切换已解锁角色  M/手柄右 切换已解锁地图  T/手柄上 切换巡逻模式  W/手柄下 切换开局武器".to_string(),
     );
-    lines.push("右下点击区: 角色  地图  模式".to_string());
+    lines.push("右下点击区: 角色  地图  模式  武器".to_string());
     lines.push("切换会重开当前巡逻并保留局外进度".to_string());
     lines.push(format!(
         "已解锁角色 {}",
@@ -5001,6 +5072,14 @@ fn render_meta_loadout_panel(
         format_runtime_unlocked_labels(
             &runtime_unlocked_map_ids(progress, content),
             |id| runtime_map_label(content, id),
+            LOADOUT_UNLOCKED_MAP_LABEL_LIMIT,
+        ),
+    ));
+    lines.push(format!(
+        "可选开局武器 {}",
+        format_runtime_unlocked_labels(
+            &runtime_unlocked_starting_weapon_ids(progress, content),
+            |id| runtime_weapon_label(content, id),
             LOADOUT_UNLOCKED_MAP_LABEL_LIMIT,
         ),
     ));
@@ -6804,11 +6883,17 @@ fn run_config_from_cli(
     content: &ContentPack,
     progress: &MetaProgress,
 ) -> RunConfig {
+    let starting_weapon_id =
+        normalize_runtime_starting_weapon_id(&cli.starting_weapon_id, progress, content);
     RunConfig {
         seed: runtime_run_seed_for_cli(cli),
         map_id: cli.map_id.clone(),
         character_id: cli.character_id.clone(),
-        starting_loadout: runtime_character_starting_loadout(content, &cli.character_id),
+        starting_loadout: runtime_starting_loadout_for_selection(
+            content,
+            &cli.character_id,
+            &starting_weapon_id,
+        ),
         unlocked_weapon_ids: progress.unlocks.weapons.iter().cloned().collect(),
         unlocked_passive_ids: progress.unlocks.passives.iter().cloned().collect(),
         difficulty: runtime_run_mode_difficulty(cli.run_mode),
@@ -6856,6 +6941,10 @@ fn runtime_daily_storm_seed() -> u64 {
 
 fn default_runtime_run_mode_key() -> String {
     runtime_run_mode_key(RunMode::StandardPatrol).to_string()
+}
+
+fn default_runtime_starting_weapon_key() -> String {
+    RUNTIME_CHARACTER_DEFAULT_STARTING_WEAPON_KEY.to_string()
 }
 
 fn runtime_run_mode_key(mode: RunMode) -> &'static str {
@@ -6946,6 +7035,80 @@ fn runtime_character_starting_loadout(
         .unwrap_or_default()
 }
 
+fn runtime_starting_loadout_for_selection(
+    content: &ContentPack,
+    character_id: &str,
+    starting_weapon_id: &str,
+) -> StartingLoadout {
+    let character_loadout = runtime_character_starting_loadout(content, character_id);
+    if starting_weapon_id == RUNTIME_CHARACTER_DEFAULT_STARTING_WEAPON_KEY
+        || !content.weapons.contains_key(starting_weapon_id)
+    {
+        return character_loadout;
+    }
+
+    StartingLoadout {
+        weapons: vec![starting_weapon_id.to_string()],
+        passives: character_loadout.passives,
+    }
+}
+
+fn runtime_unlocked_starting_weapon_ids(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Vec<String> {
+    content
+        .weapons
+        .keys()
+        .filter(|id| progress.unlocks.weapons.contains(*id))
+        .cloned()
+        .collect()
+}
+
+fn runtime_starting_weapon_selection_ids(
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> Vec<String> {
+    let mut ids = vec![default_runtime_starting_weapon_key()];
+    ids.extend(runtime_unlocked_starting_weapon_ids(progress, content));
+    ids
+}
+
+fn normalize_runtime_starting_weapon_id(
+    starting_weapon_id: &str,
+    progress: &MetaProgress,
+    content: &ContentPack,
+) -> String {
+    let candidates = runtime_starting_weapon_selection_ids(progress, content);
+    if candidates.iter().any(|id| id == starting_weapon_id) {
+        starting_weapon_id.to_string()
+    } else {
+        default_runtime_starting_weapon_key()
+    }
+}
+
+fn format_runtime_starting_weapon_selection(
+    content: &ContentPack,
+    character_id: &str,
+    starting_weapon_id: &str,
+) -> String {
+    if starting_weapon_id == RUNTIME_CHARACTER_DEFAULT_STARTING_WEAPON_KEY {
+        return format!(
+            "角色默认 {}",
+            format_runtime_content_id_labels(
+                &runtime_character_starting_loadout(content, character_id).weapons,
+                2,
+                |id| runtime_weapon_label(content, id),
+            )
+        );
+    }
+    format!(
+        "指定 {} ({})",
+        runtime_weapon_label(content, starting_weapon_id),
+        starting_weapon_id,
+    )
+}
+
 fn runtime_unlocked_character_ids(progress: &MetaProgress, content: &ContentPack) -> Vec<String> {
     content
         .characters
@@ -7004,6 +7167,18 @@ fn restore_runtime_loadout_selection_from_save(
     {
         base_ui_state.last_selected_chapter_id = cli.map_id.clone();
     }
+
+    if !cli.explicit_starting_weapon_id {
+        cli.starting_weapon_id = normalize_runtime_starting_weapon_id(
+            &base_ui_state.last_selected_starting_weapon_id,
+            progress,
+            content,
+        );
+    } else {
+        cli.starting_weapon_id =
+            normalize_runtime_starting_weapon_id(&cli.starting_weapon_id, progress, content);
+    }
+    base_ui_state.last_selected_starting_weapon_id = cli.starting_weapon_id.clone();
 }
 
 fn unlock_runtime_content_for_session(progress: &mut MetaProgress, content: &ContentPack) {
@@ -7183,6 +7358,12 @@ fn parse_runtime_cli(args: impl IntoIterator<Item = String>) -> RuntimeCli {
                 if let Some(value) = args.next() {
                     cli.character_id = value;
                     cli.explicit_character_id = true;
+                }
+            }
+            "--starting-weapon-id" | "--weapon-id" => {
+                if let Some(value) = args.next() {
+                    cli.starting_weapon_id = value;
+                    cli.explicit_starting_weapon_id = true;
                 }
             }
             "--seed" => {
@@ -8466,9 +8647,10 @@ mod tests {
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
-        settle_runtime_meta_if_needed, sounds_for_events, sync_runtime_default_build_unlocks,
-        toggle_runtime_privacy_setting, unlock_runtime_content_for_session,
-        upgrade_choice_from_gamepad, upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
+        select_next_runtime_starting_weapon, settle_runtime_meta_if_needed, sounds_for_events,
+        sync_runtime_default_build_unlocks, toggle_runtime_privacy_setting,
+        unlock_runtime_content_for_session, upgrade_choice_from_gamepad,
+        upgrade_choice_from_pointer, upgrade_choice_from_pointer_zone,
         write_runtime_privacy_settings, write_runtime_save_state,
         write_runtime_save_state_with_base_ui, RuntimeAssetCandidateItem,
         RuntimeAssetCandidateManifest, RuntimeAssetCandidateRules, RuntimeBaseUiState,
@@ -8585,6 +8767,8 @@ mod tests {
             "content/custom".to_string(),
             "--character-id".to_string(),
             "bubble-courier".to_string(),
+            "--starting-weapon-id".to_string(),
+            "mint-cyclone".to_string(),
             "--seed".to_string(),
             "9".to_string(),
             "--map-id".to_string(),
@@ -8604,6 +8788,8 @@ mod tests {
         assert_eq!(cli.content_dir, PathBuf::from("content/custom"));
         assert_eq!(cli.character_id, "bubble-courier");
         assert!(cli.explicit_character_id);
+        assert_eq!(cli.starting_weapon_id, "mint-cyclone");
+        assert!(cli.explicit_starting_weapon_id);
         assert_eq!(cli.seed, 9);
         assert!(cli.explicit_seed);
         assert_eq!(cli.map_id, "soda-creek");
@@ -8666,6 +8852,30 @@ mod tests {
         assert_eq!(cli.run_mode, RunMode::DailyStorm);
         assert_eq!(config.seed, 77);
         assert_eq!(config.duration_seconds, 42.0);
+    }
+
+    #[test]
+    fn runtime_run_config_uses_unlocked_starting_weapon_selection() {
+        let content = ContentPack::base_demo();
+        let progress = MetaProgress::demo_start();
+        let cli = parse_runtime_cli([
+            "--starting-weapon-id".to_string(),
+            "mint-cyclone".to_string(),
+        ]);
+        let config = run_config_from_cli(&cli, &content, &progress);
+
+        assert_eq!(config.starting_loadout.weapons, ["mint-cyclone"]);
+
+        let locked_cli = parse_runtime_cli([
+            "--starting-weapon-id".to_string(),
+            "star-sugar-ray".to_string(),
+        ]);
+        let locked_config = run_config_from_cli(&locked_cli, &content, &progress);
+
+        assert_eq!(
+            locked_config.starting_loadout.weapons,
+            ["rainbow-candy-shot"]
+        );
     }
 
     #[test]
@@ -9615,6 +9825,10 @@ mod tests {
             save_json["base_ui_state"]["last_selected_run_mode"],
             "standard"
         );
+        assert_eq!(
+            save_json["base_ui_state"]["last_selected_starting_weapon_id"],
+            "character-default"
+        );
     }
 
     #[test]
@@ -9663,6 +9877,7 @@ mod tests {
         base_ui_state.codex_view.selected_category = "enemies".to_string();
         base_ui_state.codex_view.discovered_only = false;
         base_ui_state.last_selected_run_mode = "daily".to_string();
+        base_ui_state.last_selected_starting_weapon_id = "mint-cyclone".to_string();
 
         write_runtime_save_state_with_base_ui(
             &save_file,
@@ -9688,6 +9903,10 @@ mod tests {
         assert_eq!(
             save_json["base_ui_state"]["last_selected_run_mode"],
             "daily"
+        );
+        assert_eq!(
+            save_json["base_ui_state"]["last_selected_starting_weapon_id"],
+            "mint-cyclone"
         );
     }
 
@@ -9807,6 +10026,10 @@ mod tests {
             .as_object_mut()
             .unwrap()
             .remove("last_selected_run_mode");
+        save_json["base_ui_state"]
+            .as_object_mut()
+            .unwrap()
+            .remove("last_selected_starting_weapon_id");
         fs::write(
             &save_file,
             format!("{}\n", serde_json::to_string_pretty(&save_json).unwrap()),
@@ -9819,6 +10042,10 @@ mod tests {
         assert_eq!(
             loaded.state.base_ui_state.last_selected_run_mode,
             "standard"
+        );
+        assert_eq!(
+            loaded.state.base_ui_state.last_selected_starting_weapon_id,
+            "character-default"
         );
     }
 
@@ -10127,6 +10354,7 @@ mod tests {
             last_selected_character_id: "bubble-courier".to_string(),
             last_selected_map_id: "soda-creek".to_string(),
             last_selected_chapter_id: "soda-creek".to_string(),
+            last_selected_starting_weapon_id: "mint-cyclone".to_string(),
             ..RuntimeBaseUiState::default()
         };
 
@@ -10139,8 +10367,13 @@ mod tests {
 
         assert_eq!(cli.character_id, "bubble-courier");
         assert_eq!(cli.map_id, "soda-creek");
+        assert_eq!(cli.starting_weapon_id, "mint-cyclone");
         assert_eq!(base_ui_state.last_selected_character_id, "bubble-courier");
         assert_eq!(base_ui_state.last_selected_map_id, "soda-creek");
+        assert_eq!(
+            base_ui_state.last_selected_starting_weapon_id,
+            "mint-cyclone"
+        );
     }
 
     #[test]
@@ -10157,10 +10390,13 @@ mod tests {
             "jar-keeper".to_string(),
             "--map-id".to_string(),
             "frosting-grassland".to_string(),
+            "--starting-weapon-id".to_string(),
+            "popping-candy-mine".to_string(),
         ]);
         let mut base_ui_state = RuntimeBaseUiState {
             last_selected_character_id: "bubble-courier".to_string(),
             last_selected_map_id: "soda-creek".to_string(),
+            last_selected_starting_weapon_id: "mint-cyclone".to_string(),
             ..RuntimeBaseUiState::default()
         };
 
@@ -10173,8 +10409,13 @@ mod tests {
 
         assert_eq!(cli.character_id, "jar-keeper");
         assert_eq!(cli.map_id, "frosting-grassland");
+        assert_eq!(cli.starting_weapon_id, "popping-candy-mine");
         assert_eq!(base_ui_state.last_selected_character_id, "jar-keeper");
         assert_eq!(base_ui_state.last_selected_map_id, "frosting-grassland");
+        assert_eq!(
+            base_ui_state.last_selected_starting_weapon_id,
+            "popping-candy-mine"
+        );
     }
 
     #[test]
@@ -10443,6 +10684,36 @@ mod tests {
         assert_eq!(state.config.seed, super::runtime_daily_storm_seed());
         assert_eq!(state.base_ui_state.last_selected_run_mode, "daily");
         assert_eq!(state.run_number, 4);
+    }
+
+    #[test]
+    fn runtime_loadout_starting_weapon_selection_cycles_and_restarts_run() {
+        let mut state = runtime_state_for_tests();
+
+        let message = select_next_runtime_starting_weapon(&mut state).unwrap();
+
+        assert!(message.contains("指定"));
+        assert_eq!(
+            state.base_ui_state.last_selected_starting_weapon_id,
+            "caramel-sticky-ground"
+        );
+        assert_eq!(
+            state.config.starting_loadout.weapons,
+            ["caramel-sticky-ground"]
+        );
+        assert_eq!(state.run_number, 2);
+
+        select_next_runtime_starting_weapon(&mut state).unwrap();
+
+        assert_eq!(
+            state.base_ui_state.last_selected_starting_weapon_id,
+            "lollipop-boomerang"
+        );
+        assert_eq!(
+            state.config.starting_loadout.weapons,
+            ["lollipop-boomerang"]
+        );
+        assert_eq!(state.run_number, 3);
     }
 
     #[test]
@@ -12222,6 +12493,13 @@ mod tests {
             Some(RuntimeLoadoutAction::Mode)
         );
 
+        let mut weapon = ButtonInput::<KeyCode>::default();
+        weapon.press(KeyCode::KeyW);
+        assert_eq!(
+            runtime_loadout_action_from_keyboard(&weapon),
+            Some(RuntimeLoadoutAction::StartingWeapon)
+        );
+
         assert_eq!(
             runtime_loadout_action_from_keyboard(&ButtonInput::<KeyCode>::default()),
             None
@@ -12250,6 +12528,13 @@ mod tests {
         assert_eq!(
             runtime_loadout_action_from_gamepad(&mode),
             Some(RuntimeLoadoutAction::Mode)
+        );
+
+        let mut weapon = ButtonInput::<GamepadButton>::default();
+        weapon.press(GamepadButton::new(gamepad, GamepadButtonType::DPadDown));
+        assert_eq!(
+            runtime_loadout_action_from_gamepad(&weapon),
+            Some(RuntimeLoadoutAction::StartingWeapon)
         );
 
         assert_eq!(
@@ -12290,8 +12575,12 @@ mod tests {
             Some(RuntimeLoadoutAction::Map)
         );
         assert_eq!(
-            runtime_loadout_action_from_pointer_zone(Vec2::new(1200.0, 40.0), window_size),
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1100.0, 40.0), window_size),
             Some(RuntimeLoadoutAction::Mode)
+        );
+        assert_eq!(
+            runtime_loadout_action_from_pointer_zone(Vec2::new(1240.0, 40.0), window_size),
+            Some(RuntimeLoadoutAction::StartingWeapon)
         );
         assert_eq!(
             runtime_loadout_action_from_pointer_zone(Vec2::new(500.0, 40.0), window_size),
@@ -12468,6 +12757,7 @@ mod tests {
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
+        assert!(panel.contains("开局武器选择 角色默认 汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
         assert!(panel.contains("构筑池详情 默认武器"));
         assert!(panel.contains("默认被动"));
@@ -12490,7 +12780,9 @@ mod tests {
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
         assert!(panel.contains("T/手柄上 切换巡逻模式"));
-        assert!(panel.contains("右下点击区: 角色  地图  模式"));
+        assert!(panel.contains("W/手柄下 切换开局武器"));
+        assert!(panel.contains("右下点击区: 角色  地图  模式  武器"));
+        assert!(panel.contains("可选开局武器"));
     }
 
     #[test]
