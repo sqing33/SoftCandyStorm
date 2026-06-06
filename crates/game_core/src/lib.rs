@@ -363,6 +363,9 @@ pub struct RunMetrics {
     pub damage_dealt_by_weapon: f32,
     pub damage_taken: f32,
     pub damage_taken_by_source: BTreeMap<String, f32>,
+    pub weapon_levels: BTreeMap<String, u32>,
+    pub passive_levels: BTreeMap<String, u32>,
+    pub evolutions_obtained: BTreeSet<String>,
     pub boss_damage: f32,
     pub boss_kill_times: Vec<f32>,
     pub enemies_defeated: BTreeMap<String, u32>,
@@ -578,6 +581,9 @@ impl GameCore {
                 damage_dealt_by_weapon: 0.0,
                 damage_taken: 0.0,
                 damage_taken_by_source: BTreeMap::new(),
+                weapon_levels: BTreeMap::new(),
+                passive_levels: BTreeMap::new(),
+                evolutions_obtained: BTreeSet::new(),
                 boss_damage: 0.0,
                 boss_kill_times: Vec::new(),
                 enemies_defeated: BTreeMap::new(),
@@ -774,6 +780,21 @@ impl GameCore {
         metrics.duration_seconds = self.time_seconds;
         metrics.level = self.player.level;
         metrics.terminal = self.terminal.clone();
+        metrics.weapon_levels = self
+            .weapons
+            .iter()
+            .map(|weapon| (weapon.id.clone(), weapon.level))
+            .collect();
+        metrics.passive_levels = self
+            .passives
+            .iter()
+            .map(|passive| (passive.id.clone(), passive.level))
+            .collect();
+        metrics.evolutions_obtained = self
+            .evolutions
+            .iter()
+            .map(|evolution| evolution.id.clone())
+            .collect();
         metrics
     }
 

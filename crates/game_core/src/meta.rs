@@ -145,6 +145,14 @@ impl MetaProgress {
                 &mut report.codex_updates,
             );
         }
+        for evolution_id in &summary.evolutions_used {
+            record_codex_use(
+                &mut self.codex.evolutions,
+                evolution_id,
+                &summary.run_id,
+                &mut report.codex_updates,
+            );
+        }
         for (enemy_id, defeated_count) in &summary.enemies_defeated {
             record_codex_defeat(
                 &mut self.codex.enemies,
@@ -187,6 +195,7 @@ pub struct MetaRunSummary {
     pub boss_damage: f32,
     pub weapon_levels: BTreeMap<String, u32>,
     pub passives_used: BTreeSet<String>,
+    pub evolutions_used: BTreeSet<String>,
     pub enemies_defeated: BTreeMap<String, u32>,
     pub bosses_defeated: BTreeSet<String>,
 }
@@ -197,18 +206,21 @@ impl MetaRunSummary {
         config: &RunConfig,
         metrics: &RunMetrics,
     ) -> Self {
-        let mut weapon_levels = BTreeMap::new();
-        for weapon_id in &config.starting_loadout.weapons {
-            weapon_levels.insert(weapon_id.clone(), 1);
-        }
-        for choice in &metrics.upgrade_choices {
-            if let Some((weapon_id, level)) = parse_weapon_level_choice(choice) {
-                weapon_levels
-                    .entry(weapon_id)
-                    .and_modify(|current| *current = (*current).max(level))
-                    .or_insert(level);
+        let mut weapon_levels = metrics.weapon_levels.clone();
+        if weapon_levels.is_empty() {
+            for weapon_id in &config.starting_loadout.weapons {
+                weapon_levels.insert(weapon_id.clone(), 1);
+            }
+            for choice in &metrics.upgrade_choices {
+                if let Some((weapon_id, level)) = parse_weapon_level_choice(choice) {
+                    weapon_levels
+                        .entry(weapon_id)
+                        .and_modify(|current| *current = (*current).max(level))
+                        .or_insert(level);
+                }
             }
         }
+        let passives_used = metrics.passive_levels.keys().cloned().collect();
 
         Self {
             run_id: run_id.into(),
@@ -230,7 +242,8 @@ impl MetaRunSummary {
             damage_taken_by_source: metrics.damage_taken_by_source.clone(),
             boss_damage: metrics.boss_damage,
             weapon_levels,
-            passives_used: BTreeSet::new(),
+            passives_used,
+            evolutions_used: metrics.evolutions_obtained.clone(),
             enemies_defeated: metrics.enemies_defeated.clone(),
             bosses_defeated: metrics.bosses_defeated.clone(),
         }
@@ -603,6 +616,7 @@ mod tests {
             boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 3)]),
             passives_used: BTreeSet::from(["big-candy-jar".to_string()]),
+            evolutions_used: BTreeSet::new(),
             enemies_defeated: BTreeMap::from([("bouncy-gummy".to_string(), 30)]),
             bosses_defeated: BTreeSet::new(),
         }
@@ -639,6 +653,39 @@ mod tests {
                 .get("bouncy-gummy")
                 .map(|entry| entry.defeated_count),
             Some(30)
+        );
+    }
+
+    #[test]
+    fn settlement_records_passive_and_evolution_codex_progress() {
+        let mut summary = base_summary();
+        summary
+            .evolutions_used
+            .insert("rainbow-candy-meteor".to_string());
+        let mut progress = MetaProgress::demo_start();
+        let report = progress.apply_run_summary(&summary);
+
+        assert!(report
+            .codex_updates
+            .contains(&"discovered:big-candy-jar".to_string()));
+        assert!(report
+            .codex_updates
+            .contains(&"discovered:rainbow-candy-meteor".to_string()));
+        assert_eq!(
+            progress
+                .codex
+                .passives
+                .get("big-candy-jar")
+                .map(|entry| entry.used_count),
+            Some(1)
+        );
+        assert_eq!(
+            progress
+                .codex
+                .evolutions
+                .get("rainbow-candy-meteor")
+                .map(|entry| entry.used_count),
+            Some(1)
         );
     }
 
@@ -751,6 +798,9 @@ mod tests {
             damage_dealt_by_weapon: 1_000.0,
             damage_taken: 10.0,
             damage_taken_by_source: BTreeMap::from([("contact".to_string(), 10.0)]),
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 5)]),
+            passive_levels: BTreeMap::from([("candy-crystal-lens".to_string(), 2)]),
+            evolutions_obtained: BTreeSet::from(["rainbow-candy-meteor".to_string()]),
             boss_damage: 250.0,
             boss_kill_times: vec![580.0],
             enemies_defeated: BTreeMap::from([("bouncy-gummy".to_string(), 7)]),
@@ -768,6 +818,8 @@ mod tests {
         assert_eq!(summary.damage_taken, 10.0);
         assert_eq!(summary.damage_taken_by_source["contact"], 10.0);
         assert_eq!(summary.boss_damage, 250.0);
+        assert!(summary.passives_used.contains("candy-crystal-lens"));
+        assert!(summary.evolutions_used.contains("rainbow-candy-meteor"));
         assert_eq!(summary.enemies_defeated.get("bouncy-gummy"), Some(&7));
         assert!(summary.bosses_defeated.contains("runaway-sugar-mixer"));
     }
@@ -806,6 +858,9 @@ mod tests {
             damage_dealt_by_weapon: 400.0,
             damage_taken: 8.0,
             damage_taken_by_source: BTreeMap::from([("hazard".to_string(), 8.0)]),
+            weapon_levels: BTreeMap::new(),
+            passive_levels: BTreeMap::new(),
+            evolutions_obtained: BTreeSet::new(),
             boss_damage: 0.0,
             boss_kill_times: Vec::new(),
             enemies_defeated: BTreeMap::new(),

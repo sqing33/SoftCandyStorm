@@ -10183,6 +10183,7 @@ mod tests {
             boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
             passives_used: Default::default(),
+            evolutions_used: Default::default(),
             enemies_defeated: Default::default(),
             bosses_defeated: Default::default(),
         };
@@ -10275,6 +10276,7 @@ mod tests {
             boss_damage: 300.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 5)]),
             passives_used: Default::default(),
+            evolutions_used: Default::default(),
             enemies_defeated: Default::default(),
             bosses_defeated: Default::default(),
         };
@@ -10365,6 +10367,7 @@ mod tests {
             boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
             passives_used: Default::default(),
+            evolutions_used: Default::default(),
             enemies_defeated: Default::default(),
             bosses_defeated: Default::default(),
         };
@@ -10413,6 +10416,7 @@ mod tests {
             boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 1)]),
             passives_used: Default::default(),
+            evolutions_used: Default::default(),
             enemies_defeated: BTreeMap::from([("bouncy-gummy".to_string(), 3)]),
             bosses_defeated: Default::default(),
         };
@@ -11058,6 +11062,7 @@ mod tests {
             boss_damage: 0.0,
             weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 3)]),
             passives_used: Default::default(),
+            evolutions_used: Default::default(),
             enemies_defeated: Default::default(),
             bosses_defeated: Default::default(),
         };
