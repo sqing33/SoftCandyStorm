@@ -99,8 +99,9 @@ const RUNTIME_STANDARD_PATROL_SECONDS: f32 = 600.0;
 const RUNTIME_LONG_PATROL_SECONDS: f32 = 900.0;
 const RUNTIME_ENDLESS_STORM_SECONDS: f32 = 1200.0;
 const RUNTIME_DAILY_STORM_SEED: u64 = 66_606;
-const RUNTIME_SELECTABLE_RUN_MODES: [RunMode; 4] = [
+const RUNTIME_SELECTABLE_RUN_MODES: [RunMode; 5] = [
     RunMode::StandardPatrol,
+    RunMode::ChapterChallenge,
     RunMode::LongPatrol,
     RunMode::DailyStorm,
     RunMode::EndlessStorm,
@@ -6793,9 +6794,9 @@ fn runtime_run_mode_duration_label(mode: RunMode) -> &'static str {
 fn runtime_run_mode_description(mode: RunMode) -> &'static str {
     match mode {
         RunMode::StandardPatrol => "主线推进和平衡基准",
+        RunMode::ChapterChallenge => "锁定当前地图章节目标，适合补 Boss、收集和进化任务",
         RunMode::LongPatrol => "留给 Build 更多升级和进化空间",
         RunMode::EndlessStorm => "先以 20 分钟强风暴目标承载极限 Build 与压力验证",
-        RunMode::ChapterChallenge => "固定规则挑战后续接入",
         RunMode::DailyStorm => "固定 seed 与强风暴压力，胜利额外给糖晶和风暴糖粒",
         RunMode::ExperimentalStorm => "候选内容测试模式，当前不进入主线",
     }
@@ -6804,6 +6805,7 @@ fn runtime_run_mode_description(mode: RunMode) -> &'static str {
 fn runtime_run_mode_reward_hint(mode: RunMode) -> &'static str {
     match mode {
         RunMode::DailyStorm | RunMode::EndlessStorm => "胜利 +25% 糖晶 +1 风暴糖粒",
+        RunMode::ChapterChallenge => "优先完成本图章节目标，获得星片、角色和地图推进",
         RunMode::LongPatrol => "更多存活和击杀资源，适合做完整 Build",
         _ => "标准章节目标、解锁和图鉴进度",
     }
@@ -8509,6 +8511,14 @@ mod tests {
         );
         assert_eq!(long_config.difficulty, Difficulty::Normal);
         assert_eq!(long_config.seed, 12_345);
+
+        let chapter_cli = parse_runtime_cli(["--run-mode".to_string(), "chapter".to_string()]);
+        let chapter_config = run_config_from_cli(&chapter_cli, &content, &progress);
+
+        assert_eq!(chapter_cli.run_mode, RunMode::ChapterChallenge);
+        assert_eq!(chapter_config.duration_seconds, 600.0);
+        assert_eq!(chapter_config.difficulty, Difficulty::Normal);
+        assert_eq!(chapter_config.seed, 12_345);
 
         let daily_cli = parse_runtime_cli(["--mode".to_string(), "daily-storm".to_string()]);
         let daily_config = run_config_from_cli(&daily_cli, &content, &progress);
@@ -10276,6 +10286,18 @@ mod tests {
 
         let message = select_next_runtime_run_mode(&mut state).unwrap();
 
+        assert!(message.contains("章节挑战"));
+        assert_eq!(state.run_mode, RunMode::ChapterChallenge);
+        assert_eq!(
+            state.config.duration_seconds,
+            runtime_run_mode_duration_seconds(RunMode::ChapterChallenge)
+        );
+        assert_eq!(state.config.difficulty, Difficulty::Normal);
+        assert_eq!(state.base_ui_state.last_selected_run_mode, "chapter");
+        assert_eq!(state.run_number, 2);
+
+        let message = select_next_runtime_run_mode(&mut state).unwrap();
+
         assert!(message.contains("长巡逻"));
         assert_eq!(state.run_mode, RunMode::LongPatrol);
         assert_eq!(
@@ -10283,7 +10305,7 @@ mod tests {
             runtime_run_mode_duration_seconds(RunMode::LongPatrol)
         );
         assert_eq!(state.base_ui_state.last_selected_run_mode, "long");
-        assert_eq!(state.run_number, 2);
+        assert_eq!(state.run_number, 3);
 
         select_next_runtime_run_mode(&mut state).unwrap();
 
@@ -10291,7 +10313,7 @@ mod tests {
         assert_eq!(state.config.difficulty, Difficulty::StrongStorm);
         assert_eq!(state.config.seed, super::runtime_daily_storm_seed());
         assert_eq!(state.base_ui_state.last_selected_run_mode, "daily");
-        assert_eq!(state.run_number, 3);
+        assert_eq!(state.run_number, 4);
     }
 
     #[test]
@@ -12211,6 +12233,37 @@ mod tests {
         assert!(panel.contains("M/手柄右 切换已解锁地图"));
         assert!(panel.contains("T/手柄上 切换巡逻模式"));
         assert!(panel.contains("右下点击区: 角色  地图  模式"));
+    }
+
+    #[test]
+    fn meta_panel_renders_chapter_challenge_mode_details() {
+        let content = ContentPack::base_demo();
+        let config = RunConfig::default();
+        let privacy_settings = RuntimePrivacySettings::default();
+        let base_ui_state = RuntimeBaseUiState::default();
+        let mut context = meta_panel_context(
+            &privacy_settings,
+            None,
+            None,
+            None,
+            &content,
+            &config,
+            &base_ui_state,
+            0,
+        );
+        context.run_mode = RunMode::ChapterChallenge;
+
+        let panel = render_meta_progress_panel(
+            &MetaProgress::demo_start(),
+            None,
+            RuntimeMetaPanelView::Loadout,
+            context,
+        );
+
+        assert!(panel.contains("模式 章节挑战 (10 分钟)"));
+        assert!(panel.contains("锁定当前地图章节目标"));
+        assert!(panel.contains("奖励 优先完成本图章节目标"));
+        assert!(panel.contains("本图目标 0/5  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
     }
 
     #[test]
