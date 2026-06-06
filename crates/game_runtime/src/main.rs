@@ -1782,6 +1782,7 @@ fn format_upgrade_options(
     options: &[UpgradeOptionSnapshot],
     content: &ContentPack,
     build: &BuildSnapshot,
+    chapter_target_evolution_id: Option<&str>,
 ) -> String {
     options
         .iter()
@@ -1795,7 +1796,7 @@ fn format_upgrade_options(
                 option.description,
                 format_upgrade_stat_preview(option, content),
                 format_upgrade_tags(&option.tags),
-                format_upgrade_context(option, content, build),
+                format_upgrade_context(option, content, build, chapter_target_evolution_id),
                 option.id,
             )
         })
@@ -1859,8 +1860,14 @@ fn format_upgrade_context(
     option: &UpgradeOptionSnapshot,
     content: &ContentPack,
     build: &BuildSnapshot,
+    chapter_target_evolution_id: Option<&str>,
 ) -> String {
     let mut notes = Vec::new();
+    if let Some(chapter_hint) =
+        format_upgrade_chapter_build_hint(option, content, build, chapter_target_evolution_id)
+    {
+        notes.push(chapter_hint);
+    }
     if let Some(evolution_hint) = format_upgrade_evolution_hint(option, content, build) {
         notes.push(evolution_hint);
     }
@@ -1872,6 +1879,32 @@ fn format_upgrade_context(
     } else {
         notes.join("  ")
     }
+}
+
+fn format_upgrade_chapter_build_hint(
+    option: &UpgradeOptionSnapshot,
+    content: &ContentPack,
+    build: &BuildSnapshot,
+    chapter_target_evolution_id: Option<&str>,
+) -> Option<String> {
+    let evolution_id = chapter_target_evolution_id?;
+    if build.evolutions.iter().any(|item| item.id == evolution_id) {
+        return None;
+    }
+    let evolution = content.evolutions.get(evolution_id)?;
+    let content_id = upgrade_option_content_id(&option.id);
+    let evolution_label = runtime_evolution_label(content, evolution_id);
+    if content_id == evolution.id {
+        return Some(format!("章节构筑目标 可完成 {evolution_label}"));
+    }
+    if upgrade_advances_evolution_path(content_id, evolution) {
+        return Some(format!(
+            "章节构筑目标 {}: {}",
+            evolution_label,
+            format_evolution_requirement_progress(evolution, content, build),
+        ));
+    }
+    None
 }
 
 fn format_upgrade_evolution_hint(
@@ -2721,11 +2754,7 @@ fn format_runtime_hud_chapter_objective(
     snapshot: &RunSnapshot,
     content: &ContentPack,
 ) -> String {
-    let Some(chapter) = progress
-        .chapters
-        .values()
-        .find(|chapter| chapter.map_id == snapshot.map.map_id)
-    else {
+    let Some(chapter) = runtime_chapter_progress_for_snapshot(progress, snapshot) else {
         return "章节目标 无".to_string();
     };
     let goals = runtime_chapter_goal_entries(&chapter.chapter_id, content);
@@ -2760,11 +2789,7 @@ fn format_runtime_hud_chapter_build_goal(
     snapshot: &RunSnapshot,
     content: &ContentPack,
 ) -> String {
-    let Some(chapter) = progress
-        .chapters
-        .values()
-        .find(|chapter| chapter.map_id == snapshot.map.map_id)
-    else {
+    let Some(chapter) = runtime_chapter_progress_for_snapshot(progress, snapshot) else {
         return "章节构筑 无".to_string();
     };
     let Some(evolution_id) = game_core::meta::chapter_target_evolution_id(&chapter.chapter_id)
@@ -2793,6 +2818,24 @@ fn format_runtime_hud_chapter_build_goal(
         format_evolution_requirement_progress(evolution, content, &snapshot.build),
         runtime_evolution_trigger_label(&evolution.requirements.trigger),
     )
+}
+
+fn runtime_chapter_progress_for_snapshot<'a>(
+    progress: &'a MetaProgress,
+    snapshot: &RunSnapshot,
+) -> Option<&'a game_core::meta::ChapterProgress> {
+    progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == snapshot.map.map_id)
+}
+
+fn runtime_chapter_target_evolution_id_for_snapshot(
+    progress: &MetaProgress,
+    snapshot: &RunSnapshot,
+) -> Option<&'static str> {
+    let chapter = runtime_chapter_progress_for_snapshot(progress, snapshot)?;
+    game_core::meta::chapter_target_evolution_id(&chapter.chapter_id)
 }
 
 fn format_runtime_hud_chapter_goal_progress(
@@ -3429,6 +3472,10 @@ fn update_hud(
                         &snapshot.upgrade_options,
                         &state.content,
                         &snapshot.build,
+                        runtime_chapter_target_evolution_id_for_snapshot(
+                            &state.meta_progress,
+                            snapshot,
+                        ),
                     )
                 )
             };
@@ -13692,7 +13739,7 @@ mod tests {
             },
         ];
 
-        let rendered = format_upgrade_options(&options, &content, &build);
+        let rendered = format_upgrade_options(&options, &content, &build, None);
 
         assert!(rendered.contains("1. 彩虹糖弹强化"));
         assert!(rendered.contains("目标 Lv.2"));
@@ -13712,6 +13759,48 @@ mod tests {
         assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
         assert!(rendered.contains("4. 泡泡鞋"));
         assert!(rendered.contains("数值 移速 + 10.00/级"));
+    }
+
+    #[test]
+    fn upgrade_options_highlight_chapter_build_target() {
+        let content = ContentPack::base_demo();
+        let build = BuildSnapshot {
+            weapons: vec![BuildItemSnapshot {
+                id: "rainbow-candy-shot".to_string(),
+                level: 1,
+            }],
+            passives: Vec::new(),
+            evolutions: Vec::new(),
+            tags: vec!["projectile".to_string()],
+            open_evolution_paths: vec!["rainbow-candy-meteor".to_string()],
+        };
+        let options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-2".to_string(),
+                name: "彩虹糖弹强化".to_string(),
+                tags: vec!["projectile".to_string()],
+                description: "提升伤害、射程和冷却节奏。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "soda-bubble-pop".to_string(),
+                name: "获得汽水泡泡".to_string(),
+                tags: vec!["control".to_string()],
+                description: "发射会弹跳的汽水泡泡。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-meteor".to_string(),
+                name: "彩虹糖流星雨".to_string(),
+                tags: vec!["evolution".to_string()],
+                description: "彩虹糖弹进化为周期性流星雨。".to_string(),
+            },
+        ];
+
+        let rendered =
+            format_upgrade_options(&options, &content, &build, Some("rainbow-candy-meteor"));
+
+        assert!(rendered.contains("关联 章节构筑目标 彩虹糖流星雨: 彩虹糖弹 1/5 + 糖晶放大镜 0/3"));
+        assert!(rendered.contains("关联 新路线"));
+        assert!(rendered.contains("章节构筑目标 可完成 彩虹糖流星雨"));
     }
 
     #[test]
