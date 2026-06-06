@@ -2755,6 +2755,46 @@ fn format_runtime_hud_chapter_objective(
     )
 }
 
+fn format_runtime_hud_chapter_build_goal(
+    progress: &MetaProgress,
+    snapshot: &RunSnapshot,
+    content: &ContentPack,
+) -> String {
+    let Some(chapter) = progress
+        .chapters
+        .values()
+        .find(|chapter| chapter.map_id == snapshot.map.map_id)
+    else {
+        return "章节构筑 无".to_string();
+    };
+    let Some(evolution_id) = game_core::meta::chapter_target_evolution_id(&chapter.chapter_id)
+    else {
+        return "章节构筑 无目标进化".to_string();
+    };
+    let Some(evolution) = content.evolutions.get(evolution_id) else {
+        return format!("章节构筑 {}", evolution_id);
+    };
+    let completed_goal_id = format!("evolve-{evolution_id}");
+    let completed = chapter.completed_goals.contains(&completed_goal_id)
+        || snapshot
+            .build
+            .evolutions
+            .iter()
+            .any(|item| item.id == evolution_id);
+    if completed {
+        return format!(
+            "章节构筑 {} 已完成",
+            runtime_evolution_label(content, evolution_id)
+        );
+    }
+    format!(
+        "章节构筑 {}: {}，{}",
+        runtime_evolution_label(content, evolution_id),
+        format_evolution_requirement_progress(evolution, content, &snapshot.build),
+        runtime_evolution_trigger_label(&evolution.requirements.trigger),
+    )
+}
+
 fn format_runtime_hud_chapter_goal_progress(
     goal_id: &str,
     chapter: &game_core::meta::ChapterProgress,
@@ -3337,6 +3377,11 @@ fn update_hud(
                 snapshot,
                 &state.content,
             );
+            let chapter_build_status = format_runtime_hud_chapter_build_goal(
+                &state.meta_progress,
+                snapshot,
+                &state.content,
+            );
             let build_status = format_build_status(&snapshot.build, &state.content);
             let enemy_status = format_enemy_swarm_status(&snapshot.visible_enemies, &state.content);
             let event_status =
@@ -3344,7 +3389,7 @@ fn update_hud(
             let hazard_status =
                 format_hazard_status(&snapshot.active_hazards, &snapshot.player.status_effects);
             set_text_section_if_changed(&mut text, format!(
-                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\n{}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
+                "Run {}  {}  Time {:05.1}s  HP {:03.0}/{:03.0}  Lv {}  XP {:.0}/{:.0}  Kills {}\n{}\nMap {} ({})\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}  [{}]\nControls: WASD/Arrows/LeftStick/DPad move | 1/2/3 upgrade | P pause | R restart | F1-F5 station",
                 state.run_number,
                 play_state,
                 snapshot.time_seconds,
@@ -3358,6 +3403,7 @@ fn update_hud(
                 map_style.display_name,
                 snapshot.map.map_id,
                 chapter_objective_status,
+                chapter_build_status,
                 boss_status,
                 enemy_status,
                 event_status,
@@ -8926,13 +8972,14 @@ mod tests {
         event_kind_for_events, export_runtime_local_data, format_boss_status, format_build_status,
         format_enemy_behavior_details, format_enemy_swarm_status, format_event_effect_for_codex,
         format_event_effect_status, format_hazard_status, format_meta_shop_offer_line,
-        format_runtime_hud_chapter_objective, format_runtime_hud_run_mode, format_terminal_overlay,
-        format_upgrade_options, load_runtime_asset_candidate_manifest,
-        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
-        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
-        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
-        player_tint, projectile_visual_style, purchase_next_runtime_shop_offer,
-        read_runtime_save_state, render_meta_progress_panel, resolve_runtime_content_selection,
+        format_runtime_hud_chapter_build_goal, format_runtime_hud_chapter_objective,
+        format_runtime_hud_run_mode, format_terminal_overlay, format_upgrade_options,
+        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
+        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
+        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
+        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
+        projectile_visual_style, purchase_next_runtime_shop_offer, read_runtime_save_state,
+        render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, restore_runtime_loadout_selection_from_save,
         run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
@@ -11451,6 +11498,42 @@ mod tests {
 
         assert!(status.contains("章节目标 4/5 完成彩虹糖流星雨进化"));
         assert!(status.contains("彩虹糖弹 3/5 + 糖晶放大镜 1/3，Boss 宝箱触发"));
+    }
+
+    #[test]
+    fn hud_chapter_build_goal_tracks_target_evolution_progress() {
+        let state = runtime_state_for_tests();
+        let mut snapshot = state.latest_snapshot.clone();
+        snapshot.build.weapons = vec![BuildItemSnapshot {
+            id: "rainbow-candy-shot".to_string(),
+            level: 3,
+        }];
+        snapshot.build.passives = vec![BuildItemSnapshot {
+            id: "candy-crystal-lens".to_string(),
+            level: 1,
+        }];
+
+        let status =
+            format_runtime_hud_chapter_build_goal(&state.meta_progress, &snapshot, &state.content);
+
+        assert!(status.contains("章节构筑 彩虹糖流星雨"));
+        assert!(status.contains("彩虹糖弹 3/5 + 糖晶放大镜 1/3"));
+        assert!(status.contains("Boss 宝箱触发"));
+    }
+
+    #[test]
+    fn hud_chapter_build_goal_marks_completed_evolution() {
+        let state = runtime_state_for_tests();
+        let mut snapshot = state.latest_snapshot.clone();
+        snapshot.build.evolutions = vec![BuildItemSnapshot {
+            id: "rainbow-candy-meteor".to_string(),
+            level: 1,
+        }];
+
+        let status =
+            format_runtime_hud_chapter_build_goal(&state.meta_progress, &snapshot, &state.content);
+
+        assert_eq!(status, "章节构筑 彩虹糖流星雨 已完成");
     }
 
     #[test]
