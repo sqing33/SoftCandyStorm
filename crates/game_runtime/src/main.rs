@@ -1794,12 +1794,13 @@ fn format_upgrade_options(
         .enumerate()
         .map(|(index, option)| {
             format!(
-                "{}. {}  {}\n   {}\n   数值 {}\n   标签 {}  关联 {}\n   id {}",
+                "{}. {}  {}\n   {}\n   数值 {}\n   玩法 {}\n   标签 {}  关联 {}\n   id {}",
                 index + 1,
                 option.name,
                 format_upgrade_option_state(option),
                 option.description,
                 format_upgrade_stat_preview(option, content),
+                format_upgrade_playstyle_preview(option, content),
                 format_upgrade_tags(&option.tags),
                 format_upgrade_context(option, content, build, chapter_target_evolution_id),
                 option.id,
@@ -1859,6 +1860,30 @@ fn format_evolution_weapon_stat_preview(weapon: &EvolutionWeaponDefinition) -> S
         weapon.base_stats.projectile_count,
         weapon.base_stats.area_radius.max(weapon.targeting.range),
     )
+}
+
+fn format_upgrade_playstyle_preview(
+    option: &UpgradeOptionSnapshot,
+    content: &ContentPack,
+) -> String {
+    let content_id = upgrade_option_content_id(&option.id);
+    if let Some(evolution) = content.evolutions.get(content_id) {
+        return format!(
+            "目标 {}  进化武器",
+            runtime_targeting_label(&evolution.weapon_definition.targeting.mode),
+        );
+    }
+    if let Some(weapon) = content.weapons.get(content_id) {
+        return format!(
+            "目标 {}  定位 {}",
+            runtime_targeting_label(&weapon.targeting.mode),
+            runtime_weapon_role_label(&weapon.balance_budget.role),
+        );
+    }
+    if content.passives.contains_key(content_id) {
+        return "被动强化".to_string();
+    }
+    "查看说明".to_string()
 }
 
 fn format_upgrade_context(
@@ -6749,10 +6774,12 @@ fn runtime_weapon_role_label(role: &str) -> String {
 
 fn runtime_targeting_label(mode: &str) -> String {
     match mode {
+        "boss_priority" => "Boss 优先",
         "ground_near_player" => "玩家附近地面",
         "highest_health_enemy" => "高血敌人",
         "movement_direction" => "移动方向",
         "nearest_enemy" => "最近敌人",
+        "random_direction" => "随机方向",
         "random_enemy" => "随机敌人",
         "self_centered" => "自身周围",
         other => return other.replace('_', " "),
@@ -9167,12 +9194,12 @@ mod tests {
         format_event_effect_status, format_hazard_status, format_meta_shop_offer_line,
         format_runtime_hud_chapter_build_goal, format_runtime_hud_chapter_objective,
         format_runtime_hud_run_mode, format_terminal_overlay, format_upgrade_options,
-        load_runtime_asset_candidate_manifest, load_runtime_privacy_settings,
-        load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
-        movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
-        parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        projectile_visual_style, purchase_next_runtime_shop_offer, read_runtime_save_state,
-        render_meta_progress_panel, resolve_runtime_content_selection,
+        format_upgrade_playstyle_preview, load_runtime_asset_candidate_manifest,
+        load_runtime_privacy_settings, load_runtime_story_codex_ui_candidate_manifest,
+        make_tone_wav, map_visual_style, movement_from_gamepad_axes, movement_from_gamepad_buttons,
+        next_runtime_selection_id, parse_runtime_cli, persist_runtime_privacy_settings_file,
+        player_tint, projectile_visual_style, purchase_next_runtime_shop_offer,
+        read_runtime_save_state, render_meta_progress_panel, resolve_runtime_content_selection,
         resolve_runtime_platform_paths, restore_runtime_loadout_selection_from_save,
         run_config_from_cli, run_runtime_data_control_action,
         run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
@@ -13977,6 +14004,7 @@ mod tests {
         assert!(rendered.contains("目标 Lv.2"));
         assert!(rendered.contains("提升伤害、射程和冷却节奏。"));
         assert!(rendered.contains("数值 伤害 14  冷却 0.62s  数量 1  范围 420"));
+        assert!(rendered.contains("玩法 目标 最近敌人  定位 开局武器"));
         assert!(rendered.contains("标签 弹幕 / 单体"));
         assert!(rendered.contains("关联 进化线 彩虹糖流星雨: 彩虹糖弹 1/5 + 糖晶放大镜 0/3"));
         assert!(rendered.contains("Build 契合 弹幕"));
@@ -13987,10 +14015,28 @@ mod tests {
         assert!(rendered.contains("3. 彩虹糖流星雨"));
         assert!(rendered.contains("进化"));
         assert!(rendered.contains("数值 伤害 42  冷却 0.90s  数量 8  范围 620"));
+        assert!(rendered.contains("玩法 目标 随机敌人  进化武器"));
         assert!(rendered.contains("进化需求 彩虹糖弹 1/5 + 糖晶放大镜 0/3，Boss 宝箱触发"));
         assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
         assert!(rendered.contains("4. 泡泡鞋"));
         assert!(rendered.contains("数值 移速 + 10.00/级"));
+        assert!(rendered.contains("玩法 被动强化"));
+    }
+
+    #[test]
+    fn upgrade_playstyle_preview_labels_boss_priority_targeting() {
+        let content = ContentPack::base_demo();
+        let option = game_core::UpgradeOptionSnapshot {
+            id: "candy-crystal-lance".to_string(),
+            name: "获得糖晶长枪".to_string(),
+            tags: vec!["boss-killer".to_string()],
+            description: "周期性射出高伤害糖晶长枪，优先瞄准 Boss。".to_string(),
+        };
+
+        assert_eq!(
+            format_upgrade_playstyle_preview(&option, &content),
+            "目标 Boss 优先  定位 Boss 输出"
+        );
     }
 
     #[test]
