@@ -104,16 +104,18 @@ impl MetaProgress {
     pub fn apply_run_summary(&mut self, summary: &MetaRunSummary) -> MetaSettlementReport {
         self.completed_runs += 1;
         self.best_survival_seconds = self.best_survival_seconds.max(summary.duration_seconds);
+        let resources_gained = calculate_run_rewards(summary);
+        let reward_notes = calculate_run_reward_notes(summary);
 
         let mut report = MetaSettlementReport {
             run_id: summary.run_id.clone(),
             mode: summary.mode,
             run_summary: summary.clone(),
-            resources_gained: calculate_run_rewards(summary),
+            resources_gained,
             completed_goals: Vec::new(),
             unlocked: Vec::new(),
             codex_updates: Vec::new(),
-            notes: Vec::new(),
+            notes: reward_notes,
         };
         self.resources.add(&report.resources_gained);
 
@@ -276,21 +278,60 @@ pub fn apply_demo_meta_settlement(
 }
 
 fn calculate_run_rewards(summary: &MetaRunSummary) -> MetaResourceWallet {
+    let base_candy_crystal_shards = calculate_base_candy_crystal_shards(summary);
+    let candy_crystal_bonus =
+        strong_storm_victory_candy_crystal_bonus(summary, base_candy_crystal_shards);
+
+    MetaResourceWallet {
+        candy_crystal_shards: base_candy_crystal_shards + candy_crystal_bonus,
+        star_shards: 0,
+        storm_grains: storm_grain_victory_reward(summary),
+    }
+}
+
+fn calculate_base_candy_crystal_shards(summary: &MetaRunSummary) -> u32 {
     let survival = (summary.duration_seconds / 12.0).floor().max(0.0) as u32;
     let kill_bonus = summary.kills / 8;
     let level_bonus = summary.level.saturating_sub(1) * 3;
     let victory_bonus = if summary.victory { 40 } else { 0 };
     let boss_bonus = summary.bosses_defeated.len() as u32 * 25;
-    let storm_grains = match summary.mode {
+
+    survival + kill_bonus + level_bonus + victory_bonus + boss_bonus
+}
+
+fn strong_storm_victory_candy_crystal_bonus(summary: &MetaRunSummary, base_reward: u32) -> u32 {
+    match summary.mode {
+        RunMode::DailyStorm | RunMode::EndlessStorm if summary.victory => {
+            base_reward.saturating_add(3) / 4
+        }
+        _ => 0,
+    }
+}
+
+fn storm_grain_victory_reward(summary: &MetaRunSummary) -> u32 {
+    match summary.mode {
         RunMode::DailyStorm | RunMode::EndlessStorm if summary.victory => 1,
         _ => 0,
-    };
-
-    MetaResourceWallet {
-        candy_crystal_shards: survival + kill_bonus + level_bonus + victory_bonus + boss_bonus,
-        star_shards: 0,
-        storm_grains,
     }
+}
+
+fn calculate_run_reward_notes(summary: &MetaRunSummary) -> Vec<String> {
+    let base_candy_crystal_shards = calculate_base_candy_crystal_shards(summary);
+    let candy_crystal_bonus =
+        strong_storm_victory_candy_crystal_bonus(summary, base_candy_crystal_shards);
+    let storm_grains = storm_grain_victory_reward(summary);
+    let mut notes = Vec::new();
+
+    if candy_crystal_bonus > 0 {
+        notes.push(format!(
+            "strong_storm_candy_crystal_bonus:{candy_crystal_bonus}"
+        ));
+    }
+    if storm_grains > 0 {
+        notes.push(format!("storm_grain_victory_bonus:{storm_grains}"));
+    }
+
+    notes
 }
 
 fn is_standard_patrol_victory(config: &RunConfig, metrics: &RunMetrics) -> bool {
@@ -688,6 +729,38 @@ mod tests {
                 .map(|entry| entry.defeated_count),
             Some(30)
         );
+    }
+
+    #[test]
+    fn daily_and_endless_victory_grant_strong_storm_rewards() {
+        let mut standard = base_summary();
+        standard.duration_seconds = 600.0;
+        standard.victory = true;
+        standard.kills = 120;
+        standard.level = 6;
+
+        let standard_rewards = calculate_run_rewards(&standard);
+
+        for mode in [RunMode::DailyStorm, RunMode::EndlessStorm] {
+            let mut summary = standard.clone();
+            summary.mode = mode;
+            let mut progress = MetaProgress::demo_start();
+            let report = progress.apply_run_summary(&summary);
+
+            assert!(
+                report.resources_gained.candy_crystal_shards
+                    > standard_rewards.candy_crystal_shards
+            );
+            assert_eq!(report.resources_gained.storm_grains, 1);
+            assert!(report
+                .notes
+                .iter()
+                .any(|note| note.starts_with("strong_storm_candy_crystal_bonus:")));
+            assert!(report
+                .notes
+                .iter()
+                .any(|note| note == "storm_grain_victory_bonus:1"));
+        }
     }
 
     #[test]

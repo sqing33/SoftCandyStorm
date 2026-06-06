@@ -4275,7 +4275,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  XP {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
@@ -4293,6 +4293,7 @@ fn render_meta_overview_panel(
             report.resources_gained.candy_crystal_shards,
             report.resources_gained.star_shards,
             report.resources_gained.storm_grains,
+            format_settlement_notes(&report.notes, 2),
             format_string_slice(&report.completed_goals, 2),
             format_meta_unlocks(report, content, 4),
             format_codex_updates(&report.codex_updates, content, 4),
@@ -6245,6 +6246,24 @@ fn format_codex_updates(updates: &[String], content: &ContentPack, limit: usize)
         .map(|update| format_codex_update_label(update, content))
         .collect::<Vec<_>>();
     format_string_items(&values, limit)
+}
+
+fn format_settlement_notes(notes: &[String], limit: usize) -> String {
+    let values = notes
+        .iter()
+        .map(|note| format_settlement_note_label(note))
+        .collect::<Vec<_>>();
+    format_string_items(&values, limit)
+}
+
+fn format_settlement_note_label(note: &str) -> String {
+    if let Some(value) = note.strip_prefix("strong_storm_candy_crystal_bonus:") {
+        return format!("强风暴糖晶加成 +{value}");
+    }
+    if let Some(value) = note.strip_prefix("storm_grain_victory_bonus:") {
+        return format!("胜利风暴糖粒 +{value}");
+    }
+    note.to_string()
 }
 
 fn format_codex_update_label(update: &str, content: &ContentPack) -> String {
@@ -10886,10 +10905,58 @@ mod tests {
         assert!(panel.contains("下一步行动"));
         assert!(panel.contains("解锁概览"));
         assert!(panel.contains("章节进度"));
+        assert!(panel.contains("奖励说明 无"));
         assert!(panel.contains("下一步"));
         assert!(panel.contains("页签点击区: 概览  章节  图鉴  设置  巡逻"));
         assert!(panel.contains("手柄 Select/Start 上一页/下一页"));
         assert!(panel.contains("右下点击区: 章节  图鉴  设置  巡逻"));
+    }
+
+    #[test]
+    fn meta_panel_renders_strong_storm_reward_notes() {
+        let mut progress = MetaProgress::demo_start();
+        let summary = MetaRunSummary {
+            run_id: "runtime_run_1_seed_66606".to_string(),
+            mode: RunMode::DailyStorm,
+            map_id: "frosting-grassland".to_string(),
+            character_id: "jar-keeper".to_string(),
+            duration_seconds: 600.0,
+            victory: true,
+            terminal_reason: "duration_reached".to_string(),
+            kills: 120,
+            level: 6,
+            xp_collected: 210.0,
+            damage_dealt_by_weapon: 1_100.0,
+            damage_taken: 6.0,
+            damage_taken_by_source: BTreeMap::from([("contact".to_string(), 6.0)]),
+            boss_damage: 300.0,
+            weapon_levels: BTreeMap::from([("rainbow-candy-shot".to_string(), 5)]),
+            passives_used: Default::default(),
+            evolutions_used: Default::default(),
+            enemies_defeated: Default::default(),
+            bosses_defeated: Default::default(),
+        };
+        let report = progress.apply_run_summary(&summary);
+        let panel = render_meta_progress_panel(
+            &progress,
+            Some(&report),
+            RuntimeMetaPanelView::Overview,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        assert_eq!(report.resources_gained.storm_grains, 1);
+        assert!(panel.contains("模式 每日风暴"));
+        assert!(panel.contains("强风暴糖晶加成 +"));
+        assert!(panel.contains("胜利风暴糖粒 +1"));
     }
 
     #[test]

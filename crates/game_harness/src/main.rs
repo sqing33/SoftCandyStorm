@@ -7148,6 +7148,14 @@ fn render_meta_settlement_summary(report: &MetaSettlementSmokeReport) -> String 
         report.settlement.resources_gained.storm_grains
     ));
     output.push_str(&format!(
+        "- Reward notes: `{}`\n",
+        if report.settlement.notes.is_empty() {
+            "-".to_string()
+        } else {
+            report.settlement.notes.join(", ")
+        }
+    ));
+    output.push_str(&format!(
         "- Completed goals: `{}`\n",
         report.settlement.completed_goals.len()
     ));
