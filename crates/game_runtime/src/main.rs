@@ -5681,6 +5681,10 @@ fn render_meta_loadout_panel(
                 trait_definition.description, trait_definition.id
             ));
         }
+        lines.push(format!(
+            "角色玩法 {}",
+            format_runtime_character_play_hint(character)
+        ));
     }
 
     lines.push(format!(
@@ -6002,6 +6006,31 @@ fn format_runtime_starting_loadout(content: &ContentPack, loadout: &StartingLoad
             content, id
         )),
     )
+}
+
+fn format_runtime_character_play_hint(character: &CharacterDefinition) -> &'static str {
+    match character
+        .trait_definition
+        .as_ref()
+        .map(|trait_definition| trait_definition.id.as_str())
+    {
+        Some("sweet-starter") => {
+            "均衡新手：稳定拉开距离，优先补目标进化或一件防御被动，每 5 级额外糖晶帮助早期成型"
+        }
+        Some("bubble-runner") => {
+            "机动拾取：保持移动拉怪，趁拾取范围提升时回收糖晶，优先补机动和范围清群"
+        }
+        Some("cream-guard") => {
+            "防御近身：可以短时承压但别站桩，优先补环绕、防御或生命回复，Boss 前留出走位空间"
+        }
+        Some("sour-control") => {
+            "控制稳打 Boss：用减速拆开敌群，优先补持续区域和单体输出，让 Boss 始终处在安全距离外"
+        }
+        Some("longer-summons") => {
+            "召唤经营：围绕炮台安全区转圈，把敌群带进火力区，优先补范围控制和持续时间"
+        }
+        _ => "按当前初始武器找输出节奏，升级时在输出、控制和生存之间补短板",
+    }
 }
 
 fn format_runtime_loadout_plan(content: &ContentPack, loadout: &StartingLoadout) -> String {
@@ -14997,6 +15026,7 @@ mod tests {
         assert!(panel.contains("角色说明"));
         assert!(panel.contains("属性 HP"));
         assert!(panel.contains("特质 移动后短时间提升拾取范围"));
+        assert!(panel.contains("角色玩法 机动拾取：保持移动拉怪"));
         assert!(panel.contains("汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局路线 先熟悉 汽水泡泡 节奏"));
         assert!(panel.contains("开局武器选择 角色默认 汽水泡泡 (soda-bubble-pop)"));
@@ -15210,6 +15240,7 @@ mod tests {
             assert!(panel.contains(expected), "missing loadout label {expected}");
         }
         assert!(panel.contains("地图机制 无固定地形伤害"));
+        assert!(panel.contains("角色玩法 均衡新手：稳定拉开距离"));
         assert!(panel.contains(
             "巡逻目标 推荐 新手  目标 0/5  风暴 标准  Boss 暴走搅糖机  目标奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"
         ));
