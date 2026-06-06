@@ -7,7 +7,7 @@ pub use content::{ContentError, ContentPack, ValidationReport};
 pub use math::Vec2;
 pub use meta::{
     apply_demo_meta_settlement, MetaCodexEntry, MetaProgress, MetaResourceWallet, MetaRunSummary,
-    MetaSettlementReport, MetaUnlockSet, RunMode,
+    MetaSettlementReport, MetaShopOffer, MetaUnlockSet, RunMode,
 };
 
 use content::{

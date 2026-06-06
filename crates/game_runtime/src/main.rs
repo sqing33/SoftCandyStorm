@@ -13,9 +13,10 @@ use game_core::content::{
 use game_core::{
     ActiveEventEffectSnapshot, BossSnapshot, BuildItemSnapshot, BuildSnapshot, ContentPack,
     Difficulty, EnemyBehavior, EnemySnapshot, FixedDt, GameCore, GameEvent, HazardSnapshot,
-    MetaCodexEntry, MetaProgress, MetaRunSummary, MetaSettlementReport, PlayerAction,
-    ProjectileSnapshot, RunConfig, RunMetrics, RunMode, RunSnapshot, StartingLoadout,
-    StatusEffectSnapshot, TerminalKind, TerminalState, UpgradeOptionSnapshot, Vec2 as CoreVec2,
+    MetaCodexEntry, MetaProgress, MetaResourceWallet, MetaRunSummary, MetaSettlementReport,
+    MetaShopOffer, PlayerAction, ProjectileSnapshot, RunConfig, RunMetrics, RunMode, RunSnapshot,
+    StartingLoadout, StatusEffectSnapshot, TerminalKind, TerminalState, UpgradeOptionSnapshot,
+    Vec2 as CoreVec2,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -1296,6 +1297,21 @@ fn step_game_core(
         return;
     }
     if state.meta_panel_view == RuntimeMetaPanelView::Overview {
+        if keyboard.just_pressed(KeyCode::KeyU) {
+            match purchase_next_runtime_shop_offer(&mut state) {
+                Ok(message) => {
+                    state.last_event = message;
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::System);
+                }
+                Err(error) => {
+                    state.last_event = format!("base unlock failed: {error}");
+                    state.last_event_kind = RuntimeEventKind::System;
+                    state.pending_sounds.push(RuntimeSound::Damage);
+                }
+            }
+            return;
+        }
         let pointer_view = primary_window.get_single().ok().and_then(|window| {
             runtime_overview_view_from_pointer(
                 &mouse_buttons,
@@ -4031,6 +4047,24 @@ fn select_next_runtime_run_mode(state: &mut RuntimeState) -> std::io::Result<Str
     ))
 }
 
+fn purchase_next_runtime_shop_offer(state: &mut RuntimeState) -> std::io::Result<String> {
+    let offer = state.meta_progress.next_demo_shop_offer().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "all current base unlock offers have been purchased",
+        )
+    })?;
+    let label = format_meta_shop_offer_label(&offer, &state.content);
+    let cost = format_meta_resource_cost(&offer.cost);
+    state
+        .meta_progress
+        .purchase_next_demo_shop_offer()
+        .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidInput, error))?;
+    persist_runtime_save_if_configured(state)?;
+
+    Ok(format!("unlocked {label} for {cost}"))
+}
+
 fn runtime_chapter_action_from_keyboard(
     keyboard: &ButtonInput<KeyCode>,
 ) -> Option<RuntimeChapterAction> {
@@ -4253,9 +4287,10 @@ fn render_meta_overview_panel(
     let next_action = format_meta_overview_next_action(progress, settlement, content);
     let unlock_summary = format_meta_overview_unlock_summary(progress, content);
     let chapter_summary = format_meta_overview_chapter_summary(progress, content);
+    let shop_summary = format_meta_shop_offer_line(progress, content);
 
     let mut output = format!(
-        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n",
+        "{}\n{}\n糖晶碎片 {}  星片 {}  风暴糖粒 {}\n章节目标 {}  图鉴发现 {}  已解锁 {}\n地图 {}\n完成巡逻 {}  最佳 {:.0}s\n下一步行动 {}\n解锁概览 {}\n章节进度 {}\n基地解锁 {}\n",
         META_PANEL_HEADER,
         META_PANEL_TAB_CLICK_HINT,
         progress.resources.candy_crystal_shards,
@@ -4270,6 +4305,7 @@ fn render_meta_overview_panel(
         next_action,
         unlock_summary,
         chapter_summary,
+        shop_summary,
     );
 
     if let Some(report) = settlement {
@@ -4361,6 +4397,46 @@ fn format_meta_overview_chapter_summary(progress: &MetaProgress, content: &Conte
         )
     } else {
         "当前已解锁章节目标已完成".to_string()
+    }
+}
+
+fn format_meta_shop_offer_line(progress: &MetaProgress, content: &ContentPack) -> String {
+    if let Some(offer) = progress.next_demo_shop_offer() {
+        let status = if progress.resources.candy_crystal_shards >= offer.cost.candy_crystal_shards {
+            "可购买"
+        } else {
+            "糖晶不足"
+        };
+        return format!(
+            "{}  费用 {}  {}  按 U 解锁",
+            format_meta_shop_offer_label(&offer, content),
+            format_meta_resource_cost(&offer.cost),
+            status,
+        );
+    }
+
+    "当前基地解锁已买完，继续挑战章节和风暴模式".to_string()
+}
+
+fn format_meta_shop_offer_label(offer: &MetaShopOffer, content: &ContentPack) -> String {
+    format_meta_unlock_label(&offer.kind, &offer.id, content)
+}
+
+fn format_meta_resource_cost(cost: &MetaResourceWallet) -> String {
+    let mut parts = Vec::new();
+    if cost.candy_crystal_shards > 0 {
+        parts.push(format!("{} 糖晶碎片", cost.candy_crystal_shards));
+    }
+    if cost.star_shards > 0 {
+        parts.push(format!("{} 星片", cost.star_shards));
+    }
+    if cost.storm_grains > 0 {
+        parts.push(format!("{} 风暴糖粒", cost.storm_grains));
+    }
+    if parts.is_empty() {
+        "免费".to_string()
+    } else {
+        parts.join(" + ")
     }
 }
 
@@ -8107,24 +8183,25 @@ mod tests {
         load_runtime_story_codex_ui_candidate_manifest, make_tone_wav, map_visual_style,
         movement_from_gamepad_axes, movement_from_gamepad_buttons, next_runtime_selection_id,
         parse_runtime_cli, persist_runtime_privacy_settings_file, player_tint,
-        projectile_visual_style, read_runtime_save_state, render_meta_progress_panel,
-        resolve_runtime_content_selection, resolve_runtime_platform_paths,
-        restore_runtime_loadout_selection_from_save, run_config_from_cli,
-        run_runtime_data_control_action, run_runtime_data_control_action_from_state,
-        runtime_asset_root, runtime_behavior_label, runtime_boss_ability_label,
-        runtime_boss_ability_summary, runtime_can_upload, runtime_chapter_action_from_gamepad,
-        runtime_chapter_action_from_keyboard, runtime_chapter_action_from_pointer,
-        runtime_chapter_action_from_pointer_zone, runtime_character_starting_loadout,
-        runtime_codex_action_from_gamepad, runtime_codex_action_from_pointer,
-        runtime_codex_action_from_pointer_zone, runtime_codex_enemy_description,
-        runtime_codex_map_description, runtime_loadout_action_from_gamepad,
-        runtime_loadout_action_from_keyboard, runtime_loadout_action_from_pointer,
-        runtime_loadout_action_from_pointer_zone, runtime_local_data_export_path,
-        runtime_meta_panel_cache_key, runtime_meta_panel_tab_view_from_gamepad,
-        runtime_meta_panel_tab_view_from_pointer, runtime_meta_panel_tab_view_from_pointer_zone,
-        runtime_meta_panel_view_from_key, runtime_native_platform_data_root_for_env,
-        runtime_overview_view_from_pointer, runtime_overview_view_from_pointer_zone,
-        runtime_privacy_notice, runtime_run_mode_duration_seconds, runtime_save_export_path,
+        projectile_visual_style, purchase_next_runtime_shop_offer, read_runtime_save_state,
+        render_meta_progress_panel, resolve_runtime_content_selection,
+        resolve_runtime_platform_paths, restore_runtime_loadout_selection_from_save,
+        run_config_from_cli, run_runtime_data_control_action,
+        run_runtime_data_control_action_from_state, runtime_asset_root, runtime_behavior_label,
+        runtime_boss_ability_label, runtime_boss_ability_summary, runtime_can_upload,
+        runtime_chapter_action_from_gamepad, runtime_chapter_action_from_keyboard,
+        runtime_chapter_action_from_pointer, runtime_chapter_action_from_pointer_zone,
+        runtime_character_starting_loadout, runtime_codex_action_from_gamepad,
+        runtime_codex_action_from_pointer, runtime_codex_action_from_pointer_zone,
+        runtime_codex_enemy_description, runtime_codex_map_description,
+        runtime_loadout_action_from_gamepad, runtime_loadout_action_from_keyboard,
+        runtime_loadout_action_from_pointer, runtime_loadout_action_from_pointer_zone,
+        runtime_local_data_export_path, runtime_meta_panel_cache_key,
+        runtime_meta_panel_tab_view_from_gamepad, runtime_meta_panel_tab_view_from_pointer,
+        runtime_meta_panel_tab_view_from_pointer_zone, runtime_meta_panel_view_from_key,
+        runtime_native_platform_data_root_for_env, runtime_overview_view_from_pointer,
+        runtime_overview_view_from_pointer_zone, runtime_privacy_notice,
+        runtime_run_mode_duration_seconds, runtime_save_export_path,
         runtime_settings_action_from_keyboard, runtime_settings_action_from_pointer,
         runtime_settings_action_from_pointer_zone, runtime_sprite_paths,
         runtime_unlocked_character_ids, runtime_unlocked_map_ids, select_next_runtime_run_mode,
@@ -11039,6 +11116,53 @@ mod tests {
         ));
         assert!(!panel.contains("survive-10-minutes - 标准巡逻坚持 10 分钟"));
         assert!(panel.contains("巡逻中：结算会在本局结束后更新"));
+    }
+
+    #[test]
+    fn meta_panel_overview_lists_next_base_unlock_offer() {
+        let mut progress = MetaProgress::demo_start();
+        progress.resources.candy_crystal_shards = 60;
+        let panel = render_meta_progress_panel(
+            &progress,
+            None,
+            RuntimeMetaPanelView::Overview,
+            meta_panel_context(
+                &RuntimePrivacySettings::default(),
+                None,
+                None,
+                None,
+                &ContentPack::base_demo(),
+                &RunConfig::default(),
+                &RuntimeBaseUiState::default(),
+                0,
+            ),
+        );
+
+        assert!(panel.contains("基地解锁 角色 泡泡邮差 (bubble-courier)"));
+        assert!(panel.contains("费用 60 糖晶碎片"));
+        assert!(panel.contains("可购买"));
+        assert!(panel.contains("按 U 解锁"));
+    }
+
+    #[test]
+    fn runtime_shop_purchase_spends_candy_and_unlocks_character() {
+        let mut state = runtime_state_for_tests();
+        state.meta_progress.resources.candy_crystal_shards = 60;
+
+        let message = purchase_next_runtime_shop_offer(&mut state)
+            .expect("enough candy crystal shards should unlock the first shop offer");
+
+        assert!(message.contains("泡泡邮差"));
+        assert_eq!(state.meta_progress.resources.candy_crystal_shards, 0);
+        assert!(state
+            .meta_progress
+            .unlocks
+            .characters
+            .contains("bubble-courier"));
+        assert!(
+            runtime_unlocked_character_ids(&state.meta_progress, &state.content)
+                .contains(&"bubble-courier".to_string())
+        );
     }
 
     #[test]

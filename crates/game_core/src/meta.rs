@@ -29,6 +29,26 @@ impl MetaResourceWallet {
         self.star_shards += other.star_shards;
         self.storm_grains += other.storm_grains;
     }
+
+    fn can_afford(&self, cost: &Self) -> bool {
+        self.candy_crystal_shards >= cost.candy_crystal_shards
+            && self.star_shards >= cost.star_shards
+            && self.storm_grains >= cost.storm_grains
+    }
+
+    fn subtract(&mut self, cost: &Self) {
+        self.candy_crystal_shards -= cost.candy_crystal_shards;
+        self.star_shards -= cost.star_shards;
+        self.storm_grains -= cost.storm_grains;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MetaShopOffer {
+    pub offer_id: String,
+    pub kind: String,
+    pub id: String,
+    pub cost: MetaResourceWallet,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -177,6 +197,67 @@ impl MetaProgress {
         apply_chapter_goals(self, summary, &mut report);
         report
     }
+
+    pub fn next_demo_shop_offer(&self) -> Option<MetaShopOffer> {
+        demo_shop_offers()
+            .into_iter()
+            .find(|offer| !self.is_shop_offer_unlocked(offer))
+    }
+
+    pub fn purchase_next_demo_shop_offer(&mut self) -> Result<MetaUnlock, String> {
+        let offer = self
+            .next_demo_shop_offer()
+            .ok_or_else(|| "no demo shop offer available".to_string())?;
+        if !self.resources.can_afford(&offer.cost) {
+            return Err(format!(
+                "not enough resources for {}: need {} candy crystal shards, have {}",
+                offer.offer_id,
+                offer.cost.candy_crystal_shards,
+                self.resources.candy_crystal_shards
+            ));
+        }
+
+        self.resources.subtract(&offer.cost);
+        self.apply_shop_offer(&offer)
+    }
+
+    fn is_shop_offer_unlocked(&self, offer: &MetaShopOffer) -> bool {
+        match offer.kind.as_str() {
+            "character" => self.unlocks.characters.contains(&offer.id),
+            "weapon" => self.unlocks.weapons.contains(&offer.id),
+            "passive" => self.unlocks.passives.contains(&offer.id),
+            "map" => self.unlocks.maps.contains(&offer.id),
+            "evolution" => self.unlocks.evolutions.contains(&offer.id),
+            "event" => self.unlocks.events.contains(&offer.id),
+            "cosmetic" => self.unlocks.cosmetics.contains(&offer.id),
+            _ => false,
+        }
+    }
+
+    fn apply_shop_offer(&mut self, offer: &MetaShopOffer) -> Result<MetaUnlock, String> {
+        let inserted = match offer.kind.as_str() {
+            "character" => self.unlocks.characters.insert(offer.id.clone()),
+            "weapon" => self.unlocks.weapons.insert(offer.id.clone()),
+            "passive" => self.unlocks.passives.insert(offer.id.clone()),
+            "map" => self.unlocks.maps.insert(offer.id.clone()),
+            "evolution" => self.unlocks.evolutions.insert(offer.id.clone()),
+            "event" => self.unlocks.events.insert(offer.id.clone()),
+            "cosmetic" => self.unlocks.cosmetics.insert(offer.id.clone()),
+            kind => return Err(format!("unsupported shop offer kind `{kind}`")),
+        };
+        if !inserted {
+            return Err(format!(
+                "shop offer {} was already unlocked",
+                offer.offer_id
+            ));
+        }
+
+        Ok(MetaUnlock {
+            kind: offer.kind.clone(),
+            id: offer.id.clone(),
+            reason: "purchased with candy crystal shards".to_string(),
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -275,6 +356,28 @@ pub fn apply_demo_meta_settlement(
     let mut progress = MetaProgress::demo_start();
     let report = progress.apply_run_summary(summary);
     (progress, report)
+}
+
+fn demo_shop_offers() -> Vec<MetaShopOffer> {
+    vec![
+        demo_character_shop_offer("bubble-courier", 60),
+        demo_character_shop_offer("cream-knight", 80),
+        demo_character_shop_offer("sour-plum-doctor", 120),
+        demo_character_shop_offer("pudding-crafter", 140),
+    ]
+}
+
+fn demo_character_shop_offer(id: &str, candy_crystal_shards: u32) -> MetaShopOffer {
+    MetaShopOffer {
+        offer_id: format!("character:{id}"),
+        kind: "character".to_string(),
+        id: id.to_string(),
+        cost: MetaResourceWallet {
+            candy_crystal_shards,
+            star_shards: 0,
+            storm_grains: 0,
+        },
+    }
 }
 
 fn calculate_run_rewards(summary: &MetaRunSummary) -> MetaResourceWallet {
@@ -710,6 +813,32 @@ mod tests {
         );
         assert!(progress.unlocks.chapters.contains("frosting-grassland"));
         assert!(!progress.unlocks.chapters.contains("soda-creek"));
+    }
+
+    #[test]
+    fn demo_shop_purchase_spends_candy_and_unlocks_next_character() {
+        let mut progress = MetaProgress::demo_start();
+        let offer = progress
+            .next_demo_shop_offer()
+            .expect("demo shop should offer the first locked character");
+
+        assert_eq!(offer.offer_id, "character:bubble-courier");
+        assert_eq!(offer.cost.candy_crystal_shards, 60);
+        assert!(progress.purchase_next_demo_shop_offer().is_err());
+
+        progress.resources.candy_crystal_shards = offer.cost.candy_crystal_shards;
+        let unlock = progress
+            .purchase_next_demo_shop_offer()
+            .expect("enough candy crystal shards should purchase the offer");
+
+        assert_eq!(unlock.kind, "character");
+        assert_eq!(unlock.id, "bubble-courier");
+        assert_eq!(progress.resources.candy_crystal_shards, 0);
+        assert!(progress.unlocks.characters.contains("bubble-courier"));
+        assert_eq!(
+            progress.next_demo_shop_offer().map(|next| next.offer_id),
+            Some("character:cream-knight".to_string())
+        );
     }
 
     #[test]
