@@ -434,7 +434,7 @@ cargo test --workspace
 Harness 阶段：
 
 ```bash
-cargo run -p game_harness -- simulate --quick
+cargo run -p game_harness -- simulate --seconds 120 --bot kite
 ```
 
 Python/RL 阶段：
