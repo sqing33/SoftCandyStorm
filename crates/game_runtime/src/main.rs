@@ -516,7 +516,7 @@ impl RuntimeCodexCategory {
             Self::Weapons => "武器",
             Self::Passives => "被动",
             Self::Enemies => "敌人",
-            Self::Bosses => "Boss",
+            Self::Bosses => "首领",
             Self::Maps => "地图",
             Self::Evolutions => "进化",
             Self::Events => "事件",
@@ -2116,7 +2116,7 @@ fn format_evolution_requirement_progress(
 
 fn runtime_evolution_trigger_label(trigger: &str) -> String {
     match trigger {
-        "boss_chest" => "Boss 宝箱触发",
+        "boss_chest" => "首领宝箱触发",
         other => return other.replace('_', " "),
     }
     .to_string()
@@ -2178,7 +2178,7 @@ fn format_upgrade_gap_fit(tags: &[String], build: &BuildSnapshot) -> Option<Stri
             "pierce",
         ],
     ) {
-        return Some("补强 Boss 输出".to_string());
+        return Some("补强首领输出".to_string());
     }
     None
 }
@@ -2212,8 +2212,8 @@ fn runtime_tag_label(tag: &str) -> String {
         "beginner" => "新手",
         "bot-test" => "Bot 测试",
         "boomerang" => "回旋",
-        "boss-killer" => "Boss",
-        "boss-safe" => "稳打 Boss",
+        "boss-killer" => "首领",
+        "boss-safe" => "稳打首领",
         "bubble" => "泡泡",
         "bubbles" => "泡泡",
         "burst" => "爆发",
@@ -2891,14 +2891,14 @@ fn format_boss_status(snapshot: &RunSnapshot, content: &ContentPack) -> String {
         runtime_next_boss_arrival(content, &snapshot.map.map_id, snapshot.time_seconds)
     {
         return format!(
-            "Boss 下一只 {}  还有 {:.0}s  {:.0}s 出现",
+            "下一首领 {}  还有 {:.0}s  {:.0}s 出现",
             runtime_boss_label(content, boss_id),
             (arrival_time - snapshot.time_seconds).max(0.0),
             arrival_time,
         );
     }
 
-    "Boss 未出现".to_string()
+    "首领未出现".to_string()
 }
 
 fn format_active_boss_status(boss: &BossSnapshot, content: &ContentPack) -> String {
@@ -2913,7 +2913,7 @@ fn format_active_boss_status(boss: &BossSnapshot, content: &ContentPack) -> Stri
         .map(|hint| format!("  {hint}"))
         .unwrap_or_default();
     format!(
-        "Boss {}  生命 {:.0}/{:.0}  {:.0}%{}",
+        "首领 {}  生命 {:.0}/{:.0}  {:.0}%{}",
         runtime_boss_label(content, &boss.boss_id),
         health,
         max_health,
@@ -3134,7 +3134,7 @@ fn format_runtime_hud_boss_goal_progress(
             0.0
         };
         return format!(
-            "Boss 生命 {:.0}/{:.0} {:.0}%",
+            "首领 生命 {:.0}/{:.0} {:.0}%",
             boss.health.max(0.0),
             boss.max_health,
             ratio
@@ -3222,7 +3222,7 @@ fn format_runtime_build_advice(build: &BuildSnapshot, content: &ContentPack) -> 
             "pierce",
         ],
     ) {
-        return "缺 Boss 输出，补单体、穿透或光束".to_string();
+        return "缺首领输出，补单体、穿透或光束".to_string();
     }
     if build.evolutions.is_empty() {
         return "基础组件已齐，继续冲一条进化".to_string();
@@ -3286,7 +3286,7 @@ fn format_enemy_swarm_status(
     }
 
     let special = if boss_or_elite_count > 0 {
-        format!("  精英/Boss {}", boss_or_elite_count)
+        format!("  精英/首领 {}", boss_or_elite_count)
     } else {
         String::new()
     };
@@ -3829,7 +3829,7 @@ fn format_terminal_review_focus(
                 "最大问题 生命归零但伤害来源不明确，先看关键事件和走位路线".to_string()
             })
         }
-        TerminalKind::Timeout => "接近目标时长，重点检查 Boss 输出和终局进化线".to_string(),
+        TerminalKind::Timeout => "接近目标时长，重点检查首领输出和终局进化线".to_string(),
         TerminalKind::Aborted => "主动中止，本局不作为平衡或构筑判断依据".to_string(),
         TerminalKind::InvalidState => {
             "异常终局，先保留 seed/replay 并记录 failure case".to_string()
@@ -3866,9 +3866,7 @@ fn format_terminal_next_run_advice(
     let base = match terminal.kind {
         TerminalKind::Victory => format_terminal_victory_advice(build, content),
         TerminalKind::Defeat => format_terminal_defeat_advice(terminal, build),
-        TerminalKind::Timeout => {
-            "这局接近目标时长，下局优先补 Boss 输出或一条完整进化线".to_string()
-        }
+        TerminalKind::Timeout => "这局接近目标时长，下局优先补首领输出或一条完整进化线".to_string(),
         TerminalKind::Aborted => "回守护站换角色、地图或初始装备后再巡逻".to_string(),
         TerminalKind::InvalidState => "保留 replay 和 seed，先记录异常再继续验证".to_string(),
     };
@@ -4241,10 +4239,7 @@ fn describe_combat_events(events: &[GameEvent], content: &ContentPack) -> Option
                 player_damage += amount.max(1.0);
             }
             GameEvent::BossSpawned { boss_id, .. } => {
-                boss_spawn = Some(format!(
-                    "Boss 出现 {}",
-                    runtime_boss_label(content, boss_id)
-                ));
+                boss_spawn = Some(format!("首领出现 {}", runtime_boss_label(content, boss_id)));
             }
             GameEvent::BossPhaseChanged {
                 boss_id,
@@ -4252,7 +4247,7 @@ fn describe_combat_events(events: &[GameEvent], content: &ContentPack) -> Option
                 ..
             } => {
                 boss_phase = Some(format!(
-                    "Boss {} 进入第 {} 阶段",
+                    "首领 {} 进入第 {} 阶段",
                     runtime_boss_label(content, boss_id),
                     phase_index + 1
                 ));
@@ -4263,7 +4258,7 @@ fn describe_combat_events(events: &[GameEvent], content: &ContentPack) -> Option
                 ..
             } => {
                 boss_ability = Some(format!(
-                    "技能预警 Boss {} 使用 {}",
+                    "技能预警 首领 {} 使用 {}",
                     runtime_boss_label(content, boss_id),
                     runtime_boss_ability_summary(ability_id)
                 ));
@@ -4372,16 +4367,15 @@ fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
         GameEvent::EnemySpawned { enemy_id, .. } => {
             Some(format!("出现 {}", runtime_enemy_label(content, enemy_id)))
         }
-        GameEvent::BossSpawned { boss_id, .. } => Some(format!(
-            "Boss 出现 {}",
-            runtime_boss_label(content, boss_id)
-        )),
+        GameEvent::BossSpawned { boss_id, .. } => {
+            Some(format!("首领出现 {}", runtime_boss_label(content, boss_id)))
+        }
         GameEvent::BossPhaseChanged {
             boss_id,
             phase_index,
             ..
         } => Some(format!(
-            "Boss {} 进入第 {} 阶段",
+            "首领 {} 进入第 {} 阶段",
             runtime_boss_label(content, boss_id),
             phase_index + 1
         )),
@@ -4390,7 +4384,7 @@ fn describe_event(event: &GameEvent, content: &ContentPack) -> Option<String> {
             ability_id,
             ..
         } => Some(format!(
-            "Boss {} 使用 {}",
+            "首领 {} 使用 {}",
             runtime_boss_label(content, boss_id),
             runtime_boss_ability_summary(ability_id)
         )),
@@ -5324,7 +5318,7 @@ fn render_meta_overview_panel(
     if let Some(report) = settlement {
         let summary = &report.run_summary;
         output.push_str(&format!(
-            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  糖晶经验 {:.0}\n输出 {:.0}  Boss {:.0}  受伤 {:.1} ({})\n复盘重点 {}\nBoss 结果 {}\nReplay {}\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
+            "\n局后结算\n{}  模式 {}  存活 {}  终局 {}\n等级 {}  击杀 {}  糖晶经验 {:.0}\n输出 {:.0}  首领伤害 {:.0}  受伤 {:.1} ({})\n复盘重点 {}\n首领结果 {}\nReplay {}\n武器伤害占比 {}\n关键事件 {}\n最终构筑 武器 {}  被动 {}  进化 {}\n资源 +{} 糖晶碎片  +{} 星片  +{} 风暴糖粒\n奖励说明 {}\n章节目标 {}\n新解锁 {}\n图鉴更新 {}\n下一步 {}",
             format_settlement_outcome(summary),
             runtime_run_mode_label(summary.mode),
             format_settlement_duration(summary.duration_seconds),
@@ -5668,7 +5662,7 @@ fn render_meta_chapter_panel(
             status
         ));
         lines.push(format!(
-            "地图 {}  Boss {}",
+            "地图 {}  首领 {}",
             runtime_map_label(content, &chapter.map_id),
             runtime_boss_label(content, &chapter.boss_id),
         ));
@@ -5684,7 +5678,7 @@ fn render_meta_chapter_panel(
             ));
         }
         if let Some(boss) = content.bosses.get(&chapter.boss_id) {
-            lines.push(format!("Boss说明 {}", boss.common.description));
+            lines.push(format!("首领说明 {}", boss.common.description));
             lines.push(format!("应对 {}", boss.common.counterplay));
         }
         lines.push(format_runtime_chapter_strategy_line(
@@ -6264,7 +6258,7 @@ fn format_runtime_map_wave_preview(content: &ContentPack, map_id: &str) -> Strin
             .join(" / ")
     };
     format!(
-        "{}  Boss {}  压力 前期{} 中期{} 后期{}",
+        "{}  首领 {}  压力 前期{} 中期{} 后期{}",
         enemy_preview,
         boss_preview,
         runtime_pressure_budget_label(&wave.pressure_budget.early),
@@ -6289,7 +6283,7 @@ fn format_runtime_patrol_target_summary(
         .filter(|(goal_id, _, _)| chapter.completed_goals.contains(goal_id))
         .count();
     Some(format!(
-        "巡逻目标 推荐 {}  目标 {}/{}  风暴 {}  Boss {}  目标奖励 {}",
+        "巡逻目标 推荐 {}  目标 {}/{}  风暴 {}  首领 {}  目标奖励 {}",
         runtime_map_recommended_difficulty(map_id),
         completed_count,
         goals.len(),
@@ -6370,7 +6364,7 @@ fn format_runtime_loadout_goal_mode_hint(
     }
     if goal_id.starts_with("defeat-") {
         return format!(
-            "Boss 战计入章节目标，{}可推进",
+            "首领战计入章节目标，{}可推进",
             runtime_run_mode_label(run_mode)
         );
     }
@@ -6378,7 +6372,7 @@ fn format_runtime_loadout_goal_mode_hint(
         return "拾取糖晶会直接推进，机动/拾取构筑更快".to_string();
     }
     if goal_id.starts_with("evolve-") {
-        return "升级时优先补目标进化，Boss 宝箱触发".to_string();
+        return "升级时优先补目标进化，首领宝箱触发".to_string();
     }
     if goal_id.ends_with("-level-5") {
         return format!(
@@ -6437,7 +6431,7 @@ fn format_runtime_loadout_departure_risk_line(
         .map(format_runtime_chapter_strategy_map_hint)
         .unwrap_or_else(|| "地图压力未知，先保持绕圈拾取".to_string());
     format!(
-        "Boss {} {}；{}；{}",
+        "首领 {} {}；{}；{}",
         runtime_boss_label(content, &chapter.boss_id),
         boss_time,
         boss_hint,
@@ -6532,8 +6526,8 @@ fn format_runtime_chapter_strategy_line(
     let boss_hint = content
         .bosses
         .get(&chapter.boss_id)
-        .map(|boss| format!("Boss 前补单体输出；{}", boss.common.counterplay))
-        .unwrap_or_else(|| "Boss 前补单体输出和生存容错".to_string());
+        .map(|boss| format!("首领前补单体输出；{}", boss.common.counterplay))
+        .unwrap_or_else(|| "首领前补单体输出和生存容错".to_string());
     format!("章节战术 {launch_hint}；{goal_hint}；{build_hint}；{map_hint}；{boss_hint}")
 }
 
@@ -6599,10 +6593,10 @@ fn format_runtime_character_play_hint(character: &CharacterDefinition) -> &'stat
             "机动拾取：保持移动拉怪，趁拾取范围提升时回收糖晶，优先补机动和范围清群"
         }
         Some("cream-guard") => {
-            "防御近身：可以短时承压但别站桩，优先补环绕、防御或生命回复，Boss 前留出走位空间"
+            "防御近身：可以短时承压但别站桩，优先补环绕、防御或生命回复，首领前留出走位空间"
         }
         Some("sour-control") => {
-            "控制稳打 Boss：用减速拆开敌群，优先补持续区域和单体输出，让 Boss 始终处在安全距离外"
+            "控制稳打首领：用减速拆开敌群，优先补持续区域和单体输出，让首领始终处在安全距离外"
         }
         Some("longer-summons") => {
             "召唤经营：围绕炮台安全区转圈，把敌群带进火力区，优先补范围控制和持续时间"
@@ -6790,7 +6784,7 @@ fn format_runtime_loadout_chapter_line(
             };
             if let Some(boss) = content.bosses.get(&chapter.boss_id) {
                 format!(
-                    "章节 Boss {}  {}  应对 {}  阶段 {}",
+                    "章节 首领 {}  {}  应对 {}  阶段 {}",
                     runtime_boss_label(content, &chapter.boss_id),
                     status,
                     boss.common.counterplay,
@@ -6798,7 +6792,7 @@ fn format_runtime_loadout_chapter_line(
                 )
             } else {
                 format!(
-                    "章节 Boss {}  {}",
+                    "章节 首领 {}  {}",
                     runtime_boss_label(content, &chapter.boss_id),
                     status,
                 )
@@ -7045,7 +7039,7 @@ fn runtime_boss_label(content: &ContentPack, boss_id: &str) -> String {
         .bosses
         .get(boss_id)
         .map(|boss| boss.common.name.clone())
-        .unwrap_or_else(|| "未知 Boss".to_string())
+        .unwrap_or_else(|| "未知首领".to_string())
 }
 
 fn runtime_enemy_label(content: &ContentPack, enemy_id: &str) -> String {
@@ -7144,7 +7138,7 @@ fn runtime_boss_ability_counterplay_hint(ability_id: &str) -> Option<&'static st
         | "summon_sticky_bear_gummy"
         | "summon_guard_wave"
         | "split_cotton_clumps" => "先清增援压力",
-        "recombine_heal" => "Boss 恢复生命",
+        "recombine_heal" => "首领恢复生命",
         "bubble_barrage"
         | "sour_phase_storm"
         | "spicy_phase_burst"
@@ -7313,7 +7307,7 @@ fn format_locked_chapter_unlock_hint(
     };
 
     format!(
-        "解锁条件 击败前章 {} Boss {}：{}；星片 {}/{}：{}",
+        "解锁条件 击败前章 {} 首领 {}：{}；星片 {}/{}：{}",
         chapter_label(content, previous_chapter),
         runtime_boss_label(content, boss_id),
         boss_status,
@@ -7409,7 +7403,7 @@ fn format_runtime_character_unlock_short(character_id: &str, content: &ContentPa
     };
     let boss_id = runtime_chapter_boss_id(chapter_id).unwrap_or(chapter_id);
     format!(
-        "击败{} Boss {}",
+        "击败{} 首领 {}",
         chapter_label(content, chapter_id),
         runtime_boss_label(content, boss_id),
     )
@@ -7495,7 +7489,7 @@ fn format_runtime_map_unlock_short(
     };
     let boss_id = runtime_chapter_boss_id(previous_chapter).unwrap_or(previous_chapter);
     format!(
-        "击败{} Boss {} + 星片 {}/{}",
+        "击败{} 首领 {} + 星片 {}/{}",
         chapter_label(content, previous_chapter),
         runtime_boss_label(content, boss_id),
         progress.resources.star_shards.min(required_star_shards),
@@ -7568,7 +7562,7 @@ fn meta_codex_category_counts(progress: &MetaProgress) -> Vec<(&'static str, usi
             progress.codex.enemies.len(),
         ),
         (
-            "Boss",
+            "首领",
             discovered_meta_entries(&progress.codex.bosses),
             progress.codex.bosses.len(),
         ),
@@ -7750,7 +7744,7 @@ fn format_meta_codex_next_discovery(
             .any(|(map_id, _)| progress.unlocks.maps.contains(map_id))
         {
             return Some(format!(
-                "Boss {}：{}",
+                "首领 {}：{}",
                 boss.common.name,
                 format_codex_boss_source(&boss.common.id, content)
             ));
@@ -8201,7 +8195,7 @@ fn format_codex_character_source(
     if let Some(chapter_id) = runtime_chapter_for_character_unlock(&item.id) {
         let boss_id = runtime_chapter_boss_id(chapter_id).unwrap_or(chapter_id);
         return format!(
-            "{state}；击败 {} 章节 Boss {} 后解锁",
+            "{state}；击败 {} 章节 首领 {} 后解锁",
             chapter_label(content, chapter_id),
             runtime_boss_label(content, boss_id),
         );
@@ -8300,15 +8294,15 @@ fn format_codex_boss_source(boss_id: &str, content: &ContentPack) -> String {
         .collect::<Vec<_>>();
     let mut parts = Vec::new();
     if let Some(chapter_id) = runtime_chapter_for_boss_id(boss_id) {
-        parts.push(format!("{} 章节 Boss", chapter_label(content, chapter_id)));
+        parts.push(format!("{} 章节 首领", chapter_label(content, chapter_id)));
     }
     if !sources.is_empty() {
         parts.push(format!("出现 {}", format_string_items(&sources, 2)));
     }
     if parts.is_empty() {
-        "Boss 事件生成；击败后推进对应图鉴".to_string()
+        "首领事件生成；击败后推进对应图鉴".to_string()
     } else {
-        format!("{}；击败后推进章节和 Boss 图鉴", parts.join("；"))
+        format!("{}；击败后推进章节和首领图鉴", parts.join("；"))
     }
 }
 
@@ -8331,7 +8325,7 @@ fn format_codex_map_source(map_id: &str, content: &ContentPack, progress: &MetaP
         let boss_id = runtime_chapter_boss_id(previous_chapter).unwrap_or(previous_chapter);
         let current_star_shards = progress.resources.star_shards.min(required_star_shards);
         parts.push(format!(
-            "解锁需击败前章 {} Boss {} 且星片 {}/{}",
+            "解锁需击败前章 {} 首领 {} 且星片 {}/{}",
             chapter_label(content, previous_chapter),
             runtime_boss_label(content, boss_id),
             current_star_shards,
@@ -8412,7 +8406,7 @@ fn runtime_codex_action_hint(
             .bosses
             .get(id)
             .map(|item| runtime_codex_boss_action_hint(item, content))
-            .unwrap_or_else(|| "继续推进章节，Boss 出现前补单体输出和防御容错。".to_string()),
+            .unwrap_or_else(|| "继续推进章节，首领出现前补单体输出和防御容错。".to_string()),
         RuntimeCodexCategory::Maps => content
             .maps
             .get(id)
@@ -8526,7 +8520,7 @@ fn runtime_codex_boss_action_hint(item: &BossDefinition, content: &ContentPack) 
         .map(|chapter_id| chapter_label(content, chapter_id))
         .unwrap_or_else(|| "对应章节".to_string());
     format!(
-        "F2/F5 选择{}推进；Boss 到场前补单体输出和生存容错，应对：{}。",
+        "F2/F5 选择{}推进；首领到场前补单体输出和生存容错，应对：{}。",
         chapter, item.common.counterplay
     )
 }
@@ -8827,7 +8821,7 @@ fn format_event_effect_for_codex(effect: &EventEffectDefinition, content: &Conte
 fn runtime_weapon_role_label(role: &str) -> String {
     match role {
         "aoe-clear" => "清群",
-        "boss-killer" => "Boss 输出",
+        "boss-killer" => "首领输出",
         "control" => "控场",
         "defense" => "防御",
         "economy" => "经济",
@@ -8841,7 +8835,7 @@ fn runtime_weapon_role_label(role: &str) -> String {
 
 fn runtime_targeting_label(mode: &str) -> String {
     match mode {
-        "boss_priority" => "Boss 优先",
+        "boss_priority" => "首领优先",
         "ground_near_player" => "玩家附近地面",
         "highest_health_enemy" => "高血敌人",
         "movement_direction" => "移动方向",
@@ -9208,7 +9202,7 @@ fn format_settlement_boss_result(summary: &MetaRunSummary, content: &ContentPack
     }
 
     if summary.boss_damage > 0.0 {
-        return format!("未击败，已造成 {:.0} Boss 伤害", summary.boss_damage);
+        return format!("未击败，已造成 {:.0} 首领伤害", summary.boss_damage);
     }
 
     "未遭遇或未造成伤害".to_string()
@@ -9317,7 +9311,7 @@ fn runtime_codex_content_label(content: &ContentPack, id: &str) -> String {
         return format!("敌人 {}", runtime_enemy_label(content, id));
     }
     if content.bosses.contains_key(id) {
-        return format!("Boss {}", runtime_boss_label(content, id));
+        return format!("首领 {}", runtime_boss_label(content, id));
     }
     if content.maps.contains_key(id) {
         return format!("地图 {}", runtime_map_label(content, id));
@@ -9417,7 +9411,7 @@ fn format_settlement_review_focus(summary: &MetaRunSummary) -> String {
         }
     }
     if !summary.victory && summary.boss_damage <= 0.0 && summary.duration_seconds >= 180.0 {
-        return "最大问题 Boss 前输出不足，下局优先补单体、穿透或一条进化线".to_string();
+        return "最大问题首领前输出不足，下局优先补单体、穿透或一条进化线".to_string();
     }
     if !summary.victory {
         return "最大问题 本局目标未完成，先看关键事件和终局构筑缺口".to_string();
@@ -9781,7 +9775,7 @@ fn runtime_run_mode_duration_label(mode: RunMode) -> &'static str {
 fn runtime_run_mode_description(mode: RunMode) -> &'static str {
     match mode {
         RunMode::StandardPatrol => "主线推进和平衡基准",
-        RunMode::ChapterChallenge => "锁定当前地图章节目标，适合补 Boss、收集和进化任务",
+        RunMode::ChapterChallenge => "锁定当前地图章节目标，适合补首领、收集和进化任务",
         RunMode::LongPatrol => "留给构筑更多升级和进化空间",
         RunMode::EndlessStorm => "先以 20 分钟强风暴目标承载极限构筑与压力验证",
         RunMode::DailyStorm => "固定 seed 与强风暴压力，胜利额外给糖晶和风暴糖粒",
@@ -14099,7 +14093,7 @@ mod tests {
 
         assert!(caramel_description.contains("地图危险 焦糖溢流 每30s x2 6s 减速x0.60 伤害1.2/s"));
         assert!(caramel_description.contains("未解锁；章节 焦糖工坊"));
-        assert!(caramel_description.contains("解锁需击败前章 棉花云牧场 Boss 巨型棉花团"));
+        assert!(caramel_description.contains("解锁需击败前章 棉花云牧场 首领 巨型棉花团"));
         assert!(frosting_description.contains("地图危险 无"));
         assert!(frosting_description.contains("已解锁，可在 F5 选择或 F2 章节挑战"));
         assert!(frosting_description.contains("首章默认开放"));
@@ -14112,7 +14106,7 @@ mod tests {
         snapshot.time_seconds = 120.0;
         let status = format_boss_status(&snapshot, &state.content);
 
-        assert!(status.contains("Boss 下一只 暴走搅糖机"));
+        assert!(status.contains("下一首领 暴走搅糖机"));
         assert!(!status.contains("runaway-sugar-mixer"));
         assert!(status.contains("还有 90s"));
         assert!(status.contains("210s 出现"));
@@ -14124,7 +14118,7 @@ mod tests {
         let mut snapshot = state.latest_snapshot.clone();
         snapshot.time_seconds = 999.0;
 
-        assert_eq!(format_boss_status(&snapshot, &state.content), "Boss 未出现");
+        assert_eq!(format_boss_status(&snapshot, &state.content), "首领未出现");
 
         let boss = BossSnapshot {
             entity_id: 42,
@@ -14308,7 +14302,7 @@ mod tests {
         let status = format_runtime_hud_chapter_objective(&progress, &snapshot, &state.content);
 
         assert!(status.contains("章节目标 4/5 完成彩虹糖流星雨进化"));
-        assert!(status.contains("彩虹糖弹 3/5 + 糖晶放大镜 1/3，Boss 宝箱触发"));
+        assert!(status.contains("彩虹糖弹 3/5 + 糖晶放大镜 1/3，首领宝箱触发"));
     }
 
     #[test]
@@ -14329,7 +14323,7 @@ mod tests {
 
         assert!(status.contains("章节构筑 彩虹糖流星雨"));
         assert!(status.contains("彩虹糖弹 3/5 + 糖晶放大镜 1/3"));
-        assert!(status.contains("Boss 宝箱触发"));
+        assert!(status.contains("首领宝箱触发"));
     }
 
     #[test]
@@ -14412,7 +14406,7 @@ mod tests {
         assert!(status.contains("汽水泡泡(分裂) x1"));
         assert!(status.contains("可见 4"));
         assert!(status.contains("最高威胁 2.8"));
-        assert!(status.contains("精英/Boss 1"));
+        assert!(status.contains("精英/首领 1"));
         assert!(status.contains("应对 绕开黏地，优先清路线附近"));
     }
 
@@ -14966,7 +14960,7 @@ mod tests {
         assert_eq!(timeline.len(), 6);
         assert!(timeline[0].time_seconds >= 32.0);
         let rendered = format_settlement_event_timeline(&timeline);
-        assert!(rendered.contains("Boss 暴走搅糖机 使用 直线冲撞：横向躲开冲撞线"));
+        assert!(rendered.contains("首领 暴走搅糖机 使用 直线冲撞：横向躲开冲撞线"));
         assert!(!rendered.contains("升到等级 2"));
     }
 
@@ -15009,7 +15003,7 @@ mod tests {
             },
             RuntimeEventTimelineEntry {
                 time_seconds: 180.0,
-                label: "Boss 出现 暴走搅糖机".to_string(),
+                label: "首领出现 暴走搅糖机".to_string(),
             },
         ];
         let privacy_settings = RuntimePrivacySettings::default();
@@ -15047,10 +15041,10 @@ mod tests {
         assert!(panel.contains("受伤 12.5"));
         assert!(panel.contains("接触 9.0"));
         assert!(panel.contains("复盘重点 最大问题 接触伤害，下局补防御/控场并保持绕圈拾取"));
-        assert!(panel.contains("Boss 结果 未遭遇或未造成伤害"));
+        assert!(panel.contains("首领结果 未遭遇或未造成伤害"));
         assert!(panel.contains("Replay 本机复盘摘要未保存"));
         assert!(panel.contains("原始 Replay 上传关闭"));
-        assert!(panel.contains("关键事件 30s 升到等级 2 | 180s Boss 出现 暴走搅糖机"));
+        assert!(panel.contains("关键事件 30s 升到等级 2 | 180s 首领出现 暴走搅糖机"));
         assert!(panel.contains("最终构筑 武器 彩虹糖弹 等级 1"));
         assert!(panel.contains("被动 糖晶放大镜"));
         assert!(panel.contains("进化 彩虹糖流星雨"));
@@ -15175,7 +15169,7 @@ mod tests {
         assert!(!panel.contains("角色 泡泡邮差 (bubble-courier)"));
         assert!(!panel.contains("地图 汽水溪谷 (soda-creek)"));
         assert!(!panel.contains("章节 汽水溪谷 (soda-creek)"));
-        assert!(panel.contains("Boss 结果 已击败 暴走搅糖机"));
+        assert!(panel.contains("首领结果 已击败 暴走搅糖机"));
         assert!(!panel.contains("weapon:marshmallow-shield"));
     }
 
@@ -15447,12 +15441,12 @@ mod tests {
         assert!(panel.contains("右下点击区: 上章  下章  巡逻"));
         assert!(panel.contains("章节路线 已解锁 糖霜草地"));
         assert!(panel.contains("糖霜草地  已解锁"));
-        assert!(panel.contains("地图 糖霜草地  Boss 暴走搅糖机"));
+        assert!(panel.contains("地图 糖霜草地  首领 暴走搅糖机"));
         assert!(!panel.contains("糖霜草地 (frosting-grassland)"));
         assert!(!panel.contains("地图 糖霜草地 (frosting-grassland)"));
         assert!(panel.contains("章节奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"));
         assert!(panel.contains("地图说明 覆盖糖霜的开阔草地"));
-        assert!(panel.contains("Boss说明"));
+        assert!(panel.contains("首领说明"));
         assert!(panel.contains("应对"));
         assert!(panel.contains("章节战术 按 G 进入章节挑战"));
         assert!(panel.contains("优先击败暴走搅糖机"));
@@ -15462,7 +15456,7 @@ mod tests {
         assert!(panel.contains("奖励 星片 +1"));
         assert!(panel.contains("章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到"));
         assert!(panel.contains(
-            "章节构筑目标 彩虹糖流星雨：彩虹糖弹 开局已带 + 糖晶放大镜 F5 可切换/局内可抽，Boss 宝箱触发"
+            "章节构筑目标 彩虹糖流星雨：彩虹糖弹 开局已带 + 糖晶放大镜 F5 可切换/局内可抽，首领宝箱触发"
         ));
         assert!(panel.contains("解锁"));
         assert!(panel.contains("集齐 2 星片开放"));
@@ -15495,13 +15489,13 @@ mod tests {
 
         assert!(panel.contains("汽水溪谷"));
         assert!(panel.contains("汽水溪谷  未解锁"));
-        assert!(panel.contains("地图 汽水溪谷  Boss 汽水喷泉龙"));
+        assert!(panel.contains("地图 汽水溪谷  首领 汽水喷泉龙"));
         assert!(!panel.contains("汽水溪谷 (soda-creek)"));
         assert!(!panel.contains("地图 汽水溪谷 (soda-creek)"));
         assert!(panel.contains("汽水喷泉龙"));
         assert!(panel.contains("未解锁"));
         assert!(panel.contains(
-            "章节路线 已解锁 糖霜草地  下一章节 汽水溪谷: 击败糖霜草地 Boss 暴走搅糖机 + 星片 0/2"
+            "章节路线 已解锁 糖霜草地  下一章节 汽水溪谷: 击败糖霜草地 首领 暴走搅糖机 + 星片 0/2"
         ));
         assert!(panel
             .contains("章节奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"));
@@ -15511,7 +15505,7 @@ mod tests {
         assert!(!panel.contains("defeat-soda-fountain-dragon - 击败汽水喷泉龙"));
         assert!(panel.contains("集齐 4 星片开放 棉花云牧场"));
         assert!(panel
-            .contains("解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：未完成；星片 0/2：还差 2 星片"));
+            .contains("解锁条件 击败前章 糖霜草地 首领 暴走搅糖机：未完成；星片 0/2：还差 2 星片"));
         assert!(panel.contains("G 不会启动锁定章节"));
     }
 
@@ -15547,10 +15541,10 @@ mod tests {
         );
 
         assert!(
-            panel.contains("解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：已完成；星片 2/2：已满足")
+            panel.contains("解锁条件 击败前章 糖霜草地 首领 暴走搅糖机：已完成；星片 2/2：已满足")
         );
         assert!(panel.contains(
-            "章节路线 已解锁 糖霜草地  下一章节 汽水溪谷: 击败糖霜草地 Boss 暴走搅糖机 + 星片 2/2"
+            "章节路线 已解锁 糖霜草地  下一章节 汽水溪谷: 击败糖霜草地 首领 暴走搅糖机 + 星片 2/2"
         ));
     }
 
@@ -16432,27 +16426,27 @@ mod tests {
         assert!(panel.contains("地图 汽水溪谷"));
         assert!(!panel.contains("地图 汽水溪谷 (soda-creek)"));
         assert!(panel.contains(
-            "巡逻目标 推荐 进阶  目标 0/4  风暴 标准  Boss 汽水喷泉龙  目标奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"
+            "巡逻目标 推荐 进阶  目标 0/4  风暴 标准  首领 汽水喷泉龙  目标奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山"
         ));
         assert!(panel.contains(
             "出发计划 锁定预览 汽水溪谷：下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1；先解锁章节后计入目标，当前可熟悉标准巡逻"
         ));
-        assert!(panel.contains("推进收益 章节奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山；当前目标 奖励 星片 +1；解锁条件 击败前章 糖霜草地 Boss 暴走搅糖机：未完成；星片 0/2：还差 2 星片"));
-        assert!(panel.contains("开局提醒 章节构筑状态 部分可调整：缺 泡泡鞋，另缺 汽水喷泉 需先解锁；Boss 汽水喷泉龙 约 210s 到场"));
+        assert!(panel.contains("推进收益 章节奖励 角色 奶油骑士 / 地图 棉花云牧场(需 4 星片) / 构筑目标 汽水火山；当前目标 奖励 星片 +1；解锁条件 击败前章 糖霜草地 首领 暴走搅糖机：未完成；星片 0/2：还差 2 星片"));
+        assert!(panel.contains("开局提醒 章节构筑状态 部分可调整：缺 泡泡鞋，另缺 汽水喷泉 需先解锁；首领 汽水喷泉龙 约 210s 到场"));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
         assert!(panel.contains("地图机制 泡泡水流 每36s x2 5s 减速x0.78"));
         assert!(panel.contains(
-            "敌群预览 蹦蹦软糖 / 汽水泡泡 / 辣味软糖 / 酸酸软糖  Boss 210s 汽水喷泉龙  压力 前期低 中期中 后期高"
+            "敌群预览 蹦蹦软糖 / 汽水泡泡 / 辣味软糖 / 酸酸软糖  首领 210s 汽水喷泉龙  压力 前期低 中期中 后期高"
         ));
-        assert!(panel.contains("章节 Boss 汽水喷泉龙"));
-        assert!(!panel.contains("章节 Boss 汽水喷泉龙 (soda-fountain-dragon)"));
+        assert!(panel.contains("章节 首领 汽水喷泉龙"));
+        assert!(!panel.contains("章节 首领 汽水喷泉龙 (soda-fountain-dragon)"));
         assert!(panel.contains("应对 喷射前有明显蓄力"));
         assert!(panel.contains("阶段 100% 汽水泡泡弹幕/召唤汽水泡泡"));
         assert!(panel.contains("锁定目标预览 0/4  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
         assert!(panel.contains("章节构筑状态 部分可调整：缺 泡泡鞋，另缺 汽水喷泉 需先解锁"));
         assert!(panel.contains(
-            "章节构筑目标 汽水火山：汽水喷泉 未解锁 + 泡泡鞋 F5 可切换/局内可抽，Boss 宝箱触发"
+            "章节构筑目标 汽水火山：汽水喷泉 未解锁 + 泡泡鞋 F5 可切换/局内可抽，首领宝箱触发"
         ));
         assert!(!panel.contains("soda-bubble-pop"));
         assert!(panel.contains("C/手柄左 切换已解锁角色"));
@@ -16463,9 +16457,9 @@ mod tests {
         assert!(panel.contains("G/手柄上按钮 推荐章节构筑"));
         assert!(panel.contains("右下点击区: 角色  地图  模式  武器  被动  推荐"));
         assert!(panel.contains("角色路线 已解锁 泡泡邮差(机动/拾取), 糖罐守护员(均衡/新手)"));
-        assert!(panel.contains("待解锁 奶油骑士: 击败汽水溪谷 Boss 汽水喷泉龙"));
+        assert!(panel.contains("待解锁 奶油骑士: 击败汽水溪谷 首领 汽水喷泉龙"));
         assert!(panel.contains("地图路线 已解锁 糖霜草地(新手/开阔), 汽水溪谷(机动/泡泡)"));
-        assert!(panel.contains("下一地图 棉花云牧场: 击败汽水溪谷 Boss 汽水喷泉龙 + 星片 0/4"));
+        assert!(panel.contains("下一地图 棉花云牧场: 击败汽水溪谷 首领 汽水喷泉龙 + 星片 0/4"));
         assert!(panel.contains("可选开局武器"));
         assert!(panel.contains("可选开局被动"));
     }
@@ -16640,17 +16634,17 @@ mod tests {
         assert!(panel.contains("地图机制 无固定地形伤害"));
         assert!(panel.contains("角色玩法 均衡新手：稳定拉开距离"));
         assert!(panel.contains(
-            "巡逻目标 推荐 新手  目标 0/5  风暴 标准  Boss 暴走搅糖机  目标奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"
+            "巡逻目标 推荐 新手  目标 0/5  风暴 标准  首领 暴走搅糖机  目标奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨"
         ));
         assert!(panel.contains(
             "出发计划 本局可推进 糖霜草地：下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1；标准巡逻可覆盖 10 分钟目标"
         ));
         assert!(panel.contains("推进收益 章节奖励 角色 泡泡邮差 / 武器 棉花糖护盾 / 地图 汽水溪谷(需 2 星片) / 构筑目标 彩虹糖流星雨；当前目标 奖励 星片 +1"));
-        assert!(panel.contains("开局提醒 章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到；Boss 暴走搅糖机 约 210s 到场"));
+        assert!(panel.contains("开局提醒 章节构筑状态 可调整：缺 糖晶放大镜，按 G 推荐构筑或局内抽到；首领 暴走搅糖机 约 210s 到场"));
         assert!(panel
-            .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  Boss 210s 暴走搅糖机"));
+            .contains("敌群预览 蹦蹦软糖 / 酸酸软糖 / 夹心饼怪 / 粘粘熊糖  首领 210s 暴走搅糖机"));
         assert!(panel.contains("本图目标 0/5  下一项 标准巡逻坚持 10 分钟 -> 奖励 星片 +1"));
-        assert!(panel.contains("角色路线 已解锁 泡泡邮差(机动/拾取), 奶油骑士(防御/新手), 糖罐守护员(均衡/新手), 布丁工匠(召唤/范围控制), 酸梅博士(控制/稳打 Boss)"));
+        assert!(panel.contains("角色路线 已解锁 泡泡邮差(机动/拾取), 奶油骑士(防御/新手), 糖罐守护员(均衡/新手), 布丁工匠(召唤/范围控制), 酸梅博士(控制/稳打首领)"));
         assert!(panel.contains("待解锁 已全部开放"));
         assert!(panel.contains("地图路线 已解锁 糖霜草地(新手/开阔), 汽水溪谷(机动/泡泡), 棉花云牧场(柔软/敌群), 焦糖工坊(地形危险/工坊), 果冻月台(路线/循环), 裂星糖罐(终章/阶段变化)"));
         assert!(panel.contains("下一地图 已全部开放"));
@@ -16910,7 +16904,7 @@ mod tests {
         assert!(rendered.contains("3. 彩虹糖流星雨  进化  类型 进化"));
         assert!(rendered.contains("数值 伤害 42  冷却 0.90s  数量 8  范围 620"));
         assert!(rendered.contains("玩法 目标 随机敌人  进化武器"));
-        assert!(rendered.contains("进化需求 彩虹糖弹 1/5 + 糖晶放大镜 0/3，Boss 宝箱触发"));
+        assert!(rendered.contains("进化需求 彩虹糖弹 1/5 + 糖晶放大镜 0/3，首领宝箱触发"));
         assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
         assert!(rendered.contains("4. 泡泡鞋  本局强化  类型 被动强化"));
         assert!(rendered.contains("数值 移速 + 10.00/级"));
@@ -16924,12 +16918,12 @@ mod tests {
             id: "candy-crystal-lance".to_string(),
             name: "获得糖晶长枪".to_string(),
             tags: vec!["boss-killer".to_string()],
-            description: "周期性射出高伤害糖晶长枪，优先瞄准 Boss。".to_string(),
+            description: "周期性射出高伤害糖晶长枪，优先瞄准首领。".to_string(),
         };
 
         assert_eq!(
             format_upgrade_playstyle_preview(&option, &content),
-            "目标 Boss 优先  定位 Boss 输出"
+            "目标 首领优先  定位 首领输出"
         );
     }
 
@@ -17243,7 +17237,7 @@ mod tests {
                 }],
                 &content
             ),
-            "Boss 出现 暴走搅糖机"
+            "首领出现 暴走搅糖机"
         );
         assert_eq!(
             describe_events(
@@ -17254,7 +17248,7 @@ mod tests {
                 }],
                 &content
             ),
-            "技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道：离开预警地面"
+            "技能预警 首领 焦糖熔炉 使用 铺设焦糖轨道：离开预警地面"
         );
         assert_eq!(
             describe_events(
@@ -17265,7 +17259,7 @@ mod tests {
                 }],
                 &content
             ),
-            "技能预警 Boss 裂星糖罐核心 使用 核心暴露：核心暴露时集中输出"
+            "技能预警 首领 裂星糖罐核心 使用 核心暴露：核心暴露时集中输出"
         );
         assert_eq!(
             describe_events(
@@ -17450,7 +17444,7 @@ mod tests {
         assert!(feedback.contains("命中 x1 / 伤害 7"));
         assert!(feedback.contains("糖晶 +6"));
         assert!(feedback.contains("受伤 3"));
-        assert!(feedback.contains("技能预警 Boss 焦糖熔炉 使用 铺设焦糖轨道：离开预警地面"));
+        assert!(feedback.contains("技能预警 首领 焦糖熔炉 使用 铺设焦糖轨道：离开预警地面"));
     }
 
     #[test]
