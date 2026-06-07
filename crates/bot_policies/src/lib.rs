@@ -108,6 +108,8 @@ impl BotController {
             0.579
         } else if snapshot.map.map_id == "caramel-workshop" {
             0.82
+        } else if snapshot.map.map_id == "cracked-star-jar" {
+            0.675
         } else {
             0.65
         };
@@ -118,6 +120,9 @@ impl BotController {
         let mut route = (target - snapshot.player.position).normalized_or_zero() * route_speed;
         if snapshot.map.map_id == "caramel-workshop" {
             let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.06;
+            route = (route + pickup).normalized_or_zero() * route_speed;
+        } else if snapshot.map.map_id == "cracked-star-jar" {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.04;
             route = (route + pickup).normalized_or_zero() * route_speed;
         }
         if snapshot.map.map_id == "soda-creek" && snapshot.time_seconds >= 205.0 {
@@ -169,10 +174,26 @@ impl BotController {
                     .normalized_or_zero()
                     * route_speed;
             }
-        } else if snapshot.map.map_id == "cracked-star-jar" && snapshot.time_seconds >= 210.0 {
-            let avoidance = avoid_enemies(snapshot, 132.0, 8);
-            if avoidance.length_squared() > 0.0 {
-                return (route + avoidance * 0.18).normalized_or_zero() * route_speed;
+        } else if snapshot.map.map_id == "cracked-star-jar" && snapshot.time_seconds >= 205.0 {
+            let enemy_avoidance = avoid_enemies(snapshot, 172.0, 8);
+            let boss_avoidance = snapshot
+                .boss
+                .as_ref()
+                .map(|boss| {
+                    let away = snapshot.player.position - boss.position;
+                    if away.length() < 198.0 {
+                        away.normalized_or_zero()
+                    } else {
+                        Vec2::ZERO
+                    }
+                })
+                .unwrap_or(Vec2::ZERO);
+            if enemy_avoidance.length_squared() > 0.0 || boss_avoidance.length_squared() > 0.0 {
+                return (route * 0.45
+                    + enemy_avoidance.normalized_or_zero() * 0.52
+                    + boss_avoidance * 0.52)
+                    .normalized_or_zero()
+                    * route_speed;
             }
         }
 
@@ -351,7 +372,7 @@ mod tests {
         let mut soda_snapshot = default_snapshot.clone();
         soda_snapshot.map.map_id = "soda-creek".to_string();
 
-        assert_close(greedy_movement(&default_snapshot).x, 0.30);
+        assert_close(greedy_movement(&default_snapshot).x, 0.34);
         assert_close(greedy_movement(&jelly_snapshot).x, 0.12);
         assert_close(greedy_movement(&caramel_snapshot).x, 0.42);
         assert_close(greedy_movement(&cotton_snapshot).x, 0.16);
@@ -387,7 +408,7 @@ mod tests {
         let mut soda_snapshot = default_snapshot.clone();
         soda_snapshot.map.map_id = "soda-creek".to_string();
 
-        assert_close(kite_movement(&default_snapshot).x, 0.35);
+        assert_close(kite_movement(&default_snapshot).x, 0.16);
         assert_close(kite_movement(&jelly_snapshot).x, 0.12);
         assert_close(kite_movement(&soda_snapshot).x, 0.45);
         let mut cotton_snapshot = default_snapshot.clone();
@@ -621,7 +642,7 @@ mod tests {
         });
 
         let mut pre_window = snapshot.clone();
-        pre_window.time_seconds = 209.9;
+        pre_window.time_seconds = 204.9;
 
         let mut pre_bot = BotController::new(BotKind::Route, 2);
         let mut boss_window_bot = BotController::new(BotKind::Route, 2);
@@ -961,7 +982,7 @@ mod tests {
         let movement = bot.next_action(&snapshot).movement;
 
         assert!(movement.x < 0.0);
-        assert!(movement.length() <= 0.35 + f32::EPSILON);
+        assert!(movement.length() <= 0.48 + f32::EPSILON);
     }
 }
 
@@ -1008,6 +1029,12 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
 
     if kind == BotKind::Route && weapon_level(snapshot, "rainbow-candy-shot") < 4 {
         if let Some(index) = find_option(snapshot, &["rainbow-candy-shot"]) {
+            return index;
+        }
+    }
+
+    if snapshot.map.map_id == "cracked-star-jar" {
+        if let Some(index) = cracked_star_learning_upgrade_choice(kind, snapshot) {
             return index;
         }
     }
@@ -1225,6 +1252,68 @@ fn caramel_workshop_learning_upgrade_choice(
     None
 }
 
+fn cracked_star_learning_upgrade_choice(kind: BotKind, snapshot: &RunSnapshot) -> Option<usize> {
+    if kind == BotKind::Route && snapshot.time_seconds >= 175.0 {
+        if let Some(index) = find_option(
+            snapshot,
+            &[
+                "big-candy-jar",
+                "nonstick-apron",
+                "marshmallow-shield",
+                "bubble-shoes",
+                "cream-clockwork",
+            ],
+        ) {
+            return Some(index);
+        }
+    }
+
+    if kind == BotKind::ZoneControl && snapshot.time_seconds >= 120.0 {
+        if let Some(index) = find_option(
+            snapshot,
+            &[
+                "bubble-shoes",
+                "big-candy-jar",
+                "nonstick-apron",
+                "marshmallow-shield",
+                "sour-plum-spray",
+                "cream-clockwork",
+                "star-spoon",
+            ],
+        ) {
+            return Some(index);
+        }
+    }
+
+    let priorities = match kind {
+        BotKind::Route => &[
+            "bubble-shoes",
+            "sour-plum-spray",
+            "soda-bubble-pop",
+            "big-candy-jar",
+            "star-spoon",
+            "cream-clockwork",
+        ][..],
+        BotKind::ZoneControl => &[
+            "sour-plum-spray",
+            "bubble-shoes",
+            "caramel-sticky-ground",
+            "mint-cyclone",
+            "big-candy-jar",
+            "cream-clockwork",
+        ][..],
+        _ => return None,
+    };
+
+    for priority in priorities {
+        if let Some(index) = find_option(snapshot, &[*priority]) {
+            return Some(index);
+        }
+    }
+
+    None
+}
+
 fn soda_creek_learning_upgrade_choice(kind: BotKind, snapshot: &RunSnapshot) -> Option<usize> {
     let priorities = match kind {
         BotKind::Greedy => &[
@@ -1384,7 +1473,7 @@ fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
     } else if snapshot.map.map_id == "cotton-cloud-pasture" {
         0.16
     } else if snapshot.map.map_id == "frosting-grassland" {
-        0.30
+        0.34
     } else if snapshot.map.map_id == "soda-creek" {
         0.28
     } else {
@@ -1573,6 +1662,8 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
     {
         let speed = if snapshot.map.map_id == "jelly-platform" {
             0.32
+        } else if snapshot.map.map_id == "frosting-grassland" {
+            0.54
         } else if snapshot.map.map_id == "soda-creek" {
             1.0
         } else if snapshot.map.map_id == "cotton-cloud-pasture" {
@@ -1609,7 +1700,7 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
         let pickup_weight = if snapshot.map.map_id == "jelly-platform" {
             0.12
         } else if snapshot.map.map_id == "frosting-grassland" {
-            0.35
+            0.16
         } else if snapshot.map.map_id == "soda-creek" {
             0.45
         } else if snapshot.map.map_id == "cotton-cloud-pasture" {
@@ -1771,13 +1862,13 @@ fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
     }
 
     if snapshot.map.map_id == "cracked-star-jar" {
-        let avoidance = avoid_enemies(snapshot, 70.0, 6);
+        let avoidance = avoid_enemies(snapshot, 86.0, 6);
         if avoidance.length_squared() > 0.0 {
-            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.03;
-            return (avoidance.normalized_or_zero() * 0.09 + pickup).normalized_or_zero() * 0.15;
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.10;
+            return (avoidance.normalized_or_zero() * 0.22 + pickup).normalized_or_zero() * 0.44;
         }
 
-        return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.07;
+        return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.16;
     }
 
     if snapshot.map.map_id == "caramel-workshop" {

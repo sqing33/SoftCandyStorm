@@ -1,0 +1,24 @@
+{
+  "case_id": "fail_20260607_024",
+  "category": "balance",
+  "content_id": "frosting-grassland,cracked-star-jar",
+  "seed": "72000..72009",
+  "bot": "greedy,kite,route,zone-control",
+  "time_seconds": 300.0,
+  "symptom": "焦糖工坊和棉花云牧场策略基线修复后，跨图 10 seed / 300 秒关键小矩阵暴露旧图策略偏移：糖霜草地 KiteBot 8/10 高于高技能目标上限，GreedyBot 2/10 低于中技能目标下限；裂星糖罐 RouteBot 0/10 低于低技能目标下限，ZoneControlBot 0/10 低于中技能目标下限。玩家可见风险是新手图和终章图的规则 Bot 技能梯度不再稳定，后续内容调参会失去可靠参照。",
+  "root_cause": "问题来自跨图策略基线在连续修复后的局部失衡。糖霜草地 GreedyBot 拾取能力偏低而 KiteBot 近敌移动和拾取节奏偏稳；裂星糖罐 RouteBot 缺少足够的 Boss 窗口避险、拾取牵引和最终图升级偏置，ZoneControlBot 的终章避险/拾取幅度和升级优先级不足。此前焦糖与棉花分支修复没有直接修改这些地图，但同一套 Bot 策略需要重新对齐各地图的目标胜率区间。",
+  "fix": "为糖霜草地单独校准 GreedyBot 与 KiteBot：提高 GreedyBot 拾取权重，降低 KiteBot 糖霜草地拾取权重和近敌速度。为裂星糖罐单独校准 RouteBot 与 ZoneControlBot：提高 RouteBot 终章路线速度、拾取牵引和 205 秒后 Boss 窗口避险；增加 cracked-star-jar 专属 Route/ZoneControl 升级偏好；提高 ZoneControlBot 终章避险半径、移动幅度和拾取幅度。同步更新相关单元测试断言。",
+  "validation": "已运行 cargo fmt --check、cargo test -p bot_policies，并完成两张图完整 5 Bot / 10 seed / 300 秒关键小矩阵。糖霜草地最终结果：Route 10%、Kite 70%、Random 0%、Greedy 50%、ZoneControl 40%，全部 pass。裂星糖罐最终结果：Route 20%、Kite 60%、Random 0%、Greedy 30%、ZoneControl 30%，全部 pass。报告路径：/private/tmp/soft_candy/v64_frosting_grassland_full_cross_map_repair_300s_10seed_72000 和 /private/tmp/soft_candy/v64_cracked_star_jar_full_cross_map_repair_300s_10seed_72000。该关键小矩阵只用于策略基线诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/v61_frosting_grassland_key_matrix_after_caramel_cotton_bot_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v61_cracked_star_jar_key_matrix_after_caramel_cotton_bot_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v62_frosting_grassland_affected_bots_after_cross_map_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v62_cracked_star_jar_affected_bots_after_cross_map_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v63_frosting_grassland_affected_bots_after_cross_map_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v63_cracked_star_jar_affected_bots_after_cross_map_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v64_frosting_grassland_affected_bots_after_cross_map_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v64_cracked_star_jar_affected_bots_after_cross_map_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v64_frosting_grassland_full_cross_map_repair_300s_10seed_72000",
+    "/private/tmp/soft_candy/v64_cracked_star_jar_full_cross_map_repair_300s_10seed_72000"
+  ]
+}
