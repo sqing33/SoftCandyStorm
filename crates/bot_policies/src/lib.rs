@@ -114,10 +114,15 @@ impl BotController {
             self.route_angle.sin() * radius_y,
         );
         let route = (target - snapshot.player.position).normalized_or_zero() * route_speed;
-        if snapshot.map.map_id == "soda-creek" && snapshot.time_seconds >= 212.0 {
-            let avoidance = avoid_enemies(snapshot, 128.0, 8);
+        if snapshot.map.map_id == "soda-creek" && snapshot.time_seconds >= 205.0 {
+            let avoidance = avoid_enemies(snapshot, 168.0, 8);
             if avoidance.length_squared() > 0.0 {
-                return (route + avoidance * 0.20).normalized_or_zero() * route_speed;
+                return (route + avoidance * 0.32).normalized_or_zero() * route_speed;
+            }
+        } else if snapshot.map.map_id == "jelly-platform" && snapshot.time_seconds >= 90.0 {
+            let avoidance = avoid_enemies(snapshot, 104.0, 8);
+            if avoidance.length_squared() > 0.0 {
+                return (route + avoidance * 0.10).normalized_or_zero() * route_speed;
             }
         } else if snapshot.map.map_id == "caramel-workshop" && snapshot.time_seconds >= 210.0 {
             let enemy_avoidance = avoid_enemies(snapshot, 128.0, 8);
@@ -210,6 +215,12 @@ mod tests {
     fn cotton_snapshot() -> RunSnapshot {
         let mut snapshot = empty_snapshot();
         snapshot.map.map_id = "cotton-cloud-pasture".to_string();
+        snapshot
+    }
+
+    fn soda_snapshot() -> RunSnapshot {
+        let mut snapshot = empty_snapshot();
+        snapshot.map.map_id = "soda-creek".to_string();
         snapshot
     }
 
@@ -322,10 +333,10 @@ mod tests {
         soda_snapshot.map.map_id = "soda-creek".to_string();
 
         assert_close(greedy_movement(&default_snapshot).x, 0.30);
-        assert_close(greedy_movement(&jelly_snapshot).x, 0.06);
+        assert_close(greedy_movement(&jelly_snapshot).x, 0.12);
         assert_close(greedy_movement(&caramel_snapshot).x, 0.42);
         assert_close(greedy_movement(&cotton_snapshot).x, 0.36);
-        assert_close(greedy_movement(&soda_snapshot).x, 0.55);
+        assert_close(greedy_movement(&soda_snapshot).x, 0.28);
     }
 
     #[test]
@@ -471,6 +482,20 @@ mod tests {
     }
 
     #[test]
+    fn zone_control_uses_soda_creek_enemy_spacing() {
+        let mut snapshot = soda_snapshot();
+        snapshot
+            .visible_enemies
+            .push(chaser_enemy(1, Vec2::new(40.0, 0.0), 4.0));
+
+        let mut bot = BotController::new(BotKind::ZoneControl, 4);
+        let movement = bot.next_action(&snapshot).movement;
+
+        assert!(movement.x < 0.0);
+        assert!(movement.length() <= 0.55 + f32::EPSILON);
+    }
+
+    #[test]
     fn route_bot_outputs_normalized_action() {
         let mut bot = BotController::new(BotKind::Route, 2);
         let action = bot.next_action(&empty_snapshot());
@@ -504,7 +529,7 @@ mod tests {
         });
 
         let mut pre_window = snapshot.clone();
-        pre_window.time_seconds = 211.9;
+        pre_window.time_seconds = 204.9;
 
         let mut pre_bot = BotController::new(BotKind::Route, 2);
         let mut boss_window_bot = BotController::new(BotKind::Route, 2);
@@ -854,6 +879,32 @@ mod tests {
     }
 
     #[test]
+    fn soda_zone_control_prefers_soda_weapon() {
+        let mut snapshot = soda_snapshot();
+        snapshot.build.weapons.push(game_core::BuildItemSnapshot {
+            id: "rainbow-candy-shot".to_string(),
+            level: 3,
+        });
+        snapshot.upgrade_options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "caramel-sticky-ground".to_string(),
+                name: "焦糖黏地".to_string(),
+                tags: vec!["control".to_string()],
+                description: "放置焦糖地面。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "soda-bubble-pop".to_string(),
+                name: "汽水泡泡爆".to_string(),
+                tags: vec!["aoe-clear".to_string()],
+                description: "制造汽水泡泡爆裂。".to_string(),
+            },
+        ];
+
+        let mut bot = BotController::new(BotKind::ZoneControl, 4);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+    }
+
+    #[test]
     fn zone_control_uses_final_map_light_avoidance() {
         let mut snapshot = empty_snapshot();
         snapshot.map.map_id = "cracked-star-jar".to_string();
@@ -914,6 +965,18 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
         }
     }
 
+    if snapshot.map.map_id == "jelly-platform" {
+        if let Some(index) = jelly_platform_learning_upgrade_choice(kind, snapshot) {
+            return index;
+        }
+    }
+
+    if snapshot.map.map_id == "soda-creek" {
+        if let Some(index) = soda_creek_learning_upgrade_choice(kind, snapshot) {
+            return index;
+        }
+    }
+
     if snapshot.map.map_id == "frosting-grassland" {
         if let Some(index) = frosting_grassland_learning_upgrade_choice(kind, snapshot) {
             return index;
@@ -966,6 +1029,73 @@ fn frosting_grassland_learning_upgrade_choice(
         .upgrade_options
         .iter()
         .position(|option| !option.id.contains("-level-"))
+}
+
+fn jelly_platform_learning_upgrade_choice(kind: BotKind, snapshot: &RunSnapshot) -> Option<usize> {
+    let priorities = match kind {
+        BotKind::Route => &[
+            "bubble-shoes",
+            "soda-bubble-pop",
+            "cream-clockwork",
+            "sour-tuner",
+            "star-spoon",
+        ][..],
+        _ => return None,
+    };
+
+    for priority in priorities {
+        if let Some(index) = find_option(snapshot, &[*priority]) {
+            return Some(index);
+        }
+    }
+
+    None
+}
+
+fn soda_creek_learning_upgrade_choice(kind: BotKind, snapshot: &RunSnapshot) -> Option<usize> {
+    let priorities = match kind {
+        BotKind::Greedy => &[
+            "bubble-shoes",
+            "soda-bubble-pop",
+            "big-candy-jar",
+            "rainbow-candy-shot",
+            "cream-clockwork",
+            "sour-tuner",
+            "star-spoon",
+            "candy-crystal-lens",
+        ][..],
+        BotKind::Kite => &[
+            "bubble-shoes",
+            "soda-bubble-pop",
+            "mint-cyclone",
+            "sour-plum-spray",
+            "cream-clockwork",
+        ][..],
+        BotKind::ZoneControl => &[
+            "soda-bubble-pop",
+            "bubble-shoes",
+            "caramel-sticky-ground",
+            "sour-plum-spray",
+            "mint-cyclone",
+            "star-spoon",
+        ][..],
+        BotKind::Route => &[
+            "bubble-shoes",
+            "soda-bubble-pop",
+            "sour-tuner",
+            "rainbow-candy-shot",
+            "star-spoon",
+        ][..],
+        _ => return None,
+    };
+
+    for priority in priorities {
+        if let Some(index) = find_option(snapshot, &[*priority]) {
+            return Some(index);
+        }
+    }
+
+    None
 }
 
 fn defense_threshold(kind: BotKind) -> f32 {
@@ -1075,17 +1205,35 @@ fn weapon_level(snapshot: &RunSnapshot, weapon_id: &str) -> u32 {
 
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
     let pickup_weight = if snapshot.map.map_id == "jelly-platform" {
-        0.06
+        0.12
     } else if snapshot.map.map_id == "caramel-workshop" {
         0.42
     } else if snapshot.map.map_id == "cotton-cloud-pasture" {
         0.36
     } else if snapshot.map.map_id == "frosting-grassland" {
         0.30
+    } else if snapshot.map.map_id == "soda-creek" {
+        0.28
     } else {
         0.55
     };
-    greedy_movement_with_avoidance(snapshot, 18.0, pickup_weight)
+    let avoidance_radius = if snapshot.map.map_id == "soda-creek" {
+        74.0
+    } else if snapshot.map.map_id == "jelly-platform" {
+        44.0
+    } else {
+        18.0
+    };
+
+    if snapshot.map.map_id == "soda-creek" && snapshot.time_seconds >= 205.0 {
+        let avoidance = avoid_enemies(snapshot, 168.0, 8);
+        if avoidance.length_squared() > 0.0 {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.08;
+            return (avoidance.normalized_or_zero() * 0.34 + pickup).normalized_or_zero() * 0.62;
+        }
+    }
+
+    greedy_movement_with_avoidance(snapshot, avoidance_radius, pickup_weight)
 }
 
 fn greedy_movement_with_avoidance(
@@ -1174,6 +1322,8 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
         55.0
     } else if snapshot.map.map_id == "frosting-grassland" {
         24.0
+    } else if snapshot.map.map_id == "soda-creek" {
+        74.0
     } else {
         36.0
     };
@@ -1183,10 +1333,18 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
     if avoidance.length_squared() > 0.0 {
         let speed = if snapshot.map.map_id == "jelly-platform" {
             0.32
+        } else if snapshot.map.map_id == "soda-creek" {
+            1.0
         } else {
             1.0
         };
-        return (avoidance.normalized_or_zero() * 0.05 + pickup_direction).normalized_or_zero()
+        let avoidance_weight = if snapshot.map.map_id == "soda-creek" {
+            0.10
+        } else {
+            0.05
+        };
+        return (avoidance.normalized_or_zero() * avoidance_weight + pickup_direction)
+            .normalized_or_zero()
             * speed;
     }
 
@@ -1195,6 +1353,8 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
             0.12
         } else if snapshot.map.map_id == "frosting-grassland" {
             0.35
+        } else if snapshot.map.map_id == "soda-creek" {
+            0.45
         } else {
             0.45
         };
@@ -1331,6 +1491,17 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
 }
 
 fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
+    if snapshot.map.map_id == "soda-creek" {
+        let avoidance = avoid_enemies(snapshot, 96.0, 8);
+        let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
+        if avoidance.length_squared() > 0.0 {
+            return (avoidance.normalized_or_zero() * 0.34 + pickup * 0.08).normalized_or_zero()
+                * 0.55;
+        }
+
+        return pickup * 0.22;
+    }
+
     if snapshot.map.map_id == "cracked-star-jar" {
         let avoidance = avoid_enemies(snapshot, 70.0, 6);
         if avoidance.length_squared() > 0.0 {
