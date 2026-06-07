@@ -103,7 +103,15 @@ impl BotController {
             self.route_angle.cos() * radius_x,
             self.route_angle.sin() * radius_y,
         );
-        (target - snapshot.player.position).normalized_or_zero() * 0.65
+        let route = (target - snapshot.player.position).normalized_or_zero() * 0.65;
+        if snapshot.map.map_id == "soda-creek" && snapshot.time_seconds >= 212.0 {
+            let avoidance = avoid_enemies(snapshot, 128.0, 8);
+            if avoidance.length_squared() > 0.0 {
+                return (route + avoidance * 0.20).normalized_or_zero() * 0.65;
+            }
+        }
+
+        route
     }
 }
 
@@ -173,6 +181,35 @@ mod tests {
         let mut bot = BotController::new(BotKind::Route, 2);
         let action = bot.next_action(&empty_snapshot());
         assert!(action.movement.length() <= 1.0 + f32::EPSILON);
+    }
+
+    #[test]
+    fn route_uses_soda_boss_window_emergency_avoidance() {
+        let mut snapshot = empty_snapshot();
+        snapshot.map.map_id = "soda-creek".to_string();
+        snapshot.time_seconds = 214.0;
+        snapshot.visible_enemies.push(game_core::EnemySnapshot {
+            entity_id: 99,
+            enemy_id: "soda-fountain-dragon".to_string(),
+            position: Vec2::new(20.0, 0.0),
+            velocity: Vec2::ZERO,
+            health: 1000.0,
+            max_health: 1000.0,
+            radius: 64.0,
+            threat: 8.0,
+            behavior: game_core::EnemyBehavior::Chase,
+            is_boss: true,
+            is_elite: false,
+        });
+
+        let mut pre_window = snapshot.clone();
+        pre_window.time_seconds = 211.9;
+
+        let mut pre_bot = BotController::new(BotKind::Route, 2);
+        let mut boss_window_bot = BotController::new(BotKind::Route, 2);
+
+        assert!(pre_bot.next_action(&pre_window).movement.x > 0.0);
+        assert!(boss_window_bot.next_action(&snapshot).movement.x < 0.0);
     }
 
     #[test]

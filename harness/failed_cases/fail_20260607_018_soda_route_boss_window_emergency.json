@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260607_018",
+  "category": "balance",
+  "content_id": "soda-creek",
+  "seed": "74000..74002",
+  "bot": "route",
+  "time_seconds": 240.0,
+  "symptom": "汽水溪谷 Boss 入场修复后，RouteBot 在 3 seed / 240 秒小矩阵中仍为 0/3，三局都在 222-224 秒左右死亡。轨迹显示固定椭圆路线会把 RouteBot 带进汽水喷泉龙半径，同时周围有 8 个近身敌人，最后还可能叠到地图泡泡水流危险区。",
+  "root_cause": "RouteBot 只按固定椭圆路线移动，完全没有紧急避险；在汽水溪谷 210 秒 Boss 入场后，这条路线会穿过 Boss 追击和近身敌人堆叠区域。该问题不适合继续降低汽水龙或泡泡全局伤害，否则会把 Kite、BossHunter 或 ZoneControl 推得过稳。",
+  "fix": "为 RouteBot 增加汽水溪谷 Boss 窗口后的窄范围紧急避险：212 秒后继续以固定路线为主，但当 128 像素内有高威胁敌人时，向路线向量叠加少量 avoid_enemies 结果。新增单测覆盖该避险只在 Boss 窗口后触发。",
+  "validation": "已运行 cargo test -p bot_policies、cargo fmt --check，以及 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id soda-creek --content-dir content/base_demo --report-dir /private/tmp/soft_candy/soda_creek_route_emergency_v2_full_matrix_74000_3seed_240s。最终小矩阵中 RouteBot 为 1/3，落在低技能目标区间；所有其它 Bot 也在目标区间。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/route_soda_74000_74002_200_226_after_bosshunter_fix.jsonl",
+    "/private/tmp/soft_candy/soda_creek_route_emergency_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/soda_creek_route_emergency_probe_v2_74000_3seed_240s",
+    "/private/tmp/soft_candy/soda_creek_route_emergency_v2_full_matrix_74000_3seed_240s"
+  ]
+}
