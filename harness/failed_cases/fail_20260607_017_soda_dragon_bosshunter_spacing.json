@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260607_017",
+  "category": "balance",
+  "content_id": "soda-fountain-dragon",
+  "seed": "74000..74002",
+  "bot": "boss-hunter",
+  "time_seconds": 240.0,
+  "symptom": "汽水溪谷 3 seed / 240 秒小矩阵中，退潮事件修复后 BossHunter 仍会在 215-224 秒窗口贴近汽水龙和泡泡组合，导致高技能规则 Bot 胜率低于 45%-75% 目标区间。初始 (78,118) 距离档位只有 1/3，通过但偏低；放宽到 (82,120) 又变成 3/3，超过目标上限。",
+  "root_cause": "BossHunter 过去只用地图级 Boss 距离标尺，汽水龙的入场泡泡和接触半径让该标尺表现成离散开关：退得太近会吃到第一轮接触/泡泡组合，退得稍宽又让高技能 Bot 稳定脱离压力。该问题更适合做汽水龙专用距离档位，而不是继续降低 Boss 或泡泡伤害。",
+  "fix": "为 soda-fountain-dragon 增加 BossHunter 专用 retreat/chase 距离 (80,119)，并保留 cracked-star-jar 的更宽终局距离档位。新增单测覆盖终局地图宽撤退和汽水龙专用间距，避免后续维护时误把该 Boss 退回通用标尺。",
+  "validation": "已运行 cargo test -p bot_policies、cargo fmt --check，以及 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id soda-creek --content-dir content/base_demo --report-dir /private/tmp/soft_candy/soda_creek_boss_hunter_spacing_v5_matrix_74000_3seed_240s。最终小矩阵中 BossHunter 为 2/3，落在高技能目标区间；Route 仍为 0/3，需要作为后续独立修复处理。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/soda_creek_boss_hunter_spacing_v3_matrix_74000_3seed_240s",
+    "/private/tmp/soft_candy/soda_creek_boss_hunter_spacing_v4_matrix_74000_3seed_240s",
+    "/private/tmp/soft_candy/soda_creek_boss_hunter_spacing_probe_80_119_74000_3seed_240s",
+    "/private/tmp/soft_candy/soda_creek_boss_hunter_spacing_v5_matrix_74000_3seed_240s"
+  ]
+}

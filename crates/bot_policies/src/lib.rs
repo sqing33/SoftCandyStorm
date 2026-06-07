@@ -220,20 +220,7 @@ mod tests {
             boss_id: "cracked-star-jar-core".to_string(),
             health: 1000.0,
             max_health: 1000.0,
-            position: Vec2::new(82.0, 0.0),
-        });
-        final_map.visible_enemies.push(game_core::EnemySnapshot {
-            entity_id: 99,
-            enemy_id: "cracked-star-jar-core".to_string(),
-            position: Vec2::new(70.0, 0.0),
-            velocity: Vec2::ZERO,
-            health: 1000.0,
-            max_health: 1000.0,
-            radius: 64.0,
-            threat: 25.0,
-            behavior: game_core::EnemyBehavior::Chase,
-            is_boss: true,
-            is_elite: false,
+            position: Vec2::new(100.0, 0.0),
         });
 
         let mut default_map = final_map.clone();
@@ -244,6 +231,28 @@ mod tests {
 
         assert!(final_bot.next_action(&final_map).movement.x < 0.0);
         assert_eq!(default_bot.next_action(&default_map).movement, Vec2::ZERO);
+    }
+
+    #[test]
+    fn boss_hunter_uses_soda_dragon_specific_spacing() {
+        let mut soda_map = empty_snapshot();
+        soda_map.map.map_id = "soda-creek".to_string();
+        soda_map.boss = Some(game_core::BossSnapshot {
+            entity_id: 99,
+            boss_id: "soda-fountain-dragon".to_string(),
+            health: 1000.0,
+            max_health: 1000.0,
+            position: Vec2::new(82.0, 0.0),
+        });
+
+        let mut generic_map = soda_map.clone();
+        generic_map.boss.as_mut().unwrap().boss_id = "caramel-furnace".to_string();
+
+        let mut soda_bot = BotController::new(BotKind::BossHunter, 5);
+        let mut generic_bot = BotController::new(BotKind::BossHunter, 5);
+
+        assert_eq!(soda_bot.next_action(&soda_map).movement, Vec2::ZERO);
+        assert!(generic_bot.next_action(&generic_map).movement.x < 0.0);
     }
 
     #[test]
@@ -586,12 +595,16 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         let to_boss = boss.position - snapshot.player.position;
         let boss_distance = to_boss.length();
         let boss_direction = to_boss.normalized_or_zero();
-        let chase_distance = if snapshot.map.map_id == "frosting-grassland" {
-            34.0
+        let (retreat_distance, chase_distance) = if snapshot.map.map_id == "frosting-grassland" {
+            (30.0, 34.0)
+        } else if boss.boss_id == "soda-fountain-dragon" {
+            (80.0, 119.0)
+        } else if snapshot.map.map_id == "cracked-star-jar" {
+            (118.0, 155.0)
         } else {
-            84.0
+            (86.0, 124.0)
         };
-        let spacing = if boss_distance < 30.0 {
+        let spacing = if boss_distance < retreat_distance {
             boss_direction * -1.0
         } else if boss_distance > chase_distance {
             boss_direction
