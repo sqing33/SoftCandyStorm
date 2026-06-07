@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260607_010",
+  "category": "balance",
+  "content_id": "content/base_demo/waves",
+  "seed": "74000..74002",
+  "bot": "all rule bots",
+  "time_seconds": 240.0,
+  "symptom": "4 个新增普通敌人接入 6 张正式标准波次后，3 seed / 240 秒 all Bot 小矩阵仍出现多地图 repair。糖霜草地 Coward、Greedy、Kite、Tank 偏高；汽水溪谷 Greedy、BossHunter、ZoneControl、Route 偏低且 Kite 偏高；棉花云牧场 Coward 偏低而 Greedy、Tank、BossHunter、Route 偏高；焦糖工坊 Greedy 偏高且 Tank、BossHunter、Route 偏低；果冻月台 Coward、Greedy、Kite、Tank 偏高且 BossHunter、Route 偏低，Random 偏高；裂星糖罐 Coward、Kite、BossHunter、ZoneControl、Route 偏低而 Tank 偏高。",
+  "root_cause": "本次改动的目标是让新增敌人从名录进入玩家可见波次，并采用少量替换旧权重的保守接入方式；但 6 张地图原本已有 Bot 表现分裂，新增 ranged_spit、orbit_player、jump、shielded 敌人改变了路线压力、远程落点压力和侧翼压力分布，不能仅靠一次全局权重替换达到各 Bot 目标区间。",
+  "fix": "后续需要按地图分别修复，不要继续全局堆新敌人权重，也不要放宽门禁。优先方向：汽水溪谷与裂星糖罐检查远程/跳跃敌人是否压低 BossHunter、ZoneControl、Route；果冻月台检查侧翼/路线压力是否仍让 Greedy 与 Kite 过稳；糖霜草地避免继续影响 Tank 下限；棉花云牧场和焦糖工坊分开处理高稳定 Bot 与低稳定 Bot 的分裂。",
+  "validation": "已运行 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id <map> --content-dir content/base_demo --report-dir /private/tmp/soft_candy/base_demo_wave_new_enemies_matrix_<map>，覆盖 frosting-grassland、soda-creek、cotton-cloud-pasture、caramel-workshop、jelly-platform、cracked-star-jar。该小矩阵只用于快速发现明显回归，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/base_demo_wave_new_enemies_matrix_frosting",
+    "/private/tmp/soft_candy/base_demo_wave_new_enemies_matrix_soda",
+    "/private/tmp/soft_candy/base_demo_wave_new_enemies_matrix_cotton",
+    "/private/tmp/soft_candy/base_demo_wave_new_enemies_matrix_caramel",
+    "/private/tmp/soft_candy/base_demo_wave_new_enemies_matrix_jelly",
+    "/private/tmp/soft_candy/base_demo_wave_new_enemies_matrix_cracked"
+  ]
+}
