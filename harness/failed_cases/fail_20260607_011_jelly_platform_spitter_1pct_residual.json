@@ -1,0 +1,15 @@
+{
+  "case_id": "fail_20260607_011",
+  "category": "balance",
+  "content_id": "jelly-platform-standard",
+  "seed": "74000..74002",
+  "bot": "random,coward,greedy,kite",
+  "time_seconds": 240.0,
+  "symptom": "果冻月台波次改为 1% 早段糖针、Boss 后窗口降分裂泡泡并缓和弹跳带减速后，3 seed / 240 秒小矩阵中 Tank、BossHunter、ZoneControl、Route 已回到目标区间，但 Random 仍 1/3 胜，Coward、Greedy、Kite 仍 3/3 胜，说明该地图对稳定走位和拾取策略仍偏宽松。",
+  "root_cause": "本轮修复优先解决 Route 与 BossHunter 在 210 秒 Boss 窗口附近被实体堆积和路线减速压死的问题；为了不重新打穿 Route，早段远程压力只能保留 1%，导致 Coward、Greedy、Kite 仍能通过保守走位或高效拾取维持低伤害。",
+  "fix": "后续应单独处理果冻月台的高手过稳问题，优先考虑不增加实体堆积的地图机制或 Boss 后可读压力，例如缩短安全循环、增加非致命路线扰动，避免再次用大量分裂泡泡或早段糖针压死 Route 与 BossHunter。",
+  "validation": "已运行 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id jelly-platform --content-dir content/base_demo --report-dir /private/tmp/soft_candy/jelly_platform_spitter_1pct_matrix_74000_3seed_240s。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/jelly_platform_spitter_1pct_matrix_74000_3seed_240s"
+  ]
+}
