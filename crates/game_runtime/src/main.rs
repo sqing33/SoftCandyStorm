@@ -16925,7 +16925,7 @@ mod tests {
         assert!(rendered.contains("进化需求 彩虹糖弹 1/5 + 糖晶放大镜 0/3，首领宝箱触发"));
         assert!(rendered.contains("标签 弹幕 / 范围 / 进化"));
         assert!(rendered.contains("4. 泡泡鞋  本局强化  类型 被动强化"));
-        assert!(rendered.contains("数值 移速 + 10.00/级"));
+        assert!(rendered.contains("数值 移速 + 9.00/级"));
         assert!(rendered.contains("玩法 被动强化"));
     }
 

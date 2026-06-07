@@ -3470,7 +3470,7 @@ fn boss_ability_actions(
             0.44,
             13.0,
         )],
-        "jump_shockwave" => vec![boss_hazard(player_position, 1, 24.0, 120.0, 1.2, 0.70, 0.0)],
+        "jump_shockwave" => vec![boss_hazard(player_position, 1, 24.0, 120.0, 1.2, 0.70, 7.0)],
         "double_jump_shockwave" => vec![boss_hazard(
             player_position,
             2,
@@ -3478,7 +3478,7 @@ fn boss_ability_actions(
             112.0,
             1.4,
             0.68,
-            0.0,
+            5.0,
         )],
         "sour_phase_storm" => vec![
             boss_summon("sour-gummy", 2, player_position),
