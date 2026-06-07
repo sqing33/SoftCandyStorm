@@ -524,6 +524,8 @@ python3 tools/validate_accepted_content_lockfile.py \
 
 `map_ids` 可省略或为空，表示全局事件；填写地图 id 列表时，事件只会在对应地图的局内进入触发判定。
 
+当前事件效果支持 `xp_multiplier`、`spawn_rate_multiplier`、`map_hazard_rate_multiplier`、`pickup_radius_multiplier`、`damage_multiplier`、`heal`、`spawn_enemy`、`spawn_hazard`、`route_echo_hazard` 和 `offer_upgrade`。其中 `map_hazard_rate_multiplier` 用于短时间调节地图周期危险区生成，适合做 Boss 入场前的可读退潮或特殊地图机制，但不应代替波次压力调参。
+
 ## Schema 校验规则
 
 P0 错误，必须拒绝：

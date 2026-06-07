@@ -1487,6 +1487,25 @@ impl ContentPack {
         cracked_phase_breath.map_ids = vec!["cracked-star-jar".to_string()];
         pack.events
             .insert(cracked_phase_breath.id.clone(), cracked_phase_breath);
+        let mut soda_boss_lull = event_definition(
+            "soda-creek-boss-lull",
+            "汽水龙入场退潮",
+            "rare",
+            &["event", "map-specific", "boss-window", "readability"],
+            "汽水龙浮出溪谷前，泡泡水流短暂退开，普通怪潮放慢，让玩家读清第一轮喷泉动作。",
+            203.0,
+            208.0,
+            1.0,
+            vec![
+                event_effect("map_hazard_rate_multiplier", 0.0, Some(30.0)),
+                event_effect("spawn_rate_multiplier", 0.82, Some(28.0)),
+            ],
+            "溪谷两侧泡泡像被轻轻吸回水面，Boss 登场位置周围露出一圈清亮汽水光。",
+            "泡泡退潮的细碎 fizz 声，随后接一声明亮的汽水龙入场提示音。",
+        );
+        soda_boss_lull.map_ids = vec!["soda-creek".to_string()];
+        pack.events
+            .insert(soda_boss_lull.id.clone(), soda_boss_lull);
 
         for wave in [
             wave_definition(
@@ -2208,6 +2227,7 @@ impl ContentPack {
                     &[
                         "xp_multiplier",
                         "spawn_rate_multiplier",
+                        "map_hazard_rate_multiplier",
                         "pickup_radius_multiplier",
                         "damage_multiplier",
                         "heal",
@@ -2239,6 +2259,15 @@ impl ContentPack {
                             event.id
                         )),
                     }
+                }
+                if effect.effect_type == "map_hazard_rate_multiplier" {
+                    if effect.duration_seconds.is_none() {
+                        errors.push(format!(
+                            "event `{}` map_hazard_rate_multiplier effect is missing duration_seconds",
+                            event.id
+                        ));
+                    }
+                    validate_non_negative_finite("event.effect.value", effect.value, &mut errors);
                 }
                 if effect.effect_type == "spawn_hazard" {
                     validate_positive("event.effect.value", effect.value, &mut errors);

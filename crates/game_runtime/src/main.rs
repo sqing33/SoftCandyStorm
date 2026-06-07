@@ -3480,6 +3480,7 @@ fn format_runtime_event_hint(content: &ContentPack, event_id: &str) -> Option<St
 fn runtime_event_effect_label(effect_type: &str) -> String {
     match effect_type {
         "damage_multiplier" => "伤害",
+        "map_hazard_rate_multiplier" => "地图危险",
         "offer_upgrade" => "升级选择",
         "pickup_radius_multiplier" => "拾取",
         "route_echo_hazard" => "路线回声危险区",

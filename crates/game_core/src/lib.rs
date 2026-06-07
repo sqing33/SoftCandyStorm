@@ -872,6 +872,9 @@ impl GameCore {
 
     fn update_map_hazards(&mut self) {
         let mut hazard_specs = Vec::new();
+        let hazard_rate_multiplier = self
+            .active_event_multiplier("map_hazard_rate_multiplier")
+            .clamp(0.0, 4.0);
         for hazard in &mut self.map.hazards {
             if self.time_seconds + f32::EPSILON < hazard.start_second {
                 continue;
@@ -883,7 +886,12 @@ impl GameCore {
                 continue;
             }
             while hazard.next_spawn_second <= self.time_seconds && hazard_specs.len() < 16 {
-                hazard_specs.push(*hazard);
+                if hazard_rate_multiplier > 0.0 {
+                    let mut spec = *hazard;
+                    spec.count =
+                        ((spec.count as f32 * hazard_rate_multiplier).round() as u32).clamp(1, 8);
+                    hazard_specs.push(spec);
+                }
                 hazard.next_spawn_second += hazard.interval_seconds;
             }
         }
@@ -1054,6 +1062,7 @@ impl GameCore {
                 }
                 "xp_multiplier"
                 | "spawn_rate_multiplier"
+                | "map_hazard_rate_multiplier"
                 | "pickup_radius_multiplier"
                 | "damage_multiplier" => {
                     let Some(duration_seconds) = effect.duration_seconds else {
@@ -5665,7 +5674,8 @@ mod tests {
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
         assert!(content.events.contains_key("cracked-star-phase-breath"));
-        assert_eq!(content.object_count(), 75);
+        assert!(content.events.contains_key("soda-creek-boss-lull"));
+        assert_eq!(content.object_count(), 76);
         for map_id in content.maps.keys().cloned().collect::<Vec<_>>() {
             GameCore::reset_with_content(
                 RunConfig {
@@ -6952,6 +6962,62 @@ mod tests {
                 && effect.value > 1.0
                 && effect.remaining_seconds > 24.0
         }));
+    }
+
+    #[test]
+    fn content_event_can_suppress_map_hazard_spawns() {
+        let mut core = GameCore::reset(RunConfig {
+            map_id: "soda-creek".to_string(),
+            ..RunConfig::default()
+        });
+        let mut event = core
+            .content
+            .events
+            .get("rainbow-candy-rush")
+            .expect("base demo event should exist")
+            .clone();
+        event.id = "test-map-hazard-lull".to_string();
+        event.map_ids = vec!["soda-creek".to_string()];
+        event.trigger.start_second = Some(59.0);
+        event.trigger.end_second = Some(61.0);
+        event.trigger.chance = Some(1.0);
+        event.effects = vec![content::EventEffectDefinition {
+            effect_type: "map_hazard_rate_multiplier".to_string(),
+            value: 0.0,
+            duration_seconds: Some(5.0),
+            enemy_id: None,
+            radius: None,
+            slow_multiplier: None,
+            placement: None,
+            min_distance: None,
+            max_distance: None,
+            lane_width: None,
+            sample_interval_seconds: None,
+            history_seconds: None,
+            trigger_radius: None,
+            hazard_duration_seconds: None,
+            damage_per_second: None,
+        }];
+        core.content.events.clear();
+        core.content.events.insert(event.id.clone(), event);
+        core.time_seconds = 59.0;
+
+        let mut events = Vec::new();
+        core.update_content_events(0.1, &mut events);
+        assert_eq!(
+            core.active_event_multiplier("map_hazard_rate_multiplier"),
+            0.0
+        );
+
+        core.time_seconds = 60.0;
+        core.update_map_hazards();
+
+        assert!(core.hazards.is_empty());
+        assert!(core
+            .map
+            .hazards
+            .iter()
+            .all(|hazard| hazard.next_spawn_second > 60.0));
     }
 
     #[test]

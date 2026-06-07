@@ -56,6 +56,7 @@ ALLOWED_EVENT_TRIGGER_TYPES = {"time_window", "boss_defeat", "level_up", "random
 ALLOWED_EVENT_EFFECT_TYPES = {
     "xp_multiplier",
     "spawn_rate_multiplier",
+    "map_hazard_rate_multiplier",
     "pickup_radius_multiplier",
     "damage_multiplier",
     "heal",
@@ -636,6 +637,7 @@ def validate_event(
         if effect_type in {
             "xp_multiplier",
             "spawn_rate_multiplier",
+            "map_hazard_rate_multiplier",
             "pickup_radius_multiplier",
             "damage_multiplier",
         }:
