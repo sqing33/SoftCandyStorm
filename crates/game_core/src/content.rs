@@ -829,6 +829,37 @@ impl ContentPack {
                 "projectile_size",
                 0.08,
             ),
+            passive_add(
+                "jellybean-brooch",
+                "软豆胸针",
+                &["sustain", "beginner", "regen"],
+                "缓慢恢复生命，适合想多一点容错的守护员。",
+                "regen_per_second",
+                0.08,
+            ),
+            passive_add(
+                "sprinkle-drum",
+                "彩糖小鼓",
+                &["offense", "damage", "rhythm"],
+                "提升所有武器伤害，让稳定输出流更有节奏。",
+                "damage_multiplier",
+                0.045,
+            ),
+            passive_with_modifiers(
+                "taffy-trail-map",
+                "太妃路线图",
+                &["mobility", "pickup", "route"],
+                "小幅提升移动速度和拾取范围，适合边走位边收集糖晶。",
+                &[("pickup_radius", "add", 7.0), ("move_speed", "add", 2.5)],
+            ),
+            passive_multiply(
+                "wafer-focus-charm",
+                "威化专注符",
+                &["cooldown", "precision"],
+                "略微缩短武器冷却，提供比奶油发条更温和的持续输出提升。",
+                "cooldown_multiplier",
+                0.965,
+            ),
         ] {
             pack.passives.insert(passive.id.clone(), passive);
         }
@@ -970,6 +1001,91 @@ impl ContentPack {
                     "dash_seconds": 0.28,
                     "cooldown_seconds": 2.4,
                     "dash_speed_multiplier": 2.1
+                }),
+            ),
+            enemy_definition(
+                "jelly-ring-orbiter",
+                "果冻环游糖",
+                "jelly",
+                &["orbit", "flank", "jelly"],
+                24.0,
+                64.0,
+                3.6,
+                13.0,
+                4.0,
+                1.05,
+            )
+            .with_behavior(
+                "orbit_player",
+                serde_json::json!({
+                    "orbit_radius": 150,
+                    "orbit_speed": 1.25,
+                    "approach_weight": 0.35
+                }),
+            ),
+            enemy_definition(
+                "sprinkle-spitter",
+                "糖针喷喷",
+                "sprinkle",
+                &["ranged", "pressure", "sprinkle"],
+                16.0,
+                50.0,
+                2.8,
+                12.0,
+                4.0,
+                0.85,
+            )
+            .with_behavior(
+                "ranged_spit",
+                serde_json::json!({
+                    "range": 300,
+                    "windup_seconds": 0.55,
+                    "cooldown_seconds": 3.2,
+                    "projectile_count": 1,
+                    "projectile_radius": 18,
+                    "projectile_duration_seconds": 1.0,
+                    "damage_per_second": 2.0,
+                    "projectile_spread_radius": 28
+                }),
+            ),
+            enemy_definition(
+                "taffy-hopling",
+                "太妃跳跳",
+                "taffy",
+                &["jump", "tempo", "taffy"],
+                18.0,
+                68.0,
+                4.0,
+                12.0,
+                3.0,
+                1.15,
+            )
+            .with_behavior(
+                "jump",
+                serde_json::json!({
+                    "charge_seconds": 0.7,
+                    "jump_duration_seconds": 0.34,
+                    "cooldown_seconds": 2.7,
+                    "jump_speed_multiplier": 1.8
+                }),
+            ),
+            enemy_definition(
+                "wafer-shield-cookie",
+                "威化盾饼",
+                "wafer",
+                &["shielded", "blocker", "wafer"],
+                42.0,
+                42.0,
+                4.6,
+                17.0,
+                5.0,
+                1.2,
+            )
+            .with_behavior(
+                "shielded",
+                serde_json::json!({
+                    "front_damage_multiplier": 0.55,
+                    "rear_damage_multiplier": 1.35
                 }),
             ),
         ] {
@@ -2306,6 +2422,22 @@ fn passive_definition(
     mode: &str,
     value_per_level: f32,
 ) -> PassiveDefinition {
+    passive_with_modifiers(
+        id,
+        name,
+        tags,
+        description,
+        &[(stat, mode, value_per_level)],
+    )
+}
+
+fn passive_with_modifiers(
+    id: &str,
+    name: &str,
+    tags: &[&str],
+    description: &str,
+    modifiers: &[(&str, &str, f32)],
+) -> PassiveDefinition {
     PassiveDefinition {
         id: id.to_string(),
         name: name.to_string(),
@@ -2313,11 +2445,14 @@ fn passive_definition(
         rarity: "common".to_string(),
         tags: tags.iter().map(|tag| (*tag).to_string()).collect(),
         description: description.to_string(),
-        stat_modifiers: vec![StatModifierDefinition {
-            stat: stat.to_string(),
-            mode: mode.to_string(),
-            value_per_level,
-        }],
+        stat_modifiers: modifiers
+            .iter()
+            .map(|(stat, mode, value_per_level)| StatModifierDefinition {
+                stat: (*stat).to_string(),
+                mode: (*mode).to_string(),
+                value_per_level: *value_per_level,
+            })
+            .collect(),
         max_level: 5,
         visual_description: format!("{name}的可爱糖果风图标。"),
         sfx_description: "轻快糖果提示音。".to_string(),

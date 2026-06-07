@@ -13482,7 +13482,7 @@ mod tests {
                 .iter()
                 .filter(|id| content.passives.contains_key(*id))
                 .count(),
-            5
+            9
         );
         assert!(!progress.unlocks.weapons.contains("pudding-turret"));
         assert!(progress.unlocks.weapons.contains("soda-bubble-pop"));
@@ -15214,7 +15214,7 @@ mod tests {
         ));
         assert!(panel.contains("糖罐星修复 0/25 (0%)  下一片 糖霜草地：标准巡逻坚持 10 分钟"));
         assert!(panel.contains("解锁概览 角色"));
-        assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
+        assert!(panel.contains("可抽构筑池 武器 8  被动 9  进化配方 10"));
         assert!(panel.contains("构筑进阶 下一构筑 被动 星星勺子  排队待解锁"));
         assert!(panel.contains("地图 糖霜草地"));
         assert!(!panel.contains("地图 糖霜草地(frosting-grassland)"));
@@ -16432,7 +16432,7 @@ mod tests {
         assert!(panel.contains("开局武器选择 角色默认 汽水泡泡"));
         assert!(!panel.contains("开局武器选择 角色默认 汽水泡泡 (soda-bubble-pop)"));
         assert!(panel.contains("开局被动选择 无额外被动"));
-        assert!(panel.contains("可抽构筑池 武器 8  被动 5  进化配方 10"));
+        assert!(panel.contains("可抽构筑池 武器 8  被动 9  进化配方 10"));
         assert!(panel.contains("构筑池详情 默认武器"));
         assert!(panel.contains("默认被动"));
         assert!(panel.contains("下一构筑 被动 星星勺子  排队待解锁"));
@@ -16666,7 +16666,7 @@ mod tests {
         assert!(panel.contains("待解锁 已全部开放"));
         assert!(panel.contains("地图路线 已解锁 糖霜草地(新手/开阔), 汽水溪谷(机动/泡泡), 棉花云牧场(柔软/敌群), 焦糖工坊(地形危险/工坊), 果冻月台(路线/循环), 裂星糖罐(终章/阶段变化)"));
         assert!(panel.contains("下一地图 已全部开放"));
-        assert!(!panel.contains("还有"));
+        assert!(panel.contains("默认被动 大号糖罐、泡泡鞋、糖晶放大镜、+6 项"));
     }
 
     #[test]

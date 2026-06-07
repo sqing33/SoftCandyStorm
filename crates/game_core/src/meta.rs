@@ -13,12 +13,16 @@ const DEMO_DEFAULT_WEAPON_IDS: [&str; 8] = [
     "sour-plum-spray",
     "soda-bubble-pop",
 ];
-const DEMO_DEFAULT_PASSIVE_IDS: [&str; 5] = [
+const DEMO_DEFAULT_PASSIVE_IDS: [&str; 9] = [
     "big-candy-jar",
     "candy-crystal-lens",
     "frosting-gloves",
+    "jellybean-brooch",
     "nonstick-apron",
     "bubble-shoes",
+    "sprinkle-drum",
+    "taffy-trail-map",
+    "wafer-focus-charm",
 ];
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -866,7 +870,7 @@ mod tests {
         assert!(progress.unlocks.chapters.contains("frosting-grassland"));
         assert!(!progress.unlocks.chapters.contains("soda-creek"));
         assert_eq!(progress.unlocks.weapons.len(), 8);
-        assert_eq!(progress.unlocks.passives.len(), 5);
+        assert_eq!(progress.unlocks.passives.len(), 9);
         assert!(!progress.unlocks.weapons.contains("pudding-turret"));
         assert!(progress.unlocks.weapons.contains("soda-bubble-pop"));
         assert!(progress.unlocks.passives.contains("bubble-shoes"));

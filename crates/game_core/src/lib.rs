@@ -5655,7 +5655,7 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 66);
+        assert_eq!(content.object_count(), 74);
         for map_id in content.maps.keys().cloned().collect::<Vec<_>>() {
             GameCore::reset_with_content(
                 RunConfig {
