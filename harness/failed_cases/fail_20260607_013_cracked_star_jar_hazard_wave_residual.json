@@ -1,0 +1,15 @@
+{
+  "case_id": "fail_20260607_013",
+  "category": "balance",
+  "content_id": "cracked-star-jar-standard",
+  "seed": "74000..74002",
+  "bot": "coward,greedy,kite,zone-control,route",
+  "time_seconds": 240.0,
+  "symptom": "裂星糖罐缓和星糖裂隙减速/伤害，并下调 90-300 秒实体堆积后，3 seed / 240 秒小矩阵中 Tank 从 3/3 过稳修到 1/3 pass，BossHunter 从 0/3 修到 2/3 pass；但 Coward、ZoneControl、Route 仍 0/3，Greedy 2/3、Kite 3/3 过高。",
+  "root_cause": "本轮修复降低了终局地图的早中期不可避免压力，让 BossHunter 与 Tank 进入目标区间；但裂星糖罐仍存在策略分裂：路线型和区域控制策略在 230 秒附近被 Boss 窗口与裂隙残压压死，Greedy 与 Kite 则依赖拾取效率和机动性变得过稳。",
+  "fix": "后续应单独设计裂星糖罐的路线容错与高手压力，不要继续整体降低波次。优先方向是可读的安全带/风暴相位窗口、针对 Kite/Greedy 的非堆怪压力，以及不让 Route 被 210 秒后实体堆积再次压死。",
+  "validation": "已运行 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id cracked-star-jar --content-dir content/base_demo --report-dir /private/tmp/soft_candy/cracked_star_jar_hazard_wave_relief_matrix_74000_3seed_240s。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/cracked_star_jar_hazard_wave_relief_matrix_74000_3seed_240s"
+  ]
+}
