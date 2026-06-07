@@ -109,6 +109,11 @@ impl BotController {
             if avoidance.length_squared() > 0.0 {
                 return (route + avoidance * 0.20).normalized_or_zero() * 0.65;
             }
+        } else if snapshot.map.map_id == "cracked-star-jar" && snapshot.time_seconds >= 210.0 {
+            let avoidance = avoid_enemies(snapshot, 132.0, 8);
+            if avoidance.length_squared() > 0.0 {
+                return (route + avoidance * 0.18).normalized_or_zero() * 0.65;
+            }
         }
 
         route
@@ -204,6 +209,35 @@ mod tests {
 
         let mut pre_window = snapshot.clone();
         pre_window.time_seconds = 211.9;
+
+        let mut pre_bot = BotController::new(BotKind::Route, 2);
+        let mut boss_window_bot = BotController::new(BotKind::Route, 2);
+
+        assert!(pre_bot.next_action(&pre_window).movement.x > 0.0);
+        assert!(boss_window_bot.next_action(&snapshot).movement.x < 0.0);
+    }
+
+    #[test]
+    fn route_uses_cracked_star_boss_window_emergency_avoidance() {
+        let mut snapshot = empty_snapshot();
+        snapshot.map.map_id = "cracked-star-jar".to_string();
+        snapshot.time_seconds = 210.0;
+        snapshot.visible_enemies.push(game_core::EnemySnapshot {
+            entity_id: 99,
+            enemy_id: "cracked-star-jar-core".to_string(),
+            position: Vec2::new(20.0, 0.0),
+            velocity: Vec2::ZERO,
+            health: 1000.0,
+            max_health: 1000.0,
+            radius: 64.0,
+            threat: 8.0,
+            behavior: game_core::EnemyBehavior::Chase,
+            is_boss: true,
+            is_elite: false,
+        });
+
+        let mut pre_window = snapshot.clone();
+        pre_window.time_seconds = 209.9;
 
         let mut pre_bot = BotController::new(BotKind::Route, 2);
         let mut boss_window_bot = BotController::new(BotKind::Route, 2);
@@ -322,6 +356,40 @@ mod tests {
     }
 
     #[test]
+    fn tank_uses_lower_final_map_retreat_threshold() {
+        let mut snapshot = empty_snapshot();
+        snapshot.map.map_id = "cracked-star-jar".to_string();
+        snapshot.player.health = 35.0;
+        snapshot.visible_enemies.push(game_core::EnemySnapshot {
+            entity_id: 7,
+            enemy_id: "cracked-star-jar-core".to_string(),
+            position: Vec2::new(40.0, 0.0),
+            velocity: Vec2::ZERO,
+            health: 1000.0,
+            max_health: 1000.0,
+            radius: 64.0,
+            threat: 8.0,
+            behavior: game_core::EnemyBehavior::Chase,
+            is_boss: true,
+            is_elite: false,
+        });
+
+        let mut stable_snapshot = snapshot.clone();
+        stable_snapshot.player.health = 35.0;
+        let mut danger_snapshot = snapshot;
+        danger_snapshot.player.health = 25.0;
+
+        let mut stable_bot = BotController::new(BotKind::Tank, 3);
+        let mut danger_bot = BotController::new(BotKind::Tank, 3);
+
+        assert_eq!(
+            stable_bot.next_action(&stable_snapshot).movement,
+            Vec2::ZERO
+        );
+        assert!(danger_bot.next_action(&danger_snapshot).movement.x < 0.0);
+    }
+
+    #[test]
     fn zone_control_unlocks_basic_weapon_before_pickup_bias() {
         let mut snapshot = empty_snapshot();
         snapshot.build.weapons.push(game_core::BuildItemSnapshot {
@@ -403,6 +471,31 @@ mod tests {
         snapshot.upgrade_options[1].id = "mint-cyclone".to_string();
         snapshot.upgrade_options[1].tags = vec!["control".to_string()];
         assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+    }
+
+    #[test]
+    fn zone_control_uses_final_map_light_avoidance() {
+        let mut snapshot = empty_snapshot();
+        snapshot.map.map_id = "cracked-star-jar".to_string();
+        snapshot.visible_enemies.push(game_core::EnemySnapshot {
+            entity_id: 7,
+            enemy_id: "cracked-star-jar-core".to_string(),
+            position: Vec2::new(40.0, 0.0),
+            velocity: Vec2::ZERO,
+            health: 1000.0,
+            max_health: 1000.0,
+            radius: 64.0,
+            threat: 8.0,
+            behavior: game_core::EnemyBehavior::Chase,
+            is_boss: true,
+            is_elite: false,
+        });
+
+        let mut bot = BotController::new(BotKind::ZoneControl, 3);
+        let movement = bot.next_action(&snapshot).movement;
+
+        assert!(movement.x < 0.0);
+        assert!(movement.length() <= 0.35 + f32::EPSILON);
     }
 }
 
@@ -608,7 +701,7 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
 fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let health_ratio = snapshot.player.health / snapshot.player.max_health;
     let retreat_threshold = if snapshot.map.map_id == "cracked-star-jar" {
-        0.55
+        0.30
     } else {
         0.14
     };
@@ -620,7 +713,7 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     }
 
     let pickup_weight = if snapshot.map.map_id == "cracked-star-jar" {
-        0.45
+        0.25
     } else {
         0.11
     };
@@ -637,7 +730,7 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         } else if boss.boss_id == "soda-fountain-dragon" {
             (80.0, 119.0)
         } else if snapshot.map.map_id == "cracked-star-jar" {
-            (118.0, 155.0)
+            (126.0, 166.0)
         } else {
             (86.0, 124.0)
         };
@@ -686,6 +779,16 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
 }
 
 fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
+    if snapshot.map.map_id == "cracked-star-jar" {
+        let avoidance = avoid_enemies(snapshot, 70.0, 6);
+        if avoidance.length_squared() > 0.0 {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.03;
+            return (avoidance.normalized_or_zero() * 0.09 + pickup).normalized_or_zero() * 0.15;
+        }
+
+        return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.07;
+    }
+
     let avoidance = avoid_enemies(snapshot, 38.0, 4);
     if avoidance.length_squared() > 0.0 {
         return avoidance.normalized_or_zero() * 0.05;

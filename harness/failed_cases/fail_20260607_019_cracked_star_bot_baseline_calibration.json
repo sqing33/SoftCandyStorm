@@ -1,0 +1,23 @@
+{
+  "case_id": "fail_20260607_019",
+  "category": "balance",
+  "content_id": "cracked-star-jar",
+  "seed": "74000..74002",
+  "bot": "tank,boss-hunter,zone-control,route",
+  "time_seconds": 240.0,
+  "symptom": "裂星糖罐当前 3 seed / 240 秒小矩阵中，Idle、Random、Coward、Greedy、Kite 已在目标区间，但 TankBot 3/3 过稳，BossHunterBot 1/3 偏低，ZoneControlBot 0/3 和 RouteBot 0/3 偏硬。玩家可见风险是终章图对不同策略的读招窗口不一致：坦克路线过安全，贴 Boss、控制区和固定路线则在 210 秒后窗口过窄。",
+  "root_cause": "问题主要来自规则 Bot 在终章图上的基线标尺分裂，而不是单一内容数值。TankBot 的 cracked-star-jar 专用撤退阈值和拾取权重过高；BossHunterBot 的 Boss 保持距离略窄；ZoneControlBot 默认只做极慢避险，终章裂隙和 Boss 组合下转场不足；RouteBot 固定椭圆路线没有终章 Boss 窗口应急避险。",
+  "fix": "校准 cracked-star-jar 的 Bot 策略基线：降低 TankBot 终章撤退阈值与拾取权重；扩大 BossHunterBot 终章 Boss retreat/chase 距离；为 ZoneControlBot 添加轻量终章避险；为 RouteBot 添加 210 秒后的终章路线应急避险。新增单测覆盖 Tank 终章阈值、ZoneControl 轻避险、Route 终章应急避险。",
+  "validation": "已运行 cargo test -p bot_policies、cargo fmt --check，以及 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id cracked-star-jar --content-dir content/base_demo --report-dir /private/tmp/soft_candy/cracked_star_bot_baseline_v1_full_matrix_74000_3seed_240s。最终小矩阵中 9 个 Bot 均落在目标区间。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/cracked_star_current_after_soda_bot_fixes_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_tank_calibration_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_tank_calibration_probe_v2_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_bosshunter_spacing_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_zone_control_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_zone_control_probe_v2_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_zone_control_probe_v3_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_route_emergency_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/cracked_star_bot_baseline_v1_full_matrix_74000_3seed_240s"
+  ]
+}
