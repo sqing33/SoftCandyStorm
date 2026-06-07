@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260607_009",
+  "category": "content_gap",
+  "content_id": "content/base_demo",
+  "seed": "n/a",
+  "bot": "n/a",
+  "time_seconds": 0.0,
+  "symptom": "当前正式可玩内容包 content/base_demo 未达到 docs/12 Phase 4 名录数量目标：角色 5/5、武器 12/12 已满足，但被动只有 8/12，普通敌人只有 8/12。玩家可见风险是 Demo 内容密度和构筑/敌人变化低于文档承诺，尤其是被动池与普通敌人池仍偏窄。",
+  "root_cause": "docs/04 已记录 Phase 4 roster gap full pack 和 Demo wave/buildcraft 候选包，但这些包仍属于 generated/simulated candidate，缺少真人设计审查、人工试玩、final acceptance 和 accepted content lockfile 证据。根据项目红线，AI 生成候选不能直接复制到 content/base_demo，因此正式内容包仍保留 8 个被动和 8 个普通敌人的状态。",
+  "fix": "不能直接把 generated_candidates 或 simulated_candidates 中的 4 个被动、4 个普通敌人复制进正式内容。后续可选路线：一是补齐人工设计审查和试玩验收后再通过 accepted content 流程；二是由用户明确要求手工扩展正式内容后，逐项设计新被动和敌人，并按 Schema、静态预算、Bot 矩阵、Replay 回归和人工试玩门禁推进。AI 内容流水线当前按用户要求暂不继续。",
+  "validation": "已运行 python3 tools/validate_phase4_roster_targets.py content/base_demo --report /private/tmp/soft_candy/phase4_roster_current_report.json --markdown /private/tmp/soft_candy/phase4_roster_current_summary.md --allow-invalid。报告结论为 phase4_roster_targets_invalid，错误为 passives count 8 is below Phase 4 target 12 和 enemies count 8 is below Phase 4 target 12。该预检只证明名录覆盖缺口，不替代 Schema、Harness、Replay 或人工验收。",
+  "diagnostics": [
+    "docs/04_内容系统与素材库.md",
+    "docs/12_阶段路线图.md",
+    "tools/validate_phase4_roster_targets.py",
+    "content/base_demo/passives",
+    "content/base_demo/enemies",
+    "/private/tmp/soft_candy/phase4_roster_current_summary.md",
+    "/private/tmp/soft_candy/phase4_roster_current_report.json"
+  ]
+}
