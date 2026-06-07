@@ -1,0 +1,22 @@
+{
+  "case_id": "fail_20260607_020",
+  "category": "balance",
+  "content_id": "jelly-platform",
+  "seed": "74000..74002",
+  "bot": "random,coward,greedy,kite",
+  "time_seconds": 240.0,
+  "symptom": "果冻月台在当前 3 seed / 240 秒小矩阵中，RandomBot 1/3 高于随机基线目标，CowardBot、GreedyBot、KiteBot 均为 3/3 过稳。玩家可见风险是第二张图的跳板与拾取节奏对低技能和中技能策略过于宽容，导致章节压力曲线不像从糖霜草地进入下一张图。",
+  "root_cause": "先尝试提高果冻月台 90 秒后刷怪密度会把 TankBot、ZoneControlBot 和 RouteBot 一起打穿，说明问题不适合继续通过全局波次加压解决。核心原因是规则 Bot 在果冻月台上仍沿用泛用策略：Random 移动步幅过大，Greedy 和 Kite 对糖晶拾取过积极，Coward 的避险半径、敌人数观察和移动强度都像高技能策略。",
+  "fix": "保留果冻月台内容波次不变，校准规则 Bot 的地图专属基线：降低 RandomBot 在 jelly-platform 的移动倍率；降低 GreedyBot 和 KiteBot 的拾取权重，并限制 Kite 避险时的移动强度；收窄 CowardBot 的避险半径、安全拾取半径和可观察敌人数，同时降低避险与拾取移动强度。新增单测覆盖果冻月台 Random、Greedy、Coward、Kite 的专属行为。",
+  "validation": "已运行 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id jelly-platform --content-dir content/base_demo --report-dir /private/tmp/soft_candy/jelly_bot_baseline_probe_v6_74000_3seed_240s。最终小矩阵中 9 个 Bot 均落在目标区间：Random 0/3、Coward 1/3、Greedy 1/3、Kite 2/3、Tank 1/3、BossHunter 2/3、ZoneControl 1/3、Route 1/3。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/jelly_platform_current_after_bot_fixes_74000_3seed_240s",
+    "/private/tmp/soft_candy/jelly_spawn_pace_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/jelly_bot_baseline_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/jelly_bot_baseline_probe_v2_74000_3seed_240s",
+    "/private/tmp/soft_candy/jelly_bot_baseline_probe_v3_74000_3seed_240s",
+    "/private/tmp/soft_candy/jelly_bot_baseline_probe_v4_74000_3seed_240s",
+    "/private/tmp/soft_candy/jelly_bot_baseline_probe_v5_74000_3seed_240s",
+    "/private/tmp/soft_candy/jelly_bot_baseline_probe_v6_74000_3seed_240s"
+  ]
+}

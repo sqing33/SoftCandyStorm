@@ -74,7 +74,7 @@ impl BotController {
 
         let movement = match self.kind {
             BotKind::Idle => Vec2::ZERO,
-            BotKind::Random => self.random_movement(),
+            BotKind::Random => self.random_movement(snapshot),
             BotKind::Coward => coward_movement(snapshot),
             BotKind::Greedy => greedy_movement(snapshot),
             BotKind::Kite => kite_movement(snapshot),
@@ -90,9 +90,14 @@ impl BotController {
         }
     }
 
-    fn random_movement(&mut self) -> Vec2 {
+    fn random_movement(&mut self, snapshot: &RunSnapshot) -> Vec2 {
         let action = self.rng.range_usize(9);
-        discrete_direction(action)
+        let speed = if snapshot.map.map_id == "jelly-platform" {
+            0.72
+        } else {
+            1.0
+        };
+        discrete_direction(action) * speed
     }
 
     fn route_movement(&mut self, snapshot: &RunSnapshot) -> Vec2 {
@@ -159,6 +164,45 @@ mod tests {
         }
     }
 
+    fn jelly_snapshot() -> RunSnapshot {
+        let mut snapshot = empty_snapshot();
+        snapshot.map.map_id = "jelly-platform".to_string();
+        snapshot
+    }
+
+    fn chaser_enemy(entity_id: u64, position: Vec2, threat: f32) -> game_core::EnemySnapshot {
+        game_core::EnemySnapshot {
+            entity_id,
+            enemy_id: "test-jelly".to_string(),
+            position,
+            velocity: Vec2::ZERO,
+            health: 100.0,
+            max_health: 100.0,
+            radius: 24.0,
+            threat,
+            behavior: game_core::EnemyBehavior::Chase,
+            is_boss: false,
+            is_elite: false,
+        }
+    }
+
+    fn xp_pickup(entity_id: u64, position: Vec2) -> game_core::PickupSnapshot {
+        game_core::PickupSnapshot {
+            entity_id,
+            pickup_type: game_core::PickupType::Xp,
+            position,
+            value: 1.0,
+            radius: 8.0,
+        }
+    }
+
+    fn assert_close(left: f32, right: f32) {
+        assert!(
+            (left - right).abs() < 0.001,
+            "expected {left} to be close to {right}"
+        );
+    }
+
     #[test]
     fn idle_bot_stands_still() {
         let mut bot = BotController::new(BotKind::Idle, 1);
@@ -179,6 +223,70 @@ mod tests {
                 right.next_action(&snapshot).movement
             );
         }
+    }
+
+    #[test]
+    fn random_bot_uses_jelly_platform_speed_cap() {
+        let default_snapshot = empty_snapshot();
+        let jelly_snapshot = jelly_snapshot();
+        let mut default_bot = BotController::new(BotKind::Random, 7);
+        let mut jelly_bot = BotController::new(BotKind::Random, 7);
+
+        let mut found_non_zero_action = false;
+        for _ in 0..16 {
+            let default_movement = default_bot.next_action(&default_snapshot).movement;
+            let jelly_movement = jelly_bot.next_action(&jelly_snapshot).movement;
+            if default_movement.length_squared() > 0.0 {
+                assert_close(jelly_movement.x, default_movement.x * 0.72);
+                assert_close(jelly_movement.y, default_movement.y * 0.72);
+                found_non_zero_action = true;
+                break;
+            }
+        }
+
+        assert!(found_non_zero_action);
+    }
+
+    #[test]
+    fn greedy_uses_jelly_platform_pickup_weight() {
+        let mut default_snapshot = empty_snapshot();
+        default_snapshot
+            .visible_pickups
+            .push(xp_pickup(1, Vec2::new(100.0, 0.0)));
+
+        let mut jelly_snapshot = default_snapshot.clone();
+        jelly_snapshot.map.map_id = "jelly-platform".to_string();
+
+        assert_close(greedy_movement(&default_snapshot).x, 0.55);
+        assert_close(greedy_movement(&jelly_snapshot).x, 0.06);
+    }
+
+    #[test]
+    fn coward_uses_jelly_platform_weaker_avoidance() {
+        let mut default_snapshot = empty_snapshot();
+        default_snapshot
+            .visible_enemies
+            .push(chaser_enemy(1, Vec2::new(50.0, 0.0), 4.0));
+
+        let mut jelly_snapshot = default_snapshot.clone();
+        jelly_snapshot.map.map_id = "jelly-platform".to_string();
+
+        assert_close(coward_movement(&default_snapshot).x, -1.0);
+        assert_close(coward_movement(&jelly_snapshot).x, -0.16);
+    }
+
+    #[test]
+    fn kite_uses_jelly_platform_pickup_weight() {
+        let mut default_snapshot = empty_snapshot();
+        default_snapshot
+            .visible_pickups
+            .push(xp_pickup(1, Vec2::new(100.0, 0.0)));
+
+        let mut jelly_snapshot = default_snapshot.clone();
+        jelly_snapshot.map.map_id = "jelly-platform".to_string();
+
+        assert_close(kite_movement(&default_snapshot).x, 0.45);
+        assert_close(kite_movement(&jelly_snapshot).x, 0.12);
     }
 
     #[test]
@@ -649,10 +757,19 @@ fn weapon_level(snapshot: &RunSnapshot, weapon_id: &str) -> u32 {
 }
 
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
-    greedy_movement_with_avoidance(snapshot, 18.0)
+    let pickup_weight = if snapshot.map.map_id == "jelly-platform" {
+        0.06
+    } else {
+        0.55
+    };
+    greedy_movement_with_avoidance(snapshot, 18.0, pickup_weight)
 }
 
-fn greedy_movement_with_avoidance(snapshot: &RunSnapshot, avoidance_radius: f32) -> Vec2 {
+fn greedy_movement_with_avoidance(
+    snapshot: &RunSnapshot,
+    avoidance_radius: f32,
+    pickup_weight: f32,
+) -> Vec2 {
     if let Some(enemy) = snapshot.visible_enemies.first() {
         let away = snapshot.player.position - enemy.position;
         if away.length() < avoidance_radius {
@@ -660,20 +777,32 @@ fn greedy_movement_with_avoidance(snapshot: &RunSnapshot, avoidance_radius: f32)
         }
     }
 
-    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.55
+    best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * pickup_weight
 }
 
 fn coward_movement(snapshot: &RunSnapshot) -> Vec2 {
-    let avoidance = avoid_enemies(snapshot, 340.0, 14);
+    let is_jelly_platform = snapshot.map.map_id == "jelly-platform";
+    let avoidance_radius = if is_jelly_platform { 58.0 } else { 340.0 };
+    let safe_pickup_radius = if is_jelly_platform { 60.0 } else { 220.0 };
+    let nearest_enemy_pickup_radius = if is_jelly_platform { 60.0 } else { 210.0 };
+    let avoidance_limit = if is_jelly_platform { 6 } else { 14 };
+    let avoidance = avoid_enemies(snapshot, avoidance_radius, avoidance_limit);
     if avoidance.length_squared() > 0.0 {
-        return avoidance.normalized_or_zero();
+        let speed = if is_jelly_platform { 0.16 } else { 1.0 };
+        return avoidance.normalized_or_zero() * speed;
     }
 
-    safe_pickup_direction(snapshot, 220.0)
+    let movement = safe_pickup_direction(snapshot, safe_pickup_radius)
         .or_else(|| {
-            best_pickup_direction(snapshot).filter(|_| nearest_enemy_distance(snapshot) > 210.0)
+            best_pickup_direction(snapshot)
+                .filter(|_| nearest_enemy_distance(snapshot) > nearest_enemy_pickup_radius)
         })
-        .unwrap_or(Vec2::ZERO)
+        .unwrap_or(Vec2::ZERO);
+    if is_jelly_platform {
+        movement * 0.16
+    } else {
+        movement
+    }
 }
 
 fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
@@ -688,11 +817,22 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
     let pickup_direction = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
 
     if avoidance.length_squared() > 0.0 {
-        return (avoidance.normalized_or_zero() * 0.05 + pickup_direction).normalized_or_zero();
+        let speed = if snapshot.map.map_id == "jelly-platform" {
+            0.32
+        } else {
+            1.0
+        };
+        return (avoidance.normalized_or_zero() * 0.05 + pickup_direction).normalized_or_zero()
+            * speed;
     }
 
     if pickup_direction.length_squared() > 0.0 {
-        pickup_direction * 0.45
+        let pickup_weight = if snapshot.map.map_id == "jelly-platform" {
+            0.12
+        } else {
+            0.45
+        };
+        pickup_direction * pickup_weight
     } else {
         Vec2::new(1.0, 0.0)
     }
