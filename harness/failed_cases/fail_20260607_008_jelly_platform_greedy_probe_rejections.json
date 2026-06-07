@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260607_008",
+  "category": "balance",
+  "content_id": "content/base_demo:jelly-platform-standard",
+  "seed": "7001-7003",
+  "bot": "GreedyXpBot",
+  "time_seconds": 240.0,
+  "symptom": "果冻月台后续探针确认 GreedyXpBot 仍 3/3 跑满。当前基线中 GreedyXpBot 在 240 秒内保持低到中等承伤，等级 10-12，最大敌人数量仅 15-23，说明高拾取路线和基础彩虹糖弹清场仍能稳定覆盖 Boss 后压力。",
+  "root_cause": "两个窄范围探针都没有命中 GreedyXpBot 的主要优势来源。后段过载果冻弹跳带只提高了部分 Bot 的承伤，并把 CowardBot、TankBot、BossHunterBot 和 ZoneControlBot 拉出目标区间，但 GreedyXpBot 仍 3/3。210-300 秒敌池向 spicy-gummy 与 sour-gummy 倾斜也没有压低 GreedyXpBot，反而在强压版本中让 TankBot 和 ZoneControlBot 偏稳，说明该 Bot 的稳定性不只是后段路线风险不足，而是拾取效率、基础武器清场和升级选择共同形成的安全成长曲线。",
+  "fix": "不保留后段过载弹跳带探针，也不保留提高 spicy-gummy 权重的 210-300 秒敌池探针。后续不应继续只在果冻月台后段堆 hazard 或冲刺怪；应优先做更精确的诊断，例如记录 GreedyXpBot 的拾取路径、升级选择、敌群距离和伤害来源，或设计只影响果冻月台高拾取路线的局部机制。仍不建议削弱全局 star-spoon、candy-crystal-lens、rainbow-candy-shot 或基础经济。",
+  "validation": "当前验证已运行：cargo run -q -p game_harness -- matrix --seed-start 7001 --seeds 3 --map-id jelly-platform --seconds 240 --tick-rate 30 --bots all --content-dir content/base_demo --report-dir /private/tmp/soft_candy/jelly_current_matrix_after_frosting。被拒绝探针：/private/tmp/soft_candy/jelly_probe_late_overload_lane_001，结果 GreedyXpBot 3/3 repair、CowardBot 0/3 repair、TankBot 2/3 repair、BossHunterBot 1/3 repair、ZoneControlBot 2/3 repair；/private/tmp/soft_candy/jelly_probe_late_spicy_weight_002，结果 GreedyXpBot 3/3 repair、TankBot 3/3 repair、ZoneControlBot 2/3 repair。两个探针均已撤回，仓库未保留内容改动。",
+  "diagnostics": [
+    "content/base_demo/maps/jelly-platform.json",
+    "content/base_demo/waves/jelly-platform-standard.json",
+    "harness/failed_cases/fail_20260607_005_jelly_platform_greedy_overstability.json",
+    "/private/tmp/soft_candy/jelly_current_matrix_after_frosting",
+    "/private/tmp/soft_candy/jelly_probe_late_overload_lane_001",
+    "/private/tmp/soft_candy/jelly_probe_late_spicy_weight_002"
+  ]
+}
