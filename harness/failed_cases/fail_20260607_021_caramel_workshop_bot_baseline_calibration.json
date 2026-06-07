@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260607_021",
+  "category": "balance",
+  "content_id": "caramel-workshop",
+  "seed": "74000..74002",
+  "bot": "greedy,tank,boss-hunter,zone-control,route",
+  "time_seconds": 240.0,
+  "symptom": "焦糖工坊当前 3 seed / 240 秒小矩阵中，GreedyBot 2/3 略高于中技能目标上限；TankBot、BossHunterBot、RouteBot 均为 0/3，主要在 215-227 秒 Boss 入场窗口后死亡。玩家可见风险是焦糖危险区和熔炉 Boss 同时压缩路线时，部分规则策略完全不会读地面危险，导致工坊后段像突然断崖。",
+  "root_cause": "先尝试增加焦糖 Boss 入场退潮事件，结果没有救回 TankBot 和 RouteBot，还把 CowardBot、ZoneControlBot 的标尺带偏，说明问题不是单纯内容窗口过窄。核心原因是 bot_policies 没有使用 RunSnapshot.active_hazards：Tank、BossHunter、ZoneControl 和 Route 在焦糖工坊会继续按敌人或固定路线移动，忽略 Boss 技能和地图焦糖溢流；GreedyBot 在该图又过度追糖晶，放大了幸存率。",
+  "fix": "保留焦糖工坊内容文件不变，校准规则 Bot 的焦糖图专属基线：新增危险区避让向量；降低 GreedyBot 在 caramel-workshop 的拾取权重；为 TankBot 添加焦糖危险区撤离和更早撤退阈值；为 BossHunterBot 增加焦糖熔炉专属距离、敌人避让半径和危险区避让；为 ZoneControlBot 添加适中的焦糖危险区撤离；为 RouteBot 添加 210 秒后焦糖 Boss 窗口的敌人、危险区和 Boss 近身应急避险。新增单测覆盖这些焦糖专属行为。",
+  "validation": "已运行 cargo test -p bot_policies，以及 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id caramel-workshop --content-dir content/base_demo --report-dir /private/tmp/soft_candy/caramel_policy_hazard_probe_v4_74000_3seed_240s。最终小矩阵中 9 个 Bot 均落在目标区间：Random 0/3、Coward 1/3、Greedy 1/3、Kite 2/3、Tank 1/3、BossHunter 2/3、ZoneControl 1/3、Route 1/3。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/caramel_workshop_current_after_bot_fixes_74000_3seed_240s",
+    "/private/tmp/soft_candy/caramel_boss_lull_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/caramel_policy_hazard_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/caramel_policy_hazard_probe_v2_74000_3seed_240s",
+    "/private/tmp/soft_candy/caramel_policy_hazard_probe_v3_74000_3seed_240s",
+    "/private/tmp/soft_candy/caramel_policy_hazard_probe_v4_74000_3seed_240s"
+  ]
+}

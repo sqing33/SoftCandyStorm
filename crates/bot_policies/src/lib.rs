@@ -114,6 +114,32 @@ impl BotController {
             if avoidance.length_squared() > 0.0 {
                 return (route + avoidance * 0.20).normalized_or_zero() * 0.65;
             }
+        } else if snapshot.map.map_id == "caramel-workshop" && snapshot.time_seconds >= 210.0 {
+            let enemy_avoidance = avoid_enemies(snapshot, 128.0, 8);
+            let hazard_avoidance = avoid_hazards(snapshot, 96.0, 6);
+            let boss_avoidance = snapshot
+                .boss
+                .as_ref()
+                .map(|boss| {
+                    let away = snapshot.player.position - boss.position;
+                    if away.length() < 168.0 {
+                        away.normalized_or_zero()
+                    } else {
+                        Vec2::ZERO
+                    }
+                })
+                .unwrap_or(Vec2::ZERO);
+            if enemy_avoidance.length_squared() > 0.0
+                || hazard_avoidance.length_squared() > 0.0
+                || boss_avoidance.length_squared() > 0.0
+            {
+                return (route
+                    + enemy_avoidance * 0.24
+                    + hazard_avoidance * 0.38
+                    + boss_avoidance * 0.34)
+                    .normalized_or_zero()
+                    * 0.65;
+            }
         } else if snapshot.map.map_id == "cracked-star-jar" && snapshot.time_seconds >= 210.0 {
             let avoidance = avoid_enemies(snapshot, 132.0, 8);
             if avoidance.length_squared() > 0.0 {
@@ -170,6 +196,12 @@ mod tests {
         snapshot
     }
 
+    fn caramel_snapshot() -> RunSnapshot {
+        let mut snapshot = empty_snapshot();
+        snapshot.map.map_id = "caramel-workshop".to_string();
+        snapshot
+    }
+
     fn chaser_enemy(entity_id: u64, position: Vec2, threat: f32) -> game_core::EnemySnapshot {
         game_core::EnemySnapshot {
             entity_id,
@@ -183,6 +215,21 @@ mod tests {
             behavior: game_core::EnemyBehavior::Chase,
             is_boss: false,
             is_elite: false,
+        }
+    }
+
+    fn active_hazard(
+        position: Vec2,
+        radius: f32,
+        slow_multiplier: f32,
+        damage_per_second: f32,
+    ) -> game_core::HazardSnapshot {
+        game_core::HazardSnapshot {
+            position,
+            radius,
+            slow_multiplier,
+            damage_per_second,
+            remaining_seconds: 3.0,
         }
     }
 
@@ -248,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn greedy_uses_jelly_platform_pickup_weight() {
+    fn greedy_uses_map_specific_pickup_weight() {
         let mut default_snapshot = empty_snapshot();
         default_snapshot
             .visible_pickups
@@ -256,9 +303,12 @@ mod tests {
 
         let mut jelly_snapshot = default_snapshot.clone();
         jelly_snapshot.map.map_id = "jelly-platform".to_string();
+        let mut caramel_snapshot = default_snapshot.clone();
+        caramel_snapshot.map.map_id = "caramel-workshop".to_string();
 
         assert_close(greedy_movement(&default_snapshot).x, 0.55);
         assert_close(greedy_movement(&jelly_snapshot).x, 0.06);
+        assert_close(greedy_movement(&caramel_snapshot).x, 0.42);
     }
 
     #[test]
@@ -290,6 +340,54 @@ mod tests {
     }
 
     #[test]
+    fn tank_uses_caramel_hazard_avoidance() {
+        let mut snapshot = caramel_snapshot();
+        snapshot
+            .active_hazards
+            .push(active_hazard(Vec2::new(40.0, 0.0), 64.0, 0.52, 13.0));
+
+        let mut bot = BotController::new(BotKind::Tank, 3);
+        let movement = bot.next_action(&snapshot).movement;
+
+        assert_close(movement.x, -0.48);
+        assert!(movement.length() <= 0.50);
+    }
+
+    #[test]
+    fn boss_hunter_uses_caramel_furnace_spacing() {
+        let mut caramel_boss = caramel_snapshot();
+        caramel_boss.boss = Some(game_core::BossSnapshot {
+            entity_id: 99,
+            boss_id: "caramel-furnace".to_string(),
+            health: 1000.0,
+            max_health: 1000.0,
+            position: Vec2::new(110.0, 0.0),
+        });
+        let mut generic_boss = caramel_boss.clone();
+        generic_boss.boss.as_mut().unwrap().boss_id = "runaway-sugar-mixer".to_string();
+
+        let mut caramel_bot = BotController::new(BotKind::BossHunter, 5);
+        let mut generic_bot = BotController::new(BotKind::BossHunter, 5);
+
+        assert!(caramel_bot.next_action(&caramel_boss).movement.x < 0.0);
+        assert_eq!(generic_bot.next_action(&generic_boss).movement, Vec2::ZERO);
+    }
+
+    #[test]
+    fn zone_control_uses_caramel_hazard_avoidance() {
+        let mut snapshot = caramel_snapshot();
+        snapshot
+            .active_hazards
+            .push(active_hazard(Vec2::new(60.0, 0.0), 64.0, 0.52, 13.0));
+
+        let mut bot = BotController::new(BotKind::ZoneControl, 4);
+        let movement = bot.next_action(&snapshot).movement;
+
+        assert_close(movement.x, -0.31);
+        assert!(movement.length() <= 0.32);
+    }
+
+    #[test]
     fn route_bot_outputs_normalized_action() {
         let mut bot = BotController::new(BotKind::Route, 2);
         let action = bot.next_action(&empty_snapshot());
@@ -317,6 +415,34 @@ mod tests {
 
         let mut pre_window = snapshot.clone();
         pre_window.time_seconds = 211.9;
+
+        let mut pre_bot = BotController::new(BotKind::Route, 2);
+        let mut boss_window_bot = BotController::new(BotKind::Route, 2);
+
+        assert!(pre_bot.next_action(&pre_window).movement.x > 0.0);
+        assert!(boss_window_bot.next_action(&snapshot).movement.x < 0.0);
+    }
+
+    #[test]
+    fn route_uses_caramel_boss_window_emergency_avoidance() {
+        let mut snapshot = caramel_snapshot();
+        snapshot.time_seconds = 210.0;
+        snapshot
+            .visible_enemies
+            .push(chaser_enemy(1, Vec2::new(20.0, 0.0), 8.0));
+        snapshot
+            .active_hazards
+            .push(active_hazard(Vec2::new(20.0, 0.0), 64.0, 0.52, 13.0));
+        snapshot.boss = Some(game_core::BossSnapshot {
+            entity_id: 99,
+            boss_id: "caramel-furnace".to_string(),
+            health: 1000.0,
+            max_health: 1000.0,
+            position: Vec2::new(40.0, 0.0),
+        });
+
+        let mut pre_window = snapshot.clone();
+        pre_window.time_seconds = 209.9;
 
         let mut pre_bot = BotController::new(BotKind::Route, 2);
         let mut boss_window_bot = BotController::new(BotKind::Route, 2);
@@ -759,6 +885,8 @@ fn weapon_level(snapshot: &RunSnapshot, weapon_id: &str) -> u32 {
 fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
     let pickup_weight = if snapshot.map.map_id == "jelly-platform" {
         0.06
+    } else if snapshot.map.map_id == "caramel-workshop" {
+        0.42
     } else {
         0.55
     };
@@ -842,18 +970,37 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
     let health_ratio = snapshot.player.health / snapshot.player.max_health;
     let retreat_threshold = if snapshot.map.map_id == "cracked-star-jar" {
         0.30
+    } else if snapshot.map.map_id == "caramel-workshop" {
+        0.24
     } else {
         0.14
     };
     if health_ratio < retreat_threshold {
-        let avoidance = avoid_enemies(snapshot, 120.0, 10);
+        let enemy_avoidance = avoid_enemies(snapshot, 120.0, 10);
+        let hazard_avoidance = if snapshot.map.map_id == "caramel-workshop" {
+            avoid_hazards(snapshot, 96.0, 6) * 1.35
+        } else {
+            Vec2::ZERO
+        };
+        let avoidance = enemy_avoidance + hazard_avoidance;
         if avoidance.length_squared() > 0.0 {
             return avoidance.normalized_or_zero();
         }
     }
 
+    if snapshot.map.map_id == "caramel-workshop" {
+        let hazard_avoidance = avoid_hazards(snapshot, 88.0, 6);
+        if hazard_avoidance.length_squared() > 0.0 {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.02;
+            return (hazard_avoidance.normalized_or_zero() * 0.22 + pickup).normalized_or_zero()
+                * 0.48;
+        }
+    }
+
     let pickup_weight = if snapshot.map.map_id == "cracked-star-jar" {
         0.25
+    } else if snapshot.map.map_id == "caramel-workshop" {
+        0.09
     } else {
         0.11
     };
@@ -869,6 +1016,8 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
             (30.0, 34.0)
         } else if boss.boss_id == "soda-fountain-dragon" {
             (80.0, 119.0)
+        } else if boss.boss_id == "caramel-furnace" {
+            (120.0, 174.0)
         } else if snapshot.map.map_id == "cracked-star-jar" {
             (126.0, 166.0)
         } else {
@@ -883,6 +1032,8 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         };
         let avoidance_radius = if snapshot.map.map_id == "cracked-star-jar" {
             95.0
+        } else if boss.boss_id == "caramel-furnace" {
+            104.0
         } else if snapshot.map.map_id == "frosting-grassland" {
             10.0
         } else {
@@ -890,13 +1041,22 @@ fn boss_hunter_movement(snapshot: &RunSnapshot) -> Vec2 {
         };
         let avoidance_weight = if snapshot.map.map_id == "cracked-star-jar" {
             0.34
+        } else if boss.boss_id == "caramel-furnace" {
+            0.25
         } else if snapshot.map.map_id == "frosting-grassland" {
             0.0
         } else {
             0.15
         };
         let avoidance = avoid_enemies(snapshot, avoidance_radius, 6);
-        return (spacing * 1.15 + avoidance.normalized_or_zero() * avoidance_weight)
+        let hazard_avoidance = if boss.boss_id == "caramel-furnace" {
+            avoid_hazards(snapshot, 116.0, 6).normalized_or_zero() * 0.48
+        } else {
+            Vec2::ZERO
+        };
+        return (spacing * 1.15
+            + avoidance.normalized_or_zero() * avoidance_weight
+            + hazard_avoidance)
             .normalized_or_zero();
     }
 
@@ -924,6 +1084,17 @@ fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
         if avoidance.length_squared() > 0.0 {
             let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.03;
             return (avoidance.normalized_or_zero() * 0.09 + pickup).normalized_or_zero() * 0.15;
+        }
+
+        return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.07;
+    }
+
+    if snapshot.map.map_id == "caramel-workshop" {
+        let enemy_avoidance = avoid_enemies(snapshot, 54.0, 5).normalized_or_zero() * 0.09;
+        let hazard_avoidance = avoid_hazards(snapshot, 108.0, 6).normalized_or_zero() * 0.27;
+        if enemy_avoidance.length_squared() > 0.0 || hazard_avoidance.length_squared() > 0.0 {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.04;
+            return (enemy_avoidance + hazard_avoidance + pickup).normalized_or_zero() * 0.31;
         }
 
         return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.07;
@@ -969,6 +1140,23 @@ fn avoid_enemies(snapshot: &RunSnapshot, radius: f32, limit: usize) -> Vec2 {
         let distance = away.length();
         if distance < radius {
             let weight = ((radius - distance) / radius).max(0.05) * enemy.threat.max(1.0);
+            avoidance += away.normalized_or_zero() * weight;
+        }
+    }
+    avoidance
+}
+
+fn avoid_hazards(snapshot: &RunSnapshot, padding_radius: f32, limit: usize) -> Vec2 {
+    let mut avoidance = Vec2::ZERO;
+    for hazard in snapshot.active_hazards.iter().take(limit) {
+        let away = snapshot.player.position - hazard.position;
+        let distance = away.length();
+        let danger_radius = hazard.radius + padding_radius;
+        if distance < danger_radius {
+            let damage_pressure = hazard.damage_per_second.max(0.0) / 12.0;
+            let slow_pressure = (1.0 - hazard.slow_multiplier).max(0.0) * 1.2;
+            let severity = (damage_pressure + slow_pressure).max(0.45);
+            let weight = ((danger_radius - distance) / danger_radius).max(0.05) * severity;
             avoidance += away.normalized_or_zero() * weight;
         }
     }
