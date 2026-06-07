@@ -1,0 +1,15 @@
+{
+  "case_id": "fail_20260607_012",
+  "category": "balance",
+  "content_id": "soda-creek-standard",
+  "seed": "74000..74002",
+  "bot": "kite,boss-hunter,zone-control,route",
+  "time_seconds": 240.0,
+  "symptom": "汽水溪谷 210 秒 Boss 窗口降低分裂泡泡权重、放慢该段出生间隔并缓和泡泡水流减速后，Greedy 从 0/3 修到 1/3 且 Tank 维持 1/3，但 Kite 仍 3/3 胜，BossHunter、ZoneControl、Route 仍 0/3，主要死亡集中在 216-226 秒。",
+  "root_cause": "本轮修复降低了 Boss 窗口实体堆积，对贪资源与坦克策略有效；但汽水龙入场后的玩家附近泡泡弹幕、地图水流和路线型 Bot 的固定移动仍叠加成短窗口爆发。Kite 能靠高机动与拾取效率绕开压力，BossHunter、ZoneControl、Route 则仍会在 Boss 初期被持续接触或泡泡压力压死。",
+  "fix": "后续应单独处理汽水龙入场读招与路线容错，优先探索 Boss 首次玩家附近弹幕的预警/延迟、Route 可读安全带或汽水溪谷专属 Boss 窗口事件；不要单纯继续降低波次，否则 Greedy、Tank 会重新过稳。",
+  "validation": "已运行 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id soda-creek --content-dir content/base_demo --report-dir /private/tmp/soft_candy/soda_creek_hazard_relief_matrix_74000_3seed_240s。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/soda_creek_hazard_relief_matrix_74000_3seed_240s"
+  ]
+}

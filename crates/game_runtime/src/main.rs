@@ -16453,7 +16453,7 @@ mod tests {
         assert!(panel.contains("开局提醒 章节构筑状态 部分可调整：缺 泡泡鞋，另缺 汽水喷泉 需先解锁；首领 汽水喷泉龙 约 210s 到场"));
         assert!(panel.contains("地图说明"));
         assert!(panel.contains("地图标签"));
-        assert!(panel.contains("地图机制 泡泡水流 每36s x2 5s 减速x0.78"));
+        assert!(panel.contains("地图机制 泡泡水流 每36s x2 5s 减速x0.84"));
         assert!(panel.contains(
             "敌群预览 蹦蹦软糖 / 汽水泡泡 / 酸酸软糖 / 辣味软糖  首领 210s 汽水喷泉龙  压力 前期低 中期中 后期高"
         ));
