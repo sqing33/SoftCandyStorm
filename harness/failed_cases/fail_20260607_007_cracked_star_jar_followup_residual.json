@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260607_007",
+  "category": "balance",
+  "content_id": "content/base_demo:cracked-star-jar-standard",
+  "seed": "7001-7003",
+  "bot": "GreedyXpBot, TankBot, BossHunterBot, ZoneControlBot",
+  "time_seconds": 240.0,
+  "symptom": "裂星糖罐在后续 240 秒复查中仍有分层残余：KiteBot 2/3 和 RouteBot 1/3 处于目标区间，但 GreedyXpBot 2/3 偏稳；TankBot 0/3、BossHunterBot 1/3、ZoneControlBot 0/3 偏硬。玩家可见表现是高拾取路线能较安全地滚出等级 11-12，而站桩、贴首领和区域控制路线在 210 秒首领初见后仍容易被裂隙、Boss 风暴和普通怪组合压死。",
+  "root_cause": "当前裂星糖罐的失败并不是单纯的 210 秒首领初见过硬。一次 210-225 秒学习窗口探针降低了初见普通怪压力，但没有修复 GreedyXpBot 偏稳，反而让 KiteBot 变为 3/3 偏松，并把原本 1/3 pass 的 RouteBot 拉成 0/3 repair。说明这张终章图需要更细的局部压力分配：既要给 TankBot、BossHunterBot 和 ZoneControlBot 处理 Boss 初见的短空档，又要保留对高效拾取和高机动风筝路线的中后段约束。",
+  "fix": "不保留 210-225 秒整体降压探针，也不修改全局经济、防御或武器数值。后续修复应做裂星糖罐专项：优先分析 TankBot 82-178 秒早中段死亡与 210 秒后失败是否属于同一原因；再考虑把压力拆成 Boss 初见可读空档、230 秒后高拾取路线干扰、以及风暴裂隙位置/频率微调，而不是简单降低 210-300 秒整段波次。",
+  "validation": "当前验证已运行：cargo run -q -p game_harness -- matrix --seed-start 7001 --seeds 3 --map-id cracked-star-jar --seconds 240 --tick-rate 30 --bots all --content-dir content/base_demo --report-dir /private/tmp/soft_candy/cracked_current_matrix_after_frosting。当前矩阵结果：IdleBot 0/3 pass；RandomBot 0/3 pass；CowardBot 1/3 pass；GreedyXpBot 2/3 repair；KiteBot 2/3 pass；TankBot 0/3 repair；BossHunterBot 1/3 repair；ZoneControlBot 0/3 repair；RouteBot 1/3 pass。被拒绝探针：/private/tmp/soft_candy/cracked_probe_intro_window_001，结果为 KiteBot 3/3 repair、RouteBot 0/3 repair，不能推进。",
+  "diagnostics": [
+    "content/base_demo/waves/cracked-star-jar-standard.json",
+    "content/base_demo/bosses/cracked-star-jar-core.json",
+    "content/base_demo/maps/cracked-star-jar.json",
+    "harness/failed_cases/fail_20260607_004_cracked_star_jar_boss_intro_pressure.json",
+    "commit 271e0b16 balance(content): 调整裂星糖罐首领初见压力"
+  ]
+}
