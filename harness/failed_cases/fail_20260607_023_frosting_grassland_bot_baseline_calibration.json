@@ -1,0 +1,19 @@
+{
+  "case_id": "fail_20260607_023",
+  "category": "balance",
+  "content_id": "frosting-grassland",
+  "seed": "74000..74002",
+  "bot": "coward,greedy,kite,tank",
+  "time_seconds": 240.0,
+  "symptom": "糖霜草地当前 3 seed / 240 秒小矩阵中，CowardBot 2/3 高于低技能目标，GreedyBot 3/3 高于中技能目标，KiteBot 3/3 高于高技能目标，TankBot 2/3 略高于中技能目标。玩家可见风险是新手图的规则 Bot 技能梯度被压平：低技能和中技能策略过早学会稳定成长线，导致糖霜草地不能作为后续地图难度的清晰基准。",
+  "root_cause": "问题主要来自规则 Bot 在糖霜草地上的移动和 build 选择过于成熟。GreedyBot、KiteBot 和 TankBot 的拾取倾向让它们稳定滚雪球；CowardBot 在新手图上既能保持安全距离，又会连续拿到较优主武器强化。单纯降低移动或拾取速度会让部分 Bot 走位更保守，反而提高生存率，因此需要同时校准移动权重和低/中技能 Bot 的糖霜草地升级偏好。",
+  "fix": "校准 frosting-grassland 的 Bot 策略基线：降低 GreedyBot 在糖霜草地的拾取权重；降低 KiteBot 的糖霜草地拾取权重；降低 TankBot 的糖霜草地拾取权重；为 CowardBot 设置糖霜草地专属的较弱避让和拾取参数；为 CowardBot 与 GreedyBot 增加糖霜草地学习型升级偏好，优先选择辅助、经济或机动项，延迟连续直升主武器。新增单测覆盖糖霜草地拾取权重、低技能避让速度和学习型升级选择。",
+  "validation": "已运行 cargo test -p bot_policies，以及 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id frosting-grassland --content-dir content/base_demo --report-dir /private/tmp/soft_candy/frosting_policy_baseline_probe_v4_74000_3seed_240s。最终小矩阵中 9 个 Bot 均落在目标区间：Idle 0/3、Random 0/3、Coward 1/3、Greedy 1/3、Kite 2/3、Tank 1/3、BossHunter 2/3、ZoneControl 1/3、Route 1/3。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/frosting_policy_baseline_current_74000_3seed_240s",
+    "/private/tmp/soft_candy/frosting_policy_baseline_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/frosting_policy_baseline_probe_v2_74000_3seed_240s",
+    "/private/tmp/soft_candy/frosting_policy_baseline_probe_v3_74000_3seed_240s",
+    "/private/tmp/soft_candy/frosting_policy_baseline_probe_v4_74000_3seed_240s"
+  ]
+}

@@ -318,11 +318,14 @@ mod tests {
         caramel_snapshot.map.map_id = "caramel-workshop".to_string();
         let mut cotton_snapshot = default_snapshot.clone();
         cotton_snapshot.map.map_id = "cotton-cloud-pasture".to_string();
+        let mut soda_snapshot = default_snapshot.clone();
+        soda_snapshot.map.map_id = "soda-creek".to_string();
 
-        assert_close(greedy_movement(&default_snapshot).x, 0.55);
+        assert_close(greedy_movement(&default_snapshot).x, 0.30);
         assert_close(greedy_movement(&jelly_snapshot).x, 0.06);
         assert_close(greedy_movement(&caramel_snapshot).x, 0.42);
         assert_close(greedy_movement(&cotton_snapshot).x, 0.36);
+        assert_close(greedy_movement(&soda_snapshot).x, 0.55);
     }
 
     #[test]
@@ -334,9 +337,12 @@ mod tests {
 
         let mut jelly_snapshot = default_snapshot.clone();
         jelly_snapshot.map.map_id = "jelly-platform".to_string();
+        let mut soda_snapshot = default_snapshot.clone();
+        soda_snapshot.map.map_id = "soda-creek".to_string();
 
-        assert_close(coward_movement(&default_snapshot).x, -1.0);
+        assert_close(coward_movement(&default_snapshot).x, -0.72);
         assert_close(coward_movement(&jelly_snapshot).x, -0.16);
+        assert_close(coward_movement(&soda_snapshot).x, -1.0);
     }
 
     #[test]
@@ -348,9 +354,12 @@ mod tests {
 
         let mut jelly_snapshot = default_snapshot.clone();
         jelly_snapshot.map.map_id = "jelly-platform".to_string();
+        let mut soda_snapshot = default_snapshot.clone();
+        soda_snapshot.map.map_id = "soda-creek".to_string();
 
-        assert_close(kite_movement(&default_snapshot).x, 0.45);
+        assert_close(kite_movement(&default_snapshot).x, 0.35);
         assert_close(kite_movement(&jelly_snapshot).x, 0.12);
+        assert_close(kite_movement(&soda_snapshot).x, 0.45);
     }
 
     #[test]
@@ -371,6 +380,16 @@ mod tests {
             .push(xp_pickup(1, Vec2::new(100.0, 0.0)));
 
         assert_close(tank_movement(&snapshot).x, 0.04);
+    }
+
+    #[test]
+    fn tank_uses_frosting_pickup_weight() {
+        let mut snapshot = empty_snapshot();
+        snapshot
+            .visible_pickups
+            .push(xp_pickup(1, Vec2::new(100.0, 0.0)));
+
+        assert_close(tank_movement(&snapshot).x, 0.07);
     }
 
     #[test]
@@ -779,6 +798,62 @@ mod tests {
     }
 
     #[test]
+    fn frosting_coward_uses_learning_upgrade_bias() {
+        let mut snapshot = empty_snapshot();
+        snapshot.upgrade_options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-2".to_string(),
+                name: "彩虹糖弹 Lv2".to_string(),
+                tags: vec!["projectile".to_string()],
+                description: "提升彩虹糖弹。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "mint-cyclone".to_string(),
+                name: "薄荷旋风".to_string(),
+                tags: vec!["control".to_string()],
+                description: "薄荷风围绕守护员旋转。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "big-candy-jar".to_string(),
+                name: "大号糖罐".to_string(),
+                tags: vec!["defense".to_string(), "health".to_string()],
+                description: "提升最大生命。".to_string(),
+            },
+        ];
+
+        let mut bot = BotController::new(BotKind::Coward, 8);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(1));
+    }
+
+    #[test]
+    fn frosting_greedy_delays_weapon_level_upgrade() {
+        let mut snapshot = empty_snapshot();
+        snapshot.upgrade_options = vec![
+            game_core::UpgradeOptionSnapshot {
+                id: "rainbow-candy-shot-level-2".to_string(),
+                name: "彩虹糖弹 Lv2".to_string(),
+                tags: vec!["projectile".to_string()],
+                description: "提升彩虹糖弹。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "caramel-sticky-ground".to_string(),
+                name: "焦糖黏地".to_string(),
+                tags: vec!["slow".to_string(), "zone".to_string()],
+                description: "在地面留下焦糖区域。".to_string(),
+            },
+            game_core::UpgradeOptionSnapshot {
+                id: "frosting-gloves".to_string(),
+                name: "糖霜手套".to_string(),
+                tags: vec!["projectile".to_string(), "size".to_string()],
+                description: "增加投射物大小。".to_string(),
+            },
+        ];
+
+        let mut bot = BotController::new(BotKind::Greedy, 9);
+        assert_eq!(bot.next_action(&snapshot).upgrade_choice, Some(2));
+    }
+
+    #[test]
     fn zone_control_uses_final_map_light_avoidance() {
         let mut snapshot = empty_snapshot();
         snapshot.map.map_id = "cracked-star-jar".to_string();
@@ -839,6 +914,12 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
         }
     }
 
+    if snapshot.map.map_id == "frosting-grassland" {
+        if let Some(index) = frosting_grassland_learning_upgrade_choice(kind, snapshot) {
+            return index;
+        }
+    }
+
     for priority in upgrade_priorities(kind) {
         if let Some(index) = find_option(snapshot, &[*priority]) {
             return index;
@@ -846,6 +927,45 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
     }
 
     fallback_upgrade_choice(kind, snapshot.upgrade_options.len())
+}
+
+fn frosting_grassland_learning_upgrade_choice(
+    kind: BotKind,
+    snapshot: &RunSnapshot,
+) -> Option<usize> {
+    let priorities = match kind {
+        BotKind::Coward => &[
+            "jellybean-brooch",
+            "taffy-trail-map",
+            "wafer-focus-charm",
+            "frosting-gloves",
+            "sour-tuner",
+            "bubble-shoes",
+            "mint-cyclone",
+            "marshmallow-shield",
+        ][..],
+        BotKind::Greedy => &[
+            "frosting-gloves",
+            "taffy-trail-map",
+            "jellybean-brooch",
+            "sour-tuner",
+            "bubble-shoes",
+            "star-spoon",
+            "candy-crystal-lens",
+        ][..],
+        _ => return None,
+    };
+
+    for priority in priorities {
+        if let Some(index) = find_option(snapshot, &[*priority]) {
+            return Some(index);
+        }
+    }
+
+    snapshot
+        .upgrade_options
+        .iter()
+        .position(|option| !option.id.contains("-level-"))
 }
 
 fn defense_threshold(kind: BotKind) -> f32 {
@@ -960,6 +1080,8 @@ fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
         0.42
     } else if snapshot.map.map_id == "cotton-cloud-pasture" {
         0.36
+    } else if snapshot.map.map_id == "frosting-grassland" {
+        0.30
     } else {
         0.55
     };
@@ -984,13 +1106,44 @@ fn greedy_movement_with_avoidance(
 fn coward_movement(snapshot: &RunSnapshot) -> Vec2 {
     let is_jelly_platform = snapshot.map.map_id == "jelly-platform";
     let is_cotton_cloud = snapshot.map.map_id == "cotton-cloud-pasture";
-    let avoidance_radius = if is_jelly_platform { 58.0 } else { 340.0 };
-    let safe_pickup_radius = if is_jelly_platform { 60.0 } else { 220.0 };
-    let nearest_enemy_pickup_radius = if is_jelly_platform { 60.0 } else { 210.0 };
-    let avoidance_limit = if is_jelly_platform { 6 } else { 14 };
+    let is_frosting_grassland = snapshot.map.map_id == "frosting-grassland";
+    let avoidance_radius = if is_jelly_platform {
+        58.0
+    } else if is_frosting_grassland {
+        280.0
+    } else {
+        340.0
+    };
+    let safe_pickup_radius = if is_jelly_platform {
+        60.0
+    } else if is_frosting_grassland {
+        150.0
+    } else {
+        220.0
+    };
+    let nearest_enemy_pickup_radius = if is_jelly_platform {
+        60.0
+    } else if is_frosting_grassland {
+        150.0
+    } else {
+        210.0
+    };
+    let avoidance_limit = if is_jelly_platform {
+        6
+    } else if is_frosting_grassland {
+        10
+    } else {
+        14
+    };
     let avoidance = avoid_enemies(snapshot, avoidance_radius, avoidance_limit);
     if avoidance.length_squared() > 0.0 {
-        let speed = if is_jelly_platform { 0.16 } else { 1.0 };
+        let speed = if is_jelly_platform {
+            0.16
+        } else if is_frosting_grassland {
+            0.72
+        } else {
+            1.0
+        };
         return avoidance.normalized_or_zero() * speed;
     }
 
@@ -1009,6 +1162,8 @@ fn coward_movement(snapshot: &RunSnapshot) -> Vec2 {
         .unwrap_or(Vec2::ZERO);
     if is_jelly_platform {
         movement * 0.16
+    } else if is_frosting_grassland {
+        movement * 0.52
     } else {
         movement
     }
@@ -1038,6 +1193,8 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
     if pickup_direction.length_squared() > 0.0 {
         let pickup_weight = if snapshot.map.map_id == "jelly-platform" {
             0.12
+        } else if snapshot.map.map_id == "frosting-grassland" {
+            0.35
         } else {
             0.45
         };
@@ -1086,6 +1243,8 @@ fn tank_movement(snapshot: &RunSnapshot) -> Vec2 {
         0.09
     } else if snapshot.map.map_id == "cotton-cloud-pasture" {
         0.04
+    } else if snapshot.map.map_id == "frosting-grassland" {
+        0.07
     } else {
         0.11
     };
