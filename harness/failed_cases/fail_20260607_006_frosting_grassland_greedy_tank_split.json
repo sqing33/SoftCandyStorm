@@ -1,0 +1,18 @@
+{
+  "case_id": "fail_20260607_006",
+  "category": "balance",
+  "content_id": "content/base_demo:frosting-grassland-standard",
+  "seed": "7001-7003",
+  "bot": "GreedyXpBot, KiteBot, TankBot",
+  "time_seconds": 240.0,
+  "symptom": "糖霜草地 240 秒矩阵修复后，CowardBot、BossHunterBot、ZoneControlBot 和 RouteBot 从明显偏硬回到可接受区间，但 GreedyXpBot 与 KiteBot 变为 3/3 跑满，TankBot 仍 0/3 未通过。玩家可见表现是会移动和会拾取的策略已经能稳定滚出成长，而偏站桩或硬扛路线仍会在中后段被糖霜草地的接触压力压死。",
+  "root_cause": "本次修复降低了 90-300 秒的高压敌人密度，并下调失控搅糖机器的接触伤害与碰撞半径，能缓解中段不可避免伤害；但地图仍缺少只约束高效拾取路线的局部风险，也缺少让 TankBot 这种低机动策略获得短暂喘息的可读窗口。尝试提高 big-candy-jar 和 nonstick-apron 等全局防御被动没有修复 TankBot，并会扩大其它地图回归风险，因此不保留。",
+  "fix": "已提交阶段性修复：降低 runaway-sugar-mixer 接触伤害和半径；放慢 frosting-grassland-standard 在 90-210 秒与 210-300 秒的刷怪间隔，降低 max_alive，并减少 sour-gummy、sticky-bear-gummy、sandwich-cookie-creep 的中段权重。后续修复应优先围绕糖霜草地局部节奏做窄范围调整，例如中后段短窗口压力、地图事件位置、Boss 出场前后的可读空档，避免继续用全局防御或经济被动硬调。",
+  "validation": "当前验证已运行：python3 tools/validate_content_schema_contract.py content/base_demo --schema-manifest content/schemas/manifest.json，cargo run -q -p game_harness -- validate-content --content-dir content/base_demo，cargo run -q -p game_harness -- matrix --seed-start 7001 --seeds 3 --map-id frosting-grassland --seconds 240 --tick-rate 30 --bots all --content-dir content/base_demo，cargo fmt --check，cargo test -p game_core，cargo test -p game_runtime。修复矩阵结果：IdleBot 0/3 pass；RandomBot 0/3 pass；CowardBot 1/3 pass；GreedyXpBot 3/3 repair；KiteBot 3/3 repair；TankBot 0/3 repair；BossHunterBot 2/3 pass；ZoneControlBot 1/3 pass；RouteBot 1/3 pass。",
+  "diagnostics": [
+    "content/base_demo/bosses/runaway-sugar-mixer.json",
+    "content/base_demo/waves/frosting-grassland-standard.json",
+    "crates/game_core/src/content.rs",
+    "commit 991b5ad0 balance(content): 调整糖霜草地中段压力"
+  ]
+}
