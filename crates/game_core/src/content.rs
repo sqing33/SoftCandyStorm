@@ -1468,6 +1468,25 @@ impl ContentPack {
         ] {
             pack.events.insert(event.id.clone(), event);
         }
+        let mut cracked_phase_breath = event_definition(
+            "cracked-star-phase-breath",
+            "裂星相位呼吸",
+            "rare",
+            &["event", "map-specific", "boss-window", "precision-pressure"],
+            "裂星糖罐核心苏醒时，风暴短暂收束普通怪潮，同时喷出少量糖针考验走位。",
+            206.0,
+            214.0,
+            1.0,
+            vec![
+                event_effect("spawn_rate_multiplier", 0.86, Some(24.0)),
+                spawn_enemy_event_effect("sprinkle-spitter", 2.0),
+            ],
+            "破裂糖罐中心呼出一圈星糖光带，周围糖晶被短暂吸亮，几枚彩色糖针从裂缝弹出。",
+            "低柔风暴吸气声、星糖铃响和两声轻快糖针 pop。",
+        );
+        cracked_phase_breath.map_ids = vec!["cracked-star-jar".to_string()];
+        pack.events
+            .insert(cracked_phase_breath.id.clone(), cracked_phase_breath);
 
         for wave in [
             wave_definition(
@@ -2130,6 +2149,14 @@ impl ContentPack {
                 },
                 &mut errors,
             );
+            for map_id in &event.map_ids {
+                if !self.maps.contains_key(map_id) {
+                    errors.push(format!(
+                        "event `{}` references missing map `{map_id}`",
+                        event.id
+                    ));
+                }
+            }
             validate_allowed(
                 "event.trigger.type",
                 &event.trigger.trigger_type,
@@ -2829,6 +2856,7 @@ fn event_definition(
         version: 1,
         rarity: rarity.to_string(),
         tags: tags.iter().map(|tag| (*tag).to_string()).collect(),
+        map_ids: Vec::new(),
         description: description.to_string(),
         trigger: EventTriggerDefinition {
             trigger_type: "time_window".to_string(),
@@ -3882,6 +3910,8 @@ pub struct EventDefinition {
     pub version: u32,
     pub rarity: String,
     pub tags: Vec<String>,
+    #[serde(default)]
+    pub map_ids: Vec<String>,
     pub description: String,
     pub trigger: EventTriggerDefinition,
     pub effects: Vec<EventEffectDefinition>,

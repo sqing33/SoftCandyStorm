@@ -1,0 +1,15 @@
+{
+  "case_id": "fail_20260607_014",
+  "category": "balance",
+  "content_id": "cracked-star-phase-breath",
+  "seed": "74000..74002",
+  "bot": "tank,boss-hunter,zone-control,route",
+  "time_seconds": 240.0,
+  "symptom": "裂星相位呼吸事件通过地图限定触发，在 3 seed / 240 秒小矩阵中把 Coward、Greedy、Kite 拉回目标区间；但 Tank 与 BossHunter 变为 3/3 过稳，ZoneControl 与 Route 仍 0/3。",
+  "root_cause": "206-214 秒触发的普通怪潮收束降低了 Boss 入场窗口的实体压力，对 Coward、Greedy、Kite 有正向修复；但该收束也让防御和 Boss 优先策略更容易稳定穿过 210 秒窗口。ZoneControl 与 Route 的问题不是单次窗口压力，而是路线/区域策略在 230 秒附近缺少足够输出或转场容错。",
+  "fix": "后续应保留地图限定事件能力，但单独补裂星糖罐的路线/区域机制：例如更明确的相位安全带、区域控制可利用的可读窗口，或针对 Tank/BossHunter 的后续非堆怪压力。不要把本轮 smoke 误读为裂星糖罐整体通过。",
+  "validation": "已运行 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id cracked-star-jar --content-dir content/base_demo --report-dir /private/tmp/soft_candy/cracked_star_phase_breath_v4_matrix_74000_3seed_240s。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/cracked_star_phase_breath_v4_matrix_74000_3seed_240s"
+  ]
+}

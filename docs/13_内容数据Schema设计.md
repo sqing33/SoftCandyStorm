@@ -497,6 +497,7 @@ python3 tools/validate_accepted_content_lockfile.py \
   "version": 1,
   "rarity": "rare",
   "tags": ["event", "risk-reward", "xp"],
+  "map_ids": [],
   "description": "短时间内糖晶掉落增加，但敌人生成也会加快。",
   "trigger": {
     "type": "time_window",
@@ -521,6 +522,8 @@ python3 tools/validate_accepted_content_lockfile.py \
 }
 ```
 
+`map_ids` 可省略或为空，表示全局事件；填写地图 id 列表时，事件只会在对应地图的局内进入触发判定。
+
 ## Schema 校验规则
 
 P0 错误，必须拒绝：
@@ -534,6 +537,7 @@ P0 错误，必须拒绝：
 - 生命、冷却、速度、半径为负
 - 波次结束时间小于开始时间
 - 波次地图、敌人池或 Boss 事件引用不存在
+- 事件 `map_ids` 引用不存在的地图
 - 进化需求引用不存在、替换武器不一致，或需求等级超过武器 / 被动最大等级
 - 地图生成距离最小值大于最大值
 - Boss 阶段阈值不按血量递减

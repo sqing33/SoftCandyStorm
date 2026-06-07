@@ -1018,6 +1018,15 @@ impl GameCore {
     }
 
     fn content_event_window_is_open(&self, event: &EventDefinition) -> bool {
+        if !event.map_ids.is_empty()
+            && !event
+                .map_ids
+                .iter()
+                .any(|map_id| map_id == &self.config.map_id)
+        {
+            return false;
+        }
+
         match event.trigger.trigger_type.as_str() {
             "time_window" => {
                 let start_second = event.trigger.start_second.unwrap_or(0.0);
@@ -5655,7 +5664,8 @@ mod tests {
             .expect("base_demo content should load from disk");
         assert!(content.evolutions.contains_key("rainbow-candy-meteor"));
         assert!(content.events.contains_key("rainbow-candy-rush"));
-        assert_eq!(content.object_count(), 74);
+        assert!(content.events.contains_key("cracked-star-phase-breath"));
+        assert_eq!(content.object_count(), 75);
         for map_id in content.maps.keys().cloned().collect::<Vec<_>>() {
             GameCore::reset_with_content(
                 RunConfig {
@@ -6942,6 +6952,47 @@ mod tests {
                 && effect.value > 1.0
                 && effect.remaining_seconds > 24.0
         }));
+    }
+
+    #[test]
+    fn map_scoped_content_event_only_triggers_on_matching_map() {
+        let mut event = GameCore::reset(RunConfig::default())
+            .content
+            .events
+            .get("rainbow-candy-rush")
+            .expect("base demo event should exist")
+            .clone();
+        event.id = "test-map-scoped-event".to_string();
+        event.map_ids = vec!["soda-creek".to_string()];
+        event.trigger.start_second = Some(0.0);
+        event.trigger.end_second = Some(10.0);
+        event.trigger.chance = Some(1.0);
+        event.effects = Vec::new();
+
+        let mut frosting_core = GameCore::reset(RunConfig::default());
+        frosting_core.content.events.clear();
+        frosting_core
+            .content
+            .events
+            .insert(event.id.clone(), event.clone());
+        let mut frosting_events = Vec::new();
+        frosting_core.update_content_events(0.1, &mut frosting_events);
+        assert!(frosting_events.is_empty());
+        assert!(!frosting_core
+            .evaluated_content_events
+            .contains("test-map-scoped-event"));
+
+        let mut soda_core = GameCore::reset(RunConfig {
+            map_id: "soda-creek".to_string(),
+            ..RunConfig::default()
+        });
+        soda_core.content.events.clear();
+        soda_core.content.events.insert(event.id.clone(), event);
+        let mut soda_events = Vec::new();
+        soda_core.update_content_events(0.1, &mut soda_events);
+        assert!(soda_events.iter().any(
+            |event| matches!(event, GameEvent::ContentEventTriggered { event_id } if event_id == "test-map-scoped-event")
+        ));
     }
 
     #[test]
