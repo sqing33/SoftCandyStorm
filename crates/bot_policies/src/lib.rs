@@ -105,7 +105,9 @@ impl BotController {
         let radius_x = snapshot.map.width * 0.28;
         let radius_y = snapshot.map.height * 0.24;
         let route_speed = if snapshot.map.map_id == "cotton-cloud-pasture" {
-            0.58
+            0.579
+        } else if snapshot.map.map_id == "caramel-workshop" {
+            0.82
         } else {
             0.65
         };
@@ -113,7 +115,11 @@ impl BotController {
             self.route_angle.cos() * radius_x,
             self.route_angle.sin() * radius_y,
         );
-        let route = (target - snapshot.player.position).normalized_or_zero() * route_speed;
+        let mut route = (target - snapshot.player.position).normalized_or_zero() * route_speed;
+        if snapshot.map.map_id == "caramel-workshop" {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.06;
+            route = (route + pickup).normalized_or_zero() * route_speed;
+        }
         if snapshot.map.map_id == "soda-creek" && snapshot.time_seconds >= 205.0 {
             let avoidance = avoid_enemies(snapshot, 168.0, 8);
             if avoidance.length_squared() > 0.0 {
@@ -124,29 +130,42 @@ impl BotController {
             if avoidance.length_squared() > 0.0 {
                 return (route + avoidance * 0.10).normalized_or_zero() * route_speed;
             }
-        } else if snapshot.map.map_id == "caramel-workshop" && snapshot.time_seconds >= 210.0 {
-            let enemy_avoidance = avoid_enemies(snapshot, 128.0, 8);
-            let hazard_avoidance = avoid_hazards(snapshot, 96.0, 6);
-            let boss_avoidance = snapshot
-                .boss
-                .as_ref()
-                .map(|boss| {
-                    let away = snapshot.player.position - boss.position;
-                    if away.length() < 168.0 {
-                        away.normalized_or_zero()
-                    } else {
-                        Vec2::ZERO
-                    }
-                })
-                .unwrap_or(Vec2::ZERO);
+        } else if snapshot.map.map_id == "caramel-workshop" && snapshot.time_seconds >= 90.0 {
+            let in_boss_window = snapshot.time_seconds >= 205.0;
+            let enemy_avoidance =
+                avoid_enemies(snapshot, if in_boss_window { 168.0 } else { 112.0 }, 8);
+            let hazard_avoidance =
+                avoid_hazards(snapshot, if in_boss_window { 128.0 } else { 84.0 }, 6);
+            let boss_avoidance = if in_boss_window {
+                snapshot
+                    .boss
+                    .as_ref()
+                    .map(|boss| {
+                        let away = snapshot.player.position - boss.position;
+                        if away.length() < 220.0 {
+                            away.normalized_or_zero()
+                        } else {
+                            Vec2::ZERO
+                        }
+                    })
+                    .unwrap_or(Vec2::ZERO)
+            } else {
+                Vec2::ZERO
+            };
             if enemy_avoidance.length_squared() > 0.0
                 || hazard_avoidance.length_squared() > 0.0
                 || boss_avoidance.length_squared() > 0.0
             {
-                return (route
-                    + enemy_avoidance * 0.24
-                    + hazard_avoidance * 0.38
-                    + boss_avoidance * 0.34)
+                if in_boss_window {
+                    return (route * 0.28
+                        + enemy_avoidance.normalized_or_zero() * 0.36
+                        + hazard_avoidance.normalized_or_zero() * 0.72
+                        + boss_avoidance * 0.78)
+                        .normalized_or_zero()
+                        * route_speed;
+                }
+
+                return (route + enemy_avoidance * 0.14 + hazard_avoidance * 0.24)
                     .normalized_or_zero()
                     * route_speed;
             }
@@ -335,7 +354,7 @@ mod tests {
         assert_close(greedy_movement(&default_snapshot).x, 0.30);
         assert_close(greedy_movement(&jelly_snapshot).x, 0.12);
         assert_close(greedy_movement(&caramel_snapshot).x, 0.42);
-        assert_close(greedy_movement(&cotton_snapshot).x, 0.36);
+        assert_close(greedy_movement(&cotton_snapshot).x, 0.16);
         assert_close(greedy_movement(&soda_snapshot).x, 0.28);
     }
 
@@ -371,6 +390,9 @@ mod tests {
         assert_close(kite_movement(&default_snapshot).x, 0.35);
         assert_close(kite_movement(&jelly_snapshot).x, 0.12);
         assert_close(kite_movement(&soda_snapshot).x, 0.45);
+        let mut cotton_snapshot = default_snapshot.clone();
+        cotton_snapshot.map.map_id = "cotton-cloud-pasture".to_string();
+        assert_close(kite_movement(&cotton_snapshot).x, 0.45);
     }
 
     #[test]
@@ -477,8 +499,8 @@ mod tests {
         let mut bot = BotController::new(BotKind::ZoneControl, 4);
         let movement = bot.next_action(&snapshot).movement;
 
-        assert_close(movement.x, -0.31);
-        assert!(movement.length() <= 0.32);
+        assert_close(movement.x, -0.36);
+        assert!(movement.length() <= 0.36);
     }
 
     #[test]
@@ -492,7 +514,20 @@ mod tests {
         let movement = bot.next_action(&snapshot).movement;
 
         assert!(movement.x < 0.0);
-        assert!(movement.length() <= 0.55 + f32::EPSILON);
+        assert!(movement.length() <= 0.58 + f32::EPSILON);
+    }
+
+    #[test]
+    fn zone_control_uses_cotton_cloud_low_pickup_weight() {
+        let mut snapshot = cotton_snapshot();
+        snapshot
+            .visible_pickups
+            .push(xp_pickup(1, Vec2::new(100.0, 0.0)));
+
+        let mut bot = BotController::new(BotKind::ZoneControl, 4);
+        let movement = bot.next_action(&snapshot).movement;
+
+        assert_close(movement.x, 0.035);
     }
 
     #[test]
@@ -506,7 +541,7 @@ mod tests {
     fn route_uses_cotton_cloud_speed_cap() {
         let mut bot = BotController::new(BotKind::Route, 2);
         let action = bot.next_action(&cotton_snapshot());
-        assert_close(action.movement.length(), 0.58);
+        assert_close(action.movement.length(), 0.579);
     }
 
     #[test]
@@ -557,7 +592,7 @@ mod tests {
         });
 
         let mut pre_window = snapshot.clone();
-        pre_window.time_seconds = 209.9;
+        pre_window.time_seconds = 89.9;
 
         let mut pre_bot = BotController::new(BotKind::Route, 2);
         let mut boss_window_bot = BotController::new(BotKind::Route, 2);
@@ -953,6 +988,18 @@ fn upgrade_choice_for_bot(kind: BotKind, snapshot: &RunSnapshot, rng: &mut Polic
         }
     }
 
+    if snapshot.map.map_id == "cotton-cloud-pasture" {
+        if let Some(index) = cotton_cloud_learning_upgrade_choice(kind, snapshot) {
+            return index;
+        }
+    }
+
+    if snapshot.map.map_id == "caramel-workshop" {
+        if let Some(index) = caramel_workshop_learning_upgrade_choice(kind, snapshot) {
+            return index;
+        }
+    }
+
     if kind == BotKind::ZoneControl && weapon_level(snapshot, "rainbow-candy-shot") < 3 {
         if let Some(index) = find_option(snapshot, &["rainbow-candy-shot"]) {
             return index;
@@ -1031,6 +1078,40 @@ fn frosting_grassland_learning_upgrade_choice(
         .position(|option| !option.id.contains("-level-"))
 }
 
+fn cotton_cloud_learning_upgrade_choice(kind: BotKind, snapshot: &RunSnapshot) -> Option<usize> {
+    if kind != BotKind::Kite {
+        return None;
+    }
+
+    if weapon_level(snapshot, "sour-plum-spray") == 0 {
+        if let Some(index) = find_option(snapshot, &["sour-plum-spray"]) {
+            return Some(index);
+        }
+    }
+
+    if weapon_level(snapshot, "rainbow-candy-shot") < 2 {
+        if let Some(index) = find_option(snapshot, &["rainbow-candy-shot"]) {
+            return Some(index);
+        }
+    }
+
+    for priority in [
+        "bubble-shoes",
+        "star-spoon",
+        "candy-crystal-lens",
+        "nonstick-apron",
+        "big-candy-jar",
+        "cream-clockwork",
+        "sour-tuner",
+    ] {
+        if let Some(index) = find_option(snapshot, &[priority]) {
+            return Some(index);
+        }
+    }
+
+    None
+}
+
 fn jelly_platform_learning_upgrade_choice(kind: BotKind, snapshot: &RunSnapshot) -> Option<usize> {
     let priorities = match kind {
         BotKind::Route => &[
@@ -1038,6 +1119,98 @@ fn jelly_platform_learning_upgrade_choice(kind: BotKind, snapshot: &RunSnapshot)
             "soda-bubble-pop",
             "cream-clockwork",
             "sour-tuner",
+            "star-spoon",
+        ][..],
+        _ => return None,
+    };
+
+    for priority in priorities {
+        if let Some(index) = find_option(snapshot, &[*priority]) {
+            return Some(index);
+        }
+    }
+
+    None
+}
+
+fn caramel_workshop_learning_upgrade_choice(
+    kind: BotKind,
+    snapshot: &RunSnapshot,
+) -> Option<usize> {
+    if kind == BotKind::Route && snapshot.time_seconds >= 150.0 {
+        if let Some(index) = find_option(
+            snapshot,
+            &["big-candy-jar", "nonstick-apron", "marshmallow-shield"],
+        ) {
+            return Some(index);
+        }
+    }
+
+    if kind == BotKind::Kite && snapshot.time_seconds >= 190.0 {
+        if let Some(index) = find_option(
+            snapshot,
+            &["marshmallow-shield", "big-candy-jar", "nonstick-apron"],
+        ) {
+            return Some(index);
+        }
+    }
+
+    if kind == BotKind::Kite && snapshot.time_seconds >= 140.0 {
+        if let Some(index) = find_option(snapshot, &["caramel-sticky-ground"]) {
+            return Some(index);
+        }
+    }
+
+    if kind == BotKind::Route && weapon_level(snapshot, "sour-plum-spray") >= 2 {
+        for priority in [
+            "bubble-shoes",
+            "soda-bubble-pop",
+            "rainbow-candy-shot",
+            "caramel-sticky-ground",
+            "mint-cyclone",
+            "big-candy-jar",
+            "star-spoon",
+        ] {
+            if let Some(index) = find_option(snapshot, &[priority]) {
+                return Some(index);
+            }
+        }
+    }
+
+    let priorities = match kind {
+        BotKind::Greedy => &[
+            "sour-plum-spray",
+            "bubble-shoes",
+            "soda-bubble-pop",
+            "mint-cyclone",
+            "rainbow-candy-shot",
+            "caramel-sticky-ground",
+            "cream-clockwork",
+            "big-candy-jar",
+            "star-spoon",
+        ][..],
+        BotKind::Kite => &[
+            "bubble-shoes",
+            "sour-plum-spray",
+            "mint-cyclone",
+            "soda-bubble-pop",
+            "cream-clockwork",
+            "big-candy-jar",
+        ][..],
+        BotKind::ZoneControl => &[
+            "caramel-sticky-ground",
+            "sour-plum-spray",
+            "bubble-shoes",
+            "mint-cyclone",
+        ][..],
+        BotKind::Route => &[
+            "sour-plum-spray",
+            "bubble-shoes",
+            "soda-bubble-pop",
+            "caramel-sticky-ground",
+            "mint-cyclone",
+            "rainbow-candy-shot",
+            "big-candy-jar",
             "star-spoon",
         ][..],
         _ => return None,
@@ -1209,7 +1382,7 @@ fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
     } else if snapshot.map.map_id == "caramel-workshop" {
         0.42
     } else if snapshot.map.map_id == "cotton-cloud-pasture" {
-        0.36
+        0.16
     } else if snapshot.map.map_id == "frosting-grassland" {
         0.30
     } else if snapshot.map.map_id == "soda-creek" {
@@ -1221,6 +1394,8 @@ fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
         74.0
     } else if snapshot.map.map_id == "jelly-platform" {
         44.0
+    } else if snapshot.map.map_id == "caramel-workshop" {
+        70.0
     } else {
         18.0
     };
@@ -1230,6 +1405,42 @@ fn greedy_movement(snapshot: &RunSnapshot) -> Vec2 {
         if avoidance.length_squared() > 0.0 {
             let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.08;
             return (avoidance.normalized_or_zero() * 0.34 + pickup).normalized_or_zero() * 0.62;
+        }
+    } else if snapshot.map.map_id == "caramel-workshop" && snapshot.time_seconds >= 90.0 {
+        let in_boss_window = snapshot.time_seconds >= 205.0;
+        let enemy_avoidance =
+            avoid_enemies(snapshot, if in_boss_window { 156.0 } else { 118.0 }, 8)
+                .normalized_or_zero()
+                * if in_boss_window { 0.34 } else { 0.22 };
+        let hazard_avoidance =
+            avoid_hazards(snapshot, if in_boss_window { 124.0 } else { 108.0 }, 6)
+                .normalized_or_zero()
+                * if in_boss_window { 0.46 } else { 0.32 };
+        let boss_avoidance = if in_boss_window {
+            snapshot
+                .boss
+                .as_ref()
+                .map(|boss| {
+                    let away = snapshot.player.position - boss.position;
+                    if away.length() < 224.0 {
+                        away.normalized_or_zero() * 0.55
+                    } else {
+                        Vec2::ZERO
+                    }
+                })
+                .unwrap_or(Vec2::ZERO)
+        } else {
+            Vec2::ZERO
+        };
+        if enemy_avoidance.length_squared() > 0.0
+            || hazard_avoidance.length_squared() > 0.0
+            || boss_avoidance.length_squared() > 0.0
+        {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.13;
+            let speed = if in_boss_window { 0.84 } else { 0.58 };
+            return (enemy_avoidance + hazard_avoidance + boss_avoidance + pickup)
+                .normalized_or_zero()
+                * speed;
         }
     }
 
@@ -1324,26 +1535,72 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
         24.0
     } else if snapshot.map.map_id == "soda-creek" {
         74.0
+    } else if snapshot.map.map_id == "cotton-cloud-pasture" {
+        12.0
+    } else if snapshot.map.map_id == "caramel-workshop" {
+        64.0
     } else {
         36.0
     };
     let avoidance = avoid_enemies(snapshot, avoidance_radius, 3);
     let pickup_direction = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO);
+    let caramel_hazard_avoidance = if snapshot.map.map_id == "caramel-workshop" {
+        avoid_hazards(snapshot, 108.0, 6)
+    } else {
+        Vec2::ZERO
+    };
+    let caramel_boss_avoidance =
+        if snapshot.map.map_id == "caramel-workshop" && snapshot.time_seconds >= 205.0 {
+            snapshot
+                .boss
+                .as_ref()
+                .map(|boss| {
+                    let away = snapshot.player.position - boss.position;
+                    if away.length() < 190.0 {
+                        away.normalized_or_zero()
+                    } else {
+                        Vec2::ZERO
+                    }
+                })
+                .unwrap_or(Vec2::ZERO)
+        } else {
+            Vec2::ZERO
+        };
 
-    if avoidance.length_squared() > 0.0 {
+    if avoidance.length_squared() > 0.0
+        || caramel_hazard_avoidance.length_squared() > 0.0
+        || caramel_boss_avoidance.length_squared() > 0.0
+    {
         let speed = if snapshot.map.map_id == "jelly-platform" {
             0.32
         } else if snapshot.map.map_id == "soda-creek" {
             1.0
+        } else if snapshot.map.map_id == "cotton-cloud-pasture" {
+            0.80
         } else {
             1.0
         };
         let avoidance_weight = if snapshot.map.map_id == "soda-creek" {
             0.10
+        } else if snapshot.map.map_id == "caramel-workshop" {
+            0.16
         } else {
             0.05
         };
-        return (avoidance.normalized_or_zero() * avoidance_weight + pickup_direction)
+        let hazard_weight = if snapshot.map.map_id == "caramel-workshop" {
+            0.30
+        } else {
+            0.0
+        };
+        let boss_weight = if snapshot.map.map_id == "caramel-workshop" {
+            0.42
+        } else {
+            0.0
+        };
+        return (avoidance.normalized_or_zero() * avoidance_weight
+            + caramel_hazard_avoidance.normalized_or_zero() * hazard_weight
+            + caramel_boss_avoidance.normalized_or_zero() * boss_weight
+            + pickup_direction)
             .normalized_or_zero()
             * speed;
     }
@@ -1354,6 +1611,8 @@ fn kite_movement(snapshot: &RunSnapshot) -> Vec2 {
         } else if snapshot.map.map_id == "frosting-grassland" {
             0.35
         } else if snapshot.map.map_id == "soda-creek" {
+            0.45
+        } else if snapshot.map.map_id == "cotton-cloud-pasture" {
             0.45
         } else {
             0.45
@@ -1502,6 +1761,15 @@ fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
         return pickup * 0.22;
     }
 
+    if snapshot.map.map_id == "cotton-cloud-pasture" {
+        let avoidance = avoid_enemies(snapshot, 38.0, 4);
+        if avoidance.length_squared() > 0.0 {
+            return avoidance.normalized_or_zero() * 0.035;
+        }
+
+        return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.035;
+    }
+
     if snapshot.map.map_id == "cracked-star-jar" {
         let avoidance = avoid_enemies(snapshot, 70.0, 6);
         if avoidance.length_squared() > 0.0 {
@@ -1513,14 +1781,35 @@ fn zone_control_movement(snapshot: &RunSnapshot) -> Vec2 {
     }
 
     if snapshot.map.map_id == "caramel-workshop" {
-        let enemy_avoidance = avoid_enemies(snapshot, 54.0, 5).normalized_or_zero() * 0.09;
-        let hazard_avoidance = avoid_hazards(snapshot, 108.0, 6).normalized_or_zero() * 0.27;
-        if enemy_avoidance.length_squared() > 0.0 || hazard_avoidance.length_squared() > 0.0 {
-            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.04;
-            return (enemy_avoidance + hazard_avoidance + pickup).normalized_or_zero() * 0.31;
+        let enemy_avoidance = avoid_enemies(snapshot, 54.0, 5).normalized_or_zero() * 0.08;
+        let hazard_avoidance = avoid_hazards(snapshot, 108.0, 6).normalized_or_zero() * 0.24;
+        let boss_avoidance = if snapshot.time_seconds >= 205.0 {
+            snapshot
+                .boss
+                .as_ref()
+                .map(|boss| {
+                    let away = snapshot.player.position - boss.position;
+                    if away.length() < 190.0 {
+                        away.normalized_or_zero() * 0.08
+                    } else {
+                        Vec2::ZERO
+                    }
+                })
+                .unwrap_or(Vec2::ZERO)
+        } else {
+            Vec2::ZERO
+        };
+        if enemy_avoidance.length_squared() > 0.0
+            || hazard_avoidance.length_squared() > 0.0
+            || boss_avoidance.length_squared() > 0.0
+        {
+            let pickup = best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.08;
+            return (enemy_avoidance + hazard_avoidance + boss_avoidance + pickup)
+                .normalized_or_zero()
+                * 0.36;
         }
 
-        return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.07;
+        return best_pickup_direction(snapshot).unwrap_or(Vec2::ZERO) * 0.12;
     }
 
     let avoidance = avoid_enemies(snapshot, 38.0, 4);
