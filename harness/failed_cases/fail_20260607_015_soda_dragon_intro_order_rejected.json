@@ -1,0 +1,15 @@
+{
+  "case_id": "fail_20260607_015",
+  "category": "balance",
+  "content_id": "soda-fountain-dragon",
+  "seed": "74000..74002",
+  "bot": "greedy,kite,boss-hunter,zone-control,route",
+  "time_seconds": 240.0,
+  "symptom": "汽水龙第一阶段能力顺序探针把首次 bubble_barrage 延后为先 summon_soda_bubble，但 3 seed / 240 秒小矩阵中 BossHunter、ZoneControl、Route 仍 0/3，Kite 仍 3/3，Greedy 从当前基线的 1/3 变为 2/3 偏高。",
+  "root_cause": "Boss 首次技能顺序并不是汽水溪谷 216-226 秒短窗口失败的唯一原因。低稳定 Bot 仍在 Boss 初期被地图水流、普通怪残压和 Boss 接触/泡泡组合压死；同时延后玩家附近弹幕给 Greedy 更多拾取成长空间，扩大了中技能过稳风险。",
+  "fix": "不保留汽水龙第一阶段能力顺序调整。后续应改为更细的 Boss 入场容错或地图专属事件，例如短时安全带、Boss 初见前移除附近水流叠加、或只降低 216-226 秒不可读爆发；不要单独延后 bubble_barrage，也不要继续整体降低 210-300 秒波次。",
+  "validation": "已运行 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id soda-creek --content-dir content/base_demo --report-dir /private/tmp/soft_candy/soda_creek_boss_intro_order_matrix_74000_3seed_240s。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/soda_creek_boss_intro_order_matrix_74000_3seed_240s"
+  ]
+}
