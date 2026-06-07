@@ -1,0 +1,26 @@
+{
+  "case_id": "fail_20260607_022",
+  "category": "balance",
+  "content_id": "cotton-cloud-pasture",
+  "seed": "74000..74002",
+  "bot": "coward,greedy,tank,boss-hunter,route",
+  "time_seconds": 240.0,
+  "symptom": "棉花云牧场当前 3 seed / 240 秒小矩阵中，CowardBot 0/3 偏低；GreedyBot、TankBot、BossHunterBot 均为 3/3 过稳；RouteBot 2/3 高于低技能目标。玩家可见风险是软云减速区对低技能策略过惩罚，但对高收益拾取、坦克和 BossHunter 策略又过于宽松，导致同一张图的技能梯度不清楚。",
+  "root_cause": "问题主要来自规则 Bot 在棉花图上的地图意识不匹配。CowardBot 不会识别 soft_cloud_patch 造成的减速风险；GreedyBot 和 TankBot 在高密度糖晶环境中过度成长；BossHunterBot 在巨型棉花团前保持默认宽距离且前期拾取效率过高；RouteBot 默认 0.65 路线速度在棉花牧场过稳。",
+  "fix": "校准 cotton-cloud-pasture 的 Bot 策略基线：为 CowardBot 增加软云危险区避让但限制速度；降低 GreedyBot 与 TankBot 在棉花图的拾取权重；降低 RouteBot 在棉花图的固定路线速度；为 BossHunterBot 设置巨型棉花团专属近距离窗口并微调无 Boss 阶段拾取权重。新增单测覆盖棉花图软云避让、拾取权重、Boss 间距和 Route 速度。",
+  "validation": "已运行 cargo test -p bot_policies，以及 cargo run -q -p game_harness -- matrix --seed-start 74000 --seeds 3 --seconds 240 --bots all --map-id cotton-cloud-pasture --content-dir content/base_demo --report-dir /private/tmp/soft_candy/cotton_policy_baseline_probe_v11_74000_3seed_240s。最终小矩阵中 9 个 Bot 均落在目标区间：Random 0/3、Coward 1/3、Greedy 1/3、Kite 2/3、Tank 1/3、BossHunter 2/3、ZoneControl 1/3、Route 1/3。该小矩阵只用于快速诊断，不等同于发布门禁、Replay 回归或人工试玩。",
+  "diagnostics": [
+    "/private/tmp/soft_candy/cotton_cloud_current_after_bot_fixes_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v1_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v2_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v3_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v4_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v5_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v6_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v7_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v8_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v9_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v10_74000_3seed_240s",
+    "/private/tmp/soft_candy/cotton_policy_baseline_probe_v11_74000_3seed_240s"
+  ]
+}
