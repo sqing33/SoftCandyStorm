@@ -1,0 +1,20 @@
+{
+  "case_id": "fail_20260607_003",
+  "category": "balance",
+  "content_id": "content/base_demo:cotton-cloud-pasture-standard",
+  "seed": "7001-7003",
+  "bot": "KiteBot",
+  "time_seconds": 240.0,
+  "symptom": "棉花云牧场 240 秒矩阵中多数策略 Bot 3/3 跑满，KiteBot 三局 damage_taken 均为 0，CowardBot、GreedyBot、TankBot、BossHunterBot 和 RouteBot 都显示 repair。玩家可见表现是第三张地图的中段敌群、软云地形和巨型棉花团初见段缺少足够路线压力。",
+  "root_cause": "90-300 秒波次中 cotton-candy-clump 占比偏高且单体威胁很低；soft_cloud_patch 只提供轻度减速，覆盖半径和持续时间不足；giant-cotton-clump 第一阶段只有 soft_roll 与 split_cotton_clumps，分裂只带来少量低威胁小团，无法让会风筝的 Bot 在 210 秒首领出场后承担压力。",
+  "fix": "将 90-210 秒拆成 90-150 与 150-210 两段，保留前段学习窗口并在 150 秒后加入 sour-gummy、sticky-bear-gummy、soda-bubble 和少量 spicy-gummy；将 210 秒后和后续段落提高混合敌人权重、max_alive 与刷怪节奏；增强 soft_cloud_patch 的覆盖和减速；将 giant-cotton-clump health 1050->1150、move_speed 32->36、contact_damage_per_second 16->18，并加入 slow_pulse 与 summon_sticky_bear_gummy 让 Boss 初见有可读路线压缩。同步更新 GameCore 内置 base_demo，并同步 cotton_boss_recombine_heal_restores_health 测试的能力 cursor。",
+  "validation": "修复后运行 python3 tools/validate_content_schema_contract.py content/base_demo --schema-manifest content/schemas/manifest.json，cargo run -q -p game_harness -- validate-content --content-dir content/base_demo，cargo run -q -p game_harness -- matrix --seed-start 7001 --seeds 3 --map-id cotton-cloud-pasture --seconds 240 --tick-rate 30 --bots all --content-dir content/base_demo，cargo test -p game_core，cargo test -p game_runtime 和 cargo fmt --check。KiteBot 从 3/3 且几乎零伤降到 2/3 并回到 high-skill gate pass；TankBot 与 ZoneControlBot 也回到 pass；IdleBot 和 RandomBot 仍为 0/3。残余风险：CowardBot 与 GreedyBot 仍为 2/3 repair，BossHunterBot 仍为 3/3 repair，RouteBot 为 0/3 repair，需要后续扩大 seed 或继续做 Bot 特异性调参，不能把本次结果包装成全量门禁通过。",
+  "diagnostics": [
+    "content/base_demo/waves/cotton-cloud-pasture-standard.json",
+    "content/base_demo/bosses/giant-cotton-clump.json",
+    "content/base_demo/maps/cotton-cloud-pasture.json",
+    "crates/game_core/src/content.rs",
+    "crates/game_core/src/lib.rs",
+    "commit 183c1fa1 balance(content): 调整棉花云牧场中段压力"
+  ]
+}
