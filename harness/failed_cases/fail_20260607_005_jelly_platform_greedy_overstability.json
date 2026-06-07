@@ -1,0 +1,21 @@
+{
+  "case_id": "fail_20260607_005",
+  "category": "balance",
+  "content_id": "content/base_demo:jelly-platform-standard",
+  "seed": "7001-7003",
+  "bot": "GreedyXpBot",
+  "time_seconds": 240.0,
+  "symptom": "果冻月台 240 秒矩阵修复后，IdleBot、RandomBot、CowardBot、KiteBot、TankBot、BossHunterBot、ZoneControlBot 和 RouteBot 均回到目标区间，但 GreedyXpBot 仍 3/3 跑满，超出 mid-skill rule bot 25%-55% 目标。玩家可见表现是高拾取路线在果冻月台仍能稳定滚出等级 10-12，并在 Boss 初见后保持低到中等承伤。",
+  "root_cause": "本次修复主要缓解了 90 秒前后的粘性围堵，强化了 210 秒后的快速与分裂压力，并用泡泡鞋小幅降速压回 KiteBot；这些改动能修复路线、控场和 Boss 贴近策略分化，但还没有针对 GreedyXpBot 的安全拾取路径做足够约束。继续削弱全局经济被动会扩大其它地图回归风险，因此不应在本轮用大范围经济削弱硬压通过。",
+  "fix": "已提交的果冻月台修复保留为阶段性改进：降低前中段 sticky-bear-gummy 与 sour-gummy 压力，调整果冻弹跳带节奏，压低泡泡鞋每级移速收益，并缩小熊糖王接触圈同时加入震波伤害。后续修复应优先使用更窄的果冻月台经济路线压力，例如局部拾取风险、210 秒后对固定安全捡晶路线的短窗口干扰，或 GreedyXpBot 高效拾取路径的地图事件候选；不要直接大幅削弱 star-spoon 或 candy-crystal-lens。",
+  "validation": "当前验证已运行：python3 tools/validate_content_schema_contract.py content/base_demo --schema-manifest content/schemas/manifest.json，cargo run -q -p game_harness -- validate-content --content-dir content/base_demo，cargo run -q -p game_harness -- matrix --seed-start 7001 --seeds 3 --map-id jelly-platform --seconds 240 --tick-rate 30 --bots all --content-dir content/base_demo，cargo fmt --check，cargo test -p game_core，cargo test -p game_runtime。矩阵结果：GreedyXpBot 3/3 repair；KiteBot 2/3 pass；TankBot 1/3 pass；BossHunterBot 2/3 pass；ZoneControlBot 1/3 pass；RouteBot 1/3 pass。",
+  "diagnostics": [
+    "content/base_demo/waves/jelly-platform-standard.json",
+    "content/base_demo/maps/jelly-platform.json",
+    "content/base_demo/bosses/giant-gummy-bear-king.json",
+    "content/base_demo/passives/bubble-shoes.json",
+    "crates/game_core/src/content.rs",
+    "crates/game_core/src/lib.rs",
+    "commit 8c0ce73b balance(content): 调整果冻月台路线压力"
+  ]
+}
