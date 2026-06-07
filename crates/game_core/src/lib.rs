@@ -6257,7 +6257,7 @@ mod tests {
             Enemy::from_boss_definition(entity_id, Vec2::new(120.0, 0.0), &boss_definition);
         boss.health = boss.max_health * 0.40;
         boss.boss_phase_index = 1;
-        boss.boss_ability_cursor = 1;
+        boss.boss_ability_cursor = 4;
         boss.boss_ability_cooldown_remaining = 0.0;
         let starting_health = boss.health;
         core.enemies.push(boss);
